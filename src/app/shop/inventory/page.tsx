@@ -14,6 +14,7 @@ export default function ShopInventoryPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [saveError, setSaveError] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [reportSummary, setReportSummary] = useState<{ totalItems: number; lowStockItems: number; totalInventoryValue: number; totalUsageQuantity: number } | null>(null);
@@ -187,6 +188,24 @@ export default function ShopInventoryPage() {
     item.reorderPoint && item.quantity <= item.reorderPoint
   );
 
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredInventory = normalizedSearch
+    ? inventory.filter((item) => {
+        const searchable = [
+          item.name,
+          item.type,
+          item.sku,
+          item.supplier,
+          item.notes,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchable.includes(normalizedSearch);
+      })
+    : inventory;
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'transparent', padding: '40px 20px' }}>
@@ -285,6 +304,27 @@ export default function ShopInventoryPage() {
         )}
 
         {/* Filter Toggle */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', color: '#9aa3b2', fontSize: 13, marginBottom: 8 }}>Search Inventory</label>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by item name, type, SKU, or supplier"
+            style={{
+              width: '100%',
+              maxWidth: 520,
+              padding: '12px 14px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.16)',
+              borderRadius: 8,
+              color: '#e5e7eb',
+              fontSize: 14,
+              outline: 'none',
+            }}
+          />
+        </div>
+
         <div style={{ marginBottom: 24 }}>
           <button
             onClick={() => {
@@ -309,11 +349,15 @@ export default function ShopInventoryPage() {
         </div>
 
         {/* Inventory Table */}
-        {inventory.length === 0 ? (
+        {filteredInventory.length === 0 ? (
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 60, textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}><FaBox style={{marginRight:4}} /></div>
-            <h3 style={{ color: '#e5e7eb', marginBottom: 8 }}>No inventory items</h3>
-            <p style={{ color: '#9aa3b2' }}>Add your first item to get started</p>
+            <h3 style={{ color: '#e5e7eb', marginBottom: 8 }}>
+              {inventory.length === 0 ? 'No inventory items' : 'No matching inventory items'}
+            </h3>
+            <p style={{ color: '#9aa3b2' }}>
+              {inventory.length === 0 ? 'Add your first item to get started' : 'Try a different search term'}
+            </p>
           </div>
         ) : (
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, overflow: 'hidden' }}>
@@ -329,7 +373,7 @@ export default function ShopInventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {inventory.map((item) => {
+                {filteredInventory.map((item) => {
                   const isLowStock = item.reorderPoint && item.quantity <= item.reorderPoint;
                   return (
                     <tr key={item.id} style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>

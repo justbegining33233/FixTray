@@ -17,11 +17,23 @@ export async function GET(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
+    const queryShopId = searchParams.get('shopId');
     const category = searchParams.get('category');
+
+    const authShopId = auth.role === 'shop'
+      ? auth.id
+      : auth.role === 'manager' || auth.role === 'tech'
+        ? auth.shopId
+        : null;
+
+    const shopId = authShopId || queryShopId;
 
     if (!shopId) {
       return NextResponse.json({ error: 'Shop ID required' }, { status: 400 });
+    }
+
+    if (authShopId && queryShopId && queryShopId !== authShopId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const VALID_CATEGORIES = ['diesel', 'gas', 'small-engine', 'heavy-equipment', 'resurfacing', 'welding', 'tire'];
@@ -77,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     const data = validation.data;
 
-    // Verify shop ownership
+    // Resolve shop ownership from auth context (do not trust client-provided shopId)
     let shopId: string;
     if (auth.role === 'shop') {
       shopId = auth.id;
@@ -87,15 +99,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Verify shopId matches
-    if (data.shopId !== shopId) {
+    if (!shopId) {
+      return NextResponse.json({ error: 'Shop ID required' }, { status: 400 });
+    }
+
+    if (data.shopId && data.shopId !== shopId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Check for duplicate service
     const existing = await prisma.shopService.findFirst({
       where: {
-        shopId: data.shopId,
+        shopId,
         serviceName: data.serviceName,
         category: data.category,
       },
@@ -111,7 +126,7 @@ export async function POST(request: NextRequest) {
     // Create service
     const service = await prisma.shopService.create({
       data: {
-        shopId: data.shopId,
+        shopId,
         serviceName: data.serviceName,
         category: data.category,
         price: data.price || null,

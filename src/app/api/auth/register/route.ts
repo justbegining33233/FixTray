@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: isFixTrayEmployee
-            ? 'FixTray employee numbers must be between 1 and 999999999 (first 1000 are reserved first)'
-            : 'Employee numbers must be between 1001 and 999999999',
+            ? 'FixTray employee numbers must be between 1 and 999999 (first 1000 are reserved first)'
+            : 'Employee numbers must be between 1001 and 999999',
         },
         { status: 400 }
       );

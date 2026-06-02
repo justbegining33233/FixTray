@@ -470,7 +470,10 @@ export default function ShopHome() {
       }
     >
       <div style={{maxWidth:1400, margin:'0 auto', padding: sidebarOpen ? '0 32px 32px 32px' : '0 32px 32px 32px'}}>
-        <div style={{display:'flex', flexWrap:'nowrap', gap:12, alignItems:'center', margin:'0 0 20px 0', overflowX:'auto', paddingBottom:4}}>
+        <div
+          className="quick-actions-slider"
+          style={{display:'flex', flexWrap:'nowrap', gap:12, alignItems:'center', margin:'0 0 20px 0', overflowX:'auto', paddingBottom:4}}
+        >
           <span style={{fontSize:13, color:'#9aa3b2', fontWeight:700}}>Quick Actions</span>
           {quickActions.map(action => {
             if (action.requiresAdmin && !user.isShopAdmin) return null;
@@ -745,6 +748,32 @@ export default function ShopHome() {
 
       {/* Real-Time Work Orders Updates */}
       <RealTimeWorkOrders userId={user.id} />
+
+      <style jsx global>{`
+        .quick-actions-slider {
+          scrollbar-width: thin;
+          scrollbar-color: #e5332a #000000;
+        }
+
+        .quick-actions-slider::-webkit-scrollbar {
+          height: 10px;
+        }
+
+        .quick-actions-slider::-webkit-scrollbar-track {
+          background: #000000;
+          border-radius: 999px;
+        }
+
+        .quick-actions-slider::-webkit-scrollbar-thumb {
+          background: #e5332a;
+          border-radius: 999px;
+          border: 2px solid #000000;
+        }
+
+        .quick-actions-slider::-webkit-scrollbar-thumb:hover {
+          background: #ff4b42;
+        }
+      `}</style>
     </MobileLayout>
   );
 }

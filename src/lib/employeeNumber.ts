@@ -2,7 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 
 const FIXTRAY_EMPLOYEE_MAX = 1000;
 const NON_FIXTRAY_EMPLOYEE_MIN = 1001;
-const EMPLOYEE_NUMBER_MAX = 999999999;
+const EMPLOYEE_NUMBER_MAX = 999999;
 
 function parseConfiguredFixTrayShopIds(): Set<string> {
   const raw = String(process.env.FIXTRAY_INTERNAL_SHOP_IDS || '').trim();

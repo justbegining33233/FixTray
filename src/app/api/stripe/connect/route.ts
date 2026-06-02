@@ -17,11 +17,8 @@ export async function GET(request: NextRequest) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
-  const from = new URL(request.url).searchParams.get('from') || 'settings';
 
-  const successRedirect = from === 'onboarding'
-    ? `${appUrl}/shop/subscribe`
-    : `${appUrl}/shop/settings?stripe_connect=success&tab=billing`;
+  const successRedirect = `${appUrl}/shop/settings?stripe_connect=success&tab=general`;
 
   try {
     // Look up the shop so we can check for an existing Stripe account

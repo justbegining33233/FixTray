@@ -13,6 +13,12 @@ interface AutomationRule {
   messageTemplate: string;
   isActive: boolean;
   createdAt: string;
+  executions?: Array<{
+    id: string;
+    channel: string;
+    status: string;
+    sentAt: string;
+  }>;
   _count?: { executions: number };
 }
 
@@ -35,7 +41,7 @@ const TRIGGER_OPTIONS = [
 const VARIABLE_HINTS = ['{customer_name}', '{vehicle}', '{shop_name}', '{tech_name}', '{appointment_date}', '{appointment_time}', '{amount_due}', '{next_service_date}', '{review_link}'];
 
 export default function AutomationsPage() {
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -52,7 +58,14 @@ export default function AutomationsPage() {
     setLoading(true);
     const token = localStorage.getItem('token');
     const r = await fetch('/api/automations', { headers: { Authorization: `Bearer ${token}` } });
-    if (r.ok) setRules(await r.json());
+    if (r.ok) {
+      const rows = await r.json();
+      const normalized = (Array.isArray(rows) ? rows : []).map((row: any) => ({
+        ...row,
+        isActive: row.isActive ?? row.active ?? false,
+      }));
+      setRules(normalized);
+    }
     setLoading(false);
   };
 
@@ -71,7 +84,11 @@ export default function AutomationsPage() {
       const token = localStorage.getItem('token');
       const method = editing ? 'PUT' : 'POST';
       const url = editing ? `/api/automations/${editing.id}` : '/api/automations';
-      const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
+      const payload = {
+        ...form,
+        active: form.isActive,
+      };
+      const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
       if (!r.ok) { const d = await r.json().catch(() => ({})); setFormError(d.error || 'Failed to save automation.'); }
       else { setShowForm(false); setEditing(null); load(); }
     } catch (err: any) {
@@ -83,7 +100,7 @@ export default function AutomationsPage() {
 
   const toggleActive = async (rule: AutomationRule) => {
     const token = localStorage.getItem('token');
-    await fetch(`/api/automations/${rule.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ isActive: !rule.isActive }) });
+    await fetch(`/api/automations/${rule.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ isActive: !rule.isActive, active: !rule.isActive }) });
     load();
   };
 
@@ -100,7 +117,7 @@ export default function AutomationsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaBolt style={{marginRight:4}} /> Automations</h1>
@@ -136,9 +153,23 @@ export default function AutomationsPage() {
                     &ldquo;{rule.messageTemplate.slice(0, 100)}{rule.messageTemplate.length > 100 ? '...' : ''}&rdquo;
                   </div>
                   <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>
-                     {rule.channel.toUpperCase()} · Trigger: {TRIGGER_OPTIONS.find(t => t.value === rule.trigger)?.label || rule.trigger} {rule.triggerValue ? `(${rule.triggerValue})` : ''}
-                    {rule._count && <span style={{ marginLeft: 12 }}>· {rule._count.executions} sent</span>}
+                     {rule.channel.toUpperCase()}  Trigger: {TRIGGER_OPTIONS.find(t => t.value === rule.trigger)?.label || rule.trigger} {rule.triggerValue ? `(${rule.triggerValue})` : ''}
+                    {rule._count && <span style={{ marginLeft: 12 }}> {rule._count.executions} sent</span>}
                   </div>
+                  {!!rule.executions?.length && (
+                    <div style={{ marginBottom: 10, background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>Recent Executions</div>
+                      <div style={{ display: 'grid', gap: 5 }}>
+                        {rule.executions.slice(0, 3).map((exec) => (
+                          <div key={exec.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+                            <span style={{ color: '#cbd5e1' }}>{exec.channel.toUpperCase()}</span>
+                            <span style={{ color: exec.status === 'sent' ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{exec.status.toUpperCase()}</span>
+                            <span style={{ color: '#9ca3af' }}>{new Date(exec.sentAt).toLocaleDateString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => openEdit(rule)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, padding: '6px 0', fontSize: 13, cursor: 'pointer' }}>Edit</button>
                     <button onClick={() => setDeleteConfirmId(rule.id)} style={{ background: 'rgba(229,51,42,0.15)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 7, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>Delete</button>
@@ -203,7 +234,7 @@ export default function AutomationsPage() {
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
                 {VARIABLE_HINTS.map(v => (
-                  <button key={v} onClick={() => insertVar(v)} style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 5, padding: '3px 8px', fontSize: 11, cursor: 'pointer' }}>{v}</button>
+                  <button key={v} onClick={() => insertVar(v)} style={{ background: 'rgba(229,51,42,0.15)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 5, padding: '3px 8px', fontSize: 11, cursor: 'pointer' }}>{v}</button>
                 ))}
               </div>
               <textarea value={form.messageTemplate} onChange={e => setForm(p => ({ ...p, messageTemplate: e.target.value }))} rows={4}
@@ -236,3 +267,4 @@ export default function AutomationsPage() {
     </div>
   );
 }
+

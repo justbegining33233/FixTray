@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 // Lazy-load `prisma` and `bcrypt` in the handler
 import { generateAccessToken, generateTempToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
+import { logActivity } from '@/lib/activityLogger';
+import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body: { username?: string; password?: string } = {};
+    try {
+      const raw = await request.text();
+      body = raw ? JSON.parse(raw) : {};
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
     const { username, password } = body;
 
     if (!username || !password) {
@@ -57,6 +65,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    const shopSettings = await prisma.shopSettings.findUnique({
+      where: { shopId: shop.id },
+      select: { notificationPreferences: true },
+    });
+
+    const notificationPrefs =
+      shopSettings?.notificationPreferences &&
+      typeof shopSettings.notificationPreferences === 'object' &&
+      !Array.isArray(shopSettings.notificationPreferences)
+        ? (shopSettings.notificationPreferences as Record<string, unknown>)
+        : {};
+
+    const agreement = notificationPrefs.fixtrayAgreement as
+      | { accepted?: boolean; signedBy?: string; signedAt?: string }
+      | undefined;
+
+    const agreementAccepted = !!(agreement?.accepted && agreement?.signedBy && agreement?.signedAt);
+
     // Reset rate limit counter on successful login
     resetRateLimit(rateLimitKey);
 
@@ -68,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate access token
-    const accessToken = generateAccessToken({ id: shop.id, username: shop.username, role: 'shop' });
+    const accessToken = generateAccessToken({ id: shop.id, shopId: shop.id, username: shop.username, role: 'shop' });
 
     // Refresh token — httpOnly cookies for silent renewal
     const refreshRaw = generateRandomToken(48);
@@ -79,6 +105,7 @@ export async function POST(request: NextRequest) {
     const userIp = request.headers.get('x-forwarded-for') || '';
     const userAgent = request.headers.get('user-agent') || '';
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
+    await enforceSingleActiveSession(prisma, { shopId: shop.id });
     const refresh = await prisma.refreshToken.create({
       data: {
         tokenHash: refreshHash,
@@ -95,6 +122,7 @@ export async function POST(request: NextRequest) {
       email: shop.email,
       phone: shop.phone,
       profileComplete: shop.profileComplete,
+      agreementAccepted,
       status: shop.status,
       accessToken,
     }, { status: 200 });
@@ -121,6 +149,15 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax' as const,
       path: '/',
       maxAge: 60 * 15,
+    });
+
+    // Fire-and-forget activity log
+    logActivity('login', shop.username, `Shop login from ${userIp}`, {
+      type: 'user',
+      severity: 'info',
+      shopId: shop.id,
+      email: shop.email,
+      metadata: { ip: userIp, role: 'shop' },
     });
 
     return response;

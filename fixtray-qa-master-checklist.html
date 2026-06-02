@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FixTray Master QA Checklist</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; padding-top: 80px; }
+        
+        /* Master Navigator */
+        .role-nav { position: fixed; top: 0; left: 0; right: 0; background: #1e293b; padding: 10px 20px; z-index: 200; display: flex; gap: 15px; border-bottom: 1px solid #334155; }
+        .role-nav a { color: #e2e8f0; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+        .role-nav a.admin { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; }
+        .role-nav a.shop { background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; color: #3b82f6; }
+        .role-nav a.tech { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; }
+        .role-nav a.customer { background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; color: #22c55e; }
+        
+        .role-header { color: #f8fafc; font-size: 32px; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-top: 40px; }
+        h2 { font-size: 22px; margin-top: 30px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+        
+        /* Dynamic Header Colors */
+        .admin-section h2 { color: #ef4444; }
+        .shop-section h2 { color: #3b82f6; }
+        .tech-section h2 { color: #f59e0b; }
+        .customer-section h2 { color: #22c55e; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #94a3b8; font-weight: 600; font-size: 14px; text-transform: uppercase; }
+        tr:last-child td { border-bottom: none; }
+        
+        .row-item { font-weight: 500; color: #f8fafc; }
+        .row-type { font-size: 12px; color: #94a3b8; background: #334155; padding: 3px 8px; border-radius: 12px; margin-left: 10px; }
+        
+        select { background: #0f172a; color: #f8fafc; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; width: 100%; outline: none; transition: border-color 0.2s; }
+        .admin-section select:focus { border-color: #ef4444; }
+        .shop-section select:focus { border-color: #3b82f6; }
+        .tech-section select:focus { border-color: #f59e0b; }
+        .customer-section select:focus { border-color: #22c55e; }
+        
+        option[value=""] { color: #94a3b8; }
+        option[value="go"] { color: #22c55e; }
+        option[value="nogo"] { color: #ef4444; }
+        
+        textarea { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 8px; border-radius: 6px; resize: vertical; min-height: 40px; font-family: inherit; }
+        
+        .notes-area { margin-top: 15px; background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid #334155; }
+        .notes-area h3 { margin: 0 0 10px 0; font-size: 16px; color: #cbd5e1; }
+        
+        /* Master Progress container */
+        .progress-wrapper { position: fixed; top: 60px; left: 0; right: 0; background: #0f172a; padding: 10px 20px; z-index: 100; border-bottom: 1px solid #334155; display: flex; flex-direction: column; gap: 5px; }
+        .progress-header { display: flex; justify-content: space-between; font-weight: bold; }
+        .progress-bar-container { display: flex; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; width: 100%; }
+        
+        .progress-segment { height: 100%; transition: width 0.3s ease; }
+        .seg-admin { background: #ef4444; }
+        .seg-shop { background: #3b82f6; }
+        .seg-tech { background: #f59e0b; }
+        .seg-customer { background: #22c55e; }
+
+    </style>
+</head>
+<body>
+
+    <div class="role-nav">
+        <a href="#admin-role" class="admin">Admin & Super Admin</a>
+        <a href="#shop-role" class="shop">Shop Owner</a>
+        <a href="#tech-role" class="tech">Technician</a>
+        <a href="#customer-role" class="customer">Customer</a>
+    </div>
+
+    <div class="progress-wrapper">
+        <div class="progress-header">
+            <span>Global App QA Progress</span>
+            <span id="global-progress-text">0 / 0 Completed (0%)</span>
+        </div>
+        <div class="progress-bar-container">
+            <div id="prog-admin" class="progress-segment seg-admin" style="width: 0%"></div>
+            <div id="prog-shop" class="progress-segment seg-shop" style="width: 0%"></div>
+            <div id="prog-tech" class="progress-segment seg-tech" style="width: 0%"></div>
+            <div id="prog-customer" class="progress-segment seg-customer" style="width: 0%"></div>
+        </div>
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- ADMIN & SUPER ADMIN ROLE                       -->
+    <!-- ============================================== -->
+    <div id="admin-role" class="admin-section" style="padding-top: 60px;">
+        <h1 class="role-header" style="color: #ef4444;">Admin & Super Admin Role Checklist</h1>
+        <p>Dashboard: /superadmin/dashboard</p>
+
+        <!-- SECTION: GLOBAL APP SHELL -->
+        <h2>1. Global Mobile Shell & Navigation</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Manage Shops <span class="row-type">Tile</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /admin/manage-shops"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Pending Shops <span class="row-type">Tile</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /admin/pending-shops"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Users <span class="row-type">Tile</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /superadmin/users"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Revenue <span class="row-type">Tile</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /admin/revenue"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Analytics <span class="row-type">Tile</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /superadmin/analytics"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Home <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /superadmin/dashboard"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Shops <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /admin/manage-shops"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Chat <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /admin/messages"></textarea></td>
+                </tr>
+                <tr>
+                    <td>System <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /admin/settings"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Shops > Manage Shops <span class="row-type">Drawer Category/Link</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Users > User Management <span class="row-type">Drawer Category/Link</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="notes-area">
+            <h3>Additional Issues (Admin Dashboard & Navigation):</h3>
+            <textarea style="min-height: 80px;" placeholder="Document bugs found..."></textarea>
+        </div>
+
+        <h2>2. Manage Shops (/admin/manage-shops)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>"Total Shops" <span class="row-type">Stat Card / Value</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>"Active" <span class="row-type">Stat Card / Value</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>"Search shops, owners, emails..." <span class="row-type">Input Field</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>"approved" <span class="row-type">Filter Button</span></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select admin-data" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- SHOP OWNER ROLE                                -->
+    <!-- ============================================== -->
+    <div id="shop-role" class="shop-section" style="padding-top: 60px;">
+        <h1 class="role-header" style="color: #3b82f6;">Shop Owner Role Checklist</h1>
+        <p>Dashboard: /shop/home</p>
+
+        <!-- SECTION: GLOBAL APP SHELL -->
+        <h2>1. Global Mobile Shell & Navigation</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Home <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /shop/home"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Bays <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /shop/bays"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Calendar <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /shop/calendar"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Chat <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /shop/customer-messages"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Menu <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Opens Drawer"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Create Work Order <span class="row-type">FAB</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Plus Icon Bottom Right"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Drawer > Customers <span class="row-type">Link</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Drawer > Inventory <span class="row-type">Link</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SECTION: DASHBOARD -->
+        <h2>2. Shop Dashboard (/shop/home)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Today's Revenue <span class="row-type">Stat Card</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Active Jobs <span class="row-type">Stat Card</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Recent Activity <span class="row-type">Feed List</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- SECTION: WAITING ROOM -->
+        <h2>3. Waiting Room (/shop/waiting-room)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Walk-Ins <span class="row-type">Tab</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Appointments <span class="row-type">Tab</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SECTION: BAYS & WORK ORDERS -->
+        <h2>4. Bays / Work Orders (/shop/bays)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Kanban Board View <span class="row-type">Container</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Work Order Card Drag/Drop <span class="row-type">Action</span></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select shop-data" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TECHNICIAN ROLE                                -->
+    <!-- ============================================== -->
+    <div id="tech-role" class="tech-section" style="padding-top: 60px;">
+        <h1 class="role-header" style="color: #f59e0b;">Technician Role Checklist</h1>
+        <p>Dashboard: /tech/home</p>
+
+        <!-- SECTION: GLOBAL APP SHELL -->
+        <h2>1. Global Mobile Shell & Navigation</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Home <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /tech/home"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Jobs <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /tech/new-inshop-job"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Tools <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /tech/all-tools"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Chat <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /tech/messages"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Drawer > Timeclock <span class="row-type">Link</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Drawer > DVI <span class="row-type">Link</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SECTION: TECH DASHBOARD -->
+        <h2>2. Tech Dashboard (/tech/home)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>My Assigned Jobs <span class="row-type">Section</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Clock In / Out <span class="row-type">Button</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- SECTION: TOOLS & DVI -->
+        <h2>3. Tools & DVI (/tech/dvi, /tech/diagnostics)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Digital Vehicle Inspection <span class="row-type">Header</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Upload Photo/Video <span class="row-type">Action</span></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select tech-data" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- CUSTOMER ROLE                                  -->
+    <!-- ============================================== -->
+    <div id="customer-role" class="customer-section" style="padding-top: 60px;">
+        <h1 class="role-header" style="color: #22c55e;">Customer Role Checklist</h1>
+        <p>Dashboard: /customer/dashboard</p>
+
+        <!-- SECTION: GLOBAL APP SHELL -->
+        <h2>1. Global Mobile Shell & Navigation</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Dashboard <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /customer/dashboard"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Vehicles <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /customer/vehicles"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Appointments <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /customer/appointments"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Messages <span class="row-type">Footer Tab</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea placeholder="Route: /customer/messages"></textarea></td>
+                </tr>
+                <tr>
+                    <td>Book Appointment <span class="row-type">FAB</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Drawer > Estimates <span class="row-type">Link</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SECTION: CUSTOMER DASHBOARD -->
+        <h2>2. Customer Dashboard (/customer/dashboard)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Active Service Updates <span class="row-type">Section</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+                <tr>
+                    <td>Action Needed (Approvals) <span class="row-type">Alert/Card</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SECTION: VEHICLES -->
+        <h2>3. My Vehicles (/customer/vehicles)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Vehicle Cards <span class="row-type">List</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SECTION: DVI & AUTHORIZATION -->
+        <h2>4. DVI & Authorization (/customer/dvi)</h2>
+        <table>
+            <thead><tr><th style="width: 35%;">UI Element (Exact Text)</th><th style="width: 15%;">Website Status</th><th style="width: 15%;">APK Status</th><th style="width: 35%;">Notes / Issues</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Approve Selected Services <span class="row-type">Button</span></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><select class="status-select customer-data" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                    <td><textarea></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SCRIPT FOR PROGRESS TRACKING AND PERSISTENCE -->
+    <script>
+        const allSelects = document.querySelectorAll('.status-select');
+        const textareas = document.querySelectorAll('textarea');
+        const globalProgressText = document.getElementById('global-progress-text');
+
+        function updateProgress() {
+            const total = allSelects.length;
+            const groups = ['admin', 'shop', 'tech', 'customer'];
+            
+            let totalCompleted = 0;
+
+            groups.forEach(group => {
+                const groupSelects = document.querySelectorAll('.status-select[data-group="' + group + '"]');
+                const groupTotal = groupSelects.length;
+                const groupCompleted = Array.from(groupSelects).filter(s => s.value !== '').length;
+                totalCompleted += groupCompleted;
+                
+                // Calculate portion of total width this group represents
+                const groupWidthPercentage = total === 0 ? 0 : (groupCompleted / total) * 100;
+                document.getElementById('prog-' + group).style.width = \`\${groupWidthPercentage}%\`;
+            });
+
+            const overallPercentage = total === 0 ? 0 : Math.round((totalCompleted / total) * 100);
+            globalProgressText.innerText = \`\${totalCompleted} / \${total} Completed (\${overallPercentage}%)\`;
+        }
+
+        // Restore & Bind Events
+        allSelects.forEach((select, i) => {
+            const saved = localStorage.getItem('master_qa_select_' + i);
+            if (saved) select.value = saved;
+            select.addEventListener('change', (e) => { 
+                localStorage.setItem('master_qa_select_' + i, e.target.value); 
+                updateProgress(); 
+            });
+        });
+
+        textareas.forEach((ta, i) => {
+            const saved = localStorage.getItem('master_qa_ta_' + i);
+            if (saved) ta.value = saved;
+            ta.addEventListener('input', (e) => { 
+                localStorage.setItem('master_qa_ta_' + i, e.target.value); 
+            });
+        });
+
+        updateProgress();
+    </script>
+</body>
+</html>

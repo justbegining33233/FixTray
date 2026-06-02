@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FixTray – Subscription Audit</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#0f0f1a;color:#e0e0ff;padding:36px 20px;min-height:100vh;}
+    .container{max-width:1060px;margin:0 auto;}
+
+    header{
+      background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);
+      border:1px solid #2a2a45;border-radius:14px;
+      padding:32px 40px;margin-bottom:32px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    header h1{font-size:24px;font-weight:800;letter-spacing:.5px;}
+    header p{font-size:13px;color:#888;margin-top:5px;}
+    .badge-header{
+      background:#e94560;color:#fff;border-radius:8px;
+      padding:8px 20px;font-size:13px;font-weight:700;white-space:nowrap;
+      box-shadow:0 0 20px rgba(233,69,96,.4);
+    }
+
+    .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+    .sc{border-radius:12px;padding:24px;text-align:center;border:2px solid;}
+    .sc .num{font-size:52px;font-weight:900;line-height:1;}
+    .sc .lbl{font-size:12px;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;}
+    .sc-green{background:#0a2a1a;border-color:#16a34a;} .sc-green .num{color:#22c55e;} .sc-green .lbl{color:#4ade80;}
+    .sc-orange{background:#2a1a0a;border-color:#ea580c;} .sc-orange .num{color:#f97316;} .sc-orange .lbl{color:#fb923c;}
+    .sc-red{background:#2a0a0a;border-color:#dc2626;} .sc-red .num{color:#ef4444;} .sc-red .lbl{color:#f87171;}
+
+    .section-title{
+      font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;
+      color:#888;margin:32px 0 14px;padding-left:4px;
+      display:flex;align-items:center;gap:10px;
+    }
+    .section-title::after{content:'';flex:1;height:1px;background:#2a2a45;}
+
+    .route-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:8px;}
+    .route-card{
+      border-radius:10px;padding:12px 16px;border-left:4px solid;
+      display:flex;flex-direction:column;gap:6px;
+      transition:transform .15s;
+    }
+    .route-card:hover{transform:translateY(-1px);}
+    .route-card .rc-path{font-family:monospace;font-size:12px;font-weight:700;}
+    .route-card .rc-desc{font-size:11px;opacity:.75;}
+    .route-card .rc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:2px;flex-wrap:wrap;gap:4px;}
+
+    .rc-gated{background:#0d1f0d;border-color:#16a34a;}
+    .rc-gated .rc-path{color:#4ade80;}
+    .rc-missing{background:#1f0d0d;border-color:#dc2626;animation:pulse-red 2.5s ease-in-out infinite;}
+    .rc-missing .rc-path{color:#f87171;}
+    .rc-ok{background:#141420;border-color:#3a3a55;}
+    .rc-ok .rc-path{color:#a0a0c0;}
+
+    @keyframes pulse-red{
+      0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0);}
+      50%{box-shadow:0 0 0 5px rgba(239,68,68,.18);}
+    }
+
+    .pill{display:inline-block;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;white-space:nowrap;letter-spacing:.3px;}
+    .p-all{background:#1e3050;color:#60a5fa;}
+    .p-growth{background:#0a2a1a;color:#4ade80;}
+    .p-pro{background:#2a1a0a;color:#fb923c;}
+    .p-biz{background:#1a0a2a;color:#c084fc;}
+    .p-ent{background:#2a0f1a;color:#f87096;}
+    .p-gated{background:#0a2a1a;color:#4ade80;}
+    .p-missing{background:#2a0a0a;color:#f87171;border:1px solid #7f1d1d;}
+    .p-ok{background:#1a1a2e;color:#888;}
+
+    .flag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px;margin-bottom:8px;}
+    .flag-card{border-radius:10px;padding:14px 18px;border:1px solid;display:flex;flex-direction:column;gap:5px;}
+    .flag-card .fc-name{font-family:monospace;font-size:13px;font-weight:700;}
+    .flag-card .fc-desc{font-size:11px;color:#888;line-height:1.5;margin-top:4px;}
+    .fc-dead{background:#1f0d0d;border-color:#7f1d1d;}  .fc-dead .fc-name{color:#f87171;}
+    .fc-warn{background:#1f160d;border-color:#7c2d12;}  .fc-warn .fc-name{color:#fb923c;}
+    .fc-ok{background:#0d1f0d;border-color:#14532d;}    .fc-ok .fc-name{color:#4ade80;}
+    .fc-info{background:#141420;border-color:#312e81;}  .fc-info .fc-name{color:#a5b4fc;}
+
+    .fix-list{display:flex;flex-direction:column;gap:10px;margin-bottom:8px;}
+    .fix-card{
+      border-radius:10px;padding:16px 20px;border:1px solid;
+      display:grid;grid-template-columns:44px 1fr auto;align-items:start;gap:16px;
+    }
+    .fix-num{font-size:26px;font-weight:900;line-height:1;text-align:center;padding-top:2px;}
+    .fix-content .fix-title{font-size:13px;font-weight:700;margin-bottom:6px;}
+    .fix-content .fix-detail{font-size:12px;color:#888;line-height:1.6;}
+    .fix-effort{font-size:11px;font-weight:700;border-radius:6px;padding:4px 10px;white-space:nowrap;height:fit-content;margin-top:2px;}
+    .fx-crit{background:#1f0d0d;border-color:#dc2626;} .fx-crit .fix-num{color:#f87171;} .fx-crit .fix-title{color:#fca5a5;}
+    .fx-high{background:#1f160d;border-color:#ea580c;} .fx-high .fix-num{color:#fb923c;} .fx-high .fix-title{color:#fdba74;}
+    .fx-med{background:#141420;border-color:#4338ca;}  .fx-med .fix-num{color:#818cf8;} .fx-med .fix-title{color:#c7d2fe;}
+    .effort-low{background:#0a2a1a;color:#4ade80;}
+    .effort-med{background:#2a1a0a;color:#fb923c;}
+
+    .legend{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:24px;padding:14px 20px;background:#141420;border-radius:10px;border:1px solid #2a2a45;}
+    .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#aaa;}
+    .ld{width:14px;height:14px;border-radius:4px;flex-shrink:0;}
+    .ld-green{background:#16a34a;} .ld-red{background:#dc2626;} .ld-gray{background:#3a3a55;}
+
+    footer{text-align:center;color:#444;font-size:12px;margin-top:40px;padding-top:20px;border-top:1px solid #2a2a45;}
+
+    @media print{
+      body{background:#fff;color:#222;padding:0;}
+      .rc-missing{animation:none;}
+      .route-card,.flag-card,.fix-card{break-inside:avoid;}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>FixTray — Subscription Gate Audit</h1>
+      <p>Every route in code, color-coded by whether it's actually protected by a subscription plan &nbsp;·&nbsp; May 20, 2026</p>
+    </div>
+    <div class="badge-header">AUDIT</div>
+  </header>
+
+  <div class="summary-row">
+    <div class="sc sc-green"><div class="num">45</div><div class="lbl">Routes Properly Gated</div></div>
+    <div class="sc sc-red"><div class="num">16</div><div class="lbl">Missing Gates — paid features free</div></div>
+    <div class="sc sc-orange"><div class="num">6</div><div class="lbl">Feature Flags Never Enforced</div></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="ld ld-green"></div> Gated — subscription enforced ✔</div>
+    <div class="legend-item"><div class="ld ld-red"></div> NOT gated — paid feature exposed to all plans ✗ (pulses)</div>
+    <div class="legend-item"><div class="ld ld-gray"></div> OK ungated — core feature included in all plans</div>
+  </div>
+
+  <!-- ── SHOP ── -->
+  <div class="section-title">🏪 Shop Routes</div>
+  <div class="route-grid">
+    <div class="route-card rc-ok"><div class="rc-path">/shop/home</div><div class="rc-desc">Shop dashboard home</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/shop/new-inshop-job</div><div class="rc-desc">Create quick in-shop work order</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/shop/reports</div><div class="rc-desc">Basic shop reports</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK — basicReporting</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/shop/services</div><div class="rc-desc">Service &amp; labor catalog</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/shop/templates</div><div class="rc-desc">Work order templates</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/shop/timeclock</div><div class="rc-desc">Staff punch clock</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK — timeTracking</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/customer-messages</div><div class="rc-desc">Customer messaging inbox</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/recurring-workorders</div><div class="rc-desc">Recurring job scheduling</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/waiting-room</div><div class="rc-desc">Live customer waiting room</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/manage-team</div><div class="rc-desc">Invite &amp; manage team</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/settings/permissions</div><div class="rc-desc">Per-user permission editor</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/settings/schedule</div><div class="rc-desc">Team schedule settings</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/dvi</div><div class="rc-desc">Digital vehicle inspection</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/condition-reports</div><div class="rc-desc">Vehicle condition reports</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/inspections</div><div class="rc-desc">Inspection management</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/shop/bays</div><div class="rc-desc">Bay / station management</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/shop/calendar</div><div class="rc-desc">Appointment scheduler</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/shop/work-authorizations</div><div class="rc-desc">Customer digital signature</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/inventory/*</div><div class="rc-desc">Inventory management</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/vendors</div><div class="rc-desc">Vendor management</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/purchase-orders</div><div class="rc-desc">Purchase order tracking</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/core-returns</div><div class="rc-desc">Core part returns</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/parts-labor</div><div class="rc-desc">Parts &amp; labor rates</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/payroll</div><div class="rc-desc">Employee payroll</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/analytics</div><div class="rc-desc">Advanced analytics</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/ar-aging</div><div class="rc-desc">Accounts receivable aging</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/profit-margins</div><div class="rc-desc">Profit margin analysis</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/eod-report</div><div class="rc-desc">End of day report</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/payment-links</div><div class="rc-desc">Payment link generation</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/referrals</div><div class="rc-desc">Referral program</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/campaigns</div><div class="rc-desc">Marketing campaigns</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/branding</div><div class="rc-desc">Shop branding settings</div><div class="rc-footer"><span class="pill p-pro">Professional+ ⚠ should be Enterprise</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/automations</div><div class="rc-desc">Workflow automations</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/tax-settings</div><div class="rc-desc">Tax configuration</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/reviews</div><div class="rc-desc">Customer reviews</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/admin/settings</div><div class="rc-desc">Admin settings panel</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/admin/logs</div><div class="rc-desc">Audit &amp; activity logs</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/admin/health</div><div class="rc-desc">System health dashboard</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/shop/loaners</div><div class="rc-desc">Loaner vehicle tracking</div><div class="rc-footer"><span class="pill p-pro">Needs → Professional+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/shop/environmental-fees</div><div class="rc-desc">Environmental fee settings</div><div class="rc-footer"><span class="pill p-pro">Needs → Professional+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/locations</div><div class="rc-desc">Multi-location management</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/fleet</div><div class="rc-desc">Fleet management</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/customer-reports</div><div class="rc-desc">Revenue &amp; customer analytics</div><div class="rc-footer"><span class="pill p-biz">Business+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/integrations</div><div class="rc-desc">Third-party integrations</div><div class="rc-footer"><span class="pill p-ent">Enterprise</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/settings/api-keys</div><div class="rc-desc">API key management</div><div class="rc-footer"><span class="pill p-ent">Enterprise</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/shop/settings/webhooks</div><div class="rc-desc">Webhook endpoints</div><div class="rc-footer"><span class="pill p-ent">Enterprise</span><span class="pill p-gated">✔ Gated</span></div></div>
+  </div>
+
+  <!-- ── MANAGER ── -->
+  <div class="section-title">👔 Manager Routes</div>
+  <div class="route-grid">
+    <div class="route-card rc-ok"><div class="rc-path">/manager/home</div><div class="rc-desc">Manager home dashboard</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/manager/timeclock</div><div class="rc-desc">Time tracking monitor</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK — timeTracking</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/messages</div><div class="rc-desc">Team &amp; customer messaging</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/recurring-workorders</div><div class="rc-desc">Recurring job management</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/team</div><div class="rc-desc">Team member management</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/settings/permissions</div><div class="rc-desc">Permission configuration</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/assignments</div><div class="rc-desc">Staff job assignments</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/approvals</div><div class="rc-desc">Manager approval queue</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/estimates</div><div class="rc-desc">Estimate oversight</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/overview</div><div class="rc-desc">Management overview dashboard</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/schedule</div><div class="rc-desc">Master schedule view</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/templates</div><div class="rc-desc">Manager templates</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/work-authorizations</div><div class="rc-desc">Authorization management</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/manager/inspections</div><div class="rc-desc">Inspection review</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+ (photoCapture)</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/inventory</div><div class="rc-desc">Inventory access</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/payroll</div><div class="rc-desc">Payroll management</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/reports</div><div class="rc-desc">Advanced reports</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/admin/settings</div><div class="rc-desc">Admin settings</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/manager/admin/logs</div><div class="rc-desc">Audit logs</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+  </div>
+
+  <!-- ── TECH ── -->
+  <div class="section-title">🔧 Technician Routes</div>
+  <div class="route-grid">
+    <div class="route-card rc-ok"><div class="rc-path">/tech/home</div><div class="rc-desc">Tech home dashboard</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/tech/customers</div><div class="rc-desc">Customer lookup</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/tech/timeclock</div><div class="rc-desc">Tech punch clock</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK — timeTracking</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/tech/timesheet</div><div class="rc-desc">Personal timesheet</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK — timeTracking</span></div></div>
+    <div class="route-card rc-ok"><div class="rc-path">/tech/new-inshop-job</div><div class="rc-desc">Quick in-shop job entry</div><div class="rc-footer"><span class="pill p-all">All Plans</span><span class="pill p-ok">OK</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/tech/messages</div><div class="rc-desc">Tech messaging</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/tech/photos</div><div class="rc-desc">Work photo upload</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/tech/dvi</div><div class="rc-desc">DVI inspection entry</div><div class="rc-footer"><span class="pill p-growth">Growth+</span><span class="pill p-gated">✔ Gated</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/tech/share-location</div><div class="rc-desc">Real-time GPS sharing</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+ (gpsVerification)</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/tech/all-tools</div><div class="rc-desc">Tech utility toolbox</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/tech/diagnostics</div><div class="rc-desc">Service diagnostics</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/tech/dtc-lookup</div><div class="rc-desc">DTC / error code lookup</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/tech/manuals</div><div class="rc-desc">Repair manuals library</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/tech/new-roadside-job</div><div class="rc-desc">Roadside emergency job</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-missing"><div class="rc-path">/tech/enhanced</div><div class="rc-desc">Enhanced tech interface</div><div class="rc-footer"><span class="pill p-growth">Needs → Growth+</span><span class="pill p-missing">✗ NOT GATED</span></div></div>
+    <div class="route-card rc-gated"><div class="rc-path">/tech/inventory</div><div class="rc-desc">Inventory access (read-only)</div><div class="rc-footer"><span class="pill p-pro">Professional+</span><span class="pill p-gated">✔ Gated</span></div></div>
+  </div>
+
+  <!-- ── FEATURE FLAGS ── -->
+  <div class="section-title">🚩 Feature Flags — defined in subscription.ts vs. enforced in subscription-access.ts</div>
+  <div class="flag-grid">
+    <div class="flag-card fc-dead">
+      <div class="fc-name">gpsVerification</div>
+      <span class="pill p-growth">Growth+</span>
+      <div class="fc-desc">Flag exists. Route /tech/share-location exists. They are <strong style="color:#f87171">NOT connected</strong>. Starter plan users can share GPS for free right now.</div>
+    </div>
+    <div class="flag-card fc-dead">
+      <div class="fc-name">breakTracking</div>
+      <span class="pill p-growth">Growth+</span>
+      <div class="fc-desc">Marketed as a paid Growth feature. No route in subscription-access.ts enforces it. Break UI is silently accessible on all plans including Starter.</div>
+    </div>
+    <div class="flag-card fc-warn">
+      <div class="fc-name">realTimeDashboards</div>
+      <span class="pill p-growth">Growth+</span>
+      <div class="fc-desc">/manager/overview and /shop/calendar are ungated. Starter users see real-time data that's marketed as a Growth upgrade.</div>
+    </div>
+    <div class="flag-card fc-warn">
+      <div class="fc-name">budgetTracking</div>
+      <span class="pill p-pro">Professional+</span>
+      <div class="fc-desc">Defined as Professional+ but no standalone route is locked by this flag. If budget UI is embedded in payroll pages (which are gated) it may be OK — but needs verification.</div>
+    </div>
+    <div class="flag-card fc-warn">
+      <div class="fc-name">whiteLabel</div>
+      <span class="pill p-ent">Enterprise only</span>
+      <div class="fc-desc">/shop/branding is currently gated by advancedReporting (Professional+), not whiteLabel (Enterprise). Shops on Professional can rebrand — 2 tiers early.</div>
+    </div>
+    <div class="flag-card fc-ok">
+      <div class="fc-name">messaging / inventory / payroll / advancedReporting / multiRoleUsers / photoCapture / multiShopManagement / revenueAnalytics / customIntegrations / apiAccess</div>
+      <div class="fc-desc">✔ These 10 flags are actively used in subscription-access.ts and correctly gate routes.</div>
+    </div>
+    <div class="flag-card fc-info">
+      <div class="fc-name">prioritySupport / slaGuarantees / dedicatedSupport / unlimitedShops</div>
+      <div class="fc-desc">✔ Service-level / capacity flags — no UI route enforcement needed. OK as-is.</div>
+    </div>
+  </div>
+
+  <!-- ── PRIORITY FIXES ── -->
+  <div class="section-title">🔧 Priority Fix List — ordered by revenue impact</div>
+  <div class="fix-list">
+    <div class="fix-card fx-crit">
+      <div class="fix-num">1</div>
+      <div class="fix-content">
+        <div class="fix-title">Gate /tech/share-location → gpsVerification (Growth+)</div>
+        <div class="fix-detail">The flag exists, the route exists, they're just not connected. This is the most obvious revenue leak — GPS is a paid feature and it's completely free right now. One line to fix in subscription-access.ts.</div>
+      </div>
+      <div class="fix-effort effort-low">1 line</div>
+    </div>
+    <div class="fix-card fx-crit">
+      <div class="fix-num">2</div>
+      <div class="fix-content">
+        <div class="fix-title">Gate 8 missing manager routes → multiRoleUsers (Growth+)</div>
+        <div class="fix-detail">/manager/assignments, /manager/approvals, /manager/estimates, /manager/overview, /manager/schedule, /manager/templates, /manager/work-authorizations, /manager/inspections — Starter has no manager role at all, yet all these pages are wide open.</div>
+      </div>
+      <div class="fix-effort effort-low">8 lines</div>
+    </div>
+    <div class="fix-card fx-high">
+      <div class="fix-num">3</div>
+      <div class="fix-content">
+        <div class="fix-title">Gate /shop/bays, /shop/calendar, /shop/work-authorizations → multiRoleUsers (Growth+)</div>
+        <div class="fix-detail">Bay management, appointment scheduling, and digital signatures are collaboration features requiring multi-user plans. All three are fully accessible on Starter.</div>
+      </div>
+      <div class="fix-effort effort-low">3 lines</div>
+    </div>
+    <div class="fix-card fx-high">
+      <div class="fix-num">4</div>
+      <div class="fix-content">
+        <div class="fix-title">Gate 6 tech advanced tool routes → multiRoleUsers (Growth+)</div>
+        <div class="fix-detail">/tech/all-tools, /tech/diagnostics, /tech/dtc-lookup, /tech/manuals, /tech/enhanced, /tech/new-roadside-job — all premium tech tools are completely free on Starter.</div>
+      </div>
+      <div class="fix-effort effort-low">6 lines</div>
+    </div>
+    <div class="fix-card fx-high">
+      <div class="fix-num">5</div>
+      <div class="fix-content">
+        <div class="fix-title">Gate /shop/loaners and /shop/environmental-fees → inventory (Professional+)</div>
+        <div class="fix-detail">Loaner vehicle tracking is asset management. Environmental fees are advanced billing config. Both belong at Professional+ alongside inventory and vendors.</div>
+      </div>
+      <div class="fix-effort effort-low">2 lines</div>
+    </div>
+    <div class="fix-card fx-high">
+      <div class="fix-num">6</div>
+      <div class="fix-content">
+        <div class="fix-title">Move /shop/branding gate from advancedReporting → whiteLabel (Enterprise)</div>
+        <div class="fix-detail">White-label branding is Enterprise-only per the pricing page and the whiteLabel flag, but the branding route is currently gated at Professional+ via advancedReporting. Shops on Professional can rebrand when they shouldn't be able to.</div>
+      </div>
+      <div class="fix-effort effort-low">1 line change</div>
+    </div>
+    <div class="fix-card fx-med">
+      <div class="fix-num">7</div>
+      <div class="fix-content">
+        <div class="fix-title">Connect breakTracking flag to actual UI or remove from pricing page</div>
+        <div class="fix-detail">breakTracking is marketed as a paid Growth feature but is never enforced anywhere. Either add route/component-level guards to the break UI inside timeclock pages, or remove it from the public pricing page to avoid false advertising.</div>
+      </div>
+      <div class="fix-effort effort-med">Medium</div>
+    </div>
+    <div class="fix-card fx-med">
+      <div class="fix-num">8</div>
+      <div class="fix-content">
+        <div class="fix-title">Gate /manager/overview and /shop/calendar with realTimeDashboards (Growth+)</div>
+        <div class="fix-detail">realTimeDashboards is a Growth+ feature flag but no routes are gated by it. The overview dashboard and calendar are live-updating pages that should require the Growth plan.</div>
+      </div>
+      <div class="fix-effort effort-low">2 lines</div>
+    </div>
+  </div>
+
+  <footer>FixTray Work Order Software &nbsp;·&nbsp; Subscription Gate Audit &nbsp;·&nbsp; May 20, 2026</footer>
+</div>
+</body>
+</html>

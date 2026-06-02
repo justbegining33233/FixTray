@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { checkFeatureAccess } from '@/lib/subscription-limits';
 
 export async function GET(req: NextRequest) {
   const auth = requireRole(req, ['shop', 'manager', 'tech', 'admin']);
@@ -52,14 +51,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { shopId, type, name, sku, quantity, price, reorderPoint, rate } = body;
-
-    // Check inventory feature access
-    if (shopId) {
-      const access = await checkFeatureAccess(shopId, 'inventory');
-      if (!access.allowed) {
-        return NextResponse.json({ error: access.message }, { status: 403 });
-      }
-    }
 
     if (!shopId || !type || !name) {
       return NextResponse.json({ error: 'shopId, type, and name are required' }, { status: 400 });

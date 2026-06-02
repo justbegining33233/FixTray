@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCalendarAlt, FaComments, FaMapMarkerAlt } from 'react-icons/fa';
@@ -204,7 +205,7 @@ export default function CustomerAppointmentsPage() {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          <Link href="/customer/home" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
+          <Link href="/customer/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -213,8 +214,8 @@ export default function CustomerAppointmentsPage() {
               <p style={{ fontSize: 14, color: '#9aa3b2' }}>Book and manage your service appointments</p>
             </div>
             <button
-              onClick={() => router.push('/customer/appointments/new')}
-              style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              onClick={() => router.push('/customer/appointments/new' as Route)}
+              style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #e5332a 0%, #c62822 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
             >
               + Book Appointment
             </button>
@@ -231,8 +232,8 @@ export default function CustomerAppointmentsPage() {
               <h3 style={{ color: '#e5e7eb', fontSize: 20, marginBottom: 8 }}>No Appointments Yet</h3>
               <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>Book your first appointment to get started</p>
               <button
-                onClick={() => router.push('/customer/appointments/new')}
-                style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                onClick={() => router.push('/customer/appointments/new' as Route)}
+                style={{ padding: '12px 24px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
                 Book Appointment
               </button>
@@ -250,8 +251,8 @@ export default function CustomerAppointmentsPage() {
                     borderRadius: 6,
                     fontSize: 12,
                     fontWeight: 700,
-                    background: apt.status === 'completed' ? 'rgba(16,185,129,0.2)' : apt.status === 'confirmed' ? 'rgba(59,130,246,0.2)' : apt.status === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
-                    color: apt.status === 'completed' ? '#10b981' : apt.status === 'confirmed' ? '#3b82f6' : apt.status === 'cancelled' ? '#e5332a' : '#f59e0b',
+                    background: apt.status === 'completed' ? 'rgba(16,185,129,0.2)' : apt.status === 'confirmed' ? 'rgba(229,51,42,0.2)' : apt.status === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
+                    color: apt.status === 'completed' ? '#10b981' : apt.status === 'confirmed' ? '#ff6b64' : apt.status === 'cancelled' ? '#e5332a' : '#f59e0b',
                     height: 'fit-content'
                   }}>
                     {apt.status.toUpperCase()}
@@ -291,7 +292,7 @@ export default function CustomerAppointmentsPage() {
 
                 <div style={{ display: 'flex', gap: 8 }}>
                   {/* Track button - goes to shop page */}
-                  <Link href={`/customer/shop/${apt.shop.id}`} style={{ flex: 1, padding: '10px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
+                  <Link href={`/customer/shop/${apt.shop.id}`} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
                     <FaMapMarkerAlt style={{marginRight:4}} /> Track
                   </Link>
 
@@ -387,7 +388,7 @@ export default function CustomerAppointmentsPage() {
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button
                   onClick={handleBookAppointment}
-                  style={{ flex: 1, padding: 12, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: 12, background: 'linear-gradient(135deg, #e5332a 0%, #c62822 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
                   Confirm Booking
                 </button>
@@ -432,7 +433,7 @@ export default function CustomerAppointmentsPage() {
       {apptMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:apptMsg.type==='success'?'#dcfce7':'#fde8e8',color:apptMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {apptMsg.text}
-          <button onClick={()=>setApptMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setApptMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
 

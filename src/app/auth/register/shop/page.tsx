@@ -5,8 +5,8 @@ export default function ShopRegistrationPage() {
     <div style={{minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40}}>
       <div style={{textAlign: 'center'}}>
         <h2 style={{marginBottom:12}}>Shop Registration</h2>
-        <p style={{color:'#6b7280', marginBottom:20}}>This page requires a client-side form. Click the button below to open the client registration experience.</p>
-        <Link href="/auth/register/shop/client" style={{padding:12, background:'#3b82f6', color:'white', borderRadius:8, textDecoration:'none', fontWeight:600}}>Open Client Registration</Link>
+        <p style={{color:'#94a3b8', marginBottom:20}}>Open the full registration flow to set up your shop profile and review the complete FixTray workflow.</p>
+        <Link href="/auth/register/shop" style={{padding:12, background:'#e5332a', color:'white', borderRadius:8, textDecoration:'none', fontWeight:600}}>Open Client Registration</Link>
       </div>
     </div>
   );

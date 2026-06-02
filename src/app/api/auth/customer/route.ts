@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
 import { customerLoginSchema } from '@/lib/validation';
-import { sanitizeObject } from '@/lib/sanitize';
 import { generateAccessToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
+import { logActivity } from '@/lib/activityLogger';
+import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 // POST /api/auth/customer
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const sanitizedBody = sanitizeObject(body);
+    // Keep this route free of DOM/HTML sanitizer dependencies to avoid
+    // serverless ESM/CJS runtime incompatibilities.
+    const sanitizedBody = {
+      email: typeof body?.email === 'string' ? body.email.trim() : body?.email,
+      password: typeof body?.password === 'string' ? body.password : body?.password,
+    };
 
     // Validate input
     const validationResult = customerLoginSchema.safeParse(sanitizedBody);
@@ -19,7 +25,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = validationResult.data;
+    const { email: rawEmail, password } = validationResult.data;
+    const email = rawEmail.trim().toLowerCase();
 
     // Rate limiting - prevent brute force attacks
     const clientIP = getClientIP(request);
@@ -57,12 +64,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Block unverified accounts
+    // Auto-verify any legacy unverified accounts on successful login
     if (customer.emailVerified === false) {
-      return NextResponse.json(
-        { error: 'Please verify your email address before logging in. Check your inbox for the verification link.' },
-        { status: 403 }
-      );
+      await prisma.customer.update({ where: { id: customer.id }, data: { emailVerified: true } }).catch(() => {});
     }
 
     // Successful login - reset rate limit
@@ -75,6 +79,7 @@ export async function POST(request: NextRequest) {
     const userIp = request.headers.get('x-forwarded-for') || request.headers.get('host') || '';
     const userAgent = request.headers.get('user-agent') || '';
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
+    await enforceSingleActiveSession(prisma, { customerId: customer.id });
     const refresh = await prisma.refreshToken.create({
       data: {
         tokenHash: refreshHash,
@@ -116,6 +121,15 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 60 * 15,
     });
+
+    // Fire-and-forget activity log
+    logActivity('login', customer.email, `Customer login from ${userIp}`, {
+      type: 'user',
+      severity: 'info',
+      email: customer.email,
+      metadata: { ip: userIp, role: 'customer' },
+    });
+
     return response;
   } catch (error) {
     console.error('Customer login error:', error);

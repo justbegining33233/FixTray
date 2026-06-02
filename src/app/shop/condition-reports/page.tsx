@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FaCamera, FaKey, FaCar, FaExclamationTriangle, FaPlus, FaQuestionCircle } from 'react-icons/fa';
+import { FaCamera, FaKey, FaCar, FaExclamationTriangle } from 'react-icons/fa';
 import useRequireAuth from '@/lib/useRequireAuth';
 
 interface ConditionReport {
@@ -21,7 +21,7 @@ interface ConditionReport {
 }
 
 export default function ConditionReportsPage() {
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [reports, setReports] = useState<ConditionReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -86,7 +86,7 @@ export default function ConditionReportsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}><FaCamera style={{fontSize:26}} /> Condition Reports</h1>
@@ -122,7 +122,7 @@ export default function ConditionReportsPage() {
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{r.vehicleDesc || 'Vehicle'}</div>
                       <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{new Date(r.createdAt).toLocaleDateString()}</div>
                     </div>
-                    <span style={{ background: r.reportType === 'check_in' ? 'rgba(96,165,250,0.2)' : 'rgba(34,197,94,0.2)', color: r.reportType === 'check_in' ? '#60a5fa' : '#22c55e', border: `1px solid ${r.reportType === 'check_in' ? '#3b82f6' : '#22c55e'}`, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                    <span style={{ background: r.reportType === 'check_in' ? 'rgba(96,165,250,0.2)' : 'rgba(34,197,94,0.2)', color: r.reportType === 'check_in' ? '#ff6b64' : '#22c55e', border: `1px solid ${r.reportType === 'check_in' ? '#e5332a' : '#22c55e'}`, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
                       {r.reportType === 'check_in' ? <><FaKey style={{marginRight:4}} />Check-In</> : <><FaCar style={{marginRight:4}} />Check-Out</>}
                     </span>
                   </div>
@@ -204,3 +204,4 @@ export default function ConditionReportsPage() {
     </div>
   );
 }
+

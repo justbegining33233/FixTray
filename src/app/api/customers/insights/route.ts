@@ -55,23 +55,23 @@ export async function GET(request: NextRequest) {
         id: 'total-spent',
         metric: 'Total Spent (All Time)',
         value: `$${totalSpent.toFixed(2)}`,
-        trend: totalSpent > 0 ? '↑ Active customer' : '→ No spend yet',
+        trend: totalSpent > 0 ? ' Active customer' : ' No spend yet',
         color: '#22c55e',
         description: `You have spent a total of $${totalSpent.toFixed(2)} across ${completed.length} completed service${completed.length !== 1 ? 's' : ''}.`,
       },
       {
         id: 'last-90-days',
-        metric: 'Spending — Last 90 Days',
+        metric: 'Spending  Last 90 Days',
         value: `$${last90Spent.toFixed(2)}`,
-        trend: last90Spent > 0 ? '↑ Recent activity' : '→ No recent spend',
-        color: '#3b82f6',
+        trend: last90Spent > 0 ? ' Recent activity' : ' No recent spend',
+        color: '#e5332a',
         description: `You have completed ${recentCompleted.length} service${recentCompleted.length !== 1 ? 's' : ''} in the last 90 days totalling $${last90Spent.toFixed(2)}.`,
       },
       {
         id: 'loyalty-points',
         metric: 'Loyalty Points',
         value: `${loyaltyPoints} pts`,
-        trend: loyaltyPoints >= 200 ? '↑ Reward available' : '→ Keep going',
+        trend: loyaltyPoints >= 200 ? ' Reward available' : ' Keep going',
         color: '#a855f7',
         description: `Earn 50 points per completed service. You are ${Math.max(0, 200 - loyaltyPoints)} points away from your next reward.`,
       },
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
             id: 'avg-rating',
             metric: 'Average Rating Given',
             value: `${avgRating} / 5`,
-            trend: parseFloat(avgRating) >= 4 ? '↑ Satisfied customer' : '↓ Room for improvement',
+            trend: parseFloat(avgRating) >= 4 ? ' Satisfied customer' : ' Room for improvement',
             color: '#f59e0b',
             description: `Based on ${reviews.length} review${reviews.length !== 1 ? 's' : ''} you have left. Your feedback helps shops improve.`,
           }]
@@ -102,3 +102,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch insights' }, { status: 500 });
   }
 }
+

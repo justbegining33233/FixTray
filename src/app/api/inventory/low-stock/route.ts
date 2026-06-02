@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { rateLimit, rateLimitConfigs } from '@/lib/rate-limit';
+import { rateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 
 // GET - Get low stock items
 export async function GET(request: NextRequest) {
@@ -49,3 +49,5 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaEnvelope, FaMobileAlt, FaRocket, FaBullhorn, FaPlus, FaQuestionCircle } from 'react-icons/fa';
+import { FaEnvelope, FaMobileAlt, FaRocket, FaBullhorn } from 'react-icons/fa';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -27,6 +27,7 @@ export default function CampaignsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -76,6 +77,25 @@ export default function CampaignsPage() {
     }
   };
 
+  const handleSendExisting = async (campaignId: string) => {
+    setSendingCampaignId(campaignId);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/shop/campaigns', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId, sendNow: true }),
+      });
+      if (res.ok) {
+        fetchCampaigns();
+      }
+    } catch (err) {
+      console.error('Failed to send campaign:', err);
+    } finally {
+      setSendingCampaignId(null);
+    }
+  };
+
   const cardStyle = {
     background: 'rgba(0,0,0,0.3)',
     border: '1px solid rgba(255,255,255,0.1)',
@@ -85,7 +105,7 @@ export default function CampaignsPage() {
 
   const statusColors: Record<string, string> = {
     draft: '#f59e0b',
-    sending: '#3b82f6',
+    sending: '#e5332a',
     sent: '#22c55e',
     failed: '#e5332a',
   };
@@ -133,9 +153,9 @@ export default function CampaignsPage() {
                     onClick={() => setType(t)}
                     style={{
                       padding: '8px 16px',
-                      background: type === t ? '#3b82f6' : 'rgba(255,255,255,0.05)',
+                      background: type === t ? '#e5332a' : 'rgba(255,255,255,0.05)',
                       color: type === t ? 'white' : '#9aa3b2',
-                      border: `1px solid ${type === t ? '#3b82f6' : 'rgba(255,255,255,0.1)'}`,
+                      border: `1px solid ${type === t ? '#e5332a' : 'rgba(255,255,255,0.1)'}`,
                       borderRadius: 6,
                       cursor: 'pointer',
                       fontSize: 13,
@@ -231,8 +251,29 @@ export default function CampaignsPage() {
                       {c.status === 'sent' && ` - ${c.sentCount} sent - ${c.failedCount} failed`}
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, color: '#9aa3b2' }}>
-                    {c.sentAt ? new Date(c.sentAt).toLocaleDateString() : new Date(c.createdAt).toLocaleDateString()}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                    <div style={{ fontSize: 12, color: '#9aa3b2' }}>
+                      {c.sentAt ? new Date(c.sentAt).toLocaleDateString() : new Date(c.createdAt).toLocaleDateString()}
+                    </div>
+                    {(c.status === 'draft' || c.status === 'failed') && (
+                      <button
+                        onClick={() => handleSendExisting(c.id)}
+                        disabled={sendingCampaignId === c.id}
+                        style={{
+                          padding: '6px 10px',
+                          background: '#22c55e',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 6,
+                          cursor: sendingCampaignId === c.id ? 'not-allowed' : 'pointer',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          opacity: sendingCampaignId === c.id ? 0.7 : 1,
+                        }}
+                      >
+                        {sendingCampaignId === c.id ? 'Sending...' : 'Send'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -243,3 +284,4 @@ export default function CampaignsPage() {
     </div>
   );
 }
+

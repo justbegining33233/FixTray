@@ -1,14 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { WorkOrderFormData, VehicleType, RepairType, MaintenanceType, TireServiceType } from '@/types/workorder';
-import { FaArrowLeft, FaArrowRight, FaCheck, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaCheck, FaMapMarkerAlt, FaCamera } from 'react-icons/fa';
+import BarcodeScanner from './BarcodeScanner';
 
 interface WorkOrderFormProps {
   initialData?: Partial<WorkOrderFormData> & { id?: string };
   onSubmit?: (data: WorkOrderFormData) => void;
   initialServiceLocation?: 'roadside' | 'in-shop';
+}
+
+interface ServiceCatalogItem {
+  serviceName: string;
+  price?: number | null;
+  duration?: number | null;
+  category?: string;
+}
+
+interface SavedAddress {
+  id: string;
+  label: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  isDefault: boolean;
 }
 
 
@@ -30,6 +49,9 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
   const [selectedShop, setSelectedShop] = useState<any>(null);
   const [shopProfile, setShopProfile] = useState<any>(null);
   const [availableServices, setAvailableServices] = useState<string[]>([]);
+  const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogItem[]>([]);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
   // Dynamically generated options from shop services (must be inside component)
   const [repairOptions, setRepairOptions] = useState<{ value: string; label: string; category?: string }[]>([]);
   const [maintenanceOptions, setMaintenanceOptions] = useState<{ value: string; label: string; category?: string }[]>([]);
@@ -45,6 +67,10 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
         const shop = JSON.parse(shopData);
         setSelectedShop(shop);
         fetchShopProfile(shop.id);
+      }
+
+      if (role === 'customer') {
+        fetchSavedAddresses();
       }
     }
   }, []);
@@ -63,21 +89,77 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
 
   const fetchShopProfile = async (shopId: string) => {
     try {
-      const response = await fetch(`/api/shops/complete-profile?shopId=${shopId}`, { credentials: 'include' });
-      if (response.ok) {
-        const profile = await response.json();
+      const token = localStorage.getItem('token');
+      const [profileResponse, servicesResponse] = await Promise.all([
+        fetch(`/api/shops/complete-profile?shopId=${shopId}`, { credentials: 'include' }),
+        fetch(`/api/services?shopId=${shopId}`, {
+          credentials: 'include',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }),
+      ]);
+
+      let profile: any = null;
+
+      if (profileResponse.ok) {
+        profile = await profileResponse.json();
         setShopProfile(profile);
-        
-        // Combine diesel and gas services into available services list
+      }
+
+      if (servicesResponse.ok) {
+        const serviceData = await servicesResponse.json();
+        const services: ServiceCatalogItem[] = serviceData.services || [];
+        if (services.length > 0) {
+          setServiceCatalog(services);
+          const names = services.map((s) => s.serviceName);
+          setAvailableServices(names);
+          setRepairOptions(names.map((s: string) => ({ value: s, label: s })));
+          setMaintenanceOptions([]);
+          return;
+        }
+      }
+
+      if (profile) {
         const services = [
           ...(profile.dieselServices || []),
           ...(profile.gasServices || [])
         ];
         setAvailableServices(services);
+        setServiceCatalog(services.map((serviceName: string) => ({ serviceName })));
       }
     } catch (error) {
       console.error('Error fetching shop profile:', error);
     }
+  };
+
+  const fetchSavedAddresses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await fetch('/api/customers/addresses', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      const items: SavedAddress[] = data.addresses || [];
+      setSavedAddresses(items);
+      const defaultAddress = items.find((item) => item.isDefault);
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+      }
+    } catch (error) {
+      console.error('Error fetching saved addresses:', error);
+    }
+  };
+
+  const applySavedAddress = (addressId: string) => {
+    setSelectedAddressId(addressId);
+    const selected = savedAddresses.find((item) => item.id === addressId);
+    if (!selected) return;
+    setLocationType('address');
+    setAddress(selected.address);
+    setCity(selected.city);
+    setState(selected.state);
+    setZipCode(selected.zipCode);
   };
 
   // Check if a service is available based on shop's offerings
@@ -131,6 +213,22 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
   
   const [vin, setVin] = useState(initialData?.vinPhoto?.vin || '');
   const [vinPhoto, setVinPhoto] = useState<File | null>(null);
+  const [showVinScanner, setShowVinScanner] = useState(false);
+
+  const selectedServiceCatalog = useMemo(() => {
+    return selectedRepairs
+      .map((name) => serviceCatalog.find((svc) => svc.serviceName === name))
+      .filter((svc): svc is ServiceCatalogItem => Boolean(svc));
+  }, [selectedRepairs, serviceCatalog]);
+
+  const estimatedCost = useMemo(() => {
+    return selectedServiceCatalog.reduce((sum, svc) => sum + (Number(svc.price) || 0), 0);
+  }, [selectedServiceCatalog]);
+
+  const estimatedLaborHours = useMemo(() => {
+    const totalMinutes = selectedServiceCatalog.reduce((sum, svc) => sum + (Number(svc.duration) || 0), 0);
+    return totalMinutes > 0 ? Number((totalMinutes / 60).toFixed(2)) : 0;
+  }, [selectedServiceCatalog]);
 
   const handleRepairToggle = (repair: string) => {
     setSelectedRepairs(prev =>
@@ -156,6 +254,19 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
   const handleVinPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setVinPhoto(file);
+  };
+
+  const handleVinBarcodeScan = (scannedValue: string) => {
+    // Validate VIN format (17 characters)
+    if (scannedValue.length === 17) {
+      setVin(scannedValue);
+      setShowVinScanner(false);
+    } else {
+      // If not 17 characters, still set it but show a warning
+      setVin(scannedValue);
+      setShowVinScanner(false);
+      // Could add a toast notification here for invalid VIN format
+    }
   };
 
   const handleGetGeolocation = () => {
@@ -191,6 +302,8 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
         shopId: selectedShop?.id,
         vehicleType,
         serviceLocationType: (userRole === 'tech' || userRole === 'manager') ? serviceLocationType : undefined,
+        estimatedCost: estimatedCost || undefined,
+        techLabor: estimatedLaborHours ? { totalHours: estimatedLaborHours } : undefined,
         services: {
           repairs: selectedRepairs.map(type => ({
             type: type as RepairType,
@@ -249,13 +362,13 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       } else {
         // Redirect based on user role
         if (userRole === 'customer') {
-          router.push('/customer/home');
+          router.push('/customer/home' as Route);
         } else if (userRole === 'tech') {
-          router.push('/tech/home');
+          router.push('/tech/home' as Route);
         } else if (userRole === 'manager') {
-          router.push('/manager/home');
+          router.push('/manager/home' as Route);
         } else {
-          router.push('/');
+          router.push('/' as Route);
         }
         router.refresh();
       }
@@ -281,9 +394,9 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
     display: 'flex',
     alignItems: 'start',
     padding: 16,
-    border: checked ? '2px solid #3b82f6' : '2px solid rgba(255,255,255,0.2)',
+    border: checked ? '2px solid #e5332a' : '2px solid rgba(255,255,255,0.2)',
     borderRadius: 12,
-    background: checked ? 'rgba(59,130,246,0.1)' : 'rgba(0,0,0,0.2)',
+    background: checked ? 'rgba(229,51,42,0.1)' : 'rgba(0,0,0,0.2)',
     cursor: 'pointer',
     transition: 'all 0.2s',
   });
@@ -292,14 +405,14 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
     <form onSubmit={handleSubmit} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:32}}>
       {/* Selected Shop Banner */}
       {selectedShop && userRole === 'customer' && (
-        <div style={{marginBottom:24, padding:16, background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12}}>
-          <div style={{fontSize:14, fontWeight:600, color:'#3b82f6', marginBottom:4}}>Requesting Service From:</div>
+        <div style={{marginBottom:24, padding:16, background:'rgba(229,51,42,0.08)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12}}>
+          <div style={{fontSize:14, fontWeight:600, color:'#e5332a', marginBottom:4}}>Requesting Service From:</div>
           <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{selectedShop.shopName || selectedShop.name}</div>
           <div style={{fontSize:13, color:'#9aa3b2', marginTop:4}}>
             {selectedShop.location} - {selectedShop.distance} mi away
           </div>
           {availableServices.length > 0 && (
-            <div style={{fontSize:12, color:'#60a5fa', marginTop:8}}>
+            <div style={{fontSize:12, color:'#e5332a', marginTop:8}}>
               <FaCheck style={{marginRight:4}} /> Only services offered by this shop are shown below
             </div>
           )}
@@ -319,7 +432,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
         <div style={{width:'100%', background:'rgba(0,0,0,0.3)', borderRadius:999, height:12}}>
           <div
             style={{
-              background:'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)',
+              background:'#e5332a',
               height:12,
               borderRadius:999,
               width:`${(step / totalSteps) * 100}%`,
@@ -347,7 +460,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                   value={option.value}
                   checked={vehicleType === option.value}
                   onChange={(e) => setVehicleType(e.target.value as VehicleType)}
-                  style={{width:20, height:20, accentColor:'#3b82f6', marginTop:2}}
+                  style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                 />
                 <span style={{marginLeft:12, fontWeight:600, color:'#e5e7eb'}}>{option.label}</span>
               </label>
@@ -370,7 +483,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                       value={option.value}
                       checked={serviceLocationType === option.value}
                       onChange={(e) => setServiceLocationType(e.target.value as 'roadside' | 'in-shop')}
-                      style={{width:20, height:20, accentColor:'#3b82f6', marginTop:2}}
+                      style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                     />
                     <div style={{marginLeft:12}}>
                       <div style={{fontWeight:600, color:'#e5e7eb'}}>{option.label}</div>
@@ -403,7 +516,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                         type="checkbox"
                         checked={selectedRepairs.includes(option.value)}
                         onChange={() => handleRepairToggle(option.value)}
-                        style={{width:20, height:20, accentColor:'#3b82f6', marginTop:2}}
+                        style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                       />
                       <div style={{marginLeft:12}}>
                         <div style={{fontWeight:600, color:'#e5e7eb'}}>{option.label}</div>
@@ -428,6 +541,15 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
           )}
 
           <div>
+            {(estimatedCost > 0 || estimatedLaborHours > 0) && (
+              <div style={{ marginBottom: 18, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>Auto-calculated from selected services</div>
+                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', color: '#e5e7eb', fontSize: 14 }}>
+                  <span>Estimated Labor: <strong>{estimatedLaborHours.toFixed(2)}h</strong></span>
+                  <span>Estimated Parts/Labor Cost: <strong>${estimatedCost.toFixed(2)}</strong></span>
+                </div>
+              </div>
+            )}
             <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>Maintenance Services</h3>
             {maintenanceOptions.length === 0 ? (
               <div style={{color:'#f87171', background:'rgba(239,68,68,0.08)', border:'1px solid #f87171', borderRadius:8, padding:24, marginBottom:32, textAlign:'center', fontWeight:600}}>
@@ -442,7 +564,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                         type="checkbox"
                         checked={selectedMaintenance.includes(option.value)}
                         onChange={() => handleMaintenanceToggle(option.value)}
-                        style={{width:20, height:20, accentColor:'#3b82f6', marginTop:2}}
+                        style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                       />
                       <div style={{marginLeft:12}}>
                         <div style={{fontWeight:600, color:'#e5e7eb'}}>{option.label}</div>
@@ -456,7 +578,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                             type="checkbox"
                             checked={oilSupplied}
                             onChange={(e) => setOilSupplied(e.target.checked)}
-                            style={{width:16, height:16, accentColor:'#3b82f6'}}
+                            style={{width:16, height:16, accentColor:'#e5332a'}}
                           />
                           <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>Will you supply the oil & filter?</span>
                         </label>
@@ -465,7 +587,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                             type="checkbox"
                             checked={techBringOil}
                             onChange={(e) => setTechBringOil(e.target.checked)}
-                            style={{width:16, height:16, accentColor:'#3b82f6'}}
+                            style={{width:16, height:16, accentColor:'#e5332a'}}
                           />
                           <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>Should the tech bring oil & filter?</span>
                         </label>
@@ -475,7 +597,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                               type="checkbox"
                               checked={vehicleGreased}
                               onChange={(e) => setVehicleGreased(e.target.checked)}
-                              style={{width:16, height:16, accentColor:'#3b82f6'}}
+                              style={{width:16, height:16, accentColor:'#e5332a'}}
                             />
                             <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>Do you want the vehicle greased?</span>
                           </label>
@@ -493,7 +615,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                               value={tso.value}
                               checked={tireServiceType === tso.value}
                               onChange={(e) => setTireServiceType(e.target.value as TireServiceType)}
-                              style={{width:16, height:16, accentColor:'#3b82f6'}}
+                              style={{width:16, height:16, accentColor:'#e5332a'}}
                             />
                             <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>{tso.label}</span>
                           </label>
@@ -577,7 +699,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
             <button
               type="button"
               onClick={handleGetGeolocation}
-              style={{padding:'12px 24px', background:'#3b82f6', color:'white', border:'none', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600, marginRight:16}}
+              style={{padding:'12px 24px', background:'#e5332a', color:'white', border:'none', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600, marginRight:16}}
             >
               <FaMapMarkerAlt style={{marginRight:4}} /> Use Current Location
             </button>
@@ -605,6 +727,20 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
 
           {locationType === 'address' && (
             <div style={{display:'grid', gap:16}}>
+              {savedAddresses.length > 0 && (
+                <select
+                  value={selectedAddressId}
+                  onChange={(e) => applySavedAddress(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">Select a saved address</option>
+                  {savedAddresses.map((saved) => (
+                    <option key={saved.id} value={saved.id}>
+                      {saved.label} - {saved.address}, {saved.city}
+                    </option>
+                  ))}
+                </select>
+              )}
               <input
                 type="text"
                 placeholder="Street Address"
@@ -649,14 +785,29 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
             <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>
               VIN Number (optional)
             </label>
-            <input
-              type="text"
-              value={vin}
-              onChange={(e) => setVin(e.target.value)}
-              placeholder="Enter VIN"
-              maxLength={17}
-              style={inputStyle}
-            />
+            <div style={{display:'flex', gap:8}}>
+              <input
+                type="text"
+                value={vin}
+                onChange={(e) => setVin(e.target.value)}
+                placeholder="Enter VIN or scan barcode"
+                maxLength={17}
+                style={{...inputStyle, flex:1}}
+              />
+              <button
+                type="button"
+                onClick={() => setShowVinScanner(true)}
+                style={{padding:'12px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600, whiteSpace:'nowrap'}}
+                title="Scan VIN barcode"
+              >
+                <FaCamera style={{marginRight:4}} /> Scan
+              </button>
+            </div>
+            {vin && vin.length !== 17 && (
+              <div style={{marginTop:8, fontSize:12, color:'#fbbf24'}}>
+                Note: VIN should be 17 characters. Current length: {vin.length}
+              </div>
+            )}
           </div>
 
           <div>
@@ -702,6 +853,15 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
           {formMsg.text}
           <button aria-label="Dismiss" onClick={()=>setFormMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
+      )}
+
+      {/* VIN Barcode Scanner Modal */}
+      {showVinScanner && (
+        <BarcodeScanner
+          onScan={handleVinBarcodeScan}
+          onClose={() => setShowVinScanner(false)}
+          label="Scan VIN Barcode"
+        />
       )}
     </form>
   );

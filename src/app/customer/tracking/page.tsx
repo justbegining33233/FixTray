@@ -199,7 +199,7 @@ export default function LiveTracking() {
                 <div style={{marginBottom:20}}>
                   <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{order.issueDescription}</h3>
                   <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>Work Order - {order.workOrderId}</div>
-                  <div style={{fontSize:16, color:'#3b82f6', fontWeight:600, marginBottom:12}}>{order.status}</div>
+                  <div style={{fontSize:16, color:'#e5332a', fontWeight:600, marginBottom:12}}>{order.status}</div>
 
                   {order.tech && (
                     <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>
@@ -237,7 +237,7 @@ export default function LiveTracking() {
                   <Link href={`/customer/workorders/${order.workOrderId}`} style={{
                     flex:1,
                     padding:'12px',
-                    background:'#3b82f6',
+                    background:'#e5332a',
                     color:'white',
                     border:'none',
                     borderRadius:8,
@@ -296,7 +296,7 @@ export default function LiveTracking() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,
@@ -402,9 +402,10 @@ export default function LiveTracking() {
       {trackingMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:trackingMsg.type==='success'?'#dcfce7':'#fde8e8',color:trackingMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {trackingMsg.text}
-          <button onClick={()=>setTrackingMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setTrackingMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>
   );
 }
+

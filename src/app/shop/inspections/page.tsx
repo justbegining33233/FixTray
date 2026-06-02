@@ -18,18 +18,59 @@ interface StateInspection {
   vehicle?: { year?: number; make?: string; model?: string; vin?: string };
 }
 
+const INSPECTION_TEMPLATES = [
+  {
+    id: 'state-safety',
+    label: 'State Safety Checklist',
+    inspectionType: 'safety',
+    fee: 37,
+    checklist: [
+      'Lights and signals',
+      'Brake operation and pad wear',
+      'Steering and suspension play',
+      'Tire tread and pressure',
+      'Windshield and wipers',
+    ],
+  },
+  {
+    id: 'state-emissions',
+    label: 'State Emissions Checklist',
+    inspectionType: 'emissions',
+    fee: 29,
+    checklist: [
+      'OBD readiness monitors',
+      'Catalyst and oxygen sensor checks',
+      'Evap leak status',
+      'Tailpipe visual inspection',
+      'MIL status and fault codes',
+    ],
+  },
+  {
+    id: 'state-combined',
+    label: 'Safety + Emissions Full',
+    inspectionType: 'safety_emissions',
+    fee: 59,
+    checklist: [
+      'Full safety checklist complete',
+      'Full emissions checklist complete',
+      'Sticker and certificate issued',
+    ],
+  },
+] as const;
+
 const RESULT_STYLE: Record<string, { bg: string; color: string; icon: ReactNode }> = {
   pass:    { bg: 'rgba(34,197,94,0.15)',  color: '#22c55e', icon: <FaCheckCircle style={{marginRight:4}} /> },
   fail:    { bg: 'rgba(229,51,42,0.15)',  color: '#e5332a', icon: <FaTimesCircle style={{marginRight:4}} /> },
   waiver:  { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', icon: <FaExclamationTriangle style={{marginRight:4}} /> },
-  pending: { bg: 'rgba(96,165,250,0.15)', color: '#60a5fa', icon: <FaHourglassHalf style={{marginRight:4}} /> },
+  pending: { bg: 'rgba(96,165,250,0.15)', color: '#ff6b64', icon: <FaHourglassHalf style={{marginRight:4}} /> },
 };
 
 export default function StateInspectionsPage() {
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [inspections, setInspections] = useState<StateInspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [form, setForm] = useState({ inspectionType: 'safety', result: 'pass', stickerId: '', expiryDate: '', odometer: '', fee: '', notes: '', workOrderId: '' });
   const [saving, setSaving] = useState(false);
 
@@ -55,13 +96,27 @@ export default function StateInspectionsPage() {
     setSaving(false);
   };
 
+  const applyTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    const template = INSPECTION_TEMPLATES.find((t) => t.id === templateId);
+    if (!template) return;
+
+    const checklistText = template.checklist.map((item, i) => `${i + 1}. ${item}`).join('\n');
+    setForm((prev) => ({
+      ...prev,
+      inspectionType: template.inspectionType,
+      fee: String(template.fee),
+      notes: `Template: ${template.label}\n${checklistText}`,
+    }));
+  };
+
   if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
   if (!user) return null;
 
   const passRate = inspections.length ? Math.round(inspections.filter(i => i.result === 'pass').length / inspections.length * 100) : 0;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaCar style={{marginRight:4}} /> State Inspections</h1>
@@ -98,7 +153,7 @@ export default function StateInspectionsPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 15 }}>{insp.vehicle ? `${insp.vehicle.year} ${insp.vehicle.make} ${insp.vehicle.model}` : 'Vehicle'}</div>
-                        <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{new Date(insp.createdAt).toLocaleDateString()} · {insp.inspectionType.replace('_', ' ')}</div>
+                        <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{new Date(insp.createdAt).toLocaleDateString()}  {insp.inspectionType.replace('_', ' ')}</div>
                       </div>
                       <span style={{ fontSize: 20 }}>{rs.icon}</span>
                     </div>
@@ -117,6 +172,19 @@ export default function StateInspectionsPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
           <div style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 460, maxWidth: '100%' }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Record State Inspection</h3>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Inspection Template</label>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => applyTemplate(e.target.value)}
+                style={{ width: '100%', background: '#374151', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14 }}
+              >
+                <option value="">Choose a template (optional)</option>
+                {INSPECTION_TEMPLATES.map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </select>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
                 <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Inspection Type</label>
@@ -161,3 +229,4 @@ export default function StateInspectionsPage() {
     </div>
   );
 }
+

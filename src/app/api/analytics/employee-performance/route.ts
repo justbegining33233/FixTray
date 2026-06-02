@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 
-// GET /api/analytics/employee-performance — cross-shop tech performance stats
+// GET /api/analytics/employee-performance ΓÇö cross-shop tech performance stats
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'admin', 'manager']);
   if (auth instanceof NextResponse) return auth;
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     // Determine which shops to include
     let shopIds: string[] = [];
-    if (auth.role === 'admin') {
+    if (auth.role === 'superadmin') {
       const shopIdParam = searchParams.get('shopId');
       if (shopIdParam) {
         shopIds = [shopIdParam];

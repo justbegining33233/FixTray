@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaArrowRight, FaBook, FaStopwatch, FaTools } from 'react-icons/fa';
 
@@ -27,14 +28,14 @@ export default function AllTechTools() {
       title: 'New Roadside Job',
       description: 'Create emergency roadside assistance work orders for towing, jumpstart, tire changes, and more',
       icon: '',
-      link: '/workorders/new',
+      link: '/tech/new-roadside-job',
       category: 'Job Creation'
     },
     {
       title: 'New In-Shop Job',
       description: 'Schedule in-shop service appointments with vehicle diagnostics and service selection',
       icon: '',
-      link: '/workorders/inshop',
+      link: '/tech/new-inshop-job',
       category: 'Job Creation'
     },
     {
@@ -55,14 +56,14 @@ export default function AllTechTools() {
       title: 'Active Jobs',
       description: 'View all your currently assigned work orders and update their status',
       icon: '',
-      link: '/workorders/list?status=in-progress',
+      link: '/tech/home',
       category: 'Job Management'
     },
     {
       title: 'Job History',
       description: 'Browse completed work orders, customer feedback, and service history',
       icon: '',
-      link: '/workorders/list?status=closed',
+      link: '/tech/home',
       category: 'Job Management'
     },
     {
@@ -117,7 +118,7 @@ export default function AllTechTools() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1400, margin:'0 auto'}}>
-          <Link href="/tech/home" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/tech/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
@@ -125,8 +126,8 @@ export default function AllTechTools() {
               <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaTools style={{marginRight:4}} /> All Tech Tools</h1>
               <p style={{fontSize:14, color:'#9aa3b2'}}>Complete suite of technician productivity tools and resources</p>
             </div>
-            <div style={{padding:'12px 20px', background:'rgba(59,130,246,0.2)', borderRadius:8, border:'1px solid rgba(59,130,246,0.3)'}}>
-              <div style={{fontSize:24, fontWeight:700, color:'#3b82f6'}}>{filteredTools.length}</div>
+            <div style={{padding:'12px 20px', background:'rgba(229,51,42,0.2)', borderRadius:8, border:'1px solid rgba(229,51,42,0.3)'}}>
+              <div style={{fontSize:24, fontWeight:700, color:'#e5332a'}}>{filteredTools.length}</div>
               <div style={{fontSize:11, color:'#9aa3b2', marginTop:2}}>Available Tools</div>
             </div>
           </div>
@@ -141,7 +142,7 @@ export default function AllTechTools() {
               <button 
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                style={{padding:'8px 16px', background:selectedCategory === cat ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', color:selectedCategory === cat ? '#3b82f6' : '#9aa3b2', border:`1px solid ${selectedCategory === cat ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.2)'}`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer'}}
+                style={{padding:'8px 16px', background:selectedCategory === cat ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)', color:selectedCategory === cat ? '#e5332a' : '#9aa3b2', border:`1px solid ${selectedCategory === cat ? 'rgba(229,51,42,0.3)' : 'rgba(255,255,255,0.2)'}`, borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer'}}
               >
                 {cat}
               </button>
@@ -154,20 +155,20 @@ export default function AllTechTools() {
           {filteredTools.map(tool => (
             <Link 
               key={tool.title} 
-              href={tool.link}
+              href={tool.link as Route}
               style={{textDecoration:'none', display:'block', height:'100%'}}
             >
               <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, cursor:'pointer', transition:'all 0.3s', height:'100%', display:'flex', flexDirection:'column'}}>
                 <div style={{fontSize:40, marginBottom:16}}>{tool.icon}</div>
                 <div style={{marginBottom:8}}>
-                  <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', borderRadius:6, fontSize:11, fontWeight:600}}>
+                  <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.2)', color:'#e5332a', borderRadius:6, fontSize:11, fontWeight:600}}>
                     {tool.category}
                   </span>
                 </div>
                 <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{tool.title}</h3>
                 <p style={{fontSize:14, color:'#9aa3b2', lineHeight:1.6, flex:1}}>{tool.description}</p>
                 <div style={{marginTop:16, paddingTop:16, borderTop:'1px solid rgba(255,255,255,0.1)'}}>
-                  <span style={{color:'#3b82f6', fontSize:14, fontWeight:600}}>Open Tool <FaArrowRight style={{marginRight:4}} /></span>
+                  <span style={{color:'#e5332a', fontSize:14, fontWeight:600}}>Open Tool <FaArrowRight style={{marginRight:4}} /></span>
                 </div>
               </div>
             </Link>
@@ -186,8 +187,8 @@ export default function AllTechTools() {
               <div style={{fontSize:28, fontWeight:700, color:'#f59e0b', marginBottom:4}}>4.8</div>
               <div style={{fontSize:13, color:'#9aa3b2'}}>Average Customer Rating</div>
             </div>
-            <div style={{padding:20, background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:8}}>
-              <div style={{fontSize:28, fontWeight:700, color:'#3b82f6', marginBottom:4}}>156</div>
+            <div style={{padding:20, background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8}}>
+              <div style={{fontSize:28, fontWeight:700, color:'#e5332a', marginBottom:4}}>156</div>
               <div style={{fontSize:13, color:'#9aa3b2'}}>Total Billable Hours</div>
             </div>
             <div style={{padding:20, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:8}}>
@@ -200,3 +201,4 @@ export default function AllTechTools() {
     </div>
   );
 }
+

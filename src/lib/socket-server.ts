@@ -22,10 +22,6 @@ interface AuthenticatedSocket extends Socket {
 
 const jwtSecret = process.env.JWT_SECRET;
 
-if (!jwtSecret && process.env.NODE_ENV === 'production') {
-  throw new Error('FATAL: JWT_SECRET env var is required in production');
-}
-
 if (!jwtSecret) {
   console.warn('WARNING: JWT_SECRET not set — socket auth will reject all tokens');
 }

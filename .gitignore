@@ -46,3 +46,10 @@ next-env.d.ts
 VERCEL_ENV_SETUP.txt
 tmp_secrets.txt
 tmp/
+.env*.local
+/logs/*.log
+/lint-output.txt
+
+# SQLite dev database (never commit)
+prisma/*.db
+prisma/*.db-journal

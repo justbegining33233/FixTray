@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaChartBar, FaChartLine, FaClipboardList, FaCog, FaCreditCard, FaDollarSign, FaStore, FaUsers, FaWrench } from 'react-icons/fa';
+import { FaChartBar, FaChartLine, FaClipboardList, FaCog, FaDollarSign, FaStore, FaUsers, FaWrench } from 'react-icons/fa';
 
 export default function AdminDashboardPage() {
   const { user, isLoading: authLoading } = useRequireAuth(['admin']);
@@ -16,7 +17,7 @@ export default function AdminDashboardPage() {
   // Super admins should land on the enhanced portal, not the legacy dashboard
   useEffect(() => {
     if (!authLoading && user?.isSuperAdmin) {
-      router.replace('/superadmin/dashboard');
+      router.replace('/admin/home' as Route);
     }
   }, [authLoading, user, router]);
 
@@ -41,7 +42,7 @@ export default function AdminDashboardPage() {
         const data = await response.json();
         setStats(data);
       } else if (response.status === 401) {
-        router.push('/admin/login');
+        router.push('/admin/login' as Route);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -52,7 +53,7 @@ export default function AdminDashboardPage() {
 
   const handleLogout = () => {
     localStorage.clear();
-    router.push('/admin/login');
+    router.push('/admin/login' as Route);
   };
 
   if (authLoading) {
@@ -94,7 +95,7 @@ export default function AdminDashboardPage() {
               style={{
                 background: 'rgba(59, 130, 246, 0.2)',
                 border: '1px solid rgba(59, 130, 246, 0.3)',
-                color: '#60a5fa',
+                color: '#ff6b64',
                 padding: '12px 24px',
                 borderRadius: 8,
                 fontSize: 15,
@@ -104,38 +105,6 @@ export default function AdminDashboardPage() {
               }}
             >
               Manage Shops
-            </Link>
-            <Link
-              href="/admin/subscriptions"
-              style={{
-                background: 'rgba(16, 185, 129, 0.2)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                color: '#10b981',
-                padding: '12px 24px',
-                borderRadius: 8,
-                fontSize: 15,
-                fontWeight: 600,
-                textDecoration: 'none',
-                display: 'inline-block',
-              }}
-            >
-              View Subscriptions
-            </Link>
-            <Link
-              href="/admin/coupons"
-              style={{
-                background: 'rgba(245, 158, 11, 0.2)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                color: '#f59e0b',
-                padding: '12px 24px',
-                borderRadius: 8,
-                fontSize: 15,
-                fontWeight: 600,
-                textDecoration: 'none',
-                display: 'inline-block',
-              }}
-            >
-              Manage Coupons
             </Link>
             <button
               onClick={handleLogout}
@@ -161,7 +130,7 @@ export default function AdminDashboardPage() {
             <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaStore style={{marginRight:4}} /></div>
               <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Total Shops</div>
-              <div style={{ color: '#3b82f6', fontSize: 32, fontWeight: 700 }}>{stats.totalShops}</div>
+              <div style={{ color: '#e5332a', fontSize: 32, fontWeight: 700 }}>{stats.totalShops}</div>
               {stats.pendingShops > 0 && (
                 <div style={{ color: '#eab308', fontSize: 12, marginTop: 8 }}>
                   {stats.pendingShops} pending approval
@@ -195,34 +164,33 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Subscription Stats */}
+            {/* Operations Stats */}
             <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaChartBar style={{marginRight:4}} /></div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Total Subscriptions</div>
-              <div style={{ color: '#10b981', fontSize: 32, fontWeight: 700 }}>{stats.totalSubscriptions || 0}</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Monthly Revenue</div>
+              <div style={{ color: '#10b981', fontSize: 32, fontWeight: 700 }}>${(stats.liveMetrics?.currentMonthRevenue || 0).toFixed(2)}</div>
               <div style={{ color: '#6ee7b7', fontSize: 12, marginTop: 8 }}>
-                {stats.activeSubscriptions || 0} active - {stats.trialingSubscriptions || 0} trialing
+                Growth: {stats.liveMetrics?.revenueGrowth || '0.0%'}
               </div>
             </div>
 
             <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 12, padding: 24 }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}><FaCreditCard style={{marginRight:4}} /></div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Monthly Recurring Revenue</div>
-              <div style={{ color: '#f59e0b', fontSize: 32, fontWeight: 700 }}>{stats.monthlyRecurringRevenue || '$0.00'}</div>
+              <div style={{ fontSize: 32, marginBottom: 8 }}><FaChartLine style={{marginRight:4}} /></div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Customer Retention</div>
+              <div style={{ color: '#f59e0b', fontSize: 32, fontWeight: 700 }}>{stats.liveMetrics?.retentionRate || '100.0%'}</div>
               <div style={{ color: '#fcd34d', fontSize: 12, marginTop: 8 }}>
-                From active subscriptions
+                Avg lifetime: {stats.liveMetrics?.avgLifetimeMonths || 0} months
               </div>
             </div>
 
             <div style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaChartLine style={{marginRight:4}} /></div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Plan Distribution</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Customer Satisfaction</div>
               <div style={{ color: '#8b5cf6', fontSize: 16, fontWeight: 700, marginTop: 8 }}>
-                {stats.planDistribution && Object.entries(stats.planDistribution).map(([plan, count]) => (
-                  <div key={plan} style={{ marginBottom: 4 }}>
-                    {plan.charAt(0).toUpperCase() + plan.slice(1)}: {count as number}
-                  </div>
-                ))}
+                Rating: {stats.liveMetrics?.avgRating || '0.0'} / 5.0
+              </div>
+              <div style={{ color: '#c4b5fd', fontSize: 12, marginTop: 8 }}>
+                {stats.liveMetrics?.reviewsCount || 0} total reviews
               </div>
             </div>
           </div>
@@ -362,3 +330,11 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

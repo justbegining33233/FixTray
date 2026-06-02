@@ -159,7 +159,7 @@ export default function BarcodeScanner({ onScan, onClose, label = 'Scan a Barcod
               onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
               style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', fontSize: 14 }}
             />
-            <button onClick={handleManualSubmit} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <button onClick={handleManualSubmit} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               Use
             </button>
           </div>

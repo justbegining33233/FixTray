@@ -1,77 +1,146 @@
-﻿'use client';
+'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaRocket, FaArrowLeft, FaCheckCircle, FaTimesCircle, FaSpinner, FaClock, FaCodeBranch, FaBox } from 'react-icons/fa';
+import {
+  FaRocket, FaArrowLeft, FaCheckCircle, FaClock, FaTimesCircle,
+  FaSyncAlt, FaCalendarAlt,
+} from 'react-icons/fa';
 
-const DEPLOYMENTS = [
-  { id: '1', version: 'v0.0.5', env: 'Production', status: 'success', date: '2025-06-15T14:30:00Z', duration: '2m 34s', commit: 'feat: superadmin portal' },
-  { id: '2', version: 'v0.0.4', env: 'Production', status: 'success', date: '2025-06-10T09:15:00Z', duration: '3m 12s', commit: 'feat: mobile app enhancements' },
-  { id: '3', version: 'v0.0.3', env: 'Production', status: 'success', date: '2025-06-01T11:00:00Z', duration: '2m 58s', commit: 'feat: shop management' },
-  { id: '4', version: 'v0.0.2', env: 'Staging', status: 'failed', date: '2025-05-28T16:45:00Z', duration: '1m 05s', commit: 'fix: auth token refresh' },
-  { id: '5', version: 'v0.0.2', env: 'Production', status: 'success', date: '2025-05-25T10:20:00Z', duration: '2m 50s', commit: 'feat: messaging system' },
+type Deployment = {
+  id: string;
+  version: string;
+  environment: string;
+  status: 'success' | 'failed' | 'in-progress' | 'pending';
+  timestamp: string;
+  commit?: string;
+  duration?: string;
+  deployer?: string;
+};
+
+const DEPLOYMENT_HISTORY: Deployment[] = [
+  {
+    id: '1',
+    version: 'v0.0.5',
+    environment: 'Production',
+    status: 'success',
+    timestamp: '2026-05-01T10:15:00.000Z',
+    duration: '2m 34s',
+    deployer: 'System',
+  },
+  {
+    id: '2',
+    version: 'v0.0.4',
+    environment: 'Production',
+    status: 'success',
+    timestamp: '2026-04-24T09:40:00.000Z',
+    duration: '3m 12s',
+    deployer: 'System',
+  },
+  {
+    id: '3',
+    version: 'v0.0.3',
+    environment: 'Production',
+    status: 'success',
+    timestamp: '2026-04-17T08:55:00.000Z',
+    duration: '2m 58s',
+    deployer: 'System',
+  },
 ];
 
-const statusIcons: Record<string, any> = { success: FaCheckCircle, failed: FaTimesCircle, 'in-progress': FaSpinner, pending: FaClock };
-const statusColors: Record<string, string> = { success: 'text-green-500', failed: 'text-red-500', 'in-progress': 'text-blue-500', pending: 'text-gray-400' };
-const statusBg: Record<string, string> = { success: 'bg-green-50', failed: 'bg-red-50', 'in-progress': 'bg-blue-50', pending: 'bg-gray-50' };
-
 export default function SuperAdminDeployments() {
-  const { user, isLoading } = useRequireAuth(['superadmin']);
+  const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
+
+  // Static deployment log  in a production system this would come from a CI/CD API
+  const [deployments] = useState<Deployment[]>(DEPLOYMENT_HISTORY);
 
   if (isLoading) {
-    return (<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500" /></div>);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500" />
+      </div>
+    );
   }
+
   if (!user) return null;
 
+  const statusConfig: Record<string, { icon: any; color: string; bg: string }> = {
+    'success': { icon: FaCheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+    'failed': { icon: FaTimesCircle, color: 'text-red-600', bg: 'bg-red-50' },
+    'in-progress': { icon: FaSyncAlt, color: 'text-[#ff6b64]', bg: 'bg-[#e5332a]/10' },
+    'pending': { icon: FaClock, color: 'text-amber-600', bg: 'bg-amber-50' },
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-20 md:pt-8">
+    <div className="min-h-screen p-4 md:p-8 pt-20 md:pt-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href={"/superadmin/dashboard" as Route} className="p-2 hover:bg-gray-100 rounded-lg"><FaArrowLeft className="w-4 h-4 text-gray-500" /></Link>
-          <div><h1 className="text-3xl font-bold text-gray-900">Deployments</h1><p className="text-gray-500 mt-1">Release history &amp; status</p></div>
+          <Link href={"/admin/home" as Route} className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg">
+            <FaArrowLeft className="w-4 h-4 text-[#94a3b8]" />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Deployments</h1>
+            <p className="text-[#94a3b8] mt-1">Release history &amp; deployment status</p>
+          </div>
         </div>
-        <div className="bg-indigo-500 rounded-2xl p-6 text-white mb-8">
+
+        {/* Current Version */}
+        <div className="bg-[#e5332a]/10 border border-indigo-200 rounded-2xl p-6 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center"><FaBox className="w-7 h-7" /></div>
+            <div className="w-14 h-14 bg-[#e5332a]/100 rounded-2xl flex items-center justify-center">
+              <FaRocket className="w-7 h-7 text-white" />
+            </div>
             <div>
-              <p className="text-sm opacity-80">Current Version</p>
-              <p className="text-3xl font-bold">v0.0.5</p>
-              <p className="text-sm opacity-80 mt-1 flex items-center gap-1"><FaCodeBranch className="w-3 h-3" /> main branch</p>
+              <p className="text-sm text-[#ff6b64] font-medium">Current Version</p>
+              <p className="text-2xl font-bold text-white">v0.0.5</p>
+              <p className="text-sm text-[#94a3b8]">FixTray Work Order Platform</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100"><h2 className="text-lg font-semibold text-gray-900">Deployment History</h2></div>
-          <div className="divide-y divide-gray-50">
-            {DEPLOYMENTS.map(d => {
-              const Icon = statusIcons[d.status] || FaClock;
+
+        {/* Deployment History */}
+        <div className="rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <h2 className="text-lg font-semibold text-white mb-4">Deployment History</h2>
+          <div className="space-y-4">
+            {deployments.map(dep => {
+              const sc = statusConfig[dep.status] || statusConfig.pending;
+              const Icon = sc.icon;
               return (
-                <div key={d.id} className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${statusBg[d.status]}`}>
-                    <Icon className={`w-5 h-5 ${statusColors[d.status]} ${d.status === 'in-progress' ? 'animate-spin' : ''}`} />
+                <div key={dep.id} className="flex items-center gap-4 p-4 rounded-xl" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)'}}>
+                  <div className={`w-10 h-10 ${sc.bg} rounded-xl flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 ${sc.color} ${dep.status === 'in-progress' ? 'animate-spin' : ''}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-900">{d.version}</span>
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{d.env}</span>
+                      <span className="font-semibold text-[#f1f5f9]">{dep.version}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sc.bg} ${sc.color}`}>
+                        {dep.status}
+                      </span>
+                      <span className="text-xs text-[#64748b] bg-[rgba(255,255,255,0.06)] px-2 py-0.5 rounded-full">
+                        {dep.environment}
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-500 truncate">{d.commit}</p>
-                  </div>
-                  <div className="text-right hidden sm:block">
-                    <p className="text-sm text-gray-900">{new Date(d.date).toLocaleDateString()}</p>
-                    <p className="text-xs text-gray-400">{d.duration}</p>
+                    <div className="flex items-center gap-4 text-sm text-[#94a3b8] mt-1">
+                      {dep.deployer && <span>by {dep.deployer}</span>}
+                      {dep.duration && (
+                        <span className="flex items-center gap-1">
+                          <FaClock className="w-3 h-3" /> {dep.duration}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <FaCalendarAlt className="w-3 h-3" /> {new Date(dep.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-5">
-          <p className="text-sm text-blue-700"><strong>CI/CD:</strong> Deployments are managed through your hosting platform (Vercel, Railway, or Render). Configure auto-deploys from the main branch.</p>
-        </div>
       </div>
     </div>
   );
 }
+

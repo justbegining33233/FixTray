@@ -1,5 +1,4 @@
 "use client";
-import { FaArrowRight } from 'react-icons/fa';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';

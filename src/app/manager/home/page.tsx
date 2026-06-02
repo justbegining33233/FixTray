@@ -3,6 +3,7 @@ import { FaBox, FaCalendarAlt, FaChartBar, FaClipboardList, FaDollarSign, FaExcl
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import TimeClock from '@/components/TimeClock';
 import MessagingCard from '@/components/MessagingCard';
@@ -10,12 +11,15 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { useIsNative } from '@/context/NativeContext';
 
 export default function ManagerHome() {
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['manager']);
   const isMobile = useIsMobile();
+  const isNative = useIsNative();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
@@ -30,7 +34,7 @@ export default function ManagerHome() {
     urgency: 'normal',
   });
 
-  // New state for enhanced dashboard features
+  // Manager dashboard metrics state
   const [teamPerformance, setTeamPerformance] = useState<any[]>([]);
   const [workOrderStats, setWorkOrderStats] = useState({
     activeJobs: 0,
@@ -47,8 +51,10 @@ export default function ManagerHome() {
   const [teamSchedule, setTeamSchedule] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
+  const [metricsReady, setMetricsReady] = useState(false);
   const [managerMsg, setManagerMsg] = useState<{type:'success'|'error';text:string}|null>(null);
-  async function fetchShopName(shop: string) {
+  async function fetchShopName(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop?shopId=${shop}`, {
@@ -63,7 +69,8 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchInventoryRequests(shop: string) {
+  async function fetchInventoryRequests(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/inventory-requests?shopId=${shop}`, {
@@ -79,7 +86,8 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchTeamPerformance(shop: string) {
+  async function fetchTeamPerformance(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/team-performance?shopId=${shop}`, {
@@ -95,7 +103,8 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchWorkOrderStats(shop: string) {
+  async function fetchWorkOrderStats(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/workorder-stats?shopId=${shop}`, {
@@ -116,7 +125,8 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchFinancialSummary(shop: string) {
+  async function fetchFinancialSummary(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/financial-summary?shopId=${shop}`, {
@@ -138,7 +148,8 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchTeamSchedule(shop: string) {
+  async function fetchTeamSchedule(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/team-schedule?shopId=${shop}`, {
@@ -154,7 +165,8 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchRecentActivity(shop: string) {
+  async function fetchRecentActivity(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/recent-activity?shopId=${shop}`, {
@@ -170,7 +182,8 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchUrgentAlerts(shop: string) {
+  async function fetchUrgentAlerts(shop?: string) {
+    if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/urgent-alerts?shopId=${shop}`, {
@@ -189,18 +202,32 @@ export default function ManagerHome() {
   useEffect(() => {
     if (user?.name) setUserName(user.name);
     if (user?.id) setUserId(user.id);
-    if (user?.shopId) {
-      setShopId(user.shopId);
-      fetchShopName(user.shopId);
-      fetchInventoryRequests(user.shopId);
-      fetchTeamPerformance(user.shopId);
-      fetchWorkOrderStats(user.shopId);
-      fetchFinancialSummary(user.shopId);
-      fetchTeamSchedule(user.shopId);
-      fetchRecentActivity(user.shopId);
-      fetchUrgentAlerts(user.shopId);
-    }
-     
+    const currentShopId: string = user?.shopId ?? '';
+    if (!currentShopId) return;
+
+    setShopId(currentShopId);
+    const loadDashboard = async () => {
+      await Promise.all([
+        fetchShopName(currentShopId),
+        fetchInventoryRequests(currentShopId),
+        fetchTeamPerformance(currentShopId),
+        fetchWorkOrderStats(currentShopId),
+        fetchFinancialSummary(currentShopId),
+        fetchTeamSchedule(currentShopId),
+        fetchRecentActivity(currentShopId),
+        fetchUrgentAlerts(currentShopId),
+      ]);
+    };
+
+    setMetricsReady(false);
+    loadDashboard().finally(() => setMetricsReady(true));
+
+    const refresh = setInterval(() => {
+      loadDashboard();
+    }, 30 * 1000);
+
+    return () => clearInterval(refresh);
+
   }, [user?.id, user?.name, user?.shopId]);
 
   const _handleSignOut = () => {
@@ -209,7 +236,7 @@ export default function ManagerHome() {
     localStorage.removeItem('userId');
     localStorage.removeItem('shopId');
     localStorage.removeItem('token');
-    router.push('/auth/login');
+    router.push('/auth/login' as Route);
   };
 
   const handleSubmitRequest = async () => {
@@ -242,6 +269,10 @@ export default function ManagerHome() {
     }
   };
 
+  if (isNative || isMobile) {
+    return <MobileShell role="manager" isHome userName={userName} />;
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navigation */}
@@ -272,6 +303,19 @@ export default function ManagerHome() {
             </div>
           ) : !user ? null : (
             <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
+              {!metricsReady ? (
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  padding: 24,
+                  color: '#e5e7eb',
+                  textAlign: 'center',
+                  fontSize: 16,
+                }}>
+                  Syncing live manager dashboard data...
+                </div>
+              ) : (
               <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? 16 : 24}}>
                 {/* Left Column */}
                 <div style={{display:'grid', gap:24}}>
@@ -296,7 +340,7 @@ export default function ManagerHome() {
                     <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}><FaClipboardList style={{marginRight:4}} /> Work Orders Overview</h2>
                     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:16}}>
                       <div style={{textAlign:'center'}}>
-                        <div style={{fontSize:28, fontWeight:700, color:'#3b82f6'}}>{workOrderStats.activeJobs}</div>
+                        <div style={{fontSize:28, fontWeight:700, color:'#e5332a'}}>{workOrderStats.activeJobs}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>Active Jobs</div>
                       </div>
                       <div style={{textAlign:'center'}}>
@@ -313,7 +357,7 @@ export default function ManagerHome() {
                       </div>
                     </div>
                     <div style={{display:'flex', gap:12, marginTop:20}}>
-                      <Link href="/workorders/list" style={{flex:1, padding:12, background:'#3b82f6', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
+                      <Link href="/manager/home" style={{flex:1, padding:12, background:'#e5332a', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
                         View All Jobs
                       </Link>
                       <Link href="/manager/assignments" style={{flex:1, padding:12, background:'#6b7280', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
@@ -360,7 +404,7 @@ export default function ManagerHome() {
                         onClick={() => setShowRequestForm(!showRequestForm)}
                         style={{
                           padding:'8px 16px',
-                          background:'#3b82f6',
+                          background:'#e5332a',
                           color:'white',
                           border:'none',
                           borderRadius:6,
@@ -374,7 +418,7 @@ export default function ManagerHome() {
                     </div>
 
                     {showRequestForm && (
-                      <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:8, padding:16, marginBottom:16}}>
+                      <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, padding:16, marginBottom:16}}>
                         <h3 style={{color:'#e5e7eb', marginBottom:12, fontSize:16}}>Request Inventory Item</h3>
                         <div style={{display:'grid', gap:12}}>
                           <input
@@ -410,7 +454,7 @@ export default function ManagerHome() {
                           <div style={{display:'flex', gap:8}}>
                             <button
                               onClick={handleSubmitRequest}
-                              style={{flex:1, padding:10, background:'#22c55e', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontWeight:600}}
+                              style={{flex:1, padding:10, background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontWeight:600}}
                             >
                               Submit Request
                             </button>
@@ -475,8 +519,8 @@ export default function ManagerHome() {
                         <div style={{color:'#22c55e', fontSize:12, marginBottom:4}}>Today's Revenue</div>
                         <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${(financialSummary.todayRevenue ?? 0).toFixed(2)}</div>
                       </div>
-                      <div style={{background:'rgba(59,130,246,0.1)', borderRadius:8, padding:12}}>
-                        <div style={{color:'#3b82f6', fontSize:12, marginBottom:4}}>This Week</div>
+                      <div style={{background:'rgba(229,51,42,0.1)', borderRadius:8, padding:12}}>
+                        <div style={{color:'#e5332a', fontSize:12, marginBottom:4}}>This Week</div>
                         <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${(financialSummary.weeklyRevenue ?? 0).toFixed(2)}</div>
                       </div>
                       <div style={{background:'rgba(168,85,247,0.1)', borderRadius:8, padding:12}}>
@@ -511,7 +555,7 @@ export default function ManagerHome() {
                         ))
                       )}
                     </div>
-                    <Link href="/workorders/list" style={{display:'block', marginTop:12, padding:8, background:'#6b7280', color:'white', borderRadius:6, textDecoration:'none', textAlign:'center', fontSize:12, fontWeight:600}}>
+                    <Link href="/manager/home" style={{display:'block', marginTop:12, padding:8, background:'#6b7280', color:'white', borderRadius:6, textDecoration:'none', textAlign:'center', fontSize:12, fontWeight:600}}>
                       View Schedule
                     </Link>
                   </div>
@@ -549,7 +593,7 @@ export default function ManagerHome() {
                       <Link href="/manager/estimates" style={{padding:12, background:'rgba(34,197,94,0.2)', borderRadius:8, textDecoration:'none', color:'#22c55e', fontSize:14, fontWeight:700, border:'1px solid rgba(34,197,94,0.3)'}}>
                         <FaDollarSign style={{marginRight:4}} /> Create Estimates
                       </Link>
-                      <Link href="/shop/home" style={{padding:12, background:'rgba(59,130,246,0.1)', borderRadius:8, textDecoration:'none', color:'#3b82f6', fontSize:14, fontWeight:600, cursor:'pointer'}}>
+                      <Link href="/shop/home" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600, cursor:'pointer'}}>
                         <FaChartBar style={{marginRight:4}} /> View Center Control
                       </Link>
                       <Link href="/shop/manage-team" style={{padding:12, background:'rgba(168,85,247,0.1)', borderRadius:8, textDecoration:'none', color:'#a855f7', fontSize:14, fontWeight:600}}>
@@ -565,6 +609,7 @@ export default function ManagerHome() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           )}
         </div>
@@ -572,9 +617,11 @@ export default function ManagerHome() {
       {managerMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:managerMsg.type==='success'?'#dcfce7':'#fde8e8',color:managerMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {managerMsg.text}
-          <button onClick={()=>setManagerMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setManagerMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>
   );
 }
+
+

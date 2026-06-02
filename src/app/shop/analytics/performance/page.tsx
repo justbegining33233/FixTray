@@ -31,6 +31,9 @@ export default function EmployeePerformancePage() {
   useEffect(() => {
     if (!user) return;
     fetchPerf();
+    const interval = setInterval(fetchPerf, 60 * 1000);
+
+    return () => clearInterval(interval);
   }, [user, days]);
 
   const fetchPerf = async () => {
@@ -57,14 +60,14 @@ export default function EmployeePerformancePage() {
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <Link href="/shop/reports" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Reports</Link>
+              <Link href="/shop/analytics" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Reports</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Employee Performance</h1>
               <p style={{ color: '#9ca3af', fontSize: 14 }}>Cross-shop performance comparison</p>
             </div>
@@ -109,23 +112,23 @@ export default function EmployeePerformancePage() {
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
-                    <div style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' }}>
+                    <div style={{ background: '#000000', borderRadius: 8, padding: 12, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 11 }}>Jobs</div>
                       <div style={{ color: '#e5e7eb', fontSize: 20, fontWeight: 700 }}>{tech.totalJobs}</div>
                     </div>
-                    <div style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' }}>
+                    <div style={{ background: '#000000', borderRadius: 8, padding: 12, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 11 }}>Completed</div>
-                      <div style={{ color: '#60a5fa', fontSize: 20, fontWeight: 700 }}>{tech.completionRate.toFixed(0)}%</div>
+                      <div style={{ color: '#ff6b64', fontSize: 20, fontWeight: 700 }}>{tech.completionRate.toFixed(0)}%</div>
                     </div>
-                    <div style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' }}>
+                    <div style={{ background: '#000000', borderRadius: 8, padding: 12, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 11 }}>SLA</div>
                       <div style={{ color: tech.slaComplianceRate >= 80 ? '#22c55e' : '#eab308', fontSize: 20, fontWeight: 700 }}>{tech.slaComplianceRate.toFixed(0)}%</div>
                     </div>
-                    <div style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' }}>
+                    <div style={{ background: '#000000', borderRadius: 8, padding: 12, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 11 }}>Hours</div>
                       <div style={{ color: '#e5e7eb', fontSize: 20, fontWeight: 700 }}>{tech.hoursWorked.toFixed(1)}</div>
                     </div>
-                    <div style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' }}>
+                    <div style={{ background: '#000000', borderRadius: 8, padding: 12, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 11 }}>$/Hour</div>
                       <div style={{ color: '#a78bfa', fontSize: 20, fontWeight: 700 }}>${tech.revenuePerHour.toFixed(2)}</div>
                     </div>
@@ -139,3 +142,5 @@ export default function EmployeePerformancePage() {
     </div>
   );
 }
+
+

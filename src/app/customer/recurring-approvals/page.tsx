@@ -211,7 +211,7 @@ export default function RecurringApprovals() {
         )}
 
         <div style={{ marginTop: 32, textAlign: 'center' }}>
-          <Link href="/customer/dashboard" style={{ padding: '10px 24px', background: '#3b82f6', color: 'white', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/customer/dashboard" style={{ padding: '10px 24px', background: '#e5332a', color: 'white', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
             Back to Dashboard
           </Link>
         </div>

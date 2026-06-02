@@ -2,15 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowLeft, FaBuilding, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaBuilding } from 'react-icons/fa';
 
 export default function ShopNewInShopJob() {
   const router = useRouter();
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'tech']);
   const [userName, setUserName] = useState('');
+  const [serviceOptions, setServiceOptions] = useState<Array<{ value: string; label: string }>>([
+    { value: 'oil-change', label: 'Oil Change' },
+    { value: 'brake-service', label: 'Brake Service' },
+    { value: 'tire-rotation', label: 'Tire Rotation' },
+    { value: 'engine-diagnostic', label: 'Engine Diagnostic' },
+    { value: 'transmission-service', label: 'Transmission Service' },
+    { value: 'electrical-repair', label: 'Electrical Repair' },
+    { value: 'air-conditioning', label: 'A/C Service' },
+    { value: 'suspension', label: 'Suspension Repair' },
+  ]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -30,6 +43,50 @@ export default function ShopNewInShopJob() {
 
   useEffect(() => {
     if (user?.name) setUserName(user.name);
+  }, [user]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user) return;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) return;
+
+      const shopId = user.shopId || user.id;
+
+      try {
+        const [servicesRes, workOrdersRes] = await Promise.all([
+          fetch(`/api/services?shopId=${encodeURIComponent(shopId)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch('/api/workorders?limit=100', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        if (servicesRes.ok) {
+          const data = await servicesRes.json();
+          const services = Array.isArray(data?.services) ? data.services : [];
+          if (services.length > 0) {
+            setServiceOptions(
+              services.map((svc: any) => ({
+                value: String(svc.id),
+                label: String(svc.serviceName || 'Service'),
+              }))
+            );
+          }
+        }
+
+        if (workOrdersRes.ok) {
+          const data = await workOrdersRes.json();
+          const items = Array.isArray(data?.workOrders) ? data.workOrders : [];
+          setCustomerSuggestions(items);
+        }
+      } catch {
+        // Keep default behavior if fetch fails.
+      }
+    };
+
+    loadData();
   }, [user]);
 
   // Show loading state while checking authentication
@@ -65,6 +122,7 @@ export default function ShopNewInShopJob() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
+          shopId: user.shopId || user.id,
           vehicleType: 'personal-vehicle',
           serviceLocationType: 'in-shop',
           customerName: formData.customerName,
@@ -75,7 +133,11 @@ export default function ShopNewInShopJob() {
           vehicleYear: formData.vehicleYear,
           vin: formData.vin,
           mileage: formData.mileage,
-          services: formData.services,
+          services: {
+            repairs: [],
+            maintenance: formData.services,
+          },
+          issueDescription: formData.notes || `In-shop job created for ${formData.vehicleYear} ${formData.vehicleMake} ${formData.vehicleModel}`,
           appointmentDate: formData.appointmentDate,
           appointmentTime: formData.appointmentTime,
           estimatedHours: parseFloat(formData.estimatedHours) || 0,
@@ -89,7 +151,7 @@ export default function ShopNewInShopJob() {
         console.error('Failed to create work order', err);
         return;
       }
-      router.push('/shop/home');
+      router.push('/shop/home' as Route);
     } catch (err) {
       console.error('Error creating work order', err);
     }
@@ -104,22 +166,42 @@ export default function ShopNewInShopJob() {
     }));
   };
 
-  const serviceOptions = [
-    { value: 'oil-change', label: 'Oil Change' },
-    { value: 'brake-service', label: 'Brake Service' },
-    { value: 'tire-rotation', label: 'Tire Rotation' },
-    { value: 'engine-diagnostic', label: 'Engine Diagnostic' },
-    { value: 'transmission-service', label: 'Transmission Service' },
-    { value: 'electrical-repair', label: 'Electrical Repair' },
-    { value: 'air-conditioning', label: 'A/C Service' },
-    { value: 'suspension', label: 'Suspension Repair' },
-  ];
+  const filteredSuggestions = customerSearch.trim().length < 2
+    ? []
+    : customerSuggestions
+      .filter((wo) => {
+        const q = customerSearch.toLowerCase();
+        const fullName = `${wo?.customer?.firstName || ''} ${wo?.customer?.lastName || ''}`.toLowerCase();
+        const email = String(wo?.customer?.email || '').toLowerCase();
+        const phone = String(wo?.customer?.phone || '').toLowerCase();
+        const make = String(wo?.vehicle?.make || '').toLowerCase();
+        const model = String(wo?.vehicle?.model || '').toLowerCase();
+        const vin = String(wo?.vehicle?.vin || '').toLowerCase();
+        const plate = String(wo?.vehicle?.licensePlate || '').toLowerCase();
+        const fleet = String(wo?.customer?.fleetAccountName || '').toLowerCase();
+        return [fullName, email, phone, make, model, vin, plate, fleet].some((v) => v.includes(q));
+      })
+      .slice(0, 8);
+
+  const applySuggestion = (wo: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerName: `${wo?.customer?.firstName || ''} ${wo?.customer?.lastName || ''}`.trim(),
+      customerPhone: wo?.customer?.phone || '',
+      customerEmail: wo?.customer?.email || '',
+      vehicleMake: wo?.vehicle?.make || prev.vehicleMake,
+      vehicleModel: wo?.vehicle?.model || prev.vehicleModel,
+      vehicleYear: wo?.vehicle?.year ? String(wo.vehicle.year) : prev.vehicleYear,
+      vin: wo?.vehicle?.vin || prev.vin,
+    }));
+    setCustomerSearch('');
+  };
 
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto'}}>
-          <Link href="/shop/home" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/shop/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaBuilding style={{marginRight:4}} /> New In-Shop Job</h1>
@@ -132,6 +214,34 @@ export default function ShopNewInShopJob() {
           {/* Customer Information */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginBottom:24}}>
             <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Customer Information</h2>
+            <div style={{ marginBottom: 16, position: 'relative' }}>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Recurring Customer / Fleet Search</label>
+              <input
+                type="text"
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+                style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
+                placeholder="Search by name, phone, email, VIN, or license plate"
+              />
+              {filteredSuggestions.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, background: '#000000', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, overflow: 'hidden' }}>
+                  {filteredSuggestions.map((wo) => (
+                    <button
+                      key={wo.id}
+                      type="button"
+                      onClick={() => applySuggestion(wo)}
+                      style={{ width: '100%', textAlign: 'left', background: 'transparent', color: '#e5e7eb', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 12px', cursor: 'pointer' }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: 13 }}>{`${wo?.customer?.firstName || ''} ${wo?.customer?.lastName || ''}`.trim() || 'Customer'}</div>
+                      <div style={{ fontSize: 12, color: '#9aa3b2' }}>
+                        {wo?.vehicle?.year ? `${wo.vehicle.year} ` : ''}{wo?.vehicle?.make || ''} {wo?.vehicle?.model || ''}
+                        {wo?.vehicle?.licensePlate ? `  Plate ${wo.vehicle.licensePlate}` : ''}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
               <div>
                 <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Customer Name *</label>
@@ -318,3 +428,5 @@ export default function ShopNewInShopJob() {
     </div>
   );
 }
+
+

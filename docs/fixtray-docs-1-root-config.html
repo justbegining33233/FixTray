@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FixTray Docs — Part 1: Root & Config Files</title>
+<style>
+  :root { --red:#e5332a; --bg:#080e1c; --surface:#0f172a; --border:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --crit:#ef4444; --major:#f97316; --minor:#eab308; --safe:#22c55e; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+  header { background:linear-gradient(135deg,#0f172a,#1e1040); border-bottom:2px solid var(--red); padding:24px 40px; }
+  header h1 { color:var(--red); font-size:1.8rem; font-weight:700; }
+  header p { color:var(--muted); margin-top:4px; }
+  nav { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 40px; display:flex; gap:12px; flex-wrap:wrap; }
+  nav a { color:var(--muted); text-decoration:none; padding:6px 14px; border-radius:6px; border:1px solid var(--border); font-size:0.85rem; transition:all 0.2s; }
+  nav a:hover, nav a.active { color:var(--red); border-color:var(--red); background:rgba(229,51,42,0.08); }
+  main { padding:32px 40px; max-width:1400px; margin:0 auto; }
+  h2 { color:#f1f5f9; font-size:1.3rem; margin:32px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  h3 { color:var(--muted); font-size:0.95rem; margin:20px 0 10px; text-transform:uppercase; letter-spacing:0.05em; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px; padding:16px; background:var(--surface); border-radius:10px; border:1px solid var(--border); }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--muted); }
+  .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
+  .crit { background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); }
+  .major { background:rgba(249,115,22,0.15); color:#fdba74; border:1px solid rgba(249,115,22,0.3); }
+  .minor { background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.3); }
+  .safe { background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3); }
+  .yes { background:rgba(34,197,94,0.1); color:#86efac; border:1px solid rgba(34,197,94,0.2); }
+  .no  { background:rgba(100,116,139,0.1); color:#94a3b8; border:1px solid rgba(100,116,139,0.2); }
+  .dev { background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2); }
+  table { width:100%; border-collapse:collapse; margin-bottom:32px; background:var(--surface); border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+  th { background:#0a1628; color:var(--muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; padding:12px 16px; text-align:left; border-bottom:1px solid var(--border); }
+  td { padding:14px 16px; border-bottom:1px solid var(--border); vertical-align:top; font-size:0.88rem; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  .filepath { font-family:'Cascadia Code','Consolas',monospace; color:#7dd3fc; font-size:0.82rem; background:rgba(125,211,252,0.06); padding:2px 6px; border-radius:4px; white-space:nowrap; }
+  .desc { color:var(--text); }
+  .impact { color:var(--muted); font-size:0.83rem; }
+  .section-intro { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--red); border-radius:8px; padding:16px 20px; margin-bottom:24px; color:var(--muted); font-size:0.9rem; }
+  footer { text-align:center; padding:24px; color:var(--muted); font-size:0.8rem; border-top:1px solid var(--border); margin-top:40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FixTray — Project File Reference</h1>
+  <p>Part 1 of 6 &nbsp;·&nbsp; Root & Configuration Files &nbsp;·&nbsp; Generated May 5, 2026</p>
+</header>
+<nav>
+  <a href="fixtray-docs-1-root-config.html" class="active">1 · Root & Config</a>
+  <a href="fixtray-docs-2-database.html">2 · Database</a>
+  <a href="fixtray-docs-3-lib-core.html">3 · Core Services (lib/)</a>
+  <a href="fixtray-docs-4-app-pages-api.html">4 · Pages & API Routes</a>
+  <a href="fixtray-docs-5-components.html">5 · Components</a>
+  <a href="fixtray-docs-6-types-hooks-scripts.html">6 · Types, Hooks, Scripts & Public</a>
+</nav>
+<main>
+
+<div class="legend">
+  <div class="legend-item"><span class="badge crit">CRITICAL</span> App won't start / build fails without it</div>
+  <div class="legend-item"><span class="badge major">MAJOR</span> Core feature lost, significant breakage</div>
+  <div class="legend-item"><span class="badge minor">MINOR</span> Graceful degradation, optional feature gone</div>
+  <div class="legend-item"><span class="badge safe">SAFE</span> Dev / deployment tooling only, no runtime effect</div>
+  <div class="legend-item"><span class="badge yes">YES</span> Actively imported/used</div>
+  <div class="legend-item"><span class="badge dev">DEV ONLY</span> Only used during development or CI</div>
+  <div class="legend-item"><span class="badge no">NO / UNUSED</span> Present but not imported</div>
+</div>
+
+<h2>Root Configuration Files</h2>
+<div class="section-intro">These files sit at <code>C:\FixTray\</code> (the project root). They configure the build system, deployment targets, runtime server, and tooling. Most are read at build time, not bundled into the app itself.</div>
+
+<table>
+  <thead>
+    <tr><th style="width:22%">File</th><th style="width:38%">What It Holds / Internals</th><th style="width:10%">Used?</th><th style="width:12%">Impact if Removed</th><th style="width:18%">What Would Break</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="filepath">package.json</span></td>
+      <td class="desc">Project manifest. Declares all <strong>npm dependencies</strong> (Next.js, Prisma, Stripe, Socket.IO, Twilio, Sentry, Capacitor, bcrypt, jose, zod, recharts, jsPDF, etc.) and <strong>devDependencies</strong> (TypeScript, Jest, Playwright, ESLint, Tailwind). Contains all <code>npm run</code> scripts: <code>dev</code>, <code>build</code>, <code>start</code>, <code>test</code>, <code>lint</code>, <code>db:push</code>, <code>db:migrate</code>. Also sets <code>"private": true</code> and version <code>1.0.0</code>.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge crit">CRITICAL</span></td>
+      <td>Without it, <code>npm install</code> fails and Node.js cannot resolve any package. The entire project dies.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">next.config.ts</span></td>
+      <td class="desc">Next.js runtime & build configuration. Key internals: wraps config with <strong>Sentry</strong> and <strong>next-intl</strong> plugins; sets security HTTP headers (CSP, HSTS, X-Frame-Options etc.) on all routes; configures <code>images.remotePatterns</code> for Cloudinary; webpack chunk-splitting (vendor, recharts, sentry bundles); marks <code>resend</code> and <code>twilio</code> as external packages; enables <code>typedRoutes</code>, <code>optimizeCss</code>, <code>scrollRestoration</code>; strips console logs in production.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge crit">CRITICAL</span></td>
+      <td>Build fails. No security headers served. Cloudinary images broken. Sentry and i18n plugins not applied.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">tsconfig.json</span></td>
+      <td class="desc">TypeScript compiler configuration. Sets <code>@/</code> path alias pointing to <code>./src</code> (used everywhere as <code>@/components/...</code>, <code>@/lib/...</code>). Enables <code>strict</code> mode, <code>jsx: preserve</code>, targets <code>ES2017</code>. Includes <code>next-env.d.ts</code> and all <code>src/**</code> files.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge crit">CRITICAL</span></td>
+      <td>TypeScript compilation fails. All <code>@/</code> imports resolve to nothing. App cannot build.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">next-env.d.ts</span></td>
+      <td class="desc">Auto-generated by Next.js. Provides TypeScript type references for Next.js image types and other framework types. Should never be edited manually — Next.js regenerates it.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge major">MAJOR</span></td>
+      <td>TypeScript loses Next.js type definitions. Type errors throughout. Auto-regenerated on next <code>next dev</code> run.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">postcss.config.mjs</span></td>
+      <td class="desc">PostCSS configuration. Loads <code>@tailwindcss/postcss</code> plugin which processes all Tailwind CSS utility classes from <code>globals.css</code> and component JSX files. Required for Tailwind v4.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge crit">CRITICAL</span></td>
+      <td>CSS build fails. All Tailwind classes produce no styles. App renders unstyled.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">eslint.config.mjs</span></td>
+      <td class="desc">ESLint flat-config file. Uses <code>eslint-config-next</code> preset which includes React, hooks, and accessibility rules. Only runs during <code>npm run lint</code> or in VS Code with ESLint extension. Not part of the production build.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Linting breaks. No runtime impact — <code>next build</code> can still run.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">jest.config.cjs</span></td>
+      <td class="desc">Jest unit test configuration. Sets up <code>ts-jest</code> transformer, <code>jest-environment-jsdom</code> for browser-like environment, maps <code>@/</code> aliases, configures coverage reporters (clover, lcov, json). Used only by <code>npm test</code>.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Unit tests cannot run. Zero runtime impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">playwright.config.ts</span></td>
+      <td class="desc">Playwright end-to-end test configuration. Defines browser projects (chromium, firefox, webkit), base URL, test directory pointing to <code>e2e/</code>, screenshot on failure, and CI-specific settings. Used only by <code>npm run test:e2e</code>.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>E2E tests cannot run. Zero runtime impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">lighthouserc.json</span></td>
+      <td class="desc">Lighthouse CI configuration. Defines performance score thresholds (performance, accessibility, best-practices, SEO) for automated auditing in CI pipelines. Not referenced by any build or runtime code.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Lighthouse CI audits fail. Zero app impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">i18n.ts</span></td>
+      <td class="desc">Internationalization configuration for <strong>next-intl</strong>. Exports a <code>getRequestConfig</code> function that dynamically imports the correct message JSON from <code>messages/{locale}.json</code> (currently <code>en.json</code> and <code>es.json</code>). Loaded by <code>next.config.ts</code> via <code>createNextIntlPlugin('./i18n.ts')</code>.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge major">MAJOR</span></td>
+      <td>next-intl plugin crashes. All translation strings (<code>t('key')</code>) throw. App build fails if next-intl components are used.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">instrumentation.ts</span></td>
+      <td class="desc">Next.js server <strong>instrumentation hook</strong>. Runs once when the Node.js server starts. Registers <strong>OpenTelemetry</strong> (via <code>@vercel/otel</code>) for distributed tracing with service name <code>fixtray-app</code>. Then conditionally loads <code>sentry.server.config</code> (Node.js runtime) or <code>sentry.edge.config</code> (Edge runtime). Also exports <code>onRequestError</code> to capture all request errors in Sentry automatically.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+      <td>Sentry and OTel stop initializing on server. Error tracking and performance monitoring go dark. App still runs fine.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">instrumentation-client.ts</span></td>
+      <td class="desc">Client-side <strong>Sentry initialization</strong>. Configures Sentry browser SDK with session replay (masks text/media), browser tracing, adjustable sample rates (100% dev, 10% prod for traces; 100% error sessions, 5% clean sessions in prod). Also exports <code>onRouterTransitionStart</code> for route change tracking.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+      <td>Client-side error reporting and session replay stop working. No user-facing impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">sentry.server.config.ts</span></td>
+      <td class="desc">Server-side Sentry configuration. Sets DSN from <code>SENTRY_DSN</code> env var, environment tag, trace sample rate (20% prod / 100% dev), and filters noise errors like <em>ResizeObserver loop limit exceeded</em>. Loaded by <code>instrumentation.ts</code> dynamically at startup.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+      <td>Server-side error tracking stops. App runs normally.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">sentry.edge.config.ts</span></td>
+      <td class="desc">Edge runtime Sentry configuration (for Next.js middleware running in the Vercel Edge Network). Minimal config — DSN, environment, sample rate. Loaded by <code>instrumentation.ts</code> when <code>NEXT_RUNTIME === 'edge'</code>.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+      <td>Middleware/Edge route errors go untracked in Sentry. App runs normally.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Deployment Configuration Files</h2>
+<div class="section-intro">These files tell different hosting platforms how to build and run FixTray. Only one is needed depending on where you deploy — they don't affect each other.</div>
+
+<table>
+  <thead>
+    <tr><th style="width:22%">File</th><th style="width:38%">What It Holds / Internals</th><th style="width:10%">Used?</th><th style="width:12%">Impact if Removed</th><th style="width:18%">What Would Break</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="filepath">vercel.json</span></td>
+      <td class="desc">Vercel deployment config. Defines two <strong>cron jobs</strong>: <code>/api/cron</code> (daily 7AM) and <code>/api/cron/keepalive</code> (every 5 min). Sets extended function timeouts for heavy API routes (payroll: 60s, messages: 30s, shop stats: 30s etc.). Sets <code>NEXT_PUBLIC_ENABLE_REALTIME=false</code> as a default env var.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge major">MAJOR</span></td>
+      <td>On Vercel: cron jobs stop running (no daily cleanup/keepalive), heavy API routes may timeout at 10s default. Locally: no impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">railway.toml</span></td>
+      <td class="desc">Railway.app deployment config. Specifies build command (<code>npm run build</code>), start command (<code>node server.js</code> — the custom server with Socket.IO), health check path (<code>/health</code>), and restart policy (on failure, max 3 retries). Uses Nixpacks builder.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge major">MAJOR</span></td>
+      <td>On Railway: deployment fails to configure correctly. Locally: no impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">render.yaml</span></td>
+      <td class="desc">Render.com deployment configuration (Infrastructure as Code). Defines web service settings for Render hosting as an alternative to Railway/Vercel.</td>
+      <td><span class="badge no">OPTIONAL</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Only matters if deploying on Render.com. No impact for Vercel or Railway.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">Dockerfile</span></td>
+      <td class="desc">Multi-stage Docker build. Stage 1 (<code>builder</code>): installs all deps, runs <code>npm run build</code>. Stage 2 (<code>runner</code>): copies build output, sets <code>NODE_ENV=production</code>, exposes port 3000, runs <code>npm start</code>. Used for containerized deployments (Docker, Kubernetes, etc.).</td>
+      <td><span class="badge no">OPTIONAL</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Docker builds fail. No impact for Vercel/Railway deploys or local dev.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Runtime Server Files</h2>
+<div class="section-intro">These are the actual Node.js server files that run in production on Railway or any non-Vercel host.</div>
+
+<table>
+  <thead>
+    <tr><th style="width:22%">File</th><th style="width:38%">What It Holds / Internals</th><th style="width:10%">Used?</th><th style="width:12%">Impact if Removed</th><th style="width:18%">What Would Break</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="filepath">server.js</span></td>
+      <td class="desc">Custom Node.js HTTP server combining <strong>Next.js + Socket.IO</strong> on a single process. Key internals: creates an <code>http.createServer</code> wrapping Next.js's request handler; adds a <code>/health</code> endpoint for Railway/Render load balancer checks; initializes <code>socket.io</code> on path <code>/api/socket</code> with JWT authentication middleware; handles shop/tech/customer rooms; broadcasts <code>work-order-updated</code>, <code>new-message</code>, <code>tech-location-updated</code>, <code>clock-status-changed</code> events; binds to <code>0.0.0.0:PORT</code> for external traffic. This is the file referenced by <code>railway.toml</code>'s start command.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge major">MAJOR</span></td>
+      <td>On Railway/self-hosted: cannot start the production server. <strong>Real-time Socket.IO features stop working</strong> (live work order updates, live messaging, tech location). On Vercel: not used — Vercel uses Next.js's built-in server.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">socket-server.js</span></td>
+      <td class="desc"><strong>Standalone Socket.IO-only server</strong> (no Next.js). Intended to be deployed on a separate service (Railway, Render, Fly.io) while the Next.js app lives on Vercel. Reads <code>ALLOWED_ORIGINS</code>, <code>JWT_SECRET</code>, and <code>PORT</code> env vars. Exposes its own <code>/health</code> endpoint. Handles identical room/event logic as <code>server.js</code>. Dev command: <code>npm run dev:socket</code>. <strong>Used when Next.js is on Vercel</strong> (which can't run persistent WebSocket servers).</td>
+      <td><span class="badge minor">SITUATIONAL</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+      <td>If deployed on Vercel: removing this means no standalone socket server available — real-time features require polling fallback. If on Railway with <code>server.js</code>: this file is unused.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Mobile App Configuration</h2>
+<div class="section-intro">These files are only relevant for building the Android/iOS mobile apps via Capacitor. The web app runs completely without them.</div>
+
+<table>
+  <thead>
+    <tr><th style="width:22%">File</th><th style="width:38%">What It Holds / Internals</th><th style="width:10%">Used?</th><th style="width:12%">Impact if Removed</th><th style="width:18%">What Would Break</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="filepath">capacitor.config.ts</span></td>
+      <td class="desc">Capacitor mobile configuration. Defines <code>appId: "com.fixtray.app"</code>, <code>appName: "FixTray Pro"</code>. In dev mode (<code>CAPACITOR_LOCAL=true</code>): points the WebView at <code>http://10.0.2.2:3000</code>. In production: loads <code>https://fixtray.app/auth/login</code>. Configures Android (<code>backgroundColor: '#020608'</code>, user-agent override, debugging disabled), iOS (scheme <code>fixtray://</code>), and all Capacitor plugins: Camera (1920x1440, 85% quality), Geolocation (high accuracy), Push Notifications, Local Notifications, Secure Storage, Biometric Auth.</td>
+      <td><span class="badge minor">MOBILE ONLY</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+      <td>Android/iOS builds fail. Web app unaffected — runs normally in browsers.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">build-apk.bat</span></td>
+      <td class="desc">Windows batch script that automates the Android APK build pipeline: runs <code>npm run build</code>, then <code>npx cap copy android</code>, then enters the <code>android/</code> directory and runs Gradle <code>assembleRelease</code>. Convenience script for Windows developers building mobile.</td>
+      <td><span class="badge minor">MOBILE ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Must build APK manually via Gradle. Web app completely unaffected.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">android/</span></td>
+      <td class="desc">Full Android Studio project generated by Capacitor. Contains <code>build.gradle</code>, <code>settings.gradle</code>, <code>gradle.properties</code>, <code>variables.gradle</code>, <code>gradlew</code>, <code>app/</code> folder with the main Android app module, and <code>gradle/</code> wrapper. This is the native shell that wraps the FixTray web app in a WebView for Android distribution.</td>
+      <td><span class="badge minor">MOBILE ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>No Android APK can be built. Web app and server completely unaffected.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">ios/</span></td>
+      <td class="desc">iOS Xcode project generated by Capacitor. Contains <code>debug.xcconfig</code> and the <code>App/</code> folder. This is the native shell that wraps FixTray for iOS App Store distribution.</td>
+      <td><span class="badge minor">MOBILE ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>No iOS IPA can be built. Web app completely unaffected.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Data & Workspace Files</h2>
+<table>
+  <thead>
+    <tr><th style="width:22%">File</th><th style="width:38%">What It Holds / Internals</th><th style="width:10%">Used?</th><th style="width:12%">Impact if Removed</th><th style="width:18%">What Would Break</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="filepath">workorder.json</span></td>
+      <td class="desc">A single sample/test work order JSON object. Appears to be a development artifact or exported sample record. Not imported by any application code.</td>
+      <td><span class="badge no">NO</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Nothing. This file is not referenced in any source code.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">work order app.code-workspace</span></td>
+      <td class="desc">VS Code workspace settings file. Defines the workspace root folder, possibly VS Code extension recommendations and settings overrides for the project. Used by VS Code when opening via "Open Workspace from File".</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>VS Code workspace settings lost. Can still open the folder directly. Zero runtime impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">README.md</span></td>
+      <td class="desc">Project documentation markdown file. Contains setup instructions, feature list, deployment guides, and development notes. Not referenced by any source code.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Documentation gone. Zero app impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">fixtray-audit-report.html</span></td>
+      <td class="desc">A previously generated security or code audit HTML report. Static file only — not served by the app or imported by any code.</td>
+      <td><span class="badge no">NO</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Nothing. Static reference document only.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">fixtray-mobile-prototype.html</span></td>
+      <td class="desc">An HTML prototype/mockup of the FixTray mobile UI. Static file used for design reference. Not served by the app.</td>
+      <td><span class="badge no">NO</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Nothing. Design reference only.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">fixtray-sitemap.html</span></td>
+      <td class="desc">An HTML sitemap document listing all app routes. Static reference document. Not used by app code.</td>
+      <td><span class="badge no">NO</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Nothing. Reference document only.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">coverage/</span></td>
+      <td class="desc">Jest code coverage output directory. Contains <code>clover.xml</code>, <code>coverage-final.json</code>, <code>lcov.info</code>, and <code>lcov-report/</code> HTML report. Generated by <code>npm run test:coverage</code>. Gitignored in most setups.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Coverage reports gone. Zero app impact — regenerated on next test run.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">logs/</span></td>
+      <td class="desc">Directory where Winston logger writes <code>app.log</code> (and rotated versions). Created at runtime by <code>src/lib/logger.ts</code> when the server starts. Contains structured JSON log entries for errors, warnings, and audit events.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+      <td>Winston tries to create it automatically. If filesystem is read-only, file logging fails but the app continues with console logging only.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">tmp/</span></td>
+      <td class="desc">Temporary files directory. Likely used for temporary file uploads or processing intermediates. Contents not critical.</td>
+      <td><span class="badge minor">SITUATIONAL</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Temporary file operations may fail if the directory doesn't exist. Auto-created as needed.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">e2e/auth.spec.ts</span></td>
+      <td class="desc">Playwright end-to-end tests for authentication flows: login, logout, invalid credentials, session persistence.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>E2E auth tests gone. Zero runtime impact.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">e2e/workorders.spec.ts</span></td>
+      <td class="desc">Playwright end-to-end tests for work order CRUD flows: create, view, update status, delete.</td>
+      <td><span class="badge dev">DEV ONLY</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>E2E work order tests gone. Zero runtime impact.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>docs/ Directory</h2>
+<div class="section-intro">All files in <code>docs/</code> are markdown documentation. None are imported or referenced by application source code. They are all <span class="badge safe">SAFE</span> to remove with zero runtime impact.</div>
+<table>
+  <thead><tr><th>File</th><th>Contents Summary</th></tr></thead>
+  <tbody>
+    <tr><td><span class="filepath">docs/ADVANCED_FEATURES_IMPLEMENTATION.md</span></td><td>Notes on enterprise/advanced feature implementation details</td></tr>
+    <tr><td><span class="filepath">docs/API_TESTING_GUIDE.md</span></td><td>Guide for manually testing API endpoints with curl/Postman</td></tr>
+    <tr><td><span class="filepath">docs/CHANGELOG-v0.0.2.md</span></td><td>Version 0.0.2 changelog</td></tr>
+    <tr><td><span class="filepath">docs/FEATURES_COMPLETE.md</span></td><td>Feature completion checklist</td></tr>
+    <tr><td><span class="filepath">docs/IMPLEMENTATION_COMPLETE.md</span></td><td>Implementation status document</td></tr>
+    <tr><td><span class="filepath">docs/MESSAGING_COMPLETE.md</span></td><td>Messaging feature implementation notes</td></tr>
+    <tr><td><span class="filepath">docs/MOBILE_APP_ENHANCEMENT_PLAN.md</span></td><td>Mobile app roadmap and planned enhancements</td></tr>
+    <tr><td><span class="filepath">docs/PRODUCTION_DEPLOYMENT.md</span></td><td>Step-by-step production deployment guide</td></tr>
+    <tr><td><span class="filepath">docs/QUICK_START.md</span></td><td>Developer quick start guide</td></tr>
+    <tr><td><span class="filepath">docs/SHOP_MANAGEMENT_IMPLEMENTATION.md</span></td><td>Shop management feature notes</td></tr>
+    <tr><td><span class="filepath">docs/VERSION_0.0.3.md through VERSION_0.0.5.md</span></td><td>Release notes for versions 0.0.3–0.0.5</td></tr>
+    <tr><td><span class="filepath">docs/V1_REMAINING_TASKS.md</span></td><td>Pending v1 task list</td></tr>
+  </tbody>
+</table>
+
+</main>
+<footer>FixTray Project File Reference &nbsp;·&nbsp; Part 1 of 6: Root &amp; Config Files &nbsp;·&nbsp; <a href="fixtray-docs-2-database.html" style="color:var(--red)">Next: Database →</a></footer>
+</body>
+</html>

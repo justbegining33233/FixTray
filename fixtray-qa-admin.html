@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FixTray QA Checklist - Admin & Super Admin</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+        h1 { color: #f8fafc; font-size: 28px; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        h2 { color: #ef4444; font-size: 22px; margin-top: 30px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #94a3b8; font-weight: 600; font-size: 14px; text-transform: uppercase; }
+        tr:last-child td { border-bottom: none; }
+        .row-item { font-weight: 500; color: #f8fafc; }
+        .row-type { font-size: 12px; color: #94a3b8; background: #334155; padding: 3px 8px; border-radius: 12px; margin-left: 10px; }
+        select { background: #0f172a; color: #f8fafc; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; width: 100%; outline: none; }
+        select:focus { border-color: #ef4444; }
+        option[value=""] { color: #94a3b8; }
+        option[value="go"] { color: #22c55e; }
+        option[value="nogo"] { color: #ef4444; }
+        textarea { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 8px; border-radius: 6px; resize: vertical; min-height: 40px; font-family: inherit; }
+        .notes-area { margin-top: 15px; background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid #334155; }
+        .notes-area h3 { margin: 0 0 10px 0; font-size: 16px; color: #cbd5e1; }
+        .progress-container { position: sticky; top: 0; background: #0f172a; padding: 15px 0; z-index: 100; border-bottom: 1px solid #334155; margin-bottom: 20px; }
+        #progress-bar { width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+        #progress-fill { height: 100%; background: #ef4444; width: 0%; transition: width 0.3s ease; }
+    </style>
+</head>
+<body>
+    <div class="progress-container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 18px;">Admin & Super Admin Role Checklist</strong>
+            <span id="progress-text">0 / 0 Completed (0%)</span>
+        </div>
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+    </div>
+
+    <h1>FixTray QA - Admin / Super Admin (Merged)</h1>
+    <p>Role Accent Color: <span style="color:#ef4444; font-weight:bold;">Red (#ef4444)</span> | Dashboard: /superadmin/dashboard</p>
+
+    <!-- SECTION: GLOBAL APP SHELL -->
+    <h2>1. Global Mobile Shell & Navigation</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">UI Element (Exact Text)</th>
+                <th style="width: 15%;">Website Status</th>
+                <th style="width: 15%;">APK Status</th>
+                <th style="width: 35%;">Notes / Issues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Manage Shops <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/manage-shops"></textarea></td>
+            </tr>
+            <tr>
+                <td>Pending Shops <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/pending-shops"></textarea></td>
+            </tr>
+            <tr>
+                <td>Users <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /superadmin/users"></textarea></td>
+            </tr>
+            <tr>
+                <td>Revenue <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/revenue"></textarea></td>
+            </tr>
+            <tr>
+                <td>Analytics <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /superadmin/analytics"></textarea></td>
+            </tr>
+            <tr>
+                <td>Security <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /superadmin/security"></textarea></td>
+            </tr>
+            <tr>
+                <td>Email Templates <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/email-templates"></textarea></td>
+            </tr>
+            <tr>
+                <td>System <span class="row-type">Tile</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/settings"></textarea></td>
+            </tr>
+            <tr>
+                <td>Home <span class="row-type">Footer Tab</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /superadmin/dashboard"></textarea></td>
+            </tr>
+            <tr>
+                <td>Shops <span class="row-type">Footer Tab</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/manage-shops"></textarea></td>
+            </tr>
+            <tr>
+                <td>Chat <span class="row-type">Footer Tab</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/messages"></textarea></td>
+            </tr>
+            <tr>
+                <td>System <span class="row-type">Footer Tab</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea placeholder="Route: /admin/settings"></textarea></td>
+            </tr>
+            <tr>
+                <td>Shops > Manage Shops <span class="row-type">Drawer Category/Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Shops > Pending Shops <span class="row-type">Drawer Category/Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Shops > Subscriptions <span class="row-type">Drawer Category/Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Users > User Management <span class="row-type">Drawer Category/Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Finance > Revenue <span class="row-type">Drawer Category/Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Platform > Security <span class="row-type">Drawer Category/Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Add Shop <span class="row-type">Floating Action Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Add User <span class="row-type">Floating Action Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="notes-area">
+        <h3>Additional Issues / Notes for App Navigation:</h3>
+        <textarea style="min-height: 80px;" placeholder="Document any bugs found in the mobile shell, drawers, or tabs..."></textarea>
+    </div>
+
+    <!-- SECTION: SUPER ADMIN DASHBOARD -->
+    <h2>2. Super Admin Dashboard (/superadmin/dashboard)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">UI Element (Exact Text)</th>
+                <th style="width: 15%;">Website Status</th>
+                <th style="width: 15%;">APK Status</th>
+                <th style="width: 35%;">Notes / Issues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>"Super Admin" <span class="row-type">Heading (h1)</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Platform Overview Stats <span class="row-type">Card/Widget</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"Admin Panel" / "Manage Shops" <span class="row-type">Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="notes-area">
+        <h3>Additional Issues / Notes for Super Admin Dashboard:</h3>
+        <textarea style="min-height: 80px;" placeholder="Document any missing data, broken links, etc..."></textarea>
+    </div>
+
+    <!-- SECTION: MANAGE SHOPS -->
+    <h2>3. Manage Shops (/admin/manage-shops)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">UI Element (Exact Text)</th>
+                <th style="width: 15%;">Website Status</th>
+                <th style="width: 15%;">APK Status</th>
+                <th style="width: 35%;">Notes / Issues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>"Admin Panel - Manage Shops" <span class="row-type">Header Group</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"Back to Dashboard" <span class="row-type">Link</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"Total Shops" <span class="row-type">Stat Card / Value</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"Active" <span class="row-type">Stat Card / Value</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"Pending" <span class="row-type">Stat Card / Value</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"Suspended" <span class="row-type">Stat Card / Value</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"Search shops, owners, emails..." <span class="row-type">Input Field</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"all" <span class="row-type">Filter Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"approved" <span class="row-type">Filter Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"pending" <span class="row-type">Filter Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>"suspended" <span class="row-type">Filter Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="notes-area">
+        <h3>Additional Issues / Notes for Manage Shops:</h3>
+        <textarea style="min-height: 80px;"></textarea>
+    </div>
+
+    <!-- SECTION: PENDING SHOP APPROVALS -->
+    <h2>4. Pending Shop Approvals (/admin/pending-shops)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">UI Element (Exact Text)</th>
+                <th style="width: 15%;">Website Status</th>
+                <th style="width: 15%;">APK Status</th>
+                <th style="width: 35%;">Notes / Issues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>"Pending Shop Approvals" <span class="row-type">Heading (h1)</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Approve <span class="row-type">Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Deny <span class="row-type">Button</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="notes-area">
+        <h3>Additional Issues / Notes for Pending Shops:</h3>
+        <textarea style="min-height: 80px;"></textarea>
+    </div>
+
+    <!-- SECTION: USER MANAGEMENT -->
+    <h2>5. User Management (/superadmin/users)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">UI Element (Exact Text)</th>
+                <th style="width: 15%;">Website Status</th>
+                <th style="width: 15%;">APK Status</th>
+                <th style="width: 35%;">Notes / Issues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>"User Management" <span class="row-type">Heading (h1)</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>User Search <span class="row-type">Input field</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="notes-area">
+        <h3>Additional Issues / Notes for User Management:</h3>
+        <textarea style="min-height: 80px;"></textarea>
+    </div>
+
+    <!-- SECTION: PLATFORM ANALYTICS -->
+    <h2>6. Platform Analytics (/superadmin/analytics)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">UI Element (Exact Text)</th>
+                <th style="width: 15%;">Website Status</th>
+                <th style="width: 15%;">APK Status</th>
+                <th style="width: 35%;">Notes / Issues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>"Platform Analytics" <span class="row-type">Heading (h1)</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+            <tr>
+                <td>Metrics Date Picker <span class="row-type">Input</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="notes-area">
+        <h3>Additional Issues / Notes for Platform Analytics:</h3>
+        <textarea style="min-height: 80px;"></textarea>
+    </div>
+
+    <!-- SECTION: REVENUE & PAYOUTS -->
+    <h2>7. Revenue & Payouts (/admin/revenue)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">UI Element (Exact Text)</th>
+                <th style="width: 15%;">Website Status</th>
+                <th style="width: 15%;">APK Status</th>
+                <th style="width: 35%;">Notes / Issues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>"Revenue & Payouts" <span class="row-type">Heading (h1)</span></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><select class="status-select"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></td>
+                <td><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="notes-area">
+        <h3>Additional Issues / Notes for Revenue / Payouts:</h3>
+        <textarea style="min-height: 80px;"></textarea>
+    </div>
+
+    <script>
+        const selects = document.querySelectorAll('.status-select');
+        const textareas = document.querySelectorAll('textarea');
+        const progressText = document.getElementById('progress-text');
+        const progressFill = document.getElementById('progress-fill');
+
+        function updateProgress() {
+            const total = selects.length;
+            const completed = Array.from(selects).filter(s => s.value !== '').length;
+            const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+            
+            progressText.innerText = \`\${completed} / \${total} Completed (\${percentage}%)\`;
+            progressFill.style.width = \`\${percentage}%\`;
+        }
+
+        // Setup Event Listeners & Local Storage for Admin Checklist
+        selects.forEach((select, i) => {
+            const saved = localStorage.getItem('admin_qa_select_' + i);
+            if (saved) select.value = saved;
+            
+            select.addEventListener('change', (e) => {
+                localStorage.setItem('admin_qa_select_' + i, e.target.value);
+                updateProgress();
+            });
+        });
+
+        textareas.forEach((ta, i) => {
+            const saved = localStorage.getItem('admin_qa_ta_' + i);
+            if (saved) ta.value = saved;
+            
+            ta.addEventListener('input', (e) => {
+                localStorage.setItem('admin_qa_ta_' + i, e.target.value);
+            });
+        });
+
+        updateProgress();
+    </script>
+</body>
+</html>

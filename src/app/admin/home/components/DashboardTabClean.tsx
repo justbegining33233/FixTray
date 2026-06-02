@@ -4,6 +4,8 @@ import React from 'react';
 import KpiCard from './KpiCard';
 import SalesFunnel from './SalesFunnel';
 import SystemHealth from './SystemHealth';
+import type { HealthMetric } from './SystemHealth';
+import type { StatusTone } from './StatusBadge';
 
 interface PlatformStats {
   totalRevenue: string;
@@ -11,10 +13,8 @@ interface PlatformStats {
   totalJobs: number;
   activeUsers: number;
   pendingShops: number;
-  systemHealth: number;
-  totalSubscriptions: number;
-  newSubsThisMonth: number;
-  monthlyRecurringRevenue: string;
+  systemHealth: number | null;
+  monthlyRevenue: string;
 }
 
 interface WeeklyOverview {
@@ -27,7 +27,6 @@ interface WeeklyOverview {
 interface ThreeMonthAverages {
   avgNewClientsPerMonth: number;
   avgJobIncomePerMonth: string;
-  avgSubscriptionRevenuePerMonth: string;
   churnRate: string;
   churnRateRaw?: number;
   totalClientsLast3Months: number;
@@ -37,11 +36,6 @@ interface ThreeMonthAverages {
 interface LiveMetrics {
   revenueTrend: number[];
   revenueGrowth: string;
-  subscriptionTrend: number[];
-  retentionRate: string;
-  retentionRateRaw: number;
-  retentionChange: string;
-  avgLifetimeMonths: number;
   avgRating: string;
   reviewsCount: number;
   websiteVisits: number;
@@ -53,65 +47,82 @@ interface LiveMetrics {
   activeTrials: number;
   convertedCustomers: number;
   conversionRate: string;
-  revenueByPlan: Record<string, number>;
-  totalMRR: number;
-  annualRecurringRevenue: number;
-  momGrowth: string;
-  yoyGrowth: string;
-  ltv: string;
+  monthOverMonthGrowth: string;
   weeklyConversionTrend: { label: string; value: number }[];
+}
+
+interface InfraHealth {
+  heartbeat: 'online' | 'degraded' | 'offline';
+  apiLatencyMs: number | null;
+  statsLatencyMs: number | null;
+  uptimeSeconds: number | null;
+  lastHeartbeatAt: number | null;
+  heartbeatAgeSeconds: number | null;
+  dbConnected: boolean | null;
+  dbCheckedAt: number | null;
+  dbLastIssueAt: number | null;
+  dbLastIssueAgeSeconds: number | null;
+  dbStatusMessage: string | null;
 }
 
 interface DashboardTabProps {
   platformStats: PlatformStats;
   pendingShops: any[];
   approvedShops: any[];
+  shopsLiveMetrics?: {
+    activeShops: number;
+    inactiveShops: number;
+    approvedShops: number;
+    pendingShops: number;
+  } | null;
   recentActivity: any[];
   planDistribution: Record<string, number>;
   weeklyOverview: WeeklyOverview;
   threeMonthAverages: ThreeMonthAverages;
   liveMetrics: LiveMetrics;
+  infraHealth: InfraHealth;
 }
 
 export function DashboardTab({
   platformStats,
-  pendingShops,
-  approvedShops,
-  liveMetrics
+  pendingShops: _pendingShops,
+  approvedShops: _approvedShops,
+  shopsLiveMetrics,
+  liveMetrics,
+  infraHealth,
 }: DashboardTabProps) {
-  const revenueTrend = liveMetrics.revenueTrend?.length ? liveMetrics.revenueTrend : [42, 52, 63, 58, 71, 69, 74];
-  const subscriptionTrend = liveMetrics.subscriptionTrend?.length ? liveMetrics.subscriptionTrend : [12, 15, 17, 16, 18, 21, 25];
+  const revenueTrend = liveMetrics.revenueTrend?.length ? liveMetrics.revenueTrend : [];
 
   const kpiCards = [
     {
-      title: 'Monthly Recurring Revenue',
-      value: liveMetrics.totalMRR ? `$${liveMetrics.totalMRR.toLocaleString()}` : platformStats.monthlyRecurringRevenue,
-      change: liveMetrics.momGrowth || '+4.8% MoM',
+      title: 'Monthly Revenue',
+      value: platformStats.monthlyRevenue,
+      change: liveMetrics.monthOverMonthGrowth !== 'Unavailable' ? liveMetrics.monthOverMonthGrowth : 'Current month',
       trend: revenueTrend,
       accent: 'emerald' as const,
-      caption: 'Rolling 30-day MRR'
+      caption: 'Paid work orders this month'
     },
     {
       title: 'Active Shops',
-      value: platformStats.totalShops.toLocaleString(),
-      change: '+2.1% WoW',
-      trend: subscriptionTrend,
+      value: (shopsLiveMetrics?.activeShops ?? 0).toLocaleString(),
+      change: `${shopsLiveMetrics?.activeShops ?? 0} currently active`,
+      trend: [],
       accent: 'sky' as const,
       caption: 'Live storefronts'
     },
     {
       title: 'Active Users',
       value: platformStats.activeUsers.toLocaleString(),
-      change: '+6.4% QoQ',
-      trend: [8, 9, 12, 11, 13, 12, 14],
+      change: 'Last 30 days',
+      trend: [],
       accent: 'violet' as const,
-      caption: 'Signed in last 24h'
+      caption: 'Users with recent activity'
     },
     {
       title: 'Pending Approvals',
-      value: pendingShops.length.toString(),
-      change: `${approvedShops.length} approved`,
-      trend: [6, 8, 7, 9, 11, 10, 12],
+      value: platformStats.pendingShops.toString(),
+      change: `${platformStats.totalShops} active shops`,
+      trend: [],
       accent: 'amber' as const,
       caption: 'Ready for review'
     }
@@ -124,12 +135,109 @@ export function DashboardTab({
     customers: liveMetrics.convertedCustomersCount || liveMetrics.convertedCustomers || 0
   };
 
-  const healthMetrics = [
-    { label: 'API', value: `${platformStats.systemHealth}%`, subtext: 'Stable', tone: 'success' as const, trend: [68, 72, 75, 79, 82, 84, 86] },
-    { label: 'Queue', value: '0.8s', subtext: 'Nominal', tone: 'info' as const, trend: [28, 26, 25, 23, 24, 22, 21] },
-    { label: 'DB Latency', value: '142ms', subtext: 'Healthy', tone: 'success' as const, trend: [140, 138, 141, 142, 139, 137, 136] },
-    { label: 'Errors', value: '0.03%', subtext: 'Low', tone: 'warning' as const, trend: [0.06, 0.05, 0.04, 0.03, 0.04, 0.03, 0.03] },
-    { label: 'Uptime', value: '99.98%', subtext: 'Green', tone: 'success' as const, trend: [99.9, 99.92, 99.93, 99.95, 99.96, 99.97, 99.98] }
+  const heartbeatLabel =
+    infraHealth.heartbeat === 'online'
+      ? 'Live'
+      : infraHealth.heartbeat === 'degraded'
+      ? 'Degraded'
+      : 'Offline';
+
+  const heartbeatTone: StatusTone =
+    infraHealth.heartbeat === 'offline'
+      ? 'danger'
+      : infraHealth.heartbeat === 'degraded'
+      ? 'warning'
+      : infraHealth.apiLatencyMs === null
+      ? 'warning'
+      : infraHealth.apiLatencyMs > 1200
+      ? 'danger'
+      : infraHealth.apiLatencyMs > 600
+      ? 'warning'
+      : 'success';
+
+  const apiLatencyTone: StatusTone =
+    infraHealth.apiLatencyMs === null
+      ? 'warning'
+      : infraHealth.apiLatencyMs > 1200
+      ? 'danger'
+      : infraHealth.apiLatencyMs > 600
+      ? 'warning'
+      : 'success';
+
+  const statsLatencyTone: StatusTone =
+    infraHealth.statsLatencyMs === null
+      ? 'warning'
+      : infraHealth.statsLatencyMs > 1400
+      ? 'danger'
+      : infraHealth.statsLatencyMs > 700
+      ? 'warning'
+      : 'success';
+
+  const dbUptimeHours =
+    infraHealth.uptimeSeconds === null
+      ? null
+      : (infraHealth.uptimeSeconds / 3600);
+
+  const freshnessSeconds = infraHealth.heartbeatAgeSeconds;
+  const lastIssueAgeSeconds = infraHealth.dbLastIssueAgeSeconds;
+
+  const dbStatusTone: StatusTone =
+    infraHealth.dbConnected === false
+      ? 'danger'
+      : infraHealth.dbConnected === true
+      ? 'success'
+      : 'warning';
+
+  const healthMetrics: HealthMetric[] = [
+    {
+      label: 'Heartbeat',
+      value: heartbeatLabel,
+      subtext: freshnessSeconds === null ? 'No signal' : `${freshnessSeconds}s ago`,
+      tone: heartbeatTone,
+      trend: [],
+    },
+    {
+      label: 'API Latency',
+      value: infraHealth.apiLatencyMs === null ? 'Unavailable' : `${infraHealth.apiLatencyMs}ms`,
+      subtext: infraHealth.apiLatencyMs === null ? 'No sample' : 'Round-trip',
+      tone: apiLatencyTone,
+      trend: [],
+    },
+    {
+      label: 'Database',
+      value: infraHealth.dbConnected === null ? 'Unknown' : infraHealth.dbConnected ? 'Connected' : 'Disconnected',
+      subtext: infraHealth.dbStatusMessage || 'Connection status',
+      tone: dbStatusTone,
+      trend: [],
+    },
+    {
+      label: 'Stats Latency',
+      value: infraHealth.statsLatencyMs === null ? 'Unavailable' : `${infraHealth.statsLatencyMs}ms`,
+      subtext: infraHealth.statsLatencyMs === null ? 'No sample' : 'Admin stats query',
+      tone: statsLatencyTone,
+      trend: [],
+    },
+    {
+      label: 'Platform Health',
+      value: platformStats.systemHealth === null ? 'Unavailable' : `${platformStats.systemHealth}%`,
+      subtext: platformStats.systemHealth === null ? 'Error signal unavailable' : 'Error-based signal',
+      tone: platformStats.systemHealth === null ? 'warning' as const : 'success' as const,
+      trend: [],
+    },
+    {
+      label: 'Issue Age',
+      value: lastIssueAgeSeconds === null ? 'None' : `${Math.floor(lastIssueAgeSeconds / 60)}m`,
+      subtext: lastIssueAgeSeconds === null ? 'No recent issues' : `${lastIssueAgeSeconds}s since last issue`,
+      tone: lastIssueAgeSeconds === null ? 'success' as const : lastIssueAgeSeconds < 300 ? 'danger' as const : 'warning' as const,
+      trend: []
+    },
+    {
+      label: 'DB Uptime',
+      value: dbUptimeHours === null ? 'Unavailable' : `${dbUptimeHours.toFixed(1)}h`,
+      subtext: dbUptimeHours === null ? 'No sample' : 'Since last recorded issue',
+      tone: dbUptimeHours === null ? 'warning' as const : 'success' as const,
+      trend: []
+    }
   ];
 
   return (

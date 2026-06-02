@@ -140,7 +140,7 @@ export default function AssignmentsPage() {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          <Link href="/manager/dashboard" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
+          <Link href="/manager/dashboard" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaUsers style={{marginRight:4}} /> Assign Work Orders</h1>
@@ -159,8 +159,8 @@ export default function AssignmentsPage() {
                   key={wo.id}
                   onClick={() => setSelectedWorkOrder(wo.id)}
                   style={{
-                    background: selectedWorkOrder === wo.id ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: selectedWorkOrder === wo.id ? '2px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                    background: selectedWorkOrder === wo.id ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)',
+                    border: selectedWorkOrder === wo.id ? '2px solid rgba(229,51,42,0.5)' : '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 8,
                     padding: 16,
                     cursor: 'pointer',
@@ -176,8 +176,8 @@ export default function AssignmentsPage() {
                       borderRadius: 4,
                       fontSize: 12,
                       fontWeight: 600,
-                      background: wo.status === 'pending' ? 'rgba(245,158,11,0.2)' : 'rgba(59,130,246,0.2)',
-                      color: wo.status === 'pending' ? '#f59e0b' : '#3b82f6'
+                      background: wo.status === 'pending' ? 'rgba(245,158,11,0.2)' : 'rgba(229,51,42,0.2)',
+                      color: wo.status === 'pending' ? '#f59e0b' : '#ff6b64'
                     }}>
                       {wo.status}
                     </div>
@@ -213,8 +213,8 @@ export default function AssignmentsPage() {
                   key={tech.id}
                   onClick={() => setSelectedTech(tech.id)}
                   style={{
-                    background: selectedTech === tech.id ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: selectedTech === tech.id ? '2px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                    background: selectedTech === tech.id ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)',
+                    border: selectedTech === tech.id ? '2px solid rgba(229,51,42,0.5)' : '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 8,
                     padding: 16,
                     cursor: 'pointer',
@@ -253,7 +253,7 @@ export default function AssignmentsPage() {
             
             {selectedWorkOrder && selectedTech ? (
               <div>
-                <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                <div style={{ background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
                   <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>Selected Work Order:</div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb' }}>
                     WO-{selectedWorkOrder.slice(0, 8)}
@@ -272,7 +272,7 @@ export default function AssignmentsPage() {
                   style={{
                     width: '100%',
                     padding: '12px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    background: 'linear-gradient(135deg, #e5332a 0%, #c62822 100%)',
                     color: 'white',
                     border: 'none',
                     borderRadius: 8,
@@ -317,9 +317,10 @@ export default function AssignmentsPage() {
       {assignMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:assignMsg.type==='success'?'#dcfce7':'#fde8e8',color:assignMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {assignMsg.text}
-          <button onClick={()=>setAssignMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setAssignMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>
   );
 }
+

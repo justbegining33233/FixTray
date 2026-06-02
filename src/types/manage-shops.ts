@@ -16,12 +16,6 @@ export type Shop = {
   techCount: number;
   activeTechs: number;
   joinedDate: Date;
-  subscription?: {
-    plan: string;
-    status: string;
-    isTrialing: boolean;
-    trialDaysLeft: number;
-  } | null;
 };
 
 export type LiveMetrics = {
@@ -38,11 +32,5 @@ export type LiveMetrics = {
   totalJobs: number;
   totalJobsThisMonth: number;
   jobsGrowth: string;
-  subscriptionBreakdown: {
-    active: number;
-    trialing: number;
-    cancelled: number;
-    none: number;
-  };
   shopTrend: number[];
 };

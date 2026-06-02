@@ -3,12 +3,12 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
-  const auth = requireRole(req, ['admin']);
+  const auth = requireRole(req, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
   // Enforce Neon-only DB: fail fast if DATABASE_URL is missing
   if (!process.env.DATABASE_URL) {
-    console.error('DATABASE_URL not configured — set it to your Neon connection string');
+    console.error('DATABASE_URL not configured ΓÇö set it to your Neon connection string');
     return NextResponse.json({ error: 'DATABASE_URL not configured' }, { status: 503 });
   }
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     // Calculate total revenue from work orders
     const totalRevenue = workOrders.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
     
-    // Platform fees are now subscription-based, not commission-based
+    // Platform fees are currently fixed to zero (no commission model enabled)
     const platformFees = 0;
     
     // Total payouts to shops (100% since no commission)

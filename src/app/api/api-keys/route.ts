@@ -12,12 +12,12 @@ function generateApiKey(): string {
   return `ft_live_${random}`;
 }
 
-// GET /api/api-keys — list API keys for the shop
+// GET /api/api-keys ΓÇö list API keys for the shop
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'admin']);
   if (auth instanceof NextResponse) return auth;
 
-  const shopId = auth.role === 'admin'
+  const shopId = (auth.role === 'superadmin')
     ? new URL(request.url).searchParams.get('shopId') || ''
     : auth.id;
 
@@ -47,19 +47,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/api-keys — create a new API key
+// POST /api/api-keys ΓÇö create a new API key
 export async function POST(request: NextRequest) {
   const auth = requireRole(request, ['shop']);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Check enterprise feature access
-    const { checkFeatureAccess } = await import('@/lib/subscription-limits');
-    const access = await checkFeatureAccess(auth.id, 'apiAccess');
-    if (!access.allowed) {
-      return NextResponse.json({ error: access.message }, { status: 403 });
-    }
-
     const { name, scopes, expiresInDays } = await request.json();
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -86,7 +79,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Return the raw key only once — it cannot be retrieved later
+    // Return the raw key only once ΓÇö it cannot be retrieved later
     return NextResponse.json({
       id: key.id,
       name: key.name,
@@ -94,7 +87,7 @@ export async function POST(request: NextRequest) {
       prefix: key.prefix,
       scopes: key.scopes,
       expiresAt: key.expiresAt,
-      message: 'Save this key securely — it will not be shown again.',
+      message: 'Save this key securely ΓÇö it will not be shown again.',
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating API key:', error);
@@ -102,7 +95,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/api-keys?id=xxx — revoke an API key
+// DELETE /api/api-keys?id=xxx ΓÇö revoke an API key
 export async function DELETE(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'admin']);
   if (auth instanceof NextResponse) return auth;
@@ -119,7 +112,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify ownership
-    if (auth.role !== 'admin' && key.shopId !== auth.id) {
+    if (auth.role !== 'superadmin' && key.shopId !== auth.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

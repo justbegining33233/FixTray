@@ -14,12 +14,10 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error');
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
 
-  const successRedirect = origin === 'onboarding'
-    ? `${appUrl}/shop/subscribe`
-    : `${appUrl}/shop/settings?stripe_connect=success&tab=billing`;
+  const successRedirect = `${appUrl}/shop/settings?stripe_connect=success&tab=general`;
   const errorRedirect = origin === 'onboarding'
     ? `${appUrl}/shop/complete-profile?stripe_connect=error`
-    : `${appUrl}/shop/settings?stripe_connect=error&tab=billing`;
+    : `${appUrl}/shop/settings?stripe_connect=error&tab=general`;
 
   if (error || !code || !state) {
     console.error('Stripe Connect OAuth error:', error);

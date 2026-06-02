@@ -51,23 +51,25 @@ export default function CustomerRegisterPage() {
   const inputStyle = {
     width: '100%',
     padding: '10px 12px',
-    border: '1px solid #d1d5db',
+    border: '1px solid rgba(255,255,255,0.14)',
     borderRadius: 8,
     fontSize: 15,
     boxSizing: 'border-box' as const,
     marginTop: 4,
+    background: 'rgba(255,255,255,0.04)',
+    color: '#f1f5f9',
   };
 
-  const labelStyle = { display: 'block', fontSize: 14, fontWeight: 500 as const, color: '#374151' };
+  const labelStyle = { display: 'block', fontSize: 14, fontWeight: 500 as const, color: '#94a3b8' };
 
   if (done) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb' }}>
-        <div style={{ background: 'white', borderRadius: 12, padding: 40, width: '100%', maxWidth: 420, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', textAlign: 'center' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent' }}>
+        <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 40, width: '100%', maxWidth: 420, boxShadow: '0 8px 36px rgba(0,0,0,0.55)', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}><FaSmile style={{marginRight:4}} /></div>
-          <h2 style={{ marginBottom: 8, color: '#111827' }}>Account Created!</h2>
-          <p style={{ color: '#6b7280', marginBottom: 24 }}>Your account is ready. You can now sign in.</p>
-          <Link href="/auth/login" style={{ display: 'inline-block', background: '#3b82f6', color: 'white', padding: '12px 32px', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
+          <h2 style={{ marginBottom: 8, color: '#f1f5f9' }}>Account Created!</h2>
+          <p style={{ color: '#94a3b8', marginBottom: 24 }}>Your account is ready. You can now sign in.</p>
+          <Link href="/auth/login" style={{ display: 'inline-block', background: '#e5332a', color: 'white', padding: '12px 32px', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
             Sign In
           </Link>
         </div>
@@ -76,10 +78,10 @@ export default function CustomerRegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', padding: 20 }}>
-      <div style={{ background: 'white', borderRadius: 12, padding: 40, width: '100%', maxWidth: 480, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-        <h2 style={{ marginBottom: 4, color: '#111827', fontSize: 22 }}>Create Customer Account</h2>
-        <p style={{ color: '#6b7280', marginBottom: 28, fontSize: 14 }}>Track your work orders and communicate with your shop.</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', padding: 20 }}>
+      <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 40, width: '100%', maxWidth: 480, boxShadow: '0 8px 36px rgba(0,0,0,0.55)' }}>
+        <h2 style={{ marginBottom: 4, color: '#f1f5f9', fontSize: 22 }}>Create Customer Account</h2>
+        <p style={{ color: '#94a3b8', marginBottom: 28, fontSize: 14 }}>Track your work orders and communicate with your shop.</p>
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
@@ -113,19 +115,19 @@ export default function CustomerRegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', padding: '12px', background: loading ? '#93c5fd' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+            style={{ width: '100%', padding: '12px', background: loading ? 'rgba(229,51,42,0.5)' : '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#94a3b8' }}>
           Already have an account?{' '}
-          <Link href="/auth/login" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
+          <Link href="/auth/login" style={{ color: '#e5332a', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
         </p>
-        <p style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#9ca3af' }}>
+        <p style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#475569' }}>
           Are you a shop?{' '}
-          <Link href="/auth/register/shop/client" style={{ color: '#6b7280', textDecoration: 'none' }}>Register your shop</Link>
+          <Link href="/auth/register/shop" style={{ color: '#64748b', textDecoration: 'none' }}>Register your shop</Link>
         </p>
       </div>
     </div>

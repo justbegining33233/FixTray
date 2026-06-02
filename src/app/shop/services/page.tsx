@@ -83,7 +83,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  diesel:            { bg: 'rgba(59,130,246,0.18)',  border: 'rgba(59,130,246,0.35)',  text: '#60a5fa' },
+  diesel:            { bg: 'rgba(229,51,42,0.18)',  border: 'rgba(229,51,42,0.35)',  text: '#ff6b64' },
   gas:               { bg: 'rgba(34,197,94,0.18)',   border: 'rgba(34,197,94,0.35)',   text: '#4ade80' },
   'small-engine':    { bg: 'rgba(251,191,36,0.18)',  border: 'rgba(251,191,36,0.35)',  text: '#fbbf24' },
   'heavy-equipment': { bg: 'rgba(168,85,247,0.18)',  border: 'rgba(168,85,247,0.35)',  text: '#c084fc' },
@@ -245,7 +245,7 @@ export default function ShopServicesPage() {
           <div style={{ marginTop: 6 }}>
             <h1 style={{ color: '#f1f5f9', fontSize: 28, fontWeight: 700, margin: 0 }}><FaTools style={{marginRight:4}} /> Service Catalog</h1>
             <p style={{ color: '#64748b', fontSize: 13, margin: '4px 0 0' }}>
-              {services.length} service{services.length !== 1 ? 's' : ''} active · Shop type: <span style={{ color: '#94a3b8', fontWeight: 600 }}>{CATEGORY_LABELS[shopType] || shopType}</span>
+              {services.length} service{services.length !== 1 ? 's' : ''} active  Shop type: <span style={{ color: '#94a3b8', fontWeight: 600 }}>{CATEGORY_LABELS[shopType] || shopType}</span>
             </p>
           </div>
         </div>
@@ -288,7 +288,7 @@ export default function ShopServicesPage() {
                 <h3 style={{ color: '#e5e7eb', marginBottom: 8 }}>No services yet</h3>
                 <p style={{ color: '#64748b', marginBottom: 20 }}>Add services from the FixTray Catalog or create a custom one.</p>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button onClick={() => setActiveTab('catalog')} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, cursor: 'pointer' }}><FaBox style={{marginRight:4}} /> Browse Catalog</button>
+                  <button onClick={() => setActiveTab('catalog')} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#e5332a', color: '#fff', fontWeight: 600, cursor: 'pointer' }}><FaBox style={{marginRight:4}} /> Browse Catalog</button>
                   <button onClick={() => setActiveTab('custom')} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.1)', color: '#e5e7eb', fontWeight: 600, cursor: 'pointer' }}><FaEdit style={{marginRight:4}} /> Add Custom</button>
                 </div>
               </div>
@@ -306,7 +306,7 @@ export default function ShopServicesPage() {
                           </span>
                         </div>
                         <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
-                          <button onClick={() => openEdit(svc)} style={{ background: 'rgba(59,130,246,0.2)', border: 'none', color: '#60a5fa', padding: '5px 11px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Edit</button>
+                          <button onClick={() => openEdit(svc)} style={{ background: 'rgba(229,51,42,0.2)', border: 'none', color: '#ff6b64', padding: '5px 11px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Edit</button>
                           <button onClick={() => setDeleteConfirmId(svc.id)} style={{ background: 'rgba(239,68,68,0.2)', border: 'none', color: '#f87171', padding: '5px 11px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}><FaTimes style={{marginRight:4}} /></button>
                         </div>
                       </div>
@@ -319,7 +319,7 @@ export default function ShopServicesPage() {
                           <div><span style={{ color: '#64748b' }}>Duration </span><span style={{ color: '#f1f5f9', fontWeight: 600 }}>{svc.duration} min</span></div>
                         )}
                         {svc.price == null && !svc.duration && (
-                          <span style={{ color: '#475569', fontSize: 12 }}>No pricing set  -  <button onClick={() => openEdit(svc)} style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: 12, padding: 0 }}>add price</button></span>
+                          <span style={{ color: '#475569', fontSize: 12 }}>No pricing set  -  <button onClick={() => openEdit(svc)} style={{ background: 'none', border: 'none', color: '#ff6b64', cursor: 'pointer', fontSize: 12, padding: 0 }}>add price</button></span>
                         )}
                       </div>
                     </div>
@@ -391,7 +391,7 @@ export default function ShopServicesPage() {
                             <button
                               onClick={() => addFromCatalog(svcName, cat)}
                               disabled={isAdding}
-                              style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${col.border}`, background: isAdding ? 'rgba(59,130,246,0.3)' : col.bg, color: col.text, fontSize: 13, fontWeight: 700, cursor: isAdding ? 'default' : 'pointer', minWidth: 60 }}>
+                              style={{ padding: '5px 14px', borderRadius: 6, border: `1px solid ${col.border}`, background: isAdding ? 'rgba(229,51,42,0.3)' : col.bg, color: col.text, fontSize: 13, fontWeight: 700, cursor: isAdding ? 'default' : 'pointer', minWidth: 60 }}>
                               {isAdding ? '...' : '+ Add'}
                             </button>
                           </div>
@@ -478,7 +478,7 @@ export default function ShopServicesPage() {
       {showEditModal && editingService && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
           onClick={() => { setShowEditModal(false); setEditingService(null); }}>
-          <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: 32, width: '100%', maxWidth: 500 }}
+          <div style={{ background: '#000000', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: 32, width: '100%', maxWidth: 500 }}
             onClick={e => e.stopPropagation()}>
             <h2 style={{ color: '#f1f5f9', fontSize: 20, fontWeight: 700, margin: '0 0 24px' }}>Edit  -  {editingService.serviceName}</h2>
             <form onSubmit={handleEditSave}>
@@ -543,3 +543,5 @@ export default function ShopServicesPage() {
     </div>
   );
 }
+
+

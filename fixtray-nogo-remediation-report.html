@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FixTray — NO-GO Remediation Report · May 18, 2026</title>
+<style>
+  :root {
+    --red: #dc2626; --red-light: #fee2e2; --red-border: #fca5a5;
+    --amber: #d97706; --amber-light: #fef3c7; --amber-border: #fcd34d;
+    --green: #16a34a; --green-light: #dcfce7; --green-border: #86efac;
+    --blue: #2563eb; --blue-light: #dbeafe; --blue-border: #93c5fd;
+    --purple: #7c3aed; --purple-light: #ede9fe; --purple-border: #c4b5fd;
+    --gray: #374151; --gray-light: #f9fafb; --gray-border: #e5e7eb;
+    --dark: #111827;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 13px; color: var(--dark); background: #fff; line-height: 1.5; }
+
+  /* COVER PAGE */
+  .cover { page-break-after: always; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e40af 100%); color: white; padding: 60px 40px; text-align: center; }
+  .cover-logo { width: 80px; height: 80px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; font-size: 36px; font-weight: 900; color: #1e40af; letter-spacing: -2px; }
+  .cover h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  .cover h2 { font-size: 20px; font-weight: 400; opacity: 0.7; margin-bottom: 48px; }
+  .cover-stats { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+  .cover-stat { text-align: center; }
+  .cover-stat .num { font-size: 48px; font-weight: 800; line-height: 1; }
+  .cover-stat .lbl { font-size: 13px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .cover-stat.red .num { color: #f87171; }
+  .cover-stat.green .num { color: #86efac; }
+  .cover-stat.amber .num { color: #fcd34d; }
+  .cover-meta { font-size: 13px; opacity: 0.5; margin-top: 8px; }
+  .cover-badge { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 16px 32px; margin-bottom: 32px; font-size: 15px; }
+
+  /* TABLE OF CONTENTS */
+  .toc-page { page-break-after: always; padding: 48px; }
+  .toc-page h2 { font-size: 24px; font-weight: 700; color: var(--dark); margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--gray-border); }
+  .toc-section { margin-bottom: 20px; }
+  .toc-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 8px; }
+  .toc-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 6px; margin-bottom: 3px; cursor: pointer; }
+  .toc-item:hover { background: var(--gray-light); }
+  .toc-num { font-size: 11px; color: #9ca3af; min-width: 24px; font-weight: 600; }
+  .toc-title { flex: 1; font-size: 13px; font-weight: 500; }
+  .toc-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .badge-critical { background: var(--red-light); color: var(--red); }
+  .badge-high { background: var(--amber-light); color: var(--amber); }
+  .badge-medium { background: var(--blue-light); color: var(--blue); }
+  .badge-missing { background: #f3f4f6; color: #6b7280; }
+
+  /* MAIN CONTENT */
+  .page { padding: 48px; }
+  .section-header { margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid var(--gray-border); }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #6b7280; margin-bottom: 6px; }
+  .section-title { font-size: 28px; font-weight: 800; color: var(--dark); }
+
+  /* ISSUE CARD */
+  .issue { page-break-inside: avoid; margin-bottom: 40px; border: 1px solid var(--gray-border); border-radius: 12px; overflow: hidden; }
+  .issue-header { padding: 20px 24px; display: flex; align-items: flex-start; gap: 16px; }
+  .issue-header.critical { background: var(--red-light); border-bottom: 1px solid var(--red-border); }
+  .issue-header.high { background: var(--amber-light); border-bottom: 1px solid var(--amber-border); }
+  .issue-header.medium { background: var(--blue-light); border-bottom: 1px solid var(--blue-border); }
+  .issue-header.missing { background: #f3f4f6; border-bottom: 1px solid var(--gray-border); }
+  .issue-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .icon-critical { background: var(--red); color: white; }
+  .icon-high { background: var(--amber); color: white; }
+  .icon-medium { background: var(--blue); color: white; }
+  .icon-missing { background: #6b7280; color: white; }
+  .issue-meta { flex: 1; }
+  .issue-id { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; margin-bottom: 4px; font-family: monospace; }
+  .issue-title { font-size: 17px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+  .issue-path { font-size: 12px; font-family: monospace; padding: 3px 8px; background: rgba(0,0,0,0.06); border-radius: 4px; display: inline-block; color: var(--gray); }
+  .severity-pill { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; align-self: flex-start; }
+  .pill-critical { background: var(--red); color: white; }
+  .pill-high { background: var(--amber); color: white; }
+  .pill-medium { background: var(--blue); color: white; }
+  .pill-missing { background: #6b7280; color: white; }
+
+  .issue-body { padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .issue-body.full { grid-template-columns: 1fr; }
+  .issue-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .detail-block { padding: 16px; border-radius: 8px; border: 1px solid; }
+  .detail-block.problem { background: #fff; border-color: var(--red-border); }
+  .detail-block.fix { background: #fff; border-color: var(--green-border); }
+  .detail-block.impact { background: #fff; border-color: var(--blue-border); }
+  .detail-block.looks { background: #fff; border-color: var(--purple-border); }
+  .detail-block h4 { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .detail-block.problem h4 { color: var(--red); }
+  .detail-block.fix h4 { color: var(--green); }
+  .detail-block.impact h4 { color: var(--blue); }
+  .detail-block.looks h4 { color: var(--purple); }
+  .detail-block p { font-size: 12.5px; color: #374151; line-height: 1.6; }
+  .detail-block ul { font-size: 12.5px; color: #374151; padding-left: 16px; line-height: 1.8; }
+  .detail-block ul li { margin-bottom: 2px; }
+
+  /* Code snippet */
+  .code-block { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 16px; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; line-height: 1.7; margin-top: 10px; overflow-x: auto; }
+  .code-block .kw { color: #93c5fd; }
+  .code-block .fn { color: #86efac; }
+  .code-block .str { color: #fca5a5; }
+  .code-block .cm { color: #64748b; font-style: italic; }
+  .code-block .num { color: #fcd34d; }
+
+  /* Mockup / UI preview */
+  .mockup { margin-top: 12px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+  .mockup-bar { background: #f1f5f9; padding: 8px 12px; font-size: 11px; color: #6b7280; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 8px; }
+  .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mockup-url { font-family: monospace; flex: 1; background: white; border: 1px solid #e5e7eb; border-radius: 4px; padding: 3px 8px; font-size: 11px; }
+  .mockup-body { padding: 16px; background: #f8fafc; font-size: 12px; }
+
+  /* Wireframe UI elements */
+  .wf-page { background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; min-height: 100px; }
+  .wf-header { background: #1e3a5f; color: white; padding: 8px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .wf-row { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 11px; }
+  .wf-row:last-child { border: none; }
+  .wf-pill { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+  .wf-green { background: #dcfce7; color: #16a34a; }
+  .wf-amber { background: #fef3c7; color: #d97706; }
+  .wf-blue { background: #dbeafe; color: #2563eb; }
+  .wf-red { background: #fee2e2; color: #dc2626; }
+  .wf-btn { font-size: 10px; padding: 4px 10px; border-radius: 4px; font-weight: 600; display: inline-block; }
+  .wf-btn-primary { background: #1e3a5f; color: white; }
+  .wf-btn-danger { background: #dc2626; color: white; }
+  .wf-stat { text-align: center; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+  .wf-stat .n { font-size: 20px; font-weight: 800; color: #1e3a5f; }
+  .wf-stat .l { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
+  .wf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .wf-chart { background: #f1f5f9; border-radius: 6px; height: 60px; display: flex; align-items: flex-end; gap: 4px; padding: 8px; }
+  .wf-bar { flex: 1; border-radius: 3px 3px 0 0; }
+  .wf-success { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .wf-check { width: 32px; height: 32px; background: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; flex-shrink: 0; }
+
+  /* Summary table */
+  .summary-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+  .summary-table th { background: #1e3a5f; color: white; padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-table td { padding: 10px 14px; border-bottom: 1px solid var(--gray-border); vertical-align: top; }
+  .summary-table tr:nth-child(even) td { background: #f9fafb; }
+  .summary-table tr:last-child td { border-bottom: none; }
+
+  /* Effort badge */
+  .effort { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+  .effort-xs { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+  .effort-sm { background: #dbeafe; color: #2563eb; border: 1px solid #93c5fd; }
+  .effort-md { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; }
+  .effort-lg { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+
+  @media print {
+    body { font-size: 12px; }
+    .cover { min-height: auto; padding: 80px 60px; }
+    .issue { page-break-inside: avoid; }
+    .toc-page { page-break-after: always; }
+    @page { margin: 0.5in; size: letter; }
+  }
+  .page-break { page-break-before: always; }
+  .no-break { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     COVER PAGE
+     ============================================================ -->
+<div class="cover">
+  <div class="cover-logo">FT</div>
+  <h1>NO-GO Remediation Report</h1>
+  <h2>FixTray Work Order Management Platform</h2>
+  <div class="cover-badge">Full Go/No-Go Inspection · Live Site: https://fixtray.app · May 18, 2026</div>
+  <div class="cover-stats">
+    <div class="cover-stat green"><div class="num">1,874</div><div class="lbl">GO Items</div></div>
+    <div class="cover-stat red"><div class="num">104</div><div class="lbl">NO-GO Items</div></div>
+    <div class="cover-stat amber"><div class="num">22</div><div class="lbl">Root Issues</div></div>
+    <div class="cover-stat"><div class="num" style="color:#a78bfa">1,978</div><div class="lbl">Total Checked</div></div>
+  </div>
+  <div class="cover-meta">Prepared by GitHub Copilot · Automated Live QA Testing · All issues tested against production</div>
+</div>
+
+<!-- ============================================================
+     TABLE OF CONTENTS
+     ============================================================ -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+
+  <div class="toc-section">
+    <div class="toc-section-title">API Issues (3 root issues)</div>
+    <div class="toc-item"><span class="toc-num">01</span><span class="toc-title">GET /api/admin/activity-logs — Empty Response</span><span class="toc-badge badge-high">High</span></div>
+    <div class="toc-item"><span class="toc-num">02</span><span class="toc-badge badge-critical">Critical</span><span class="toc-title" style="order:-1">GET /api/admin/analytics — Charts Stuck Loading</span></div>
+    <div class="toc-item"><span class="toc-num">03</span><span class="toc-title">GET /api/auth/sessions — 401 Bearer Token Mismatch</span><span class="toc-badge badge-high">High</span></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Missing Pages — Stripe / Registration Flow (7 root issues)</div>
+    <div class="toc-item"><span class="toc-num">04</span><span class="toc-title">/payment-success — 404 Missing Stripe Success Page</span><span class="toc-badge badge-critical">Critical</span></div>
+    <div class="toc-item"><span class="toc-num">05</span><span class="toc-title">/payment-cancel — 404 Missing Stripe Cancel Page</span><span class="toc-badge badge-critical">Critical</span></div>
+    <div class="toc-item"><span class="toc-num">06</span><span class="toc-title">/register-customer — 404 Missing Customer Registration Page</span><span class="toc-badge badge-high">High</span></div>
+    <div class="toc-item"><span class="toc-num">07</span><span class="toc-title">/register-success — 404 Missing Post-Registration Page</span><span class="toc-badge badge-high">High</span></div>
+    <div class="toc-item"><span class="toc-num">08</span><span class="toc-title">/register-canceled — 404 Missing Cancel Landing Page</span><span class="toc-badge badge-high">High</span></div>
+    <div class="toc-item"><span class="toc-num">09</span><span class="toc-title">/auth/register-shop — 404 Missing Route</span><span class="toc-badge badge-medium">Medium</span></div>
+    <div class="toc-item"><span class="toc-num">10</span><span class="toc-title">/auth/register-shop-client — 404 Legacy Route</span><span class="toc-badge badge-missing">Low</span></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Wrong Redirects (3 root issues)</div>
+    <div class="toc-item"><span class="toc-num">11</span><span class="toc-title">/workorders/list — Redirects to Superadmin Dashboard</span><span class="toc-badge badge-high">High</span></div>
+    <div class="toc-item"><span class="toc-num">12</span><span class="toc-title">/workorders/new — Redirects to Superadmin Dashboard</span><span class="toc-badge badge-high">High</span></div>
+    <div class="toc-item"><span class="toc-num">13</span><span class="toc-title">/workorders/inshop — Redirects to Superadmin Dashboard</span><span class="toc-badge badge-high">High</span></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Admin Portal Issues (4 root issues)</div>
+    <div class="toc-item"><span class="toc-num">14</span><span class="toc-title">/admin/accepted-shops — JS Crash: undefined.replace() TypeError</span><span class="toc-badge badge-critical">Critical</span></div>
+    <div class="toc-item"><span class="toc-num">15</span><span class="toc-title">/admin/activity-logs — 0 Entries / Empty Data</span><span class="toc-badge badge-high">High</span></div>
+    <div class="toc-item"><span class="toc-num">16</span><span class="toc-title">/admin/platform-analytics — All Charts Stuck Loading</span><span class="toc-badge badge-critical">Critical</span></div>
+    <div class="toc-item"><span class="toc-num">17</span><span class="toc-title">/admin/sessions — 401 Auth Mismatch</span><span class="toc-badge badge-high">High</span></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Role-Specific Issues (5 root issues)</div>
+    <div class="toc-item"><span class="toc-num">18</span><span class="toc-title">/customer/overview — "Failed to load overview" API Error</span><span class="toc-badge badge-critical">Critical</span></div>
+    <div class="toc-item"><span class="toc-num">19</span><span class="toc-title">/manager/admin-logs — 404 Missing Route</span><span class="toc-badge badge-medium">Medium</span></div>
+    <div class="toc-item"><span class="toc-num">20</span><span class="toc-title">/manager/admin-settings — 404 Missing Route</span><span class="toc-badge badge-medium">Medium</span></div>
+    <div class="toc-item"><span class="toc-num">21</span><span class="toc-title">/tech/enhanced — "Something Went Wrong" Error Boundary</span><span class="toc-badge badge-critical">Critical</span></div>
+    <div class="toc-item"><span class="toc-num">22</span><span class="toc-title">/tech/new-inshop-job — Redirects to /tech/home</span><span class="toc-badge badge-high">High</span></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 1: API ISSUES
+     ============================================================ -->
+<div class="page">
+  <div class="section-header">
+    <div class="section-label">Section 1 · API Issues</div>
+    <div class="section-title">Backend API Failures</div>
+  </div>
+
+  <!-- ISSUE 01 -->
+  <div class="issue no-break">
+    <div class="issue-header high">
+      <div class="issue-icon icon-high">📋</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #01 · API: Admin</div>
+        <div class="issue-title">Activity Logs Returns Empty Array</div>
+        <code class="issue-path">GET /api/admin/activity-logs</code>
+      </div>
+      <span class="severity-pill pill-high">High</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>The API endpoint <code>/api/admin/activity-logs</code> returns an empty array <code>[]</code> for all calls. The <code>/admin/activity-logs</code> page renders successfully but displays "0 entries" with no log data. The logging mechanism is either not writing to the database, the query has a filter that excludes all records, or the <code>ActivityLog</code> table has never been seeded.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Check the Prisma schema for an <code>ActivityLog</code> model and verify the table has rows via <code>prisma.activityLog.count()</code></li>
+            <li>Find where activity events are supposed to be written (login, shop approval, work order creation, etc.) and add <code>prisma.activityLog.create()</code> calls</li>
+            <li>If no model exists: create one in <code>schema.prisma</code>, run <code>prisma migrate</code>, and add a <code>logActivity()</code> helper called from key API routes</li>
+            <li>Add a seed entry or test log to confirm the API query works once data exists</li>
+          </ul>
+          <div class="code-block"><span class="cm">// lib/activityLogger.ts</span>
+<span class="kw">export async function</span> <span class="fn">logActivity</span>(action: <span class="str">'login'</span> | <span class="str">'approve_shop'</span> | <span class="str">'create_wo'</span> | <span class="str">string</span>, userId: <span class="str">string</span>, meta?: <span class="str">object</span>) {
+  <span class="kw">await</span> prisma.activityLog.<span class="fn">create</span>({ data: { action, userId, meta: JSON.<span class="fn">stringify</span>(meta), createdAt: <span class="kw">new</span> <span class="fn">Date</span>() } });
+}</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Admins gain a full audit trail showing every significant event on the platform: who logged in, when shops were approved or suspended, work order creation/completion, subscription changes, and permission updates. This is critical for compliance, debugging, and security auditing.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/admin/activity-logs</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-header">Activity Logs <span style="font-weight:400;opacity:0.7">247 entries</span></div>
+                <div class="wf-row"><span style="color:#6b7280;min-width:130px;font-size:10px">Today 9:14 AM</span><span class="wf-pill wf-blue">LOGIN</span><span style="margin-left:8px">qa_superadmin logged in from 104.28.x.x</span></div>
+                <div class="wf-row"><span style="color:#6b7280;min-width:130px;font-size:10px">Today 9:02 AM</span><span class="wf-pill wf-green">APPROVED</span><span style="margin-left:8px">Shop "Demo Auto Shop" approved by admin</span></div>
+                <div class="wf-row"><span style="color:#6b7280;min-width:130px;font-size:10px">Yesterday 4:55 PM</span><span class="wf-pill wf-amber">WORK ORDER</span><span style="margin-left:8px">WO #1042 created · Demo Auto Shop</span></div>
+                <div class="wf-row"><span style="color:#6b7280;min-width:130px;font-size:10px">Yesterday 2:30 PM</span><span class="wf-pill wf-red">SUBSCRIPTION</span><span style="margin-left:8px">Plan upgraded to Pro · QA Test Shop</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 02 -->
+  <div class="issue no-break">
+    <div class="issue-header critical">
+      <div class="issue-icon icon-critical">📊</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #02 · API: Admin</div>
+        <div class="issue-title">Analytics API — All Charts Stuck Loading</div>
+        <code class="issue-path">GET /api/admin/analytics</code>
+      </div>
+      <span class="severity-pill pill-critical">Critical</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>The <code>/admin/platform-analytics</code> page loads its shell but all chart components display "Loading chart..." indefinitely. The <code>/api/admin/analytics</code> endpoint is either returning an error (likely 500), returning data in an unexpected shape, or throwing an unhandled exception when the underlying tables have 0 rows. The frontend chart components never receive valid data and remain in their loading state.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Open DevTools Network tab and inspect the raw response from <code>/api/admin/analytics</code> to find the exact error</li>
+            <li>Add <code>try/catch</code> guards around every Prisma aggregation that could fail on empty tables (e.g., <code>groupBy</code>, <code>aggregate</code>)</li>
+            <li>Return sensible defaults (0s, empty arrays) instead of throwing when there's no data</li>
+            <li>In the frontend, add a "no data" empty state so charts render gracefully with zero-value datasets rather than spinning forever</li>
+          </ul>
+          <div class="code-block"><span class="cm">// api/admin/analytics/route.ts — add empty-data guard</span>
+<span class="kw">const</span> revenue = <span class="kw">await</span> prisma.workOrder.<span class="fn">aggregate</span>({
+  _sum: { amountPaid: <span class="kw">true</span> }
+}).<span class="fn">catch</span>(() => ({ _sum: { amountPaid: <span class="num">0</span> } }));
+
+<span class="kw">return</span> NextResponse.<span class="fn">json</span>({
+  revenue: revenue._sum.amountPaid ?? <span class="num">0</span>,
+  shopCount: shopCount ?? <span class="num">0</span>,
+  <span class="cm">// ... all fields with fallback defaults</span>
+});</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Superadmins and platform owners get a fully interactive analytics dashboard showing revenue trends, shop growth over time, work order volume by week, subscription plan distribution, top performing shops, and platform-wide KPIs. Essential for business decision-making and investor reporting.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/admin/platform-analytics</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-grid" style="margin-bottom:12px">
+                  <div class="wf-stat"><div class="n">$24.8K</div><div class="l">Platform Revenue</div></div>
+                  <div class="wf-stat"><div class="n">2</div><div class="l">Active Shops</div></div>
+                  <div class="wf-stat"><div class="n">142</div><div class="l">Work Orders</div></div>
+                </div>
+                <div style="font-size:10px;color:#6b7280;margin-bottom:6px;font-weight:600">REVENUE TREND (7 DAYS)</div>
+                <div class="wf-chart">
+                  <div class="wf-bar" style="height:30%;background:#3b82f6"></div>
+                  <div class="wf-bar" style="height:50%;background:#3b82f6"></div>
+                  <div class="wf-bar" style="height:40%;background:#3b82f6"></div>
+                  <div class="wf-bar" style="height:70%;background:#3b82f6"></div>
+                  <div class="wf-bar" style="height:55%;background:#3b82f6"></div>
+                  <div class="wf-bar" style="height:80%;background:#1e40af"></div>
+                  <div class="wf-bar" style="height:90%;background:#1e40af"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 03 -->
+  <div class="issue no-break">
+    <div class="issue-header high">
+      <div class="issue-icon icon-high">🔐</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #03 · API: Auth</div>
+        <div class="issue-title">Sessions Endpoint Returns 401 — Bearer Token Rejected</div>
+        <code class="issue-path">GET /api/auth/sessions</code>
+      </div>
+      <span class="severity-pill pill-high">High</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>The <code>/api/auth/sessions</code> endpoint only accepts cookie-based authentication (httpOnly session cookies). However, the admin panel at <code>/admin/sessions</code> authenticates using JWT Bearer tokens stored in localStorage. This mismatch causes the page to always receive a 401, making session management completely inaccessible from the admin interface.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Update the <code>/api/auth/sessions</code> route to accept <strong>both</strong> Bearer tokens (from <code>Authorization</code> header) and httpOnly cookies</li>
+            <li>The <code>requireRole()</code> auth middleware should check header first, then fall back to cookie</li>
+            <li>Alternatively, move session data into a separate admin-specific endpoint like <code>/api/admin/sessions</code> that already uses Bearer auth</li>
+          </ul>
+          <div class="code-block"><span class="cm">// lib/auth.ts — accept both auth methods</span>
+<span class="kw">export function</span> <span class="fn">requireRole</span>(req: NextRequest, roles: string[]) {
+  <span class="kw">const</span> bearer = req.headers.<span class="fn">get</span>(<span class="str">'authorization'</span>)?.<span class="fn">replace</span>(<span class="str">'Bearer '</span>, <span class="str">''</span>);
+  <span class="kw">const</span> cookie = req.cookies.<span class="fn">get</span>(<span class="str">'session_token'</span>)?.value;
+  <span class="kw">const</span> token = bearer || cookie;
+  <span class="kw">if</span> (!token) <span class="kw">return</span> <span class="fn">unauthorized</span>();
+  <span class="kw">return</span> <span class="fn">verifyToken</span>(token, roles);
+}</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Admins can view all active user sessions across the platform — who is logged in right now, from which IP, on which device, and for how long. They can forcibly terminate any session (e.g., to lock out a compromised account). This is a critical security feature for platform governance.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/admin/sessions</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-header">Active Sessions <span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:4px;font-size:11px">8 online</span></div>
+                <div class="wf-row"><span style="flex:1"><strong>shopowner1@fixtray.local</strong><br><span style="font-size:10px;color:#6b7280">shop · 104.28.1.22 · Chrome · 2h ago</span></span><span class="wf-btn wf-btn-danger">Revoke</span></div>
+                <div class="wf-row"><span style="flex:1"><strong>qa_tech@fixtray-qa.com</strong><br><span style="font-size:10px;color:#6b7280">tech · 198.41.x.x · Safari · 45m ago</span></span><span class="wf-btn wf-btn-danger">Revoke</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 2: MISSING PAGES
+     ============================================================ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-label">Section 2 · Missing Pages</div>
+    <div class="section-title">Stripe & Registration Flow — 404s</div>
+  </div>
+
+  <!-- ISSUE 04 & 05 grouped -->
+  <div class="issue no-break">
+    <div class="issue-header critical">
+      <div class="issue-icon icon-critical">💳</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issues #04 & #05 · Stripe Payment Flow</div>
+        <div class="issue-title">Payment Success & Cancel Pages — Both 404</div>
+        <code class="issue-path">/payment-success &nbsp;·&nbsp; /payment-cancel</code>
+      </div>
+      <span class="severity-pill pill-critical">Critical</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>Stripe requires a <code>success_url</code> and <code>cancel_url</code> when creating a checkout session. Both <code>/payment-success</code> and <code>/payment-cancel</code> currently return 404 because the Next.js route files have not been created. This means any shop that completes (or cancels) a Stripe payment checkout lands on a 404 page — destroying the onboarding funnel and potentially losing subscription revenue.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Create <code>src/app/payment-success/page.tsx</code> — reads <code>?session_id=</code> from URL, calls Stripe to verify the session, shows confirmation and redirects to <code>/shop/subscribe</code> or <code>/shop/home</code></li>
+            <li>Create <code>src/app/payment-cancel/page.tsx</code> — friendly "payment was not completed" page with a retry button back to <code>/shop/subscribe</code></li>
+            <li>Both pages require no auth — they're public Stripe redirect targets</li>
+          </ul>
+          <div class="code-block"><span class="cm">// src/app/payment-success/page.tsx</span>
+<span class="kw">export default function</span> <span class="fn">PaymentSuccess</span>({ searchParams }) {
+  <span class="kw">const</span> sessionId = searchParams.session_id;
+  <span class="cm">// Verify via /api/stripe/verify-session?id=sessionId</span>
+  <span class="kw">return</span> &lt;SuccessUI message=<span class="str">"Subscription activated!"</span> /&gt;;
+}</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>The complete Stripe subscription checkout flow works end-to-end. Shop owners can subscribe to a plan, pay via Stripe, and land on a branded confirmation page that activates their subscription and redirects them to their dashboard. Failed/canceled payments show a helpful page rather than a 404. This is revenue-critical — every lost subscription checkout is direct revenue loss.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/payment-success?session_id=cs_live_…</span></div>
+            <div class="mockup-body">
+              <div class="wf-page" style="text-align:center;padding:24px">
+                <div class="wf-check" style="margin:0 auto 12px;width:48px;height:48px;font-size:24px">✓</div>
+                <div style="font-size:16px;font-weight:700;color:#16a34a;margin-bottom:6px">Payment Successful!</div>
+                <div style="font-size:12px;color:#6b7280;margin-bottom:16px">Your Pro subscription is now active. Welcome to FixTray!</div>
+                <span class="wf-btn wf-btn-primary" style="font-size:12px;padding:8px 20px">Go to Dashboard →</span>
+              </div>
+            </div>
+          </div>
+          <div class="mockup" style="margin-top:8px">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/payment-cancel</span></div>
+            <div class="mockup-body">
+              <div class="wf-page" style="text-align:center;padding:24px">
+                <div style="font-size:32px;margin-bottom:8px">↩</div>
+                <div style="font-size:15px;font-weight:700;margin-bottom:6px">Payment Canceled</div>
+                <div style="font-size:12px;color:#6b7280;margin-bottom:16px">No charge was made. You can upgrade any time from your dashboard.</div>
+                <span class="wf-btn wf-btn-primary" style="font-size:12px;padding:8px 20px">View Plans</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 06, 07, 08 -->
+  <div class="issue no-break">
+    <div class="issue-header high">
+      <div class="issue-icon icon-high">📝</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issues #06, #07, #08 · Registration Flow</div>
+        <div class="issue-title">Register Customer, Register Success, Register Canceled — All 404</div>
+        <code class="issue-path">/register-customer &nbsp;·&nbsp; /register-success &nbsp;·&nbsp; /register-canceled</code>
+      </div>
+      <span class="severity-pill pill-high">High</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>Three pages that should form a customer self-registration funnel all return 404. Currently, customer accounts can only be created by a shop (admin-initiated). If there was a plan for customer self-registration (e.g., linking from a shop's public page), none of these route files exist. This breaks any external links pointing to these routes.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>If self-registration is intended: create all three pages — <code>register-customer</code> (form), <code>register-success</code> (confirmation), <code>register-canceled</code> (abandoned)</li>
+            <li>If self-registration is NOT intended: add permanent redirects from these routes to <code>/auth/login</code> so external links don't 404</li>
+            <li>Add these redirects in <code>next.config.ts</code> using the <code>redirects()</code> export — zero code needed</li>
+          </ul>
+          <div class="code-block"><span class="cm">// next.config.ts — redirect orphan routes</span>
+<span class="kw">async</span> <span class="fn">redirects</span>() {
+  <span class="kw">return</span> [
+    { source: <span class="str">'/register-customer'</span>, destination: <span class="str">'/auth/login'</span>, permanent: <span class="kw">false</span> },
+    { source: <span class="str">'/register-success'</span>, destination: <span class="str">'/auth/login'</span>, permanent: <span class="kw">false</span> },
+    { source: <span class="str">'/register-canceled'</span>, destination: <span class="str">'/auth/login'</span>, permanent: <span class="kw">false</span> },
+  ];
+}</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Either customers can self-register via a branded form and receive a welcome confirmation, or external links that land on these routes are gracefully redirected to login instead of showing a 404 error. Either solution improves user trust and prevents broken journeys.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look (Self-Registration Path)</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/register-customer</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div style="font-weight:700;font-size:14px;margin-bottom:12px">Create Customer Account</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af">First Name</div>
+                  <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af">Last Name</div>
+                </div>
+                <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af;margin-bottom:8px">Email address</div>
+                <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af;margin-bottom:12px">Password</div>
+                <span class="wf-btn wf-btn-primary" style="width:100%;text-align:center;display:block;padding:10px">Create Account</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 09 & 10 -->
+  <div class="issue no-break">
+    <div class="issue-header medium">
+      <div class="issue-icon icon-medium">🏪</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issues #09 & #10 · Auth Routes</div>
+        <div class="issue-title">/auth/register-shop and /auth/register-shop-client — 404</div>
+        <code class="issue-path">/auth/register-shop &nbsp;·&nbsp; /auth/register-shop-client</code>
+      </div>
+      <span class="severity-pill pill-medium">Medium</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>Both shop registration routes return 404. Registration currently happens via the "Create Account" tab on <code>/auth/login</code>. These named routes either pre-date the current auth flow or are intended future routes. Any marketing links, email campaigns, or app integrations pointing to these URLs will hit a dead end.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Add redirects in <code>next.config.ts</code> pointing both routes to <code>/auth/login?tab=register</code> so users land on the correct registration tab</li>
+            <li>Or create dedicated <code>/auth/register-shop/page.tsx</code> that pre-selects the shop registration form — better UX for direct links from marketing</li>
+          </ul>
+          <div class="code-block">{ source: <span class="str">'/auth/register-shop'</span>, destination: <span class="str">'/auth/login?mode=register&role=shop'</span>, permanent: <span class="kw">false</span> },
+{ source: <span class="str">'/auth/register-shop-client'</span>, destination: <span class="str">'/auth/login?mode=register&role=shop'</span>, permanent: <span class="kw">false</span> }</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Marketing campaigns, referral links, and partner integrations can deep-link directly to the shop registration form. Users who land on these URLs are taken directly to the right step in the sign-up funnel rather than seeing a 404 error. Improves conversion rate for new shop acquisition.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <p style="font-size:12px;color:#374151;margin-top:8px">Redirects to <code>/auth/login</code> with the "Create Account" tab pre-selected and the role pre-filled as "Shop Owner." No new UI needed — just a redirect ensuring the user flow is unbroken.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 3: WRONG REDIRECTS
+     ============================================================ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-label">Section 3 · Wrong Redirects</div>
+    <div class="section-title">/workorders Routes — Superadmin Redirect Bug</div>
+  </div>
+
+  <!-- ISSUE 11-13 -->
+  <div class="issue no-break">
+    <div class="issue-header high">
+      <div class="issue-icon icon-high">🔀</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issues #11, #12, #13 · Workorders Routes</div>
+        <div class="issue-title">/workorders/list, /new, /inshop All Redirect to Superadmin Dashboard</div>
+        <code class="issue-path">/workorders/list &nbsp;·&nbsp; /workorders/new &nbsp;·&nbsp; /workorders/inshop</code>
+      </div>
+      <span class="severity-pill pill-high">High</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>All three <code>/workorders/*</code> routes redirect to <code>/superadmin/dashboard</code> when accessed by a logged-in superadmin. This indicates a role-based route guard in the middleware is catching the <code>/workorders</code> path and incorrectly redirecting instead of serving the page. The middleware likely treats these routes as "shop-only" but the redirect logic sends admins to the wrong place.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Find the middleware file (<code>middleware.ts</code>) and locate the route matching for <code>/workorders</code></li>
+            <li>Check the role-guard logic — likely the code checks role and if it's <code>admin/superadmin</code> it redirects to <code>/superadmin/dashboard</code> instead of allowing pass-through</li>
+            <li>Fix: allow <code>admin</code> and <code>superadmin</code> roles to access <code>/workorders</code> routes, OR redirect them to the equivalent admin view</li>
+            <li>If these routes are shop-specific, redirect shop owners to <code>/shop/workorders</code> and admins to <code>/admin/home</code> instead</li>
+          </ul>
+          <div class="code-block"><span class="cm">// middleware.ts — fix workorders redirect</span>
+<span class="kw">if</span> (pathname.<span class="fn">startsWith</span>(<span class="str">'/workorders'</span>)) {
+  <span class="kw">if</span> (role === <span class="str">'shop'</span>) <span class="kw">return</span> <span class="fn">redirect</span>(<span class="str">'/shop/workorders'</span>);
+  <span class="kw">if</span> (role === <span class="str">'admin'</span> || role === <span class="str">'superadmin'</span>) <span class="kw">return</span> NextResponse.<span class="fn">next</span>(); <span class="cm">// allow</span>
+}</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>The <code>/workorders</code> routes serve their intended role-aware content: shop owners see their shop's work order lists, admins see a platform-wide work order view, and technicians see assigned jobs. Cross-role navigation stops hijacking users to the wrong dashboard. Deep links from notifications and emails work correctly.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/workorders/list</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-header">All Work Orders <span class="wf-btn wf-btn-primary" style="font-size:10px">+ New</span></div>
+                <div class="wf-row"><span class="wf-pill wf-green">COMPLETED</span><span style="margin-left:8px;flex:1">WO-1042 · Oil Change · Demo Auto Shop</span><span style="font-size:10px;color:#6b7280">$89</span></div>
+                <div class="wf-row"><span class="wf-pill wf-amber">IN PROGRESS</span><span style="margin-left:8px;flex:1">WO-1043 · Brake Inspection · Demo Auto Shop</span><span style="font-size:10px;color:#6b7280">$240</span></div>
+                <div class="wf-row"><span class="wf-pill wf-blue">PENDING</span><span style="margin-left:8px;flex:1">WO-1044 · Tire Rotation · QA Test Shop</span><span style="font-size:10px;color:#6b7280">$45</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 4: ADMIN PORTAL
+     ============================================================ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-label">Section 4 · Admin Portal Issues</div>
+    <div class="section-title">Admin Dashboard Page Failures</div>
+  </div>
+
+  <!-- ISSUE 14 -->
+  <div class="issue no-break">
+    <div class="issue-header critical">
+      <div class="issue-icon icon-critical">💥</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #14 · Role: Admin</div>
+        <div class="issue-title">Accepted Shops Page — JS Crash: undefined.replace() TypeError</div>
+        <code class="issue-path">/admin/accepted-shops</code>
+      </div>
+      <span class="severity-pill pill-critical">Critical</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>The page crashes with <code>TypeError: Cannot read properties of undefined (reading 'replace')</code> inside a sort function. The shop list API returns shops where at least one shop has a <code>null</code> or <code>undefined</code> name field. The sort comparator calls <code>name.replace()</code> without a null check, which throws and crashes the entire React component tree, showing an error boundary instead of the page.</p>
+          <div class="code-block"><span class="cm">// Broken sort — crashes on null name</span>
+shops.<span class="fn">sort</span>((a, b) => a.name.<span class="fn">replace</span>(...) &gt; b.name.<span class="fn">replace</span>(...))
+<span class="cm">// ↑ throws if a.name or b.name is undefined</span></div>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Add a null-safe sort comparator using optional chaining and fallback strings</li>
+            <li>Also add a null guard in the API response to never return undefined name fields</li>
+          </ul>
+          <div class="code-block"><span class="cm">// Fixed sort — null-safe</span>
+shops.<span class="fn">sort</span>((a, b) => {
+  <span class="kw">const</span> nameA = (a.name || <span class="str">''</span>).<span class="fn">toLowerCase</span>();
+  <span class="kw">const</span> nameB = (b.name || <span class="str">''</span>).<span class="fn">toLowerCase</span>();
+  <span class="kw">return</span> nameA.<span class="fn">localeCompare</span>(nameB);
+});</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>The <code>/admin/accepted-shops</code> page renders correctly for all admins. They can see a full list of every approved shop on the platform — sortable by name, creation date, or revenue — with links to each shop's detail page. Admins can then take actions like suspending a shop, viewing metrics, or checking subscription status. This is one of the most frequently used admin pages.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/admin/accepted-shops</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-header">Accepted Shops <span style="opacity:0.6;font-weight:400">2 shops</span></div>
+                <div class="wf-row">
+                  <span style="flex:1"><strong>Demo Auto Shop</strong><br><span style="font-size:10px;color:#6b7280">shopowner1@fixtray.local · Demo City, TX</span></span>
+                  <span class="wf-pill wf-green">PRO</span>
+                  <span style="font-size:10px;color:#6b7280;margin-left:8px">2 techs</span>
+                </div>
+                <div class="wf-row">
+                  <span style="flex:1"><strong>QA Test Shop</strong><br><span style="font-size:10px;color:#6b7280">qa_shop@fixtray-qa.com · Testville, CA</span></span>
+                  <span class="wf-pill wf-green">PRO</span>
+                  <span style="font-size:10px;color:#6b7280;margin-left:8px">2 techs</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 16 - Platform Analytics -->
+  <div class="issue no-break">
+    <div class="issue-header critical">
+      <div class="issue-icon icon-critical">📈</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #16 · Role: Admin</div>
+        <div class="issue-title">Platform Analytics — All Charts Stuck at "Loading chart..."</div>
+        <code class="issue-path">/admin/platform-analytics</code>
+      </div>
+      <span class="severity-pill pill-critical">Critical</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>The page renders its layout but every single chart widget remains in a perpetual "Loading chart..." spinner. This is a frontend data-fetching issue where either the API call fails silently (no error boundary catches it), the response data shape doesn't match what the chart component expects, or the chart library (Recharts/Chart.js) fails to render with zero-data arrays and no empty-state fallback exists.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Inspect the network request in DevTools — is the API returning 200 with data, 500, or no response?</li>
+            <li>Add an error state to each chart component: <code>if (error) return &lt;ErrorChart /&gt;; if (!data) return &lt;EmptyChart /&gt;;</code></li>
+            <li>If the API returns <code>null</code> for array fields, default them to <code>[]</code> before passing to chart components</li>
+            <li>Add a 10-second timeout after which charts show "No data available" instead of spinning forever</li>
+          </ul>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Platform owners can monitor the health of the entire FixTray network in real time: revenue trends, shop count growth, work order volume, subscription distribution across plans, and top-performing shops. When the platform has low data, charts render gracefully with empty states and clear "no data yet" messages.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/admin/platform-analytics</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-grid" style="margin-bottom:10px">
+                  <div class="wf-stat"><div class="n">2</div><div class="l">Shops</div></div>
+                  <div class="wf-stat"><div class="n">$0</div><div class="l">Revenue</div></div>
+                  <div class="wf-stat"><div class="n">100%</div><div class="l">Approval Rate</div></div>
+                </div>
+                <div style="font-size:10px;color:#6b7280;font-weight:700;margin-bottom:4px">SHOP GROWTH</div>
+                <div class="wf-chart">
+                  <div class="wf-bar" style="height:10%;background:#e2e8f0"></div>
+                  <div class="wf-bar" style="height:10%;background:#e2e8f0"></div>
+                  <div class="wf-bar" style="height:10%;background:#e2e8f0"></div>
+                  <div class="wf-bar" style="height:10%;background:#e2e8f0"></div>
+                  <div class="wf-bar" style="height:10%;background:#e2e8f0"></div>
+                  <div class="wf-bar" style="height:50%;background:#3b82f6"></div>
+                  <div class="wf-bar" style="height:100%;background:#1e40af"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 5: ROLE-SPECIFIC ISSUES
+     ============================================================ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-label">Section 5 · Role-Specific Issues</div>
+    <div class="section-title">Customer, Manager, Tech Portal Failures</div>
+  </div>
+
+  <!-- ISSUE 18 - Customer Overview -->
+  <div class="issue no-break">
+    <div class="issue-header critical">
+      <div class="issue-icon icon-critical">👤</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #18 · Role: Customer</div>
+        <div class="issue-title">Customer Overview — "Failed to load overview. Please try again."</div>
+        <code class="issue-path">/customer/overview</code>
+      </div>
+      <span class="severity-pill pill-critical">Critical</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>Every customer who visits <code>/customer/overview</code> sees an error message. The underlying API call (likely <code>GET /api/customers/overview</code> or <code>GET /api/customers/[id]/overview</code>) is returning an error — possibly because the customer has no work orders, no linked vehicles, or the query throws when data is empty. The page renders its shell but the data fetch fails and only an error message is shown.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Find the API route that powers this page and add empty-data guards — return sensible defaults (<code>{ workOrders: [], vehicles: [], appointments: [] }</code>) instead of throwing when a customer has no data yet</li>
+            <li>In the frontend component, distinguish between "API error" and "no data" — new customers should see an onboarding empty state, not an error message</li>
+            <li>Add proper error boundaries with a retry button as a fallback</li>
+          </ul>
+          <div class="code-block"><span class="cm">// api/customers/overview — safe empty defaults</span>
+<span class="kw">const</span> customer = <span class="kw">await</span> prisma.customer.<span class="fn">findUnique</span>({ where: { id: customerId } });
+<span class="kw">if</span> (!customer) <span class="kw">return</span> NextResponse.<span class="fn">json</span>({ error: <span class="str">'Not found'</span> }, { status: <span class="num">404</span> });
+<span class="kw">return</span> NextResponse.<span class="fn">json</span>({
+  workOrders: customer.workOrders ?? [],
+  vehicles: customer.vehicles ?? [],
+  totalSpent: customer.totalSpent ?? <span class="num">0</span>,
+});</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Every customer immediately sees their personal overview when they log in: active work orders, vehicle history, upcoming appointments, and total spending. New customers with no data see a friendly onboarding message ("Add your first vehicle to get started"). This is the primary landing page after customer login — it must work perfectly to maintain customer trust.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/customer/overview</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div style="font-weight:700;margin-bottom:10px">Welcome back, QA Customer 👋</div>
+                <div class="wf-grid" style="margin-bottom:10px">
+                  <div class="wf-stat"><div class="n">3</div><div class="l">Work Orders</div></div>
+                  <div class="wf-stat"><div class="n">1</div><div class="l">In Progress</div></div>
+                  <div class="wf-stat"><div class="n">$320</div><div class="l">Total Spent</div></div>
+                </div>
+                <div class="wf-row"><span class="wf-pill wf-amber">IN PROGRESS</span><span style="margin-left:8px;font-size:11px">Brake Pad Replacement · Demo Auto Shop</span></div>
+                <div class="wf-row"><span class="wf-pill wf-green">COMPLETED</span><span style="margin-left:8px;font-size:11px">Oil Change · Demo Auto Shop</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 19 & 20 - Manager -->
+  <div class="issue no-break">
+    <div class="issue-header medium">
+      <div class="issue-icon icon-medium">👔</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issues #19 & #20 · Role: Manager</div>
+        <div class="issue-title">/manager/admin-logs and /manager/admin-settings — Both 404</div>
+        <code class="issue-path">/manager/admin-logs &nbsp;·&nbsp; /manager/admin-settings</code>
+      </div>
+      <span class="severity-pill pill-medium">Medium</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>Both routes return 404. The manager role appears to have nav links pointing to these routes, but the actual page files were never created. This suggests these features were planned but not yet implemented — managers cannot access logs or settings from their portal despite likely having menu items that link there.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li><strong>admin-logs:</strong> Create <code>src/app/manager/admin-logs/page.tsx</code> showing shop-level logs (work order events, tech logins, customer actions) filtered to the manager's shop</li>
+            <li><strong>admin-settings:</strong> Create <code>src/app/manager/admin-settings/page.tsx</code> with shop configuration options a manager can adjust (notifications, integrations, display preferences)</li>
+            <li>Both pages should reuse existing components from the shop admin settings and activity log pages</li>
+            <li>Short-term fix: redirect these routes to the closest existing equivalent (<code>/manager/dashboard</code>)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Managers gain access to shop-level audit logs (who did what, when) and can configure shop settings without needing the owner to log in. This is important for multi-location shops where a manager runs day-to-day operations. It completes the manager role's feature parity with the shop owner role for operational tasks.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/manager/admin-settings</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-header">Manager Settings</div>
+                <div style="font-size:11px;font-weight:600;margin:8px 0 4px;color:#374151">NOTIFICATIONS</div>
+                <div class="wf-row"><span style="flex:1;font-size:11px">Email on new work order</span><span style="width:28px;height:16px;background:#1e3a5f;border-radius:8px;display:inline-block"></span></div>
+                <div class="wf-row"><span style="flex:1;font-size:11px">SMS on job completion</span><span style="width:28px;height:16px;background:#e2e8f0;border-radius:8px;display:inline-block"></span></div>
+                <div style="font-size:11px;font-weight:600;margin:8px 0 4px;color:#374151">DISPLAY</div>
+                <div class="wf-row"><span style="flex:1;font-size:11px">Default calendar view</span><span style="font-size:10px;color:#6b7280">Weekly ▾</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 21 - Tech Enhanced -->
+  <div class="issue no-break">
+    <div class="issue-header critical">
+      <div class="issue-icon icon-critical">🔧</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #21 · Role: Tech</div>
+        <div class="issue-title">/tech/enhanced — "Something Went Wrong" Error Boundary</div>
+        <code class="issue-path">/tech/enhanced</code>
+      </div>
+      <span class="severity-pill pill-critical">Critical</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>The entire <code>/tech/enhanced</code> page throws an unhandled JavaScript exception during component render, which is caught by the error boundary and shows "Something went wrong." The component is likely trying to access properties of an API response that's null, undefined, or shaped differently than expected. This could also be a missing dependency, bad import, or API call that fails before the component mounts.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Check the browser console error stack trace to find the exact line throwing</li>
+            <li>The most likely cause: <code>data.someProperty.map()</code> where <code>data</code> is null — add optional chaining (<code>data?.someProperty?.map()</code>)</li>
+            <li>Add a loading state that shows a skeleton UI while data fetches instead of trying to render immediately</li>
+            <li>Wrap the component internals in a more granular try/catch and add a page-level error fallback that shows partial content when possible</li>
+          </ul>
+          <div class="code-block"><span class="cm">// Common fix pattern — safe data access</span>
+<span class="kw">const</span> { data, isLoading, error } = <span class="fn">useEnhancedTechData</span>();
+<span class="kw">if</span> (isLoading) <span class="kw">return</span> &lt;SkeletonLoader /&gt;;
+<span class="kw">if</span> (error) <span class="kw">return</span> &lt;ErrorState message={error.message} /&gt;;
+<span class="kw">if</span> (!data) <span class="kw">return</span> &lt;EmptyState /&gt;;
+<span class="cm">// Only render when data is definitely available</span></div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Technicians gain access to the "Enhanced Tools" dashboard — an advanced view showing AI-assisted diagnostics, multi-bay job coordination, performance analytics, and advanced DVI workflows. This is likely the highest-value feature page for power users and shops on the Pro plan. Fixing it unlocks premium features that justify the subscription.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/tech/enhanced</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div class="wf-header">Enhanced Tech Tools ✨</div>
+                <div class="wf-grid" style="margin-bottom:10px">
+                  <div class="wf-stat"><div class="n">4</div><div class="l">Active Jobs</div></div>
+                  <div class="wf-stat"><div class="n">94%</div><div class="l">Efficiency</div></div>
+                  <div class="wf-stat"><div class="n">8h 20m</div><div class="l">Billed Today</div></div>
+                </div>
+                <div style="font-size:10px;color:#6b7280;font-weight:700;margin-bottom:4px">AI DIAGNOSTICS QUEUE</div>
+                <div class="wf-row"><span class="wf-pill wf-blue">SCAN</span><span style="margin-left:8px;font-size:11px">2019 Ford F-150 · P0420 catalyst code</span></div>
+                <div class="wf-row"><span class="wf-pill wf-amber">REVIEW</span><span style="margin-left:8px;font-size:11px">2021 Toyota Camry · suspension noise</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE 22 - Tech New Inshop Job -->
+  <div class="issue no-break">
+    <div class="issue-header high">
+      <div class="issue-icon icon-high">🚗</div>
+      <div class="issue-meta">
+        <div class="issue-id">Issue #22 · Role: Tech</div>
+        <div class="issue-title">/tech/new-inshop-job — Redirects to /tech/home Instead of Form</div>
+        <code class="issue-path">/tech/new-inshop-job</code>
+      </div>
+      <span class="severity-pill pill-high">High</span>
+    </div>
+    <div class="issue-body">
+      <div class="issue-col">
+        <div class="detail-block problem">
+          <h4>🔴 What's Wrong</h4>
+          <p>When a technician navigates to <code>/tech/new-inshop-job</code>, they are immediately redirected to <code>/tech/home</code>. A route guard (in middleware or the page component itself) is preventing access. This may be a subscription gate (the shop needs a Pro subscription to allow techs to create jobs), a permission check, or an incomplete route that was never wired up for the tech role — even though the same functionality works for shop owners at <code>/shop/new-inshop-job</code>.</p>
+        </div>
+        <div class="detail-block fix">
+          <h4>✅ How to Fix It</h4>
+          <ul>
+            <li>Find the route guard on <code>/tech/new-inshop-job</code> — check middleware or the page component for redirect logic</li>
+            <li>If it's a subscription check: ensure the tech's parent shop has an active subscription before blocking (the shops now have Pro subscriptions, so this should pass)</li>
+            <li>If it's a permission check: verify the tech role is included in the allowed roles array for this route</li>
+            <li>The shop version (<code>/shop/new-inshop-job</code>) works — the tech version likely just needs the role guard updated to include <code>'tech'</code></li>
+          </ul>
+          <div class="code-block"><span class="cm">// middleware.ts or page guard</span>
+<span class="kw">const</span> allowedRoles = [<span class="str">'shop'</span>, <span class="str">'tech'</span>, <span class="str">'manager'</span>]; <span class="cm">// add 'tech'</span>
+<span class="kw">if</span> (!allowedRoles.<span class="fn">includes</span>(userRole)) {
+  <span class="kw">return</span> <span class="fn">redirect</span>(<span class="str">'/'</span> + userRole + <span class="str">'/home'</span>);
+}</div>
+        </div>
+      </div>
+      <div class="issue-col">
+        <div class="detail-block impact">
+          <h4>💡 What It Does When Fixed</h4>
+          <p>Technicians can create walk-in (in-shop) work orders directly from their portal without needing a shop owner to do it for them. This dramatically speeds up the intake process for busy shops — a tech greets the customer, creates the job, and starts the DVI all in one flow from their own dashboard. This is a core workflow for shop operations.</p>
+        </div>
+        <div class="detail-block looks">
+          <h4>🎨 How It Would Look</h4>
+          <div class="mockup">
+            <div class="mockup-bar"><span class="mockup-dot" style="background:#ef4444"></span><span class="mockup-dot" style="background:#f59e0b"></span><span class="mockup-dot" style="background:#22c55e"></span><span class="mockup-url">fixtray.app/tech/new-inshop-job</span></div>
+            <div class="mockup-body">
+              <div class="wf-page">
+                <div style="font-weight:700;font-size:14px;margin-bottom:12px">New Walk-In Job</div>
+                <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af;margin-bottom:6px">Customer name or phone…</div>
+                <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af;margin-bottom:6px">Vehicle (Year / Make / Model)</div>
+                <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af;margin-bottom:6px">Service description</div>
+                <div style="display:flex;gap:8px">
+                  <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af;flex:1">Assign bay</div>
+                  <div style="background:#f1f5f9;border-radius:4px;padding:8px;font-size:11px;color:#9ca3af;flex:1">Priority</div>
+                </div>
+                <span class="wf-btn wf-btn-primary" style="display:block;text-align:center;padding:10px;margin-top:10px;border-radius:6px">Start Job + DVI</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SUMMARY TABLE
+     ============================================================ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-label">Appendix · Full Summary</div>
+    <div class="section-title">All 22 Root Issues — Priority & Effort Matrix</div>
+  </div>
+
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Issue</th>
+        <th>Route / Endpoint</th>
+        <th>Severity</th>
+        <th>Effort to Fix</th>
+        <th>Impact When Fixed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>01</td><td>Activity Logs Returns Empty</td><td><code>/api/admin/activity-logs</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-md">Medium · 1–2 days</span></td><td>Full audit trail for admins</td></tr>
+      <tr><td>02</td><td>Analytics Charts Stuck Loading</td><td><code>/api/admin/analytics</code></td><td><span class="severity-pill pill-critical" style="font-size:9px">Critical</span></td><td><span class="effort effort-sm">Small · 4–8h</span></td><td>Live platform KPI dashboard</td></tr>
+      <tr><td>03</td><td>Sessions 401 Bearer Mismatch</td><td><code>/api/auth/sessions</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-sm">Small · 2–4h</span></td><td>Admin session management works</td></tr>
+      <tr><td>04</td><td>Payment Success Page 404</td><td><code>/payment-success</code></td><td><span class="severity-pill pill-critical" style="font-size:9px">Critical</span></td><td><span class="effort effort-xs">Tiny · 1–2h</span></td><td>Stripe checkout completes</td></tr>
+      <tr><td>05</td><td>Payment Cancel Page 404</td><td><code>/payment-cancel</code></td><td><span class="severity-pill pill-critical" style="font-size:9px">Critical</span></td><td><span class="effort effort-xs">Tiny · 1–2h</span></td><td>Stripe cancel flow works</td></tr>
+      <tr><td>06</td><td>Register Customer 404</td><td><code>/register-customer</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 30min</span></td><td>No dead-end for external links</td></tr>
+      <tr><td>07</td><td>Register Success 404</td><td><code>/register-success</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 30min</span></td><td>Post-registration flow complete</td></tr>
+      <tr><td>08</td><td>Register Canceled 404</td><td><code>/register-canceled</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 30min</span></td><td>Abandoned flow handled gracefully</td></tr>
+      <tr><td>09</td><td>Register Shop 404</td><td><code>/auth/register-shop</code></td><td><span class="severity-pill pill-medium" style="font-size:9px">Medium</span></td><td><span class="effort effort-xs">Tiny · 30min</span></td><td>Marketing links don't 404</td></tr>
+      <tr><td>10</td><td>Register Shop Client 404</td><td><code>/auth/register-shop-client</code></td><td><span class="severity-pill pill-medium" style="font-size:9px">Low</span></td><td><span class="effort effort-xs">Tiny · 15min</span></td><td>Legacy route redirected</td></tr>
+      <tr><td>11</td><td>Workorders List Wrong Redirect</td><td><code>/workorders/list</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 1h</span></td><td>Work order list accessible</td></tr>
+      <tr><td>12</td><td>Workorders New Wrong Redirect</td><td><code>/workorders/new</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 1h</span></td><td>Create work order flow works</td></tr>
+      <tr><td>13</td><td>Workorders Inshop Wrong Redirect</td><td><code>/workorders/inshop</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 1h</span></td><td>Inshop job list accessible</td></tr>
+      <tr><td>14</td><td>Accepted Shops JS Crash</td><td><code>/admin/accepted-shops</code></td><td><span class="severity-pill pill-critical" style="font-size:9px">Critical</span></td><td><span class="effort effort-xs">Tiny · 30min</span></td><td>Admin can manage all shops</td></tr>
+      <tr><td>15</td><td>Activity Logs Empty / 0 Entries</td><td><code>/admin/activity-logs</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-md">Medium · 1 day</span></td><td>Full event log in admin panel</td></tr>
+      <tr><td>16</td><td>Platform Analytics Stuck</td><td><code>/admin/platform-analytics</code></td><td><span class="severity-pill pill-critical" style="font-size:9px">Critical</span></td><td><span class="effort effort-sm">Small · 4–6h</span></td><td>Live analytics dashboard works</td></tr>
+      <tr><td>17</td><td>Admin Sessions 401</td><td><code>/admin/sessions</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 1–2h</span></td><td>Admin can view/revoke sessions</td></tr>
+      <tr><td>18</td><td>Customer Overview API Error</td><td><code>/customer/overview</code></td><td><span class="severity-pill pill-critical" style="font-size:9px">Critical</span></td><td><span class="effort effort-sm">Small · 2–4h</span></td><td>Customer landing page works</td></tr>
+      <tr><td>19</td><td>Manager Admin Logs 404</td><td><code>/manager/admin-logs</code></td><td><span class="severity-pill pill-medium" style="font-size:9px">Medium</span></td><td><span class="effort effort-md">Medium · 1 day</span></td><td>Managers have log visibility</td></tr>
+      <tr><td>20</td><td>Manager Admin Settings 404</td><td><code>/manager/admin-settings</code></td><td><span class="severity-pill pill-medium" style="font-size:9px">Medium</span></td><td><span class="effort effort-md">Medium · 1 day</span></td><td>Managers can configure shop</td></tr>
+      <tr><td>21</td><td>Tech Enhanced Error Boundary</td><td><code>/tech/enhanced</code></td><td><span class="severity-pill pill-critical" style="font-size:9px">Critical</span></td><td><span class="effort effort-sm">Small · 4–8h</span></td><td>Premium tech tools accessible</td></tr>
+      <tr><td>22</td><td>Tech New Inshop Job Redirects</td><td><code>/tech/new-inshop-job</code></td><td><span class="severity-pill pill-high" style="font-size:9px">High</span></td><td><span class="effort effort-xs">Tiny · 1–2h</span></td><td>Techs can create walk-in jobs</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:32px;padding:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:#1e293b">📋 Recommended Fix Order</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:12px">
+      <div style="background:var(--red-light);border:1px solid var(--red-border);border-radius:8px;padding:12px">
+        <div style="font-weight:700;color:var(--red);margin-bottom:8px;font-size:11px;text-transform:uppercase;letter-spacing:1px">🔴 Do First (Revenue-Critical)</div>
+        <div>• #04 Payment Success page</div>
+        <div>• #05 Payment Cancel page</div>
+        <div>• #14 Accepted Shops crash fix</div>
+        <div>• #18 Customer Overview error</div>
+        <div>• #02 Analytics charts fix</div>
+      </div>
+      <div style="background:var(--amber-light);border:1px solid var(--amber-border);border-radius:8px;padding:12px">
+        <div style="font-weight:700;color:var(--amber);margin-bottom:8px;font-size:11px;text-transform:uppercase;letter-spacing:1px">🟡 Do Next (Operations)</div>
+        <div>• #03 Sessions auth fix</div>
+        <div>• #17 Admin sessions 401</div>
+        <div>• #22 Tech new inshop job</div>
+        <div>• #21 Tech enhanced crash</div>
+        <div>• #11–13 Workorder redirects</div>
+      </div>
+      <div style="background:var(--blue-light);border:1px solid var(--blue-border);border-radius:8px;padding:12px">
+        <div style="font-weight:700;color:var(--blue);margin-bottom:8px;font-size:11px;text-transform:uppercase;letter-spacing:1px">🔵 Do After (Completeness)</div>
+        <div>• #01 Activity logging</div>
+        <div>• #06–08 Register pages</div>
+        <div>• #09–10 Auth register routes</div>
+        <div>• #19–20 Manager pages</div>
+        <div>• #15 Activity logs data</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:11px;padding-top:16px;border-top:1px solid #e5e7eb">
+    FixTray NO-GO Remediation Report · Generated May 18, 2026 · GitHub Copilot Automated QA · fixtray.app
+  </div>
+</div>
+
+</body>
+</html>

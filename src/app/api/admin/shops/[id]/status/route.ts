@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { logActivity } from '@/lib/activityLogger';
 
 export async function PATCH(
   request: NextRequest,
@@ -39,6 +40,15 @@ export async function PATCH(
         ...(status === 'approved' && !existingShop.approvedAt ? { approvedAt: new Date() } : {})
       }
     });
+
+    // Fire-and-forget audit log for the status change
+    const actionMap: Record<string, string> = { approved: 'shop_approved', suspended: 'shop_suspended', pending: 'shop_pending' };
+    logActivity(
+      actionMap[status] ?? 'settings_updated',
+      (auth as any).username ?? (auth as any).id ?? 'admin',
+      `Shop "${existingShop.shopName}" status changed from "${existingShop.status}" to "${status}"`,
+      { type: 'shop', shopId: id, severity: status === 'approved' ? 'success' : status === 'suspended' ? 'warning' : 'info' }
+    );
 
     return NextResponse.json({
       message: `Shop status updated to ${status}`,

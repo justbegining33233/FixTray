@@ -157,7 +157,7 @@ export default function ShopReviewsPage() {
             </button>
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button onClick={() => setRatingFilter('all')} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', fontSize: 12, cursor: 'pointer', background: ratingFilter === 'all' ? '#3b82f6' : 'rgba(255,255,255,0.08)', color: ratingFilter === 'all' ? '#fff' : '#9aa3b2' }}>All <FaStar style={{marginRight:4}} /></button>
+            <button onClick={() => setRatingFilter('all')} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', fontSize: 12, cursor: 'pointer', background: ratingFilter === 'all' ? '#e5332a' : 'rgba(255,255,255,0.08)', color: ratingFilter === 'all' ? '#fff' : '#9aa3b2' }}>All <FaStar style={{marginRight:4}} /></button>
             {STARS.map(s => (
               <button key={s} onClick={() => setRatingFilter(ratingFilter === s ? 'all' : s)} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', fontSize: 12, cursor: 'pointer', background: ratingFilter === s ? '#fbbf24' : 'rgba(255,255,255,0.08)', color: ratingFilter === s ? '#000' : '#9aa3b2' }}>{s}<FaStar style={{marginRight:4}} /></button>
             ))}
@@ -209,7 +209,7 @@ export default function ShopReviewsPage() {
                     </div>
                     {responding !== review.id && (
                       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                        <button onClick={() => { setResponding(review.id); setResponseText(review.shopResponse || ''); }} style={{ fontSize: 12, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Edit</button>
+                        <button onClick={() => { setResponding(review.id); setResponseText(review.shopResponse || ''); }} style={{ fontSize: 12, color: '#e5332a', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Edit</button>
                         <button onClick={() => setDeleteResponseConfirmId(review.id)} style={{ fontSize: 12, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Remove</button>
                       </div>
                     )}
@@ -238,7 +238,7 @@ export default function ShopReviewsPage() {
                     </div>
                   </div>
                 ) : !review.shopResponse ? (
-                  <button onClick={() => { setResponding(review.id); setResponseText(''); }} style={{ fontSize: 13, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontWeight: 600 }}>
+                  <button onClick={() => { setResponding(review.id); setResponseText(''); }} style={{ fontSize: 13, color: '#e5332a', background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontWeight: 600 }}>
                     <FaComments style={{marginRight:4}} /> Reply to this review
                   </button>
                 ) : null}
@@ -265,3 +265,4 @@ export default function ShopReviewsPage() {
     </div>
   );
 }
+

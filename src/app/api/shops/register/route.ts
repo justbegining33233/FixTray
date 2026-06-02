@@ -29,10 +29,24 @@ export async function POST(request: Request) {
       mobileServiceRadius: z.number().optional(),
       emergencyService24_7: z.boolean().optional(),
       acceptedPaymentMethods: z.array(z.string()).optional(),
-      subscriptionPlan: z.enum(['starter', 'growth', 'professional', 'business', 'enterprise']),
       couponCode: z.string().optional(),
     });
     const data = schema.parse(body);
+
+    const existingOwnerShops = await prisma.shop.findMany({
+      where: {
+        email: data.email,
+        status: { in: ['approved', 'pending'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingOwnerShops.length >= 20) {
+      return NextResponse.json(
+        { error: 'Shop limit reached for this owner email.' },
+        { status: 403 }
+      );
+    }
 
     // Generate a temporary unique username for pending shops
     const tempUsername = `pending_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -56,60 +70,11 @@ export async function POST(request: Request) {
     });
     
 
-    // Create Stripe Checkout Session so the shop owner completes payment on Stripe's hosted page
-    let checkoutUrl: string | null = null;
-    try {
-
-      const { default: stripeClient, STRIPE_PRODUCTS, createOrRetrieveCustomer } = await import('@/lib/stripe');
-      const selectedProduct = STRIPE_PRODUCTS[data.subscriptionPlan];
-
-      // Pre-create (or retrieve) the Stripe customer so the email is pre-filled
-      const stripeCustomer = await createOrRetrieveCustomer(data.email, data.ownerName || data.shopName);
-
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
-
-      const session = await stripeClient.checkout.sessions.create({
-        mode: 'subscription',
-        customer: stripeCustomer.id,
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: selectedProduct.priceId,
-            quantity: 1,
-          },
-        ],
-        subscription_data: {
-          trial_period_days: 7, // 7-day free trial � card collected now, charged after trial
-          metadata: {
-            shopId: newShop.id,
-            plan: data.subscriptionPlan,
-          },
-        },
-        allow_promotion_codes: true,
-        billing_address_collection: 'required',
-        metadata: {
-          shopId: newShop.id,
-          plan: data.subscriptionPlan,
-          couponCode: data.couponCode || '',
-          registrationFlow: 'true',
-        },
-        success_url: `${appUrl}/register/success?session_id={CHECKOUT_SESSION_ID}&shopId=${newShop.id}`,
-        cancel_url: `${appUrl}/register/canceled?shopId=${newShop.id}`,
-      });
-
-      checkoutUrl = session.url;
-    } catch (stripeError) {
-      console.error('?? [REGISTER] Stripe Checkout Session creation failed:', stripeError);
-      // Registration record was saved � admin can still manually activate the shop.
-    }
-
     return NextResponse.json({
       success: true,
       shopId: newShop.id,
-      checkoutUrl,
-      message: checkoutUrl
-        ? 'Shop registration submitted. Complete checkout to activate your 7-day free trial.'
-        : 'Shop registration submitted. Awaiting admin approval.',
+      checkoutUrl: null,
+      message: 'Shop registration submitted. Awaiting admin approval.',
     });
   } catch (error) {
     console.error('[REGISTER] ERROR:', error);

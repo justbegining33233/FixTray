@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TechLiveMap from '@/components/TechLiveMap';
+import CustomerMessaging from '@/components/CustomerMessaging';
 import { FaArrowLeft, FaCheckCircle, FaClock, FaLock, FaMapMarkerAlt, FaStore } from 'react-icons/fa';
 
 interface WorkOrderDetails {
@@ -55,6 +56,7 @@ export default function WorkOrderDetailsPage() {
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState('');
+  const [messages] = useState<any[]>([]);
 
   const workOrderId = params?.id as string;
 
@@ -255,8 +257,8 @@ export default function WorkOrderDetailsPage() {
             </div>
 
             {/* Job Info / Live Tracking - show shop address & appointment for in-shop jobs; show live GPS for roadside */}
-            <div style={{marginTop:32, padding:20, background:'rgba(59,130,246,0.04)', border:'1px solid rgba(59,130,246,0.08)', borderRadius:8}}>
-              <h3 style={{fontSize:16, fontWeight:600, color:'#3b82f6', marginBottom:12}}>{workOrder.serviceLocation && workOrder.serviceLocation.toLowerCase() !== 'roadside' ? 'Appointment Details' : 'Live Tracking'}</h3>
+            <div style={{marginTop:32, padding:20, background:'rgba(229,51,42,0.04)', border:'1px solid rgba(229,51,42,0.08)', borderRadius:8}}>
+              <h3 style={{fontSize:16, fontWeight:600, color:'#e5332a', marginBottom:12}}>{workOrder.serviceLocation && workOrder.serviceLocation.toLowerCase() !== 'roadside' ? 'Appointment Details' : 'Live Tracking'}</h3>
 
               {workOrder.serviceLocation && workOrder.serviceLocation.toLowerCase() !== 'roadside' ? (
                 // IN-SHOP: Always show shop address and appointment time (do not show GPS)
@@ -330,10 +332,20 @@ export default function WorkOrderDetailsPage() {
                   {paying ? 'Redirecting to Stripe...' : `Pay $${workOrder.estimate.totalDue.toFixed(2)} Securely`}
                 </button>
                 <div style={{textAlign:'center', marginTop:10, fontSize:12, color:'#6b7280'}}>
-                  <FaLock style={{marginRight:4}} /> Powered by Stripe · Apple Pay &amp; Google Pay accepted
+                  <FaLock style={{marginRight:4}} /> Powered by Stripe  Apple Pay &amp; Google Pay accepted
                 </div>
               </div>
             )}
+
+            {/* Messages Section */}
+            <div style={{marginTop:32}}>
+              <CustomerMessaging
+                workOrderId={workOrderId}
+                initialMessages={messages}
+                userName={userName}
+                senderRole="customer"
+              />
+            </div>
 
             {workOrder.status === 'closed' && (
               <div style={{

@@ -1,28 +1,23 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 /* Safe area insets for mobile app (Capacitor / PWA) */
 body {
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
 
-/* ─────────────────────────────────────────────────────────────
+/* 
    DESIGN TOKENS
-───────────────────────────────────────────────────────────── */
+ */
 :root {
   /* Backgrounds */
-  --bg:              #080e1c;
-  --surface:         rgba(10, 16, 32, 0.68);
-  --surface-raised:  rgba(18, 26, 48, 0.82);
+  --bg:              #000000;
+  --surface:         rgba(15, 23, 42, 0.74);
+  --surface-raised:  rgba(17, 24, 39, 0.88);
   --surface-hover:   rgba(255,255,255,0.04);
 
   /* Borders */
@@ -44,13 +39,13 @@ body {
   --green-dim:       rgba(34,197,94,0.12);
   --amber:           #f59e0b;
   --amber-dim:       rgba(245,158,11,0.12);
-  --blue:            #3b82f6;
-  --blue-dim:        rgba(59,130,246,0.12);
+  --blue:            #e5332a;
+  --blue-dim:        rgba(229,51,42,0.12);
   --purple:          #a855f7;
   --purple-dim:      rgba(168,85,247,0.12);
 
   /* Typography */
-  --font:            'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font:            var(--font-plus-jakarta), var(--font-inter), system-ui, -apple-system, sans-serif;
 
   /* Radii */
   --r-sm:  8px;
@@ -66,7 +61,7 @@ body {
   --shadow-glow: 0 0 0 1px var(--accent-border), 0 4px 18px rgba(229,51,42,0.18);
 
   /* Legacy compat */
-  --background: #080e1c;
+  --background: #000000;
   --foreground: #f1f5f9;
 }
 
@@ -78,7 +73,7 @@ html {
 body {
   min-height: 100vh;
   min-height: 100dvh;
-  background: linear-gradient(160deg, #52566a 0%, #2e3148 35%, #1a1b2e 65%, #0f1120 100%);
+  background: #000000;
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font);
@@ -92,9 +87,18 @@ body {
   max-width: 100vw;
 }
 
-/* ─────────────────────────────────────────────────────────────
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 
    BASE ELEMENT STYLES
-───────────────────────────────────────────────────────────── */
+ */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font);
   font-weight: 700;
@@ -110,13 +114,13 @@ h4 { font-size: 1rem;   font-weight: 600; }
 p  { color: var(--text-muted); line-height: 1.7; }
 a  { color: var(--text); text-decoration: none; }
 
-/* Inputs & selects — clean glass style */
+/* Inputs & selects  clean glass style */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 select,
 textarea {
   font-family: var(--font);
   font-size: 13.5px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.035);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
   color: var(--text);
@@ -133,9 +137,9 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(229,51,42,0.12);
 }
 input::placeholder, textarea::placeholder { color: var(--text-faint); }
-select option { background: #0f172a; color: var(--text); }
+select option { background: #000000; color: var(--text); }
 
-/* Buttons — clean hierarchy */
+/* Buttons  clean hierarchy */
 button {
   font-family: var(--font);
   cursor: pointer;
@@ -171,11 +175,11 @@ tbody td {
   vertical-align: middle;
 }
 
-/* ─────────────────────────────────────────────────────────────
+/* 
    UTILITY CLASSES
-───────────────────────────────────────────────────────────── */
+ */
 
-/* Glass card — the main surface for panels, sections */
+/* Glass card  the main surface for panels, sections */
 .card {
   background: var(--surface);
   backdrop-filter: blur(14px) saturate(1.3);
@@ -246,7 +250,7 @@ tbody td {
 .badge-red    { background: rgba(229,51,42,0.15);  color: #ff6b64; border: 1px solid rgba(229,51,42,0.25); }
 .badge-green  { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
 .badge-amber  { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
-.badge-blue   { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+.badge-blue   { background: rgba(229,51,42,0.12); color: #ff6b64; border: 1px solid rgba(229,51,42,0.25); }
 .badge-purple { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
 .badge-ghost  { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border); }
 
@@ -286,16 +290,254 @@ tbody td {
 .btn-ghost:hover { color: var(--text); border-color: var(--border-strong); }
 .btn-link { background: transparent; border: none; color: var(--blue); font-size: 13px; font-weight: 500; padding: 0; }
 
-@media (min-width: 1024px) {
-  .marketing-shift {
-    transform: translateX(1.15in);
+/* Center legacy full-width page sections on desktop web */
+.centered-app-page {
+  width: 100%;
+  padding-left: clamp(12px, 2vw, 24px);
+  padding-right: clamp(12px, 2vw, 24px);
+}
+
+.role-route-shell {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background:
+    radial-gradient(1100px 440px at 10% -12%, rgba(229, 51, 42, 0.08), transparent 58%),
+    radial-gradient(760px 340px at 95% -10%, rgba(255, 255, 255, 0.04), transparent 60%),
+    #000000;
+  padding: clamp(10px, 1.6vw, 20px);
+}
+
+.role-route-shell > * {
+  width: 100%;
+}
+
+.role-route-shell [data-page-shell],
+.role-route-shell .centered-app-page {
+  width: 100%;
+  max-width: 1240px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Desktop mode on narrow screens: normalize density across roles/pages. */
+@media (max-width: 1200px) {
+  .role-route-shell.desktop-mode-shell {
+    padding: clamp(6px, 1.4vw, 14px);
+    overflow-x: hidden;
   }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] {
+    max-width: 100%;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] * {
+    max-width: 100%;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] h1 {
+    font-size: clamp(1.18rem, 2.2vw, 1.55rem) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] h2 {
+    font-size: clamp(1.02rem, 1.9vw, 1.3rem) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] h3 {
+    font-size: clamp(0.95rem, 1.7vw, 1.08rem) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] a,
+  .role-route-shell.desktop-mode-shell [data-page-shell] button,
+  .role-route-shell.desktop-mode-shell [data-page-shell] input,
+  .role-route-shell.desktop-mode-shell [data-page-shell] select,
+  .role-route-shell.desktop-mode-shell [data-page-shell] textarea,
+  .role-route-shell.desktop-mode-shell [data-page-shell] label,
+  .role-route-shell.desktop-mode-shell [data-page-shell] p,
+  .role-route-shell.desktop-mode-shell [data-page-shell] span,
+  .role-route-shell.desktop-mode-shell [data-page-shell] td,
+  .role-route-shell.desktop-mode-shell [data-page-shell] th {
+    font-size: clamp(11.5px, 1.35vw, 14px);
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='padding: 32px'] {
+    padding: clamp(14px, 2vw, 22px) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='padding: 24px'] {
+    padding: clamp(12px, 1.8vw, 18px) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='padding: 20px'] {
+    padding: clamp(10px, 1.6vw, 16px) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 1600px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 1400px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 1200px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 900px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 800px'] {
+    max-width: 100% !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))'] {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: repeat(2, 1fr)'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns:repeat(2, 1fr)'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: 1fr 1fr'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns:1fr 1fr'] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .role-route-shell.desktop-mode-shell {
+    padding: 8px;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: 2fr 1fr'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: 1fr 1fr'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: 340px 1fr'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='grid-template-columns: 1fr 400px'] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='display: grid'][style*='gap: 24px'] {
+    gap: 12px !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='display: flex'][style*='flex-wrap: nowrap'] {
+    flex-wrap: wrap !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='padding: 32px 40px'] {
+    padding: 14px !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='width: 480px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='width: 440px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='width: 560px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='width: 600px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='width: 700px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='width: 800px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 560px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 600px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 700px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='max-width: 800px'] {
+    width: min(94vw, 560px) !important;
+    max-width: 94vw !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='min-width: 300px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='min-width: 320px'] {
+    min-width: 0 !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='font-size: 32px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='font-size:32px'] {
+    font-size: clamp(22px, 4.2vw, 30px) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='font-size: 24px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='font-size:24px'] {
+    font-size: clamp(18px, 3.2vw, 22px) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='font-size: 20px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='font-size:20px'] {
+    font-size: clamp(16px, 2.6vw, 19px) !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='border-radius: 16px'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='border-radius:16px'] {
+    border-radius: 12px !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='position: fixed'][style*='display: flex'][style*='align-items: center'][style*='justify-content: center'] > div {
+    width: min(94vw, 640px) !important;
+    max-width: 94vw !important;
+    min-width: 0 !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+  }
+
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='position: fixed'][style*='padding:32'],
+  .role-route-shell.desktop-mode-shell [data-page-shell] [style*='position: fixed'][style*='padding: 32px'] {
+    padding: 10px !important;
+  }
+}
+
+.role-route-shell [data-page-shell] {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(6, 8, 12, 0.95) 0%, rgba(0, 0, 0, 0.92) 100%);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* Cross-role normalization layer: keep legacy pages coherent until migrated. */
+.role-route-shell [class*="text-blue-"],
+.role-route-shell [class*="text-sky-"] {
+  color: #ff6b64 !important;
+}
+
+.role-route-shell [class*="border-blue-"],
+.role-route-shell [class*="border-sky-"] {
+  border-color: rgba(229, 51, 42, 0.38) !important;
+}
+
+.role-route-shell [class*="bg-slate"],
+.role-route-shell [class*="bg-zinc"],
+.role-route-shell [class*="bg-gray"] {
+  background-color: #05070b !important;
+}
+
+/* Popup normalization: button-triggered overlays should use black modal panels. */
+.fixed.inset-0 > div,
+[style*="position: fixed"][style*="inset: 0"] > div,
+[style*="position: fixed"][style*="top: 0"][style*="left: 0"][style*="right: 0"][style*="bottom: 0"] > div {
+  background: #000000 !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.centered-app-page > :not([data-center-ignore]) {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+[data-marketing-main] > section {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Guard against margin resets overriding utility centering after hydration. */
+.mx-auto {
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 /* Mobile-friendly utilities */
 @media (max-width: 768px) {
   input, select, textarea, button {
     font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  .role-route-shell {
+    padding: 0;
+    background: #000000;
+  }
+
+  .role-route-shell [data-page-shell] {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
   }
 
   /* Smoother native-feel scrolling */
@@ -312,6 +554,15 @@ tbody td {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Pulse animation for loading indicators */
 @keyframes pulse {
   0%, 100% {
@@ -322,9 +573,9 @@ tbody td {
   }
 }
 
-/* ─────────────────────────────────────────────────────────────
+/* 
    PRINT STYLES
-───────────────────────────────────────────────────────────── */
+ */
 @media print {
   /* Reset dark background for print */
   body {
@@ -385,7 +636,36 @@ tbody td {
   a[href]:after {
     content: none;
   }
+}
 
+/* 
+   MOBILE SHELL  hide desktop chrome inside sub-page content
+ */
+
+/* Hide TopNavBar (<nav>) and Sidebar (<aside>) when rendered
+   inside the MobileShell content area */
+[data-mobile-shell-body] nav,
+[data-mobile-shell-body] aside {
+  display: none !important;
+}
+
+/* Hide desktop page-level back-button / header rows.
+   These are the first direct-child divs of a page that contain
+   a "Back to Dashboard" link sitting next to a page title.
+   We identify them as the first <div> child whose style includes
+   a semi-transparent background and a borderBottom. Since we
+   cannot match arbitrary inline styles reliably, we instead hide
+   any <a> or <button> that contains an svg (react-icon) AND sits
+   inside the first 80px of a page's first container div.        */
+[data-mobile-shell-body] > div > div:first-child a[href*="/home"],
+[data-mobile-shell-body] > div > div:first-child a[href*="/dashboard"],
+[data-mobile-shell-body] > div > div:first-child a[href*="/admin/home"],
+[data-mobile-shell-body] > div > div:first-child a[href*="/superadmin"] {
+  /* keep visible but demote  the MobileShell header already provides back */
+  display: none !important;
+}
+
+@media print {
   /* Page breaks */
   .page-break-before {
     page-break-before: always;
@@ -403,10 +683,10 @@ tbody td {
   }
 }
 
-/* ─────────────────────────────────────────────────────────────
+/* 
    Oil-on-Water keyframe animations
    Used by .oil-slick-nav (header) and .sos-wrap (login page)
-───────────────────────────────────────────────────────────── */
+ */
 @keyframes oil-drift {
   0%   { transform: translate(0%, 0%)   rotate(0deg)   scale(1);    }
   25%  { transform: translate(4%, 3%)   rotate(90deg)  scale(1.05); }
@@ -430,5 +710,6 @@ tbody td {
   50%  { filter: hue-rotate(30deg) blur(62px); }
   100% { filter: hue-rotate(0deg)  blur(55px); }
 }
+
 
 

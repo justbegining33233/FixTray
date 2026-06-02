@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import MobileNav from './MobileNav';
-import { IconMenu } from '@/components/icons';
+import { useEffect, useState } from 'react';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsNative } from '@/context/NativeContext';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -14,124 +14,30 @@ interface MobileLayoutProps {
 
 export default function MobileLayout({
   children,
-  role,
+  role: _role,
   showSidebar = true,
   sidebarContent,
   topNavContent
 }: MobileLayoutProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const isNative = useIsNative();
+  const [isCompactDesktop, setIsCompactDesktop] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (!mobile) {
-        setSidebarOpen(false);
-      }
+    const updateCompactMode = () => {
+      if (typeof window === 'undefined') return;
+      setIsCompactDesktop(window.innerWidth <= 1200);
     };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    updateCompactMode();
+    window.addEventListener('resize', updateCompactMode);
+    return () => window.removeEventListener('resize', updateCompactMode);
   }, []);
 
-  if (isMobile) {
-    return (
-      <div style={{
-        minHeight: '100dvh',
-        height: '100dvh',
-        background: 'transparent',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        width: '100%',
-        maxWidth: '100vw',
-      }}>
-        {/* Mobile Header */}
-        {topNavContent && (
-          <div style={{
-            background: 'rgba(0,0,0,0.3)',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}>
-            {showSidebar && sidebarContent && (
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#e5e7eb',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <IconMenu size={22} />
-              </button>
-            )}
-            {topNavContent}
-          </div>
-        )}
+  // On mobile, skip all desktop chrome (sidebar, top nav) — the section layout
+  // already wraps content in MobileShell. Just render the page content directly.
+  if (isNative || isMobile) return <>{children}</>;
 
-        {/* Mobile Sidebar Overlay */}
-        {sidebarOpen && sidebarContent && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0,0,0,0.5)',
-              zIndex: 999,
-            }}
-            onClick={() => setSidebarOpen(false)}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                bottom: 0,
-                width: '280px',
-                background: 'rgba(0,0,0,0.95)',
-                transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-                transition: 'transform 0.3s ease',
-                padding: '20px',
-                overflowY: 'auto',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {sidebarContent}
-            </div>
-          </div>
-        )}
-
-        {/* Main Content */}
-        <div style={{
-          flex: 1,
-          padding: '16px',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-          paddingBottom: '80px',
-        }}>
-          {children}
-        </div>
-
-        {/* Mobile Navigation */}
-        <MobileNav role={role} />
-      </div>
-    );
-  }
-
-  // Desktop Layout (existing)
   return (
     <div style={{
       minHeight: '100vh',
@@ -143,23 +49,20 @@ export default function MobileLayout({
       {topNavContent}
 
       {/* Main Layout with Sidebar */}
-      <div style={{ display: 'flex', flex: 1 }}>
-        {/* Sidebar */}
-        {showSidebar && sidebarContent && (
-          <div style={{
-            width: sidebarOpen ? '280px' : '0',
-            overflow: 'hidden',
-            transition: 'width 0.3s ease',
-            background: 'rgba(0,0,0,0.3)',
-            borderRight: '1px solid rgba(255,255,255,0.1)',
-          }}>
-            {sidebarContent}
-          </div>
-        )}
+      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        {/* Sidebar Space */}
+        {showSidebar && sidebarContent}
 
         {/* Main Content */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ maxWidth: 1400, margin: '0 auto', padding: 32 }}>
+          <div
+            style={{
+              maxWidth: isCompactDesktop ? 1200 : 1400,
+              margin: '0 auto',
+              padding: isCompactDesktop ? 14 : 32,
+              width: '100%',
+            }}
+          >
             {children}
           </div>
         </div>

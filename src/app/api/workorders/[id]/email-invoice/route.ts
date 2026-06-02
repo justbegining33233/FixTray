@@ -29,7 +29,7 @@ export async function POST(
 
     // Only shop/tech/manager can email invoices
     const authorized =
-      auth.role === 'admin' ||
+      (auth.role === 'superadmin') ||
       (auth.role === 'shop' && workOrder.shopId === auth.id) ||
       ((auth.role === 'tech' || auth.role === 'manager') && workOrder.shopId === auth.shopId);
 
@@ -43,8 +43,7 @@ export async function POST(
 
     // Generate PDF
     const pdf = generateInvoicePDF(workOrder as any);
-    const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
-    const pdfBase64 = pdfBuffer.toString('base64');
+    const _pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
 
     const shopName = workOrder.shop?.shopName || 'Your Auto Shop';
     const customerName = workOrder.customer

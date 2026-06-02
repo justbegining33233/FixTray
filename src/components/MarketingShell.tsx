@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import type { ReactNode } from "react";
 import OilSlickCanvas from "@/components/OilSlickCanvas";
 
@@ -16,24 +17,27 @@ interface MarketingShellProps {
 
 export default function MarketingShell({ children }: MarketingShellProps) {
   const pageStyle: React.CSSProperties = {
-    background: "#020608",
+    background: "#09090b",
     fontFamily: '"Plus Jakarta Sans", "Inter", system-ui, sans-serif',
     position: "relative",
   };
 
   return (
     <div className="min-h-screen text-slate-100" style={pageStyle}>
-      <OilSlickCanvas />
+      <OilSlickCanvas intensity="subtle" />
 
       <header
         className="relative border-b backdrop-blur"
         style={{
           zIndex: 10,
-          borderColor: "rgba(255,255,255,0.07)",
-          background: "rgba(8, 13, 26, 0.82)",
+          borderColor: "rgba(255,255,255,0.08)",
+          background: "rgba(9, 9, 11, 0.92)",
         }}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ width: "100%", maxWidth: 1152, marginLeft: "auto", marginRight: "auto" }}
+        >
           <Link href="/" className="flex items-center gap-2">
             <span
               style={{
@@ -50,7 +54,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
 
           <nav className="hidden items-center gap-6 text-sm md:flex" style={{ color: "#94a3b8" }}>
             {navLinks.map((item) => (
-              <Link key={item.href} href={item.href} className="transition hover:text-white">
+              <Link key={item.href} href={item.href as Route} className="transition hover:text-white">
                 {item.label}
               </Link>
             ))}
@@ -79,7 +83,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
         </div>
       </header>
 
-      <main className="relative" style={{ zIndex: 1 }}>
+      <main className="relative" style={{ zIndex: 1 }} data-marketing-main>
         {children}
       </main>
 
@@ -87,11 +91,14 @@ export default function MarketingShell({ children }: MarketingShellProps) {
         className="relative border-t"
         style={{
           zIndex: 1,
-          borderColor: "rgba(255,255,255,0.07)",
-          background: "rgba(8, 13, 26, 0.82)",
+          borderColor: "rgba(255,255,255,0.08)",
+          background: "rgba(9, 9, 11, 0.92)",
         }}
       >
-        <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 text-center md:grid-cols-4 md:text-left">
+        <div
+          className="grid max-w-6xl gap-8 px-6 py-12 text-center md:grid-cols-4 md:text-left"
+          style={{ width: "100%", maxWidth: 1152, marginLeft: "auto", marginRight: "auto" }}
+        >
           <div>
             <p style={{ fontWeight: 800, color: "#e5332a", fontSize: 18 }}>FixTray</p>
             <p className="mt-3 text-sm" style={{ color: "#94a3b8" }}>
@@ -121,11 +128,19 @@ export default function MarketingShell({ children }: MarketingShellProps) {
             </ul>
           </div>
         </div>
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-4 px-6 py-6 text-center text-xs" style={{ color: "#64748b" }}>
-            <span>© 2026 FixTray. All rights reserved.</span>
-            <span>Built for multi-shop operations and modern service teams.</span>
-          </div>
+        <div
+          className="flex flex-wrap items-center justify-center gap-4 px-6 py-6 text-center text-xs"
+          style={{
+            width: "100%",
+            maxWidth: 1152,
+            marginLeft: "auto",
+            marginRight: "auto",
+            color: "#64748b",
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <span> 2026 FixTray. All rights reserved.</span>
+          <span>Built for owner-operators, growing shop teams, and multi-shop service groups.</span>
         </div>
       </footer>
     </div>

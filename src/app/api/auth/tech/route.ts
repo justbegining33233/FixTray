@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // `prisma` and `bcrypt` are lazy-imported inside the handler to avoid build-time
 // evaluation issues (native binaries / environment differences).
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
-
 import { generateAccessToken, generateRandomToken, generateTempToken, refreshExpiryDate } from '@/lib/auth';
+import { logActivity } from '@/lib/activityLogger';
+import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 export async function POST(request: NextRequest) {
   try {
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
     const userIp = request.headers.get('x-forwarded-for') || request.headers.get('host') || '';
     const userAgent = request.headers.get('user-agent') || '';
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
+    await enforceSingleActiveSession(prisma, { techId: tech.id });
     const refresh = await prisma.refreshToken.create({
       data: {
         tokenHash: refreshHash,
@@ -145,6 +147,16 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 60 * 15,
     });
+
+    // Fire-and-forget activity log
+    logActivity('login', `${tech.firstName} ${tech.lastName}`, `Tech login from ${userIp}`, {
+      type: 'user',
+      severity: 'info',
+      shopId: tech.shopId,
+      email: tech.email ?? undefined,
+      metadata: { ip: userIp, role: tech.role },
+    });
+
     return response;
     } catch (error: unknown) {
       console.error('Tech login error:', error, (error as Error)?.stack);

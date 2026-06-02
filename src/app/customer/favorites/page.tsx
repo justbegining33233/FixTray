@@ -47,7 +47,7 @@ export default function Favorites() {
             <div key={shop.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
               <div style={{marginBottom:16}}>
                 <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{shop.name}</h3>
-                <div style={{fontSize:14, color:'#3b82f6', fontWeight:600, marginBottom:8}}>{shop.type}</div>
+                <div style={{fontSize:14, color:'#e5332a', fontWeight:600, marginBottom:8}}>{shop.type}</div>
                 <div style={{display:'flex', alignItems:'center', gap:16, marginBottom:12}}>
                   <span style={{fontSize:14, color:'#9aa3b2'}}><FaStar style={{marginRight:4}} /> {shop.rating}</span>
                   <span style={{fontSize:14, color:'#9aa3b2'}}><FaMapMarkerAlt style={{marginRight:4}} /> {shop.distance}</span>
@@ -55,7 +55,7 @@ export default function Favorites() {
                 <div style={{fontSize:14, color:'#9aa3b2', marginBottom:12}}>{shop.address}</div>
                 <div style={{display:'flex', flexWrap:'wrap', gap:8, marginBottom:16}}>
                   {shop.services.map(service => (
-                    <span key={service} style={{padding:'4px 8px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', borderRadius:6, fontSize:12, fontWeight:600}}>
+                    <span key={service} style={{padding:'4px 8px', background:'rgba(229,51,42,0.2)', color:'#ff6b64', borderRadius:6, fontSize:12, fontWeight:600}}>
                       {service}
                     </span>
                   ))}
@@ -65,7 +65,7 @@ export default function Favorites() {
                 <button style={{
                   flex:1,
                   padding:'12px',
-                  background:'#3b82f6',
+                  background:'#e5332a',
                   color:'white',
                   border:'none',
                   borderRadius:8,
@@ -103,7 +103,7 @@ export default function Favorites() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,

@@ -54,7 +54,7 @@ const ROLE_LABEL: Record<string, string> = { shop: "Shop", manager: "Manager", t
 const ROLE_COLOR: Record<string, string> = { shop: "#f59e0b", manager: "#8b5cf6", tech: "#10b981" };
 
 type TabKey = "all" | "shop" | "manager" | "tech";
-const TABS: { key: TabKey; label: string }[] = [
+const ROLE_FILTERS: { key: TabKey; label: string }[] = [
   { key: "all", label: "All" },
   { key: "shop", label: "Shops" },
   { key: "manager", label: "Managers" },
@@ -79,6 +79,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
   const [showCompose, setShowCompose] = useState(false);
   const [availableContacts, setAvailableContacts] = useState<AvailableContact[]>([]);
   const [newRecipient, setNewRecipient] = useState<AvailableContact | null>(null);
+  const [composeRoleFilter, setComposeRoleFilter] = useState<TabKey>("all");
   const [contactsLoading, setContactsLoading] = useState(false);
   const [noContacts, setNoContacts] = useState(false);
 
@@ -106,6 +107,11 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
     }
     return counts;
   }, [shopStaffConversations]);
+
+  const filteredAvailableContacts = useMemo(() => {
+    if (composeRoleFilter === "all") return availableContacts;
+    return availableContacts.filter((c) => c.role === composeRoleFilter);
+  }, [availableContacts, composeRoleFilter]);
 
   // Auto-select the conversation matching initialShopId on first data load
   useEffect(() => {
@@ -277,29 +283,34 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
           <p style={{ margin: 0, color: "#9ca3af", fontSize: 12 }}>Chat with shops, managers & techs</p>
         </div>
         <button
-          onClick={() => { setShowCompose(true); setSelected(null); fetchAvailableContacts(); }}
+          onClick={() => { setShowCompose(true); setSelected(null); setComposeRoleFilter(activeTab); fetchAvailableContacts(); }}
           style={{ padding: "6px 12px", background: "#e5332a", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
           + New
         </button>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.2)" }}>
-        {TABS.map((tab) => {
-          const count = unreadByTab[tab.key] || 0;
-          const active = activeTab === tab.key;
-          return (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              style={{ flex: 1, padding: "6px 8px", background: active ? "rgba(229,51,42,0.2)" : "rgba(255,255,255,0.04)", border: active ? "1px solid rgba(229,51,42,0.5)" : "1px solid transparent", borderRadius: 6, color: active ? "#e5332a" : "#9ca3af", fontSize: 12, fontWeight: active ? 700 : 500, cursor: "pointer", position: "relative" }}>
-              {tab.label}
-              {count > 0 && (
-                <span style={{ position: "absolute", top: -5, right: -4, background: "#e5332a", color: "white", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>
-                  {count > 99 ? "99+" : count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* Category dropdown */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.2)" }}>
+        <label style={{ color: "#9ca3af", fontSize: 12, fontWeight: 600 }}>Category</label>
+        <select
+          value={activeTab}
+          onChange={(e) => {
+            setActiveTab(e.target.value as TabKey);
+            setSelected(null);
+          }}
+          style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.3)", color: "#e5e7eb", fontSize: 12, fontWeight: 600 }}>
+          {ROLE_FILTERS.map((filter) => {
+            const count = unreadByTab[filter.key] || 0;
+            return (
+              <option key={filter.key} value={filter.key}>
+                {filter.label}{count > 0 ? ` (${count > 99 ? "99+" : count} unread)` : ""}
+              </option>
+            );
+          })}
+        </select>
+        <span style={{ fontSize: 11, color: "#6b7280" }}>
+          {filteredConversations.length} thread{filteredConversations.length === 1 ? "" : "s"}
+        </span>
       </div>
 
       {/* Body */}
@@ -356,10 +367,23 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
             /* Compose new message */
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16, gap: 12 }}>
               <div>
+                <label style={{ display: "block", color: "#9ca3af", fontSize: 12, marginBottom: 6 }}>Recipient type:</label>
+                <select
+                  value={composeRoleFilter}
+                  onChange={(e) => {
+                    setComposeRoleFilter(e.target.value as TabKey);
+                    setNewRecipient(null);
+                  }}
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.3)", color: "#e5e7eb", fontSize: 13, marginBottom: 10 }}>
+                  {ROLE_FILTERS.map((filter) => (
+                    <option key={`compose-${filter.key}`} value={filter.key}>{filter.label}</option>
+                  ))}
+                </select>
+
                 <label style={{ display: "block", color: "#9ca3af", fontSize: 12, marginBottom: 6 }}>To:</label>
                 {contactsLoading ? (
                   <div style={{ color: "#6b7280", fontSize: 12 }}>Loading contacts...</div>
-                ) : noContacts ? (
+                ) : noContacts || filteredAvailableContacts.length === 0 ? (
                   <div style={{ color: "#f59e0b", fontSize: 13, padding: "10px 12px", background: "rgba(245,158,11,0.08)", borderRadius: 8 }}>
                     <FaExclamationTriangle style={{marginRight:4}} /> No messageable contacts found.
                     <br />
@@ -376,12 +400,12 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
                       const underscoreIdx = val.indexOf("_");
                       const role = val.slice(0, underscoreIdx);
                       const id = val.slice(underscoreIdx + 1);
-                      const c = availableContacts.find((x) => x.id === id && x.role === role);
+                      const c = filteredAvailableContacts.find((x) => x.id === id && x.role === role);
                       setNewRecipient(c ?? null);
                     }}
                     style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.3)", color: "#e5e7eb", fontSize: 13 }}>
                     <option value=""> -  Select recipient  - </option>
-                    {availableContacts.map((c) => (
+                    {filteredAvailableContacts.map((c) => (
                       <option key={`${c.role}_${c.id}`} value={`${c.role}_${c.id}`}>
                         {ROLE_ICON[c.role]} {c.name} ({ROLE_LABEL[c.role] ?? c.role})  -  {c.contextLabel}
                       </option>
@@ -402,7 +426,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
                   style={{ flex: 1, padding: "10px 0", background: "#e5332a", color: "white", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: loading || !messageText.trim() || !newRecipient ? "not-allowed" : "pointer", opacity: loading || !messageText.trim() || !newRecipient ? 0.5 : 1 }}>
                   {loading ? "Sending..." : "Send Message"}
                 </button>
-                <button onClick={() => { setShowCompose(false); setNewRecipient(null); setMessageText(""); }}
+                <button onClick={() => { setShowCompose(false); setNewRecipient(null); setMessageText(""); setComposeRoleFilter(activeTab); }}
                   style={{ padding: "10px 16px", background: "rgba(255,255,255,0.07)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   Cancel
                 </button>

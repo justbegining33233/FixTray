@@ -80,19 +80,19 @@ export default function PaymentLinksPage() {
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div>
-              <Link href="/shop/admin" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Admin</Link>
+              <Link href="/shop/admin" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Admin</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Payment Links</h1>
               <p style={{ color: '#9ca3af', fontSize: 14 }}>Create and send payment links to customers</p>
             </div>
             <button onClick={() => { setShowCreate(true); setCreatedLink(null); }}
-              style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
+              style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
               + New Link
             </button>
           </div>
@@ -102,7 +102,7 @@ export default function PaymentLinksPage() {
             <div style={{ background: '#052e16', border: '1px solid #16a34a', borderRadius: 12, padding: 20, marginBottom: 24 }}>
               <div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 8 }}><FaLink style={{marginRight:4}} /> Payment Link Created</div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ flex: 1, color: '#e5e7eb', fontFamily: 'monospace', fontSize: 13, background: '#0f172a', padding: 10, borderRadius: 8, wordBreak: 'break-all' }}>
+                <div style={{ flex: 1, color: '#e5e7eb', fontFamily: 'monospace', fontSize: 13, background: '#000000', padding: 10, borderRadius: 8, wordBreak: 'break-all' }}>
                   {createdLink}
                 </div>
                 <button onClick={() => navigator.clipboard.writeText(createdLink)}
@@ -123,17 +123,17 @@ export default function PaymentLinksPage() {
                 <div>
                   <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Amount ($)</label>
                   <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01"
-                    style={{ width: '100%', background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
+                    style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
                 </div>
                 <div>
                   <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Description</label>
                   <input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Brake repair invoice"
-                    style={{ width: '100%', background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
+                    style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={createLink} disabled={saving}
-                  style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.5 : 1 }}>
+                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.5 : 1 }}>
                   {saving ? 'Creating...' : 'Create Link'}
                 </button>
                 <button onClick={() => setShowCreate(false)}
@@ -183,3 +183,6 @@ export default function PaymentLinksPage() {
     </div>
   );
 }
+
+
+

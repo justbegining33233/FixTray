@@ -26,7 +26,7 @@ const BLANK_ITEM: OrderItem = { itemName: '', sku: '', quantity: '1', unitCost: 
 
 const ratingStars = (r: number) => [...Array.from({length: Math.round(r)}, (_, i) => <FaStar key={i} />), ...Array.from({length: 5 - Math.round(r)}, (_, i) => <FaRegStar key={i} />)];
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  ordered:   { bg: 'rgba(59,130,246,0.2)',  text: '#60a5fa' },
+  ordered:   { bg: 'rgba(229,51,42,0.2)',  text: '#ff6b64' },
   shipped:   { bg: 'rgba(245,158,11,0.2)',  text: '#fbbf24' },
   received:  { bg: 'rgba(34,197,94,0.2)',   text: '#4ade80' },
   cancelled: { bg: 'rgba(239,68,68,0.2)',   text: '#f87171' },
@@ -181,7 +181,7 @@ export default function VendorManagementPage() {
             { id: 'orders' as TabId,  label: ` Parts Orders (${orders.filter(o => o.status !== 'cancelled').length})` },
           ]).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              style={{ padding: '9px 20px', borderRadius: 7, border: 'none', background: activeTab === tab.id ? '#3b82f6' : 'transparent', color: activeTab === tab.id ? '#fff' : '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ padding: '9px 20px', borderRadius: 7, border: 'none', background: activeTab === tab.id ? '#e5332a' : 'transparent', color: activeTab === tab.id ? '#fff' : '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               {tab.label}
             </button>
           ))}
@@ -194,12 +194,12 @@ export default function VendorManagementPage() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {['all', ...CATEGORIES].map(cat => (
                   <button key={cat} onClick={() => setFilterCategory(cat)}
-                    style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.15)', background: filterCategory === cat ? '#3b82f6' : 'transparent', color: filterCategory === cat ? 'white' : '#94a3b8', cursor: 'pointer', fontSize: 13, textTransform: 'capitalize' }}>
+                    style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.15)', background: filterCategory === cat ? '#e5332a' : 'transparent', color: filterCategory === cat ? 'white' : '#94a3b8', cursor: 'pointer', fontSize: 13, textTransform: 'capitalize' }}>
                     {cat}
                   </button>
                 ))}
               </div>
-              <button onClick={openCreate} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>+ Add Vendor</button>
+              <button onClick={openCreate} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>+ Add Vendor</button>
             </div>
 
             {vendorSuccess && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#86efac', fontSize: 14 }}>{vendorSuccess}</div>}
@@ -208,7 +208,7 @@ export default function VendorManagementPage() {
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
               {[
-                { label: 'Total Vendors', value: vendors.length, color: '#60a5fa' },
+                { label: 'Total Vendors', value: vendors.length, color: '#ff6b64' },
                 { label: 'Active', value: vendors.filter(v => v.isActive).length, color: '#34d399' },
                 { label: 'Categories', value: new Set(vendors.map(v => v.category)).size, color: '#a78bfa' },
               ].map(s => (
@@ -249,7 +249,7 @@ export default function VendorManagementPage() {
                     <div style={{ display: 'flex', gap: 8, marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
                       <button onClick={() => openEdit(v)} style={{ flex: 1, padding: '7px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: 13 }}>Edit</button>
                       <button onClick={() => { setOrderVendor(v.name); setActiveTab('orders'); setShowOrderForm(true); }}
-                        style={{ flex: 1, padding: '7px', borderRadius: 7, border: '1px solid rgba(59,130,246,0.4)', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', cursor: 'pointer', fontSize: 13 }}>
+                        style={{ flex: 1, padding: '7px', borderRadius: 7, border: '1px solid rgba(229,51,42,0.4)', background: 'rgba(229,51,42,0.1)', color: '#ff6b64', cursor: 'pointer', fontSize: 13 }}>
                         <FaBox style={{marginRight:4}} /> Order Parts
                       </button>
                       <button onClick={() => setDeleteVendorConfirm({ id: v.id, name: v.name })} style={{ padding: '7px 12px', borderRadius: 7, border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#fca5a5', cursor: 'pointer', fontSize: 13 }}><FaTimes style={{marginRight:4}} /></button>
@@ -289,7 +289,7 @@ export default function VendorManagementPage() {
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
               {[
-                { label: 'Open Orders', value: orders.filter(o => o.status === 'ordered').length, color: '#60a5fa' },
+                { label: 'Open Orders', value: orders.filter(o => o.status === 'ordered').length, color: '#ff6b64' },
                 { label: 'In Transit', value: orders.filter(o => o.status === 'shipped').length, color: '#fbbf24' },
                 { label: 'Received', value: orders.filter(o => o.status === 'received').length, color: '#4ade80' },
                 { label: 'Total Spent', value: `$${orders.filter(o => o.status === 'received').reduce((s, o) => s + (o.totalCost || 0), 0).toFixed(0)}`, color: '#a78bfa' },
@@ -320,8 +320,8 @@ export default function VendorManagementPage() {
                         <div style={{ flex: 1, minWidth: 160 }}>
                           <div style={{ color: '#f1f5f9', fontWeight: 600, fontSize: 15 }}>{order.vendor}</div>
                           <div style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>
-                            {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                            {order.expectedDate && ` · Expected ${new Date(order.expectedDate).toLocaleDateString()}`}
+                            {new Date(order.createdAt).toLocaleDateString()}  {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                            {order.expectedDate && `  Expected ${new Date(order.expectedDate).toLocaleDateString()}`}
                           </div>
                         </div>
                         <span style={{ background: sc.bg, color: sc.text, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>{order.status}</span>
@@ -446,7 +446,7 @@ export default function VendorManagementPage() {
             {vendorError && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>{vendorError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={handleSave} disabled={saving}
-                style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
                 {saving ? 'Saving...' : editId ? 'Update Vendor' : 'Add Vendor'}
               </button>
               <button onClick={() => { setShowForm(false); setVendorError(null); }}
@@ -462,7 +462,7 @@ export default function VendorManagementPage() {
       {showOrderForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}
           onClick={() => setShowOrderForm(false)}>
-          <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 640, maxHeight: '92vh', overflowY: 'auto' }}
+          <div style={{ background: '#000000', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 640, maxHeight: '92vh', overflowY: 'auto' }}
             onClick={e => e.stopPropagation()}>
             <h2 style={{ color: '#f1f5f9', fontSize: 20, fontWeight: 700, margin: '0 0 20px' }}><FaBox style={{marginRight:4}} /> New Parts Order</h2>
 
@@ -497,7 +497,7 @@ export default function VendorManagementPage() {
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <label style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600 }}>Line Items *</label>
-                <button onClick={addItem} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(59,130,246,0.4)', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', cursor: 'pointer', fontSize: 12 }}>+ Add Item</button>
+                <button onClick={addItem} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(229,51,42,0.4)', background: 'rgba(229,51,42,0.1)', color: '#ff6b64', cursor: 'pointer', fontSize: 12 }}>+ Add Item</button>
               </div>
               <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 8, overflow: 'hidden' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 70px 90px 28px', gap: 6, padding: '8px 10px', color: '#475569', fontSize: 11, fontWeight: 600 }}>
@@ -567,4 +567,6 @@ export default function VendorManagementPage() {
     </div>
   );
 }
+
+
 

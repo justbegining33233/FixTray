@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowDown, FaArrowRight, FaArrowUp, FaChartBar, FaChartLine } from 'react-icons/fa';
+import { FaArrowRight, FaChartBar, FaChartLine } from 'react-icons/fa';
 
 interface Insight {
   id: string;
@@ -40,12 +41,12 @@ export default function Insights() {
   const handleSignOut = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
-    router.push('/auth/login');
+    router.push('/auth/login' as Route);
   };
 
   const getTrendIcon = (trend: string) => {
-    if (trend.includes('↑')) return <FaChartLine style={{marginRight:4}} />;
-    if (trend.includes('↓')) return <FaChartLine style={{marginRight:4}} />;
+    if (trend.includes('')) return <FaChartLine style={{marginRight:4}} />;
+    if (trend.includes('')) return <FaChartLine style={{marginRight:4}} />;
     return <FaArrowRight style={{marginRight:4}} />;
   };
 
@@ -97,10 +98,10 @@ export default function Insights() {
                 </div>
                 <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5}}>{insight.description}</div>
               </div>
-              <button onClick={() => router.push('/customer/workorders')} style={{
+              <button onClick={() => router.push('/customer/workorders' as Route)} style={{
                 width:'100%',
                 padding:'12px',
-                background:'#3b82f6',
+                background:'#e5332a',
                 color:'white',
                 border:'none',
                 borderRadius:8,
@@ -123,7 +124,7 @@ export default function Insights() {
               <div style={{fontSize:14, color:'#9aa3b2'}}>Total Spent</div>
             </div>
             <div style={{textAlign:'center'}}>
-              <div style={{fontSize:32, fontWeight:700, color:'#3b82f6'}}>{summary ? summary.servicesCompleted : 0}</div>
+              <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{summary ? summary.servicesCompleted : 0}</div>
               <div style={{fontSize:14, color:'#9aa3b2'}}>Services Completed</div>
             </div>
             <div style={{textAlign:'center'}}>
@@ -141,7 +142,7 @@ export default function Insights() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,

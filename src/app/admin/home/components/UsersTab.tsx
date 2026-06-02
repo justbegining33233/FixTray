@@ -61,15 +61,15 @@ interface UsersLiveMetrics {
   totalWorkOrders?: number;
   completedWorkOrders?: number;
   // User health indicators
-  accountVerificationRate?: number;
+  accountVerificationRate?: number | null;
   profileCompletionRate?: number;
   onboardingCompletionRate?: number;
-  twoFactorAuthRate?: number;
+  twoFactorAuthRate?: number | null;
   // Security metrics
   activeSessions?: number;
-  failedLogins?: number;
-  accountLockouts?: number;
-  securityAlerts?: number;
+  failedLogins?: number | null;
+  accountLockouts?: number | null;
+  securityAlerts?: number | null;
 }
 
 interface UsersTabProps {
@@ -79,6 +79,9 @@ interface UsersTabProps {
 
 // Chart Components
 function MiniLineChart({ data, color, height = 40 }: { data: number[]; color: string; height?: number }) {
+  if (!data.length) {
+    data = [0, 0];
+  }
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
@@ -172,7 +175,7 @@ function ActivityHeatmap({ data }: { data: number[][] }) {
 
 const ROLE_CONFIG: Record<string, { name: string; icon: React.ReactNode; color: string; bgColor: string }> = {
   admin: { name: 'Admin', icon: <FaCrown style={{marginRight:4}} />, color: '#EF4444', bgColor: 'bg-[#EF4444]/10' },
-  shop: { name: 'Shop Owner', icon: '', color: '#3B82F6', bgColor: 'bg-[#3B82F6]/10' },
+  shop: { name: 'Shop Owner', icon: '', color: '#e5332a', bgColor: 'bg-[#e5332a]/10' },
   tech: { name: 'Technician', icon: '', color: '#22C55E', bgColor: 'bg-[#22C55E]/10' },
   manager: { name: 'Manager', icon: '', color: '#F97316', bgColor: 'bg-[#F97316]/10' },
   customer: { name: 'Customer', icon: '', color: '#8B5CF6', bgColor: 'bg-[#8B5CF6]/10' }
@@ -207,11 +210,13 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
     })
     .filter(r => r.count > 0);
 
-  // Use real trend data from API or fallback
-  const userGrowthTrend = liveMetrics?.userTrend || [0, 0, 0, 0, 0, 0, totalUsers];
-  const activeUsersTrend = userGrowthTrend.map(v => Math.round(v * 0.7)); // Approximate
+  // Use live trend data only.
+  const userGrowthTrend = liveMetrics?.userTrend || [];
+  const activeUsersTrend = liveMetrics?.activityHeatmap?.length
+    ? liveMetrics.activityHeatmap[liveMetrics.activityHeatmap.length - 1]
+    : [];
   
-  // Activity heatmap from API or fallback
+  // Activity heatmap from API or empty state
   const activityData = liveMetrics?.activityHeatmap || [
     [0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0],
@@ -219,11 +224,19 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
     [0, 0, 0, 0, 0, 0, 0]
   ];
 
+  const formatNullableMetric = (value?: number | null, suffix = '') => {
+    if (value === null || value === undefined) {
+      return 'Unavailable';
+    }
+
+    return `${value}${suffix}`;
+  };
+
   // Engagement metrics from live data
   const engagementMetrics = {
-    dailyActiveUsers: liveMetrics?.dailyActiveUsers || Math.round(activeUsersCount * 0.3),
-    weeklyActiveUsers: liveMetrics?.weeklyActiveUsers || activeUsersCount,
-    monthlyActiveUsers: liveMetrics?.monthlyActiveUsers || totalUsers,
+    dailyActiveUsers: liveMetrics?.dailyActiveUsers ?? 0,
+    weeklyActiveUsers: liveMetrics?.weeklyActiveUsers ?? 0,
+    monthlyActiveUsers: liveMetrics?.monthlyActiveUsers ?? 0,
     featureAdoptionRate: liveMetrics?.featureAdoptionRate || 0,
     userRetentionRate: parseFloat(liveMetrics?.retentionRate?.replace('%', '') || '0'),
     churnRate: parseFloat(liveMetrics?.churnRate?.replace('%', '') || '0'),
@@ -268,14 +281,14 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
               <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">Active Users</p>
               <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{activeUsersCount}</p>
             </div>
-            <div className="flex items-center gap-1 px-2 py-1 bg-[#3B82F6]/10 rounded-full">
-              <svg className="w-3 h-3 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="flex items-center gap-1 px-2 py-1 bg-[#e5332a]/10 rounded-full">
+              <svg className="w-3 h-3 text-[#e5332a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
               </svg>
-              <span className="text-xs font-medium text-[#3B82F6]">{activeRate}</span>
+              <span className="text-xs font-medium text-[#e5332a]">{activeRate}</span>
             </div>
           </div>
-          <MiniLineChart data={activeUsersTrend} color="#3B82F6" height={50} />
+          <MiniLineChart data={activeUsersTrend} color="#e5332a" height={50} />
           <p className="text-[10px] text-[#52525B] mt-2">Weekly active users</p>
         </div>
 
@@ -284,7 +297,7 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
             <div>
               <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">Retention Rate</p>
               <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{engagementMetrics.userRetentionRate}%</p>
-              <p className="text-xs text-[#22C55E] mt-1"><FaArrowUp style={{marginRight:4}} /> 2.3% vs last month</p>
+              <p className="text-xs text-[#22C55E] mt-1"><FaArrowUp style={{marginRight:4}} /> Live 30-day rate</p>
             </div>
             <div className="w-16 h-16 rounded-full border-4 border-[#8B5CF6] flex items-center justify-center">
               <span className="text-sm font-bold text-[#8B5CF6]">{engagementMetrics.userRetentionRate}%</span>
@@ -397,7 +410,7 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
             Engagement Funnel
           </h3>
           <div className="space-y-4">
-            <FunnelStep label="Registered Users" value={totalUsers} percent={100} color="#3B82F6" />
+            <FunnelStep label="Registered Users" value={totalUsers} percent={100} color="#e5332a" />
             <FunnelStep label="Onboarded" value={liveMetrics?.onboardedUsers || 0} percent={engagementMetrics.onboardingRate} color="#8B5CF6" />
             <FunnelStep label="Feature Adoption" value={Math.round(totalUsers * engagementMetrics.featureAdoptionRate / 100)} percent={engagementMetrics.featureAdoptionRate} color="#F97316" />
             <FunnelStep label="Power Users" value={liveMetrics?.powerUsers || 0} percent={engagementMetrics.powerUserRate} color="#22C55E" />
@@ -408,7 +421,7 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
               <p className="text-[10px] text-[#52525B]">Power Users</p>
             </div>
             <div className="text-center p-3 bg-[#27272A]/30 rounded-lg">
-              <p className="text-lg font-bold text-[#3B82F6]">{engagementMetrics.onboardingRate}%</p>
+              <p className="text-lg font-bold text-[#e5332a]">{engagementMetrics.onboardingRate}%</p>
               <p className="text-[10px] text-[#52525B]">Onboarding</p>
             </div>
           </div>
@@ -419,12 +432,12 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
+            <span className="w-2 h-2 rounded-full bg-[#e5332a]" />
             Daily Activity
           </h3>
           <div className="grid grid-cols-2 gap-4">
-            <MetricBox label="DAU" value={engagementMetrics.dailyActiveUsers.toString()} color="#3B82F6" />
-            <MetricBox label="DAU/MAU" value={`${((liveMetrics?.dauMauRatio || 0) * 100).toFixed(0)}%`} color="#22C55E" />
+            <MetricBox label="DAU" value={engagementMetrics.dailyActiveUsers.toString()} color="#e5332a" />
+            <MetricBox label="DAU/MAU" value={`${liveMetrics?.dauMauRatio || 0}%`} color="#22C55E" />
             <MetricBox label="Avg Value" value={`$${(liveMetrics?.avgCustomerValue || 0).toFixed(0)}`} color="#8B5CF6" />
             <MetricBox label="Total Orders" value={(liveMetrics?.totalWorkOrders || 0).toLocaleString()} color="#F97316" />
           </div>
@@ -437,9 +450,9 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <MetricBox label="WAU" value={engagementMetrics.weeklyActiveUsers.toString()} color="#8B5CF6" />
-            <MetricBox label="Feature Usage" value={`${((liveMetrics?.featureAdoptionRate || 0) * 100).toFixed(0)}%`} color="#22C55E" />
+            <MetricBox label="Feature Usage" value={`${liveMetrics?.featureAdoptionRate || 0}%`} color="#22C55E" />
             <MetricBox label="Completed" value={(liveMetrics?.completedWorkOrders || 0).toString()} color="#F97316" />
-            <MetricBox label="Reviews" value={(liveMetrics?.totalReviewCount || 0).toString()} color="#3B82F6" />
+            <MetricBox label="Reviews" value={(liveMetrics?.totalReviewCount || 0).toString()} color="#e5332a" />
           </div>
         </div>
 
@@ -451,7 +464,7 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
           <div className="grid grid-cols-2 gap-4">
             <MetricBox label="MAU" value={engagementMetrics.monthlyActiveUsers.toString()} color="#22C55E" />
             <MetricBox label="Retention" value={liveMetrics?.retentionRate || '0%'} color="#8B5CF6" />
-            <MetricBox label="Churn" value={liveMetrics?.churnRate || '0%'} color="#3B82F6" />
+            <MetricBox label="Churn" value={liveMetrics?.churnRate || '0%'} color="#e5332a" />
             <MetricBox label="Satisfaction" value={`${(liveMetrics?.customerSatisfaction || 0).toFixed(1)}/5`} color="#F97316" />
           </div>
         </div>
@@ -558,16 +571,16 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
             User Health Indicators
           </h3>
           <div className="space-y-4">
-            <HealthBar label="Account Verification" value={liveMetrics?.accountVerificationRate || 0} color="#22C55E" />
-            <HealthBar label="Profile Completion" value={liveMetrics?.profileCompletionRate || 0} color="#3B82F6" />
+            <HealthBar label="Account Verification" value={liveMetrics?.accountVerificationRate ?? null} color="#22C55E" />
+            <HealthBar label="Profile Completion" value={liveMetrics?.profileCompletionRate || 0} color="#e5332a" />
             <HealthBar label="Onboarding Completion" value={liveMetrics?.onboardingCompletionRate || 0} color="#8B5CF6" />
-            <HealthBar label="Two-Factor Auth" value={liveMetrics?.twoFactorAuthRate || 0} color="#F97316" />
+            <HealthBar label="Two-Factor Auth" value={liveMetrics?.twoFactorAuthRate ?? null} color="#F97316" />
           </div>
         </div>
 
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-5 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
+            <span className="w-2 h-2 rounded-full bg-[#e5332a]" />
             Security Overview
           </h3>
           <div className="grid grid-cols-2 gap-4">
@@ -576,15 +589,15 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
               <p className="text-xs text-[#71717A]">Active Sessions</p>
             </div>
             <div className="p-4 bg-[#F97316]/5 border border-[#F97316]/20 rounded-xl text-center">
-              <p className="text-2xl font-bold text-[#F97316]">{liveMetrics?.failedLogins || 0}</p>
+              <p className="text-2xl font-bold text-[#F97316]">{formatNullableMetric(liveMetrics?.failedLogins)}</p>
               <p className="text-xs text-[#71717A]">Failed Logins</p>
             </div>
             <div className="p-4 bg-[#EF4444]/5 border border-[#EF4444]/20 rounded-xl text-center">
-              <p className="text-2xl font-bold text-[#EF4444]">{liveMetrics?.accountLockouts || 0}</p>
+              <p className="text-2xl font-bold text-[#EF4444]">{formatNullableMetric(liveMetrics?.accountLockouts)}</p>
               <p className="text-xs text-[#71717A]">Account Lockouts</p>
             </div>
             <div className="p-4 bg-[#22C55E]/5 border border-[#22C55E]/20 rounded-xl text-center">
-              <p className="text-2xl font-bold text-[#22C55E]">{liveMetrics?.securityAlerts || 0}</p>
+              <p className="text-2xl font-bold text-[#22C55E]">{formatNullableMetric(liveMetrics?.securityAlerts)}</p>
               <p className="text-xs text-[#71717A]">Security Alerts</p>
             </div>
           </div>
@@ -622,16 +635,22 @@ function MetricBox({ label, value, color }: { label: string; value: string; colo
   );
 }
 
-function HealthBar({ label, value, color }: { label: string; value: number; color: string }) {
+function HealthBar({ label, value, color }: { label: string; value: number | null; color: string }) {
+  const isUnavailable = value === null;
+  const safeValue = value ?? 0;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs text-[#A1A1AA]">{label}</span>
-        <span className="text-xs font-medium" style={{ color }}>{value}%</span>
+        <span className="text-xs font-medium" style={{ color: isUnavailable ? '#A1A1AA' : color }}>
+          {isUnavailable ? 'Unavailable' : `${safeValue}%`}
+        </span>
       </div>
       <div className="h-2 rounded-full bg-[#27272A] overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, backgroundColor: color }} />
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${safeValue}%`, backgroundColor: isUnavailable ? '#52525B' : color }} />
       </div>
     </div>
   );
 }
+

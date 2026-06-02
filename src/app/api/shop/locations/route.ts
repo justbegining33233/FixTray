@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const shopId = auth.shopId ?? auth.id;
+
   let body: Awaited<ReturnType<typeof request.json>>;
   try {
     body = await request.json();

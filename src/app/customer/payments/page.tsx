@@ -115,9 +115,9 @@ export default function Payments() {
 
         {/* Summary Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24, marginBottom: 32 }}>
-          <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12, padding: 24 }}>
+          <div style={{ background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 24 }}>
             <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>Total Paid</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6' }}>${summary.totalPaid.toFixed(2)}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#e5332a' }}>${summary.totalPaid.toFixed(2)}</div>
             <div style={{ fontSize: 12, color: '#6b7280' }}>{summary.paidCount} transactions</div>
           </div>
           <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: 24 }}>
@@ -144,7 +144,7 @@ export default function Payments() {
                       {payment.status === 'Paid' ? `$${payment.amountPaid.toFixed(2)} paid` : `$${payment.amount.toFixed(2)} due`}
                     </div>
                     <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 4 }}>{payment.service}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{payment.shop} · {payment.vehicle}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{payment.shop}  {payment.vehicle}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{formatDate(payment.date)}</div>
                     {payment.status === 'Pending' && payment.amount > 0 && (
                       <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
@@ -166,7 +166,7 @@ export default function Payments() {
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <Link href={`/customer/workorders/${payment.id}`} style={{
                     padding: '8px 16px',
-                    background: '#3b82f6',
+                    background: '#e5332a',
                     color: 'white',
                     border: 'none',
                     borderRadius: 6,
@@ -209,7 +209,7 @@ export default function Payments() {
 
         <div style={{ marginTop: 32, textAlign: 'center' }}>
           <Link href="/customer/dashboard" style={{
-            padding: '12px 24px', background: '#3b82f6', color: 'white', borderRadius: 8,
+            padding: '12px 24px', background: '#e5332a', color: 'white', borderRadius: 8,
             fontSize: 16, fontWeight: 600, textDecoration: 'none',
           }}>
             Back to Dashboard
@@ -218,7 +218,7 @@ export default function Payments() {
 
         <div style={{ marginTop: 24, padding: 16, background: 'rgba(0,0,0,0.2)', borderRadius: 8, textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: '#9aa3b2' }}>
-            <FaLock style={{marginRight:4}} /> Secured by Stripe · PCI DSS Compliant · 256-bit SSL Encryption
+            <FaLock style={{marginRight:4}} /> Secured by Stripe  PCI DSS Compliant  256-bit SSL Encryption
           </div>
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function Payments() {
       {payError && (
         <div style={{position:'fixed',bottom:24,right:24,background:'#fde8e8',color:'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {payError}
-          <button onClick={()=>setPayError('')} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setPayError('')} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>

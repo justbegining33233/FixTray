@@ -1,27 +1,17 @@
 /**
- * useSocket — polling-based real-time hook (Vercel-compatible, no Socket.io)
+ * useSocket — Real-time hook using Socket.IO client with polling fallback.
  *
- * Every 5 seconds it fetches work orders and messages from Neon via the
- * existing API routes.  When changes are detected it fires the same
- * window CustomEvents that the rest of the app already listens for:
+ * Connects to the Socket.IO server specified by NEXT_PUBLIC_SOCKET_URL.
+ * Falls back to REST polling if the env var is not set or connection fails.
  *
- *   work-order:updated   → triggered when any work order status/updatedAt changes
- *   chat:new-message     → triggered when an unread conversation appears
- *   chat:typing          → (stub — no real-time typing without persistent WS)
- *   chat:stopped-typing  → (stub)
- *   tech:location_updated→ (stub)
- *   clock:status_changed → (stub — clock status polled independently in TopNavBar)
- *
- * The hook's `on` / `off` helpers translate socket event names into the above
- * window event names so that components relying on on('new-message', cb) keep
- * working without any changes.
- *
- * `emit` is a no-op stub; all actual mutations already go through REST endpoints.
+ * Fires window CustomEvents so existing component listeners keep working:
+ *   work-order:updated, chat:new-message, chat:typing, etc.
  */
 
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 // ─── Socket → Window event name mapping ──────────────────────────────────────
 const EVENT_MAP: Record<string, string> = {
@@ -33,7 +23,7 @@ const EVENT_MAP: Record<string, string> = {
   'clock-status-changed':  'clock:status_changed',
 };
 
-// ─── Types (kept for compatibility) ──────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 export interface ServerToClientEvents {
   'work-order-updated': (data: any) => void;
   'new-message': (data: any) => void;
@@ -59,19 +49,75 @@ function dispatch(windowEvent: string, detail: unknown) {
   }
 }
 
-// ─── Polling state (module-level singleton so multiple hook instances share it)
+// ─── Singleton Socket.IO connection ──────────────────────────────────────────
+let socketInstance: Socket | null = null;
+let socketConnected = false;
+
+function shouldUseSocketInCurrentEnv(): boolean {
+  if (process.env.NEXT_PUBLIC_ENABLE_REALTIME !== 'true') return false;
+  // Require an explicit socket server URL.
+  // Vercel serverless functions cannot host a persistent Socket.IO connection,
+  // so we must never fall back to the app's own origin.
+  // If no URL is configured, getSocket() returns null and the polling fallback
+  // in useSocket() takes over automatically.
+  if (!process.env.NEXT_PUBLIC_SOCKET_URL) return false;
+  if (process.env.NODE_ENV === 'production') return true;
+  return process.env.NEXT_PUBLIC_ENABLE_SOCKET_IN_DEV === 'true';
+}
+
+function getSocket(): Socket | null {
+  if (typeof window === 'undefined') return null;
+  if (socketInstance) return socketInstance;
+  if (!shouldUseSocketInCurrentEnv()) return null;
+
+  const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL!;
+  if (!socketUrl) return null; // guarded above, but keep as safety net
+
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+
+  socketInstance = io(socketUrl, {
+    auth: { token },
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 2000,
+    timeout: 10000,
+  });
+
+  socketInstance.on('connect', () => {
+    socketConnected = true;
+    const shopId = localStorage.getItem('shopId');
+    const userId = localStorage.getItem('userId');
+    if (shopId) socketInstance?.emit('join-shop', shopId);
+    if (userId) socketInstance?.emit('join-user', userId);
+  });
+
+  socketInstance.on('disconnect', () => { socketConnected = false; });
+  socketInstance.on('connect_error', () => { socketConnected = false; });
+
+  // Forward all server events to window CustomEvents
+  Object.entries(EVENT_MAP).forEach(([socketEvent, windowEvent]) => {
+    socketInstance?.on(socketEvent, (data: any) => {
+      dispatch(windowEvent, data);
+    });
+  });
+
+  return socketInstance;
+}
+
+// ─── Polling fallback (when Socket.IO server is not configured) ──────────────
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
-let prevWorkOrderSnapshot: Record<string, string> = {}; // id → updatedAt
-let prevMessageSnapshot: Record<string, string> = {};   // contactId → lastMessageAt
+let prevWorkOrderSnapshot: Record<string, string> = {};
+let prevMessageSnapshot: Record<string, string> = {};
 
 async function poll() {
   if (typeof window === 'undefined') return;
   const token = localStorage.getItem('token');
   if (!token) return;
 
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
 
-  // ── Work orders ────────────────────────────────────────────────────────────
+  // ── Work orders ─────────────────────────────────────────────────────────
   try {
     const res = await fetch('/api/workorders', { headers, credentials: 'include' });
     if (res.ok) {
@@ -84,7 +130,6 @@ async function poll() {
         next[wo.id] = stamp;
         const prev = prevWorkOrderSnapshot[wo.id];
         if (prev !== undefined && prev !== stamp) {
-          // Status changed — fire event
           dispatch('work-order:updated', {
             workOrderId: wo.id,
             action: 'updated',
@@ -96,11 +141,9 @@ async function poll() {
       }
       prevWorkOrderSnapshot = next;
     }
-  } catch {
-    // network error — silently ignore
-  }
+  } catch { /* network error */ }
 
-  // ── Messages ───────────────────────────────────────────────────────────────
+  // ── Messages ──────────────────────────────────────────────────────────────
   try {
     const res = await fetch('/api/messages', { headers, credentials: 'include' });
     if (res.ok) {
@@ -124,45 +167,55 @@ async function poll() {
       }
       prevMessageSnapshot = next;
     }
-  } catch {
-    // network error — silently ignore
-  }
+  } catch { /* network error */ }
+}
+
+function startPollingFallback() {
+  if (pollingInterval) return;
+  poll();
+  pollingInterval = setInterval(poll, 5000);
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export const useSocket = () => {
-  const [isConnected] = useState(true); // polling is always "connected"
-  // Track window-event listeners so on/off work correctly
+  const [isConnected, setIsConnected] = useState(false);
   const listenersRef = useRef<Map<string, (e: Event) => void>>(new Map());
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Start the shared polling interval (once globally)
-    if (!pollingInterval) {
-      // Kick off first poll immediately, then every 5 s
-      poll();
-      pollingInterval = setInterval(poll, 5000);
-    }
+    const socket = getSocket();
 
-    return () => {
-      // We intentionally leave the interval running — TopNavBar mounts/unmounts
-      // on every page navigation; stopping polling on unmount would break other
-      // components that still need live data.
-    };
+    if (socket) {
+      // Real Socket.IO mode
+      const onConnect = () => setIsConnected(true);
+      const onDisconnect = () => setIsConnected(false);
+      socket.on('connect', onConnect);
+      socket.on('disconnect', onDisconnect);
+      if (socket.connected) setIsConnected(true);
+
+      return () => {
+        socket.off('connect', onConnect);
+        socket.off('disconnect', onDisconnect);
+      };
+    } else {
+      // Polling fallback — no socket server configured
+      setIsConnected(true);
+      startPollingFallback();
+    }
   }, []);
 
-  const emit = useCallback((_event: keyof ClientToServerEvents, _data: any) => {
-    // No-op: all mutations are handled by dedicated REST endpoints.
-    // clock-status-change → already handled by /api/shop/team/clock
-    // send-message        → RealTimeMessaging uses its own API call
+  const emit = useCallback((event: keyof ClientToServerEvents, data: any) => {
+    const socket = getSocket();
+    if (socket && socketConnected) {
+      socket.emit(event, data);
+    }
   }, []);
 
   const on = useCallback((event: keyof ServerToClientEvents, callback: (data: any) => void) => {
     const windowEvent = EVENT_MAP[event];
     if (!windowEvent || typeof window === 'undefined') return;
     const wrapper = (e: Event) => callback((e as CustomEvent).detail);
-    // Key: event name + callback ref to support clean removal
     const key = `${event}:${callback.toString().slice(0, 40)}`;
     listenersRef.current.set(key, wrapper);
     window.addEventListener(windowEvent, wrapper);
@@ -180,7 +233,6 @@ export const useSocket = () => {
         listenersRef.current.delete(key);
       }
     } else {
-      // Remove all listeners for this event
       listenersRef.current.forEach((wrapper, key) => {
         if (key.startsWith(`${event}:`)) {
           window.removeEventListener(windowEvent, wrapper);

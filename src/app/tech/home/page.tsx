@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { Route } from 'next';
 import TimeClock from '@/components/TimeClock';
 import TechLiveMap from '@/components/TechLiveMap';
 import TopNavBar from '@/components/TopNavBar';
@@ -10,14 +11,17 @@ import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import RealTimeWorkOrders from '@/components/RealTimeWorkOrders';
 import MobileLayout from '@/components/MobileLayout';
+import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsNative } from '@/context/NativeContext';
 import { FaArrowRight, FaBook, FaBox, FaCamera, FaCar, FaChartBar, FaCheckCircle, FaCircle, FaClipboardList, FaCog, FaComments, FaExclamationCircle, FaMapMarkerAlt, FaRegCircle, FaSearch, FaStopwatch, FaSyncAlt, FaTools, FaUser, FaWrench } from 'react-icons/fa';
 
 export default function TechHome() {
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['tech']);
   const isMobile = useIsMobile();
+  const isNative = useIsNative();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [todayJobs, setTodayJobs] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('job-creation');
@@ -28,6 +32,7 @@ export default function TechHome() {
   const [roadCalls, setRoadCalls] = useState<any[]>([]);
   const [partsVendors, setPartsVendors] = useState<{ vendor: string; address?: string; poId?: string }[]>([]);
   const [homeMsg, setHomeMsg] = useState<{type:'success'|'error';text:string}|null>(null);
+  const [shopStatsReady, setShopStatsReady] = useState(false);
   const [shopStats, setShopStats] = useState({
     openJobs: 0,
     completedToday: 0,
@@ -136,29 +141,55 @@ export default function TechHome() {
     }
   };
 
+  const fetchShopStats = async (shopId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const [workOrdersResponse, purchaseOrdersResponse] = await Promise.all([
+        fetch(`/api/workorders?shopId=${shopId}&limit=100`, { headers }),
+        fetch(`/api/purchase-orders?shopId=${shopId}`, { headers }),
+      ]);
+
+      if (!workOrdersResponse.ok) return;
+
+      const workOrderData = await workOrdersResponse.json();
+      const orders: any[] = workOrderData.workOrders || [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const openJobs = orders.filter((w: any) => ['assigned', 'in-progress'].includes(w.status)).length;
+      const completedToday = orders.filter((w: any) => w.status === 'closed' && new Date(w.updatedAt) >= today).length;
+      const todayRevenue = orders
+        .filter((w: any) => w.status === 'closed' && w.paymentStatus === 'paid' && new Date(w.updatedAt) >= today)
+        .reduce((sum: number, w: any) => sum + (w.amountPaid || 0), 0);
+
+      let partsOrdered = 0;
+      if (purchaseOrdersResponse.ok) {
+        const purchaseOrderData = await purchaseOrdersResponse.json();
+        partsOrdered = Array.isArray(purchaseOrderData.orders) ? purchaseOrderData.orders.length : 0;
+      }
+
+      setShopStats({
+        openJobs,
+        completedToday,
+        partsOrdered,
+        revenue: `$${todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}`,
+      });
+      setShopStatsReady(true);
+    } catch {
+      // Keep the last known live values.
+    }
+  };
+
   // Initialize data when user is available
   useEffect(() => {
     if (!user) return;
     // Fetch shop profile if shopId exists
     if (user.shopId) {
       fetchShopProfile(user.shopId);
-      // Fetch aggregated shop stats from work orders
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      fetch(`/api/workorders?shopId=${user.shopId}&limit=100`, { headers })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (!data) return;
-          const orders: any[] = data.workOrders || [];
-          const today = new Date(); today.setHours(0, 0, 0, 0);
-          const openJobs = orders.filter((w: any) => ['assigned', 'in-progress'].includes(w.status)).length;
-          const completedToday = orders.filter((w: any) => w.status === 'closed' && new Date(w.updatedAt) >= today).length;
-          const todayRevenue = orders
-            .filter((w: any) => w.status === 'closed' && w.paymentStatus === 'paid' && new Date(w.updatedAt) >= today)
-            .reduce((s: number, w: any) => s + (w.amountPaid || 0), 0);
-          setShopStats({ openJobs, completedToday, partsOrdered: 0, revenue: `$${todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}` });
-        })
-        .catch(() => {});
+      setShopStatsReady(false);
+      fetchShopStats(user.shopId);
     }
     // Fetch tech profile
     fetchTechProfile(user.id);
@@ -171,10 +202,17 @@ export default function TechHome() {
       fetchTechProfile(user.id);
       fetchTodayJobs(user.id);
       fetchMessageUnreadCount();
+      if (user.shopId) fetchShopStats(user.shopId);
     }, 10000);
     return () => clearInterval(refreshInterval);
   }, [user]);
 
+
+  //  Mobile / native: show the tile-grid shell immediately 
+  // Must come before isLoading so mobile users never see the desktop flash.
+  if (isNative || isMobile) {
+    return <MobileShell role="tech" isHome userName={user?.name} />;
+  }
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -204,17 +242,17 @@ export default function TechHome() {
     localStorage.removeItem('userId');
     localStorage.removeItem('shopId');
     localStorage.removeItem('token');
-    router.push('/auth/login');
+    router.push('/auth/login' as Route);
   };
 
   const jobCreationTools = [
-    { title: 'New Roadside Job', description: 'Create emergency roadside assistance work orders', icon: <FaCar style={{marginRight:4}} />, link: '/workorders/new' },
-    { title: 'New In-Shop Job', description: 'Schedule in-shop service appointments', icon: <FaWrench style={{marginRight:4}} />, link: '/workorders/inshop' },
+    { title: 'New Roadside Job', description: 'Create emergency roadside assistance work orders', icon: <FaCar style={{marginRight:4}} />, link: '/tech/new-roadside-job' },
+    { title: 'New In-Shop Job', description: 'Schedule in-shop service appointments', icon: <FaWrench style={{marginRight:4}} />, link: '/tech/new-inshop-job' },
   ];
 
   const jobManagementTools = [
-    { title: 'Active Jobs', description: 'View all your currently assigned work orders', icon: <FaClipboardList style={{marginRight:4}} />, link: '/workorders/list?status=in-progress' },
-    { title: 'Job History', description: 'Browse completed work orders and feedback', icon: <FaChartBar style={{marginRight:4}} />, link: '/workorders/list?status=closed' },
+    { title: 'Active Jobs', description: 'View all your currently assigned work orders', icon: <FaClipboardList style={{marginRight:4}} />, link: '/tech/home' },
+    { title: 'Job History', description: 'Browse completed work orders and feedback', icon: <FaChartBar style={{marginRight:4}} />, link: '/tech/home' },
   ];
 
   const fieldTools = [
@@ -248,21 +286,21 @@ export default function TechHome() {
     >
         {/* Shop Stats */}
         <div style={{display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? 10 : 16, marginBottom:24}}>
-          <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:20}}>
+          <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>My Open Jobs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#3b82f6'}}>{todayJobs.length}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{todayJobs.length}</div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Completed Today</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStats.completedToday}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStatsReady ? shopStats.completedToday : '...'} </div>
           </div>
           <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Parts Ordered</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{shopStats.partsOrdered}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{shopStatsReady ? shopStats.partsOrdered : '...'} </div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Today's Revenue</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStats.revenue}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStatsReady ? shopStats.revenue : 'Syncing...'} </div>
           </div>
         </div>
 
@@ -272,7 +310,7 @@ export default function TechHome() {
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
                 <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}><FaWrench style={{marginRight:4}} /> My Tasks Today</h2>
-                <Link href="/workorders/list" style={{fontSize:13, color:'#3b82f6', textDecoration:'none'}}>View All <FaArrowRight style={{marginRight:4}} /></Link>
+                <Link href="/tech/home" style={{fontSize:13, color:'#e5332a', textDecoration:'none'}}>View All <FaArrowRight style={{marginRight:4}} /></Link>
               </div>
               
               {todayJobs.length === 0 ? (
@@ -294,8 +332,8 @@ export default function TechHome() {
                               borderRadius:8,
                               fontSize:11,
                               fontWeight:700,
-                              background: job.status === 'in-progress' ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.2)',
-                              color: job.status === 'in-progress' ? '#22c55e' : '#3b82f6',
+                              background: job.status === 'in-progress' ? 'rgba(34,197,94,0.2)' : 'rgba(229,51,42,0.2)',
+                              color: job.status === 'in-progress' ? '#22c55e' : '#ff6b64',
                             }}>
                               {job.status.toUpperCase()}
                             </span>
@@ -308,10 +346,10 @@ export default function TechHome() {
                           </div>
                         </div>
                         <Link
-                          href={`/workorders/${job.id}`}
+                          href={`/workorders/${job.id}` as Route}
                           style={{
                             padding:'6px 12px',
-                            background:'#3b82f6',
+                            background:'#e5332a',
                             color:'white',
                             borderRadius:6,
                             textDecoration:'none',
@@ -390,7 +428,7 @@ export default function TechHome() {
                             } catch (err) { console.error(err); setHomeMsg({type:'error',text:'Error loading road calls'}); }
                           }} style={{padding:8, borderRadius:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', color:'#e5e7eb', cursor:'pointer'}}>Show</button>
 
-                          <Link href="/workorders/new?serviceLocation=roadside" style={{display:'inline-block', padding:'8px 10px', background:'#e5332a', color:'white', borderRadius:6, textDecoration:'none', fontWeight:700, fontSize:13}}>Create Road Call</Link>
+                          <Link href="/tech/new-roadside-job" style={{display:'inline-block', padding:'8px 10px', background:'#e5332a', color:'white', borderRadius:6, textDecoration:'none', fontWeight:700, fontSize:13}}>Create Road Call</Link>
                         </div>
                       </div>
 
@@ -532,7 +570,7 @@ export default function TechHome() {
                               const stopBtn = document.getElementById('stop-share-btn') as HTMLButtonElement | null;
                               if (stopBtn) stopBtn.style.display = 'inline-block';
                             } catch (err) { console.error('Location error', err); setHomeMsg({type:'error',text:'Failed to get location'}); }
-                          }} style={{flex:1, padding:8, borderRadius:6, background:'#3b82f6', color:'white', border:'none', fontWeight:700}}>Share</button>
+                          }} style={{flex:1, padding:8, borderRadius:6, background:'#e5332a', color:'white', border:'none', fontWeight:700}}>Share</button>
                           <button id="stop-share-btn" onClick={() => {
                             const id = (window as any).__shop_location_watch;
                             if (id !== undefined) { navigator.geolocation.clearWatch(id); (window as any).__shop_location_watch = undefined; }
@@ -546,7 +584,7 @@ export default function TechHome() {
                       </div>
 
                       <div style={{flex:1}} />
-                      <div style={{fontSize:10, color:'#9aa3b2', textAlign:'center'}}>Leaflet | © OpenStreetMap contributors</div>
+                      <div style={{fontSize:10, color:'#9aa3b2', textAlign:'center'}}>Leaflet |  OpenStreetMap contributors</div>
                     </div>
                   </div>
                 ) : (
@@ -669,9 +707,9 @@ export default function TechHome() {
               {activeTab === 'job-creation' && (
                 <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isMobile ? 12 : 20}}>
                   {jobCreationTools.map(tool => (
-                    <Link key={tool.title} href={tool.link} style={{textDecoration:'none'}}>
+                    <Link key={tool.title} href={tool.link as Route} style={{textDecoration:'none'}}>
                       <div style={{
-                        background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                        background:'#000000',
                         border:'1px solid rgba(255,255,255,0.15)',
                         borderRadius:16,
                         padding:24,
@@ -702,9 +740,9 @@ export default function TechHome() {
               {activeTab === 'job-management' && (
                 <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isMobile ? 12 : 20}}>
                   {jobManagementTools.map(tool => (
-                    <Link key={tool.title} href={tool.link} style={{textDecoration:'none'}}>
+                    <Link key={tool.title} href={tool.link as Route} style={{textDecoration:'none'}}>
                       <div style={{
-                        background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                        background:'#000000',
                         border:'1px solid rgba(255,255,255,0.15)',
                         borderRadius:16,
                         padding:24,
@@ -735,9 +773,9 @@ export default function TechHome() {
               {activeTab === 'field-tools' && (
                 <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isMobile ? 12 : 20}}>
                   {fieldTools.map(tool => (
-                    <Link key={tool.title} href={tool.link} style={{textDecoration:'none'}}>
+                    <Link key={tool.title} href={tool.link as Route} style={{textDecoration:'none'}}>
                       <div style={{
-                        background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                        background:'#000000',
                         border:'1px solid rgba(255,255,255,0.15)',
                         borderRadius:16,
                         padding:24,
@@ -775,9 +813,9 @@ export default function TechHome() {
               {activeTab === 'resources' && (
                 <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isMobile ? 12 : 20}}>
                   {resourceTools.map(tool => (
-                    <Link key={tool.title} href={tool.link} style={{textDecoration:'none'}}>
+                    <Link key={tool.title} href={tool.link as Route} style={{textDecoration:'none'}}>
                       <div style={{
-                        background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                        background:'#000000',
                         border:'1px solid rgba(255,255,255,0.15)',
                         borderRadius:16,
                         padding:24,
@@ -808,9 +846,9 @@ export default function TechHome() {
               {activeTab === 'technical' && (
                 <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isMobile ? 12 : 20}}>
                   {technicalTools.map(tool => (
-                    <Link key={tool.title} href={tool.link} style={{textDecoration:'none'}}>
+                    <Link key={tool.title} href={tool.link as Route} style={{textDecoration:'none'}}>
                       <div style={{
-                        background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                        background:'#000000',
                         border:'1px solid rgba(255,255,255,0.15)',
                         borderRadius:16,
                         padding:24,
@@ -843,7 +881,7 @@ export default function TechHome() {
           <div>
             {/* Tech Profile Card */}
             {techProfile && (
-              <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:20, marginBottom:24}}>
+              <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20, marginBottom:24}}>
                 <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
                   <div style={{fontSize:32}}><FaUser style={{marginRight:4}} /></div>
                   <div>
@@ -861,9 +899,9 @@ export default function TechHome() {
                       <span style={{fontSize:13, color:'#9aa3b2'}}>Phone:</span>
                       <span style={{fontSize:13, color:'#e5e7eb'}}>{techProfile.phone || 'N/A'}</span>
                     </div>
-                    <div style={{display:'flex', justifyContent:'space-between', background:'rgba(34,197,94,0.2)', padding:'8px 12px', borderRadius:8, marginTop:4}}>
-                      <span style={{fontSize:13, fontWeight:600, color:'#22c55e'}}>Hourly Rate:</span>
-                      <span style={{fontSize:16, fontWeight:700, color:'#22c55e'}}>${(techProfile.hourlyRate ?? 0).toFixed(2)}/hr</span>
+                    <div style={{display:'flex', justifyContent:'space-between', background:'rgba(229,51,42,0.2)', padding:'8px 12px', borderRadius:8, marginTop:4}}>
+                      <span style={{fontSize:13, fontWeight:600, color:'#ff6b64'}}>Hourly Rate:</span>
+                      <span style={{fontSize:16, fontWeight:700, color:'#ff6b64'}}>${(techProfile.hourlyRate ?? 0).toFixed(2)}/hr</span>
                     </div>
                     <div style={{display:'flex', justifyContent:'space-between'}}>
                       <span style={{fontSize:13, color:'#9aa3b2'}}>Status:</span>
@@ -886,7 +924,7 @@ export default function TechHome() {
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginTop:24}}>
               <h3 style={{color:'#e5e7eb', marginBottom:16, fontSize:16}}><FaTools style={{marginRight:4}} /> Quick Tools</h3>
               <div style={{display:'grid', gap:8}}>
-                <Link href="/tech/diagnostics" style={{padding:12, background:'rgba(59,130,246,0.1)', borderRadius:8, textDecoration:'none', color:'#3b82f6', fontSize:14, fontWeight:600}}>
+                <Link href="/tech/diagnostics" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600}}>
                   <FaSearch style={{marginRight:4}} /> Diagnostics
                 </Link>
                 <Link href="/tech/inventory" style={{padding:12, background:'rgba(34,197,94,0.1)', borderRadius:8, textDecoration:'none', color:'#22c55e', fontSize:14, fontWeight:600}}>
@@ -932,9 +970,10 @@ export default function TechHome() {
       {homeMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:homeMsg.type==='success'?'#dcfce7':'#fde8e8',color:homeMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {homeMsg.text}
-          <button onClick={()=>setHomeMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setHomeMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </MobileLayout>
   );
 }
+

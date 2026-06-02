@@ -14,6 +14,9 @@ export async function POST(request: NextRequest) {
       insurancePolicy,
       shopType,
       numberOfBays,
+      agreementAccepted,
+      agreementSignature,
+      agreementVersion,
       dieselServices = [],
       gasServices = [],
       smallEngineServices = [],
@@ -29,13 +32,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the authenticated user owns this shop (or is an admin)
-    const isAdmin = auth.role === 'admin' || auth.role === 'superadmin';
+    const isAdmin = auth.role === 'superadmin';
     if (!isAdmin && auth.id !== shopId) {
       return NextResponse.json({ error: 'Unauthorized: cannot modify another shop\'s profile' }, { status: 403 });
     }
 
     if (!businessLicense || !insurancePolicy) {
       return NextResponse.json({ error: 'Business license and insurance policy are required' }, { status: 400 });
+    }
+
+    if (!agreementAccepted || !String(agreementSignature || '').trim()) {
+      return NextResponse.json({ error: 'You must accept and sign the FixTray agreement to continue' }, { status: 400 });
     }
 
     // Validate that services are selected based on shop type
@@ -89,6 +96,41 @@ export async function POST(request: NextRequest) {
         shopType,
         profileComplete: true,
         ...(numberOfBays && numberOfBays > 0 ? { capacity: parseInt(String(numberOfBays)) } : {}),
+      },
+    });
+
+    const existingSettings = await prisma.shopSettings.findUnique({
+      where: { shopId },
+      select: { notificationPreferences: true },
+    });
+
+    const existingPrefs =
+      existingSettings?.notificationPreferences &&
+      typeof existingSettings.notificationPreferences === 'object' &&
+      !Array.isArray(existingSettings.notificationPreferences)
+        ? (existingSettings.notificationPreferences as Record<string, unknown>)
+        : {};
+
+    const fixtrayAgreement = {
+      accepted: true,
+      signedBy: String(agreementSignature).trim(),
+      signedAt: new Date().toISOString(),
+      version: String(agreementVersion || '2026-06-01'),
+    };
+
+    await prisma.shopSettings.upsert({
+      where: { shopId },
+      update: {
+        notificationPreferences: {
+          ...existingPrefs,
+          fixtrayAgreement,
+        },
+      },
+      create: {
+        shopId,
+        notificationPreferences: {
+          fixtrayAgreement,
+        },
       },
     });
 
@@ -150,6 +192,10 @@ export async function POST(request: NextRequest) {
         resurfacingServices: resurfacingServices || [],
         weldingServices: weldingServices || [],
         tireServices: tireServices || [],
+        agreementAccepted: true,
+        agreementSignedBy: fixtrayAgreement.signedBy,
+        agreementSignedAt: fixtrayAgreement.signedAt,
+        agreementVersion: fixtrayAgreement.version,
         profileComplete: true,
         completedAt: updatedShop.updatedAt,
       }

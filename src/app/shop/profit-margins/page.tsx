@@ -25,6 +25,42 @@ interface WOMargin {
   completedAt?: string;
 }
 
+function normalizeMargins(raw: any, days: number): MarginData {
+  if (raw?.summary && Array.isArray(raw?.orders)) {
+    const workOrders: WOMargin[] = raw.orders.map((o: any) => ({
+      id: String(o.id),
+      invoiceNumber: o.invoiceNumber,
+      vehicle: o.vehicle,
+      customer: o.customer,
+      revenue: Number(o.revenue ?? 0),
+      partsCost: Number(o.partsCost ?? 0),
+      laborCost: Number(o.laborCost ?? 0),
+      totalCost: Number(o.totalCost ?? 0),
+      profit: Number(o.profit ?? o.grossProfit ?? 0),
+      margin: Number(o.margin ?? 0),
+      completedAt: o.completedAt,
+    }));
+
+    return {
+      days,
+      totalRevenue: Number(raw.summary.totalRevenue ?? 0),
+      totalCost: Number(raw.summary.totalCost ?? 0),
+      totalProfit: Number(raw.summary.totalProfit ?? 0),
+      marginPct: Number(raw.summary.avgMargin ?? 0),
+      workOrders,
+    };
+  }
+
+  return {
+    days: Number(raw?.days ?? days),
+    totalRevenue: Number(raw?.totalRevenue ?? 0),
+    totalCost: Number(raw?.totalCost ?? 0),
+    totalProfit: Number(raw?.totalProfit ?? 0),
+    marginPct: Number(raw?.marginPct ?? 0),
+    workOrders: Array.isArray(raw?.workOrders) ? raw.workOrders : [],
+  };
+}
+
 export default function ProfitMarginsPage() {
   const { user, isLoading } = useRequireAuth(['shop']);
   const [data, setData] = useState<MarginData | null>(null);
@@ -41,7 +77,10 @@ export default function ProfitMarginsPage() {
     try {
       const token = localStorage.getItem('token');
       const r = await fetch(`/api/profit-margins?days=${days}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (r.ok) setData(await r.json());
+      if (r.ok) {
+        const raw = await r.json();
+        setData(normalizeMargins(raw, days));
+      }
       else setMarginError('Failed to load profit margin data. Please try again.');
     } catch {
       setMarginError('Network error. Please check your connection.');
@@ -63,7 +102,7 @@ export default function ProfitMarginsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaChartLine style={{marginRight:4}} /> Profit Margins</h1>
@@ -92,7 +131,7 @@ export default function ProfitMarginsPage() {
           {/* Summary Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
             {[
-              { label: 'Total Revenue', value: `$${data.totalRevenue.toFixed(2)}`, icon: '', color: '#60a5fa' },
+              { label: 'Total Revenue', value: `$${data.totalRevenue.toFixed(2)}`, icon: '', color: '#ff6b64' },
               { label: 'Total Cost', value: `$${data.totalCost.toFixed(2)}`, icon: '', color: '#f59e0b' },
               { label: 'Gross Profit', value: `$${data.totalProfit.toFixed(2)}`, icon: '', color: '#22c55e' },
               { label: 'Avg Margin', value: `${avg.toFixed(1)}%`, icon: '', color: marginColor },
@@ -133,7 +172,7 @@ export default function ProfitMarginsPage() {
                   <div key={wo.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 0, padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{wo.vehicle || 'Vehicle'}</div>
-                      <div style={{ fontSize: 12, color: '#9ca3af' }}>{wo.customer || ''}{wo.invoiceNumber ? ` · #${wo.invoiceNumber}` : ''}</div>
+                      <div style={{ fontSize: 12, color: '#9ca3af' }}>{wo.customer || ''}{wo.invoiceNumber ? `  #${wo.invoiceNumber}` : ''}</div>
                     </div>
                     <div style={{ textAlign: 'right', fontWeight: 700 }}>${wo.revenue.toFixed(0)}</div>
                     <div style={{ textAlign: 'right', color: '#9ca3af', fontSize: 13 }}>${wo.partsCost.toFixed(0)}</div>
@@ -152,3 +191,4 @@ export default function ProfitMarginsPage() {
     </div>
   );
 }
+

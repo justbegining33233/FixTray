@@ -128,7 +128,7 @@ export default function EODReportPage() {
               </div>
               <div style={cardStyle}>
                 <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 8 }}>New Jobs</div>
-                <div style={statStyle('#3b82f6')}>{report.summary.newJobsCount}</div>
+                <div style={statStyle('#e5332a')}>{report.summary.newJobsCount}</div>
               </div>
               <div style={cardStyle}>
                 <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 8 }}>Still Open</div>
@@ -241,7 +241,7 @@ export default function EODReportPage() {
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{entry.techName}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{new Date(entry.clockIn).toLocaleTimeString()}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString() : 'Still clocked in'}</td>
-                          <td style={{ padding: '10px 12px', fontSize: 13, color: '#3b82f6', textAlign: 'right', fontWeight: 600 }}>{entry.hours.toFixed(1)}h</td>
+                          <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5332a', textAlign: 'right', fontWeight: 600 }}>{entry.hours.toFixed(1)}h</td>
                         </tr>
                       ))}
                     </tbody>
@@ -255,3 +255,4 @@ export default function EODReportPage() {
     </div>
   );
 }
+

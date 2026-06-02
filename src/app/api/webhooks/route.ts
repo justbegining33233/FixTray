@@ -44,13 +44,6 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Check feature access
-    const { checkFeatureAccess } = await import('@/lib/subscription-limits');
-    const access = await checkFeatureAccess(auth.id, 'customIntegrations');
-    if (!access.allowed) {
-      return NextResponse.json({ error: access.message }, { status: 403 });
-    }
-
     const { url, events } = await request.json();
     if (!url || !events) {
       return NextResponse.json({ error: 'url and events are required' }, { status: 400 });

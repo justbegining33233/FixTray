@@ -48,23 +48,23 @@ export default function ShopLogsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 1000, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <Link href="/shop/admin" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Admin</Link>
+              <Link href="/shop/admin" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Admin</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Shop Logs</h1>
               <p style={{ color: '#9ca3af', fontSize: 14 }}>Audit trail and activity history</p>
             </div>
-            <div style={{ display: 'flex', gap: 4, background: '#0f172a', borderRadius: 8, padding: 2 }}>
+            <div style={{ display: 'flex', gap: 4, background: '#000000', borderRadius: 8, padding: 2 }}>
               {(['audit', 'activity'] as const).map(type => (
                 <button key={type} onClick={() => setLogType(type)}
                   style={{
                     padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                    background: logType === type ? '#2563eb' : 'transparent',
+                    background: logType === type ? '#e5332a' : 'transparent',
                     color: logType === type ? '#fff' : '#9ca3af',
                   }}>
                   {type === 'audit' ? <><FaLock style={{marginRight:6, verticalAlign:'middle'}} /> Audit</> : <><FaClipboardList style={{marginRight:6, verticalAlign:'middle'}} /> Activity</>}
@@ -104,3 +104,6 @@ export default function ShopLogsPage() {
     </div>
   );
 }
+
+
+

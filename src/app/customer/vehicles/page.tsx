@@ -191,7 +191,7 @@ export default function CustomerVehiclesPage() {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          <Link href="/customer/home" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
+          <Link href="/customer/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -201,7 +201,7 @@ export default function CustomerVehiclesPage() {
             </div>
             <button
               onClick={() => setShowAddForm(true)}
-              style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              style={{ padding: '12px 24px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
             >
               + Add Vehicle
             </button>
@@ -219,7 +219,7 @@ export default function CustomerVehiclesPage() {
               <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>Add your first vehicle to get started</p>
               <button
                 onClick={() => setShowAddForm(true)}
-                style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '12px 24px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
                 Add Vehicle
               </button>
@@ -263,7 +263,7 @@ export default function CustomerVehiclesPage() {
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     onClick={() => startEdit(vehicle)}
-                    style={{ flex: 1, padding: '10px', background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                   >
                     Edit
                   </button>
@@ -363,7 +363,7 @@ export default function CustomerVehiclesPage() {
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button
                   onClick={editingVehicle ? handleUpdateVehicle : handleAddVehicle}
-                  style={{ flex: 1, padding: 12, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
                   {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
                 </button>
@@ -386,7 +386,7 @@ export default function CustomerVehiclesPage() {
       {vehicleMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:vehicleMsg.type==='success'?'#dcfce7':'#fde8e8',color:vehicleMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {vehicleMsg.text}
-          <button onClick={()=>setVehicleMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setVehicleMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
 
@@ -405,3 +405,4 @@ export default function CustomerVehiclesPage() {
     </div>
   );
 }
+

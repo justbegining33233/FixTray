@@ -69,8 +69,8 @@ export default function CustomerPayPage() {
     <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 64 }}><FaExclamationTriangle style={{marginRight:4}} /></div>
-        <h2 style={{ color: '#111827', margin: '16px 0 8px' }}>Payment Link Not Found</h2>
-        <p style={{ color: '#6b7280' }}>{error}</p>
+        <h2 style={{ color: '#f1f5f9', margin: '16px 0 8px' }}>Payment Link Not Found</h2>
+        <p style={{ color: '#94a3b8' }}>{error}</p>
       </div>
     </div>
   );
@@ -79,9 +79,9 @@ export default function CustomerPayPage() {
     <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', padding: 32 }}>
         <div style={{ fontSize: 80 }}><FaSmile style={{marginRight:4}} /></div>
-        <h2 style={{ color: '#111827', margin: '16px 0 8px', fontSize: 26 }}>Payment Successful!</h2>
-        <p style={{ color: '#6b7280', marginBottom: 8 }}>Thank you for your payment of <strong>${Number(link?.amount).toFixed(2)}</strong>.</p>
-        <p style={{ color: '#6b7280' }}>A receipt has been sent to your email. Thank you for choosing us!</p>
+        <h2 style={{ color: '#22c55e', margin: '16px 0 8px', fontSize: 26 }}>Payment Successful!</h2>
+        <p style={{ color: '#94a3b8', marginBottom: 8 }}>Thank you for your payment of <strong>${Number(link?.amount).toFixed(2)}</strong>.</p>
+        <p style={{ color: '#94a3b8' }}>A receipt has been sent to your email. Thank you for choosing us!</p>
       </div>
     </div>
   );
@@ -104,12 +104,12 @@ export default function CustomerPayPage() {
       </div>
 
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '32px 20px' }}>
-        {isExpired && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, padding: 14, marginBottom: 20, color: '#dc2626', fontWeight: 600 }}><FaClock style={{marginRight:4}} /> This payment link has expired. Please contact the shop.</div>}
-        {isAlreadyPaid && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: 14, marginBottom: 20, color: '#16a34a', fontWeight: 600 }}><FaCheckCircle style={{marginRight:4}} /> This invoice has already been paid. Thank you!</div>}
+        {isExpired && <div style={{ background: 'rgba(229,51,42,0.12)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 10, padding: 14, marginBottom: 20, color: '#fca5a5', fontWeight: 600 }}><FaClock style={{marginRight:4}} /> This payment link has expired. Please contact the shop.</div>}
+        {isAlreadyPaid && <div style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: 14, marginBottom: 20, color: '#86efac', fontWeight: 600 }}><FaCheckCircle style={{marginRight:4}} /> This invoice has already been paid. Thank you!</div>}
 
         {/* Invoice Summary */}
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 24, marginBottom: 20 }}>
-          <h2 style={{ margin: '0 0 16px', fontSize: 18, color: '#111827' }}>Invoice Summary</h2>
+        <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 24, marginBottom: 20 }}>
+          <h2 style={{ margin: '0 0 16px', fontSize: 18, color: '#f1f5f9' }}>Invoice Summary</h2>
           {link?.workOrderId && <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>Work Order: #{link.workOrderId}</div>}
           {link?.description && <p style={{ color: '#374151', fontSize: 15, lineHeight: 1.5, margin: '0 0 16px' }}>{link.description}</p>}
           <div style={{ background: 'linear-gradient(135deg,#e5332a,#c41f16)', borderRadius: 10, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -120,29 +120,29 @@ export default function CustomerPayPage() {
 
         {/* Payment Form */}
         {!isExpired && !isAlreadyPaid && (
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 24 }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 17, color: '#111827' }}>Card Information</h3>
+          <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 24 }}>
+            <h3 style={{ margin: '0 0 20px', fontSize: 17, color: '#f1f5f9' }}>Card Information</h3>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, color: '#374151', display: 'block', marginBottom: 6, fontWeight: 600 }}>Cardholder Name</label>
+              <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>Cardholder Name</label>
               <input value={name} onChange={e => setName(e.target.value)} placeholder="John Smith"
-                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#111827', boxSizing: 'border-box' }} />
+                style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, color: '#374151', display: 'block', marginBottom: 6, fontWeight: 600 }}>Card Number</label>
+              <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>Card Number</label>
               <input value={cardNumber} onChange={e => setCardNumber(formatCard(e.target.value))} placeholder="1234 5678 9012 3456" maxLength={19}
-                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#111827', boxSizing: 'border-box', letterSpacing: '0.05em' }} />
+                style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box', letterSpacing: '0.05em' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
               <div>
-                <label style={{ fontSize: 13, color: '#374151', display: 'block', marginBottom: 6, fontWeight: 600 }}>Expiry</label>
+                <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>Expiry</label>
                 <input value={expiry} onChange={e => setExpiry(formatExpiry(e.target.value))} placeholder="MM/YY" maxLength={5}
-                  style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#111827', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <label style={{ fontSize: 13, color: '#374151', display: 'block', marginBottom: 6, fontWeight: 600 }}>CVV</label>
+                <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>CVV</label>
                 <input value={cvv} onChange={e => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="123" type="password" maxLength={4}
-                  style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#111827', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box' }} />
               </div>
             </div>
 

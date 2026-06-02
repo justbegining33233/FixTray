@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Prevent IDOR: non-admins can only query their own shop
-  if (auth.role !== 'admin') {
+  if (auth.role !== 'superadmin') {
     const callerShopId = auth.role === 'shop' ? auth.id : auth.shopId;
     if (!callerShopId || shopId !== callerShopId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });

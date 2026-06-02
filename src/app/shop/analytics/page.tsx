@@ -34,7 +34,10 @@ export default function AnalyticsPage() {
 
     setShopId(id || '');
     fetchAnalytics(id || '');
-  }, [router]);
+    const interval = setInterval(() => fetchAnalytics(id || ''), 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [router, dateRange.start, dateRange.end]);
 
   const fetchAnalytics = async (id: string) => {
     try {
@@ -160,7 +163,7 @@ export default function AnalyticsPage() {
             <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaCheckCircle style={{marginRight:4}} /></div>
               <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Completed Jobs</div>
-              <div style={{ color: '#3b82f6', fontSize: 28, fontWeight: 700 }}>
+              <div style={{ color: '#e5332a', fontSize: 28, fontWeight: 700 }}>
                 {analytics.summary.completedJobs}
               </div>
             </div>
@@ -217,7 +220,7 @@ export default function AnalyticsPage() {
                   labelStyle={{ color: '#e5e7eb' }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="hours" stroke="#3b82f6" strokeWidth={2} name="Hours" />
+                <Line type="monotone" dataKey="hours" stroke="#e5332a" strokeWidth={2} name="Hours" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -237,7 +240,7 @@ export default function AnalyticsPage() {
                   labelStyle={{ color: '#e5e7eb' }}
                 />
                 <Legend />
-                <Bar dataKey="completed" fill="#3b82f6" name="Jobs Completed" />
+                <Bar dataKey="completed" fill="#e5332a" name="Jobs Completed" />
                 <Bar dataKey="revenue" fill="#22c55e" name="Revenue ($)" />
               </BarChart>
             </ResponsiveContainer>
@@ -247,3 +250,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+

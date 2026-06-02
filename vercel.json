@@ -1,4 +1,10 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": null,
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_ENABLE_REALTIME": "false"
+  },
   "crons": [
     {
       "path": "/api/cron",

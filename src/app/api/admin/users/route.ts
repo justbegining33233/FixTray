@@ -2,21 +2,73 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logAdminAction } from '@/lib/auditLog';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
+import { isOwnerAdmin } from '@/lib/owner-access';
+
+type SupportedUserType = 'admin' | 'shop' | 'customer' | 'manager' | 'tech';
+
+type RefreshSessionMetadata = {
+  shopId?: string;
+  customerId?: string;
+  techId?: string;
+  ip?: string;
+  agent?: string;
+  csrfToken?: string;
+};
+
+function parseSessionMetadata(raw: string | null): RefreshSessionMetadata {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as RefreshSessionMetadata;
+  } catch {
+    return {};
+  }
+}
+
+function isRecentlyActive(_lastLogin: Date | null, hasActiveSession: boolean): boolean {
+  return hasActiveSession;
+}
+
+function getUserCapabilities(userType: SupportedUserType, options?: { isOwnerAdmin?: boolean }) {
+  const isOwner = Boolean(options?.isOwnerAdmin);
+
+  return {
+    canEditRole: userType === 'tech' || userType === 'manager',
+    canEditStatus: userType === 'shop',
+    canEditUsername: userType === 'customer' || userType === 'shop' || (userType === 'admin' && !isOwner),
+  };
+}
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
   try {
+    const searchQuery = request.nextUrl.searchParams.get('q')?.trim() || '';
+    const hasSearch = searchQuery.length > 0;
+
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const _endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
     // Get all customers with work order data
     const customers = await prisma.customer.findMany({
+      ...(hasSearch
+        ? {
+            where: {
+              OR: [
+                { email: { contains: searchQuery, mode: 'insensitive' } },
+                { username: { contains: searchQuery, mode: 'insensitive' } },
+                { firstName: { contains: searchQuery, mode: 'insensitive' } },
+                { lastName: { contains: searchQuery, mode: 'insensitive' } },
+              ],
+            },
+          }
+        : {}),
       select: {
         id: true,
         username: true,
@@ -36,12 +88,23 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         createdAt: 'desc'
-      },
-      take: 100
+      }
     });
 
     // Get all techs with work order and time entry data
     const techs = await prisma.tech.findMany({
+      ...(hasSearch
+        ? {
+            where: {
+              OR: [
+                { email: { contains: searchQuery, mode: 'insensitive' } },
+                { firstName: { contains: searchQuery, mode: 'insensitive' } },
+                { lastName: { contains: searchQuery, mode: 'insensitive' } },
+                { role: { contains: searchQuery } },
+              ],
+            },
+          }
+        : {}),
       select: {
         id: true,
         email: true,
@@ -71,12 +134,23 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         createdAt: 'desc'
-      },
-      take: 100
+      }
     });
 
     // Get all shops (admins)
     const shops = await prisma.shop.findMany({
+      ...(hasSearch
+        ? {
+            where: {
+              OR: [
+                { email: { contains: searchQuery, mode: 'insensitive' } },
+                { username: { contains: searchQuery, mode: 'insensitive' } },
+                { ownerName: { contains: searchQuery, mode: 'insensitive' } },
+                { status: { contains: searchQuery } },
+              ],
+            },
+          }
+        : {}),
       select: {
         id: true,
         username: true,
@@ -95,9 +169,90 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         createdAt: 'desc'
-      },
-      take: 100
+      }
     });
+
+    const admins = await prisma.admin.findMany({
+      ...(hasSearch
+        ? {
+            where: {
+              OR: [
+                { email: { contains: searchQuery, mode: 'insensitive' } },
+                { username: { contains: searchQuery, mode: 'insensitive' } },
+              ],
+            },
+          }
+        : {}),
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+        isSuperAdmin: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Real usage signals: login logs + currently valid refresh sessions.
+    const [loginEvents, activeRefreshSessions] = await Promise.all([
+      prisma.activityLog.findMany({
+        where: {
+          action: 'login',
+          type: 'user',
+          createdAt: { gte: ninetyDaysAgo },
+        },
+        select: {
+          createdAt: true,
+          email: true,
+          shopId: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.refreshToken.findMany({
+        where: {
+          revoked: false,
+          expiresAt: { gt: now },
+        },
+        select: {
+          adminId: true,
+          metadata: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    const latestLoginByEmail = new Map<string, Date>();
+    const latestLoginByShopId = new Map<string, Date>();
+
+    for (const event of loginEvents) {
+      if (event.email) {
+        const key = event.email.trim().toLowerCase();
+        if (!latestLoginByEmail.has(key)) {
+          latestLoginByEmail.set(key, event.createdAt);
+        }
+      }
+      if (event.shopId && !latestLoginByShopId.has(event.shopId)) {
+        latestLoginByShopId.set(event.shopId, event.createdAt);
+      }
+    }
+
+    const activeAdminIds = new Set<string>();
+    const activeShopIds = new Set<string>();
+    const activeCustomerIds = new Set<string>();
+    const activeTechIds = new Set<string>();
+
+    for (const session of activeRefreshSessions) {
+      if (session.adminId) {
+        activeAdminIds.add(session.adminId);
+        continue;
+      }
+      const meta = parseSessionMetadata(session.metadata ?? null);
+      if (meta.shopId) activeShopIds.add(meta.shopId);
+      if (meta.customerId) activeCustomerIds.add(meta.customerId);
+      if (meta.techId) activeTechIds.add(meta.techId);
+    }
 
     // Combine all users with role identification and metrics
     const allUsers = [
@@ -106,24 +261,32 @@ export async function GET(request: NextRequest) {
         const totalSpent = customer.workOrders
           ?.filter((wo: any) => wo.paymentStatus === 'paid')
           .reduce((sum: number, wo: any) => sum + (wo.amountPaid || 0), 0) || 0;
-        const lastOrderDate = customer.workOrders?.length > 0 
-          ? new Date(Math.max(...customer.workOrders.map((wo: any) => new Date(wo.createdAt).getTime())))
-          : null;
+        const lastOrderDate = customer.workOrders
+          ?.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          ?.[0]?.createdAt || null;
+        const lastLogin = latestLoginByEmail.get((customer.email || '').toLowerCase()) || null;
+        const hasActiveSession = activeCustomerIds.has(customer.id);
+        const activityStatus = isRecentlyActive(lastLogin, hasActiveSession) ? 'active' : 'inactive';
         
         return {
           id: customer.id,
+          userType: 'customer' as const,
           username: customer.username,
           email: customer.email,
           firstName: customer.firstName || '',
           lastName: customer.lastName || '',
           role: 'customer' as const,
-          status: 'active',
+          status: activityStatus,
+          accountStatus: 'active',
+          activityStatus,
+          hasActiveSession,
+          capabilities: getUserCapabilities('customer'),
           createdAt: customer.createdAt,
           // Customer-specific metrics
           totalOrders,
           totalSpent,
           lastOrderDate,
-          lastLogin: lastOrderDate, // Use last order as proxy for activity
+          lastLogin,
         };
       }),
       ...techs.map((tech: any) => {
@@ -132,18 +295,23 @@ export async function GET(request: NextRequest) {
         ).length || 0;
         const totalJobs = tech.assignedWorkOrders?.length || 0;
         const recentTimeEntries = tech.timeEntries?.length || 0;
-        const lastActivity = tech.timeEntries?.length > 0
-          ? new Date(Math.max(...tech.timeEntries.map((te: any) => new Date(te.clockIn).getTime())))
-          : tech.createdAt;
+        const lastLogin = latestLoginByEmail.get((tech.email || '').toLowerCase()) || null;
+        const hasActiveSession = activeTechIds.has(tech.id);
+        const activityStatus = isRecentlyActive(lastLogin, hasActiveSession) ? 'active' : 'inactive';
         
         return {
           id: tech.id,
+          userType: tech.role as 'tech' | 'manager',
           username: tech.email,
           email: tech.email,
           firstName: tech.firstName,
           lastName: tech.lastName,
           role: tech.role as 'tech' | 'manager',
-          status: tech.available ? 'active' : 'inactive',
+          status: activityStatus,
+          accountStatus: tech.available ? 'available' : 'away',
+          activityStatus,
+          hasActiveSession,
+          capabilities: getUserCapabilities(tech.role as 'tech' | 'manager'),
           createdAt: tech.createdAt,
           shopId: tech.shopId,
           // Tech-specific metrics
@@ -151,7 +319,7 @@ export async function GET(request: NextRequest) {
           totalJobs,
           completionRate: totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0,
           recentTimeEntries,
-          lastLogin: lastActivity,
+          lastLogin,
         };
       }),
       ...shops.map((shop: any) => {
@@ -160,19 +328,52 @@ export async function GET(request: NextRequest) {
           .reduce((sum: number, wo: any) => sum + (wo.amountPaid || 0), 0) || 0;
         const totalJobs = shop.workOrders?.length || 0;
         
+        const emailKey = (shop.email || '').toLowerCase();
+        const lastLogin = latestLoginByShopId.get(shop.id) || latestLoginByEmail.get(emailKey) || null;
+        const hasActiveSession = activeShopIds.has(shop.id);
+        const activityStatus = isRecentlyActive(lastLogin, hasActiveSession) ? 'active' : 'inactive';
+
         return {
           id: shop.id,
+          userType: 'shop' as const,
           username: shop.username,
           email: shop.email,
           firstName: shop.ownerName?.split(' ')[0] || '',
           lastName: shop.ownerName?.split(' ').slice(1).join(' ') || '',
           role: 'shop' as const,
           status: shop.status,
+          accountStatus: shop.status,
+          activityStatus,
+          hasActiveSession,
+          capabilities: getUserCapabilities('shop'),
           createdAt: shop.createdAt,
           // Shop owner metrics
           totalRevenue,
           totalJobs,
-          lastLogin: shop.createdAt, // Would need actual login tracking
+          lastLogin,
+        };
+      }),
+      ...admins.map((admin: any) => {
+        const ownerAdmin = isOwnerAdmin({ id: admin.id, username: admin.username });
+        const lastLogin = latestLoginByEmail.get((admin.email || '').toLowerCase()) || null;
+        const hasActiveSession = activeAdminIds.has(admin.id);
+        const activityStatus = isRecentlyActive(lastLogin, hasActiveSession) ? 'active' : 'inactive';
+        return {
+          id: admin.id,
+          userType: 'admin' as const,
+          username: admin.username,
+          email: admin.email,
+          firstName: 'FixTray',
+          lastName: 'Admin',
+          role: 'admin' as const,
+          status: activityStatus,
+          accountStatus: 'active',
+          activityStatus,
+          hasActiveSession,
+          isOwner: ownerAdmin,
+          capabilities: getUserCapabilities('admin', { isOwnerAdmin: ownerAdmin }),
+          createdAt: admin.createdAt,
+          lastLogin,
         };
       })
     ];
@@ -196,7 +397,7 @@ export async function GET(request: NextRequest) {
       : newUsersThisMonth > 0 ? 100 : 0;
 
     // Active users (those with recent activity - last 7 days)
-    const activeUsers = allUsers.filter(u => u.lastLogin && new Date(u.lastLogin) >= sevenDaysAgo).length;
+    const activeUsers = allUsers.filter((u: any) => u.activityStatus === 'active').length;
     const activeRate = totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0;
 
     // Techs availability
@@ -332,9 +533,8 @@ export async function GET(request: NextRequest) {
     const totalReviewCount = reviews._count.rating || 0;
 
     // User Health Indicators
-    // Account verification - users with email (all users have email)
-    const verifiedAccounts = totalUsers; // All users have email in system
-    const accountVerificationRate = totalUsers > 0 ? Math.round((verifiedAccounts / totalUsers) * 100) : 0;
+    // Email verification is not tracked consistently across every role.
+    const accountVerificationRate = null;
 
     // Profile completion - users with firstName and lastName
     const profileCompletedCustomers = customers.filter((c: any) => c.firstName && c.lastName).length;
@@ -344,20 +544,11 @@ export async function GET(request: NextRequest) {
     const profileCompletionRate = totalUsers > 0 ? Math.round((profileCompletedUsers / totalUsers) * 100) : 0;
 
     // Security metrics - count active sessions (users active today)
-    const activeSessions = dailyActiveUsers;
+    const activeSessions = activeAdminIds.size + activeShopIds.size + activeCustomerIds.size + activeTechIds.size;
 
-    // Failed logins (simulated based on churn - users who haven't logged in)
-    const failedLogins = Math.min(churnedUsers, 50); // Cap at 50
-
-    // Account lockouts (users who haven't been active in 60+ days)
-    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-    const lockedOutUsers = allUsers.filter(u => {
-      if (!u.lastLogin) return new Date(u.createdAt) < sixtyDaysAgo;
-      return new Date(u.lastLogin) < sixtyDaysAgo;
-    }).length;
-
-    // Security alerts (users with suspicious activity - none tracked yet)
-    const securityAlerts = 0;
+    const failedLogins = null;
+    const lockedOutUsers = null;
+    const securityAlerts = null;
 
     return NextResponse.json({ 
       users: allUsers,
@@ -405,7 +596,7 @@ export async function GET(request: NextRequest) {
         accountVerificationRate,
         profileCompletionRate,
         onboardingCompletionRate: onboardingRate, // Same as onboarding rate
-        twoFactorAuthRate: 0, // No 2FA tracking yet
+        twoFactorAuthRate: null,
         // Security metrics
         activeSessions,
         failedLogins,
@@ -422,35 +613,156 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function POST(request: NextRequest) {
+  const auth = requireRole(request, ['admin', 'superadmin']);
+  if (auth instanceof NextResponse) return auth;
+
+  if (!auth.isOwner) {
+    return NextResponse.json({ error: 'Only FixTray Owner can create FixTray Admin employees.' }, { status: 403 });
+  }
+
+  try {
+    const { username, email, password } = await request.json();
+
+    const normalizedUsername = typeof username === 'string' ? username.trim() : '';
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+    if (!normalizedUsername || !normalizedEmail || typeof password !== 'string') {
+      return NextResponse.json({ error: 'username, email, and password are required' }, { status: 400 });
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
+    }
+
+    const existing = await prisma.admin.findFirst({
+      where: {
+        OR: [
+          { username: normalizedUsername },
+          { email: normalizedEmail },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return NextResponse.json({ error: 'Username or email already exists' }, { status: 409 });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const createdAdmin = await prisma.admin.create({
+      data: {
+        username: normalizedUsername,
+        email: normalizedEmail,
+        password: hashedPassword,
+        // Internal staff created from Command Center are FixTray Admin accounts.
+        isSuperAdmin: false,
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        isSuperAdmin: true,
+        createdAt: true,
+      },
+    });
+
+    await logAdminAction(auth.id, 'Created FixTray employee account', `${createdAdmin.username} (${createdAdmin.email})`);
+
+    return NextResponse.json({ success: true, user: createdAdmin }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+    return NextResponse.json({ error: 'Failed to create employee account' }, { status: 500 });
+  }
+}
+
 export async function PUT(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const { id, role, status, userType } = await request.json();
+    const { id, role, status, userType, email, username, firstName, lastName } = await request.json();
     
     if (!id || !userType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const normalizedUserType = userType as SupportedUserType;
     let updated = null;
 
+    if (!['admin', 'shop', 'customer', 'manager', 'tech'].includes(normalizedUserType)) {
+      return NextResponse.json({ error: 'Invalid user type' }, { status: 400 });
+    }
+
+    let targetOwnerAdmin = false;
+    if (normalizedUserType === 'admin') {
+      const existingAdmin = await prisma.admin.findUnique({
+        where: { id },
+        select: { id: true, username: true },
+      });
+
+      if (!existingAdmin) {
+        return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
+      }
+
+      targetOwnerAdmin = isOwnerAdmin(existingAdmin);
+      if (targetOwnerAdmin && typeof username === 'string' && username.trim() && username.trim() !== existingAdmin.username) {
+        return NextResponse.json({ error: 'Owner username is locked and cannot be changed here.' }, { status: 403 });
+      }
+    }
+
+    const capabilities = getUserCapabilities(normalizedUserType, { isOwnerAdmin: targetOwnerAdmin });
+
+    if (typeof role === 'string' && role.trim() && !capabilities.canEditRole) {
+      return NextResponse.json({ error: 'Role cannot be updated for this user type.' }, { status: 400 });
+    }
+
+    if (typeof status === 'string' && status.trim() && !capabilities.canEditStatus) {
+      return NextResponse.json({ error: 'Status cannot be updated for this user type.' }, { status: 400 });
+    }
+
+    if (typeof username === 'string' && username.trim() && !capabilities.canEditUsername) {
+      return NextResponse.json({ error: 'Username cannot be updated for this user type.' }, { status: 400 });
+    }
+
     // Update based on user type
-    if (userType === 'shop') {
+    if (normalizedUserType === 'shop') {
+      const ownerName = [firstName, lastName].filter(Boolean).join(' ').trim();
       updated = await prisma.shop.update({
         where: { id },
         data: {
           ...(status && { status }),
+          ...(email && { email }),
+          ...(username && { username }),
+          ...(ownerName && { ownerName }),
         },
       });
-    } else if (userType === 'customer') {
-      // Customers don't have a status field in the schema
-      return NextResponse.json({ error: 'Cannot update customer status' }, { status: 400 });
-    } else if (userType === 'tech' || userType === 'manager') {
+    } else if (normalizedUserType === 'customer') {
+      updated = await prisma.customer.update({
+        where: { id },
+        data: {
+          ...(email && { email }),
+          ...(username && { username }),
+          ...(typeof firstName === 'string' && { firstName }),
+          ...(typeof lastName === 'string' && { lastName }),
+        },
+      });
+    } else if (normalizedUserType === 'tech' || normalizedUserType === 'manager') {
       updated = await prisma.tech.update({
         where: { id },
         data: {
           ...(role && { role }),
+          ...(email && { email }),
+          ...(typeof firstName === 'string' && { firstName }),
+          ...(typeof lastName === 'string' && { lastName }),
+        },
+      });
+    } else if (normalizedUserType === 'admin') {
+      updated = await prisma.admin.update({
+        where: { id },
+        data: {
+          ...(email && { email }),
+          ...(username && { username }),
         },
       });
     }
@@ -459,7 +771,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
     }
 
-    await logAdminAction(auth.id, `Updated user ${id}`, `Type: ${userType}, Role: ${role}, Status: ${status}`);
+    await logAdminAction(auth.id, `Updated user ${id}`, `Type: ${normalizedUserType}, Role: ${role}, Status: ${status}`);
     return NextResponse.json({ success: true, user: updated });
   } catch (error) {
     console.error('Error updating user:', error);

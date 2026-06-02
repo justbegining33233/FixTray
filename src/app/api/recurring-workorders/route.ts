@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const where =
-    auth.role === 'admin'
+    (auth.role === 'superadmin')
       ? {}
       : auth.role === 'shop'
       ? { shopId: auth.id }

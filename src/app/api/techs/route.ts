@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/middleware';
 import { hashPassword } from '@/lib/auth';
-import { enforceSubscriptionLimits } from '@/lib/subscription-limits';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
@@ -16,7 +15,7 @@ export async function GET(request: NextRequest) {
     let shopId: string | undefined;
     if (queryShopId) {
       // Prevent IDOR: non-admin callers can only query their own shop
-      if (auth.role !== 'admin') {
+      if (auth.role !== 'superadmin') {
         const callerShopId = auth.role === 'shop' ? auth.id : auth.shopId;
         if (!callerShopId || callerShopId !== queryShopId) {
           return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -72,12 +71,6 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const shopId = auth.role === 'shop' ? auth.id : auth.shopId;
-
-    // Enforce subscription limits (user count)
-    if (shopId) {
-      const limitResponse = await enforceSubscriptionLimits(request, shopId);
-      if (limitResponse) return limitResponse;
-    }
 
     // Check if email exists
     const existing = await prisma.tech.findUnique({

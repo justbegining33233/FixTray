@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const auth = requireRole(req, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
   if (!process.env.DATABASE_URL) {
-    console.error('DATABASE_URL not configured — set it to your Neon connection string');
+    console.error('DATABASE_URL not configured ΓÇö set it to your Neon connection string');
     return NextResponse.json({ error: 'DATABASE_URL not configured' }, { status: 503 });
   }
 

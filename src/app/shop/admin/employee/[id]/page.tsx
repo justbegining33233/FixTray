@@ -3,6 +3,7 @@ import { FaArrowLeft, FaCheck, FaEdit, FaEnvelope, FaMobileAlt, FaRegCircle, FaS
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 
@@ -24,7 +25,7 @@ export default function EmployeeProfile() {
     const id = localStorage.getItem('shopId') || '';
 
     if (admin !== 'true') {
-      router.push('/shop/home');
+      router.push('/shop/home' as Route);
       return;
     }
 
@@ -69,15 +70,15 @@ export default function EmployeeProfile() {
           });
         } else {
           console.error('Employee not found');
-          router.push('/shop/admin?tab=team');
+          router.push('/shop/admin?tab=team' as Route);
         }
       } else {
         console.error('Failed to fetch employee data');
-        router.push('/shop/admin?tab=team');
+        router.push('/shop/admin?tab=team' as Route);
       }
     } catch (error) {
       console.error('Error fetching employee:', error);
-      router.push('/shop/admin?tab=team');
+      router.push('/shop/admin?tab=team' as Route);
     } finally {
       setLoading(false);
     }
@@ -132,6 +133,7 @@ export default function EmployeeProfile() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent' }}>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Employee Profile</h1>
       {/* Header */}
       <div style={{
         background: 'rgba(0,0,0,0.3)',
@@ -473,7 +475,7 @@ export default function EmployeeProfile() {
       {employeeMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:employeeMsg.type==='success'?'#dcfce7':'#fde8e8',color:employeeMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {employeeMsg.text}
-          <button onClick={()=>setEmployeeMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setEmployeeMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>├ù</button>
         </div>
       )}
     </div>

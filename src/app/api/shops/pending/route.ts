@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
-  if (auth.role !== 'admin') {
+  if (auth.role !== 'superadmin') {
     return NextResponse.json({ error: 'Unauthorized - Admin access only' }, { status: 403 });
   }
 
@@ -76,6 +76,21 @@ export async function POST(request: NextRequest) {
     });
 
     const data = schema.parse(body);
+
+    const existingOwnerShops = await prisma.shop.findMany({
+      where: {
+        email: data.email,
+        status: { in: ['approved', 'pending'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingOwnerShops.length >= 20) {
+      return NextResponse.json(
+        { error: 'Shop limit reached for this owner email.' },
+        { status: 403 }
+      );
+    }
 
     // Hash password if provided
     let hashed = undefined;
@@ -160,7 +175,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Shop not found' }, { status: 404 });
     }
 
-    if (auth.role !== 'admin') {
+    if (auth.role !== 'superadmin') {
       return NextResponse.json({ error: 'Admin role required' }, { status: 403 });
     }
 

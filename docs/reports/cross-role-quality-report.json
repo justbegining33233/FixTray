@@ -1,0 +1,401 @@
+{
+  "pages": 199,
+  "averageScore": 100,
+  "byRole": [
+    {
+      "role": "admin",
+      "pages": 33,
+      "averageScore": 100,
+      "failingPages": []
+    },
+    {
+      "role": "superadmin",
+      "pages": 9,
+      "averageScore": 100,
+      "failingPages": []
+    },
+    {
+      "role": "shop",
+      "pages": 57,
+      "averageScore": 100,
+      "failingPages": []
+    },
+    {
+      "role": "manager",
+      "pages": 25,
+      "averageScore": 100,
+      "failingPages": []
+    },
+    {
+      "role": "tech",
+      "pages": 21,
+      "averageScore": 100,
+      "failingPages": []
+    },
+    {
+      "role": "customer",
+      "pages": 29,
+      "averageScore": 100,
+      "failingPages": []
+    },
+    {
+      "role": "public",
+      "pages": 25,
+      "averageScore": 100,
+      "failingPages": []
+    }
+  ],
+  "worstPages": [
+    {
+      "file": "src/app/about/page.tsx",
+      "role": "public",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": true
+      }
+    },
+    {
+      "file": "src/app/admin/accepted-shops/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/activity-logs/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/admin-tools/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/backup-restore/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/command-center/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/coupons/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/dashboard/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/email-templates/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/enhanced/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/financial-reports/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/guide/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/home/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/login/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/manage-customers/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/manage-shops/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/manage-tenants/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/messages/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/owner/my-profile/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/owner/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/owner/quick-edit-user-info/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/owner/reset-user-password/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/pending-shops/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    },
+    {
+      "file": "src/app/admin/platform-analytics/page.tsx",
+      "role": "admin",
+      "score": 100,
+      "checks": {
+        "hasViewportShell": true,
+        "usesBlackShell": true,
+        "hasSemanticHeading": true,
+        "hasTouchSafePattern": true,
+        "avoidsLegacyBlue": true,
+        "avoidsSlateShell": true,
+        "usesMarketingShell": false
+      }
+    }
+  ],
+  "generatedAt": "2026-05-29T00:15:57.690Z"
+}

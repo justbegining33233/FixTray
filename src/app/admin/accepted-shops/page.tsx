@@ -29,7 +29,7 @@ type AcceptedShop = {
 };
 
 export default function AcceptedShops() {
-  const { user, isLoading } = useRequireAuth(['admin']);
+  const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [acceptedShops, setAcceptedShops] = useState<AcceptedShop[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedShop, setSelectedShop] = useState<AcceptedShop | null>(null);
@@ -71,16 +71,18 @@ export default function AcceptedShops() {
     switch (sortBy) {
       case 'revenue':
         return sorted.sort((a, b) => {
-          const revenueA = parseInt(a.revenue.replace(/[$,]/g, ''));
-          const revenueB = parseInt(b.revenue.replace(/[$,]/g, ''));
+          const revenueA = parseInt((a.revenue ?? '0').replace(/[$,]/g, '')) || 0;
+          const revenueB = parseInt((b.revenue ?? '0').replace(/[$,]/g, '')) || 0;
           return revenueB - revenueA;
         });
       case 'rating':
-        return sorted.sort((a, b) => b.rating - a.rating);
+        return sorted.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
       case 'jobs':
-        return sorted.sort((a, b) => b.jobs - a.jobs);
+        return sorted.sort((a, b) => (b.jobs ?? 0) - (a.jobs ?? 0));
       default:
-        return sorted;
+        return sorted.sort((a, b) =>
+          (a.name ?? '').toLowerCase().localeCompare((b.name ?? '').toLowerCase())
+        );
     }
   };
 
@@ -121,7 +123,7 @@ export default function AcceptedShops() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(34,197,94,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1400, margin:'0 auto'}}>
-          <Link href="/admin/home" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/admin/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
@@ -205,7 +207,7 @@ export default function AcceptedShops() {
                   </div>
                   <div>
                     <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Completed Jobs</div>
-                    <div style={{fontSize:18, color:'#3b82f6', fontWeight:700}}>{shop.jobs}</div>
+                    <div style={{fontSize:18, color:'#e5332a', fontWeight:700}}>{shop.jobs}</div>
                   </div>
                   <div>
                     <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Rating</div>
@@ -225,7 +227,7 @@ export default function AcceptedShops() {
                 <div style={{display:'flex', gap:12}}>
                   <button 
                     onClick={() => handleViewDetails(shop)}
-                    style={{flex:1, padding:'12px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', border:'1px solid rgba(59,130,246,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
+                    style={{flex:1, padding:'12px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                   >
                     View Details
                   </button>
@@ -245,7 +247,7 @@ export default function AcceptedShops() {
       {/* Details Modal */}
       {showDetails && selectedShop && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.8)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:32}}>
-          <div style={{background:'linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 50%, #525252 100%)', border:'2px solid rgba(34,197,94,0.3)', borderRadius:16, padding:32, maxWidth:800, width:'100%', maxHeight:'90vh', overflowY:'auto'}}>
+          <div style={{background:'#000000', border:'2px solid rgba(34,197,94,0.3)', borderRadius:16, padding:32, maxWidth:800, width:'100%', maxHeight:'90vh', overflowY:'auto'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Shop Details</h2>
               <button 
@@ -268,7 +270,7 @@ export default function AcceptedShops() {
                     </div>
                     <div>
                       <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Completed Jobs</div>
-                      <div style={{fontSize:20, color:'#3b82f6', fontWeight:700}}>{selectedShop.jobs}</div>
+                      <div style={{fontSize:20, color:'#e5332a', fontWeight:700}}>{selectedShop.jobs}</div>
                     </div>
                     <div>
                       <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Customer Rating</div>
@@ -352,7 +354,7 @@ export default function AcceptedShops() {
       {/* Contact Shop Modal */}
       {showContactModal && contactShop && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.8)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:32}}>
-          <div style={{background:'linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 50%, #525252 100%)', border:'2px solid rgba(59,130,246,0.3)', borderRadius:16, padding:32, maxWidth:600, width:'100%'}}>
+          <div style={{background:'#000000', border:'2px solid rgba(229,51,42,0.3)', borderRadius:16, padding:32, maxWidth:600, width:'100%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Contact Information</h2>
               <button 
@@ -382,7 +384,7 @@ export default function AcceptedShops() {
                   <span style={{fontSize:20}}><FaPhone style={{marginRight:4}} /></span>
                   <a 
                     href={`tel:${contactShop.phone}`}
-                    style={{fontSize:18, fontWeight:600, color:'#3b82f6', textDecoration:'none'}}
+                    style={{fontSize:18, fontWeight:600, color:'#e5332a', textDecoration:'none'}}
                   >
                     {contactShop.phone}
                   </a>
@@ -404,7 +406,7 @@ export default function AcceptedShops() {
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contactShop.address || contactShop.location)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{fontSize:13, color:'#3b82f6', textDecoration:'none', fontWeight:600}}
+                      style={{fontSize:13, color:'#e5332a', textDecoration:'none', fontWeight:600}}
                     >
                       Open in Google Maps <FaArrowRight style={{marginRight:4}} />
                     </a>
@@ -421,7 +423,7 @@ export default function AcceptedShops() {
                   <span style={{fontSize:20}}><FaEnvelope style={{marginRight:4}} /></span>
                   <a 
                     href={`mailto:${contactShop.email}`}
-                    style={{fontSize:16, fontWeight:600, color:'#3b82f6', textDecoration:'none'}}
+                    style={{fontSize:16, fontWeight:600, color:'#e5332a', textDecoration:'none'}}
                   >
                     {contactShop.email}
                   </a>
@@ -439,7 +441,7 @@ export default function AcceptedShops() {
               </a>
               <a 
                 href={`mailto:${contactShop.email}`}
-                style={{padding:'12px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', border:'1px solid rgba(59,130,246,0.3)', borderRadius:8, fontSize:14, fontWeight:600, textAlign:'center', textDecoration:'none', display:'block'}}
+                style={{padding:'12px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, textAlign:'center', textDecoration:'none', display:'block'}}
               >
                 <FaEnvelope style={{marginRight:4}} /> Send Email
               </a>
@@ -450,3 +452,4 @@ export default function AcceptedShops() {
     </div>
   );
 }
+

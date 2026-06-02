@@ -133,6 +133,6 @@ export async function GET(request: NextRequest) {
     warning: checks.filter(c => c.status === 'warning').length,
   };
 
-  // Don't expose actual values — just status
+  // Don't expose actual values ΓÇö just status
   return NextResponse.json({ checks, summary });
 }

@@ -220,7 +220,7 @@ export default function TechTimesheet() {
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div>
-            <Link href="/tech/all-tools" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:8, display:'inline-block'}}>
+            <Link href="/tech/all-tools" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:8, display:'inline-block'}}>
               <FaArrowLeft style={{marginRight:4}} /> Back to Tools
             </Link>
             <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaClock style={{marginRight:4}} /> Time Tracking</h1>
@@ -229,8 +229,8 @@ export default function TechTimesheet() {
           <div style={{textAlign:'right'}}>
             <div style={{fontSize:12, color:'#9aa3b2'}}>Range</div>
             <div style={{display:'flex', gap:8}}>
-              <button onClick={() => setRange('week')} style={{padding:'8px 12px', borderRadius:8, background: range==='week'? '#111827':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Week</button>
-              <button onClick={() => setRange('month')} style={{padding:'8px 12px', borderRadius:8, background: range==='month'? '#111827':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Month</button>
+              <button onClick={() => setRange('week')} style={{padding:'8px 12px', borderRadius:8, background: range==='week'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Week</button>
+              <button onClick={() => setRange('month')} style={{padding:'8px 12px', borderRadius:8, background: range==='month'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Month</button>
             </div>
             <div style={{fontSize:12, color:'#9aa3b2', marginTop:6}}>{start.toLocaleDateString()} <FaArrowRight style={{marginRight:4}} /> {end.toLocaleDateString()}</div>
           </div>
@@ -330,7 +330,7 @@ export default function TechTimesheet() {
                       ) : (
                         e.workOrderId ? (
                           <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                            <Link href={`/workorders/${e.workOrderId}`} style={{color:'#3b82f6', fontWeight:700, textDecoration:'none'}}>{e.workOrderId}</Link>
+                            <Link href={`/workorders/${e.workOrderId}`} style={{color:'#e5332a', fontWeight:700, textDecoration:'none'}}>{e.workOrderId}</Link>
                             <span style={{fontSize:11, background:'#052e16', color:'#bbf7d0', padding:'2px 6px', borderRadius:999}}>Billable</span>
                           </div>
                         ) : (
@@ -392,7 +392,7 @@ export default function TechTimesheet() {
                         </>
                       ) : (
                         <>
-                          <button onClick={() => { setEditingId(e.id); setEditValues({ notes: e.notes || '', workOrderId: e.workOrderId || '' }); }} style={{padding:'0', borderRadius:4, background:'transparent', color:'#3b82f6', border:'none', fontSize:13, fontWeight:600, cursor:'pointer'}}>Edit</button>
+                          <button onClick={() => { setEditingId(e.id); setEditValues({ notes: e.notes || '', workOrderId: e.workOrderId || '' }); }} style={{padding:'0', borderRadius:4, background:'transparent', color:'#e5332a', border:'none', fontSize:13, fontWeight:600, cursor:'pointer'}}>Edit</button>
 
                           {(user.role === 'manager' || user.role === 'admin') && (
                             <button onClick={() => setApproveConfirmId(e.id)} style={{padding:'6px 8px', borderRadius:6, background:'#f59e0b', color:'#1f2937', border:'none'}}>Approve</button>
@@ -433,7 +433,7 @@ export default function TechTimesheet() {
                     <div style={{fontSize:13, color:'#9aa3b2'}}>{ci.toLocaleDateString()}</div>
                     <div style={{fontWeight:600, fontFamily:'monospace'}}>{formatTime(ci)}</div>
                     <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : <span style={{color:'#f59e0b'}}>In progress</span>}</div>
-                    <div><Link href={`/workorders/${be.workOrderId}`} style={{color:'#3b82f6', fontWeight:700, textDecoration:'none'}}>{be.workOrderId}</Link></div>
+                    <div><Link href={`/workorders/${be.workOrderId}`} style={{color:'#e5332a', fontWeight:700, textDecoration:'none'}}>{be.workOrderId}</Link></div>
                   </div>
                 );
               })}
@@ -446,7 +446,7 @@ export default function TechTimesheet() {
       {timesheetMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:timesheetMsg.type==='success'?'#dcfce7':'#fde8e8',color:timesheetMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {timesheetMsg.text}
-          <button onClick={()=>setTimesheetMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setTimesheetMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
 
@@ -477,3 +477,5 @@ export default function TechTimesheet() {
     </div>
   );
 }
+
+

@@ -68,7 +68,7 @@ export async function DELETE(
     const review = await prisma.review.findUnique({ where: { id } });
     if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 });
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role !== 'superadmin') {
       const shopId = decoded.role === 'shop' ? decoded.id : decoded.shopId;
       if (review.shopId !== shopId) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 403 });

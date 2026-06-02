@@ -1,0 +1,111 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "export": "Exportar",
+    "import": "Importar"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "register": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "loginTitle": "Inicia sesión en tu cuenta",
+    "registerTitle": "Crea tu cuenta",
+    "invalidCredentials": "Correo electrónico o contraseña inválidos",
+    "emailRequired": "El correo electrónico es obligatorio",
+    "passwordRequired": "La contraseña es obligatoria",
+    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+    "emailInvalid": "Por favor ingresa un correo electrónico válido"
+  },
+  "workorders": {
+    "title": "Órdenes de Trabajo",
+    "createNew": "Crear Nueva Orden de Trabajo",
+    "noWorkOrders": "No se encontraron órdenes de trabajo",
+    "status": {
+      "pending": "Pendiente",
+      "assigned": "Asignada",
+      "inProgress": "En Progreso",
+      "waitingEstimate": "Esperando Presupuesto",
+      "waitingPayment": "Esperando Pago",
+      "completed": "Completada",
+      "denied": "Denegada"
+    },
+    "priority": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "urgent": "Urgente"
+    },
+    "vehicleType": "Tipo de Vehículo",
+    "issueDescription": "Descripción del Problema",
+    "assignedTo": "Asignado A",
+    "dueDate": "Fecha Límite",
+    "createdAt": "Creado El",
+    "updatedAt": "Actualizado El",
+    "customer": "Cliente",
+    "shop": "Taller",
+    "location": "Ubicación",
+    "services": "Servicios",
+    "parts": "Piezas y Materiales",
+    "estimate": "Presupuesto",
+    "totalCost": "Costo Total"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido a FixTray",
+    "overview": "Resumen del Panel",
+    "totalWorkOrders": "Total de Órdenes de Trabajo",
+    "pendingWorkOrders": "Órdenes Pendientes",
+    "completedWorkOrders": "Órdenes Completadas",
+    "revenue": "Ingresos",
+    "activeShops": "Talleres Activos",
+    "recentActivity": "Actividad Reciente"
+  },
+  "admin": {
+    "title": "Administración",
+    "users": "Usuarios",
+    "shops": "Talleres",
+    "analytics": "Analíticas",
+    "settings": "Configuración",
+    "reports": "Reportes",
+    "permissions": "Permisos",
+    "auditLog": "Registro de Auditoría",
+    "systemHealth": "Estado del Sistema"
+  },
+  "errors": {
+    "generic": "Algo salió mal. Por favor intenta de nuevo.",
+    "network": "Error de red. Por favor verifica tu conexión.",
+    "unauthorized": "No estás autorizado para realizar esta acción.",
+    "forbidden": "Acceso denegado.",
+    "notFound": "El recurso solicitado no fue encontrado.",
+    "validation": "Por favor verifica tu entrada e intenta de nuevo.",
+    "server": "Error del servidor. Por favor intenta más tarde."
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "email": "Por favor ingresa un correo electrónico válido",
+    "minLength": "Debe tener al menos {min} caracteres",
+    "maxLength": "No debe tener más de {max} caracteres",
+    "numeric": "Debe ser un número",
+    "positive": "Debe ser un número positivo",
+    "date": "Por favor ingresa una fecha válida",
+    "phone": "Por favor ingresa un número de teléfono válido"
+  }
+}

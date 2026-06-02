@@ -5,7 +5,7 @@ import type { AuthUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   // Require authentication — shop discovery is only for logged-in users
-  const auth = requireRole(request, ['customer', 'shop', 'manager', 'tech', 'admin']);
+  const auth = requireRole(request, ['customer', 'shop', 'manager', 'tech', 'admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: 'desc'
       },
-      take: 3,
       include: {
         workOrders: {
           select: {
@@ -43,14 +42,6 @@ export async function GET(request: NextRequest) {
             duration: true,
             description: true
           }
-        },
-        subscription: {
-          select: {
-            plan: true,
-            status: true,
-            currentPeriodEnd: true,
-            trialEnd: true,
-          }
         }
       }
     });
@@ -58,7 +49,7 @@ export async function GET(request: NextRequest) {
     // Format response — only expose public-facing fields (NO password, no credentials)
     const formattedShops = approvedShops.map((shop) => {
       const completedJobs = shop.workOrders.filter(wo => wo.status === 'closed').length;
-      const _totalRevenue = shop.workOrders
+      const totalRevenue = shop.workOrders
         .filter(wo => wo.paymentStatus === 'paid')
         .reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
 
@@ -99,9 +90,11 @@ export async function GET(request: NextRequest) {
         address: shop.address,
         phone: shop.phone,
         shopType: shop.shopType,
-        services: shop.services,
+        services: shop.services.length,
         rating,
         reviewCount: reviewRatings.length,
+        jobs: completedJobs,
+        revenue: `$${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
         completionRate,
         averageResponseTime,
         profileComplete: shop.profileComplete,
@@ -110,7 +103,7 @@ export async function GET(request: NextRequest) {
         createdAt: shop.createdAt,
         dieselServices,
         gasServices,
-        // NOTE: revenue, email, subscription and credentials intentionally omitted
+        // NOTE: email and credentials intentionally omitted
       };
     });
 

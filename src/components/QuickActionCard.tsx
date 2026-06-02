@@ -2,9 +2,10 @@
 import { FaArrowRight } from 'react-icons/fa';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 
 interface QuickActionCardProps {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   description: string;
   href?: string;
@@ -150,7 +151,7 @@ export default function QuickActionCard(props: QuickActionCardProps) {
 
   if (href) {
     return (
-      <Link href={href} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+      <Link href={href as Route} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
         {renderContent()}
       </Link>
     );

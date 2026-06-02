@@ -90,7 +90,7 @@ export default function FleetPage() {
   const outstanding = accounts.reduce((s, a) => s + a.invoices.filter(i => i.status !== 'paid').reduce((ss, i) => ss + (i.totalAmount - i.amountPaid), 0), 0);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaBuilding style={{marginRight:4}} /> Fleet Accounts</h1>

@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBox, FaBuilding, FaCalendarAlt, FaCar, FaCheck, FaCheckCircle, FaClipboardList, FaClock, FaCog, FaComments, FaCreditCard, FaExclamationCircle, FaExclamationTriangle, FaLink, FaSignOutAlt, FaStar, FaTimes, FaTimesCircle, FaTrash, FaTruck, FaWrench } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBox, FaBuilding, FaCalendarAlt, FaCar, FaCheck, FaClipboardList, FaClock, FaCog, FaComments, FaCreditCard, FaExclamationCircle, FaSignOutAlt, FaStar, FaTimes, FaTrash, FaTruck, FaWrench } from 'react-icons/fa';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { FIXTRAY_SHOP_PARTICIPATION_AGREEMENT } from '@/lib/fixtrayShopParticipationAgreement';
 
 type CategoryId = 'diesel' | 'gas' | 'small-engine' | 'heavy-equipment' | 'resurfacing' | 'welding' | 'tire';
 
@@ -191,13 +193,15 @@ const SERVICE_OPTIONS: Record<CategoryId, string[]> = {
 
 const CATEGORY_CONFIG: Array<{ id: CategoryId; label: string; color: string; bg: string; hoverBg: string; border: string; badge?: string }> = [
   { id: 'diesel', label: 'Diesel / Heavy-Duty', color: '#22c55e', bg: 'rgba(34,197,94,0.1)', hoverBg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.3)' },
-  { id: 'gas', label: 'Gas / Automotive', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', hoverBg: 'rgba(59,130,246,0.2)', border: 'rgba(59,130,246,0.3)' },
+  { id: 'gas', label: 'Gas / Automotive', color: '#e5332a', bg: 'rgba(229,51,42,0.1)', hoverBg: 'rgba(229,51,42,0.2)', border: 'rgba(229,51,42,0.3)' },
   { id: 'small-engine', label: 'Small Engine', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', hoverBg: 'rgba(245,158,11,0.2)', border: 'rgba(245,158,11,0.3)' },
   { id: 'heavy-equipment', label: 'Heavy Equipment', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', hoverBg: 'rgba(139,92,246,0.2)', border: 'rgba(139,92,246,0.3)' },
   { id: 'resurfacing', label: 'Resurfacing / Machining', color: '#06b6d4', bg: 'rgba(6,182,212,0.1)', hoverBg: 'rgba(6,182,212,0.2)', border: 'rgba(6,182,212,0.3)' },
   { id: 'welding', label: 'Welding & Fabrication', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', hoverBg: 'rgba(239,68,68,0.2)', border: 'rgba(239,68,68,0.3)' },
   { id: 'tire', label: 'Tire Shop', color: '#f97316', bg: 'rgba(249,115,22,0.1)', hoverBg: 'rgba(249,115,22,0.2)', border: 'rgba(249,115,22,0.3)' },
 ];
+
+const FIXTRAY_AGREEMENT_VERSION = '2026-06-01';
 
 interface Service {
   id: string;
@@ -213,16 +217,15 @@ function ShopSettingsPageContent() {
   const searchParams = useSearchParams();
   const { user, isLoading } = useRequireAuth(['shop']);
 
-  const [_userName, setUserName] = useState('');
+  const [_userName] = useState('');
   const [shopId, setShopId] = useState('');
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(true);
-  const [paymentMessage, setPaymentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [showEditServiceModal, setShowEditServiceModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [_settingsLoaded, setSettingsLoaded] = useState(false);
   const [newService, setNewService] = useState({
     serviceName: '',
     customName: '',
@@ -281,137 +284,52 @@ function ShopSettingsPageContent() {
   const [notificationSoundEnabled, setNotificationSoundEnabled] = useState(true);
   const [notificationSaveMessage, setNotificationSaveMessage] = useState('');
   const [pushStatus, setPushStatus] = useState('');
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [agreementSignature, setAgreementSignature] = useState('');
+  const [agreementSignedAt, setAgreementSignedAt] = useState<string | null>(null);
+  const [agreementError, setAgreementError] = useState('');
+  const [showAgreementModal, setShowAgreementModal] = useState(false);
 
   // Stripe Connect payout account state
   const [_stripeConnected, setStripeConnected] = useState<boolean | null>(null);
-  const [_stripeConnectMessage, setStripeConnectMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [_stripeConnectMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Subscription/Billing state
-  const [subscription, setSubscription] = useState<{
-    plan: string;
-    status: string;
-    currentPeriodEnd: string | null;
-    trialEnd: string | null;
-    stripeCustomerId: string | null;
-    cancelAtPeriodEnd: boolean;
-  } | null>(null);
-  const [billingLoading, setBillingLoading] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
-  const [connectLoading, setConnectLoading] = useState(false);
+  // Billing tab removed.
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [serviceMsg, setServiceMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [cancelSubConfirm, setCancelSubConfirm] = useState(false);
   const [removeServiceConfirmId, setRemoveServiceConfirmId] = useState<string | null>(null);
 
   const isCustomService = (service: Service) => {
-    const defaults = SERVICE_OPTIONS[service.category as CategoryId] || [];
-    return !defaults.includes(service.serviceName);
+    const options = SERVICE_OPTIONS[service.category as CategoryId] || [];
+    return !options.includes(service.serviceName);
   };
 
-  const PLAN_DETAILS: Record<string, { name: string; price: number; features: string[]; maxUsers: number; color: string }> = {
-    starter: {
-      name: 'Starter',
-      price: 99.88,
-      maxUsers: 1,
-      color: '#6B7280',
-      features: ['1 User', '1 Shop', 'Basic Work Orders', 'Email Support']
-    },
-    growth: {
-      name: 'Growth',
-      price: 249.88,
-      maxUsers: 5,
-      color: '#3B82F6',
-      features: ['Up to 5 Users', '1 Shop', 'Advanced Work Orders', 'Inventory Management', 'Priority Support']
-    },
-    professional: {
-      name: 'Professional',
-      price: 499.88,
-      maxUsers: 15,
-      color: '#8B5CF6',
-      features: ['Up to 15 Users', '1 Shop', 'Full Features', 'Custom Reports', 'API Access', 'Phone Support']
-    },
-    business: {
-      name: 'Business',
-      price: 749.88,
-      maxUsers: 40,
-      color: '#F97316',
-      features: ['Up to 40 Users', 'Up to 5 Shops', 'Multi-Location', 'Advanced Analytics', 'Dedicated Support']
-    },
-    enterprise: {
-      name: 'Enterprise',
-      price: 999.88,
-      maxUsers: -1,
-      color: '#EF4444',
-      features: ['Unlimited Users', 'Unlimited Shops', 'White Label Options', 'Custom Integrations', '24/7 Support', 'SLA']
-    }
-  };
-
-  useEffect(() => {
-    if (!user?.shopId || settingsLoaded) return;
-    setShopId(user.shopId);
-    setLoading(true);
-    loadSettings(user.shopId).finally(() => setSettingsLoaded(true));
-  }, [user?.shopId, settingsLoaded]);
-
-  useEffect(() => {
-    if (user?.name) setUserName(user.name);
-    if (user?.shopId) setShopId(user.shopId);
-    
-    // Handle payment return from Stripe
-    const payment = searchParams?.get('payment');
-    if (payment === 'success') {
-      setActiveTab('billing');
-      setPaymentMessage({ type: 'success', text: 'Payment successful! Your subscription has been updated.' });
-      router.replace('/shop/settings', { scroll: false });
-    } else if (payment === 'canceled') {
-      setActiveTab('billing');
-      setPaymentMessage({ type: 'error', text: 'Payment was canceled. Your subscription has not been changed.' });
-      router.replace('/shop/settings', { scroll: false });
-    }
-
-    // Handle Stripe Connect OAuth return
-    const stripeConnect = searchParams?.get('stripe_connect');
-    if (stripeConnect === 'success') {
-      setActiveTab('billing');
-      setStripeConnected(true);
-      setStripeConnectMessage({ type: 'success', text: 'Payout account connected! You\'ll now receive payments directly to your Stripe account.' });
-      router.replace('/shop/settings', { scroll: false });
-    } else if (stripeConnect === 'error') {
-      setActiveTab('billing');
-      setStripeConnectMessage({ type: 'error', text: 'Failed to connect payout account. Please try again.' });
-      router.replace('/shop/settings', { scroll: false });
-    }
-     
-  }, [router, searchParams]);
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#e5e7eb',
-        fontSize: '18px'
-      }}>
-        Loading...
-      </div>
-    );
-  }
-
-  // If no user, the useRequireAuth hook will handle redirect
-  if (!user) {
-    return null;
-  }
-
-  const loadSettings = async (id: string) => {
+  const loadSettings = async (resolvedShopId?: string) => {
     try {
-      const response = await fetch(`/api/shops/settings?shopId=${id}`, { credentials: 'include' });
-      if (response.ok) {
-        const data = await response.json();
-        setSettings({
+      setLoading(true);
+      const localShopId = resolvedShopId || localStorage.getItem('shopId') || user?.id || '';
+      if (!localShopId) {
+        setLoading(false);
+        return;
+      }
+
+      setShopId(localShopId);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/shops/settings?shopId=${localShopId}`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!response.ok) {
+        setSettingsMsg({ type: 'error', text: 'Failed to load shop settings' });
+        setLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+      if (data?.shop) {
+        setSettings((prev) => ({
+          ...prev,
           shopName: data.shop.shopName || '',
           email: data.shop.email || '',
           phone: data.shop.phone || '',
@@ -422,63 +340,162 @@ function ShopSettingsPageContent() {
           businessLicense: data.shop.businessLicense || '',
           insurancePolicy: data.shop.insurancePolicy || '',
           shopType: data.shop.shopType || 'diesel',
-          operatingHours: data.shop.operatingHours ?? {
-            monday: { open: '08:00', close: '18:00', closed: false },
-            tuesday: { open: '08:00', close: '18:00', closed: false },
-            wednesday: { open: '08:00', close: '18:00', closed: false },
-            thursday: { open: '08:00', close: '18:00', closed: false },
-            friday: { open: '08:00', close: '18:00', closed: false },
-            saturday: { open: '09:00', close: '14:00', closed: false },
-            sunday: { open: '09:00', close: '14:00', closed: true },
-          }
-        });
-        setServices(data.shop.services || []);
-        if (data.settings) {
-          setNotificationsEnabled(data.settings.notificationsEnabled ?? true);
-          setNotificationSoundEnabled(data.settings.notificationSoundEnabled ?? true);
-          setNotifications({
-            ...defaultNotificationPreferences,
-            ...(data.settings.notificationPreferences || {}),
-          });
-        }
-        
-        // Load subscription data
-        if (data.shop.subscription) {
-          setSubscription({
-            plan: data.shop.subscription.plan || 'starter',
-            status: data.shop.subscription.status || 'active',
-            currentPeriodEnd: data.shop.subscription.currentPeriodEnd || null,
-            trialEnd: data.shop.subscription.trialEnd || null,
-            stripeCustomerId: data.shop.subscription.stripeCustomerId || null,
-            cancelAtPeriodEnd: data.shop.subscription.cancelAtPeriodEnd || false,
-          });
-        }
-
-        // Load Stripe Connect status
+        }));
+        setServices(Array.isArray(data.shop.services) ? data.shop.services : []);
         setStripeConnected(!!data.shop.stripeConnected);
       }
+
+      if (data?.settings) {
+        setNotificationsEnabled(data.settings.notificationsEnabled ?? true);
+        setNotificationSoundEnabled(data.settings.notificationSoundEnabled ?? true);
+        setNotifications((prev) => ({ ...prev, ...(data.settings.notificationPreferences || {}) }));
+        const agreement = data.settings.fixtrayAgreement as
+          | { accepted?: boolean; signedBy?: string; signedAt?: string }
+          | null;
+        if (agreement?.accepted) {
+          setAgreementAccepted(true);
+          setAgreementSignature(String(agreement.signedBy || ''));
+          setAgreementSignedAt(String(agreement.signedAt || ''));
+          if (typeof window !== 'undefined') localStorage.setItem('fixtrayAgreementAccepted', 'true');
+        } else {
+          setAgreementAccepted(false);
+          setAgreementSignature('');
+          setAgreementSignedAt(null);
+          if (typeof window !== 'undefined') localStorage.removeItem('fixtrayAgreementAccepted');
+        }
+      }
+      setSettingsLoaded(true);
     } catch (error) {
       console.error('Error loading settings:', error);
+      setSettingsMsg({ type: 'error', text: 'Error loading shop settings' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      router.push('/auth/login' as Route);
+      return;
+    }
+
+    const payment = searchParams?.get('payment');
+    if (payment === 'success' || payment === 'canceled') {
+      setSettingsMsg({
+        type: payment === 'success' ? 'success' : 'error',
+        text: payment === 'success' ? 'Payment processed successfully.' : 'Payment flow was canceled.',
+      });
+      router.replace('/shop/settings' as Route, { scroll: false });
+    }
+
+    const requestedTab = searchParams?.get('tab');
+    if (requestedTab && ['general', 'hours', 'notifications'].includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+
+    loadSettings();
+  }, [isLoading, user, router, searchParams]);
+
+  const saveNotificationSettings = async (
+    nextPrefs: typeof defaultNotificationPreferences = notifications,
+    nextEnabled: boolean = notificationsEnabled,
+    nextSound: boolean = notificationSoundEnabled,
+  ) => {
+    if (!shopId) return;
     try {
-      const csrf = typeof document !== 'undefined' ? document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1] : null;
+      const token = localStorage.getItem('token');
+      await fetch('/api/shops/settings', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          shopId,
+          notificationSettings: {
+            notificationsEnabled: nextEnabled,
+            notificationSoundEnabled: nextSound,
+            notificationPreferences: nextPrefs,
+          },
+        }),
+      });
+      setNotificationSaveMessage('Saved');
+      setTimeout(() => setNotificationSaveMessage(''), 2000);
+    } catch {
+      setNotificationSaveMessage('Failed to save');
+      setTimeout(() => setNotificationSaveMessage(''), 2000);
+    }
+  };
+
+  const handleNotificationToggle = (key: keyof typeof defaultNotificationPreferences) => {
+    const next = { ...notifications, [key]: !notifications[key] };
+    setNotifications(next);
+    saveNotificationSettings(next);
+  };
+
+  const handleEnablePush = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setPushStatus('Push notifications are not supported in this browser.');
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    setPushStatus(permission === 'granted' ? 'Push notifications enabled.' : 'Push notifications not enabled.');
+  };
+
+  const handleSave = async () => {
+    if (!shopId) {
+      setSettingsMsg({ type: 'error', text: 'Shop ID not found' });
+      return;
+    }
+
+    if (!agreementAccepted || !agreementSignature.trim()) {
+      setAgreementError('You must accept and sign the FixTray agreement before using the platform.');
+      setActiveTab('general');
+      return;
+    }
+
+    setAgreementError('');
+    const signedAt = agreementSignedAt || new Date().toISOString();
+
+    try {
+      const token = localStorage.getItem('token');
       const response = await fetch('/api/shops/settings', {
         method: 'PUT',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf || '' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           shopId,
-          ...settings
+          shopName: settings.shopName,
+          email: settings.email,
+          phone: settings.phone,
+          address: settings.address,
+          city: settings.city,
+          state: settings.state,
+          zipCode: settings.zipCode,
+          notificationSettings: {
+            notificationsEnabled,
+            notificationSoundEnabled,
+            notificationPreferences: notifications,
+          },
+          fixtrayAgreement: {
+            accepted: true,
+            signedBy: agreementSignature.trim(),
+            signedAt,
+            version: FIXTRAY_AGREEMENT_VERSION,
+          },
         }),
       });
 
       if (response.ok) {
-        setSettingsMsg({ type: 'success', text: 'Settings saved successfully!' });
+        setAgreementSignedAt(signedAt);
+        localStorage.setItem('fixtrayAgreementAccepted', 'true');
+        setSettingsMsg({ type: 'success', text: 'Settings saved successfully' });
         setTimeout(() => setSettingsMsg(null), 3000);
       } else {
         setSettingsMsg({ type: 'error', text: 'Failed to save settings' });
@@ -489,265 +506,49 @@ function ShopSettingsPageContent() {
     }
   };
 
-  const saveNotificationSettings = async (nextPreferences?: typeof notifications, nextEnabled?: boolean, nextSound?: boolean) => {
-    try {
-      const payload = {
-        shopId,
-        notificationSettings: {
-          notificationsEnabled: nextEnabled ?? notificationsEnabled,
-          notificationSoundEnabled: nextSound ?? notificationSoundEnabled,
-          notificationPreferences: nextPreferences ?? notifications,
-        },
-      };
-
-      const csrf = typeof document !== 'undefined' ? document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1] : null;
-      const response = await fetch('/api/shops/settings', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf || '' },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        setNotificationSaveMessage('Notification settings saved.');
-        setTimeout(() => setNotificationSaveMessage(''), 2000);
-      } else {
-        setNotificationSaveMessage('Failed to save notification settings.');
-      }
-    } catch (error) {
-      console.error('Error saving notification settings:', error);
-      setNotificationSaveMessage('Failed to save notification settings.');
-    }
-  };
-
-  const handleNotificationToggle = (key: string) => {
-    setNotifications(prev => {
-      const next = {
-        ...prev,
-        [key]: !prev[key as keyof typeof prev]
-      };
-      saveNotificationSettings(next);
-      return next;
-    });
-  };
-
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
-
-  const handleEnablePush = async () => {
-    try {
-      setPushStatus('Requesting permission...');
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        setPushStatus('Push not supported in this browser.');
-        return;
-      }
-
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        setPushStatus('Permission denied.');
-        return;
-      }
-
-      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidPublicKey) {
-        setPushStatus('Missing VAPID public key.');
-        return;
-      }
-
-      const _registration = await navigator.serviceWorker.register('/sw.js');
-      const readyRegistration = await navigator.serviceWorker.ready;
-      const existingSubscription = await readyRegistration.pushManager.getSubscription();
-      const subscription = existingSubscription || await readyRegistration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-      });
-
-      const userId = (user as any)?.id || (user as any)?.shopId || 'shop-admin';
-      const shopHeader = (user as any)?.shopId || shopId || '';
-      const res = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId,
-          ...(shopHeader ? { 'x-shop-id': shopHeader } : {}),
-        },
-        body: JSON.stringify(subscription),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || 'Failed to save subscription');
-      }
-
-      setPushStatus('Push enabled for this browser.');
-    } catch (error: any) {
-      console.error('Enable push failed', error);
-      setPushStatus(error?.message || 'Failed to enable push.');
-    }
-  };
-
-  // Billing functions
-  const openBillingPortal = async () => {
-    if (!shopId) {
-      setSettingsMsg({ type: 'error', text: 'Missing shop ID. Please refresh and try again.' });
+  const handleSignAgreement = () => {
+    if (!agreementAccepted || !agreementSignature.trim()) {
+      setAgreementError('You must check acceptance and provide your full legal signature.');
       return;
     }
 
-    setBillingLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/stripe/portal', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ shopId })
-      });
-      
-      if (response.ok) {
-        const { url } = await response.json();
-        window.location.href = url;
-      } else {
-        const error = await response.json().catch(() => ({}));
-        setSettingsMsg({ type: 'error', text: error?.error || 'Failed to open billing portal' });
-      }
-    } catch (error) {
-      console.error('Error opening billing portal:', error);
-      setSettingsMsg({ type: 'error', text: 'Error opening billing portal' });
-    } finally {
-      setBillingLoading(false);
-    }
+    setAgreementSignedAt(new Date().toISOString());
+    setAgreementError('');
+    setShowAgreementModal(false);
   };
 
-  const handleStripeConnect = async () => {
-    setConnectLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/stripe/connect', {
-        method: 'GET',
-        credentials: 'include',
-        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-      });
-      if (res.ok) {
-        const { url } = await res.json();
-        window.location.href = url;
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setSettingsMsg({ type: 'error', text: err?.error || 'Failed to start Stripe Connect onboarding' });
-      }
-    } catch (e) {
-      console.error('Stripe Connect error:', e);
-      setSettingsMsg({ type: 'error', text: 'Error starting Stripe Connect' });
-    } finally {
-      setConnectLoading(false);
-    }
-  };
-
-  const upgradePlan = async (newPlan: string) => {
-    setBillingLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          plan: newPlan,
-          shopId,
-          email: settings.email,
-          shopName: settings.shopName
-        })
-      });
-      
-      if (response.ok) {
-        const { url } = await response.json();
-        window.location.href = url;
-      } else {
-        setSettingsMsg({ type: 'error', text: 'Failed to start checkout' });
-      }
-    } catch (error) {
-      console.error('Error upgrading plan:', error);
-      setSettingsMsg({ type: 'error', text: 'Error upgrading plan' });
-    } finally {
-      setBillingLoading(false);
-    }
-  };
-
-  const cancelSubscription = () => {
-    if (!shopId || !subscription?.stripeCustomerId) {
-      setSettingsMsg({ type: 'error', text: 'No active subscription found to cancel.' });
-      return;
-    }
-    setCancelSubConfirm(true);
-  };
-
-  const doCancelSubscription = async () => {
-    setCancelSubConfirm(false);
-    setCancelling(true);
-    try {
-      const csrf = typeof document !== 'undefined' ? document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1] : null;
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/subscriptions/${shopId}/cancel`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrf ? { 'x-csrf-token': csrf } : {}),
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ reason: 'user_requested', immediate: false }),
-      });
-
-      if (response.ok) {
-        const _data = await response.json();
-        setSubscription((prev) => prev ? { ...prev, cancelAtPeriodEnd: true, status: prev.status } : prev);
-        setSettingsMsg({ type: 'success', text: 'Subscription cancellation scheduled. You retain access until the period ends.' });
-        setTimeout(() => setSettingsMsg(null), 6000);
-      } else {
-        const error = await response.json();
-        setSettingsMsg({ type: 'error', text: error.error || 'Failed to cancel subscription' });
-      }
-    } catch (error) {
-      console.error('Error cancelling subscription:', error);
-      setSettingsMsg({ type: 'error', text: 'Error cancelling subscription' });
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+  const agreementDisplayText = FIXTRAY_SHOP_PARTICIPATION_AGREEMENT
+    .replace(/\[DATE\]/g, new Date().toLocaleDateString())
+    .replace(/\[LEGAL SHOP NAME\]/g, settings.shopName || '[LEGAL SHOP NAME]')
+    .replace(/\[SHOP_LEGAL_NAME\]/g, settings.shopName || '[SHOP_LEGAL_NAME]')
+    .replace(/\[SHOP_ADMIN_FULL_NAME\]/g, agreementSignature || '[SHOP_ADMIN_FULL_NAME]')
+    .replace(/\[SHOP_ADMIN_EMAIL\]/g, settings.email || '[SHOP_ADMIN_EMAIL]')
+    .replace(/\[SHOP_ADMIN_ESIGN_UTC\]/g, agreementSignedAt || '[SHOP_ADMIN_ESIGN_UTC]');
 
   const handleAddService = async () => {
-    const serviceName = newServiceMode === 'custom' ? newService.customName.trim() : newService.serviceName.trim();
+    if (!shopId) {
+      setServiceMsg({ type: 'error', text: 'Shop ID not found' });
+      return;
+    }
+
+    const serviceName = newServiceMode === 'catalog' ? newService.serviceName : newService.customName.trim();
     if (!serviceName) {
-      setServiceMsg({ type: 'error', text: newServiceMode === 'custom' ? 'Please enter a custom service name' : 'Please select a service from the dropdown' });
+      setServiceMsg({ type: 'error', text: 'Please select or enter a service name' });
       return;
     }
 
     try {
-      const csrf = typeof document !== 'undefined' ? document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1] : null;
+      const csrf = typeof document !== 'undefined'
+        ? document.cookie.split(';').map(s => s.trim()).find(s => s.startsWith('csrf_token='))?.split('=')[1]
+        : null;
+
       const response = await fetch('/api/shops/services', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf || '' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
         body: JSON.stringify({
           shopId,
           serviceName,
@@ -758,15 +559,15 @@ function ShopSettingsPageContent() {
 
       if (response.ok) {
         const data = await response.json();
-        setServices([...services, data.service]);
+        setServices((prev) => [...prev, data.service]);
         setShowAddServiceModal(false);
         setNewService({ serviceName: '', customName: '', category: 'diesel', price: '' });
         setNewServiceMode('catalog');
         setServiceMsg({ type: 'success', text: 'Service added successfully!' });
         setTimeout(() => setServiceMsg(null), 3000);
       } else {
-        const error = await response.json();
-        setServiceMsg({ type: 'error', text: error.error || 'Failed to add service' });
+        const payload = await response.json().catch(() => ({}));
+        setServiceMsg({ type: 'error', text: payload.error || 'Failed to add service' });
       }
     } catch (error) {
       console.error('Error adding service:', error);
@@ -871,7 +672,6 @@ function ShopSettingsPageContent() {
   const tabs = [
     { id: 'general', icon: <FaBuilding />, name: 'General Info' },
     { id: 'hours', icon: <FaClock />, name: 'Operating Hours' },
-    { id: 'billing', icon: <FaCreditCard />, name: 'Billing & Plan' },
     { id: 'notifications', icon: <FaBell />, name: 'Notifications' },
   ];
 
@@ -881,7 +681,7 @@ function ShopSettingsPageContent() {
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto', display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div>
-            <Link href="/shop/admin#overview" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:8, display:'inline-block'}}>
+            <Link href="/shop/admin#overview" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:8, display:'inline-block'}}>
               <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
             </Link>
             <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:4, display:'flex', alignItems:'center', gap:12}}>
@@ -896,7 +696,7 @@ function ShopSettingsPageContent() {
               localStorage.removeItem('userName');
               localStorage.removeItem('shopId');
               localStorage.removeItem('userId');
-              router.push('/auth/login');
+              router.push('/auth/login' as Route);
             }}
             style={{
               padding:'10px 20px',
@@ -929,9 +729,9 @@ function ShopSettingsPageContent() {
                   width:'100%',
                   padding:'12px 16px',
                   marginBottom:8,
-                  background: activeTab === tab.id ? 'rgba(59,130,246,0.2)' : 'transparent',
-                  color: activeTab === tab.id ? '#3b82f6' : '#9aa3b2',
-                  border: activeTab === tab.id ? '1px solid rgba(59,130,246,0.3)' : '1px solid transparent',
+                  background: activeTab === tab.id ? 'rgba(229,51,42,0.2)' : 'transparent',
+                  color: activeTab === tab.id ? '#e5332a' : '#9aa3b2',
+                  border: activeTab === tab.id ? '1px solid rgba(229,51,42,0.3)' : '1px solid transparent',
                   borderRadius:8,
                   fontSize:14,
                   fontWeight:600,
@@ -1001,6 +801,33 @@ function ShopSettingsPageContent() {
                       <input type="text" value={settings.insurancePolicy} onChange={(e) => setSettings({...settings, insurancePolicy: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                   </div>
+
+                  <div style={{ marginTop: 8, padding: 16, borderRadius: 10, background: 'rgba(229,51,42,0.10)', border: '1px solid rgba(229,51,42,0.35)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb' }}>FixTray Shop Participation Agreement</div>
+                        <div style={{ fontSize: 12, color: '#9aa3b2' }}>Agreement version: {FIXTRAY_AGREEMENT_VERSION}</div>
+                      </div>
+                      <button
+                        onClick={() => setShowAgreementModal(true)}
+                        style={{ padding: '10px 14px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.35)', color: '#e5e7eb', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        {agreementSignedAt ? 'Review Agreement' : 'Read and Sign Agreement'}
+                      </button>
+                    </div>
+
+                    {agreementSignedAt ? (
+                      <div style={{ color: '#86efac', fontSize: 12 }}>
+                        Signed by {agreementSignature || 'Shop Admin'} on {new Date(agreementSignedAt).toLocaleString()}
+                      </div>
+                    ) : (
+                      <div style={{ color: '#fde68a', fontSize: 12 }}>
+                        Signature required before saving settings and continuing platform access.
+                      </div>
+                    )}
+
+                    {agreementError ? <div style={{ color: '#fca5a5', fontSize: 12, marginTop: 8 }}>{agreementError}</div> : null}
+                  </div>
                 </div>
               </div>
             )}
@@ -1014,8 +841,8 @@ function ShopSettingsPageContent() {
                   href="/shop/settings/schedule"
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: 20, marginBottom: 24, background: 'linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(139,92,246,0.2) 100%)',
-                    border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12,
+                    padding: 20, marginBottom: 24, background: 'linear-gradient(135deg, rgba(229,51,42,0.18) 0%, rgba(0,0,0,0.85) 100%)',
+                    border: '1px solid rgba(229,51,42,0.30)', borderRadius: 12,
                     textDecoration: 'none', transition: 'all 0.2s'
                   }}
                 >
@@ -1027,7 +854,7 @@ function ShopSettingsPageContent() {
                       Manage capacity, time slots, blocked dates & customer booking availability
                     </div>
                   </div>
-                  <FaArrowRight style={{ fontSize: 24, color: '#3b82f6' }} />
+                  <FaArrowRight style={{ fontSize: 24, color: '#e5332a' }} />
                 </Link>
                 
                 <div style={{display:'grid', gap:16}}>
@@ -1101,7 +928,7 @@ function ShopSettingsPageContent() {
                     </button>
                     <button
                       onClick={handlePopulateDefaults}
-                      style={{padding:'10px 20px', background:'#3b82f6', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
+                      style={{padding:'10px 20px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                       title="Import default services for all categories"
                     >
                       Import Default Services
@@ -1174,7 +1001,7 @@ function ShopSettingsPageContent() {
                                 style={{background:'transparent', border:'none', color:'#e5332a', cursor:'pointer', fontSize:18, padding:4}}
                                 title="Remove service"
                               >
-                                ×
+                                
                               </button>
                             </div>
                           ))}
@@ -1235,7 +1062,7 @@ function ShopSettingsPageContent() {
                                   style={{background:'transparent', border:'none', color:'#e5332a', cursor:'pointer', fontSize:18, padding:4}}
                                   title="Remove service"
                                 >
-                                  ×
+                                  
                                 </button>
                               </div>
                             ))}
@@ -1250,338 +1077,6 @@ function ShopSettingsPageContent() {
                     })}
                   </div>
                 )}
-              </div>
-            )}
-
-            {activeTab === 'billing' && (
-              <div>
-                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>Billing & Subscription</h2>
-                <p style={{color:'#9aa3b2', marginBottom:32}}>Manage your subscription plan and payment methods</p>
-
-                {/* Payment Message */}
-                {paymentMessage && (
-                  <div style={{
-                    padding: 16,
-                    background: paymentMessage.type === 'success' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                    border: `1px solid ${paymentMessage.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                    borderRadius: 12,
-                    marginBottom: 24,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ fontSize: 20 }}>{paymentMessage.type === 'success' ? <FaCheckCircle style={{marginRight:4}} /> : <FaTimesCircle style={{marginRight:4}} />}</span>
-                      <span style={{ color: paymentMessage.type === 'success' ? '#22c55e' : '#ef4444', fontWeight: 500 }}>
-                        {paymentMessage.text}
-                      </span>
-                    </div>
-                    <button 
-                      onClick={() => setPaymentMessage(null)}
-                      style={{ background: 'transparent', border: 'none', color: '#9aa3b2', cursor: 'pointer', fontSize: 18 }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-
-                {/* Current Plan Card */}
-                <div style={{
-                  background: `linear-gradient(135deg, ${PLAN_DETAILS[subscription?.plan || 'starter']?.color}20 0%, rgba(0,0,0,0.3) 100%)`,
-                  border: `1px solid ${PLAN_DETAILS[subscription?.plan || 'starter']?.color}40`,
-                  borderRadius: 16,
-                  padding: 24,
-                  marginBottom: 32
-                }}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:16}}>
-                    <div>
-                      <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
-                        <span style={{
-                          fontSize:24,
-                          fontWeight:700,
-                          color: PLAN_DETAILS[subscription?.plan || 'starter']?.color
-                        }}>
-                          {PLAN_DETAILS[subscription?.plan || 'starter']?.name} Plan
-                        </span>
-                        <span style={{
-                          padding:'4px 12px',
-                          background: subscription?.status === 'active' ? 'rgba(34,197,94,0.2)' : 
-                                     subscription?.status === 'trialing' ? 'rgba(59,130,246,0.2)' :
-                                     subscription?.status === 'past_due' ? 'rgba(239,68,68,0.2)' : 'rgba(107,114,128,0.2)',
-                          color: subscription?.status === 'active' ? '#22c55e' :
-                                 subscription?.status === 'trialing' ? '#3b82f6' :
-                                 subscription?.status === 'past_due' ? '#ef4444' : '#6b7280',
-                          borderRadius: 20,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          textTransform: 'capitalize'
-                        }}>
-                          {subscription?.status || 'active'}
-                        </span>
-                      </div>
-                      <div style={{color:'#e5e7eb', fontSize:32, fontWeight:700, marginBottom:4}}>
-                        ${PLAN_DETAILS[subscription?.plan || 'starter']?.price}
-                        <span style={{fontSize:16, fontWeight:400, color:'#9aa3b2'}}>/month</span>
-                      </div>
-                      <div style={{color:'#9aa3b2', fontSize:14}}>
-                        {subscription?.status === 'trialing' && subscription?.trialEnd ? (
-                          <>Trial ends {formatDate(subscription.trialEnd)}</>
-                        ) : subscription?.currentPeriodEnd ? (
-                          <>Next billing date: {formatDate(subscription.currentPeriodEnd)}</>
-                        ) : (
-                          <>Subscription active</>
-                        )}
-                      </div>
-                      {subscription?.cancelAtPeriodEnd && (
-                        <div style={{color:'#f59e0b', fontSize:13, marginTop:8, display:'flex', alignItems:'center', gap:6}}>
-                          <FaExclamationTriangle style={{marginRight:4}} /> Cancels at end of billing period
-                        </div>
-                      )}
-                    </div>
-                    <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
-                      <button
-                        onClick={openBillingPortal}
-                        disabled={billingLoading}
-                        style={{
-                          padding:'12px 24px',
-                          background:'#3b82f6',
-                          color:'white',
-                          border:'none',
-                          borderRadius:8,
-                          fontSize:14,
-                          fontWeight:600,
-                          cursor: billingLoading ? 'not-allowed' : 'pointer',
-                          opacity: billingLoading ? 0.7 : 1,
-                          display:'flex',
-                          alignItems:'center',
-                          gap:8
-                        }}
-                      >
-                        {billingLoading ? '...' : <><FaCreditCard style={{marginRight:4}} /> Manage Billing</>}
-                      </button>
-                      <button
-                        onClick={cancelSubscription}
-                        disabled={cancelling || !subscription?.stripeCustomerId || subscription?.cancelAtPeriodEnd}
-                        style={{
-                          padding:'12px 20px',
-                          background: subscription?.cancelAtPeriodEnd ? 'rgba(239,68,68,0.2)' : '#ef4444',
-                          color:'white',
-                          border:'none',
-                          borderRadius:10,
-                          fontSize:14,
-                          fontWeight:700,
-                          cursor: (cancelling || subscription?.cancelAtPeriodEnd) ? 'not-allowed' : 'pointer',
-                          opacity: (cancelling || subscription?.cancelAtPeriodEnd) ? 0.7 : 1,
-                          display:'flex',
-                          alignItems:'center',
-                          gap:8
-                        }}
-                        title={subscription?.cancelAtPeriodEnd ? 'Cancellation already scheduled' : 'Cancel at period end'}
-                      >
-                        {subscription?.cancelAtPeriodEnd ? 'Cancellation Scheduled' : (cancelling ? 'Cancelling...' : 'Cancel Subscription')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Plan Features */}
-                  <div style={{marginTop:24, paddingTop:24, borderTop:'1px solid rgba(255,255,255,0.1)'}}>
-                    <div style={{color:'#9aa3b2', fontSize:13, marginBottom:12}}>Your plan includes:</div>
-                    <div style={{display:'flex', flexWrap:'wrap', gap:12}}>
-                      {PLAN_DETAILS[subscription?.plan || 'starter']?.features.map((feature, i) => (
-                        <span key={i} style={{
-                          padding:'6px 12px',
-                          background:'rgba(255,255,255,0.05)',
-                          borderRadius:20,
-                          fontSize:13,
-                          color:'#e5e7eb',
-                          display:'flex',
-                          alignItems:'center',
-                          gap:6
-                        }}>
-                          <FaCheck style={{marginRight:4}} /> {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Upgrade Options */}
-                <div style={{marginBottom:32}}>
-                  <h3 style={{fontSize:16, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>
-                    {subscription?.plan === 'enterprise' ? 'You\'re on our highest tier!' : 'Upgrade Your Plan'}
-                  </h3>
-                  
-                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:16}}>
-                    {Object.entries(PLAN_DETAILS)
-                      .filter(([key]) => {
-                        const planOrder = ['starter', 'growth', 'professional', 'business', 'enterprise'];
-                        const currentIndex = planOrder.indexOf(subscription?.plan || 'starter');
-                        const thisIndex = planOrder.indexOf(key);
-                        return thisIndex > currentIndex;
-                      })
-                      .map(([key, plan]) => (
-                        <div
-                          key={key}
-                          style={{
-                            background:'rgba(0,0,0,0.3)',
-                            border:`1px solid ${plan.color}30`,
-                            borderRadius:12,
-                            padding:20,
-                            transition:'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = `${plan.color}60`;
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = `${plan.color}30`;
-                            e.currentTarget.style.transform = 'translateY(0)';
-                          }}
-                        >
-                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12}}>
-                            <div>
-                              <div style={{color:plan.color, fontSize:18, fontWeight:700}}>{plan.name}</div>
-                              <div style={{color:'#e5e7eb', fontSize:24, fontWeight:700}}>
-                                ${plan.price}<span style={{fontSize:14, fontWeight:400, color:'#9aa3b2'}}>/mo</span>
-                              </div>
-                            </div>
-                            {key === 'professional' && (
-                              <span style={{
-                                padding:'4px 8px',
-                                background:'rgba(139,92,246,0.2)',
-                                color:'#8B5CF6',
-                                borderRadius:4,
-                                fontSize:10,
-                                fontWeight:700
-                              }}>
-                                POPULAR
-                              </span>
-                            )}
-                          </div>
-                          <div style={{marginBottom:16}}>
-                            {plan.features.slice(0, 3).map((f, i) => (
-                              <div key={i} style={{color:'#9aa3b2', fontSize:13, marginBottom:4, display:'flex', alignItems:'center', gap:6}}>
-                                <span style={{color:plan.color}}><FaCheck style={{marginRight:4}} /></span> {f}
-                              </div>
-                            ))}
-                            {plan.features.length > 3 && (
-                              <div style={{color:'#6b7280', fontSize:12, marginTop:4}}>
-                                +{plan.features.length - 3} more features
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => upgradePlan(key)}
-                            disabled={billingLoading}
-                            style={{
-                              width:'100%',
-                              padding:'10px',
-                              background:`${plan.color}20`,
-                              border:`1px solid ${plan.color}40`,
-                              color:plan.color,
-                              borderRadius:8,
-                              fontSize:14,
-                              fontWeight:600,
-                              cursor:'pointer'
-                            }}
-                          >
-                            Upgrade to {plan.name}
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Stripe Connect Payout Account */}
-                <div style={{marginBottom:24}}>
-                  <h3 style={{fontSize:16, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>Payout Account</h3>
-                  <p style={{color:'#9aa3b2', fontSize:13, marginBottom:16}}>Connect your Stripe account to receive work order payments directly to your bank.</p>
-                  <div style={{
-                    background:'rgba(255,255,255,0.05)',
-                    borderRadius:12,
-                    padding:20,
-                    display:'flex',
-                    justifyContent:'space-between',
-                    alignItems:'center',
-                  }}>
-                    <div>
-                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Stripe Express Account</div>
-                      <div style={{color:'#9aa3b2', fontSize:13}}>Complete Stripe&apos;s onboarding to enable direct payouts.</div>
-                    </div>
-                    <button
-                      onClick={handleStripeConnect}
-                      disabled={connectLoading}
-                      style={{
-                        padding:'10px 20px',
-                        background: connectLoading ? 'rgba(255,255,255,0.1)' : '#635bff',
-                        color:'white',
-                        border:'none',
-                        borderRadius:8,
-                        fontSize:14,
-                        fontWeight:600,
-                        cursor: connectLoading ? 'not-allowed' : 'pointer',
-                        whiteSpace:'nowrap',
-                      }}
-                    >
-                      {connectLoading ? 'Loading...' : <><FaLink style={{marginRight:4}} /> Connect Stripe</>}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Payment History Link */}
-                <div style={{
-                  background:'rgba(255,255,255,0.05)',
-                  borderRadius:12,
-                  padding:20,
-                  display:'flex',
-                  justifyContent:'space-between',
-                  alignItems:'center'
-                }}>
-                  <div>
-                    <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Payment History & Invoices</div>
-                    <div style={{color:'#9aa3b2', fontSize:13}}>View past invoices and download receipts</div>
-                  </div>
-                  <button
-                    onClick={openBillingPortal}
-                    disabled={billingLoading}
-                    style={{
-                      padding:'10px 20px',
-                      background:'rgba(255,255,255,0.1)',
-                      border:'1px solid rgba(255,255,255,0.2)',
-                      color:'#e5e7eb',
-                      borderRadius:8,
-                      fontSize:14,
-                      cursor: billingLoading ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    View Invoices <FaArrowRight style={{marginRight:4}} />
-                  </button>
-                </div>
-
-                {/* FAQ Section */}
-                <div style={{marginTop:32}}>
-                  <h3 style={{fontSize:16, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>Billing FAQ</h3>
-                  <div style={{display:'grid', gap:12}}>
-                    <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>When will I be charged?</div>
-                      <div style={{color:'#9aa3b2', fontSize:13}}>
-                        You get a 14-day free trial. After that, you&apos;ll be charged monthly on the same day you started.
-                      </div>
-                    </div>
-                    <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Can I cancel anytime?</div>
-                      <div style={{color:'#9aa3b2', fontSize:13}}>
-                        Yes! Cancel anytime from the billing portal. You&apos;ll keep access until the end of your billing period.
-                      </div>
-                    </div>
-                    <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>What payment methods do you accept?</div>
-                      <div style={{color:'#9aa3b2', fontSize:13}}>
-                        We accept all major credit cards (Visa, MasterCard, American Express) and ACH bank transfers.
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -1710,7 +1205,7 @@ function ShopSettingsPageContent() {
 
                 {/* Message Notifications */}
                 <div style={{marginBottom:32}}>
-                  <h3 style={{fontSize:16, fontWeight:600, color:'#60a5fa', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
+                  <h3 style={{fontSize:16, fontWeight:600, color:'#ff6b64', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
                     <span><FaComments style={{marginRight:4}} /></span> Messages
                   </h3>
                   <div style={{display:'grid', gap:12}}>
@@ -1726,7 +1221,7 @@ function ShopSettingsPageContent() {
 
                 {/* Work Order Status Updates */}
                 <div style={{marginBottom:32}}>
-                  <h3 style={{fontSize:16, fontWeight:600, color:'#3b82f6', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
+                  <h3 style={{fontSize:16, fontWeight:600, color:'#e5332a', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
                     <span><FaClipboardList style={{marginRight:4}} /></span> Work Order Status Updates
                   </h3>
                   <div style={{display:'grid', gap:12}}>
@@ -1795,12 +1290,75 @@ function ShopSettingsPageContent() {
       </div>
 
       {/* Add Service Modal */}
+      {showAgreementModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: 20 }}>
+          <div style={{ background: '#030303', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 16, maxWidth: 980, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.14)' }}>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#e5e7eb' }}>FixTray Shop Participation Agreement</div>
+                <div style={{ fontSize: 12, color: '#9aa3b2' }}>Read the full agreement text and sign electronically.</div>
+              </div>
+              <button onClick={() => setShowAgreementModal(false)} style={{ background: 'transparent', border: 'none', color: '#9aa3b2', fontSize: 26, cursor: 'pointer' }}><FaTimes /></button>
+            </div>
+
+            <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0, color: '#cbd5e1', fontSize: 12, lineHeight: 1.6, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
+                {agreementDisplayText}
+              </pre>
+            </div>
+
+            <div style={{ padding: 20, borderTop: '1px solid rgba(255,255,255,0.14)', background: 'rgba(0,0,0,0.45)' }}>
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Shop Legal Name</label>
+                    <input type="text" value={settings.shopName} readOnly style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, color: '#e5e7eb', fontSize: 13 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Admin Email</label>
+                    <input type="text" value={settings.email} readOnly style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, color: '#e5e7eb', fontSize: 13 }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Digital Signature (full legal name)</label>
+                  <input
+                    type="text"
+                    value={agreementSignature}
+                    onChange={(e) => setAgreementSignature(e.target.value)}
+                    placeholder="Type full legal name"
+                    style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 8, color: '#e5e7eb', fontSize: 14 }}
+                  />
+                </div>
+
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, color: '#e5e7eb', fontSize: 13, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={agreementAccepted}
+                    onChange={(e) => setAgreementAccepted(e.target.checked)}
+                    style={{ width: 18, height: 18, marginTop: 2, cursor: 'pointer' }}
+                  />
+                  <span>I am authorized to bind this Shop and I agree to the FixTray Shop Participation Agreement.</span>
+                </label>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  {agreementSignedAt ? <div style={{ color: '#9aa3b2', fontSize: 12 }}>Current signed timestamp: {new Date(agreementSignedAt).toLocaleString()}</div> : <div style={{ color: '#9aa3b2', fontSize: 12 }}>Signing will timestamp this agreement in UTC.</div>}
+                  <button onClick={handleSignAgreement} style={{ padding: '10px 18px', border: 'none', background: '#22c55e', color: '#fff', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Sign Agreement</button>
+                </div>
+
+                {agreementError ? <div style={{ color: '#fca5a5', fontSize: 12 }}>{agreementError}</div> : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAddServiceModal && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
-          <div style={{background:'linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 50%, #525252 100%)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
+          <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Add New Service</h2>
-              <button onClick={() => setShowAddServiceModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}>×</button>
+              <button onClick={() => setShowAddServiceModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
             <div style={{display:'flex', gap:8, marginBottom:16}}>
@@ -1811,8 +1369,8 @@ function ShopSettingsPageContent() {
                   flex:1,
                   padding:'10px 12px',
                   borderRadius:8,
-                  border: newServiceMode === 'catalog' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
-                  background: newServiceMode === 'catalog' ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)',
+                  border: newServiceMode === 'catalog' ? '2px solid #e5332a' : '1px solid rgba(255,255,255,0.1)',
+                  background: newServiceMode === 'catalog' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)',
                   color:'#e5e7eb',
                   fontWeight:700,
                   cursor:'pointer'
@@ -1929,14 +1487,14 @@ function ShopSettingsPageContent() {
       {/* Edit Service Modal */}
       {showEditServiceModal && selectedService && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
-          <div style={{background:'linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 50%, #525252 100%)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:600, width:'90%'}}>
+          <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:600, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <div>
                 <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{selectedService.serviceName}</h2>
                 <span style={{
                   padding:'4px 12px', 
-                  background: selectedService.category === 'diesel' ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.2)', 
-                  color: selectedService.category === 'diesel' ? '#22c55e' : '#3b82f6', 
+                  background: selectedService.category === 'diesel' ? 'rgba(34,197,94,0.2)' : 'rgba(229,51,42,0.2)', 
+                  color: selectedService.category === 'diesel' ? '#22c55e' : '#e5332a', 
                   borderRadius:12, 
                   fontSize:12, 
                   fontWeight:600
@@ -1944,7 +1502,7 @@ function ShopSettingsPageContent() {
                   {selectedService.category === 'diesel' ? <><FaTruck style={{marginRight:4}} /> Diesel / Heavy-Duty</> : <><FaCar style={{marginRight:4}} /> Gas / Automotive</>}
                 </span>
               </div>
-              <button onClick={() => setShowEditServiceModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}>×</button>
+              <button onClick={() => setShowEditServiceModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
             <p style={{color:'#9aa3b2', marginBottom:24, fontSize:14}}>Set labor time and pricing for this service</p>
@@ -1995,7 +1553,7 @@ function ShopSettingsPageContent() {
               </button>
               <button 
                 onClick={handleUpdateService} 
-                style={{flex:1, padding:'12px', background:'#3b82f6', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
+                style={{flex:1, padding:'12px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
                 Save Changes
               </button>
@@ -2009,21 +1567,6 @@ function ShopSettingsPageContent() {
         <div style={{ position: 'fixed', bottom: 24, right: 24, background: settingsMsg.type === 'success' ? '#dcfce7' : '#fde8e8', color: settingsMsg.type === 'success' ? '#166534' : '#991b1b', border: `1px solid ${settingsMsg.type === 'success' ? '#86efac' : '#fca5a5'}`, borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxWidth: 420 }}>
           {settingsMsg.text}
           <button onClick={() => setSettingsMsg(null)} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: settingsMsg.type === 'success' ? '#166534' : '#991b1b' }}><FaTimes style={{marginRight:4}} /></button>
-        </div>
-      )}
-
-      {/* Cancel subscription confirm modal */}
-      {cancelSubConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-          <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, padding: 32, maxWidth: 440, width: '100%', textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}><FaCreditCard style={{marginRight:4}} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>Cancel Subscription?</h3>
-            <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>Your subscription will be cancelled at the end of the current billing period. You will retain access until then.</p>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setCancelSubConfirm(false)} style={{ flex: 1, padding: '10px', background: '#334155', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', color: '#e2e8f0' }}>Keep Subscription</button>
-              <button onClick={doCancelSubscription} disabled={cancelling} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Yes, Cancel</button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -2054,3 +1597,5 @@ function ShopSettingsPageWrapper() {
 }
 
 export default ShopSettingsPageWrapper;
+
+

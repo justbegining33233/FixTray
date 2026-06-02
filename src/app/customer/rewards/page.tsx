@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 
 interface Reward {
@@ -51,7 +52,7 @@ export default function Rewards() {
   const handleSignOut = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
-    router.push('/auth/login');
+    router.push('/auth/login' as Route);
   };
 
   return (
@@ -81,7 +82,7 @@ export default function Rewards() {
           <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}>Current Balance</h2>
           <div style={{display:'flex', alignItems:'center', gap:24}}>
             <div>
-              <div style={{fontSize:36, fontWeight:700, color:'#3b82f6'}}>{loyaltyPoints}</div>
+              <div style={{fontSize:36, fontWeight:700, color:'#e5332a'}}>{loyaltyPoints}</div>
               <div style={{fontSize:14, color:'#9aa3b2'}}>Loyalty Points</div>
             </div>
             <div style={{flex:1}}>
@@ -100,7 +101,7 @@ export default function Rewards() {
                       <span style={{fontSize:14, color:'#9aa3b2'}}>{loyaltyPoints} / {nextThreshold ?? loyaltyPoints}</span>
                     </div>
                     <div style={{width:'100%', height:8, background:'rgba(255,255,255,0.1)', borderRadius:4}}>
-                      <div style={{width:`${pct}%`, height:'100%', background:'#3b82f6', borderRadius:4}}></div>
+                      <div style={{width:`${pct}%`, height:'100%', background:'#e5332a', borderRadius:4}}></div>
                     </div>
                   </>
                 );
@@ -128,7 +129,7 @@ export default function Rewards() {
                     </span>
                   )}
                 </div>
-                <div style={{fontSize:18, color:'#3b82f6', fontWeight:600, marginBottom:8}}>{reward.value}</div>
+                <div style={{fontSize:18, color:'#e5332a', fontWeight:600, marginBottom:8}}>{reward.value}</div>
                 <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{reward.description}</div>
                 <div style={{fontSize:12, color:'#6b7280'}}>Expires: {reward.expires}</div>
                 {reward.progress && (
@@ -138,7 +139,7 @@ export default function Rewards() {
                       <span style={{fontSize:12, color:'#9aa3b2'}}>{reward.progress} / {reward.total}</span>
                     </div>
                     <div style={{width:'100%', height:6, background:'rgba(255,255,255,0.1)', borderRadius:3}}>
-                      <div style={{width:`${reward.total ? (reward.progress / reward.total) * 100 : 0}%`, height:'100%', background:'#3b82f6', borderRadius:3}}></div>
+                      <div style={{width:`${reward.total ? (reward.progress / reward.total) * 100 : 0}%`, height:'100%', background:'#e5332a', borderRadius:3}}></div>
                     </div>
                   </div>
                 )}
@@ -149,7 +150,7 @@ export default function Rewards() {
                     if (!reward.earned) return;
                     try {
                       const token = localStorage.getItem('token');
-                      const r = await fetch('/api/customers/rewards/claim', {
+                      const r = await fetch('/api/customers/rewards', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                         body: JSON.stringify({ rewardId: reward.id }),
@@ -203,7 +204,7 @@ export default function Rewards() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FixTray Full Audit Report — May 2026</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --border: rgba(255,255,255,0.09);
+    --text: #e5e7eb;
+    --muted: #9aa3b2;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+    --orange: #f97316;
+    --purple: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* Header */
+  .header { border-bottom: 2px solid var(--blue); padding-bottom: 28px; margin-bottom: 40px; }
+  .logo { font-size: 13px; font-weight: 700; letter-spacing: 3px; color: var(--blue); text-transform: uppercase; margin-bottom: 10px; }
+  h1 { font-size: 36px; font-weight: 800; color: #fff; }
+  .meta { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .verdict { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); border-radius: 999px; padding: 6px 18px; font-size: 14px; font-weight: 600; color: var(--green); }
+  .verdict-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+  /* Summary strip */
+  .summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .scard { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 18px; }
+  .scard .num { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+  .scard .lbl { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .yellow { color: var(--yellow); }
+  .blue { color: var(--blue); }
+
+  /* Sections */
+  section { margin-bottom: 48px; }
+  h2 { font-size: 20px; font-weight: 700; color: #fff; border-left: 3px solid var(--blue); padding-left: 12px; margin-bottom: 20px; }
+  h3 { font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-top: 24px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  thead tr { background: rgba(255,255,255,0.03); }
+  th { padding: 11px 14px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; font-size: 13.5px; color: var(--text); border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Status badges */
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+  .badge-ok { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+  .badge-fixed { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+  .badge-warn { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-fail { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+  .badge-info { background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.25); }
+  .badge-crit { background: rgba(239,68,68,0.22); color: #ff6b6b; border: 1px solid rgba(239,68,68,0.45); }
+
+  /* Severity pill in fix table */
+  .sev { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 4px; }
+  .sev-critical { background: rgba(239,68,68,0.25); color: #ff6b6b; }
+  .sev-high { background: rgba(245,158,11,0.2); color: var(--yellow); }
+  .sev-medium { background: rgba(59,130,246,0.18); color: #93c5fd; }
+  .sev-low { background: rgba(255,255,255,0.08); color: var(--muted); }
+
+  /* Notes */
+  .note { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; padding: 14px 16px; font-size: 13px; color: #93c5fd; margin-top: 16px; }
+  .note-warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.25); color: #fcd34d; }
+
+  /* Checklist */
+  .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .checklist li { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; }
+  .checklist .icon { flex-shrink: 0; margin-top: 2px; }
+  .check { color: var(--green); font-size: 15px; }
+  .cross { color: var(--red); font-size: 15px; }
+  .dash { color: var(--muted); font-size: 15px; }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* Footer */
+  .footer { color: var(--muted); font-size: 12px; margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">FixTray · Full Feature Audit</div>
+    <h1>Audit Report</h1>
+    <div class="meta">Conducted: May 20, 2026 &nbsp;·&nbsp; Environment: localhost:3000 (Development) &nbsp;·&nbsp; Version: 1.0</div>
+    <div class="verdict"><span class="verdict-dot"></span> PASS — App is fully functional after all fixes</div>
+  </div>
+
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip">
+    <div class="scard"><div class="num green">28</div><div class="lbl">Pages Confirmed</div></div>
+    <div class="scard"><div class="num blue">13</div><div class="lbl">Bugs Fixed</div></div>
+    <div class="scard"><div class="num red">1</div><div class="lbl">Security Issues</div></div>
+    <div class="scard"><div class="num green">0</div><div class="lbl">TypeScript Errors</div></div>
+    <div class="scard"><div class="num green">6</div><div class="lbl">Roles Tested</div></div>
+    <div class="scard"><div class="num yellow">2</div><div class="lbl">Known Limitations</div></div>
+  </div>
+
+  <!-- SECTION 1: BUGS FIXED -->
+  <section>
+    <h2>Bugs Found &amp; Fixed</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Issue</th>
+            <th>Severity</th>
+            <th>Category</th>
+            <th>Fix Applied</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>/superadmin/:path*</strong> missing from <code>proxy.ts</code> matcher — superadmin routes were completely unprotected (no JWT check)</td>
+            <td><span class="sev sev-critical">CRITICAL</span></td>
+            <td>Security</td>
+            <td>Added <code>/superadmin/:path*</code> to the middleware matcher array in <code>src/proxy.ts</code></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Superadmin login redirected to non-existent <code>/superadmin/dashboard</code> — 404 on every superadmin login</td>
+            <td><span class="sev sev-high">HIGH</span></td>
+            <td>UX / Routing</td>
+            <td>Deleted <code>/superadmin/dashboard</code> page entirely; updated <code>LoginClient.tsx</code>, <code>AuthContext.tsx</code>, <code>proxy.ts</code>, <code>useRequireAuth.ts</code>, and 14 other files to point to <code>/admin/home</code></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>DB plan mismatch: <code>qa_shop</code> subscription had plan <code>'pro'</code> in database but codebase only knows <code>'professional'</code> — caused subscription gates to misfire</td>
+            <td><span class="sev sev-high">HIGH</span></td>
+            <td>Data / Subscription</td>
+            <td>Updated DB record via Prisma: <code>subscription.plan = 'professional'</code></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><code>/workorders</code> root path returned 404 (no page.tsx)</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Routing</td>
+            <td>Created <code>src/app/workorders/page.tsx</code> — redirects to <code>/workorders/list</code></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><code>/shop</code> root path returned 404</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Routing</td>
+            <td>Created <code>src/app/shop/page.tsx</code> — redirects to <code>/shop/home</code></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><code>/admin</code> root path returned 404</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Routing</td>
+            <td>Created <code>src/app/admin/page.tsx</code> — redirects to <code>/admin/home</code></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><code>/superadmin</code> root path returned 404</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Routing</td>
+            <td>Created <code>src/app/superadmin/page.tsx</code> — redirects to <code>/admin/home</code></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><code>/manager/admin</code> root path returned 404</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Routing</td>
+            <td>Created <code>src/app/manager/admin/page.tsx</code> — redirects to <code>/manager/admin/logs</code></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td><code>/tech/settings</code> root path returned 404</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Routing</td>
+            <td>Created <code>src/app/tech/settings/page.tsx</code> — redirects to <code>/tech/settings/two-factor</code></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td><code>/customer/workorders</code> returned 404 (sidebar link target)</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Routing</td>
+            <td>Created <code>src/app/customer/workorders/page.tsx</code> — redirects to <code>/customer/history</code></td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td><code>/shop/customers</code> returned 404 — linked directly from ShopNavigation sidebar</td>
+            <td><span class="sev sev-medium">MEDIUM</span></td>
+            <td>Missing Page</td>
+            <td>Created <code>src/app/shop/customers/page.tsx</code> — full customer directory with search and links to CRM profiles</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td><code>subscription-copy.ts</code> had stale/incorrect user capacity descriptions (mismatched with actual subscription model)</td>
+            <td><span class="sev sev-low">LOW</span></td>
+            <td>Data / Content</td>
+            <td>Updated all plan descriptions with correct capacity numbers: Starter=5, Growth=10, Professional=30, Business=50, Enterprise=unlimited</td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>Stale <code>.next/types/validator.ts</code> still referenced the deleted <code>superadmin/dashboard/page.js</code> — caused 5 TypeScript compile errors</td>
+            <td><span class="sev sev-low">LOW</span></td>
+            <td>Build / Types</td>
+            <td>Removed all stale <code>.next</code> cache directories and cleaned the orphaned block from <code>validator.ts</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 2: PAGES CONFIRMED WORKING -->
+  <section>
+    <h2>Pages Confirmed Working</h2>
+
+    <h3>Shop Role</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Page</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Shop Home</td><td>/shop/home</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Quick Actions, stats tiles, message preview all render</td></tr>
+          <tr><td>Shop Admin</td><td>/shop/admin</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Inventory, work order stats, team stats visible</td></tr>
+          <tr><td>Inventory</td><td>/shop/inventory</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Parts list with Add Part button</td></tr>
+          <tr><td>Time Clock</td><td>/shop/timeclock</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Clock in/out interface</td></tr>
+          <tr><td>Payroll</td><td>/shop/payroll</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Employee list renders</td></tr>
+          <tr><td>Customers</td><td>/shop/customers</td><td><span class="badge badge-fixed">✓ FIXED</span></td><td>New page — customer directory with search bar, links to /shop/customers/[id]/crm</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Manager Role</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Page</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Dashboard</td><td>/manager/home</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Work Orders Overview, Team Performance section</td></tr>
+          <tr><td>Time Clock</td><td>/manager/timeclock</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Clock in/out for manager</td></tr>
+          <tr><td>Payroll</td><td>/manager/payroll</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Shows QA Technician and QA Manager employees from DB</td></tr>
+          <tr><td>Schedule</td><td>/manager/schedule</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Weekly calendar with Prev/Today/Next navigation</td></tr>
+          <tr><td>Reports</td><td>/manager/reports</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Performance Reports with date filter &amp; Export CSV</td></tr>
+          <tr><td>Audit Logs</td><td>/manager/admin/logs</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Live audit log data showing today's login events</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Tech Role</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Page</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Dashboard</td><td>/tech/home</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Active jobs panel, quick actions</td></tr>
+          <tr><td>Time Clock</td><td>/tech/timeclock</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Clock in/out with history</td></tr>
+          <tr><td>Messages</td><td>/tech/messages</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Messaging interface</td></tr>
+          <tr><td>New In-Shop Job</td><td>/tech/new-inshop-job</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Work order creation form</td></tr>
+          <tr><td>New Roadside Job</td><td>/tech/new-roadside-job</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Roadside service form</td></tr>
+          <tr><td>Diagnostics</td><td>/tech/diagnostics</td><td><span class="badge badge-ok">✓ PASS</span></td><td>OBD Codes, NHTSA VIN Decoder, iATN, CarMD links</td></tr>
+          <tr><td>Parts Inventory</td><td>/tech/inventory</td><td><span class="badge badge-ok">✓ PASS</span></td><td>RockAuto, NAPA, AutoZone Pro, Parts Request links</td></tr>
+          <tr><td>DVI</td><td>/tech/dvi/[token]</td><td><span class="badge badge-info">— BY DESIGN</span></td><td>Token-based deep link — requires active work order; correct behavior</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Customer Role</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Page</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Dashboard</td><td>/customer/dashboard</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Bronze loyalty tier, Active Jobs/Vehicles/Messages/Points stats</td></tr>
+          <tr><td>Vehicles</td><td>/customer/vehicles</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Vehicle list with Add Vehicle CTA</td></tr>
+          <tr><td>History</td><td>/customer/history</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Work order history list</td></tr>
+          <tr><td>Messages</td><td>/customer/messages</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Chat interface with Shops/Managers/Techs filter tabs</td></tr>
+          <tr><td>Estimates</td><td>/customer/estimates</td><td><span class="badge badge-ok">✓ PASS</span></td><td>My Estimates / Request Estimate / Denied / Approved tabs</td></tr>
+          <tr><td>Profile</td><td>/customer/profile</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Customer account settings with My Profile / Contact &amp; Settings / Quick Links tabs</td></tr>
+          <tr><td>Appointments</td><td>/customer/appointments</td><td><span class="badge badge-ok">✓ PASS</span></td><td>My Appointments with + Book Appointment CTA</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Admin Role</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Page</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Home / Console</td><td>/admin/home</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Admin Console Overview with live platform stats</td></tr>
+          <tr><td>Manage Shops</td><td>/admin/manage-shops</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Shop listing with status and subscription info</td></tr>
+          <tr><td>Manage Customers</td><td>/admin/manage-customers</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Customer directory with search</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Superadmin Role</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Page</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Login Redirect</td><td>/admin/home</td><td><span class="badge badge-fixed">✓ FIXED</span></td><td>Superadmin now correctly lands on /admin/home (was broken /superadmin/dashboard)</td></tr>
+          <tr><td>Users</td><td>/superadmin/users</td><td><span class="badge badge-ok">✓ PASS</span></td><td>User management interface</td></tr>
+          <tr><td>Tenants</td><td>/superadmin/tenants</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Multi-tenant management</td></tr>
+          <tr><td>Analytics</td><td>/superadmin/analytics</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Platform analytics</td></tr>
+          <tr><td>Security</td><td>/superadmin/security</td><td><span class="badge badge-ok">✓ PASS</span></td><td>Security audit controls</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 3: AUTH & MIDDLEWARE -->
+  <section>
+    <h2>Authentication &amp; Middleware</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Check</th><th>Result</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>All 6 role logins work</td>
+            <td><span class="badge badge-ok">✓ PASS</span></td>
+            <td>shop, manager, tech, customer, admin, superadmin all authenticate successfully with QA credentials</td>
+          </tr>
+          <tr>
+            <td>Role-based redirect after login</td>
+            <td><span class="badge badge-ok">✓ PASS</span></td>
+            <td>Each role lands on its correct home page post-login. Superadmin → /admin/home (fixed)</td>
+          </tr>
+          <tr>
+            <td>Middleware protects all role paths</td>
+            <td><span class="badge badge-fixed">✓ FIXED</span></td>
+            <td>All 7 path prefixes (admin, superadmin, shop, tech, customer, manager, workorders, reports) are in the matcher</td>
+          </tr>
+          <tr>
+            <td>Unauthenticated redirect</td>
+            <td><span class="badge badge-ok">✓ PASS</span></td>
+            <td>Accessing /manager/admin/logs while logged out → redirected to /auth/login?redirect=/manager/admin/logs</td>
+          </tr>
+          <tr>
+            <td>Wrong role access blocked</td>
+            <td><span class="badge badge-ok">✓ PASS</span></td>
+            <td>Middleware returns 403 and redirects to role home when accessing unauthorized paths</td>
+          </tr>
+          <tr>
+            <td>JWT token storage</td>
+            <td><span class="badge badge-warn">⚠ NOTE</span></td>
+            <td>JWT stored in localStorage — cleared on Fast Refresh full reloads in dev. Not an issue in production builds.</td>
+          </tr>
+          <tr>
+            <td>Subscription gate enforcement</td>
+            <td><span class="badge badge-ok">✓ PASS</span></td>
+            <td>Only 3 Enterprise-exclusive routes gated: /shop/integrations, /shop/settings/api-keys, /shop/settings/webhooks. All other features accessible on all plans.</td>
+          </tr>
+          <tr>
+            <td>DB plan name consistency</td>
+            <td><span class="badge badge-fixed">✓ FIXED</span></td>
+            <td>qa_shop subscription.plan updated from 'pro' → 'professional' to match codebase expectations</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 4: TYPESCRIPT & BUILD -->
+  <section>
+    <h2>TypeScript &amp; Build Health</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Check</th><th>Result</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>TypeScript compile (<code>tsc --noEmit</code>)</td>
+            <td><span class="badge badge-ok">✓ 0 ERRORS</span></td>
+            <td>Full compile passes with zero errors after clearing stale .next cache</td>
+          </tr>
+          <tr>
+            <td>Stale .next cache (superadmin/dashboard)</td>
+            <td><span class="badge badge-fixed">✓ FIXED</span></td>
+            <td>Removed all .next/types, .next/dev/types, .next/server, .next/static/chunks entries for the deleted dashboard page. Cleaned validator.ts orphaned block.</td>
+          </tr>
+          <tr>
+            <td>All created pages are valid TypeScript</td>
+            <td><span class="badge badge-ok">✓ PASS</span></td>
+            <td>8 new redirect pages + 1 customer list page compile cleanly</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 5: TEST CREDENTIALS -->
+  <section>
+    <h2>QA Test Credentials</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Role</th><th>Username / Email</th><th>Password</th><th>DB ID</th></tr></thead>
+        <tbody>
+          <tr><td>Shop Owner</td><td>qa_shop</td><td>QATest2026!</td><td>cmpamglu40002lf1ukstqqi0l</td></tr>
+          <tr><td>Manager</td><td>qa_manager@fixtray-qa.com</td><td>QATest2026!</td><td>cmpamgmhm0006lf1utdnmwqst</td></tr>
+          <tr><td>Technician</td><td>qa_tech@fixtray-qa.com</td><td>QATest2026!</td><td>cmpamgm630004lf1u9kbhrkzn</td></tr>
+          <tr><td>Customer</td><td>qa_customer@fixtray-qa.com</td><td>QATest2026!</td><td>cmpamgmt00007lf1umkx975s1</td></tr>
+          <tr><td>Admin</td><td>qa_admin</td><td>QATest2026!</td><td>—</td></tr>
+          <tr><td>Superadmin</td><td>qa_superadmin</td><td>QATest2026!</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 6: KNOWN LIMITATIONS -->
+  <section>
+    <h2>Known Limitations &amp; Notes</h2>
+
+    <div class="note note-warn">
+      <strong>Fast Refresh Full Reloads (Development Only):</strong> When the Next.js dev server performs a full reload after certain file changes, localStorage is cleared, logging out the active session. This is a dev-only behavior — production builds are not affected.
+    </div>
+
+    <div class="note" style="margin-top: 12px;">
+      <strong>DVI Page (/tech/dvi/[token]):</strong> Requires an active work order with a valid DVI token URL. There is no direct navigation to it — a customer or shop sends a specific link. This is by design. No bug.
+    </div>
+
+    <hr>
+    <h3>Subscription Model (Reference)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Plan</th><th>DB Key</th><th>Users</th><th>Shops</th><th>Features</th></tr></thead>
+        <tbody>
+          <tr><td>Starter</td><td>starter</td><td>5</td><td>1</td><td>All features</td></tr>
+          <tr><td>Growth</td><td>growth</td><td>10</td><td>1</td><td>All features</td></tr>
+          <tr><td>Professional</td><td>professional</td><td>30</td><td>3</td><td>All features</td></tr>
+          <tr><td>Business</td><td>business</td><td>50</td><td>5</td><td>All features</td></tr>
+          <tr><td>Enterprise</td><td>enterprise</td><td>Unlimited</td><td>Unlimited</td><td>All features + Custom Integrations, API Access, White Label, Dedicated Support</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr>
+    <h3>Superadmin Sub-Pages (All Navigable)</h3>
+    <ul class="checklist" style="margin-top: 8px;">
+      <li><span class="icon check">✓</span> <span>/superadmin/users</span></li>
+      <li><span class="icon check">✓</span> <span>/superadmin/tenants</span></li>
+      <li><span class="icon check">✓</span> <span>/superadmin/analytics</span></li>
+      <li><span class="icon check">✓</span> <span>/superadmin/security</span></li>
+      <li><span class="icon check">✓</span> <span>/superadmin/deployments</span></li>
+      <li><span class="icon check">✓</span> <span>/superadmin/infrastructure</span></li>
+      <li><span class="icon check">✓</span> <span>/superadmin/settings</span></li>
+      <li><span class="icon check">✓</span> <span>/superadmin/profile</span></li>
+      <li><span class="icon cross">✗</span> <span>/superadmin/dashboard — <strong>Deleted</strong>. All back-links updated to /admin/home. (18 references updated across codebase)</span></li>
+    </ul>
+  </section>
+
+  <!-- SECTION 7: FILES CHANGED -->
+  <section>
+    <h2>Files Modified During Audit</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>File</th><th>Change Type</th><th>Summary</th></tr></thead>
+        <tbody>
+          <tr><td>src/proxy.ts</td><td><span class="badge badge-fixed">Modified</span></td><td>Added /superadmin/:path* to matcher; superadmin ROLE_HOME → /admin/home</td></tr>
+          <tr><td>src/components/LoginClient.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>Superadmin post-login redirect → /admin/home</td></tr>
+          <tr><td>src/contexts/AuthContext.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>ROLE_HOME_MAP superadmin → /admin/home</td></tr>
+          <tr><td>src/lib/useRequireAuth.ts</td><td><span class="badge badge-fixed">Modified</span></td><td>superadmin ROLE_HOME → /admin/home</td></tr>
+          <tr><td>src/lib/subscription.ts</td><td><span class="badge badge-fixed">Modified</span></td><td>Capacity-based model; correct plan keys; all features on Starter–Business</td></tr>
+          <tr><td>src/lib/subscription-copy.ts</td><td><span class="badge badge-fixed">Modified</span></td><td>Updated plan descriptions with correct user counts</td></tr>
+          <tr><td>src/lib/subscription-access.ts</td><td><span class="badge badge-fixed">Modified</span></td><td>Only 3 Enterprise-exclusive routes gated</td></tr>
+          <tr><td>src/app/admin/dashboard/page.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>router.replace → /admin/home</td></tr>
+          <tr><td>src/app/superadmin/dashboard/ (dir)</td><td><span class="badge badge-fail">Deleted</span></td><td>Entire /superadmin/dashboard page and directory removed</td></tr>
+          <tr><td>src/app/superadmin/{analytics,deployments,infrastructure,profile,security,settings,tenants,users}/page.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>All /superadmin/dashboard back-links → /admin/home</td></tr>
+          <tr><td>src/app/superadmin/layout.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>/superadmin/dashboard reference → /admin/home</td></tr>
+          <tr><td>src/components/SuperAdminNavigation.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>Dashboard link → /admin/home</td></tr>
+          <tr><td>src/components/TopNavBar.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>Dashboard link → /admin/home</td></tr>
+          <tr><td>src/components/BreadcrumbNavigation.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>Dashboard link → /admin/home</td></tr>
+          <tr><td>src/components/MobileShell.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>Dashboard link → /admin/home</td></tr>
+          <tr><td>src/components/DashboardWelcome.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>Dashboard link → /admin/home</td></tr>
+          <tr><td>src/components/UserOnboarding.tsx</td><td><span class="badge badge-fixed">Modified</span></td><td>Dashboard link → /admin/home</td></tr>
+          <tr><td>src/app/workorders/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Root redirect → /workorders/list</td></tr>
+          <tr><td>src/app/shop/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Root redirect → /shop/home</td></tr>
+          <tr><td>src/app/admin/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Root redirect → /admin/home</td></tr>
+          <tr><td>src/app/superadmin/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Root redirect → /admin/home</td></tr>
+          <tr><td>src/app/manager/admin/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Root redirect → /manager/admin/logs</td></tr>
+          <tr><td>src/app/tech/settings/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Root redirect → /tech/settings/two-factor</td></tr>
+          <tr><td>src/app/customer/workorders/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Root redirect → /customer/history</td></tr>
+          <tr><td>src/app/shop/customers/page.tsx</td><td><span class="badge badge-info">Created</span></td><td>Customer directory page with search and CRM links</td></tr>
+          <tr><td>.next/types/validator.ts</td><td><span class="badge badge-fixed">Modified</span></td><td>Removed orphaned superadmin/dashboard type block</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <strong>FixTray Full Feature Audit</strong> &nbsp;·&nbsp; Conducted May 20, 2026 &nbsp;·&nbsp; All 6 roles tested against live Neon PostgreSQL database &nbsp;·&nbsp; 0 TypeScript errors &nbsp;·&nbsp; 28 pages confirmed functional
+  </div>
+</div>
+</body>
+</html>

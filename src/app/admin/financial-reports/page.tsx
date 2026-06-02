@@ -31,7 +31,7 @@ type TopShop = {
 
 export default function FinancialReports() {
   const _router = useRouter();
-  const { user, isLoading } = useRequireAuth(['admin']);
+  const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<FinancialStats>({
     totalRevenue: '$0',
@@ -106,7 +106,7 @@ export default function FinancialReports() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1400, margin:'0 auto'}}>
-          <Link href="/admin/home" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/admin/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaDollarSign style={{marginRight:4}} /> Financial Reports</h1>
@@ -129,15 +129,15 @@ export default function FinancialReports() {
             <div style={{fontSize:28, fontWeight:700, color:'#22c55e'}}>{stats.totalRevenue}</div>
             <div style={{fontSize:11, color:'#9aa3b2', marginTop:4}}>All time</div>
           </div>
-          <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:20}}>
+          <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Total Payouts</div>
-            <div style={{fontSize:28, fontWeight:700, color:'#3b82f6'}}>{stats.totalPayouts}</div>
+            <div style={{fontSize:28, fontWeight:700, color:'#e5332a'}}>{stats.totalPayouts}</div>
             <div style={{fontSize:11, color:'#9aa3b2', marginTop:4}}>Paid to shops</div>
           </div>
           <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Platform Fees</div>
             <div style={{fontSize:28, fontWeight:700, color:'#f59e0b'}}>{stats.platformFees}</div>
-            <div style={{fontSize:11, color:'#9aa3b2', marginTop:4}}>Subscription-based (no commission)</div>
+            <div style={{fontSize:11, color:'#9aa3b2', marginTop:4}}>Flat platform fee model</div>
           </div>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Pending Payouts</div>
@@ -200,7 +200,7 @@ export default function FinancialReports() {
                       </div>
                       <div>
                         <div style={{color:'#6b7280', fontSize:11}}>Payout</div>
-                        <div style={{color:'#3b82f6', fontWeight:700}}>{shop.payout}</div>
+                        <div style={{color:'#e5332a', fontWeight:700}}>{shop.payout}</div>
                       </div>
                     </div>
                   </div>
@@ -224,7 +224,7 @@ export default function FinancialReports() {
             </div>
             <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
               <div style={{fontSize:13, color:'#9aa3b2', marginBottom:4}}>Pricing Model</div>
-              <div style={{fontSize:24, fontWeight:700, color:'#f59e0b'}}>Subscription</div>
+              <div style={{fontSize:24, fontWeight:700, color:'#f59e0b'}}>Flat Fee</div>
             </div>
           </div>
         </div>
@@ -234,3 +234,4 @@ export default function FinancialReports() {
     </div>
   );
 }
+

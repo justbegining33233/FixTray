@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FixTray Detailed QA Master Checklist</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; padding-top: 80px; }
+        
+        /* Master Navigator */
+        .role-nav { position: fixed; top: 0; left: 0; right: 0; background: #1e293b; padding: 10px 20px; z-index: 200; display: flex; gap: 15px; border-bottom: 1px solid #334155; }
+        .role-nav a { color: #e2e8f0; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+        .role-nav a.admin { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; }
+        .role-nav a.shop { background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; color: #3b82f6; }
+        .role-nav a.tech { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; }
+        .role-nav a.customer { background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; color: #22c55e; }
+        
+        /* Progress wrapper */
+        .progress-wrapper { position: fixed; top: 55px; left: 0; right: 0; background: #0f172a; padding: 10px 20px; z-index: 100; border-bottom: 1px solid #334155; display: flex; flex-direction: column; gap: 5px; }
+        .progress-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;}
+        .progress-bar-container { display: flex; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; width: 100%; }
+        .progress-segment { height: 100%; transition: width 0.3s ease; }
+        .seg-admin { background: #ef4444; }
+        .seg-shop { background: #3b82f6; }
+        .seg-tech { background: #f59e0b; }
+        .seg-customer { background: #22c55e; }
+
+        .role-header { font-size: 28px; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px;}
+        
+        /* Accordion Styles */
+        details { background: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-bottom: 15px; overflow: hidden; }
+        summary { padding: 15px 20px; cursor: pointer; font-weight: 600; font-size: 18px; outline: none; display: flex; align-items: center; background: #0f172a; transition: background 0.2s; }
+        summary:hover { background: #162032; }
+        summary::-webkit-details-marker { display: none; }
+        summary::before { content: '▶'; margin-right: 15px; font-size: 12px; transition: transform 0.2s; color: #94a3b8;}
+        details[open] summary::before { transform: rotate(90deg); }
+        details[open] summary { border-bottom: 1px solid #334155; }
+        
+        .admin-section details { border-left: 4px solid #ef4444; }
+        .shop-section details { border-left: 4px solid #3b82f6; }
+        .tech-section details { border-left: 4px solid #f59e0b; }
+        .customer-section details { border-left: 4px solid #22c55e; }
+
+        /* Detail grids */
+        .test-container { padding: 0; }
+        .grid-header { display: grid; grid-template-columns: 2fr 1fr 1fr 2fr; gap: 15px; padding: 12px 20px; background: #0f172a; color: #94a3b8; font-size: 12px; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid #334155; }
+        .test-row { display: grid; grid-template-columns: 2fr 1fr 1fr 2fr; gap: 15px; padding: 15px 20px; border-bottom: 1px solid #334155; align-items: start; transition: background 0.2s; }
+        .test-row:hover { background: rgba(255,255,255,0.02); }
+        .test-row:last-child { border-bottom: none; }
+        
+        .component-info { display: flex; flex-direction: column; gap: 4px; }
+        .component-name { font-weight: 600; color: #f8fafc; font-size: 15px; }
+        .component-desc { font-size: 13px; color: #94a3b8; line-height: 1.4; }
+        .component-type { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #334155; width: fit-content; margin-top: 4px; }
+        
+        select { background: #0f172a; color: #f8fafc; border: 1px solid #334155; padding: 8px; border-radius: 6px; width: 100%; outline: none; font-size: 14px; }
+        select:focus { border-color: #94a3b8; }
+        option[value=""] { color: #94a3b8; }
+        option[value="go"] { color: #22c55e; }
+        option[value="nogo"] { color: #ef4444; }
+        
+        textarea { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 10px; border-radius: 6px; resize: vertical; min-height: 40px; font-family: inherit; font-size: 13px; box-sizing: border-box; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="role-nav">
+        <a href="#admin-role" class="admin">Admin</a>
+        <a href="#shop-role" class="shop">Shop Owner</a>
+        <a href="#tech-role" class="tech">Technician</a>
+        <a href="#customer-role" class="customer">Customer</a>
+    </div>
+
+    <div class="progress-wrapper">
+        <div class="progress-header">
+            <span>Granular Component QA Progress</span>
+            <span id="global-progress-text">0 / 0 Components Tested (0%)</span>
+        </div>
+        <div class="progress-bar-container">
+            <div id="prog-admin" class="progress-segment seg-admin" style="width: 0%"></div>
+            <div id="prog-shop" class="progress-segment seg-shop" style="width: 0%"></div>
+            <div id="prog-tech" class="progress-segment seg-tech" style="width: 0%"></div>
+            <div id="prog-customer" class="progress-segment seg-customer" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- ADMIN SECTION                                  -->
+    <!-- ============================================== -->
+    <div id="admin-role" class="admin-section" style="padding-top: 80px;">
+        <h1 class="role-header" style="color: #ef4444;">Admin & Super Admin Components</h1>
+
+        <details>
+            <summary>Page: Manage Shops (/admin/manage-shops)</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">"Search Shops" Input Box</span>
+                        <span class="component-desc">Typing filters the shop list below in real-time or on Enter. Empty state shows if no match.</span>
+                        <span class="component-type">Input / Data Filter</span>
+                    </div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea placeholder="e.g. Search delays filtering, crashes..."></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Status Filter Chips (All, Active, Pending, Suspended)</span>
+                        <span class="component-desc">Clicking a chip visually highlights it and filters the displayed shops correctly.</span>
+                        <span class="component-type">Button Group</span>
+                    </div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Metric Card: "Total Shops"</span>
+                        <span class="component-desc">Number correctly reflects the sum of all shops in the system.</span>
+                        <span class="component-type">Stat Display</span>
+                    </div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Shop List Card - "Edit" Button</span>
+                        <span class="component-desc">Clicking opens the Shop Edit Modal/Page. Pre-fills existing shop data correctly.</span>
+                        <span class="component-type">Action Button / Navigation</span>
+                    </div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Shop List Card - "Login As" Button</span>
+                        <span class="component-desc">Authenticates the admin into the Shop Owner view for that specific shop.</span>
+                        <span class="component-type">Action Button / Auth</span>
+                    </div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>Page: Global Admin App Shell</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Top Navigation / Profile Icon</span>
+                        <span class="component-desc">Clicking opens an auth menu to "Logout" or "View Profile". Logout clears session.</span>
+                        <span class="component-type">Dropdown Menu</span>
+                    </div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Bottom Navigation Bar (Mobile / APK)</span>
+                        <span class="component-desc">Home | Shops | Chat | System. Tapping switches routes immediately. Active tab colored.</span>
+                        <span class="component-type">Navigation Footer</span>
+                    </div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="admin"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- SHOP OWNER SECTION                             -->
+    <!-- ============================================== -->
+    <div id="shop-role" class="shop-section" style="padding-top: 40px;">
+        <h1 class="role-header" style="color: #3b82f6;">Shop Owner Components</h1>
+
+        <details>
+            <summary>Page: Kanban Bays / Work Orders (/shop/bays)</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Column: Work Order Cards</span>
+                        <span class="component-desc">Cards show Customer Name, Vehicle, Status Badge, Edit Icon. Data is accurate.</span>
+                        <span class="component-type">UI Listing Card</span>
+                    </div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Drag and Drop Feature (Status Change)</span>
+                        <span class="component-desc">Dragging a card from "Pending" to "In Progress" updates the database/backend and UI stays synced.</span>
+                        <span class="component-type">Interactive Drag/Drop</span>
+                    </div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Card Click / "View Details"</span>
+                        <span class="component-desc">Clicking a card opens the detailed Work Order modal/page with parts, labor, and costs.</span>
+                        <span class="component-type">Navigation / Details Modal</span>
+                    </div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">"Assign Tech" Dropdown (Inside WO Details)</span>
+                        <span class="component-desc">Dropdown lists active technicians. Selecting one updates the WO assignment immediately.</span>
+                        <span class="component-type">Select Menus</span>
+                    </div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>Page: Dashboard Home (/shop/home)</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">"New Work Order" Floating Action Button (FAB)</span>
+                        <span class="component-desc">Tapping the (+) FAB opens the Create Work Order form.</span>
+                        <span class="component-type">FAB / Navigation</span>
+                    </div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Activity Feed / Recent Activity</span>
+                        <span class="component-desc">List populates with recent system events (e.g., "John Doe approved estimate").</span>
+                        <span class="component-type">List / Data API</span>
+                    </div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="shop"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TECH SECTION                                   -->
+    <!-- ============================================== -->
+    <div id="tech-role" class="tech-section" style="padding-top: 40px;">
+        <h1 class="role-header" style="color: #f59e0b;">Technician Components</h1>
+
+        <details>
+            <summary>Page: Tech DVI & Diagnostics (/tech/dvi)</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">"Add Photo/Video" Upload Button</span>
+                        <span class="component-desc">Opens device camera or file picker. Upload succeeds and preview appears in list.</span>
+                        <span class="component-type">Media Upload</span>
+                    </div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Inspection Checklist Switches (Green/Yellow/Red)</span>
+                        <span class="component-desc">Tapping changes condition status. Data is saved so if navigating away and back, state persists.</span>
+                        <span class="component-type">Input Toggles</span>
+                    </div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">"Submit to Service Advisor" Button</span>
+                        <span class="component-desc">Locks the DVI from further tech edits, updates WO status.</span>
+                        <span class="component-type">Action / State Change</span>
+                    </div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+        
+        <details>
+            <summary>Page: Timeclock & Dashboard (/tech/home)</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Clock In / Clock Out Button</span>
+                        <span class="component-desc">Toggles state. Records timestamp into backend. Timer UI starts counting.</span>
+                        <span class="component-type">Timer / Action</span>
+                    </div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="tech"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- CUSTOMER SECTION                               -->
+    <!-- ============================================== -->
+    <div id="customer-role" class="customer-section" style="padding-top: 40px; padding-bottom: 80px;">
+        <h1 class="role-header" style="color: #22c55e;">Customer Components</h1>
+
+        <details>
+            <summary>Page: View Estimate & Authorize (/customer/dvi or estimate)</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Recommended Service Selection Checkboxes</span>
+                        <span class="component-desc">Checking/unchecking items dynamically updates the "Total Authorized Cost" UI.</span>
+                        <span class="component-type">Checkbox / Math Logic</span>
+                    </div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">"Approve Selected" Button</span>
+                        <span class="component-desc">Triggers an authorization flow, possibly asking for signature, and updates WO in Shop view.</span>
+                        <span class="component-type">Action / API</span>
+                    </div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">View Tech Photos Gallery</span>
+                        <span class="component-desc">Clicking a thumbnail opens full-screen image viewer or lightbox to see tech uploads.</span>
+                        <span class="component-type">Media Viewer</span>
+                    </div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>Page: Book Appointment (/customer/appointments)</summary>
+            <div class="test-container">
+                <div class="grid-header">
+                    <div>Component / Expected Behavior</div><div>Web Status</div><div>APK Status</div><div>Bug Notes</div>
+                </div>
+                
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">Date/Time Picker Calendar</span>
+                        <span class="component-desc">Selecting a date shows available times. Disables past dates or shop closed days.</span>
+                        <span class="component-type">Date Picker Input</span>
+                    </div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+
+                <div class="test-row">
+                    <div class="component-info">
+                        <span class="component-name">"Vehicle Issue" Description Field</span>
+                        <span class="component-desc">Allows typing paragraphs. Characters render properly upon submission.</span>
+                        <span class="component-type">Text Area</span>
+                    </div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><select class="status-select" data-group="customer"><option value=""></option><option value="go">Go</option><option value="nogo">No-Go</option></select></div>
+                    <div><textarea></textarea></div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- SCRIPT FOR PROGRESS TRACKING AND PERSISTENCE -->
+    <script>
+        const allSelects = document.querySelectorAll('.status-select');
+        const textareas = document.querySelectorAll('textarea');
+        const globalProgressText = document.getElementById('global-progress-text');
+
+        function updateProgress() {
+            const total = allSelects.length;
+            const groups = ['admin', 'shop', 'tech', 'customer'];
+            
+            let totalCompleted = 0;
+
+            groups.forEach(group => {
+                const groupSelects = document.querySelectorAll('.status-select[data-group="' + group + '"]');
+                const groupTotal = groupSelects.length;
+                const groupCompleted = Array.from(groupSelects).filter(s => s.value !== '').length;
+                totalCompleted += groupCompleted;
+                
+                const groupWidthPercentage = total === 0 ? 0 : (groupCompleted / total) * 100;
+                document.getElementById('prog-' + group).style.width = \`\${groupWidthPercentage}%\`;
+            });
+
+            const overallPercentage = total === 0 ? 0 : Math.round((totalCompleted / total) * 100);
+            globalProgressText.innerText = \`\${totalCompleted} / \${total} Checks Completed (\${overallPercentage}%)\`;
+        }
+
+        // Restore & Bind Events safely namespace under advanced_qa to prevent collision with the old file
+        allSelects.forEach((select, i) => {
+            const saved = localStorage.getItem('advanced_qa_select_' + i);
+            if (saved) select.value = saved;
+            select.addEventListener('change', (e) => { 
+                localStorage.setItem('advanced_qa_select_' + i, e.target.value); 
+                updateProgress(); 
+            });
+        });
+
+        textareas.forEach((ta, i) => {
+            const saved = localStorage.getItem('advanced_qa_ta_' + i);
+            if (saved) ta.value = saved;
+            ta.addEventListener('input', (e) => { 
+                localStorage.setItem('advanced_qa_ta_' + i, e.target.value); 
+            });
+        });
+
+        updateProgress();
+    </script>
+</body>
+</html>

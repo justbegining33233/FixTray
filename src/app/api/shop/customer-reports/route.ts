@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const shopId = searchParams.get('shopId');
     // Data isolation: the requested shopId must belong to the authenticated user
     // (admins/superadmins can query any shop)
-    if (decoded.role !== 'admin' && decoded.role !== 'superadmin' && shopId && shopId !== decoded.id) {
+    if (decoded.role !== 'superadmin' && shopId && shopId !== decoded.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!shopId) return NextResponse.json({ error: 'shopId required' }, { status: 400 });
 
     // Verify caller owns or belongs to this shop (prevent IDOR)
-    if (decoded.role !== 'admin') {
+    if (decoded.role !== 'superadmin') {
       const callerShopId = decoded.role === 'shop' ? decoded.id : decoded.shopId;
       if (!callerShopId || shopId !== callerShopId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });

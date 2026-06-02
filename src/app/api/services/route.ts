@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { rateLimit, rateLimitConfigs } from '@/lib/rate-limit';
+import { rateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 import { validateRequest, serviceCreateSchema } from '@/lib/validation';
 import { sanitizeObject } from '@/lib/sanitize';
 
@@ -129,3 +129,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+

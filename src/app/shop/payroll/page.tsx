@@ -57,15 +57,25 @@ interface OvertimeRule {
 
 // --- Constants ---------------------------------------------------------------
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const THEME = {
+  pageBg: '#050505',
+  surface: '#0f0f10',
+  surfaceAlt: '#151516',
+  border: 'rgba(229,51,42,0.28)',
+  borderSoft: 'rgba(255,255,255,0.08)',
+  text: '#e5e7eb',
+  textMuted: '#9ca3af',
+  accent: '#e5332a',
+};
 const DEPT_COLORS: Record<string, string> = {
-  service: '#3b82f6', parts: '#f59e0b', admin: '#8b5cf6', management: '#10b981', default: '#6b7280',
+  service: '#e5332a', parts: '#f59e0b', admin: '#8b5cf6', management: '#10b981', default: '#6b7280',
 };
 const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  present:     { bg: '#dcfce7', color: '#166534', label: 'Present' },
-  late:        { bg: '#fef9c3', color: '#854d0e', label: 'Late' },
-  absent:      { bg: '#fde8e8', color: '#991b1b', label: 'Absent' },
-  unscheduled: { bg: '#e0e7ff', color: '#3730a3', label: 'Unscheduled' },
-  scheduled:   { bg: '#f1f5f9', color: '#475569', label: 'Scheduled' },
+  present:     { bg: 'rgba(34,197,94,0.16)', color: '#4ade80', label: 'Present' },
+  late:        { bg: 'rgba(245,158,11,0.16)', color: '#fbbf24', label: 'Late' },
+  absent:      { bg: 'rgba(229,51,42,0.2)', color: '#f87171', label: 'Absent' },
+  unscheduled: { bg: 'rgba(59,130,246,0.16)', color: '#93c5fd', label: 'Unscheduled' },
+  scheduled:   { bg: 'rgba(156,163,175,0.2)', color: '#d1d5db', label: 'Scheduled' },
 };
 
 function fmt(n: number) { return `$${n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}` }
@@ -146,7 +156,7 @@ export default function PayrollPage() {
   };
   useEffect(() => { if (tab === 'stubs') loadStubs(); }, [tab]);
 
-  if (isLoading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><div style={{ fontSize: 18, color: '#6b7280' }}>Loading...</div></div>;
+  if (isLoading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: THEME.pageBg }}><div style={{ fontSize: 18, color: THEME.textMuted }}>Loading...</div></div>;
 
   // --- Computed values ------------------------------------------------------
   const activeEmps = employees.filter((e) => !e.terminatedAt);
@@ -226,14 +236,49 @@ export default function PayrollPage() {
     load();
   };
 
+  const exportPayStubsCsv = () => {
+    if (payStubs.length === 0) return;
+    const rows = [
+      ['Employee', 'Department', 'Job Title', 'Period Start', 'Period End', 'Regular Hours', 'Overtime Hours', 'Gross Pay', 'Deductions', 'Net Pay', 'YTD Gross', 'Status'],
+      ...payStubs.map((s) => [
+        `${s.tech?.firstName ?? ''} ${s.tech?.lastName ?? ''}`.trim(),
+        s.tech?.department ?? '',
+        s.tech?.jobTitle ?? '',
+        s.payPeriod?.startDate ? new Date(s.payPeriod.startDate).toISOString().slice(0, 10) : '',
+        s.payPeriod?.endDate ? new Date(s.payPeriod.endDate).toISOString().slice(0, 10) : '',
+        String(s.regularHours ?? 0),
+        String(s.overtimeHours ?? 0),
+        String(s.grossPay ?? 0),
+        String(s.totalDeductions ?? 0),
+        String(s.netPay ?? 0),
+        String(s.ytdGross ?? 0),
+        s.status ?? '',
+      ]),
+    ];
+
+    const csv = rows
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `payroll-information-paystubs-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // --- Sub-components -------------------------------------------------------
   const TabBtn = ({ id, label, badge }: { id: typeof tab; label: string; badge?: number }) => (
     <button
       onClick={() => setTab(id)}
       style={{
         padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14,
-        background: tab === id ? '#2563eb' : 'transparent',
-        color: tab === id ? '#fff' : '#374151',
+        background: tab === id ? THEME.accent : 'transparent',
+        color: tab === id ? '#fff' : THEME.textMuted,
         position: 'relative',
       }}
     >
@@ -245,10 +290,10 @@ export default function PayrollPage() {
   );
 
   const Card = ({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) => (
-    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px', flex: 1, minWidth: 160 }}>
-      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: color ?? '#111827' }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>{sub}</div>}
+    <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: '20px 24px', flex: 1, minWidth: 160 }}>
+      <div style={{ fontSize: 13, color: THEME.textMuted, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: color ?? THEME.text }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: THEME.textMuted, marginTop: 4 }}>{sub}</div>}
     </div>
   );
 
@@ -262,30 +307,30 @@ export default function PayrollPage() {
     <div>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
         <Card label="Active Employees" value={String(activeEmps.length)} sub={`${employees.filter(e => e.terminatedAt).length} terminated`} />
-        <Card label="Total Payroll (All Time)" value={fmt(totalPayrollThisMonth)} sub="approved/paid periods" color="#2563eb" />
-        <Card label="Late Today" value={String(lateToday)} sub="based on today's schedule" color={lateToday > 0 ? '#d97706' : '#111827'} />
-        <Card label="Absent Today" value={String(absentToday)} sub="no clock-in recorded" color={absentToday > 0 ? '#dc2626' : '#111827'} />
-        <Card label="Pending Leave Requests" value={String(pendingLeave.length)} sub="awaiting approval" color={pendingLeave.length > 0 ? '#7c3aed' : '#111827'} />
+        <Card label="Total Payroll (All Time)" value={fmt(totalPayrollThisMonth)} sub="approved/paid periods" color="#e5332a" />
+        <Card label="Late Today" value={String(lateToday)} sub="based on today's schedule" color={lateToday > 0 ? '#d97706' : THEME.text} />
+        <Card label="Absent Today" value={String(absentToday)} sub="no clock-in recorded" color={absentToday > 0 ? '#dc2626' : THEME.text} />
+        <Card label="Pending Leave Requests" value={String(pendingLeave.length)} sub="awaiting approval" color={pendingLeave.length > 0 ? '#7c3aed' : THEME.text} />
         <Card label="Open Pay Periods" value={String(openPeriods.length)} sub="ready to run" />
       </div>
 
       {/* Alerts section */}
       {(lateToday > 0 || absentToday > 0 || pendingLeave.length > 0) && (
-        <div style={{ background: '#fefce8', border: '1px solid #fcd34d', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <div style={{ fontWeight: 700, marginBottom: 12, color: '#92400e' }}><FaExclamationTriangle style={{marginRight:4}} /> Alerts</div>
+        <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <div style={{ fontWeight: 700, marginBottom: 12, color: '#f59e0b' }}><FaExclamationTriangle style={{marginRight:4}} /> Alerts</div>
           {attendance.filter(a => a.status === 'late').map(a => (
-            <div key={a.timeEntryId} style={{ padding: '6px 0', borderBottom: '1px solid #fde68a', fontSize: 14 }}>
+            <div key={a.timeEntryId} style={{ padding: '6px 0', borderBottom: '1px solid rgba(245,158,11,0.25)', fontSize: 14, color: THEME.text }}>
               <FaClock style={{marginRight:4}} /> <strong>{a.tech.firstName} {a.tech.lastName}</strong> arrived <strong>{a.lateMinutes} min late</strong>
               {a.scheduledStart && ` (scheduled ${a.scheduledStart}`})
             </div>
           ))}
           {attendance.filter(a => a.status === 'absent').map(a => (
-            <div key={a.shiftId} style={{ padding: '6px 0', borderBottom: '1px solid #fde68a', fontSize: 14, color: '#991b1b' }}>
+            <div key={a.shiftId} style={{ padding: '6px 0', borderBottom: '1px solid rgba(245,158,11,0.25)', fontSize: 14, color: '#f87171' }}>
               <FaTimesCircle style={{marginRight:4}} /> <strong>{a.tech.firstName} {a.tech.lastName}</strong>  -  no clock-in (scheduled {a.scheduledStart})
             </div>
           ))}
           {pendingLeave.slice(0, 3).map(l => (
-            <div key={l.id} style={{ padding: '6px 0', fontSize: 14, color: '#7c3aed' }}>
+            <div key={l.id} style={{ padding: '6px 0', fontSize: 14, color: '#fca5a5' }}>
               <FaClipboardList style={{marginRight:4}} /> <strong>{l.tech.firstName} {l.tech.lastName}</strong> requested {l.leaveType.toUpperCase()}  -  {fmtDate(l.startDate)} to {fmtDate(l.endDate)}
             </div>
           ))}
@@ -293,21 +338,21 @@ export default function PayrollPage() {
       )}
 
       {/* Recent pay periods */}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20 }}>
-        <div style={{ fontWeight: 700, marginBottom: 16, fontSize: 16 }}>Recent Pay Periods</div>
+      <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 20 }}>
+        <div style={{ fontWeight: 700, marginBottom: 16, fontSize: 16, color: THEME.text }}>Recent Pay Periods</div>
         {payPeriods.slice(0, 5).map(p => (
-          <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
+          <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${THEME.borderSoft}` }}>
             <div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{fmtDate(p.startDate)}  -  {fmtDate(p.endDate)}</div>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>{p.periodType} · {p.employeeCount} employees</div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>{fmtDate(p.startDate)}  -  {fmtDate(p.endDate)}</div>
+              <div style={{ fontSize: 12, color: THEME.textMuted }}>{p.periodType}  {p.employeeCount} employees</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontWeight: 700 }}>{fmt(p.totalGross)}</div>
-              <span style={{ background: p.status === 'paid' ? '#dcfce7' : p.status === 'processing' ? '#dbeafe' : '#f3f4f6', color: p.status === 'paid' ? '#166534' : p.status === 'processing' ? '#1d4ed8' : '#374151', borderRadius: 8, padding: '2px 8px', fontSize: 11 }}>{p.status.toUpperCase()}</span>
+              <div style={{ fontWeight: 700, color: THEME.text }}>{fmt(p.totalGross)}</div>
+              <span style={{ background: p.status === 'paid' ? 'rgba(34,197,94,0.16)' : p.status === 'processing' ? 'rgba(229,51,42,0.2)' : 'rgba(156,163,175,0.2)', color: p.status === 'paid' ? '#4ade80' : p.status === 'processing' ? '#f87171' : '#d1d5db', borderRadius: 8, padding: '2px 8px', fontSize: 11 }}>{p.status.toUpperCase()}</span>
             </div>
           </div>
         ))}
-        {payPeriods.length === 0 && <div style={{ color: '#9ca3af', textAlign: 'center', padding: 24 }}>No pay periods yet. Create one to get started.</div>}
+        {payPeriods.length === 0 && <div style={{ color: THEME.textMuted, textAlign: 'center', padding: 24 }}>No pay periods yet. Create one to get started.</div>}
       </div>
     </div>
   );
@@ -317,30 +362,30 @@ export default function PayrollPage() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() - 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: '1px solid #d1d5db', borderRadius: 8, background: '#fff', cursor: 'pointer' }}><FaArrowLeft style={{marginRight:4}} /> Prev</button>
-          <div style={{ fontWeight: 700, fontSize: 16 }}>
+          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() - 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.text, cursor: 'pointer' }}><FaArrowLeft style={{marginRight:4}} /> Prev</button>
+          <div style={{ fontWeight: 700, fontSize: 16, color: THEME.text }}>
             Week of {weekOf.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
-          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() + 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: '1px solid #d1d5db', borderRadius: 8, background: '#fff', cursor: 'pointer' }}>Next <FaArrowRight style={{marginRight:4}} /></button>
-          <button onClick={() => setWeekOf(weekStart())} style={{ padding: '6px 14px', border: '1px solid #2563eb', borderRadius: 8, background: '#eff6ff', color: '#2563eb', cursor: 'pointer', fontSize: 12 }}>Today</button>
+          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() + 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.text, cursor: 'pointer' }}>Next <FaArrowRight style={{marginRight:4}} /></button>
+          <button onClick={() => setWeekOf(weekStart())} style={{ padding: '6px 14px', border: `1px solid ${THEME.accent}`, borderRadius: 8, background: 'rgba(229,51,42,0.12)', color: THEME.accent, cursor: 'pointer', fontSize: 12 }}>Today</button>
         </div>
         {user?.role === 'shop' && (
-          <button onClick={() => setShowAddShift(true)} style={{ padding: '8px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ Add Shift</button>
+          <button onClick={() => setShowAddShift(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ Add Shift</button>
         )}
       </div>
 
       {/* Schedule grid */}
-      <div style={{ overflowX: 'auto', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+      <div style={{ overflowX: 'auto', background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
           <thead>
-            <tr style={{ background: '#f8fafc' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, borderBottom: '2px solid #e5e7eb', minWidth: 150 }}>Employee</th>
+            <tr style={{ background: THEME.surfaceAlt }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text, borderBottom: `2px solid ${THEME.borderSoft}`, minWidth: 150 }}>Employee</th>
               {weekDates.map((d, i) => {
                 const isToday = d.toDateString() === new Date().toDateString();
                 return (
-                  <th key={i} style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', background: isToday ? '#eff6ff' : undefined, minWidth: 120 }}>
-                    <div style={{ fontWeight: 700, color: isToday ? '#2563eb' : '#374151' }}>{DAYS[d.getDay()]}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                  <th key={i} style={{ padding: '12px 8px', textAlign: 'center', borderBottom: `2px solid ${THEME.borderSoft}`, background: isToday ? 'rgba(229,51,42,0.14)' : undefined, minWidth: 120 }}>
+                    <div style={{ fontWeight: 700, color: isToday ? THEME.accent : THEME.text }}>{DAYS[d.getDay()]}</div>
+                    <div style={{ fontSize: 12, color: THEME.textMuted }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                   </th>
                 );
               })}
@@ -348,15 +393,15 @@ export default function PayrollPage() {
           </thead>
           <tbody>
             {activeEmps.map((emp) => (
-              <tr key={emp.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <tr key={emp.id} style={{ borderBottom: `1px solid ${THEME.borderSoft}` }}>
                 <td style={{ padding: '10px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: DEPT_COLORS[emp.department ?? 'default'] ?? '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13 }}>
                       {emp.firstName[0]}{emp.lastName[0]}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{emp.firstName} {emp.lastName}</div>
-                      <div style={{ fontSize: 11, color: '#9ca3af' }}>{emp.jobTitle ?? emp.role}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: THEME.text }}>{emp.firstName} {emp.lastName}</div>
+                      <div style={{ fontSize: 11, color: THEME.textMuted }}>{emp.jobTitle ?? emp.role}</div>
                     </div>
                   </div>
                 </td>
@@ -364,18 +409,18 @@ export default function PayrollPage() {
                   const shift = getShiftForTechDay(emp.id, d);
                   const isToday = d.toDateString() === new Date().toDateString();
                   return (
-                    <td key={i} style={{ padding: 6, textAlign: 'center', background: isToday ? '#f0f9ff' : undefined, verticalAlign: 'middle' }}>
+                    <td key={i} style={{ padding: 6, textAlign: 'center', background: isToday ? 'rgba(229,51,42,0.08)' : undefined, verticalAlign: 'middle' }}>
                       {shift ? (
-                        <div style={{ background: shift.status === 'no-show' ? '#fee2e2' : shift.status === 'late' ? '#fef9c3' : '#dbeafe', borderRadius: 8, padding: '6px 4px', fontSize: 11, position: 'relative' }}>
-                          <div style={{ fontWeight: 600 }}>{shift.startTime}-{shift.endTime}</div>
-                          <div style={{ color: '#374151' }}>{shift.shiftType}</div>
+                        <div style={{ background: shift.status === 'no-show' ? 'rgba(229,51,42,0.2)' : shift.status === 'late' ? 'rgba(245,158,11,0.2)' : 'rgba(229,51,42,0.12)', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, padding: '6px 4px', fontSize: 11, position: 'relative' }}>
+                          <div style={{ fontWeight: 600, color: THEME.text }}>{shift.startTime}-{shift.endTime}</div>
+                          <div style={{ color: THEME.textMuted }}>{shift.shiftType}</div>
                           {shift.lateMinutes > 0 && <div style={{ color: '#b45309', fontSize: 10 }}><FaClock style={{marginRight:4}} /> {shift.lateMinutes}m late</div>}
                           {user?.role === 'shop' && (
-                            <button onClick={() => setDeleteConfirmShiftId(shift.id)} style={{ position: 'absolute', top: 2, right: 2, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 12, lineHeight: 1 }}>×</button>
+                            <button onClick={() => setDeleteConfirmShiftId(shift.id)} style={{ position: 'absolute', top: 2, right: 2, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 12, lineHeight: 1 }}></button>
                           )}
                         </div>
                       ) : (
-                        <div style={{ color: '#d1d5db', fontSize: 20, lineHeight: 1 }}> - </div>
+                        <div style={{ color: '#4b5563', fontSize: 20, lineHeight: 1 }}> - </div>
                       )}
                     </td>
                   );
@@ -389,33 +434,33 @@ export default function PayrollPage() {
       {/* Add shift modal */}
       {showAddShift && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>Add Shift</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Employee</label>
-                <select value={shiftForm.techId ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, techId: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                <select value={shiftForm.techId ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, techId: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
                   <option value="">Select employee...</option>
                   {activeEmps.map(e => <option key={e.id} value={e.id}>{e.firstName} {e.lastName}</option>)}
                 </select>
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Date</label>
-                <input type="date" value={shiftForm.date ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, date: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                <input type="date" value={shiftForm.date ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, date: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Start Time</label>
-                  <input type="time" value={shiftForm.startTime ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, startTime: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                  <input type="time" value={shiftForm.startTime ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, startTime: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>End Time</label>
-                  <input type="time" value={shiftForm.endTime ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, endTime: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                  <input type="time" value={shiftForm.endTime ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, endTime: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Shift Type</label>
-                <select value={shiftForm.shiftType ?? 'regular'} onChange={e => setShiftForm((f: any) => ({ ...f, shiftType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                <select value={shiftForm.shiftType ?? 'regular'} onChange={e => setShiftForm((f: any) => ({ ...f, shiftType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
                   <option value="regular">Regular</option>
                   <option value="overtime">Overtime</option>
                   <option value="on-call">On-Call</option>
@@ -424,16 +469,16 @@ export default function PayrollPage() {
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Position (optional)</label>
-                <input type="text" value={shiftForm.position ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, position: e.target.value }))} placeholder="e.g. Lead Tech" style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                <input type="text" value={shiftForm.position ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, position: e.target.value }))} placeholder="e.g. Lead Tech" style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Notes</label>
-                <textarea value={shiftForm.notes ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, notes: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, resize: 'none' }} />
+                <textarea value={shiftForm.notes ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, notes: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, resize: 'none' }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={addShift} style={{ flex: 1, padding: '10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save Shift</button>
-              <button onClick={() => setShowAddShift(false)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={addShift} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save Shift</button>
+              <button onClick={() => setShowAddShift(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -453,18 +498,18 @@ export default function PayrollPage() {
           <Card label="Total Shifts" value={String(attSummary.totalShifts)} />
         </div>
       )}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Employee</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Date</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Scheduled</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Actual Clock In</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Clock Out</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>Hours</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>Status</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>Approved</th>
+            <tr style={{ background: THEME.surfaceAlt, borderBottom: `2px solid ${THEME.borderSoft}` }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Employee</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Date</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Scheduled</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Actual Clock In</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Clock Out</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Hours</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Status</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Approved</th>
             </tr>
           </thead>
           <tbody>
@@ -472,18 +517,18 @@ export default function PayrollPage() {
               <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>No attendance records for this week</td></tr>
             )}
             {attendance.map((a, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #f3f4f6', background: a.status === 'absent' ? '#fff5f5' : a.status === 'late' ? '#fefce8' : undefined }}>
-                <td style={{ padding: '10px 16px', fontWeight: 600 }}>{a.tech.firstName} {a.tech.lastName}</td>
-                <td style={{ padding: '10px 16px', fontSize: 13, color: '#6b7280' }}>{fmtDate(a.date)}</td>
-                <td style={{ padding: '10px 16px', fontSize: 13 }}>{a.scheduledStart ?? ' - '} - {a.scheduledEnd ?? ' - '}</td>
-                <td style={{ padding: '10px 16px', fontSize: 13 }}>
+              <tr key={i} style={{ borderBottom: `1px solid ${THEME.borderSoft}`, background: a.status === 'absent' ? 'rgba(229,51,42,0.14)' : a.status === 'late' ? 'rgba(245,158,11,0.12)' : undefined }}>
+                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{a.tech.firstName} {a.tech.lastName}</td>
+                <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.textMuted }}>{fmtDate(a.date)}</td>
+                <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>{a.scheduledStart ?? ' - '} - {a.scheduledEnd ?? ' - '}</td>
+                <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>
                   {a.actualClockIn ? new Date(a.actualClockIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ' - '}
                   {a.lateMinutes > 0 && <span style={{ color: '#b45309', fontSize: 11, marginLeft: 6 }}>+{a.lateMinutes}m</span>}
                 </td>
-                <td style={{ padding: '10px 16px', fontSize: 13 }}>
+                <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>
                   {a.actualClockOut ? new Date(a.actualClockOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : <span style={{ color: '#9ca3af' }}>Still clocked in</span>}
                 </td>
-                <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>{fmtHrs(a.hoursWorked)}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: THEME.text }}>{fmtHrs(a.hoursWorked)}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}><BadgeStatus status={a.status} /></td>
                 <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: 18 }}>{a.approved ? <FaCheckCircle style={{marginRight:4}} /> : <FaRegSquare style={{marginRight:4}} />}</td>
               </tr>
@@ -499,22 +544,22 @@ export default function PayrollPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 18 }}>Leave Requests</div>
-        <button onClick={() => setShowAddLeave(true)} style={{ padding: '8px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ New Request</button>
+        <button onClick={() => setShowAddLeave(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ New Request</button>
       </div>
 
       {/* Pending */}
       {pendingLeave.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 12 }}>Pending Approval ({pendingLeave.length})</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#fca5a5', marginBottom: 12 }}>Pending Approval ({pendingLeave.length})</div>
           {pendingLeave.map(l => (
-            <div key={l.id} style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 12, padding: 16, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div key={l.id} style={{ background: 'rgba(229,51,42,0.08)', border: `1px solid ${THEME.border}`, borderRadius: 12, padding: 16, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <div style={{ fontWeight: 700 }}>{l.tech.firstName} {l.tech.lastName}</div>
-                <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
-                  <span style={{ background: '#e9d5ff', color: '#7c3aed', borderRadius: 6, padding: '2px 8px', marginRight: 8, fontSize: 11 }}>{l.leaveType.toUpperCase()}</span>
-                  {fmtDate(l.startDate)}  -  {fmtDate(l.endDate)} · {l.totalHours}h
+                <div style={{ fontWeight: 700, color: THEME.text }}>{l.tech.firstName} {l.tech.lastName}</div>
+                <div style={{ fontSize: 13, color: THEME.textMuted, marginTop: 4 }}>
+                  <span style={{ background: 'rgba(229,51,42,0.2)', color: '#fca5a5', borderRadius: 6, padding: '2px 8px', marginRight: 8, fontSize: 11 }}>{l.leaveType.toUpperCase()}</span>
+                  {fmtDate(l.startDate)}  -  {fmtDate(l.endDate)}  {l.totalHours}h
                 </div>
-                {l.reason && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Reason: {l.reason}</div>}
+                {l.reason && <div style={{ fontSize: 12, color: THEME.textMuted, marginTop: 4 }}>Reason: {l.reason}</div>}
               </div>
               {user?.role === 'shop' && (
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -528,15 +573,15 @@ export default function PayrollPage() {
       )}
 
       {/* All requests */}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Employee</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Type</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Date Range</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>Hours</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>Status</th>
+            <tr style={{ background: THEME.surfaceAlt, borderBottom: `2px solid ${THEME.borderSoft}` }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Employee</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Type</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Date Range</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Hours</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -544,15 +589,15 @@ export default function PayrollPage() {
               <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>No leave requests</td></tr>
             )}
             {leaveRequests.map(l => (
-              <tr key={l.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <td style={{ padding: '10px 16px', fontWeight: 600 }}>{l.tech.firstName} {l.tech.lastName}</td>
+              <tr key={l.id} style={{ borderBottom: `1px solid ${THEME.borderSoft}` }}>
+                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{l.tech.firstName} {l.tech.lastName}</td>
                 <td style={{ padding: '10px 16px' }}>
-                  <span style={{ background: '#ede9fe', color: '#7c3aed', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>{l.leaveType.toUpperCase()}</span>
+                  <span style={{ background: 'rgba(229,51,42,0.2)', color: '#fca5a5', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>{l.leaveType.toUpperCase()}</span>
                 </td>
-                <td style={{ padding: '10px 16px', fontSize: 13 }}>{fmtDate(l.startDate)}  -  {fmtDate(l.endDate)}</td>
-                <td style={{ padding: '10px 16px', textAlign: 'right' }}>{l.totalHours}h</td>
+                <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>{fmtDate(l.startDate)}  -  {fmtDate(l.endDate)}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'right', color: THEME.text }}>{l.totalHours}h</td>
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                  <span style={{ background: l.status === 'approved' ? '#dcfce7' : l.status === 'denied' ? '#fde8e8' : '#fef9c3', color: l.status === 'approved' ? '#166534' : l.status === 'denied' ? '#991b1b' : '#92400e', borderRadius: 8, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>{l.status.toUpperCase()}</span>
+                  <span style={{ background: l.status === 'approved' ? 'rgba(34,197,94,0.16)' : l.status === 'denied' ? 'rgba(229,51,42,0.18)' : 'rgba(245,158,11,0.16)', color: l.status === 'approved' ? '#4ade80' : l.status === 'denied' ? '#f87171' : '#fbbf24', borderRadius: 8, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>{l.status.toUpperCase()}</span>
                 </td>
               </tr>
             ))}
@@ -562,44 +607,44 @@ export default function PayrollPage() {
 
       {showAddLeave && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: 480 }}>
+          <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 480 }}>
             <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>New Leave Request</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Employee</label>
-                <select value={leaveForm.techId ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, techId: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                <select value={leaveForm.techId ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, techId: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
                   <option value="">Select...</option>
                   {activeEmps.map(e => <option key={e.id} value={e.id}>{e.firstName} {e.lastName}</option>)}
                 </select>
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Leave Type</label>
-                <select value={leaveForm.leaveType} onChange={e => setLeaveForm((f: any) => ({ ...f, leaveType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                <select value={leaveForm.leaveType} onChange={e => setLeaveForm((f: any) => ({ ...f, leaveType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
                   {['pto', 'vacation', 'sick', 'personal', 'unpaid', 'bereavement', 'jury'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Start Date</label>
-                  <input type="date" value={leaveForm.startDate ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, startDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                  <input type="date" value={leaveForm.startDate ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, startDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>End Date</label>
-                  <input type="date" value={leaveForm.endDate ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, endDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                  <input type="date" value={leaveForm.endDate ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, endDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Total Hours</label>
-                <input type="number" value={leaveForm.totalHours ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, totalHours: Number(e.target.value) }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                <input type="number" value={leaveForm.totalHours ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, totalHours: Number(e.target.value) }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Reason</label>
-                <textarea value={leaveForm.reason ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, reason: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, resize: 'none' }} />
+                <textarea value={leaveForm.reason ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, reason: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, resize: 'none' }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={addLeave} style={{ flex: 1, padding: '10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Submit Request</button>
-              <button onClick={() => setShowAddLeave(false)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={addLeave} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Submit Request</button>
+              <button onClick={() => setShowAddLeave(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -613,30 +658,30 @@ export default function PayrollPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 18 }}>Pay Periods</div>
         {user?.role === 'shop' && (
-          <button onClick={() => setShowAddPeriod(true)} style={{ padding: '8px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ New Period</button>
+          <button onClick={() => setShowAddPeriod(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ New Period</button>
         )}
       </div>
 
       {payPeriods.map(p => (
-        <div key={p.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 14 }}>
+        <div key={p.id} style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 20, marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 16 }}>{fmtDate(p.startDate)}  -  {fmtDate(p.endDate)}</div>
-              <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
-                {p.periodType} · Pay date: {p.payDate ? fmtDate(p.payDate) : 'Not set'} · {p.employeeCount} employees
+              <div style={{ fontWeight: 800, fontSize: 16, color: THEME.text }}>{fmtDate(p.startDate)}  -  {fmtDate(p.endDate)}</div>
+              <div style={{ fontSize: 13, color: THEME.textMuted, marginTop: 4 }}>
+                {p.periodType}  Pay date: {p.payDate ? fmtDate(p.payDate) : 'Not set'}  {p.employeeCount} employees
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: '#6b7280' }}>Gross</div>
-                <div style={{ fontWeight: 800, fontSize: 20 }}>{fmt(p.totalGross)}</div>
+                <div style={{ fontSize: 13, color: THEME.textMuted }}>Gross</div>
+                <div style={{ fontWeight: 800, fontSize: 20, color: THEME.text }}>{fmt(p.totalGross)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: '#6b7280' }}>Net</div>
+                <div style={{ fontSize: 13, color: THEME.textMuted }}>Net</div>
                 <div style={{ fontWeight: 800, fontSize: 20, color: '#16a34a' }}>{fmt(p.totalNet)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: '#6b7280' }}>OT</div>
+                <div style={{ fontSize: 13, color: THEME.textMuted }}>OT</div>
                 <div style={{ fontWeight: 700, color: '#d97706' }}>{fmt(p.totalOvertimePay)}</div>
               </div>
             </div>
@@ -644,14 +689,14 @@ export default function PayrollPage() {
           {user?.role === 'shop' && (
             <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {(p.status === 'open' || p.status === 'processing') && (
-                <button onClick={() => setRunPayrollConfirmId(p.id)} disabled={runningPayroll} style={{ padding: '8px 18px', background: runningPayroll ? '#9ca3af' : '#2563eb', color: '#fff', border: 'none', borderRadius: 8, cursor: runningPayroll ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
+                <button onClick={() => setRunPayrollConfirmId(p.id)} disabled={runningPayroll} style={{ padding: '8px 18px', background: runningPayroll ? '#9ca3af' : '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: runningPayroll ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
                   {runningPayroll ? <><FaHourglassHalf style={{marginRight:4}} /> Running...</> : <><FaCaretRight style={{marginRight:4}} /> Run Payroll</>}
                 </button>
               )}
               {p.status === 'processing' && (
                 <button onClick={() => setMarkPaidConfirmId(p.id)} style={{ padding: '8px 18px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}><FaCheck style={{marginRight:4}} /> Mark as Paid</button>
               )}
-              <span style={{ display: 'inline-flex', alignItems: 'center', background: p.status === 'paid' ? '#dcfce7' : p.status === 'processing' ? '#dbeafe' : '#f3f4f6', color: p.status === 'paid' ? '#166534' : p.status === 'processing' ? '#1d4ed8' : '#374151', borderRadius: 8, padding: '8px 14px', fontWeight: 600, fontSize: 13 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', background: p.status === 'paid' ? 'rgba(34,197,94,0.16)' : p.status === 'processing' ? 'rgba(59,130,246,0.16)' : 'rgba(156,163,175,0.16)', color: p.status === 'paid' ? '#4ade80' : p.status === 'processing' ? '#93c5fd' : '#d1d5db', borderRadius: 8, padding: '8px 14px', fontWeight: 600, fontSize: 13 }}>
                 {p.status.toUpperCase()}
               </span>
             </div>
@@ -662,12 +707,12 @@ export default function PayrollPage() {
 
       {showAddPeriod && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: 440 }}>
+          <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 440 }}>
             <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>New Pay Period</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Period Type</label>
-                <select value={periodForm.periodType} onChange={e => setPeriodForm((f: any) => ({ ...f, periodType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                <select value={periodForm.periodType} onChange={e => setPeriodForm((f: any) => ({ ...f, periodType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
                   <option value="weekly">Weekly</option>
                   <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
                   <option value="semimonthly">Semi-Monthly (twice/month)</option>
@@ -677,21 +722,21 @@ export default function PayrollPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Start Date</label>
-                  <input type="date" value={periodForm.startDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, startDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                  <input type="date" value={periodForm.startDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, startDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>End Date</label>
-                  <input type="date" value={periodForm.endDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, endDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                  <input type="date" value={periodForm.endDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, endDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Pay Date (optional)</label>
-                <input type="date" value={periodForm.payDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, payDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                <input type="date" value={periodForm.payDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, payDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={createPeriod} style={{ flex: 1, padding: '10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Create Period</button>
-              <button onClick={() => setShowAddPeriod(false)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={createPeriod} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Create Period</button>
+              <button onClick={() => setShowAddPeriod(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -702,20 +747,38 @@ export default function PayrollPage() {
   // --- Tab: Pay Stubs -------------------------------------------------------
   const PayStubsTab = () => (
     <div>
-      <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 20 }}>Pay Stubs</div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ fontWeight: 700, fontSize: 18 }}>Pay Stubs</div>
+        <button
+          onClick={exportPayStubsCsv}
+          disabled={payStubs.length === 0}
+          style={{
+            background: payStubs.length === 0 ? '#9ca3af' : '#e5332a',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            padding: '8px 14px',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: payStubs.length === 0 ? 'not-allowed' : 'pointer',
+          }}
+        >
+          Export CSV
+        </button>
+      </div>
+      <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Employee</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700 }}>Period</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>Reg Hrs</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>OT Hrs</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>Gross</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>Taxes</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>Net</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>YTD Gross</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>Status</th>
+            <tr style={{ background: THEME.surfaceAlt, borderBottom: `2px solid ${THEME.borderSoft}` }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Employee</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Period</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Reg Hrs</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>OT Hrs</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Gross</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Taxes</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Net</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>YTD Gross</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -723,22 +786,22 @@ export default function PayrollPage() {
               <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>No pay stubs. Run payroll to generate them.</td></tr>
             )}
             {payStubs.map(s => (
-              <tr key={s.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <tr key={s.id} style={{ borderBottom: `1px solid ${THEME.borderSoft}` }}>
                 <td style={{ padding: '10px 16px' }}>
-                  <div style={{ fontWeight: 600 }}>{s.tech?.firstName} {s.tech?.lastName}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af' }}>{s.tech?.department ?? ''} · {s.tech?.jobTitle ?? ''}</div>
+                  <div style={{ fontWeight: 600, color: THEME.text }}>{s.tech?.firstName} {s.tech?.lastName}</div>
+                  <div style={{ fontSize: 11, color: THEME.textMuted }}>{s.tech?.department ?? ''}  {s.tech?.jobTitle ?? ''}</div>
                 </td>
-                <td style={{ padding: '10px 16px', fontSize: 13, color: '#6b7280' }}>
+                <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.textMuted }}>
                   {s.payPeriod ? `${fmtDate(s.payPeriod.startDate)}  -  ${fmtDate(s.payPeriod.endDate)}` : ' - '}
                 </td>
-                <td style={{ padding: '10px 16px', textAlign: 'right' }}>{fmtHrs(s.regularHours)}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'right', color: THEME.text }}>{fmtHrs(s.regularHours)}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'right', color: s.overtimeHours > 0 ? '#d97706' : undefined, fontWeight: s.overtimeHours > 0 ? 700 : 400 }}>{fmtHrs(s.overtimeHours)}</td>
-                <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>{fmt(s.grossPay)}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{fmt(s.grossPay)}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'right', color: '#dc2626' }}>{fmt(s.totalDeductions)}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>{fmt(s.netPay)}</td>
-                <td style={{ padding: '10px 16px', textAlign: 'right', color: '#6b7280' }}>{fmt(s.ytdGross)}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'right', color: THEME.textMuted }}>{fmt(s.ytdGross)}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                  <span style={{ background: s.status === 'paid' ? '#dcfce7' : s.status === 'approved' ? '#dbeafe' : '#f3f4f6', color: s.status === 'paid' ? '#166534' : s.status === 'approved' ? '#1d4ed8' : '#374151', borderRadius: 8, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>{s.status.toUpperCase()}</span>
+                  <span style={{ background: s.status === 'paid' ? 'rgba(34,197,94,0.16)' : s.status === 'approved' ? 'rgba(59,130,246,0.16)' : 'rgba(156,163,175,0.16)', color: s.status === 'paid' ? '#4ade80' : s.status === 'approved' ? '#93c5fd' : '#d1d5db', borderRadius: 8, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>{s.status.toUpperCase()}</span>
                 </td>
               </tr>
             ))}
@@ -752,7 +815,7 @@ export default function PayrollPage() {
   const SettingsTab = () => (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
       {/* Overtime Rules */}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 24 }}>
+      <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 24 }}>
         <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 20 }}><FaCog style={{marginRight:4}} /> Overtime Rules</div>
         {otRule && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -764,12 +827,12 @@ export default function PayrollPage() {
               <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
-                    <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>OT Threshold (hrs/wk)</label>
-                    <input type="number" value={otRule.weeklyOvertimeThreshold} onChange={e => setOtRule(r => r ? { ...r, weeklyOvertimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                    <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>OT Threshold (hrs/wk)</label>
+                    <input type="number" value={otRule.weeklyOvertimeThreshold} onChange={e => setOtRule(r => r ? { ...r, weeklyOvertimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>OT Multiplier</label>
-                    <input type="number" step="0.1" value={otRule.overtimeMultiplier} onChange={e => setOtRule(r => r ? { ...r, overtimeMultiplier: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                    <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>OT Multiplier</label>
+                    <input type="number" step="0.1" value={otRule.overtimeMultiplier} onChange={e => setOtRule(r => r ? { ...r, overtimeMultiplier: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                   </div>
                 </div>
               </div>
@@ -780,8 +843,8 @@ export default function PayrollPage() {
             </label>
             {otRule.dailyOvertimeEnabled && (
               <div style={{ marginLeft: 24 }}>
-                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Daily OT Threshold (hrs/day)</label>
-                <input type="number" value={otRule.dailyOvertimeThreshold} onChange={e => setOtRule(r => r ? { ...r, dailyOvertimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>Daily OT Threshold (hrs/day)</label>
+                <input type="number" value={otRule.dailyOvertimeThreshold} onChange={e => setOtRule(r => r ? { ...r, dailyOvertimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
               </div>
             )}
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
@@ -791,12 +854,12 @@ export default function PayrollPage() {
             {otRule.doubleTimeEnabled && (
               <div style={{ marginLeft: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Double Time Threshold (hrs)</label>
-                  <input type="number" value={otRule.doubleTimeThreshold} onChange={e => setOtRule(r => r ? { ...r, doubleTimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                  <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>Double Time Threshold (hrs)</label>
+                  <input type="number" value={otRule.doubleTimeThreshold} onChange={e => setOtRule(r => r ? { ...r, doubleTimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Double Time Multiplier</label>
-                  <input type="number" step="0.1" value={otRule.doubleTimeMultiplier} onChange={e => setOtRule(r => r ? { ...r, doubleTimeMultiplier: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
+                  <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>Double Time Multiplier</label>
+                  <input type="number" step="0.1" value={otRule.doubleTimeMultiplier} onChange={e => setOtRule(r => r ? { ...r, doubleTimeMultiplier: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                 </div>
               </div>
             )}
@@ -805,33 +868,33 @@ export default function PayrollPage() {
               <span style={{ fontWeight: 600 }}>7th Consecutive Day Rule</span>
             </label>
             {user?.role === 'shop' && (
-              <button onClick={saveOtRule} style={{ padding: '10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save OT Rules</button>
+              <button onClick={saveOtRule} style={{ padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save OT Rules</button>
             )}
           </div>
         )}
       </div>
 
       {/* Employee pay settings */}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 24 }}>
+      <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 24 }}>
         <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 20 }}><FaUsers style={{marginRight:4}} /> Employee Pay Settings</div>
         {activeEmps.map(emp => (
-          <div key={emp.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
+          <div key={emp.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${THEME.borderSoft}` }}>
             <div>
-              <div style={{ fontWeight: 600 }}>{emp.firstName} {emp.lastName}</div>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>
+              <div style={{ fontWeight: 600, color: THEME.text }}>{emp.firstName} {emp.lastName}</div>
+              <div style={{ fontSize: 12, color: THEME.textMuted }}>
                 {emp.payType === 'salary' ? `Salary: ${fmt(emp.salary ?? 0)}/yr` : `${fmt(emp.hourlyRate)}/hr`}
-                {emp.department && ` · ${emp.department}`}
+                {emp.department && `  ${emp.department}`}
               </div>
             </div>
             {user?.role === 'shop' && (
-              <button onClick={() => setShowEditEmployee(emp)} style={{ padding: '6px 14px', border: '1px solid #d1d5db', borderRadius: 8, background: '#f9fafb', cursor: 'pointer', fontSize: 13 }}>Edit</button>
+              <button onClick={() => setShowEditEmployee(emp)} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.textMuted, cursor: 'pointer', fontSize: 13 }}>Edit</button>
             )}
           </div>
         ))}
 
         {showEditEmployee && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-            <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }}>
               <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 24 }}>Edit: {showEditEmployee.firstName} {showEditEmployee.lastName}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
@@ -846,18 +909,18 @@ export default function PayrollPage() {
                   <div key={key}>
                     <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{label}</label>
                     {type === 'select' ? (
-                      <select value={(showEditEmployee as any)[key] ?? ''} onChange={e => setShowEditEmployee((emp: any) => ({ ...emp, [key]: e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}>
+                      <select value={(showEditEmployee as any)[key] ?? ''} onChange={e => setShowEditEmployee((emp: any) => ({ ...emp, [key]: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
                         {opts?.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     ) : (
-                      <input type={type} value={(showEditEmployee as any)[key] ?? ''} onChange={e => setShowEditEmployee((emp: any) => ({ ...emp, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }} />
+                      <input type={type} value={(showEditEmployee as any)[key] ?? ''} onChange={e => setShowEditEmployee((emp: any) => ({ ...emp, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                     )}
                   </div>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                <button onClick={saveEmployee} style={{ flex: 1, padding: '10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save Changes</button>
-                <button onClick={() => setShowEditEmployee(null)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={saveEmployee} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save Changes</button>
+                <button onClick={() => setShowEditEmployee(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               </div>
             </div>
           </div>
@@ -868,15 +931,15 @@ export default function PayrollPage() {
 
   // --- Render ---------------------------------------------------------------
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '32px 40px', maxWidth: 1400, margin: '0 auto', color: THEME.text, background: THEME.pageBg, borderRadius: 18, border: `1px solid ${THEME.borderSoft}` }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, margin: 0 }}><FaDollarSign style={{marginRight:4}} /> Payroll Center</h1>
-        <p style={{ color: '#6b7280', marginTop: 6 }}>Scheduling · Time Tracking · Attendance · Pay Periods · Pay Stubs</p>
+        <h1 style={{ fontSize: 32, fontWeight: 800, margin: 0, color: THEME.text }}><FaDollarSign style={{marginRight:4}} /> Payroll Information</h1>
+        <p style={{ color: THEME.textMuted, marginTop: 6 }}>Scheduling  Time Tracking  Attendance  Pay Periods  Pay Stubs  Export</p>
       </div>
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, background: '#f3f4f6', borderRadius: 12, padding: 4, marginBottom: 28, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 4, background: THEME.surfaceAlt, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 4, marginBottom: 28, flexWrap: 'wrap' }}>
         <TabBtn id="overview" label=" Overview" />
         <TabBtn id="schedule" label=" Schedule" />
         <TabBtn id="attendance" label=" Attendance" badge={lateToday + absentToday || undefined} />
@@ -887,7 +950,7 @@ export default function PayrollPage() {
       </div>
 
       {/* Loading indicator */}
-      {loading && <div style={{ background: '#eff6ff', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#1d4ed8', fontSize: 14 }}>Loading payroll data...</div>}
+      {loading && <div style={{ background: 'rgba(229,51,42,0.12)', borderRadius: 8, border: `1px solid ${THEME.border}`, padding: '10px 16px', marginBottom: 16, color: '#fca5a5', fontSize: 14 }}>Loading payroll data...</div>}
 
       {/* Tab content */}
       {tab === 'overview' && <OverviewTab />}
@@ -900,15 +963,15 @@ export default function PayrollPage() {
 
       {/* Error toast */}
       {payrollError && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#fde8e8', color: '#991b1b', border: '1px solid #fca5a5', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxWidth: 400 }}>
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: 'rgba(229,51,42,0.2)', color: '#fca5a5', border: '1px solid rgba(229,51,42,0.45)', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.35)', maxWidth: 400 }}>
           {payrollError}
-          <button onClick={() => setPayrollError('')} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#991b1b' }}><FaTimes style={{marginRight:4}} /></button>
+          <button onClick={() => setPayrollError('')} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#fca5a5' }}><FaTimes style={{marginRight:4}} /></button>
         </div>
       )}
 
       {/* Success toast */}
       {payrollMsg && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#dcfce7', color: '#166534', border: '1px solid #86efac', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxWidth: 400 }}>
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: 'rgba(34,197,94,0.2)', color: '#86efac', border: '1px solid rgba(34,197,94,0.45)', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.35)', maxWidth: 400 }}>
           {payrollMsg}
         </div>
       )}
@@ -916,12 +979,12 @@ export default function PayrollPage() {
       {/* Delete shift confirm modal */}
       {deleteConfirmShiftId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+          <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><FaTrash style={{marginRight:4}} /></div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Delete Shift?</h3>
-            <p style={{ color: '#6b7280', marginBottom: 24 }}>This will permanently remove the shift from the schedule.</p>
+            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>This will permanently remove the shift from the schedule.</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setDeleteConfirmShiftId(null)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setDeleteConfirmShiftId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               <button onClick={() => deleteShift(deleteConfirmShiftId)} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Delete</button>
             </div>
           </div>
@@ -931,13 +994,13 @@ export default function PayrollPage() {
       {/* Run payroll confirm modal */}
       {runPayrollConfirmId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+          <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><FaDollarSign style={{marginRight:4}} /></div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Run Payroll?</h3>
-            <p style={{ color: '#6b7280', marginBottom: 24 }}>This will generate pay stubs for all active employees in this period.</p>
+            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>This will generate pay stubs for all active employees in this period.</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setRunPayrollConfirmId(null)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => runPayroll(runPayrollConfirmId)} disabled={runningPayroll} style={{ flex: 1, padding: '10px', background: runningPayroll ? '#9ca3af' : '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: runningPayroll ? 'not-allowed' : 'pointer' }}>{runningPayroll ? 'Processing...' : 'Run Payroll'}</button>
+              <button onClick={() => setRunPayrollConfirmId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => runPayroll(runPayrollConfirmId)} disabled={runningPayroll} style={{ flex: 1, padding: '10px', background: runningPayroll ? '#9ca3af' : '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: runningPayroll ? 'not-allowed' : 'pointer' }}>{runningPayroll ? 'Processing...' : 'Run Payroll'}</button>
             </div>
           </div>
         </div>
@@ -946,12 +1009,12 @@ export default function PayrollPage() {
       {/* Mark period paid confirm modal */}
       {markPaidConfirmId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+          <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><FaCheckCircle style={{marginRight:4}} /></div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Mark Period as Paid?</h3>
-            <p style={{ color: '#6b7280', marginBottom: 24 }}>This action is final and cannot be undone.</p>
+            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>This action is final and cannot be undone.</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setMarkPaidConfirmId(null)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setMarkPaidConfirmId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               <button onClick={() => markPeriodPaid(markPaidConfirmId)} style={{ flex: 1, padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Confirm Paid</button>
             </div>
           </div>
@@ -961,12 +1024,12 @@ export default function PayrollPage() {
       {/* Deny leave modal */}
       {denyModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+          <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Deny Leave Request</h3>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, fontSize: 14 }}>Reason for denial (optional)</label>
-            <textarea value={denyModal.reason} onChange={e => setDenyModal(d => d ? { ...d, reason: e.target.value } : d)} rows={3} style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, resize: 'vertical', fontFamily: 'inherit', fontSize: 14, boxSizing: 'border-box' }} placeholder="Enter reason..." />
+            <textarea value={denyModal.reason} onChange={e => setDenyModal(d => d ? { ...d, reason: e.target.value } : d)} rows={3} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, resize: 'vertical', fontFamily: 'inherit', fontSize: 14, boxSizing: 'border-box' }} placeholder="Enter reason..." />
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-              <button onClick={() => setDenyModal(null)} style={{ flex: 1, padding: '10px', background: '#f3f4f6', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setDenyModal(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               <button onClick={() => { approveLeave(denyModal.id, 'denied', denyModal.reason); setDenyModal(null); }} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}><FaTimes style={{marginRight:4}} /> Deny</button>
             </div>
           </div>
@@ -975,3 +1038,6 @@ export default function PayrollPage() {
     </div>
   );
 }
+
+
+

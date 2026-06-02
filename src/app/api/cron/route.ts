@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendSms } from '@/lib/smsService';
+import { sendEmail } from '@/lib/emailService';
 
 // Cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -13,6 +14,17 @@ function verifyCron(request: NextRequest): boolean {
   }
   const auth = request.headers.get('authorization');
   return auth === `Bearer ${CRON_SECRET}`;
+}
+
+function fillTemplate(template: string, values: Record<string, string | number | null | undefined>) {
+  return template.replace(/\{(\w+)\}/g, (_m, key: string) => {
+    const v = values[key];
+    return v === undefined || v === null ? '' : String(v);
+  });
+}
+
+function stripHtml(input: string) {
+  return input.replace(/<[^>]*>/g, '');
 }
 
 export async function GET(request: NextRequest) {
@@ -208,6 +220,264 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Recurring work orders error:', error);
     results.recurringWorkOrders = { error: 'Failed' };
+  }
+
+  // ─── 4. Custom Automation Rules Execution ───
+  try {
+    const activeRules = await prisma.automationRule.findMany({
+      where: { active: true },
+      include: {
+        Shop: {
+          select: {
+            id: true,
+            shopName: true,
+          },
+        },
+      },
+    });
+
+    let ruleChecks = 0;
+    let messagesSent = 0;
+    let messagesFailed = 0;
+
+    for (const rule of activeRules) {
+      ruleChecks++;
+      const triggerValue = Number(rule.triggerValue || 0);
+
+      if (rule.type === 'appointment_reminder') {
+        let targetTime = now;
+        if (rule.trigger === 'days_before_appointment') {
+          targetTime = new Date(now.getTime() + triggerValue * 24 * 60 * 60 * 1000);
+        } else if (rule.trigger === 'hours_before_appointment') {
+          targetTime = new Date(now.getTime() + triggerValue * 60 * 60 * 1000);
+        } else {
+          continue;
+        }
+
+        const windowStart = new Date(targetTime.getTime() - 30 * 60 * 1000);
+        const windowEnd = new Date(targetTime.getTime() + 30 * 60 * 1000);
+
+        const appointments = await prisma.appointment.findMany({
+          where: {
+            shopId: rule.shopId,
+            status: { in: ['scheduled', 'confirmed'] },
+            scheduledDate: { gte: windowStart, lte: windowEnd },
+          },
+          include: {
+            customer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+            vehicle: { select: { year: true, make: true, model: true } },
+          },
+        });
+
+        for (const appt of appointments) {
+          const already = await prisma.automationExecution.findFirst({
+            where: {
+              ruleId: rule.id,
+              customerId: appt.customer.id,
+              channel: rule.channel,
+              sentAt: { gte: new Date(now.getTime() - 20 * 60 * 60 * 1000) },
+            },
+          });
+          if (already) continue;
+
+          const customerName = [appt.customer.firstName, appt.customer.lastName].filter(Boolean).join(' ').trim() || 'Customer';
+          const vehicle = appt.vehicle ? `${appt.vehicle.year || ''} ${appt.vehicle.make || ''} ${appt.vehicle.model || ''}`.replace(/\s+/g, ' ').trim() : 'your vehicle';
+          const message = fillTemplate(rule.messageTemplate, {
+            customer_name: customerName,
+            vehicle,
+            shop_name: rule.Shop.shopName,
+            appointment_date: new Date(appt.scheduledDate).toLocaleDateString(),
+            appointment_time: new Date(appt.scheduledDate).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+          });
+
+          const subject = `${rule.Shop.shopName} Appointment Reminder`;
+          let sent = true;
+
+          if (rule.channel === 'sms' || rule.channel === 'both') {
+            if (appt.customer.phone) {
+              const smsSent = await sendSms(appt.customer.phone, stripHtml(message).slice(0, 320));
+              sent = sent && smsSent;
+            } else {
+              sent = false;
+            }
+          }
+
+          if (rule.channel === 'email' || rule.channel === 'both') {
+            if (appt.customer.email) {
+              const emailSent = await sendEmail({ to: appt.customer.email, subject, html: `<p>${message}</p>` });
+              sent = sent && emailSent;
+            } else {
+              sent = false;
+            }
+          }
+
+          await prisma.automationExecution.create({
+            data: {
+              ruleId: rule.id,
+              customerId: appt.customer.id,
+              channel: rule.channel,
+              status: sent ? 'sent' : 'failed',
+            },
+          });
+
+          if (sent) messagesSent++;
+          else messagesFailed++;
+        }
+      }
+
+      if (rule.type === 'follow_up' || rule.type === 'review_request') {
+        if (rule.trigger !== 'days_after_completion') continue;
+
+        const targetStart = new Date(now.getTime() - (triggerValue + 1) * 24 * 60 * 60 * 1000);
+        const targetEnd = new Date(now.getTime() - triggerValue * 24 * 60 * 60 * 1000);
+
+        const completedOrders = await prisma.workOrder.findMany({
+          where: {
+            shopId: rule.shopId,
+            status: { in: ['closed', 'completed'] },
+            updatedAt: { gte: targetStart, lte: targetEnd },
+          },
+          include: {
+            customer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+            vehicle: { select: { year: true, make: true, model: true } },
+          },
+        });
+
+        for (const wo of completedOrders) {
+          const already = await prisma.automationExecution.findFirst({
+            where: {
+              ruleId: rule.id,
+              customerId: wo.customerId,
+              workOrderId: wo.id,
+              channel: rule.channel,
+            },
+          });
+          if (already) continue;
+
+          const customerName = [wo.customer.firstName, wo.customer.lastName].filter(Boolean).join(' ').trim() || 'Customer';
+          const vehicle = wo.vehicle ? `${wo.vehicle.year || ''} ${wo.vehicle.make || ''} ${wo.vehicle.model || ''}`.replace(/\s+/g, ' ').trim() : 'your vehicle';
+          const message = fillTemplate(rule.messageTemplate, {
+            customer_name: customerName,
+            vehicle,
+            shop_name: rule.Shop.shopName,
+            review_link: `${process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app'}/shop/reviews`,
+          });
+
+          const subject = rule.type === 'review_request'
+            ? `${rule.Shop.shopName} - How did we do?`
+            : `${rule.Shop.shopName} Follow-up`;
+
+          let sent = true;
+          if (rule.channel === 'sms' || rule.channel === 'both') {
+            if (wo.customer.phone) {
+              const smsSent = await sendSms(wo.customer.phone, stripHtml(message).slice(0, 320));
+              sent = sent && smsSent;
+            } else {
+              sent = false;
+            }
+          }
+
+          if (rule.channel === 'email' || rule.channel === 'both') {
+            if (wo.customer.email) {
+              const emailSent = await sendEmail({ to: wo.customer.email, subject, html: `<p>${message}</p>` });
+              sent = sent && emailSent;
+            } else {
+              sent = false;
+            }
+          }
+
+          await prisma.automationExecution.create({
+            data: {
+              ruleId: rule.id,
+              customerId: wo.customerId,
+              workOrderId: wo.id,
+              channel: rule.channel,
+              status: sent ? 'sent' : 'failed',
+            },
+          });
+
+          if (sent) messagesSent++;
+          else messagesFailed++;
+        }
+      }
+
+      if (rule.type === 'overdue_invoice') {
+        if (rule.trigger !== 'invoice_overdue_days') continue;
+
+        const overdueCutoff = new Date(now.getTime() - triggerValue * 24 * 60 * 60 * 1000);
+        const overdueOrders = await prisma.workOrder.findMany({
+          where: {
+            shopId: rule.shopId,
+            status: 'waiting-for-payment',
+            updatedAt: { lte: overdueCutoff },
+          },
+          include: {
+            customer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+          },
+        });
+
+        for (const wo of overdueOrders) {
+          const already = await prisma.automationExecution.findFirst({
+            where: {
+              ruleId: rule.id,
+              customerId: wo.customerId,
+              workOrderId: wo.id,
+              channel: rule.channel,
+            },
+          });
+          if (already) continue;
+
+          const customerName = [wo.customer.firstName, wo.customer.lastName].filter(Boolean).join(' ').trim() || 'Customer';
+          const message = fillTemplate(rule.messageTemplate, {
+            customer_name: customerName,
+            shop_name: rule.Shop.shopName,
+            amount_due: Math.max(0, (wo.estimatedCost || 0) - (wo.amountPaid || 0)),
+          });
+
+          const subject = `${rule.Shop.shopName} Payment Reminder`;
+          let sent = true;
+          if (rule.channel === 'sms' || rule.channel === 'both') {
+            if (wo.customer.phone) {
+              const smsSent = await sendSms(wo.customer.phone, stripHtml(message).slice(0, 320));
+              sent = sent && smsSent;
+            } else {
+              sent = false;
+            }
+          }
+
+          if (rule.channel === 'email' || rule.channel === 'both') {
+            if (wo.customer.email) {
+              const emailSent = await sendEmail({ to: wo.customer.email, subject, html: `<p>${message}</p>` });
+              sent = sent && emailSent;
+            } else {
+              sent = false;
+            }
+          }
+
+          await prisma.automationExecution.create({
+            data: {
+              ruleId: rule.id,
+              customerId: wo.customerId,
+              workOrderId: wo.id,
+              channel: rule.channel,
+              status: sent ? 'sent' : 'failed',
+            },
+          });
+
+          if (sent) messagesSent++;
+          else messagesFailed++;
+        }
+      }
+    }
+
+    results.customAutomations = {
+      rulesChecked: ruleChecks,
+      sent: messagesSent,
+      failed: messagesFailed,
+    };
+  } catch (error) {
+    console.error('Custom automations error:', error);
+    results.customAutomations = { error: 'Failed' };
   }
 
   return NextResponse.json({

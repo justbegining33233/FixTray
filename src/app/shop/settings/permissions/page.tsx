@@ -5,7 +5,7 @@ import Link from 'next/link';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowLeft, FaCheckCircle, FaChevronRight } from 'react-icons/fa';
+import { FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 
 interface TechPermissions {
   techId: string;
@@ -61,19 +61,23 @@ export default function PermissionsPage() {
     finally { setSaving(null); }
   };
 
-  const formatPerm = (perm: string) => perm.replace(/\./g, ' <FaChevronRight style={{marginRight:4}} /> ').replace(/(^|\s)\S/g, t => t.toUpperCase());
+  const formatPerm = (perm: string) =>
+    perm
+      .split('.')
+      .map((part) => part.replace(/(^|\s)\S/g, t => t.toUpperCase()))
+      .join(', ');
 
   if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <div style={{ marginBottom: 24 }}>
-            <Link href="/shop/manage-team" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Manage Team</Link>
+            <Link href="/shop/manage-team" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Manage Team</Link>
             <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Team Permissions</h1>
             <p style={{ color: '#9ca3af', fontSize: 14 }}>Control what each team member can access</p>
           </div>
@@ -145,3 +149,5 @@ export default function PermissionsPage() {
     </div>
   );
 }
+
+

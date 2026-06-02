@@ -3,7 +3,7 @@ import { requireRole } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['admin']);
+  const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       take: limit ? parseInt(limit) : 100,
     });
 
-    // Map createdAt → time for backwards compatibility with frontend
+    // Map createdAt ΓåÆ time for backwards compatibility with frontend
     const mapped = logs.map(log => ({ ...log, time: log.createdAt }));
 
     return NextResponse.json(mapped);

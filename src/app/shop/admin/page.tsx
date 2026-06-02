@@ -3,10 +3,23 @@
 import { useEffect, useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
+import Link from 'next/link';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import {
+  FaArrowRight,
+  FaBox,
+  FaBuilding,
+  FaChartBar,
+  FaClock,
+  FaCog,
+  FaDollarSign,
+  FaUserCog,
+  FaUsers,
+} from 'react-icons/fa';
 import OverviewTab from './tabs/OverviewTab';
 import SettingsTab from './tabs/SettingsTab';
 import PayrollTab from './tabs/PayrollTab';
@@ -31,6 +44,11 @@ export default function ShopAdminPage() {
   });
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'payroll' | 'team' | 'inventory'>('overview');
+  const [accessFeatures] = useState({
+    payroll: true,
+    multiRoleUsers: true,
+    inventory: true,
+  });
   
   // Date range for payroll
   const [payrollStartDate, setPayrollStartDate] = useState('');
@@ -76,12 +94,14 @@ export default function ShopAdminPage() {
 
   // Keep tab selection in sync with URL hashes so sidebar anchor clicks switch cards
   const setTab = (tab: 'overview' | 'settings' | 'payroll' | 'team' | 'inventory') => {
-    // Managers cannot access the settings tab (billing, Stripe, subscription)
+    // Managers cannot access the settings tab.
     if (tab === 'settings' && user?.role === 'manager') return;
+    if (tab === 'payroll' && !accessFeatures?.payroll) return;
+    if (tab === 'team' && !accessFeatures?.multiRoleUsers) return;
+    if (tab === 'inventory' && !accessFeatures?.inventory) return;
     setActiveTab(tab);
     if (typeof window !== 'undefined') {
       window.history.replaceState(null, '', `#${tab}`);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -89,6 +109,22 @@ export default function ShopAdminPage() {
     const syncTabFromHash = () => {
       const hash = (typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '') as typeof activeTab;
       if (hash && ['overview', 'settings', 'payroll', 'team', 'inventory'].includes(hash)) {
+        if (hash === 'settings' && user?.role === 'manager') {
+          setActiveTab('overview');
+          return;
+        }
+        if (hash === 'payroll' && !accessFeatures?.payroll) {
+          setActiveTab('overview');
+          return;
+        }
+        if (hash === 'team' && !accessFeatures?.multiRoleUsers) {
+          setActiveTab('overview');
+          return;
+        }
+        if (hash === 'inventory' && !accessFeatures?.inventory) {
+          setActiveTab('overview');
+          return;
+        }
         setActiveTab(hash);
       }
     };
@@ -96,13 +132,13 @@ export default function ShopAdminPage() {
     syncTabFromHash();
     window.addEventListener('hashchange', syncTabFromHash);
     return () => window.removeEventListener('hashchange', syncTabFromHash);
-  }, []);
+  }, [accessFeatures, user?.role]);
 
   useEffect(() => {
     if (isLoading) return;
     const isManager = user?.role === 'manager';
     if (user && !user.isShopAdmin && !isManager) {
-      router.replace('/shop/home');
+      router.replace('/shop/home' as Route);
       return;
     }
 
@@ -110,16 +146,22 @@ export default function ShopAdminPage() {
     const id = localStorage.getItem('shopId');
     const name = localStorage.getItem('userName');
     const profileComplete = localStorage.getItem('shopProfileComplete') === 'true';
+    const agreementAccepted = localStorage.getItem('fixtrayAgreementAccepted') === 'true';
 
     // Only shop owners need isShopAdmin flag; managers bypass this check
     if (admin !== 'true' && !isManager) {
-      router.push('/shop/home');
+      router.push('/shop/home' as Route);
       return;
     }
 
     // Only shop owners need a complete profile; managers don't set up the shop
     if (!profileComplete && !isManager) {
-      router.push('/shop/complete-profile');
+      router.push('/shop/complete-profile' as Route);
+      return;
+    }
+
+    if (!agreementAccepted && !isManager) {
+      router.push('/shop/settings?tab=general' as Route);
       return;
     }
 
@@ -583,6 +625,34 @@ export default function ShopAdminPage() {
     }
   };
 
+  const openWorkOrders = shopStats?.workOrders?.open ?? 0;
+  const completedThisWeek = shopStats?.workOrders?.completedThisWeek ?? 0;
+  const weeklyRevenue = shopStats?.revenue?.week ?? 0;
+  const teamCount = shopStats?.team?.total ?? 0;
+  const clockedInCount = shopStats?.team?.clockedIn ?? 0;
+  const inventoryCount = inventoryStock?.length ?? 0;
+  const pendingActions = (shopStats?.workOrders?.pendingApprovals ?? 0) + (shopStats?.inventory?.pendingRequests ?? 0);
+  const totalPipeline = openWorkOrders + completedThisWeek;
+  const completionRate = totalPipeline > 0 ? Math.round((completedThisWeek / totalPipeline) * 100) : 0;
+  const weeklyBudget = budgetData?.weeklyBudget ?? 0;
+  const weeklySpent = budgetData?.weeklySpent ?? 0;
+  const payrollUtilization = weeklyBudget > 0 ? Math.min(100, Math.round((weeklySpent / weeklyBudget) * 100)) : 0;
+
+  const statCards = [
+    { label: 'Open Work Orders', value: String(openWorkOrders), sub: `${completedThisWeek} completed this week`, color: '#e5332a', icon: <FaClock /> },
+    { label: 'Weekly Revenue', value: `$${Number(weeklyRevenue).toFixed(2)}`, sub: `${completionRate}% weekly completion rate`, color: '#22c55e', icon: <FaDollarSign /> },
+    { label: 'Team Coverage', value: `${clockedInCount}/${teamCount}`, sub: 'Clocked in right now', color: '#f59e0b', icon: <FaUsers /> },
+    { label: 'Inventory Health', value: String(inventoryCount), sub: `${pendingActions} pending admin actions`, color: '#a855f7', icon: <FaBox /> },
+  ];
+
+  const quickLinks = [
+    { href: '/shop/analytics', label: 'Shop Analytics', desc: 'Performance trends, SLA, profit', color: '#8b5cf6', icon: <FaChartBar /> },
+    { href: '/shop/analytics', label: 'Reports Center', desc: 'Payroll, exports, and summaries', color: '#22c55e', icon: <FaBuilding /> },
+    { href: '/shop/manage-team', label: 'Team Operations', desc: 'Roles, staffing, and access', color: '#e5332a', icon: <FaUserCog /> },
+    { href: '/shop/inventory', label: 'Inventory Control', desc: 'Stock, POs, and reorders', color: '#f59e0b', icon: <FaBox /> },
+    { href: '/shop/settings', label: 'Shop Settings', desc: 'Rates, alerts, and configuration', color: '#e5332a', icon: <FaCog /> },
+  ];
+
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navigation */}
@@ -602,9 +672,92 @@ export default function ShopAdminPage() {
         {/* Main Content */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+            {/* Header */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(229,51,42,0.16)', border: '1px solid rgba(229,51,42,0.3)', color: '#e5332a', fontSize: 18 }}>
+                  <FaBuilding />
+                </div>
+                <div>
+                  <h1 style={{ margin: 0, color: '#e5e7eb', fontSize: 28, fontWeight: 800 }}>Shop Admin Command Center</h1>
+                  <div style={{ color: '#9aa3b2', fontSize: 13 }}>In-depth operational and financial analytics for your shop</div>
+                </div>
+              </div>
+            </div>
 
+            {/* Primary KPI Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 18 }}>
+              {statCards.map((card) => (
+                <div key={card.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ color: '#9aa3b2', fontSize: 12, fontWeight: 700 }}>{card.label}</div>
+                    <div style={{ color: card.color, fontSize: 16 }}>{card.icon}</div>
+                  </div>
+                  <div style={{ color: '#e5e7eb', fontSize: 28, fontWeight: 800, lineHeight: 1.15 }}>{card.value}</div>
+                  <div style={{ marginTop: 5, color: '#9aa3b2', fontSize: 12 }}>{card.sub}</div>
+                </div>
+              ))}
+            </div>
 
+            {/* Secondary Analytics Row */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: 16 }}>
+                <div style={{ color: '#e5e7eb', fontWeight: 700, marginBottom: 10 }}>Weekly Operations Health</div>
+                <div style={{ marginBottom: 8, color: '#9aa3b2', fontSize: 12 }}>Completion Rate</div>
+                <div style={{ width: '100%', height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
+                  <div style={{ width: `${completionRate}%`, height: '100%', background: 'linear-gradient(90deg, #e5332a, #22c55e)' }} />
+                </div>
+                <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700 }}>{completionRate}% ({completedThisWeek}/{totalPipeline || 0})</div>
 
+                {weeklyBudget > 0 && (
+                  <>
+                    <div style={{ marginTop: 14, marginBottom: 8, color: '#9aa3b2', fontSize: 12 }}>Payroll Budget Utilization</div>
+                    <div style={{ width: '100%', height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
+                      <div style={{ width: `${payrollUtilization}%`, height: '100%', background: payrollUtilization >= 95 ? 'linear-gradient(90deg, #f59e0b, #e5332a)' : 'linear-gradient(90deg, #22c55e, #e5332a)' }} />
+                    </div>
+                    <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700 }}>{payrollUtilization}% (${weeklySpent.toFixed(2)} / ${weeklyBudget.toFixed(2)})</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Tab Switcher */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 8, marginBottom: 20 }}>
+              {[
+                { id: 'overview', label: 'Overview' },
+                { id: 'inventory', label: 'Inventory' },
+                { id: 'team', label: 'Team' },
+                { id: 'payroll', label: 'Payroll' },
+                { id: 'settings', label: 'Settings' },
+              ].map((tab) => {
+                const disabled =
+                  (tab.id === 'settings' && user?.role === 'manager') ||
+                  (tab.id === 'payroll' && !accessFeatures?.payroll) ||
+                  (tab.id === 'team' && !accessFeatures?.multiRoleUsers) ||
+                  (tab.id === 'inventory' && !accessFeatures?.inventory);
+                const selected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setTab(tab.id as typeof activeTab)}
+                    disabled={disabled}
+                    style={{
+                      padding: '9px 14px',
+                      borderRadius: 9,
+                      border: 'none',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      background: selected ? '#e5332a' : 'rgba(255,255,255,0.04)',
+                      color: selected ? '#fff' : disabled ? '#6b7280' : '#cbd5e1',
+                      opacity: disabled ? 0.5 : 1,
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Tab Content */}
             {activeTab === 'overview' && (
@@ -628,7 +781,7 @@ export default function ShopAdminPage() {
               />
             )}
 
-            {activeTab === 'payroll' && (
+            {activeTab === 'payroll' && accessFeatures?.payroll && (
               <PayrollTab
                 payrollData={payrollData}
                 loading={loading}
@@ -643,11 +796,11 @@ export default function ShopAdminPage() {
               />
             )}
 
-            {activeTab === 'team' && (
+            {activeTab === 'team' && accessFeatures?.multiRoleUsers && (
               <TeamTab teamData={teamData} />
             )}
 
-            {activeTab === 'inventory' && (
+            {activeTab === 'inventory' && accessFeatures?.inventory && (
               <InventoryTab
                 showLowStockOnly={showLowStockOnly}
                 setShowLowStockOnly={setShowLowStockOnly}
@@ -674,10 +827,11 @@ export default function ShopAdminPage() {
       {adminMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:adminMsg.type==='success'?'#dcfce7':'#fde8e8',color:adminMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {adminMsg.text}
-          <button onClick={()=>setAdminMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setAdminMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>
   );
 }
+
 

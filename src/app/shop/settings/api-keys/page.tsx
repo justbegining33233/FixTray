@@ -95,19 +95,19 @@ export default function ApiKeysPage() {
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div>
-              <Link href="/shop/settings" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Settings</Link>
+              <Link href="/shop/settings" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Settings</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>API Keys</h1>
               <p style={{ color: '#9ca3af', fontSize: 14 }}>Manage API keys for external integrations</p>
             </div>
             <button onClick={() => { setShowCreate(true); setCreatedKey(null); }}
-              style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
+              style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
               + New Key
             </button>
           </div>
@@ -116,7 +116,7 @@ export default function ApiKeysPage() {
           {createdKey && (
             <div style={{ background: '#052e16', border: '1px solid #16a34a', borderRadius: 12, padding: 20, marginBottom: 24 }}>
               <div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 8 }}><FaKey style={{marginRight:4}} /> API Key Created  -  Copy it now!</div>
-              <div style={{ color: '#e5e7eb', fontFamily: 'monospace', fontSize: 14, background: '#0f172a', padding: 12, borderRadius: 8, wordBreak: 'break-all' }}>
+              <div style={{ color: '#e5e7eb', fontFamily: 'monospace', fontSize: 14, background: '#000000', padding: 12, borderRadius: 8, wordBreak: 'break-all' }}>
                 {createdKey}
               </div>
               <div style={{ color: '#9ca3af', fontSize: 12, marginTop: 8 }}>This key will not be shown again. Store it securely.</div>
@@ -131,7 +131,7 @@ export default function ApiKeysPage() {
               <div style={{ marginBottom: 16 }}>
                 <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Key Name</label>
                 <input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="e.g. CRM Integration"
-                  style={{ width: '100%', background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
+                  style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 8 }}>Scopes</label>
@@ -140,7 +140,7 @@ export default function ApiKeysPage() {
                     <button key={scope} onClick={() => toggleScope(scope)}
                       style={{
                         padding: '6px 12px', borderRadius: 20, fontSize: 13, cursor: 'pointer', border: 'none',
-                        background: newKeyScopes.includes(scope) ? '#1d4ed8' : '#0f172a',
+                        background: newKeyScopes.includes(scope) ? '#1d4ed8' : '#000000',
                         color: newKeyScopes.includes(scope) ? '#fff' : '#9ca3af',
                       }}>
                       {scope}
@@ -150,7 +150,7 @@ export default function ApiKeysPage() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={createKey} disabled={saving}
-                  style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.5 : 1 }}>
+                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.5 : 1 }}>
                   {saving ? 'Creating...' : 'Create Key'}
                 </button>
                 <button onClick={() => setShowCreate(false)}
@@ -178,13 +178,13 @@ export default function ApiKeysPage() {
                     <div style={{ color: '#6b7280', fontFamily: 'monospace', fontSize: 13, marginTop: 2 }}>{key.prefix}---</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
                       {key.scopes.map(s => (
-                        <span key={s} style={{ background: '#0f172a', color: '#60a5fa', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>{s}</span>
+                        <span key={s} style={{ background: '#000000', color: '#ff6b64', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>{s}</span>
                       ))}
                     </div>
                     <div style={{ color: '#4b5563', fontSize: 12, marginTop: 4 }}>
                       Created {new Date(key.createdAt).toLocaleDateString()}
-                      {key.lastUsedAt && ` · Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
-                      {key.expiresAt && ` · Expires ${new Date(key.expiresAt).toLocaleDateString()}`}
+                      {key.lastUsedAt && `  Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
+                      {key.expiresAt && `  Expires ${new Date(key.expiresAt).toLocaleDateString()}`}
                     </div>
                   </div>
                   <button onClick={() => revokeKey(key.id)}
@@ -200,3 +200,5 @@ export default function ApiKeysPage() {
     </div>
   );
 }
+
+

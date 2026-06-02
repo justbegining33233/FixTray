@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { verifyToken } from '@/lib/auth-client';
 
 interface LoginUserData {
@@ -13,6 +14,7 @@ interface LoginUserData {
   isShopAdmin?: boolean;
   shopProfileComplete?: boolean;
   isSuperAdmin?: boolean;
+  isOwner?: boolean;
 }
 
 interface AuthContextType {
@@ -24,11 +26,14 @@ interface AuthContextType {
     isShopAdmin?: boolean;
     shopProfileComplete?: boolean;
     isSuperAdmin?: boolean;
+    isOwner?: boolean;
+    onboardingCompleted?: boolean;
   } | null;
   isLoading: boolean;
   login: (userData: LoginUserData) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  completeOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,31 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthContextType['user']>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const scheduleRefresh = (token: string) => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      if (!payload.exp) return;
-      const msUntilExpiry = payload.exp * 1000 - Date.now();
-      if (msUntilExpiry <= 0) return;
-      // Refresh 5 minutes before expiry, but at least 30s from now
-      const refreshIn = Math.max(msUntilExpiry - 5 * 60 * 1000, 30_000);
-      refreshTimerRef.current = setTimeout(async () => {
-        try {
-          const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.accessToken) {
-              localStorage.setItem('token', data.accessToken);
-              scheduleRefresh(data.accessToken);
-            }
-          }
-        } catch { /* network error â€” will retry on next visibility change */ }
-      }, refreshIn);
-    } catch { /* invalid token format */ }
-  };
 
   // Public routes that don't require authentication
   const _publicRoutes = ['/auth/login', '/auth/register', '/auth/thank-you', '/auth/pending-approval', '/'];
@@ -82,10 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    };
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []); // Remove pathname dependency to prevent re-checking on every route change
 
   const checkAuth = () => {
@@ -97,13 +74,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const token = localStorage.getItem('token');
-      const role = localStorage.getItem('userRole');
-      const name = localStorage.getItem('userName');
-      const id = localStorage.getItem('userId');
+      let role = localStorage.getItem('userRole');
+      let name = localStorage.getItem('userName');
+      let id = localStorage.getItem('userId');
       const shopId = localStorage.getItem('shopId');
       const isShopAdmin = localStorage.getItem('isShopAdmin') === 'true';
       const shopProfileComplete = localStorage.getItem('shopProfileComplete') === 'true';
       const isSuperAdmin = localStorage.getItem('isSuperAdmin') === 'true';
+      const storedIsOwner = localStorage.getItem('isOwner') === 'true';
+      const onboardingCompleted = localStorage.getItem('onboardingCompleted') === 'true';
+      let isOwner = storedIsOwner;
+
+      if (!role || !name || !id) {
+        try {
+          const rawUser = localStorage.getItem('user');
+          if (rawUser) {
+            const parsed = JSON.parse(rawUser) as Record<string, unknown>;
+            role = role || (typeof parsed.role === 'string' ? parsed.role : null);
+            name = name || (typeof parsed.name === 'string' ? parsed.name : null);
+            id = id || (typeof parsed.id === 'string' ? parsed.id : null);
+
+            if (role) localStorage.setItem('userRole', role);
+            if (name) localStorage.setItem('userName', name);
+            if (id) localStorage.setItem('userId', id);
+          }
+        } catch {
+          // Ignore malformed legacy payloads and continue with known keys only.
+        }
+      }
 
 
       // Validate token if it exists
@@ -118,10 +116,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('shopId');
           localStorage.removeItem('isShopAdmin');
           localStorage.removeItem('shopProfileComplete');
+          localStorage.removeItem('isSuperAdmin');
+          localStorage.removeItem('isOwner');
           setUser(null);
           setIsLoading(false);
           return;
         }
+
+        isOwner = Boolean(decodedToken.isOwner ?? storedIsOwner);
+        if (typeof decodedToken.isSuperAdmin === 'boolean') {
+          if (decodedToken.isSuperAdmin) localStorage.setItem('isSuperAdmin', 'true');
+          else localStorage.removeItem('isSuperAdmin');
+        }
+        if (isOwner) localStorage.setItem('isOwner', 'true');
+        else localStorage.removeItem('isOwner');
 
         // If valid token found, ensure socket is connected for real-time updates
         try {
@@ -132,8 +140,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }).catch(e => console.warn('Failed to connect socket on auth check:', e));
         } catch {
         }
-
-        scheduleRefresh(token);
       }
 
       if (role && name && id) {
@@ -145,13 +151,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isShopAdmin,
           shopProfileComplete,
           isSuperAdmin,
+          isOwner,
+          onboardingCompleted,
         });
       } else {
         setUser(null);
         // Removed automatic redirect - let individual pages handle auth requirements
       }
     } catch (error) {
-      console.error('Ã¢Å’ [AUTH CHECK] Auth check error:', error);
+      console.error('âŒ [AUTH CHECK] Auth check error:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -165,7 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // If logging in with existing user data, try to refresh the token
     if (userData.token) {
       localStorage.setItem('token', userData.token);
-      scheduleRefresh(userData.token);
       // Initialize socket client on login (non-blocking)
       import('@/lib/socket-client').then(mod => {
         try {
@@ -189,6 +196,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     else localStorage.removeItem('shopProfileComplete');
     if (userData.isSuperAdmin) localStorage.setItem('isSuperAdmin', 'true');
     else localStorage.removeItem('isSuperAdmin');
+    if (userData.isOwner) localStorage.setItem('isOwner', 'true');
+    else localStorage.removeItem('isOwner');
 
     setUser({
       id: userData.id,
@@ -198,6 +207,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isShopAdmin: userData.isShopAdmin,
       shopProfileComplete: userData.shopProfileComplete,
       isSuperAdmin: userData.isSuperAdmin,
+      isOwner: userData.isOwner,
+      onboardingCompleted: localStorage.getItem('onboardingCompleted') === 'true',
     });
   };
 
@@ -211,8 +222,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('shopId');
     localStorage.removeItem('isShopAdmin');
     localStorage.removeItem('shopProfileComplete');
+    localStorage.removeItem('isSuperAdmin');
+    localStorage.removeItem('isOwner');
     localStorage.removeItem('token');
-    if (refreshTimerRef.current) { clearTimeout(refreshTimerRef.current); refreshTimerRef.current = null; }
 
     try {
       const { default: socketClient } = await import('@/lib/socket-client');
@@ -221,7 +233,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(null);
-    router.push('/auth/login');
+    router.push('/auth/login' as Route);
+  };
+
+  const completeOnboarding = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('onboardingCompleted', 'true');
+    setUser(prev => prev ? { ...prev, onboardingCompleted: true } : null);
   };
 
   const value = {
@@ -230,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     isAuthenticated: !!user,
+    completeOnboarding,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -245,6 +264,7 @@ export function useAuth() {
       login: () => {},
       logout: () => {},
       isAuthenticated: false,
+      completeOnboarding: () => {},
     };
   }
   return context;
@@ -253,9 +273,9 @@ export function useAuth() {
 /** Where each role belongs  -  must mirror src/middleware.ts */
 const ROLE_HOME_MAP: Record<string, string> = {
   admin:      '/admin/home',
-  superadmin: '/superadmin/dashboard',
-  shop:       '/shop/home',
-  manager:    '/shop/home',
+  superadmin: '/admin/home',
+  shop:       '/shop/admin',
+  manager:    '/manager/home',
   tech:       '/tech/home',
   customer:   '/customer/dashboard',
 };
@@ -267,14 +287,17 @@ export function useRequireAuth(requiredRoles?: string[]) {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/auth/login');
+      const target = typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : '/';
+      router.push(`/auth/login?redirect=${encodeURIComponent(target)}` as Route);
       return;
     }
 
     if (!isLoading && user && requiredRoles && !requiredRoles.includes(user.role)) {
       // Redirect to the user's own section, not to login
       const home = ROLE_HOME_MAP[user.role] ?? '/auth/login';
-      router.push(home);
+      router.push(home as Route);
     }
   }, [user, isLoading, requiredRoles]); // Remove router from dependencies
 

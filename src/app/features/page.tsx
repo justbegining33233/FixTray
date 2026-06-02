@@ -19,13 +19,13 @@ export default function FeaturesPage() {
           The full stack for world-class work orders.
         </h1>
         <p className="mt-5 mx-auto max-w-2xl text-lg text-slate-300">
-          FixTray blends dispatch, approvals, and customer visibility into one cinematic workflow.
+          FixTray covers the full operating loop: work orders, dispatch, customer communication, team workflow, inventory, payroll, analytics, and multi-shop growth.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/auth/login" className="rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30">
             Start free
           </Link>
-          <Link href="/pricing" className="rounded-full border border-slate-700/70 bg-slate-950/60 px-6 py-3 text-sm font-semibold text-slate-200">
+          <Link href="/pricing" className="rounded-full border border-white/10 bg-black px-6 py-3 text-sm font-semibold text-slate-200">
             View pricing
           </Link>
         </div>
@@ -34,12 +34,12 @@ export default function FeaturesPage() {
       <section className="mx-auto max-w-6xl px-6 pb-20 text-center">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
-            { title: "Control center", detail: "A real-time work order wall with status ribbons and SLA visibility." },
-            { title: "Smart dispatch", detail: "Auto-route work by skill, proximity, and priority." },
-            { title: "Approval engine", detail: "Instant estimates, e-signatures, and customer-ready approvals." },
-            { title: "Mobile tech suite", detail: "Offline-first mobile workflows, photos, and time tracking." },
-            { title: "Customer timeline", detail: "Share progress updates with live ETAs and branded portals." },
-            { title: "Revenue analytics", detail: "Track margin, cycle time, and technician performance." }
+            { title: "Work order control", detail: "Manage intake, assignment, approvals, estimates, payments, and closeout from one system." },
+            { title: "Dispatch + routing", detail: "Coordinate teams by role, availability, status, and location context." },
+            { title: "Customer communication", detail: "Send approvals, updates, documents, and messages from the same workflow." },
+            { title: "Mobile tech suite", detail: "Run time tracking, photos, inspections, and field updates from technician-ready screens." },
+            { title: "Operational finance", detail: "Handle inventory, payroll, budget tracking, and reporting without separate back-office tooling." },
+            { title: "Multi-shop visibility", detail: "Professional and above can operate multiple shops with shared owner-level oversight." }
           ].map((item) => (
             <div key={item.title} className="rounded-3xl p-6 text-center" style={glassCardStyle}>
               <p className="text-lg font-semibold text-white">{item.title}</p>
@@ -51,17 +51,17 @@ export default function FeaturesPage() {
 
       <section className="mx-auto max-w-6xl px-6 pb-24 text-center">
         <div className="grid gap-8 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-800/70 bg-slate-950/70 p-8 text-center">
+          <div className="rounded-3xl border border-white/10 bg-black p-8 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Automation</p>
             <h2 className="mt-4 text-2xl font-semibold text-white">Let the workflow run itself.</h2>
             <p className="mt-4 text-sm text-slate-300">
-              Trigger tasks, approvals, and customer updates automatically when a job hits each milestone.
+              Automate milestone-based updates, approvals, recurring work, reminders, and handoffs without manual chasing.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-slate-200">
               {[
                 "SLA alerts and escalation paths",
-                "Auto-generated estimates and invoices",
-                "Customer SMS and email sequences"
+                "Recurring work orders and reminder flows",
+                "Customer email and message sequences"
               ].map((item) => (
                 <li key={item} className="flex items-center justify-center gap-3">
                   <span className="h-2 w-2 rounded-full bg-cyan-400" />
@@ -70,17 +70,17 @@ export default function FeaturesPage() {
               ))}
             </ul>
           </div>
-          <div className="rounded-3xl border border-slate-800/70 bg-slate-950/70 p-8 text-center">
+          <div className="rounded-3xl border border-white/10 bg-black p-8 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Mobile first</p>
             <h2 className="mt-4 text-2xl font-semibold text-white">Technicians stay in flow.</h2>
             <p className="mt-4 text-sm text-slate-300">
-              Mobile checklists, photo capture, and voice notes keep field teams moving fast without paperwork.
+              Techs can clock time, capture photos, complete inspections, message the shop, and keep jobs moving without paperwork.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-slate-200">
               {[
                 "Offline capture and sync",
-                "Photo + signature capture",
-                "Live routing + turn-by-turn"
+                "Photo, signature, and inspection capture",
+                "Live routing and field-ready job context"
               ].map((item) => (
                 <li key={item} className="flex items-center justify-center gap-3">
                   <span className="h-2 w-2 rounded-full bg-pink-400" />

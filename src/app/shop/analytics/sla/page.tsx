@@ -37,7 +37,41 @@ export default function SLAAnalyticsPage() {
   useEffect(() => {
     if (!user) return;
     fetchSLA();
+    const interval = setInterval(fetchSLA, 60 * 1000);
+
+    return () => clearInterval(interval);
   }, [user, days]);
+
+  const normalize = (raw: any): SLAData => {
+    const overview = raw?.overview ?? raw ?? {};
+    const techRows = Array.isArray(raw?.techPerformance) ? raw.techPerformance : [];
+    const techPerformance: TechStat[] = techRows.map((t: any) => {
+      const totalJobs = Number(t.totalJobs ?? t.completedJobs ?? 0);
+      const onTime = Number(
+        t.onTime ??
+        (typeof t.slaComplianceRate === 'number' ? Math.round((t.slaComplianceRate / 100) * totalJobs) : 0)
+      );
+      return {
+        techId: String(t.techId ?? ''),
+        name: String(t.name ?? 'Unknown'),
+        totalJobs,
+        onTime,
+        late: Math.max(0, totalJobs - onTime),
+        revenue: Number(t.revenue ?? 0),
+        avgHours: Number(t.avgHours ?? t.avgCompletionHours ?? 0),
+      };
+    });
+
+    return {
+      complianceRate: Number(overview.complianceRate ?? overview.slaComplianceRate ?? 0),
+      avgCompletionHours: Number(overview.avgCompletionHours ?? 0),
+      totalCompleted: Number(overview.totalCompleted ?? overview.completedWorkOrders ?? 0),
+      onTime: Number(overview.onTime ?? overview.onTimeCount ?? 0),
+      late: Number(overview.late ?? overview.lateCount ?? 0),
+      statusBreakdown: raw?.statusBreakdown ?? {},
+      techPerformance,
+    };
+  };
 
   const fetchSLA = async () => {
     setLoading(true);
@@ -48,7 +82,7 @@ export default function SLAAnalyticsPage() {
       });
       if (res.ok) {
         const json = await res.json();
-        setData(json);
+        setData(normalize(json));
       }
     } catch (e) {
       console.error('Failed to fetch SLA data:', e);
@@ -61,14 +95,14 @@ export default function SLAAnalyticsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div>
-              <Link href="/shop/reports" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Reports</Link>
+              <Link href="/shop/analytics" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Reports</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>SLA & Performance Metrics</h1>
               <p style={{ color: '#9ca3af', fontSize: 14 }}>Track service level compliance and team efficiency</p>
             </div>
@@ -102,7 +136,7 @@ export default function SLAAnalyticsPage() {
                 </div>
                 <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' }}>
                   <div style={{ color: '#9ca3af', fontSize: 13, marginBottom: 4 }}>Avg. Completion Time</div>
-                  <div style={{ color: '#60a5fa', fontSize: 32, fontWeight: 700 }}>{data.avgCompletionHours.toFixed(1)}h</div>
+                  <div style={{ color: '#ff6b64', fontSize: 32, fontWeight: 700 }}>{data.avgCompletionHours.toFixed(1)}h</div>
                   <div style={{ color: '#6b7280', fontSize: 12 }}>Average hours per job</div>
                 </div>
                 <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' }}>
@@ -122,7 +156,7 @@ export default function SLAAnalyticsPage() {
                 <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Status Breakdown</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                   {Object.entries(data.statusBreakdown).map(([status, count]) => (
-                    <div key={status} style={{ background: '#0f172a', borderRadius: 8, padding: 16, textAlign: 'center' }}>
+                    <div key={status} style={{ background: '#000000', borderRadius: 8, padding: 16, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 12, textTransform: 'capitalize', marginBottom: 4 }}>{status.replace(/_/g, ' ')}</div>
                       <div style={{ color: '#e5e7eb', fontSize: 24, fontWeight: 700 }}>{count}</div>
                     </div>
@@ -182,3 +216,5 @@ export default function SLAAnalyticsPage() {
     </div>
   );
 }
+
+

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FixTray – Hybrid Mobile Prototype</title>
+<style>
+:root {
+  --bg: #0b0d12;
+  --surface: #13161f;
+  --border: #1f2330;
+  --text: #e2e8f0;
+  --muted: #4a5568;
+  --muted2: #718096;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+}
+.pg-head { text-align: center; margin-bottom: 28px; }
+.pg-head h1 { font-size: 20px; font-weight: 800; }
+.pg-head p { color: var(--muted2); font-size: 12px; margin-top: 5px; }
+
+.role-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px; }
+.role-btn {
+  border: 1.5px solid var(--border); background: var(--surface);
+  color: var(--muted2); border-radius: 20px; padding: 7px 16px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+}
+.role-btn.active { color: #fff; }
+
+.phone-outer { display: flex; justify-content: center; align-items: flex-start; gap: 32px; flex-wrap: wrap; }
+.phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.phone-label { font-size: 11px; color: var(--muted2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; }
+
+.phone {
+  width: 310px; height: 650px; background: #060709;
+  border-radius: 44px; border: 3px solid #252833; overflow: hidden;
+  position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px #1a1d26;
+}
+.phone-notch {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 90px; height: 24px; background: #060709;
+  border-radius: 0 0 16px 16px; z-index: 200;
+}
+.phone-screen { width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+
+.status-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 28px 18px 4px; font-size: 10px; font-weight: 700; color: #fff;
+  flex-shrink: 0; position: relative; z-index: 10;
+}
+.sb-right { display: flex; gap: 5px; align-items: center; }
+.bat { width: 18px; height: 9px; border: 1.5px solid rgba(255,255,255,0.6); border-radius: 2px; padding: 1px; position: relative; }
+.bat::after { content:''; position:absolute; right:-4px; top:1.5px; width:2.5px; height:5px; background:rgba(255,255,255,0.5); border-radius:1px; }
+.bat-f { height:100%; width:70%; background:#22c55e; border-radius:1px; }
+
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 14px 8px; flex-shrink: 0;
+  background: rgba(6,7,9,0.95); backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.05); position: relative; z-index: 10;
+}
+.hdr-left { display: flex; align-items: center; gap: 8px; }
+.hdr-menu {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; cursor: pointer; flex-shrink: 0; transition: background 0.15s;
+}
+.hdr-menu:hover { background: rgba(255,255,255,0.12); }
+.hdr-title { font-size: 15px; font-weight: 800; }
+.hdr-sub { font-size: 9px; color: var(--muted2); margin-top: 1px; }
+.hdr-right { display: flex; align-items: center; gap: 6px; }
+.hdr-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0; border: 1.5px solid;
+}
+
+/* HOME TILES */
+.home-scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 10px 12px 80px; scrollbar-width: none;
+}
+.home-scroll::-webkit-scrollbar { display: none; }
+.sec-label {
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted2); margin: 8px 0 6px;
+}
+.tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.tile {
+  border-radius: 16px; padding: 14px 12px 12px; cursor: pointer;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 94px; transition: transform 0.15s, filter 0.15s;
+  border: 1px solid rgba(255,255,255,0.04); -webkit-tap-highlight-color: transparent;
+}
+.tile:active { transform: scale(0.94); filter: brightness(1.15); }
+.tile.span2 { grid-column: span 2; min-height: 72px; flex-direction: row; align-items: center; gap: 14px; }
+.tile.span2 .t-ico { margin-bottom: 0; }
+.t-ico { font-size: 24px; margin-bottom: 8px; }
+.t-name { font-size: 11px; font-weight: 800; color: #fff; line-height: 1.3; }
+.t-sub { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.t-badge {
+  position: absolute; top: 8px; right: 8px;
+  background: #ef4444; color: #fff; border-radius: 10px;
+  font-size: 9px; font-weight: 800; padding: 1px 6px; min-width: 16px; text-align: center;
+  border: 1.5px solid rgba(0,0,0,0.3);
+}
+
+/* SECTION VIEW */
+.section-scroll { flex: 1; overflow-y: auto; padding: 0 12px 80px; scrollbar-width: none; }
+.section-scroll::-webkit-scrollbar { display: none; }
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 8px 0 12px; }
+.stat-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; padding: 10px 12px;
+}
+.stat-num { font-size: 20px; font-weight: 900; line-height: 1; }
+.stat-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted2); margin-top: 3px; }
+.stat-chg { font-size: 9px; color: #22c55e; margin-top: 2px; }
+.list-item {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; padding: 11px 12px; margin-bottom: 7px;
+  display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.15s;
+}
+.list-item:active { background: rgba(255,255,255,0.07); }
+.li-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.li-body { flex: 1; min-width: 0; }
+.li-title { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li-sub { font-size: 10px; color: var(--muted2); margin-top: 2px; }
+.li-right { flex-shrink: 0; text-align: right; }
+.li-status { font-size: 9px; font-weight: 700; border-radius: 8px; padding: 2px 7px; display: inline-block; }
+.li-time { font-size: 9px; color: var(--muted2); margin-top: 3px; }
+
+/* FOOTER NAV */
+.footer-nav {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(6,7,9,0.97); backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 4px 18px; display: flex; align-items: flex-end;
+}
+.fn-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 9px; font-weight: 600; color: var(--muted);
+  cursor: pointer; padding: 4px 2px; transition: color 0.15s;
+  position: relative; -webkit-tap-highlight-color: transparent;
+}
+.fn-item .fn-icon { font-size: 21px; transition: transform 0.15s; }
+.fn-item.active { color: #fff; }
+.fn-item.active .fn-icon { transform: scale(1.1); }
+.fn-pip {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0; transition: opacity 0.15s;
+}
+.fn-item.active .fn-pip { opacity: 1; }
+.fn-badge {
+  position: absolute; top: 1px; right: calc(50% - 18px);
+  background: #ef4444; color: #fff; font-size: 7px; font-weight: 800;
+  width: 14px; height: 14px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; border: 1.5px solid #060709;
+}
+.fn-new {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent;
+}
+.fn-new-circle {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; color: #fff; margin-top: -20px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5); transition: transform 0.2s;
+}
+.fn-new-circle.rotated { transform: rotate(45deg); }
+.fn-new-label { font-size: 9px; font-weight: 600; color: var(--muted2); }
+
+/* NEW submenu */
+.new-menu {
+  position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%) scale(0.9);
+  background: #13161f; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px; padding: 12px; width: 200px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+}
+.new-menu.open { opacity: 1; pointer-events: all; transform: translateX(-50%) scale(1); }
+.new-menu-title {
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted2); text-align: center; margin-bottom: 10px;
+}
+.new-opt {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 7px; cursor: pointer;
+  transition: background 0.15s;
+}
+.new-opt:last-child { margin-bottom: 0; }
+.new-opt:active { background: rgba(255,255,255,0.1); }
+.no-ico { font-size: 22px; }
+.no-title { font-size: 12px; font-weight: 700; }
+.no-sub { font-size: 10px; color: var(--muted2); margin-top: 1px; }
+
+/* DIM overlay */
+.screen-dim {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 45; display: none;
+}
+.screen-dim.show { display: block; }
+
+/* DRAWER */
+.drawer-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 150; display: none;
+}
+.drawer-overlay.open { display: flex; }
+.drawer {
+  width: 240px; height: 100%; background: #0d0f16;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  display: flex; flex-direction: column; overflow: hidden;
+  animation: slideIn 0.25s ease;
+}
+@keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.drawer-head { padding: 36px 14px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.drawer-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 8px;
+}
+.drawer-name { font-size: 13px; font-weight: 800; }
+.drawer-role-lbl { font-size: 10px; color: var(--muted2); margin-top: 2px; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 6px 0; scrollbar-width: none; }
+.drawer-body::-webkit-scrollbar { display: none; }
+.drawer-sec { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); padding: 10px 14px 4px; }
+.drawer-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; cursor: pointer; font-size: 12px; font-weight: 500;
+  border-radius: 8px; margin: 1px 6px; transition: background 0.15s;
+}
+.drawer-item:hover { background: rgba(255,255,255,0.06); }
+.di-ico { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+.di-badge { margin-left: auto; background: #ef4444; border-radius: 8px; font-size: 9px; font-weight: 800; padding: 1px 5px; color: #fff; }
+.drawer-footer { padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.07); }
+.drawer-out {
+  display: flex; align-items: center; gap: 8px; font-size: 12px; color: #f87171;
+  cursor: pointer; padding: 8px 6px; border-radius: 8px; transition: background 0.15s;
+}
+.drawer-out:hover { background: rgba(239,68,68,0.1); }
+
+/* placeholder screen */
+.empty-screen {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; padding: 20px; text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="pg-head">
+  <h1>FixTray — Hybrid Mobile UI</h1>
+  <p>Home = Tile Grid &nbsp;·&nbsp; Tap a tile → section opens on right phone &nbsp;·&nbsp; 🔧 = drawer menu &nbsp;·&nbsp; ＋ = new job submenu</p>
+</div>
+
+<div class="role-bar" id="roleBar">
+  <button class="role-btn active" data-role="shop"     onclick="setRole('shop',this)"    >🔧 Shop Owner</button>
+  <button class="role-btn"        data-role="tech"     onclick="setRole('tech',this)"    >⚙️ Technician</button>
+  <button class="role-btn"        data-role="customer" onclick="setRole('customer',this)">👤 Customer</button>
+  <button class="role-btn"        data-role="manager"  onclick="setRole('manager',this)" >📊 Manager</button>
+  <button class="role-btn"        data-role="admin"    onclick="setRole('admin',this)"   >🛡️ Admin</button>
+</div>
+
+<div class="phone-outer">
+  <div class="phone-wrap">
+    <div class="phone-label">Home Screen (Tile Grid)</div>
+    <div class="phone"><div class="phone-notch"></div><div class="phone-screen" id="screen1"></div></div>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone-label" id="labelB">Section View — tap a tile ←</div>
+    <div class="phone"><div class="phone-notch"></div><div class="phone-screen" id="screen2"></div></div>
+  </div>
+</div>
+
+<script>
+const R = {
+  shop:{
+    name:'Alex Rivera',rl:'Shop Owner',color:'#f59e0b',ico:'🔧',
+    tiles:[
+      {ico:'🗂️',name:'Work Orders',sub:'12 active',badge:'3',bg:'#0f1e3a',sec:'workorders',span2:true},
+      {ico:'📅',name:'Calendar',sub:'4 appts today',bg:'#0f2214',sec:'calendar'},
+      {ico:'👥',name:'Team',sub:'8 on shift',bg:'#1a0f2e',sec:'team'},
+      {ico:'💬',name:'Messages',sub:'5 unread',badge:'5',bg:'#0f0f2e',sec:'messages'},
+      {ico:'🔩',name:'Inventory',sub:'3 low-stock',badge:'!',bg:'#2e1a0a',sec:'inventory'},
+      {ico:'📊',name:'Reports',sub:"Today's summary",bg:'#0a1e2e',sec:'reports'},
+      {ico:'💳',name:'Payroll',sub:'Due Friday',bg:'#2e0f0f',sec:'payroll'},
+      {ico:'⚙️',name:'Settings',sub:'Shop config',bg:'#111318',sec:'settings'},
+    ],
+    footer:[{ico:'🏠',lbl:'Home',active:true},{ico:'🗂️',lbl:'Jobs',badge:'3'},'NEW',{ico:'💬',lbl:'Chat',badge:'5'},{ico:'📊',lbl:'Reports'}],
+    newOpts:[{ico:'🏪',title:'In-Shop Job',sub:'Customer is here at the shop'},{ico:'🚐',title:'Roadside Job',sub:'Vehicle at another location'}],
+    drawer:[
+      {t:'Operations',items:[{ico:'🗂️',lbl:'Work Orders',badge:'3'},{ico:'📅',lbl:'Calendar'},{ico:'🏪',lbl:'Bays / Waiting Room'},{ico:'🔍',lbl:'DVI Inspections'},{ico:'📝',lbl:'Work Authorizations'},{ico:'🔄',lbl:'Recurring Jobs'}]},
+      {t:'Team & Pay',items:[{ico:'👥',lbl:'Manage Team'},{ico:'🕐',lbl:'Time Clock'},{ico:'💳',lbl:'Payroll'},{ico:'🗓️',lbl:'Schedule'}]},
+      {t:'Inventory',items:[{ico:'🔩',lbl:'Inventory'},{ico:'🛒',lbl:'Purchase Orders'},{ico:'🏭',lbl:'Vendors'}]},
+      {t:'Finance',items:[{ico:'📊',lbl:'Reports'},{ico:'📈',lbl:'Analytics'},{ico:'💰',lbl:'Profit Margins'}]},
+      {t:'Settings',items:[{ico:'⚙️',lbl:'Settings'},{ico:'🔑',lbl:'API Keys'},{ico:'🔒',lbl:'2FA / Security'}]},
+    ],
+    sections:{
+      workorders:{title:'Work Orders',stats:[{n:'12',l:'Open Jobs',c:'+3 today'},{n:'$4.2k',l:"Revenue",c:'↑18%'},{n:'3',l:'Urgent',c:'Action needed'},{n:'94%',l:'On-Time',c:'This week'}],items:[{ico:'🔴',t:'#2041 – Ford F-150 Oil Change',s:'Bay 2 · Carlos M.',sc:'#ef4444',sl:'Urgent',ti:'Now'},{ico:'🟡',t:'#2039 – Chevy Tahoe Brakes',s:'Bay 1 · Maria S.',sc:'#f59e0b',sl:'Active',ti:'2h'},{ico:'🟢',t:'#2037 – Toyota Camry AC',s:'Bay 3 · Jamie C.',sc:'#22c55e',sl:'Ready',ti:'Done'},{ico:'⚪',t:'#2045 – Honda Civic Tune-up',s:'Pending assign',sc:'#64748b',sl:'Queued',ti:'Tmrw'},{ico:'⚪',t:'#2046 – Nissan Altima Check',s:'Pending assign',sc:'#64748b',sl:'Queued',ti:'Tmrw'}]},
+      calendar:{title:'Calendar',stats:[{n:'4',l:'Appts Today',c:'2 confirmed'},{n:'1',l:'No-Show Risk',c:'Send reminder'},{n:'18',l:'This Week',c:'Mon–Sun'},{n:'72%',l:'Bay Usage',c:'Right now'}],items:[{ico:'🟢',t:'9:00 AM – Toyota Camry',s:'Oil change · Bay 1',sc:'#22c55e',sl:'Confirmed',ti:'9:00'},{ico:'🟡',t:'11:00 AM – Ford F-150',s:'Inspection · Bay 2',sc:'#f59e0b',sl:'Pending',ti:'11:00'},{ico:'🟢',t:'2:00 PM – Chevy Tahoe',s:'Brakes · Bay 3',sc:'#22c55e',sl:'Confirmed',ti:'14:00'},{ico:'⚪',t:'4:30 PM – Honda Civic',s:'Tune-up · TBD',sc:'#64748b',sl:'TBD',ti:'16:30'}]},
+      messages:{title:'Messages',stats:[{n:'5',l:'Unread',c:'3 customers'},{n:'2',l:'Ests Out',c:'Awaiting reply'},{n:'1',l:'Urgent',c:'Authorization'},{n:'12',l:'This Week',c:'Total'}],items:[{ico:'🔴',t:'Maria S. – Authorization',s:'Approve brake job?',sc:'#ef4444',sl:'Urgent',ti:'5m'},{ico:'🟡',t:'Carlos M. – Update',s:'How much longer?',sc:'#f59e0b',sl:'Waiting',ti:'22m'},{ico:'⚪',t:'Sam J. – Estimate',s:'Is the part OEM?',sc:'#64748b',sl:'New',ti:'1h'},{ico:'⚪',t:'Team – Schedule',s:'Jamie: Shift swap?',sc:'#6366f1',sl:'Internal',ti:'2h'}]},
+      inventory:{title:'Inventory',stats:[{n:'3',l:'Low Stock',c:'Reorder now'},{n:'842',l:'Total SKUs',c:'In database'},{n:'$12.4k',l:'Stock Value',c:'On hand'},{n:'7',l:'Pending POs',c:'Incoming'}],items:[{ico:'🔴',t:'5W-30 Full Synthetic Oil',s:'Stock: 2 qts · Min: 24',sc:'#ef4444',sl:'Critical',ti:'Reorder'},{ico:'🟡',t:'Brake Pads – Front',s:'Stock: 4 sets · Min: 8',sc:'#f59e0b',sl:'Low',ti:'Order'},{ico:'🟡',t:'Air Filter – Standard',s:'Stock: 6 · Min: 10',sc:'#f59e0b',sl:'Low',ti:'Order'},{ico:'🟢',t:'Serpentine Belt',s:'Stock: 22 · OK',sc:'#22c55e',sl:'Good',ti:'Fine'}]},
+    },
+  },
+  tech:{
+    name:'Jamie Chen',rl:'Technician',color:'#10b981',ico:'⚙️',
+    tiles:[
+      {ico:'🗂️',name:'My Jobs',sub:'4 assigned',badge:'4',bg:'#0f1e3a',sec:'myjobs',span2:true},
+      {ico:'🔍',name:'DVI',sub:'2 pending',badge:'2',bg:'#0f2214',sec:'dvi'},
+      {ico:'📸',name:'Photos',sub:'Upload pics',bg:'#1a0f2e',sec:'photos'},
+      {ico:'💬',name:'Messages',sub:'1 unread',badge:'1',bg:'#0f0f2e',sec:'messages'},
+      {ico:'🧪',name:'Diagnostics',sub:'DTC lookup',bg:'#111318',sec:'diagnostics'},
+      {ico:'📖',name:'Manuals',sub:'Look up specs',bg:'#0a1e2e',sec:'manuals'},
+      {ico:'🕐',name:'Time Clock',sub:'In since 7:02',bg:'#2e0f0f',sec:'timeclock'},
+      {ico:'🔧',name:'All Tools',sub:'Shop toolkit',bg:'#2e1a0a',sec:'tools'},
+    ],
+    footer:[{ico:'🏠',lbl:'Home',active:true},{ico:'🗂️',lbl:'My Jobs',badge:'4'},'NEW',{ico:'💬',lbl:'Chat',badge:'1'},{ico:'👤',lbl:'Profile'}],
+    newOpts:[{ico:'🏪',title:'In-Shop Job',sub:'Start new in-shop repair'},{ico:'🚐',title:'Roadside Job',sub:'Start roadside service call'}],
+    drawer:[
+      {t:'My Work',items:[{ico:'🗂️',lbl:'My Jobs',badge:'4'},{ico:'🔍',lbl:'DVI / Inspections',badge:'2'},{ico:'📸',lbl:'Job Photos'},{ico:'🚐',lbl:'Roadside Jobs'}]},
+      {t:'Lookup',items:[{ico:'🧪',lbl:'Diagnostics / DTC'},{ico:'📖',lbl:'Service Manuals'},{ico:'🔧',lbl:'All Tools'}]},
+      {t:'Time',items:[{ico:'🕐',lbl:'Time Clock'},{ico:'📋',lbl:'My Timesheet'}]},
+      {t:'Account',items:[{ico:'👤',lbl:'Profile'},{ico:'🔒',lbl:'2FA Settings'}]},
+    ],
+    sections:{
+      myjobs:{title:'My Jobs',stats:[{n:'4',l:'Assigned',c:'1 urgent'},{n:'7h12m',l:'Clocked In',c:'Since 7:02'},{n:'2',l:'Pending DVI',c:'Need photos'},{n:'92%',l:'Efficiency',c:'This week'}],items:[{ico:'🔴',t:'#2041 – Ford F-150',s:'Oil change · Bay 2',sc:'#ef4444',sl:'My Turn',ti:'Now'},{ico:'🟡',t:'#2039 – Chevy Tahoe',s:'Brake pads · Bay 1',sc:'#f59e0b',sl:'Active',ti:'2h'},{ico:'⚪',t:'#2045 – Honda Civic',s:'Tune-up · Queued',sc:'#64748b',sl:'Next',ti:'Tmrw'},{ico:'⚪',t:'#2047 – Nissan Altima',s:'Check engine · Queue',sc:'#64748b',sl:'Queued',ti:'Tmrw'}]},
+      dvi:{title:'DVI Inspections',stats:[{n:'2',l:'Pending',c:'Upload photos'},{n:'5',l:'Done Today',c:'Submitted'},{n:'1',l:'Flagged',c:'Needs review'},{n:'100%',l:'This Week',c:'Completed'}],items:[{ico:'🔴',t:'#2041 – Ford F-150 DVI',s:'Photos needed · Bay 2',sc:'#ef4444',sl:'Pending',ti:'Now'},{ico:'🟡',t:'#2039 – Chevy Tahoe DVI',s:'Awaiting approval',sc:'#f59e0b',sl:'Review',ti:'1h'},{ico:'🟢',t:'#2037 – Toyota Camry DVI',s:'Complete · Sent',sc:'#22c55e',sl:'Done',ti:'AM'}]},
+      messages:{title:'Messages',stats:[{n:'1',l:'Unread',c:'From shop'},{n:'3',l:'Threads',c:'Active'},{n:'0',l:'Unresolved',c:'All replied'},{n:'12',l:'This Week',c:'Total'}],items:[{ico:'🟡',t:'Shop – Job Update',s:'#2041 needs auth',sc:'#f59e0b',sl:'Action',ti:'15m'},{ico:'⚪',t:'Carlos – Parts ETA',s:'Here by 2pm',sc:'#64748b',sl:'Info',ti:'1h'},{ico:'⚪',t:'Manager – Schedule',s:'Shift swap approved',sc:'#22c55e',sl:'Done',ti:'3h'}]},
+    },
+  },
+  customer:{
+    name:'Sam Johnson',rl:'Customer',color:'#06b6d4',ico:'👤',
+    tiles:[
+      {ico:'🚗',name:'My Vehicles',sub:'2 vehicles',bg:'#0f1e3a',sec:'vehicles',span2:true},
+      {ico:'🗂️',name:'Service History',sub:'8 past jobs',bg:'#0f2214',sec:'history'},
+      {ico:'📅',name:'Appointments',sub:'Next: May 7',badge:'1',bg:'#1a0f2e',sec:'appts'},
+      {ico:'💬',name:'Messages',sub:'Reply needed',badge:'2',bg:'#0f0f2e',sec:'messages'},
+      {ico:'💰',name:'Estimates',sub:'1 pending',badge:'1',bg:'#2e1a0a',sec:'estimates'},
+      {ico:'💳',name:'Payments',sub:'$240 due',badge:'!',bg:'#2e0f0f',sec:'payments'},
+      {ico:'📍',name:'Find Shops',sub:'Near me',bg:'#0a1e2e',sec:'findshops'},
+      {ico:'⭐',name:'Reviews',sub:'Leave feedback',bg:'#2e2a0a',sec:'reviews'},
+    ],
+    footer:[{ico:'🏠',lbl:'Home',active:true},{ico:'🗂️',lbl:'History'},'NEW',{ico:'💬',lbl:'Chat',badge:'2'},{ico:'👤',lbl:'Profile'}],
+    newOpts:[{ico:'📅',title:'Book Appointment',sub:'Schedule at a shop near you'},{ico:'🔔',title:'Request Service',sub:'Send a service request'}],
+    drawer:[
+      {t:'My Cars',items:[{ico:'🚗',lbl:'My Vehicles'},{ico:'🗂️',lbl:'Service History'},{ico:'📋',lbl:'Active Work Orders'}]},
+      {t:'Appointments',items:[{ico:'📅',lbl:'Appointments',badge:'1'},{ico:'🔄',lbl:'Recurring Approvals'}]},
+      {t:'Finances',items:[{ico:'💰',lbl:'Estimates',badge:'1'},{ico:'💳',lbl:'Payments'},{ico:'📄',lbl:'Documents'}]},
+      {t:'Discover',items:[{ico:'📍',lbl:'Find Shops'},{ico:'❤️',lbl:'Favorites'},{ico:'🏆',lbl:'Rewards'},{ico:'⭐',lbl:'Reviews'}]},
+      {t:'Account',items:[{ico:'👤',lbl:'Profile'},{ico:'🔔',lbl:'Notifications'}]},
+    ],
+    sections:{
+      vehicles:{title:'My Vehicles',stats:[{n:'2',l:'Vehicles',c:'1 in service'},{n:'$240',l:'Balance Due',c:'Invoice #2041'},{n:'1',l:'Pending Est.',c:'Approve now'},{n:'850',l:'Reward Pts',c:'+50 this month'}],items:[{ico:'🚗',t:'2023 Toyota Camry',s:'In service · FixTray Auto',sc:'#f59e0b',sl:'Active',ti:'Today'},{ico:'🚙',t:'2019 Honda CRV',s:'Last svc: Apr 22',sc:'#22c55e',sl:'Good',ti:'Apr 22'}]},
+      history:{title:'Service History',stats:[{n:'8',l:'Past Jobs',c:'All shops'},{n:'$1,840',l:'Total Spent',c:'All time'},{n:'4.8★',l:'Avg Rating',c:'You gave'},{n:'2',l:'Shops Used',c:'Regulars'}],items:[{ico:'🟢',t:'Camry – Oil Service',s:'FixTray Auto · May 4',sc:'#22c55e',sl:'Done',ti:'Today'},{ico:'🟢',t:'CRV – Tire Rotation',s:'FixTray Auto · Apr 22',sc:'#22c55e',sl:'Done',ti:'Apr 22'},{ico:'🟢',t:'Camry – Brake Inspect',s:'FixTray Auto · Mar 10',sc:'#22c55e',sl:'Done',ti:'Mar 10'},{ico:'🟢',t:'CRV – Oil Change',s:'FixTray Auto · Feb 14',sc:'#22c55e',sl:'Done',ti:'Feb 14'}]},
+      messages:{title:'Messages',stats:[{n:'2',l:'Unread',c:'From shop'},{n:'1',l:'Awaiting Reply',c:'From you'},{n:'1',l:'Auth Needed',c:'Approve now'},{n:'5',l:'This Month',c:'Total'}],items:[{ico:'🔴',t:'FixTray Auto – Authorization',s:'Approve brake job $890?',sc:'#ef4444',sl:'Action',ti:'1h'},{ico:'🟡',t:'FixTray Auto – Update',s:'Your Camry is ready!',sc:'#22c55e',sl:'New',ti:'30m'},{ico:'⚪',t:'FixTray Auto – Invoice',s:'Invoice #2041 attached',sc:'#64748b',sl:'Read',ti:'2h'}]},
+      estimates:{title:'Estimates',stats:[{n:'1',l:'Pending',c:'Needs approval'},{n:'$890',l:'Est. Amount',c:'Brake job'},{n:'48h',l:'Expires In',c:'Approve ASAP'},{n:'3',l:'Past Ests.',c:'All approved'}],items:[{ico:'🔴',t:'Brake Pad Replacement',s:'2023 Camry · $890',sc:'#ef4444',sl:'Approve?',ti:'2d left'},{ico:'🟢',t:'Oil Change Service',s:'Apr 22 · $89',sc:'#22c55e',sl:'Done',ti:'Apr 22'},{ico:'🟢',t:'Tire Rotation',s:'Mar 10 · $45',sc:'#22c55e',sl:'Done',ti:'Mar 10'}]},
+    },
+  },
+  manager:{
+    name:'Morgan Lee',rl:'Manager',color:'#8b5cf6',ico:'📊',
+    tiles:[
+      {ico:'📋',name:'Assignments',sub:'3 unassigned',badge:'3',bg:'#0f1e3a',sec:'assignments',span2:true},
+      {ico:'✅',name:'Approvals',sub:'2 waiting',badge:'2',bg:'#0f2214',sec:'approvals'},
+      {ico:'👥',name:'Team',sub:'10 staff',bg:'#1a0f2e',sec:'team'},
+      {ico:'💬',name:'Messages',sub:'4 unread',badge:'4',bg:'#0f0f2e',sec:'messages'},
+      {ico:'📊',name:'Reports',sub:'KPIs & metrics',bg:'#0a1e2e',sec:'reports'},
+      {ico:'🗓️',name:'Schedule',sub:"Today's shifts",bg:'#2e1a0a',sec:'schedule'},
+      {ico:'💳',name:'Payroll',sub:'Review timesheets',bg:'#2e0f0f',sec:'payroll'},
+      {ico:'⚙️',name:'Settings',sub:'Permissions',bg:'#111318',sec:'settings'},
+    ],
+    footer:[{ico:'🏠',lbl:'Home',active:true},{ico:'📋',lbl:'Assign',badge:'3'},'NEW',{ico:'💬',lbl:'Chat',badge:'4'},{ico:'📊',lbl:'Reports'}],
+    newOpts:[{ico:'🏪',title:'In-Shop Job',sub:'Create new in-shop work order'},{ico:'🚐',title:'Roadside Job',sub:'Dispatch a roadside job'}],
+    drawer:[
+      {t:'Operations',items:[{ico:'📋',lbl:'Assignments',badge:'3'},{ico:'✅',lbl:'Approvals',badge:'2'},{ico:'📝',lbl:'Work Authorizations'},{ico:'🔄',lbl:'Recurring Jobs'}]},
+      {t:'Team',items:[{ico:'👥',lbl:'Team'},{ico:'🗓️',lbl:'Schedule'},{ico:'🕐',lbl:'Time Clock'},{ico:'💳',lbl:'Payroll'}]},
+      {t:'Reports',items:[{ico:'📊',lbl:'Reports'},{ico:'📋',lbl:'Templates'},{ico:'🔧',lbl:'Inventory'}]},
+      {t:'Settings',items:[{ico:'⚙️',lbl:'Settings'},{ico:'🔒',lbl:'Permissions'},{ico:'🛡️',lbl:'Admin Logs'}]},
+    ],
+    sections:{
+      assignments:{title:'Assignments',stats:[{n:'3',l:'Unassigned',c:'Action needed!'},{n:'2',l:'Pending Approval',c:'Review now'},{n:'10',l:'Staff Today',c:'2 on break'},{n:'$6.8k',l:'Jobs Today',c:'↑12%'}],items:[{ico:'🔴',t:'#2041 – Ford F-150 · Urgent',s:'No tech assigned',sc:'#ef4444',sl:'Unassigned',ti:'Now'},{ico:'🔴',t:'#2044 – Dodge Ram · Oil',s:'No tech assigned',sc:'#ef4444',sl:'Unassigned',ti:'20m'},{ico:'🟡',t:'#2043 – Brake approval',s:'Estimate $890 pending',sc:'#f59e0b',sl:'Approve?',ti:'1h'},{ico:'🟢',t:'#2039 – Carlos assigned',s:'Chevy Tahoe · Bay 1',sc:'#22c55e',sl:'On Track',ti:'2h left'}]},
+      messages:{title:'Messages',stats:[{n:'4',l:'Unread',c:'Team + customer'},{n:'1',l:'Urgent',c:'Authorization'},{n:'2',l:'From Techs',c:'Questions'},{n:'1',l:'Customer',c:'Complaint'}],items:[{ico:'🔴',t:'Jamie – DVI Question',s:'Flag the suspension?',sc:'#ef4444',sl:'Urgent',ti:'10m'},{ico:'🟡',t:'Carlos – Parts Delay',s:'Brake pads delayed 2h',sc:'#f59e0b',sl:'FYI',ti:'25m'},{ico:'🟡',t:'Customer #2043 – Unhappy',s:'Been waiting 3h, update?',sc:'#f59e0b',sl:'Handle',ti:'1h'},{ico:'⚪',t:'Team Announcement',s:'Staff meeting at 5pm',sc:'#64748b',sl:'Read',ti:'3h'}]},
+    },
+  },
+  admin:{
+    name:'SupAdm1006',rl:'Super Admin',color:'#ef4444',ico:'🛡️',
+    tiles:[
+      {ico:'🏪',name:'Manage Shops',sub:'142 shops',bg:'#0f1e3a',sec:'shops',span2:true},
+      {ico:'⏳',name:'Pending Shops',sub:'7 awaiting',badge:'7',bg:'#2e1a0a',sec:'pending'},
+      {ico:'👥',name:'Users',sub:'3,841 total',bg:'#0f2214',sec:'users'},
+      {ico:'💰',name:'Revenue',sub:'$84k MRR',bg:'#0a1e2e',sec:'revenue'},
+      {ico:'📊',name:'Analytics',sub:'Platform-wide',bg:'#1a0f2e',sec:'analytics'},
+      {ico:'🔐',name:'Security',sub:'0 threats',bg:'#0f0f2e',sec:'security'},
+      {ico:'📧',name:'Email Templates',sub:'12 templates',bg:'#2e0f0f',sec:'email'},
+      {ico:'⚙️',name:'System',sub:'All settings',bg:'#111318',sec:'system'},
+    ],
+    footer:[{ico:'🏠',lbl:'Home',active:true},{ico:'🏪',lbl:'Shops',badge:'7'},'NEW',{ico:'💬',lbl:'Chat'},{ico:'⚙️',lbl:'System'}],
+    newOpts:[{ico:'🏪',title:'Add Shop',sub:'Manually register a new shop'},{ico:'👤',title:'Add User',sub:'Create new admin or user'}],
+    drawer:[
+      {t:'Shops',items:[{ico:'🏪',lbl:'Manage Shops'},{ico:'⏳',lbl:'Pending Shops',badge:'7'},{ico:'✅',lbl:'Accepted Shops'},{ico:'📋',lbl:'Subscriptions'}]},
+      {t:'Users',items:[{ico:'👥',lbl:'User Management'},{ico:'👤',lbl:'Customers'},{ico:'🏢',lbl:'Tenants'}]},
+      {t:'Finance',items:[{ico:'💰',lbl:'Revenue'},{ico:'📊',lbl:'Financial Reports'},{ico:'🎟️',lbl:'Coupons'}]},
+      {t:'Platform',items:[{ico:'📈',lbl:'Analytics'},{ico:'🔐',lbl:'Security Settings'},{ico:'📋',lbl:'Activity Logs'},{ico:'🖥️',lbl:'Sessions'},{ico:'📧',lbl:'Email Templates'},{ico:'🏗️',lbl:'System Settings'},{ico:'💾',lbl:'Backup & Restore'}]},
+    ],
+    sections:{
+      pending:{title:'Pending Shops',stats:[{n:'7',l:'Awaiting',c:'3 new today'},{n:'2',l:'Under Review',c:'In progress'},{n:'142',l:'Active Shops',c:'Approved'},{n:'4.1d',l:'Avg Review',c:'Last 30 days'}],items:[{ico:'🟡',t:'AutoFix Express',s:'Applied 3d ago · Houston TX',sc:'#f59e0b',sl:'Review',ti:'3d'},{ico:'🟡',t:'Quick Lube 360',s:'Applied today · Dallas TX',sc:'#3b82f6',sl:'New',ti:'2h'},{ico:'🟡',t:"Mike's Garage",s:'Applied today · Austin TX',sc:'#3b82f6',sl:'New',ti:'4h'},{ico:'🔴',t:'Premier Auto Care',s:'Payment failed',sc:'#ef4444',sl:'Action',ti:'1d'},{ico:'⚪',t:'City Tire & Auto',s:'Docs pending',sc:'#64748b',sl:'Waiting',ti:'5d'}]},
+      shops:{title:'Manage Shops',stats:[{n:'142',l:'Active',c:'+3 this week'},{n:'7',l:'Pending',c:'Need review'},{n:'$84k',l:'MRR',c:'↑8% MoM'},{n:'98.2%',l:'Uptime',c:'All shops'}],items:[{ico:'🟢',t:'FixTray Auto – Houston',s:'Pro Plan · 8 techs',sc:'#22c55e',sl:'Active',ti:'Good'},{ico:'🟢',t:'Quick Lube Express',s:'Starter · 2 techs',sc:'#22c55e',sl:'Active',ti:'Good'},{ico:'🔴',t:"Mike's Garage",s:'Payment failed · Suspended',sc:'#ef4444',sl:'Issue',ti:'Action'},{ico:'🟡',t:'City Auto Repair',s:'Enterprise · Renewing soon',sc:'#f59e0b',sl:'Renew',ti:'7d'}]},
+      security:{title:'Security',stats:[{n:'0',l:'Threats',c:'All clear'},{n:'3',l:'Alerts Today',c:'Resolved'},{n:'841',l:'Sessions',c:'Right now'},{n:'99.9%',l:'Auth Rate',c:'Last 24h'}],items:[{ico:'🟢',t:'System Health',s:'All services up',sc:'#22c55e',sl:'OK',ti:'Now'},{ico:'🟡',t:'Rate Limit Hit',s:'5 IPs auto-blocked',sc:'#f59e0b',sl:'Resolved',ti:'3h'},{ico:'🟡',t:'Login Spike',s:'+12 fails in 5min',sc:'#f59e0b',sl:'Resolved',ti:'6h'},{ico:'🟢',t:'2FA Enforcement',s:'98.4% admins enrolled',sc:'#22c55e',sl:'Good',ti:'Today'}]},
+    },
+  },
+};
+
+let role = 'shop';
+
+function setRole(r, btn) {
+  role = r;
+  document.querySelectorAll('.role-btn').forEach(b => { b.classList.remove('active'); b.style.cssText=''; });
+  const d = R[r];
+  btn.classList.add('active');
+  btn.style.background = d.color+'22'; btn.style.borderColor = d.color; btn.style.color = d.color;
+  render();
+}
+
+function render() {
+  buildPhone('screen1', true, null);
+  buildPhone('screen2', false, null);
+  document.getElementById('labelB').textContent = 'Section View — tap a tile ←';
+}
+
+function buildPhone(id, isHome, sectionKey) {
+  const d = R[role];
+  const el = document.getElementById(id);
+  const sec = sectionKey ? d.sections?.[sectionKey] : null;
+
+  el.innerHTML =
+    statusBar() +
+    header(d, !!sec, sec?.title) +
+    (isHome ? homeContent(d) : (sec ? sectionContent(sec, d.color) : emptyContent())) +
+    footer(d) +
+    drawer(d);
+
+  // NEW button
+  el.querySelectorAll('.fn-new').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const menu = el.querySelector('.new-menu');
+      const fab  = el.querySelector('.fn-new-circle');
+      const dim  = el.querySelector('.screen-dim');
+      const open = menu.classList.toggle('open');
+      fab.classList.toggle('rotated', open);
+      dim.classList.toggle('show', open);
+    });
+  });
+  // dismiss dim
+  const dim = el.querySelector('.screen-dim');
+  if (dim) dim.addEventListener('click', () => {
+    el.querySelector('.new-menu')?.classList.remove('open');
+    el.querySelector('.fn-new-circle')?.classList.remove('rotated');
+    dim.classList.remove('show');
+  });
+  // new option close
+  el.querySelectorAll('.new-opt').forEach(opt => {
+    opt.addEventListener('click', e => {
+      e.stopPropagation();
+      el.querySelector('.new-menu')?.classList.remove('open');
+      el.querySelector('.fn-new-circle')?.classList.remove('rotated');
+      dim?.classList.remove('show');
+    });
+  });
+  // drawer
+  el.querySelectorAll('.drawer-trigger').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      el.querySelector('.drawer-overlay').classList.add('open');
+    });
+  });
+  el.querySelector('.drawer-overlay')?.addEventListener('click', () => {
+    el.querySelector('.drawer-overlay').classList.remove('open');
+  });
+  el.querySelector('.drawer')?.addEventListener('click', e => e.stopPropagation());
+  el.querySelector('.drawer-out')?.addEventListener('click', () => {
+    el.querySelector('.drawer-overlay').classList.remove('open');
+  });
+  // tile taps (only on phone 1)
+  if (isHome) {
+    el.querySelectorAll('.tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const sec = tile.dataset.sec;
+        buildPhone('screen2', false, sec);
+        const d2 = R[role];
+        const secData = d2.sections?.[sec];
+        document.getElementById('labelB').textContent = secData ? secData.title : sec;
+      });
+    });
+  }
+  // back button
+  el.querySelector('.back-btn')?.addEventListener('click', () => {
+    buildPhone('screen2', false, null);
+    document.getElementById('labelB').textContent = 'Section View — tap a tile ←';
+    // re-attach for new phone2
+    const el2 = document.getElementById('screen2');
+    el2.querySelector('.drawer-overlay')?.addEventListener('click', () => el2.querySelector('.drawer-overlay').classList.remove('open'));
+  });
+}
+
+function statusBar() {
+  return `<div class="status-bar"><span>9:41</span><div class="sb-right"><span>●●●●</span><div class="bat"><div class="bat-f"></div></div></div></div>`;
+}
+
+function header(d, showBack, title) {
+  if (showBack) {
+    return `<div class="app-header">
+      <div class="hdr-left">
+        <div class="hdr-menu back-btn" style="font-size:16px">←</div>
+        <div><div class="hdr-title">${title}</div></div>
+      </div>
+      <div class="hdr-right">
+        <div class="hdr-avatar" style="background:${d.color}18;border-color:${d.color}55;color:${d.color}">${d.ico}</div>
+      </div>
+    </div>`;
+  }
+  return `<div class="app-header">
+    <div class="hdr-left">
+      <div class="hdr-menu drawer-trigger">🔧</div>
+      <div><div class="hdr-title">FixTray</div><div class="hdr-sub">${d.rl}</div></div>
+    </div>
+    <div class="hdr-right">
+      <div class="hdr-avatar" style="background:${d.color}18;border-color:${d.color}55;color:${d.color}">${d.ico}</div>
+    </div>
+  </div>`;
+}
+
+function homeContent(d) {
+  const tiles = d.tiles.map(t =>
+    `<div class="tile${t.span2?' span2':''}" data-sec="${t.sec}"
+      style="background:${t.bg};border-color:rgba(255,255,255,0.04)">
+      ${t.badge?`<div class="t-badge">${t.badge}</div>`:''}
+      <div class="t-ico">${t.ico}</div>
+      <div><div class="t-name">${t.name}</div><div class="t-sub">${t.sub}</div></div>
+    </div>`
+  ).join('');
+  return `<div class="home-scroll"><div class="sec-label">Quick Access</div><div class="tile-grid">${tiles}</div></div>`;
+}
+
+function sectionContent(sec, color) {
+  const stats = sec.stats.map(s =>
+    `<div class="stat-card"><div class="stat-num" style="color:${color}">${s.n}</div><div class="stat-lbl">${s.l}</div><div class="stat-chg">${s.c}</div></div>`
+  ).join('');
+  const items = sec.items.map(i =>
+    `<div class="list-item">
+      <div class="li-icon">${i.ico}</div>
+      <div class="li-body"><div class="li-title">${i.t}</div><div class="li-sub">${i.s}</div></div>
+      <div class="li-right"><div class="li-status" style="background:${i.sc}22;color:${i.sc}">${i.sl}</div><div class="li-time">${i.ti}</div></div>
+    </div>`
+  ).join('');
+  return `<div class="section-scroll"><div class="stats-row">${stats}</div><div class="sec-label">Recent</div>${items}</div>`;
+}
+
+function emptyContent() {
+  return `<div class="empty-screen"><div style="font-size:40px;opacity:0.15">👆</div><div style="font-size:12px;font-weight:700;color:#1e2230">Tap a tile on the left</div><div style="font-size:10px;color:#151820;margin-top:4px">Section opens here</div></div>`;
+}
+
+function footer(d) {
+  const items = d.footer.map(f => {
+    if (f === 'NEW') {
+      const opts = d.newOpts.map(o =>
+        `<div class="new-opt"><div class="no-ico">${o.ico}</div><div><div class="no-title">${o.title}</div><div class="no-sub">${o.sub}</div></div></div>`
+      ).join('');
+      return `<div class="fn-new">
+        <div class="fn-new-circle" style="background:${d.color}">＋</div>
+        <span class="fn-new-label">New</span>
+        <div class="new-menu">
+          <div class="new-menu-title">Create New</div>
+          ${opts}
+        </div>
+      </div>`;
+    }
+    return `<div class="fn-item${f.active?' active':''}">
+      <div class="fn-pip"></div>
+      <div class="fn-icon">${f.ico}</div>
+      <span>${f.lbl}</span>
+      ${f.badge?`<div class="fn-badge">${f.badge}</div>`:''}
+    </div>`;
+  }).join('');
+  return `<div class="screen-dim"></div><div class="footer-nav">${items}</div>`;
+}
+
+function drawer(d) {
+  const secs = d.drawer.map(sec =>
+    `<div class="drawer-sec">${sec.t}</div>` +
+    sec.items.map(i =>
+      `<div class="drawer-item"><span class="di-ico">${i.ico}</span><span>${i.lbl}</span>${i.badge?`<span class="di-badge">${i.badge}</span>`:''}</div>`
+    ).join('')
+  ).join('');
+  return `<div class="drawer-overlay">
+    <div class="drawer">
+      <div class="drawer-head">
+        <div class="drawer-avatar" style="background:${d.color}22;border:1.5px solid ${d.color}55;color:${d.color}">${d.ico}</div>
+        <div class="drawer-name">${d.name}</div>
+        <div class="drawer-role-lbl">${d.rl}</div>
+      </div>
+      <div class="drawer-body">${secs}</div>
+      <div class="drawer-footer"><div class="drawer-out">🚪 Sign Out</div></div>
+    </div>
+  </div>`;
+}
+
+// Init
+render();
+document.querySelector('[data-role="shop"]').style.cssText = 'background:#f59e0b22;border-color:#f59e0b;color:#f59e0b';
+</script>
+</body>
+</html>

@@ -16,7 +16,7 @@ interface EnvFee {
 const FEE_ICONS: Record<string, ReactNode> = { oil: <FaOilCan style={{marginRight:4}} />, tire: <FaSyncAlt style={{marginRight:4}} />, refrigerant: <FaSnowflake style={{marginRight:4}} />, battery: <FaBatteryFull style={{marginRight:4}} />, coolant: <FaTint style={{marginRight:4}} />, other: <FaRecycle style={{marginRight:4}} /> };
 
 export default function EnvironmentalFeesPage() {
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [fees, setFees] = useState<EnvFee[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -73,7 +73,7 @@ export default function EnvironmentalFeesPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaRecycle style={{marginRight:4}} /> Environmental Fees</h1>

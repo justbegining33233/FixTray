@@ -79,13 +79,13 @@ export default function CustomerDVIPage() {
   };
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
+    <div style={{ minHeight: '100vh', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
       Loading inspection...
     </div>
   );
 
   if (error || !inspection) return (
-    <div style={{ minHeight: '100vh', background: '#111827', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb', textAlign: 'center', padding: 32 }}>
+    <div style={{ minHeight: '100vh', background: '#000000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb', textAlign: 'center', padding: 32 }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}><FaSearch style={{marginRight:4}} /></div>
       <h2 style={{ margin: '0 0 8px', fontSize: 22 }}>Inspection Not Found</h2>
       <p style={{ color: '#9ca3af' }}>{error || 'This inspection link may have expired or is invalid.'}</p>
@@ -98,12 +98,12 @@ export default function CustomerDVIPage() {
   const totalEstimate = inspection.items.filter(i => i.condition !== 'green' && i.estimatedCost).reduce((s, i) => s + (i.estimatedCost || 0), 0);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#111827', color: '#e5e7eb', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#000000', color: '#e5e7eb', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
       <div style={{ background: '#1f2937', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '20px 24px' }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}><FaSearch style={{marginRight:4}} /> Vehicle Inspection Report</h1>
         {inspection.vehicleDesc && (
-          <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>{inspection.vehicleDesc}{inspection.mileage ? ` · ${inspection.mileage.toLocaleString()} miles` : ''}</p>
+          <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>{inspection.vehicleDesc}{inspection.mileage ? `  ${inspection.mileage.toLocaleString()} miles` : ''}</p>
         )}
         <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 13 }}>{new Date(inspection.createdAt).toLocaleDateString()}</p>
       </div>

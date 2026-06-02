@@ -51,41 +51,41 @@ export default function ContactPage() {
 
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <div className="grid gap-8 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-800/70 bg-slate-950/70 p-8">
+          <div className="rounded-3xl border border-white/10 bg-black p-8">
             <h2 className="text-2xl font-semibold text-white">Contact details</h2>
             <ul className="mt-6 space-y-4 text-sm text-slate-300">
               <li><span className="text-slate-500">Email:</span> support@fixtray.app</li>
               <li><span className="text-slate-500">Availability:</span> Mon-Fri, 8am-6pm</li>
             </ul>
           </div>
-          <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-800/70 bg-slate-950/70 p-8">
+          <form onSubmit={handleSubmit} className="rounded-3xl border border-white/10 bg-black p-8">
             <div className="grid gap-4">
               <input
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
+                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
                 placeholder="Full name"
               />
               <input
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
+                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
                 placeholder="Work email"
                 type="email"
               />
               <input
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                className="w-full rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
+                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
                 placeholder="Company"
               />
               <textarea
                 required
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="min-h-[120px] w-full rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
+                className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500"
                 placeholder="Tell us about your operation"
               />
 

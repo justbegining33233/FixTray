@@ -24,6 +24,7 @@ const conditionBg: Record<string, string> = { green: 'rgba(34,197,94,0.1)', yell
 export default function DVIPage() {
   const { user, isLoading } = useRequireAuth(['shop']);
   const [inspections, setInspections] = useState<DVIInspection[]>([]);
+  const [workOrderOptions, setWorkOrderOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<DVIInspection | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -36,8 +37,30 @@ export default function DVIPage() {
   const load = async () => {
     setLoading(true);
     const token = localStorage.getItem('token');
-    const r = await fetch('/api/dvi', { headers: { Authorization: `Bearer ${token}` } });
-    if (r.ok) setInspections(await r.json());
+    const [dviRes, baysRes, workOrdersRes] = await Promise.all([
+      fetch('/api/dvi', { headers: { Authorization: `Bearer ${token}` } }),
+      fetch('/api/bays', { headers: { Authorization: `Bearer ${token}` } }),
+      fetch('/api/workorders?limit=100', { headers: { Authorization: `Bearer ${token}` } }),
+    ]);
+    if (dviRes.ok) setInspections(await dviRes.json());
+
+    const bayIds = baysRes.ok
+      ? ((await baysRes.json()) as any[])
+          .filter((b) => b?.workOrderId)
+          .map((b) => b.workOrderId)
+      : [];
+
+    let workOrders: any[] = [];
+    if (workOrdersRes.ok) {
+      const workOrdersData = await workOrdersRes.json();
+      workOrders = Array.isArray(workOrdersData?.workOrders) ? workOrdersData.workOrders : [];
+    }
+
+    const options = (Array.isArray(workOrders) ? workOrders : []).filter((wo: any) => {
+      const status = String(wo?.status || '').toLowerCase();
+      return bayIds.includes(wo.id) || ['pending', 'in-progress', 'waiting'].includes(status);
+    });
+    setWorkOrderOptions(options);
     setLoading(false);
   };
 
@@ -121,7 +144,7 @@ export default function DVIPage() {
   const categories = selected ? [...new Set(selected.items.map(i => i.category))] : [];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaSearch style={{marginRight:4}} /> Digital Vehicle Inspections</h1>
@@ -155,8 +178,8 @@ export default function DVIPage() {
                       </div>
                       <span style={{
                         background: insp.status === 'approved' ? 'rgba(34,197,94,0.2)' : insp.status === 'sent' ? 'rgba(96,165,250,0.2)' : 'rgba(245,158,11,0.2)',
-                        color: insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#60a5fa' : '#f59e0b',
-                        border: `1px solid ${insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#60a5fa' : '#f59e0b'}`,
+                        color: insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#ff6b64' : '#f59e0b',
+                        border: `1px solid ${insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#ff6b64' : '#f59e0b'}`,
                         borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
                       }}>{insp.status}</span>
                     </div>
@@ -177,7 +200,7 @@ export default function DVIPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>{selected.vehicleDesc || 'Vehicle Inspection'}</h3>
-                <div style={{ fontSize: 13, color: '#9ca3af' }}>{selected.mileage ? `${selected.mileage.toLocaleString()} miles` : ''} · {new Date(selected.createdAt).toLocaleDateString()}</div>
+                <div style={{ fontSize: 13, color: '#9ca3af' }}>{selected.mileage ? `${selected.mileage.toLocaleString()} miles` : ''}  {new Date(selected.createdAt).toLocaleDateString()}</div>
               </div>
               <button onClick={() => setSelected(null)} style={{ background: 'transparent', color: '#6b7280', border: 'none', cursor: 'pointer', fontSize: 18 }}><FaTimes style={{marginRight:4}} /></button>
             </div>
@@ -185,13 +208,13 @@ export default function DVIPage() {
             {/* Send / Copy Link */}
             {selected.status === 'in-progress' && (
               <button onClick={() => sendToCustomer(selected.id)}
-                style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
+                style={{ width: '100%', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
                 <FaUpload style={{marginRight:4}} /> Send to Customer for Approval
               </button>
             )}
             {selected.approvalToken && (
               <button onClick={() => copyLink(selected.approvalToken)}
-                style={{ width: '100%', background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid #3b82f6', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
+                style={{ width: '100%', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid #e5332a', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
                 {copied === selected.approvalToken ? <><FaCheckCircle style={{marginRight:4}} /> Link Copied!</> : <><FaLink style={{marginRight:4}} /> Copy Customer Review Link</>}
               </button>
             )}
@@ -242,7 +265,31 @@ export default function DVIPage() {
           <div style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 420, maxWidth: '90%' }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Start New DVI</h3>
             <p style={{ color: '#9ca3af', fontSize: 13, marginTop: 0, marginBottom: 20 }}>A 19-point inspection template will be created. You can adjust each item&apos;s condition () after creation.</p>
-            {[['vehicleDesc', 'Vehicle (Year/Make/Model)'], ['mileage', 'Current Mileage'], ['workOrderId', 'Work Order ID (optional)'], ['notes', 'Notes (optional)']].map(([k, label]) => (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Work Order (from bays/waiting)</label>
+              <select
+                value={newForm.workOrderId}
+                onChange={(e) => {
+                  const selectedWo = workOrderOptions.find((wo) => wo.id === e.target.value);
+                  setNewForm((p) => ({
+                    ...p,
+                    workOrderId: e.target.value,
+                    vehicleDesc: selectedWo
+                      ? `${selectedWo?.vehicle?.year ? `${selectedWo.vehicle.year} ` : ''}${selectedWo?.vehicle?.make || ''} ${selectedWo?.vehicle?.model || ''}`.trim() || p.vehicleDesc
+                      : p.vehicleDesc,
+                  }));
+                }}
+                style={{ width: '100%', background: '#374151', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 14 }}
+              >
+                <option value="">Select work order...</option>
+                {workOrderOptions.map((wo) => (
+                  <option key={wo.id} value={wo.id}>
+                    #{wo.id.slice(-6).toUpperCase()}  {wo?.vehicle?.year || ''} {wo?.vehicle?.make || ''} {wo?.vehicle?.model || ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {[['vehicleDesc', 'Vehicle (Year/Make/Model)'], ['mileage', 'Current Mileage'], ['notes', 'Notes (optional)']].map(([k, label]) => (
               <div key={k} style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>{label}</label>
                 <input value={(newForm as any)[k]} onChange={e => setNewForm(p => ({ ...p, [k]: e.target.value }))}
@@ -259,3 +306,4 @@ export default function DVIPage() {
     </div>
   );
 }
+

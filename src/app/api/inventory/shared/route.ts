@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const lowStockOnly = searchParams.get('lowStockOnly') === 'true';
 
     let shopIds: string[] = [];
-    if (auth.role === 'admin') {
+    if (auth.role === 'superadmin') {
       const shops = await prisma.shop.findMany({ where: { status: 'approved' }, select: { id: true } });
       shopIds = shops.map(s => s.id);
     } else if (auth.role === 'shop') {

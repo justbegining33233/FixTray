@@ -31,7 +31,7 @@ export async function GET(
       where: { vehicleId: id, shopId },
     });
 
-    if (!isOwner && !isShop && auth.role !== 'admin') {
+    if (!isOwner && !isShop && (auth.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

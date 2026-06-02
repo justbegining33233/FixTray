@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FixTray — QA Checklist</title>
+<style>
+  :root {
+    --bg: #09090B;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.09);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --shop: #F59E0B;
+    --tech: #10B981;
+    --customer: #06B6D4;
+    --manager: #8B5CF6;
+    --admin: #EF4444;
+    --superadmin: #F43F5E;
+    --go: #10B981;
+    --nogo: #EF4444;
+    --nt: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  /* ── HEADER ── */
+  .doc-header {
+    background: linear-gradient(135deg, #0f0f11 0%, #1a1a20 100%);
+    border-bottom: 1px solid rgba(239,68,68,0.3);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .doc-header .logo {
+    width: 44px; height: 44px;
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.35);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .doc-header h1 { font-size: 20px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.3px; }
+  .doc-header .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .doc-header .meta { margin-left: auto; text-align: right; font-size: 11px; color: var(--muted); }
+  .doc-header .meta strong { display: block; font-size: 13px; color: #cbd5e1; }
+
+  /* ── ROLE TABS ── */
+  .role-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 40px;
+    background: #0c0c0f;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    position: sticky; top: 92px; z-index: 99;
+  }
+  .role-tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    background: var(--surface);
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .role-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .role-tab[data-role="shop"]       { --accent: var(--shop); }
+  .role-tab[data-role="tech"]       { --accent: var(--tech); }
+  .role-tab[data-role="customer"]   { --accent: var(--customer); }
+  .role-tab[data-role="manager"]    { --accent: var(--manager); }
+  .role-tab[data-role="admin"]      { --accent: var(--admin); }
+  .role-tab[data-role="superadmin"] { --accent: var(--superadmin); }
+  .role-tab.active { background: color-mix(in srgb, var(--accent) 15%, transparent); border-color: var(--accent); color: var(--accent); }
+
+  /* ── MAIN ── */
+  .main { padding: 32px 40px; max-width: 1200px; }
+
+  /* ── ROLE SECTION ── */
+  .role-section { margin-bottom: 48px; scroll-margin-top: 140px; }
+  .role-heading {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    border-radius: 10px 10px 0 0;
+    border: 1px solid var(--accent);
+    border-bottom: none;
+    font-size: 16px; font-weight: 700;
+    letter-spacing: -0.2px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+  }
+  .role-heading .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  .role-heading .page-count { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--muted); }
+  .role-body {
+    border: 1px solid var(--accent);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+  }
+
+  /* ── PAGE CARD ── */
+  .page-card {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .page-card:last-child { border-bottom: none; }
+
+  .page-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(0,0,0,0.2);
+    transition: background .12s;
+  }
+  .page-header:hover { background: rgba(255,255,255,0.04); }
+  .page-header .page-title { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+  .page-header .page-route {
+    font-size: 11px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+  }
+  .page-header .toggle-icon { margin-left: auto; color: var(--muted); font-size: 11px; transition: transform .2s; }
+  .page-header.open .toggle-icon { transform: rotate(90deg); }
+
+  /* Page-level overall status */
+  .page-overall {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px 0;
+    font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
+  }
+
+  .page-body { padding: 0 16px 16px; display: none; }
+  .page-body.open { display: block; }
+
+  /* ── SECTION GROUP ── */
+  .section-group { margin-top: 14px; }
+  .section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+    color: var(--muted);
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+
+  /* ── ITEM ROW ── */
+  .item-row {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: rgba(0,0,0,0.2);
+  }
+  .item-top {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .item-name { font-size: 12px; color: #cbd5e1; flex: 1; min-width: 140px; }
+  .status-group { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .status-label {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .12s;
+  }
+  .status-label.go-label   { border-color: rgba(16,185,129,.3); color: rgba(16,185,129,.6); }
+  .status-label.nogo-label { border-color: rgba(239,68,68,.3);  color: rgba(239,68,68,.6); }
+  .status-label.nt-label   { border-color: rgba(107,114,128,.3); color: rgba(107,114,128,.6); }
+  input[type="radio"] { display: none; }
+  input[type="radio"]:checked + .status-label.go-label   { background: rgba(16,185,129,.15); border-color: var(--go);  color: var(--go);   }
+  input[type="radio"]:checked + .status-label.nogo-label { background: rgba(239,68,68,.15);  border-color: var(--nogo); color: var(--nogo); }
+  input[type="radio"]:checked + .status-label.nt-label   { background: rgba(107,114,128,.12); border-color: var(--nt); color: #9ca3af; }
+  .item-notes {
+    width: 100%; border: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 11px;
+    padding: 6px 8px;
+    resize: vertical; min-height: 38px;
+    font-family: inherit;
+    transition: border-color .12s;
+  }
+  .item-notes:focus { outline: none; border-color: var(--accent); }
+  .item-notes::placeholder { color: #4b5563; }
+
+  /* ── PAGE OVERALL STATUS ── */
+  .overall-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overall-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted);
+    margin-right: 4px;
+  }
+
+  /* ── ROLE COLOR VARS ── */
+  .role-shop       { --accent: var(--shop); }
+  .role-tech       { --accent: var(--tech); }
+  .role-customer   { --accent: var(--customer); }
+  .role-manager    { --accent: var(--manager); }
+  .role-admin      { --accent: var(--admin); }
+  .role-superadmin { --accent: var(--superadmin); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { padding: 16px 40px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+  .progress-bar-bg { background: rgba(255,255,255,0.06); border-radius: 4px; height: 8px; overflow: hidden; margin-top: 6px; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #10B981, #06B6D4); border-radius: 4px; transition: width .4s; }
+  .progress-text { font-size: 11px; color: var(--muted); }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #fff; color: #000; font-size: 10px; }
+    .doc-header { background: #f8f8f8; color: #000; position: relative; top: auto; border-bottom: 2px solid #ccc; }
+    .doc-header h1, .doc-header .subtitle, .doc-header .meta, .doc-header .meta strong { color: #000; }
+    .role-tabs, .progress-wrap { display: none; }
+    .main { padding: 0; }
+    .role-section { page-break-before: always; }
+    .role-section:first-child { page-break-before: avoid; }
+    .page-card { page-break-inside: avoid; }
+    .page-body { display: block !important; }
+    .page-header .toggle-icon { display: none; }
+    .role-heading { background: #eee !important; border: 1px solid #bbb; color: #222; }
+    .role-dot { background: #555 !important; }
+    .role-body { border: 1px solid #bbb; }
+    .page-header { background: #f5f5f5; border-bottom: 1px solid #ddd; }
+    .page-title { color: #111 !important; }
+    .page-route { color: #555 !important; background: #eee !important; }
+    .item-row { border: 1px solid #ddd; background: #fafafa; margin-bottom: 4px; }
+    .item-name { color: #222 !important; }
+    .status-label { border-color: #999 !important; color: #555 !important; }
+    input[type="radio"]:checked + .status-label.go-label   { background: #d1fae5 !important; color: #065f46 !important; }
+    input[type="radio"]:checked + .status-label.nogo-label { background: #fee2e2 !important; color: #991b1b !important; }
+    input[type="radio"]:checked + .status-label.nt-label   { background: #f3f4f6 !important; color: #374151 !important; }
+    .item-notes {
+      background: #fff !important; color: #000 !important;
+      border: 1px solid #ccc !important;
+      min-height: 28px !important;
+    }
+    .section-label { color: #555 !important; background: #eee !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="doc-header">
+  <div class="logo">🛡️</div>
+  <div>
+    <h1>FixTray — QA Checklist</h1>
+    <div class="subtitle">Comprehensive go/no-go validation for all roles, pages &amp; UI elements</div>
+  </div>
+  <div class="meta">
+    <strong id="progress-summary">0 / 0 items tested</strong>
+    <span id="date-stamp"></span>
+  </div>
+</div>
+
+<!-- ROLE TABS NAV -->
+<nav class="role-tabs" id="roleTabs">
+  <a class="role-tab active" data-role="shop"       href="#role-shop">🔧 Shop (35)</a>
+  <a class="role-tab"        data-role="tech"        href="#role-tech">⚙️ Tech (16)</a>
+  <a class="role-tab"        data-role="customer"    href="#role-customer">👤 Customer (17)</a>
+  <a class="role-tab"        data-role="manager"     href="#role-manager">📋 Manager (17)</a>
+  <a class="role-tab"        data-role="admin"       href="#role-admin">🔑 Admin (14)</a>
+  <a class="role-tab"        data-role="superadmin"  href="#role-superadmin">🛡️ Super Admin (7)</a>
+</nav>
+
+<!-- PROGRESS BAR -->
+<div class="progress-wrap">
+  <div class="progress-text">Testing progress — <span id="pct">0%</span> complete</div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+</div>
+
+<div class="main" id="main"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// DATA — all 106 pages, 6 roles
+// Format: { role, key, pages: [{ title, route, buttons[], links[], cards[], forms[], tabs[] }] }
+// ════════════════════════════════════════════════════════════════
+const QA_DATA = [
+
+// ══════════════ SHOP ══════════════
+{
+  role: 'Shop', key: 'shop',
+  pages: [
+    { title: 'Shop Home Dashboard', route: '/shop/home',
+      buttons: ['Parts button', 'Shop Admin / Manager / Tech Panel (role-dependent)', 'Parts Orders', 'Services', 'New In-Shop Job', 'WO Templates', 'Vendors', 'Locations', 'Recurring Orders', 'Two-Factor Auth', '+ Add Team Member', 'Submit (add team member)', 'Mark as Empty (per bay)', 'Mark as In Use (per bay)', 'Mark as Reserved (per bay)'],
+      links: ['/shop/parts-labor — Parts', '/shop/admin or /shop/manager or /shop/tech (role-dependent)', '/shop/purchase-orders — Parts Orders', '/shop/services — Services', '/shop/new-inshop-job — New In-Shop Job', '/shop/templates — WO Templates', '/shop/vendors — Vendors', '/shop/locations — Locations', '/shop/recurring-workorders — Recurring Orders', '/shop/settings/two-factor — Two-Factor Auth'],
+      cards: ['Quick Stats — Open Jobs count', 'Quick Stats — Completed Today count', 'Quick Stats — Today Revenue', 'Quick Stats — Week Revenue', 'Quick Stats — Active Techs', 'Quick Stats — Pending Approvals', 'Pending Work Orders list', 'Team Members list', 'Bays grid (bay status cards)'],
+      forms: ['Add Team Member — Name field', 'Add Team Member — Role select (tech/manager)', 'Add Team Member — Email field', 'Add Team Member — Phone field', 'Add Team Member — Password field'],
+      tabs: [] },
+
+    { title: 'Bay & Lift Board', route: '/shop/bays',
+      buttons: ['+ Add Bay', '+ Add First Bay (empty state)', 'Mark as Empty (per bay)', 'Mark as In Use (per bay)', 'Mark as Reserved (per bay)', 'Edit (per bay)', 'Delete bay (with confirm)'],
+      links: [],
+      cards: ['Total bays stat', 'In Use stat', 'Reserved stat', 'Open stat', 'Per-bay status card'],
+      forms: ['Bay Name field', 'Bay Type select (general/alignment/tire/lube/inspection/detail)', 'Status select', 'Vehicle Description field', 'Notes field'],
+      tabs: [] },
+
+    { title: 'Shop Calendar', route: '/shop/calendar',
+      buttons: ['← Previous month/week', '→ Next month/week', 'Today', 'Month view toggle', 'Week view toggle'],
+      links: ['FixTray logo → /shop/home', 'Back to Dashboard → /shop/home'],
+      cards: ['Calendar grid — appointment events (blue)', 'Calendar grid — workorder events (purple)'],
+      forms: [],
+      tabs: ['Month view', 'Week view'] },
+
+    { title: 'Manage Team', route: '/shop/manage-team',
+      buttons: ['+ Add Team Member', 'Edit (per member)', 'Remove (per member, with confirm)'],
+      links: [],
+      cards: ['Per-member card (name, role, email, phone)'],
+      forms: ['Add Member — Name', 'Add Member — Role (tech/manager)', 'Add Member — Email', 'Add Member — Phone', 'Add Member — Password', 'Edit Member — First Name', 'Edit Member — Last Name', 'Edit Member — Email', 'Edit Member — Phone', 'Edit Member — Role'],
+      tabs: [] },
+
+    { title: 'Real-Time Customer Messaging', route: '/shop/customer-messages',
+      buttons: ['Sign Out'],
+      links: ['FixTray logo → /shop/home'],
+      cards: ['RealTimeMessaging component — customer chat interface'],
+      forms: ['Select Customer dropdown'],
+      tabs: [] },
+
+    { title: 'Inventory Management', route: '/shop/inventory',
+      buttons: ['+ Add Item', 'Edit (per item)', 'Delete (per item, with confirm)', 'Show Low Stock Only (toggle)'],
+      links: [],
+      cards: ['Low Stock Alert banner', 'Per-item row (name, SKU, qty, price, reorder point)'],
+      forms: ['Type select', 'Name field', 'SKU field', 'Quantity field', 'Price field', 'Reorder Point field', 'Supplier field', 'Notes field'],
+      tabs: [] },
+
+    { title: 'Reports & Analytics', route: '/shop/reports',
+      buttons: ['Export CSV', 'Back to Dashboard'],
+      links: [],
+      cards: ['Total Revenue card', 'Completed Jobs card', 'Avg Job Value card', 'Completion Rate card', 'Revenue Trend chart', 'Top Services table', 'Tech Performance table'],
+      forms: ['Year select', 'Month select'],
+      tabs: [] },
+
+    { title: 'Payroll', route: '/shop/payroll',
+      buttons: ['+ Add Shift', '+ Add Leave Request', '+ New Pay Period', 'Run Payroll', 'Mark Paid', 'Approve Leave', 'Deny Leave', '← Week prev', '→ Week next', 'Delete Shift'],
+      links: [],
+      cards: ['Per-employee overview', 'Schedule grid', 'Timecards list', 'Pay periods list'],
+      forms: ['Add Shift — employee select', 'Add Shift — date', 'Add Shift — start time', 'Add Shift — end time', 'Add Shift — shift type', 'Add Leave — employee select', 'Add Leave — leave type', 'Add Leave — start date', 'Add Leave — end date', 'Add Leave — reason', 'New Pay Period — period type', 'New Pay Period — start date', 'New Pay Period — end date', 'New Pay Period — pay date'],
+      tabs: ['Overview', 'Schedule', 'Timecards', 'Attendance', 'Leave', 'Pay Periods', 'Stubs', 'Settings'] },
+
+    { title: 'Shop Settings', route: '/shop/settings',
+      buttons: ['Save (general settings)', 'Enable Notifications toggle', 'Enable Notification Sound toggle', 'Save (billing)', 'Stripe Connect'],
+      links: [],
+      cards: ['Subscription plan display', 'Notification toggles (13 types)', 'Operating Hours grid'],
+      forms: ['Shop Name', 'Email', 'Phone', 'Address', 'City', 'State', 'Zip Code', 'Business License', 'Insurance Policy', 'Shop Type select', 'Operating Hours (Mon–Sun open/close + closed checkbox per day)'],
+      tabs: ['General', 'Services', 'Notifications', 'Billing'] },
+
+    { title: 'Digital Vehicle Inspections', route: '/shop/dvi',
+      buttons: ['+ New DVI', '+ Start First DVI (empty state)', 'OK (per inspection item)', 'Advisory (per inspection item)', 'Urgent (per inspection item)', 'Send to Customer for Approval', 'Copy Customer Review Link', '× Close panel'],
+      links: [],
+      cards: ['Stats — Urgent count', 'Stats — Advisory count', 'Stats — Approved badge', 'Per-DVI list item'],
+      forms: ['New DVI — Vehicle Description', 'New DVI — Mileage', 'New DVI — Work Order ID (optional)', 'New DVI — Notes (optional)'],
+      tabs: ['Inspection category tabs (within detail panel)'] },
+
+    { title: 'Work Authorizations', route: '/shop/work-authorizations',
+      buttons: ['+ New Authorization', '+ Create First Authorization (empty state)', 'Copy Link (per pending auth)'],
+      links: [],
+      cards: ['Total stat', 'Signed stat', 'Pending stat', 'Per-auth list item (status badges: pending/signed/declined/expired)'],
+      forms: ['Work Order ID (optional)', 'Work Summary (textarea, required)', 'Estimated Total ($)'],
+      tabs: [] },
+
+    { title: 'Recurring Work Orders', route: '/shop/recurring-workorders',
+      buttons: ['Back', '+ New Schedule', 'Submit', 'Toggle Active/Paused (per schedule)', 'Delete (with confirm)'],
+      links: ['Back button navigation'],
+      cards: ['Per-schedule card (title, customer, frequency, next run date)'],
+      forms: ['Customer search field', 'Service Title (required)', 'Description textarea (required)', 'Frequency select', 'First Run Date', 'Estimated Cost ($)', 'Service Location', 'Notes textarea', 'Requires Approval checkbox'],
+      tabs: [] },
+
+    { title: 'New In-Shop Job', route: '/shop/new-inshop-job',
+      buttons: ['Back to Dashboard → /shop/home', 'Submit', 'Oil Change service toggle', 'Brake Service toggle', 'Tire Rotation toggle', 'Engine Diagnostic toggle', 'Transmission Service toggle', 'Electrical Repair toggle', 'A/C Service toggle', 'Suspension Repair toggle'],
+      links: ['Back to Dashboard → /shop/home'],
+      cards: ['Service selection grid'],
+      forms: ['Customer Name (required)', 'Customer Phone (required)', 'Customer Email', 'Vehicle Year (required)', 'Vehicle Make (required)', 'Vehicle Model (required)', 'VIN', 'Mileage', 'Appointment Date', 'Appointment Time', 'Estimated Hours', 'Additional Notes textarea'],
+      tabs: [] },
+
+    { title: 'Time Clock', route: '/shop/timeclock',
+      buttons: ['Clock In', 'Clock Out'],
+      links: [],
+      cards: ['TimeClock component — current status', 'TimeClock component — history list'],
+      forms: ['(within TimeClock component)'],
+      tabs: [] },
+
+    { title: 'Analytics Dashboard', route: '/shop/analytics',
+      buttons: ['Update (apply date range)', 'Retry (error state)'],
+      links: [],
+      cards: ['Total Revenue card', 'Completed Jobs card', 'Avg Completion Time card', 'Unique Customers card', 'Revenue Over Time (LineChart)', 'Avg Completion Time (LineChart)', 'Tech Performance (BarChart)'],
+      forms: ['Start Date', 'End Date'],
+      tabs: [] },
+
+    { title: 'Purchase Orders', route: '/shop/purchase-orders',
+      buttons: ['Back', '+ New Purchase Order', '+ Create Purchase Order (empty state)', 'Retry (error)', '× Close modal', '+ Add Item (line item)', 'Status buttons per PO: Pending / Ordered / Received / Cancelled'],
+      links: ['Back button navigation'],
+      cards: ['Per-PO card (vendor, status, expected date, line items)'],
+      forms: ['Vendor (required)', 'Expected Delivery Date', 'Line Items — Description', 'Line Items — Part #', 'Line Items — Qty', 'Line Items — Unit $', 'Notes'],
+      tabs: ['All', 'Pending', 'Ordered', 'Received', 'Cancelled'] },
+
+    { title: 'Vendors & Parts Orders', route: '/shop/vendors',
+      buttons: ['+ Add Vendor', 'Edit (per vendor)', 'Order Parts (per vendor)', '× Delete vendor', '+ New Order', 'Mark as ordered/shipped/received/cancelled (per order)', '× Delete order'],
+      links: [],
+      cards: ['Vendor list', 'Parts Orders list'],
+      forms: ['Vendor — Name (required)', 'Vendor — Contact Name', 'Vendor — Phone', 'Vendor — Email', 'Vendor — Website', 'Vendor — Category', 'Vendor — Account Number', 'Vendor — Payment Terms', 'Vendor — Rating', 'Vendor — Notes', 'Vendor — Active toggle', 'Order — Vendor select', 'Order — Item Name', 'Order — SKU', 'Order — Quantity', 'Order — Unit Cost', 'Order — Expected Date', 'Order — Notes'],
+      tabs: ['Vendors tab', 'Parts Orders tab'] },
+
+    { title: 'Profit Margins', route: '/shop/profit-margins',
+      buttons: ['Retry (error state)', 'Sort by Profit', 'Sort by Revenue', 'Sort by Margin'],
+      links: [],
+      cards: ['Total Revenue card', 'Total Cost card', 'Gross Profit card', 'Avg Margin card', 'Jobs Analyzed card'],
+      forms: ['Date range dropdown (Last 7/30/90 days, Last 12 months)'],
+      tabs: [] },
+
+    { title: 'Customer Reports', route: '/shop/customer-reports',
+      buttons: ['30 Days', '90 Days', '6 Months', '1 Year (date range buttons)'],
+      links: ['FixTray logo → /shop/home', 'Revenue Reports → /shop/reports'],
+      cards: ['Total Customers card', 'New Customers card', 'Returning Customers card', 'Retention Rate card', 'Avg Jobs/Customer card', 'Top Customers table'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Shop Branding', route: '/shop/branding',
+      buttons: ['Save Branding'],
+      links: [],
+      cards: ['Live Preview panel'],
+      forms: ['Business Name', 'Tagline', 'Address', 'Phone', 'Email', 'Website', 'Primary Color picker', 'Accent Color picker', 'Logo URL', 'Footer Text', 'Custom Domain'],
+      tabs: [] },
+
+    { title: 'Service Catalog', route: '/shop/services',
+      buttons: ['Edit (per service)', 'Delete (per service)', 'Browse Catalog', 'Add Custom CTA', '+ Add (per catalog item)', 'Filter: all', 'Filter: diesel', 'Filter: gas', 'Filter: small-engine', 'Filter: heavy-equipment', 'Filter: resurfacing', 'Filter: welding', 'Filter: tire'],
+      links: [],
+      cards: ['My Services list', 'Catalog items grid'],
+      forms: ['Add Custom — Service Name', 'Add Custom — Category', 'Add Custom — Price', 'Add Custom — Duration (min)', 'Add Custom — Description'],
+      tabs: ['My Services', 'FixTray Catalog', 'Add Custom'] },
+
+    { title: 'Tax Rules', route: '/shop/tax-settings',
+      buttons: ['+ Add Tax Rule', '+ Add First Tax Rule (empty state)', 'Edit (per rule)', 'Delete (per rule, with confirm)'],
+      links: [],
+      cards: ['Per-rule list (name, rate, state, county)'],
+      forms: ['Rule Name (required)', 'Rate % (required)', 'State', 'County', 'Applies To — Parts checkbox', 'Applies To — Labor checkbox', 'Applies To — Environmental Fees checkbox', 'Set as default toggle', 'Active toggle'],
+      tabs: [] },
+
+    { title: 'Integrations', route: '/shop/integrations',
+      buttons: ['Connected/Disabled toggle (per integration)', 'Configure / + Connect (per integration)'],
+      links: [],
+      cards: ['QuickBooks Online card', 'Xero card', 'Google Calendar card', 'Stripe card', 'Twilio card', 'SendGrid card', 'CARFAX card', 'ALLDATA card'],
+      forms: ['Configure modal — provider-specific credential fields (API key, secret, etc.)'],
+      tabs: [] },
+
+    { title: 'Shop Profile', route: '/shop/profile',
+      buttons: ['Save Profile'],
+      links: ['Back to Shop Home → /shop/home'],
+      cards: ['Profile section', 'Details section', 'Links section'],
+      forms: ['Shop Name', 'Phone', 'Email', 'Address', 'City', 'State', 'Zip'],
+      tabs: ['Profile tab', 'Details tab', 'Links tab'] },
+
+    { title: 'Waiting Room (TV Board)', route: '/shop/waiting-room',
+      buttons: ['(none — display-only board)'],
+      links: [],
+      cards: ['Currently Working On list', 'Waiting for Service list', 'Ready for Pickup list', 'Promo ticker (rotates every 8s)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Work Order Templates', route: '/shop/templates',
+      buttons: ['+ New Template', 'Edit (per template)', 'Delete (per template)', 'Save (modal)', 'Cancel'],
+      links: ['Admin → /shop/admin'],
+      cards: ['Per-template card (name, service type, estimated cost, labor hours)'],
+      forms: ['Template Name (required)', 'Service Type select (12 options)', 'Description', 'Estimated Cost ($)', 'Labor Hours', 'Repairs textarea', 'Maintenance textarea', 'Notes textarea'],
+      tabs: [] },
+
+    { title: 'State Inspections', route: '/shop/inspections',
+      buttons: ['+ Record Inspection', '+ Record First Inspection (empty state)'],
+      links: [],
+      cards: ['Total stat', 'Passed stat', 'Failed stat', 'Pass Rate stat', 'Per-inspection list item'],
+      forms: ['Inspection Type select', 'Result select', 'Sticker/Certificate #', 'Expiry Date', 'Odometer', 'Fee ($)', 'Work Order ID', 'Notes textarea'],
+      tabs: [] },
+
+    { title: 'Fleet Accounts', route: '/shop/fleet',
+      buttons: ['+ New Fleet Account', '+ Add Fleet Account (empty state)', '+ Add Vehicle', 'Add', 'Cancel', 'Delete Account'],
+      links: [],
+      cards: ['Account list', 'Detail panel — Vehicles tab', 'Detail panel — Recent Invoices tab'],
+      forms: ['New Account — Company Name (required)', 'New Account — Contact Name (required)', 'New Account — Contact Email (required)', 'New Account — Contact Phone', 'New Account — Billing Address', 'New Account — Net Terms', 'New Account — Credit Limit', 'New Account — Status', 'Add Vehicle — Make', 'Add Vehicle — Model', 'Add Vehicle — Year', 'Add Vehicle — VIN', 'Add Vehicle — License Plate', 'Add Vehicle — Unit Number'],
+      tabs: [] },
+
+    { title: 'Loaner Vehicles', route: '/shop/loaners',
+      buttons: ['+ Add Loaner', '+ Add First Loaner (empty state)', 'Check Out (per available vehicle)', 'Check In (per checked-out vehicle)', 'Delete (per vehicle)'],
+      links: [],
+      cards: ['Available count card', 'Checked Out count card', 'Per-vehicle card with status badge'],
+      forms: ['Add Loaner — Make', 'Add Loaner — Model', 'Add Loaner — Year', 'Add Loaner — Color', 'Add Loaner — License Plate', 'Add Loaner — VIN', 'Checkout — Mileage Out', 'Checkout — Fuel Level Out', 'Checkout — Expected Back (date)', 'Check-In — Mileage In', 'Check-In — Fuel Level In', 'Check-In — Damage Notes'],
+      tabs: [] },
+
+    { title: 'Customer Reviews', route: '/shop/reviews',
+      buttons: ['Reply (per review)', 'Save Response', 'Delete Response (with confirm)', 'Filter: All', 'Filter: Needs Reply', 'Filter: Replied', 'Star filter: All / 1★ / 2★ / 3★ / 4★ / 5★'],
+      links: [],
+      cards: ['Average rating card', 'Rating Breakdown bar chart', 'Per-review card'],
+      forms: ['Response textarea'],
+      tabs: [] },
+
+    { title: 'Referral Program', route: '/shop/referrals',
+      buttons: ['+ New Referral', '+ Create First Referral (empty state)', 'Copy Code (per referral)'],
+      links: [],
+      cards: ['Total Referrals stat', 'Converted stat', 'Pending stat', 'Rewards Issued stat', 'Per-referral list item'],
+      forms: ['Referred Customer Name (required)', 'Email', 'Phone', 'Reward Type select', 'Reward Value ($)', 'Notes textarea'],
+      tabs: [] },
+
+    { title: 'Campaigns', route: '/shop/campaigns',
+      buttons: ['+ New Campaign', 'Send Now', 'Save as Draft', 'Cancel'],
+      links: [],
+      cards: ['Campaign list (name, type, status)'],
+      forms: ['Campaign Name', 'Type select (Email/SMS/Both)', 'Email Subject', 'Message textarea'],
+      tabs: [] },
+
+    { title: 'Automations', route: '/shop/automations',
+      buttons: ['+ New Rule', '+ Create First Automation (empty state)', 'Edit (per rule)', 'Delete (per rule, with confirm)', 'Active/Paused toggle (per rule)'],
+      links: [],
+      cards: ['Per-rule list item (name, type, channel, status)'],
+      forms: ['Rule Name (required)', 'Type select', 'Channel select', 'Trigger select', 'Trigger Value', 'Message Template textarea'],
+      tabs: [] },
+
+    { title: 'Shop Locations', route: '/shop/locations',
+      buttons: ['+ Add Location', 'Edit (per location)', 'Delete (per location)', 'Set Main (per location)'],
+      links: ['Admin → /shop/admin'],
+      cards: ['Total Locations stat', 'Active stat', 'Per-location list item'],
+      forms: ['Location Name (required)', 'Street Address (required)', 'City (required)', 'State', 'ZIP', 'Phone', 'Email', 'Status select', 'Notes textarea', 'Is Main checkbox'],
+      tabs: [] },
+
+    { title: 'Payment Links', route: '/shop/payment-links',
+      buttons: ['+ New Link', 'Create Link (submit)', 'Copy (created URL)', 'Copy Link (per pending)', 'Cancel'],
+      links: ['Admin → /shop/admin'],
+      cards: ['Link list (description, amount, status, created/expires dates)'],
+      forms: ['Amount ($)', 'Description'],
+      tabs: [] },
+
+    { title: 'End-of-Day Report', route: '/shop/eod-report',
+      buttons: ['Print'],
+      links: [],
+      cards: ['Completed Jobs stat', 'New Jobs stat', 'Still Open stat', 'Appointments stat', 'Outstanding Balance stat', 'Payment Breakdown (cash/card/check/transfer/other/total)', 'Completed Jobs table', 'Outstanding Balances table', 'Tech Hours table'],
+      forms: ['Date picker'],
+      tabs: [] },
+  ]
+},
+
+// ══════════════ TECH ══════════════
+{
+  role: 'Tech', key: 'tech',
+  pages: [
+    { title: 'Tech Home Dashboard', route: '/tech/home',
+      buttons: ['(role-contextual buttons via MobileShell on mobile)'],
+      links: ['(MobileShell nav on mobile; sidebar on desktop)'],
+      cards: ["Today's Jobs list", 'Shop Stats — Open Jobs', 'Shop Stats — Completed Today', 'Shop Stats — Parts Ordered', 'Shop Stats — Revenue', 'Tech Profile card', 'Road Calls card', 'Parts Vendors card'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Digital Vehicle Inspection', route: '/tech/dvi',
+      buttons: ['OK — green (per inspection item)', 'Advisory — yellow (per inspection item)', 'Urgent — red (per inspection item)', 'Submit DVI', 'Copy Link', 'New Inspection', 'View All DVIs → /shop/dvi'],
+      links: ['View All DVIs → /shop/dvi'],
+      cards: ['Per-tab inspection items', 'Result summary card'],
+      forms: ['Vehicle field (required)', 'Mileage field', 'Work Order ID field'],
+      tabs: ['Engine', 'Cooling', 'Brakes', 'Tires', 'Fluids', 'Electrical', 'Lights', 'Suspension', 'Wipers', 'Exhaust'] },
+
+    { title: 'Photo Gallery', route: '/tech/photos',
+      buttons: ['Upload Photo (opens modal)', 'Copy URL (per photo)', 'Edit caption (per photo)', 'Assign to WO (per photo)', 'Remove (per photo)'],
+      links: ['Back to Tools → /tech/all-tools'],
+      cards: ['Photo grid'],
+      forms: ['Upload — file input', 'Upload — Caption (optional)', 'Upload — Assign to WO id', 'Caption edit modal', 'WO Assign modal'],
+      tabs: [] },
+
+    { title: 'Messages', route: '/tech/messages',
+      buttons: ['(within MessagingCard component)'],
+      links: ['Back to Dashboard → /tech/home'],
+      cards: ['MessagingCard component'],
+      forms: ['Message input field', 'Send button'],
+      tabs: [] },
+
+    { title: 'DTC Code Lookup', route: '/tech/dtc-lookup',
+      buttons: ['Lookup button', 'Quick code P0300', 'Quick code P0420', 'Quick code P0101', 'Quick code P0171', 'Quick code P0440', 'Quick code P0128', 'Quick code B0100', 'Quick code C1234', 'Quick code U0100', 'Quick code P0562'],
+      links: [],
+      cards: ['Results card (code, description, severity, affected systems, causes, fixes)', 'Recent lookups (session history)'],
+      forms: ['Code input (text, auto-uppercase)'],
+      tabs: [] },
+
+    { title: 'Service Manuals', route: '/tech/manuals',
+      buttons: ['(external link cards open in new tab)'],
+      links: ['Back to Tools → /tech/all-tools', 'ALLDATA DIY (external)', 'Mitchell 1 ProDemand (external)', 'Identifix Direct-Hit (external)', 'Autodata (external)', 'NHTSA TSB Search (external)', 'NHTSA Recall Search (external)', 'iATN TechHelp (external)', 'YouTube - EricTheCarGuy (external)', 'Gates Timing Guide (external)', 'FCA ServiceInfo (external)'],
+      cards: ['10 external resource cards', 'Common Torque Specs Quick Reference table (8 entries)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Time Clock', route: '/tech/timeclock',
+      buttons: ['Clock In', 'Clock Out'],
+      links: [],
+      cards: ['TimeClock component — current status', 'TimeClock component — history'],
+      forms: ['(within TimeClock component)'],
+      tabs: [] },
+
+    { title: 'All Tech Tools', route: '/tech/all-tools',
+      buttons: ['Filter: All', 'Filter: Job Creation', 'Filter: Job Management', 'Filter: Field Tools', 'Filter: Communication', 'Filter: Resources', 'Filter: Time Management', 'Filter: Customer Service', 'Filter: Technical Tools', 'Filter: Documentation'],
+      links: ['Back to Dashboard → /tech/home', 'New Roadside Job → /tech/new-roadside-job', 'New In-Shop Job → /tech/new-inshop-job', 'Share Location → /tech/share-location', 'Messages → /tech/messages', 'Active Jobs → /tech/home', 'Parts Inventory → /tech/inventory', 'Service Manuals → /tech/manuals', 'Time Tracking → /tech/timesheet', 'Customer Portal → /tech/customers', 'Diagnostic Tools → /tech/diagnostics', 'Photo Upload → /tech/photos'],
+      cards: ['Performance Overview — Jobs Completed', 'Performance Overview — Avg Rating', 'Performance Overview — Billable Hours', 'Performance Overview — On-Time Rate', '12 Tool cards grid'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Parts Inventory', route: '/tech/inventory',
+      buttons: ['(external link cards open in new tab)'],
+      links: ['Back to Tools → /tech/all-tools', 'RockAuto (external)', 'NAPA Online (external)', 'AutoZone Pro (external)', "O'Reilly Fleet (external)", 'OEMPartsPro (external)', 'Parts Request → /tech/work-orders'],
+      cards: ['5 supplier link cards', 'Common Part Brands Quick Reference table'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Technician Profile', route: '/tech/profile',
+      buttons: ['Save Changes (Contact section)'],
+      links: ['Back to Tech Home → /tech/home', 'Time Clock → /tech/timeclock', 'Technician Dashboard → /tech/home'],
+      cards: ['My Profile — Name, Role (view-only)', 'Contact & Settings (editable)', 'Quick Links panel'],
+      forms: ['Name field (editable)', 'Phone field (editable)', 'Email field (disabled)'],
+      tabs: ['My Profile', 'Contact & Settings', 'Quick Links'] },
+
+    { title: 'New Roadside Job', route: '/tech/new-roadside-job',
+      buttons: ['Create Roadside Job (submit)', 'Cancel → /tech/home'],
+      links: ['Back to Dashboard → /tech/home'],
+      cards: ['(form card)'],
+      forms: ['Customer Name', 'Customer Phone', 'Location (Address or GPS)', 'Vehicle Year (required)', 'Vehicle Make (required)', 'Vehicle Model (required)', 'Service Type select (Towing/Jump Start/Tire Change/Lockout/Fuel Delivery/Other)', 'Urgency Level select (Low/Normal/High/Emergency)', 'Issue Description textarea (required)', 'Additional Notes textarea'],
+      tabs: [] },
+
+    { title: 'Timesheet', route: '/tech/timesheet',
+      buttons: ['Week view toggle', 'Month view toggle', 'Export CSV', 'Export Payroll CSV', 'Approve (per entry, with confirm)'],
+      links: ['Back to Dashboard → /tech/home'],
+      cards: ['Total Hours stat', 'Billable Hours stat', 'Non-Billable Hours stat', 'Billable Estimate stat'],
+      forms: ['Notes inline edit (per entry)', 'Work Order ID assignment inline (per entry)'],
+      tabs: [] },
+
+    { title: 'Share Location', route: '/tech/share-location',
+      buttons: ['Get Current Location', 'Refresh Location', 'Start Sharing Location', 'Stop Sharing', 'Copy Link', 'Open in Maps (external)', 'Send to Customer (disabled until location)', 'Send to Dispatch (disabled until location)'],
+      links: ['Back to Dashboard → /tech/home'],
+      cards: ['Current location display card'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Diagnostic Tools', route: '/tech/diagnostics',
+      buttons: ['(external link cards open in new tab)'],
+      links: ['Back to Tools → /tech/all-tools', 'OBD Codes (external)', 'Engine Light Help (external)', 'NHTSA VIN Decoder (external)', 'CarMD (external)', 'iATN TechHelp (external)', 'TIS2Web/ACDelco TDS (external)'],
+      cards: ['6 external tool cards', 'Common OBD-II Codes Quick Reference table (10 entries)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Customer Portal (Search)', route: '/tech/customers',
+      buttons: ['Clear search'],
+      links: ['Back to Tools → /tech/all-tools', 'Per-result → /workorders/[id]'],
+      cards: ['Search results (customer name, contact info, work orders)'],
+      forms: ['Search input (2+ chars, debounced 300ms)'],
+      tabs: [] },
+
+    { title: 'New In-Shop Job (redirect)', route: '/tech/new-inshop-job',
+      buttons: ['(none — redirects to /shop/new-inshop-job)'],
+      links: ['Redirect to /shop/new-inshop-job'],
+      cards: [],
+      forms: [],
+      tabs: [] },
+  ]
+},
+
+// ══════════════ CUSTOMER ══════════════
+{
+  role: 'Customer', key: 'customer',
+  pages: [
+    { title: 'Customer Dashboard', route: '/customer/dashboard',
+      buttons: ['(within MobileShell on mobile, feature cards on desktop)'],
+      links: ['Appointments → /customer/appointments', 'Vehicles → /customer/vehicles', 'History → /customer/history', 'Messages → /customer/messages', 'Reviews → /customer/reviews', 'Favorites → /customer/favorites', 'Documents → /customer/documents', 'Payments → /customer/payments'],
+      cards: ['Open Orders stat', 'Completed Today stat', 'Unread Messages stat', 'Upcoming Appointments stat', 'Loyalty Points card', 'Loyalty Tier badge', '8 Feature cards'],
+      forms: [],
+      tabs: ['Discover tab'] },
+
+    { title: 'My Vehicles', route: '/customer/vehicles',
+      buttons: ['+ Add Vehicle', 'Edit (per vehicle)', 'Delete (per vehicle, with confirm)'],
+      links: [],
+      cards: ['Per-vehicle card (type icon, Make/Model/Year, VIN, License Plate, created date)'],
+      forms: ['Vehicle Type select', 'Make (required)', 'Model (required)', 'Year', 'VIN', 'License Plate'],
+      tabs: [] },
+
+    { title: 'Service History', route: '/customer/history',
+      buttons: ['Sign Out', 'View Details (per item)', 'Book Again (per item)', 'Download Invoice (per item)'],
+      links: ['FixTray logo → /customer/dashboard', 'Back to Dashboard → /customer/dashboard'],
+      cards: ['Per-WO card (service, shop, vehicle, date, cost, star rating, status badge)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Appointments', route: '/customer/appointments',
+      buttons: ['+ Book Appointment (opens form)', 'Cancel appointment (with confirm)', 'Message shop (per appointment, opens modal)'],
+      links: [],
+      cards: ['Per-appointment card (shop, vehicle, date, service, status badge)'],
+      forms: ['Book — Shop select', 'Book — Vehicle select', 'Book — Scheduled Date', 'Book — Service Type select', 'Book — Notes textarea', 'Message modal — message textarea', 'Message modal — Send Message button'],
+      tabs: [] },
+
+    { title: 'Messages', route: '/customer/messages',
+      buttons: ['Sign Out'],
+      links: ['FixTray logo → /customer/dashboard'],
+      cards: ['CustomerMessagingCard component'],
+      forms: ['(within CustomerMessagingCard, ?shopId= param)'],
+      tabs: [] },
+
+    { title: 'Estimates', route: '/customer/estimates',
+      buttons: ['Sign Out', 'Accept (per pending estimate)', 'Deny (per pending estimate)', 'Request New Estimate (per denied)'],
+      links: ['FixTray logo → /customer/dashboard'],
+      cards: ['Per-estimate card (service, price, shop, description, validUntil, lineItems, status: pending/accepted/denied)'],
+      forms: [],
+      tabs: ['My Estimates tab'] },
+
+    { title: 'Payment History', route: '/customer/payments',
+      buttons: ['Sign Out', 'Pay $X.XX Securely (Stripe checkout, per pending payment)'],
+      links: ['FixTray logo → /customer/dashboard', 'Dashboard → /customer/dashboard', 'Pending Services → /customer/recurring-approvals', 'View Work Order → /customer/workorders/[id]'],
+      cards: ['Total Paid summary card', 'Pending summary card', 'Per-payment row (status badge Paid/Pending)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Find Auto Shops', route: '/customer/findshops',
+      buttons: ['Sign Out', 'Favorite toggle (per shop)', 'Unfavorite toggle (per shop)'],
+      links: ['FixTray logo → /customer/dashboard'],
+      cards: ['Per-shop card (name, type, rating, distance, address, services tags)'],
+      forms: ['Search input (auto-detects name vs. zip)'],
+      tabs: [] },
+
+    { title: 'My Reviews', route: '/customer/reviews',
+      buttons: ['Sign Out', 'Edit Review (per review)', 'Delete review (per review)'],
+      links: ['FixTray logo → /customer/dashboard', 'Back to Dashboard → /customer/dashboard'],
+      cards: ['Per-review card (empty list currently)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Customer Profile', route: '/customer/profile',
+      buttons: ['Save Changes (Contact section)'],
+      links: ['Back to Customer Dashboard → /customer/dashboard', 'My Vehicles → /customer/vehicles', 'My Work Orders → /customer/workorders'],
+      cards: ['My Profile — Name, Role (view-only)', 'Contact & Settings (editable)', 'Quick Links panel'],
+      forms: ['Name field (editable)', 'Phone field (editable)', 'Email field (disabled)'],
+      tabs: ['My Profile', 'Contact & Settings', 'Quick Links'] },
+
+    { title: 'Account Overview', route: '/customer/overview',
+      buttons: ['Sign Out', 'Retry (error state)'],
+      links: ['FixTray logo → /customer/dashboard', 'Back to Dashboard → /customer/dashboard'],
+      cards: ['Active Orders stat', 'Completed This Month stat', 'Unread Messages stat', 'Loyalty Points stat', 'Recent Activity list (empty state)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Notifications', route: '/customer/notifications',
+      buttons: ['Click notification to mark as read'],
+      links: ['Dashboard → /customer/dashboard'],
+      cards: ['Per-notification item (title, body, date, unread dot)', 'Empty state message'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Live Tracking', route: '/customer/tracking',
+      buttons: ['Sign Out', 'Message (per active order — opens modal)'],
+      links: ['FixTray logo → /customer/dashboard'],
+      cards: ['Per-WO tracking card (status, tech name/phone, shop name/address, service time, location/ETA)'],
+      forms: ['Message modal — message textarea', 'Message modal — Send Message button'],
+      tabs: [] },
+
+    { title: 'My Documents', route: '/customer/documents',
+      buttons: ['Sign Out', 'Upload Document', 'View (per doc)', 'Download (per doc)'],
+      links: ['FixTray logo → /customer/dashboard', 'Back to Dashboard → /customer/dashboard'],
+      cards: ['Per-doc card (name, type badge: Invoice/Estimate/Warranty/Receipt/Report, shop, date, size)', 'Empty state'],
+      forms: ['Upload Document — file input'],
+      tabs: [] },
+
+    { title: 'Favorite Shops', route: '/customer/favorites',
+      buttons: ['Sign Out', 'Book Appointment (per shop)', 'Remove Favorite (per shop)'],
+      links: ['FixTray logo → /customer/dashboard', 'Back to Dashboard → /customer/dashboard'],
+      cards: ['Per-shop card (name, type, rating, distance, address, services)', 'Empty state'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'My Rewards', route: '/customer/rewards',
+      buttons: ['Sign Out', 'Claim Reward (per earned reward, disabled if not yet earned)'],
+      links: ['FixTray logo → /customer/dashboard'],
+      cards: ['Current Balance card (loyalty points + progress bar)', 'Per-reward card (name, value, description, expires, progress bar, Claimed badge)', 'Points History table'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Recurring Service Approvals', route: '/customer/recurring-approvals',
+      buttons: ['Sign Out', 'Yes, Schedule Me In (per pending, with confirm)', 'Skip This Time (per pending)'],
+      links: ['FixTray logo → /customer/dashboard', 'Dashboard → /customer/dashboard', 'Payments → /customer/payments'],
+      cards: ['Per-approval card (service, shop, address, vehicle, estimated cost, requested date)', 'Resolved items list (this session)'],
+      forms: [],
+      tabs: [] },
+  ]
+},
+
+// ══════════════ MANAGER ══════════════
+{
+  role: 'Manager', key: 'manager',
+  pages: [
+    { title: 'Manager Home', route: '/manager/home',
+      buttons: ['+ Request Inventory', 'Submit Request'],
+      links: ['(MobileShell nav on mobile; sidebar on desktop)'],
+      cards: ['Active Jobs stat', 'Pending Assignments stat', 'Overdue Jobs stat', 'Completed Today stat', 'Today Revenue', 'Weekly Revenue', 'Monthly Revenue', 'Outstanding Invoices', 'Team Performance widget', 'Team Schedule widget', 'Recent Activity feed', 'Urgent Alerts widget'],
+      forms: ['Inventory Request — Item Name', 'Inventory Request — Quantity', 'Inventory Request — Reason', 'Inventory Request — Urgency select (normal/urgent)'],
+      tabs: [] },
+
+    { title: 'Assign Work Orders', route: '/manager/assignments',
+      buttons: ['Assign (POST to /api/manager/assignments)'],
+      links: ['Back to Dashboard → /manager/dashboard'],
+      cards: ['Work Orders list (selectable)', 'Techs list (selectable)', 'Assignment panel'],
+      forms: ['Click to select WO', 'Click to select tech'],
+      tabs: [] },
+
+    { title: 'Pending Approvals', route: '/manager/approvals',
+      buttons: ['Filter: pending', 'Filter: all', 'View → /workorders/[id] (per item)'],
+      links: ['View → /workorders/[id]'],
+      cards: ['Per-approval item (title, priority badge, customerName, estimatedCost, date)', 'Empty state (checkmark icon)'],
+      forms: [],
+      tabs: ['Pending filter', 'All filter'] },
+
+    { title: 'Team Overview', route: '/manager/team',
+      buttons: ['(none — view-only)'],
+      links: [],
+      cards: ['Per-member card (avatar, name, role badge, Clocked In/Off, assigned jobs, email, phone, joined date)'],
+      forms: ['Search input (filter by name or role)'],
+      tabs: [] },
+
+    { title: 'Messages', route: '/manager/messages',
+      buttons: ['(within MessagingCard component)'],
+      links: [],
+      cards: ['MessagingCard component'],
+      forms: ['Message input', 'Send button'],
+      tabs: [] },
+
+    { title: 'Performance Reports', route: '/manager/reports',
+      buttons: ['Export CSV'],
+      links: [],
+      cards: ['Total Work Orders stat', 'Completed stat', 'Revenue stat', 'Avg Completion Time stat', 'Technician Performance table (Name, Completed, Avg Time)'],
+      forms: ['Date range select (Last 7/30/90 days)'],
+      tabs: [] },
+
+    { title: 'Team Schedule', route: '/manager/schedule',
+      buttons: ['← Prev week', 'Today', 'Next week →'],
+      links: [],
+      cards: ['7-day weekly grid (Mon–Sun columns, tech rows with startTime–endTime)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Payroll (view-only)', route: '/manager/payroll',
+      buttons: ['(none — view-only)'],
+      links: [],
+      cards: ['Per-employee card (name, role, Active/Inactive badge, pay rate: hourly or salary)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Manager Settings', route: '/manager/settings',
+      buttons: ['(links styled as buttons)'],
+      links: ['Permissions → /manager/settings/permissions', 'Two-Factor Auth → /manager/settings/two-factor'],
+      cards: ['Permissions card', 'Two-Factor Auth card'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Work Authorizations (view)', route: '/manager/work-authorizations',
+      buttons: ['Copy Link (per auth — copies customer signing URL)'],
+      links: [],
+      cards: ['Per-auth item (status: pending/signed/declined/expired, work summary, estimate total, created date)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Recurring Work Orders (view)', route: '/manager/recurring-workorders',
+      buttons: ['(none — view-only)'],
+      links: [],
+      cards: ['Per-schedule card (active/paused badge, title, customer, vehicle, frequency, next run date)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Vehicle Inspections', route: '/manager/inspections',
+      buttons: ['Filter: all', 'Filter: passed', 'Filter: failed', 'Filter: pending'],
+      links: [],
+      cards: ['Per-inspection row (vehicleInfo, inspector, date, status badge, notes)'],
+      forms: ['Search input (filter by vehicle or inspector)'],
+      tabs: ['All', 'Passed', 'Failed', 'Pending'] },
+
+    { title: 'Inventory Management', route: '/manager/inventory',
+      buttons: ['+ Add Item', 'Low Stock filter toggle', 'Edit (per item)', 'Delete (per item, with confirm)'],
+      links: ['Back to Dashboard → /manager/dashboard'],
+      cards: ['Per-item table row', 'Low Stock filter highlight', 'Upgrade Prompt (if no access)'],
+      forms: ['Name', 'SKU', 'Category', 'Description', 'Quantity', 'Reorder Point', 'Unit Cost', 'Selling Price', 'Location'],
+      tabs: [] },
+
+    { title: 'Estimate Builder', route: '/manager/estimates',
+      buttons: ['+ Add Line Item', '× Remove line item', 'Submit Estimate'],
+      links: ['Back to Dashboard → /manager/dashboard'],
+      cards: ['Work Order Details panel (Customer, vehicle info)', 'Estimate summary (Subtotal, Tax, Total)'],
+      forms: ['Line Item — Description', 'Line Item — Quantity', 'Line Item — Unit Price', 'Notes textarea', 'Tax Rate %', '(?workOrderId= param required)'],
+      tabs: [] },
+
+    { title: 'Work Order Templates (view)', route: '/manager/templates',
+      buttons: ['(none — view-only)'],
+      links: [],
+      cards: ['Per-template card (name, serviceType, description, estimated cost, labor hours)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Time Clock', route: '/manager/timeclock',
+      buttons: ['Clock In', 'Clock Out'],
+      links: [],
+      cards: ['TimeClock component'],
+      forms: ['(within TimeClock component)'],
+      tabs: [] },
+
+    { title: 'Manager Profile', route: '/manager/profile',
+      buttons: ['Save Changes (Contact section)', 'My Profile (sidebar nav)', 'Contact & Settings (sidebar nav)', 'Quick Links (sidebar nav)'],
+      links: ['Back to Manager Home → /manager/home', 'Manager Settings → /manager/settings', 'Manager Dashboard → /manager/home'],
+      cards: ['My Profile — Name, Role (view-only)', 'Contact & Settings (editable)', 'Quick Links panel'],
+      forms: ['Name field (editable)', 'Phone field (editable)', 'Email field (disabled)'],
+      tabs: ['My Profile', 'Contact & Settings', 'Quick Links'] },
+  ]
+},
+
+// ══════════════ ADMIN ══════════════
+{
+  role: 'Admin', key: 'admin',
+  pages: [
+    { title: 'Admin Home', route: '/admin/home',
+      buttons: ['(within QuickLinks grid and tab content — 20+ links)'],
+      links: ['QuickLinks to all admin sub-pages (20+ across tabs)', 'Stat card links to sub-sections'],
+      cards: ['DashboardTab content', 'SubscriptionsTab content', 'UsersTab content', 'HierarchyTab content'],
+      forms: ['(within tab content)'],
+      tabs: ['Dashboard', 'Subscriptions', 'Users', 'Hierarchy'] },
+
+    { title: 'Manage Shops', route: '/admin/manage-shops',
+      buttons: ['Filter: All', 'Filter: Approved', 'Filter: Pending', 'Filter: Suspended', 'Approve (per shop)', 'Suspend (per shop)', 'Re-activate (per shop)'],
+      links: ['FixTray logo → /admin/home', 'Back to Dashboard → /admin/home'],
+      cards: ['Total Shops stat', 'Active stat', 'Pending stat', 'Suspended stat', 'Per-shop expandable card (name, owner, email, phone, location, type, jobs, revenue, rating, subscription)'],
+      forms: ['Search input (by shop name, owner, email, location)'],
+      tabs: ['All', 'Approved', 'Pending', 'Suspended'] },
+
+    { title: 'Pending Shops', route: '/admin/pending-shops',
+      buttons: ['Approve (per shop, with confirm)', 'Deny (per shop, with confirm)', 'View Details (per shop)', 'Close (detail panel)'],
+      links: ['FixTray logo → /admin/home'],
+      cards: ['Per-shop pending card (shopName, ownerName, location, phone, email, businessLicense, insurancePolicy, submitted date)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Accepted Shops', route: '/admin/accepted-shops',
+      buttons: ['Sort by Revenue', 'Sort by Rating', 'Sort by Jobs', 'View Details (per shop)', 'Contact Shop (per shop)'],
+      links: ['FixTray logo → /admin/home', 'Back to Dashboard → /admin/home'],
+      cards: ['Per-shop card (VERIFIED badge, rank badge, name, location, revenue, rating, jobs, completion rate, avg response time, time active)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Subscription & User Management', route: '/admin/subscriptions',
+      buttons: ['Back to Dashboard → /admin/dashboard', 'Logout'],
+      links: ['Back to Dashboard → /admin/dashboard'],
+      cards: ['Per-subscription row (shopName, plan badge, status, period dates, user count)', 'All Users table', 'Account Hierarchy tree'],
+      forms: [],
+      tabs: ['Subscriptions', 'All Users', 'Account Hierarchy'] },
+
+    { title: 'Revenue & Financial Dashboard', route: '/admin/revenue',
+      buttons: ['Back to Dashboard → /admin/home', 'Stripe Dashboard (external: Payments)', 'Stripe Dashboard (external: Subscriptions)', 'Stripe Dashboard (external: Payouts)', 'Stripe Dashboard (external: Balances)'],
+      links: ['Back → /admin/home', 'Stripe external links'],
+      cards: ['MRR card', 'ARR card', 'Active Subscriptions card', 'Plan Breakdown card', 'MoM Growth', 'YoY Growth', 'Churn Rate', 'Retention Rate', 'Conversion Rate', 'ARPU', 'LTV', 'New Subs This Month', 'Trialing', 'Canceled', 'Revenue This/Last Month', 'Revenue Trend chart', 'Recent Payments table', 'Work Order Fees breakdown'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Manage Customers (Platform)', route: '/admin/manage-customers',
+      buttons: ['View Details (per shop — side panel)', 'Plan filter buttons', 'Health filter buttons'],
+      links: [],
+      cards: ['Total Customers stat', 'New This Month', 'MRR', 'ARR', 'ARPU', 'LTV', 'Churn Rate', 'Total Jobs', 'Plan Distribution', 'Health Distribution', 'Top Customers list', 'At-Risk Customers list'],
+      forms: ['Plan filter (all/enterprise/professional/business/growth/starter/free)', 'Health filter (all/excellent/good/fair/at-risk)'],
+      tabs: [] },
+
+    { title: 'User Management', route: '/admin/user-management',
+      buttons: ['Edit (per user, opens modal)', 'Reset Password (per user, opens modal)', 'Activate/Suspend status toggle (per user)', 'Save User Edit', 'Save Password Reset', 'Close modal'],
+      links: ['FixTray logo → /admin/home'],
+      cards: ['User list row (name, email, role badge, status, joined date, org)'],
+      forms: ['Edit — First Name', 'Edit — Last Name', 'Edit — Email', 'Edit — Role (if canEditRole)', 'Edit — Status (if canEditStatus)', 'Reset Password — New Password (min 8 chars)'],
+      tabs: ['Role filters: all/admin/shop/manager/tech/customer', 'Status filters: all/active/inactive/suspended/pending'] },
+
+    { title: 'Activity Logs', route: '/admin/activity-logs',
+      buttons: ['Clear Filters (when active)'],
+      links: ['FixTray logo → /admin/home', 'Back to Dashboard → /admin/home'],
+      cards: ['Timeline log rows (action, user, location, email, amount, severity badge, time-ago)', 'Total logs count badge'],
+      forms: ['Filter by Type select (All Types/Shops/Revenue/Users/Alerts)', 'Filter by Severity select (All/Success/Info/Warning/Error)'],
+      tabs: [] },
+
+    { title: 'Email Templates', route: '/admin/email-templates',
+      buttons: ['Send Test Email', 'Save Template'],
+      links: ['Back to Admin Tools → /admin/admin-tools'],
+      cards: ['Template list (8: Welcome, Shop Approved, Shop Denied, WO Created, WO Assigned, WO Completed, Payment Received, Password Reset)'],
+      forms: ['Subject Line (text input)', 'Email Body textarea'],
+      tabs: [] },
+
+    { title: 'Admin Settings (redirect)', route: '/admin/settings',
+      buttons: ['(redirects to /admin/system-settings)'],
+      links: ['Redirect to /admin/system-settings'],
+      cards: [],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Platform Messages', route: '/admin/messages',
+      buttons: ['(within MessagingCard component)'],
+      links: ['Back to Admin Dashboard → /admin/home'],
+      cards: ['MessagingCard component (userId=admin, shopId="")'],
+      forms: ['Message input', 'Send button'],
+      tabs: [] },
+
+    { title: 'Financial Reports', route: '/admin/financial-reports',
+      buttons: ['(none — read-only)'],
+      links: ['Back to Dashboard → /admin/home'],
+      cards: ['Total Revenue stat', 'Total Payouts stat', 'Platform Fees stat', 'Pending Payouts stat', 'Monthly Revenue table (month, revenue, payouts, fees)', 'Top Earning Shops table (name, revenue, fees, payout)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Platform Analytics', route: '/admin/platform-analytics',
+      buttons: ['(none — chart display)'],
+      links: ['Back to Admin Tools → /admin/admin-tools'],
+      cards: ['Total Revenue metric', 'Active Users metric', 'Work Orders metric', 'Avg Response Time metric', 'Revenue Trends chart', 'Top Performing Shops list', 'Completion Times chart', 'Technician Performance chart', 'Work Order Status chart', 'Monthly Trends chart'],
+      forms: [],
+      tabs: [] },
+  ]
+},
+
+// ══════════════ SUPERADMIN ══════════════
+{
+  role: 'Super Admin', key: 'superadmin',
+  pages: [
+    { title: 'Super Admin Dashboard', route: '/superadmin/dashboard',
+      buttons: ['(within stat cards and quick links)'],
+      links: ['Total Shops → /superadmin/tenants', 'Total Users → /superadmin/users', 'Active Work Orders → /superadmin/analytics', 'System Health → /superadmin/infrastructure', 'QuickLink: Tenants', 'QuickLink: Users', 'QuickLink: Security', 'QuickLink: Infrastructure', 'QuickLink: Deployments', 'QuickLink: Analytics'],
+      cards: ['Total Shops stat card', 'Total Users stat card', 'Active Work Orders stat card', 'System Health stat card', 'Recent Shops list', 'Recent Activity log', '6 QuickLink cards'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'User Management (SuperAdmin)', route: '/superadmin/users',
+      buttons: ['Role filter pills (click to filter/deselect)'],
+      links: ['Back → /superadmin/dashboard'],
+      cards: ['Users table (Name, Email, Role badge, Shop, Joined date)', 'Role summary pills (role: count)'],
+      forms: ['Search input (name or email)'],
+      tabs: [] },
+
+    { title: 'Platform Analytics (SuperAdmin)', route: '/superadmin/analytics',
+      buttons: ['(link cards only)'],
+      links: ['Back → /superadmin/dashboard', 'Detailed Analytics → /admin/platform-analytics', 'Financial Reports → /admin/financial-reports'],
+      cards: ['Total Users stat', 'Total Shops stat', 'Work Orders stat', 'Revenue stat', 'Completion Rate donut chart', 'Work Order Breakdown', '2 deep-link cards'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Security Center', route: '/superadmin/security',
+      buttons: ['(link cards only)'],
+      links: ['Back → /superadmin/dashboard', 'Security Settings → /admin/security-settings', 'Activity Logs → /admin/activity-logs'],
+      cards: ['Authentication card (JWT, sessions, passwords)', 'Access Control card (RBAC, route protection)', 'API Security card (rate limiting, CSRF, input validation)', 'Data Protection card (encryption, bcrypt)', 'Recent Audit Logs list (action, user, IP, timestamp)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Tenant Management', route: '/superadmin/tenants',
+      buttons: ['(none — view-only cards)'],
+      links: ['Back → /superadmin/dashboard'],
+      cards: ['Per-tenant card (shop name, owner, team count, total jobs, subscription plan, joined date)'],
+      forms: ['Search input (shop name or owner)', 'Plan filter select (all/free/starter/professional/enterprise)'],
+      tabs: [] },
+
+    { title: 'Infrastructure', route: '/superadmin/infrastructure',
+      buttons: ['Refresh (re-fetches /api/admin/health)'],
+      links: ['Back → /superadmin/dashboard'],
+      cards: ['System Status banner (All Systems Operational / Issues Detected)', 'Version & uptime card', 'Database status (connected/disconnected, response time ms)', 'Memory usage card (usage/total/free MB)', 'CPU usage card (%)'],
+      forms: [],
+      tabs: [] },
+
+    { title: 'Deployments', route: '/superadmin/deployments',
+      buttons: ['(none — static display)'],
+      links: ['Back → /superadmin/dashboard'],
+      cards: ['Current Version card (v0.0.5, FixTray Work Order Platform)', 'Deployment History list (v0.0.5, v0.0.4, v0.0.3 — each with status, environment, deployer, duration, date)'],
+      forms: [],
+      tabs: [] },
+  ]
+},
+
+]; // end QA_DATA
+
+
+// ════════════════════════════════════════════════════════════════
+// RENDER ENGINE
+// ════════════════════════════════════════════════════════════════
+let itemCounter = 0;
+const totalItems = { val: 0 };
+const testedItems = { val: 0 };
+
+function makeId(prefix) {
+  return `qai-${prefix}-${++itemCounter}`;
+}
+
+function makeStatusGroup(uid) {
+  const goId   = `${uid}-go`;
+  const nogoId = `${uid}-nogo`;
+  const ntId   = `${uid}-nt`;
+  return `
+    <div class="status-group">
+      <input type="radio" id="${goId}"   name="${uid}" value="go">
+      <label for="${goId}"   class="status-label go-label">✅ Go</label>
+      <input type="radio" id="${nogoId}" name="${uid}" value="nogo">
+      <label for="${nogoId}" class="status-label nogo-label">❌ No Go</label>
+      <input type="radio" id="${ntId}"   name="${uid}" value="nt" checked>
+      <label for="${ntId}"   class="status-label nt-label">⬜ Not Tested</label>
+    </div>`;
+}
+
+function renderItems(items, sectionKey, pageKey, roleKey) {
+  if (!items || items.length === 0) return '';
+  const sectionNames = { buttons: '🔲 Buttons', links: '🔗 Links', cards: '🃏 Cards', forms: '📝 Form Fields', tabs: '📑 Tabs' };
+  const label = sectionNames[sectionKey] || sectionKey;
+
+  let html = `<div class="section-group"><span class="section-label">${label}</span>`;
+  items.forEach((item, idx) => {
+    const uid = `${roleKey}-${pageKey}-${sectionKey}-${idx}`;
+    totalItems.val++;
+    html += `
+      <div class="item-row">
+        <div class="item-top">
+          <span class="item-name">${escHtml(item)}</span>
+          ${makeStatusGroup(uid)}
+        </div>
+        <textarea class="item-notes" data-uid="${uid}" placeholder="What's happening / What should happen…" rows="2"></textarea>
+      </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,'');
+}
+
+function renderPage(page, pageIdx, roleKey) {
+  const pageKey = slugify(page.route || page.title);
+  const headerId = `ph-${roleKey}-${pageIdx}`;
+  const bodyId   = `pb-${roleKey}-${pageIdx}`;
+  const overallUid = `${roleKey}-${pageKey}-overall`;
+  totalItems.val++;
+
+  let sectionsHtml = '';
+  ['buttons','links','cards','forms','tabs'].forEach(sec => {
+    if (page[sec] && page[sec].length > 0) {
+      sectionsHtml += renderItems(page[sec], sec, pageKey, roleKey);
+    }
+  });
+
+  return `
+  <div class="page-card">
+    <div class="page-header" id="${headerId}" onclick="togglePage('${bodyId}','${headerId}')" tabindex="0" role="button" aria-expanded="false">
+      <span class="page-title">${escHtml(page.title)}</span>
+      <span class="page-route">${escHtml(page.route)}</span>
+      <span class="toggle-icon">▶</span>
+    </div>
+    <div class="page-overall">
+      <span class="overall-label">Page Overall:</span>
+      ${makeStatusGroup(overallUid)}
+    </div>
+    <div class="page-body" id="${bodyId}">
+      ${sectionsHtml}
+    </div>
+  </div>`;
+}
+
+function renderRole(roleData) {
+  const key = roleData.key;
+  const sectionId = `role-${key}`;
+  let pagesHtml = '';
+  roleData.pages.forEach((page, idx) => {
+    pagesHtml += renderPage(page, idx, key);
+  });
+
+  return `
+  <section class="role-section role-${key}" id="${sectionId}">
+    <div class="role-heading">
+      <span class="role-dot"></span>
+      ${roleData.role} Role
+      <span class="page-count">${roleData.pages.length} pages</span>
+    </div>
+    <div class="role-body">${pagesHtml}</div>
+  </section>`;
+}
+
+function renderAll() {
+  const main = document.getElementById('main');
+  let html = '';
+  // Count first pass (reset counter)
+  itemCounter = 0;
+  totalItems.val = 0;
+  QA_DATA.forEach(rd => {
+    html += renderRole(rd);
+  });
+  main.innerHTML = html;
+  document.getElementById('progress-summary').textContent = `0 / ${totalItems.val} items tested`;
+  document.getElementById('date-stamp').textContent = new Date().toLocaleDateString('en-US', {weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  attachListeners();
+}
+
+function togglePage(bodyId, headerId) {
+  const body = document.getElementById(bodyId);
+  const header = document.getElementById(headerId);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+  header.setAttribute('aria-expanded', String(!isOpen));
+}
+
+function attachListeners() {
+  // Track progress on radio changes
+  document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', updateProgress);
+  });
+  // Save/restore state from sessionStorage
+  restoreState();
+}
+
+function updateProgress() {
+  const allRadios = document.querySelectorAll('input[type="radio"]');
+  const groupsSeen = new Set();
+  const testedGroups = new Set();
+  allRadios.forEach(r => {
+    groupsSeen.add(r.name);
+    if (r.checked && r.value !== 'nt') testedGroups.add(r.name);
+  });
+  const total = groupsSeen.size;
+  const tested = testedGroups.size;
+  const pct = total > 0 ? Math.round((tested / total) * 100) : 0;
+  document.getElementById('progress-summary').textContent = `${tested} / ${total} items tested`;
+  document.getElementById('pct').textContent = `${pct}%`;
+  document.getElementById('progressFill').style.width = `${pct}%`;
+  saveState();
+}
+
+// ── PERSIST STATE ──
+function saveState() {
+  try {
+    const state = {};
+    document.querySelectorAll('input[type="radio"]').forEach(r => {
+      if (r.checked) state[r.name] = r.value;
+    });
+    document.querySelectorAll('.item-notes').forEach(ta => {
+      if (ta.value) state['note__' + ta.dataset.uid] = ta.value;
+    });
+    sessionStorage.setItem('fixtray_qa', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function restoreState() {
+  try {
+    const raw = sessionStorage.getItem('fixtray_qa');
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    Object.entries(state).forEach(([key, val]) => {
+      if (key.startsWith('note__')) {
+        const uid = key.slice(6);
+        const ta = document.querySelector(`.item-notes[data-uid="${uid}"]`);
+        if (ta) ta.value = val;
+      } else {
+        const radio = document.querySelector(`input[name="${key}"][value="${val}"]`);
+        if (radio) radio.checked = true;
+      }
+    });
+    updateProgress();
+    // Save notes on change too
+    document.querySelectorAll('.item-notes').forEach(ta => {
+      ta.addEventListener('input', saveState);
+    });
+  } catch(e) {}
+}
+
+// ── ROLE TABS ──
+document.querySelectorAll('.role-tab').forEach(tab => {
+  tab.addEventListener('click', function(e) {
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── KEYBOARD SUPPORT ──
+document.addEventListener('keydown', function(e) {
+  if (e.target.classList.contains('page-header') && (e.key === 'Enter' || e.key === ' ')) {
+    e.target.click();
+  }
+});
+
+// ── INIT ──
+renderAll();
+
+// Add note listeners after render
+setTimeout(() => {
+  document.querySelectorAll('.item-notes').forEach(ta => {
+    ta.addEventListener('input', saveState);
+  });
+  updateProgress();
+}, 100);
+</script>
+</body>
+</html>

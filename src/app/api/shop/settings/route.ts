@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     // Scope shopId: admins can pass any; shop owners use their own id; managers/techs use their shopId
-    const shopId = decoded.role === 'admin'
+    const shopId = (decoded.role === 'superadmin')
       ? searchParams.get('shopId')
       : (decoded.role === 'shop' ? decoded.id : decoded.shopId);
 
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest) {
   const decoded = requireAuth(request);
   if (decoded instanceof NextResponse) return decoded;
 
-  if (decoded.role !== 'shop' && decoded.role !== 'admin') {
+  if (decoded.role !== 'shop' && (decoded.role !== 'superadmin')) {
     return NextResponse.json({ error: 'Unauthorized - Shop admin only' }, { status: 403 });
   }
 

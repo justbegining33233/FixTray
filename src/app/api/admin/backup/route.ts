@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 
-// GET /api/admin/backup — export a full platform data snapshot as JSON
+// GET /api/admin/backup ΓÇö export a full platform data snapshot as JSON
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin']);
   if (auth instanceof NextResponse) return auth;
@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
       workOrders,
       appointments,
       reviews,
-      subscriptions,
       notifications,
     ] = await Promise.all([
       prisma.shop.findMany({ select: { id: true, shopName: true, email: true, status: true, createdAt: true, city: true, state: true } }),
@@ -24,7 +23,6 @@ export async function GET(request: NextRequest) {
       prisma.workOrder.findMany({ select: { id: true, status: true, shopId: true, customerId: true, createdAt: true, estimatedCost: true, amountPaid: true, paymentStatus: true } }),
       prisma.appointment.findMany({ select: { id: true, status: true, scheduledDate: true, shopId: true, customerId: true } }),
       prisma.review.findMany({ select: { id: true, rating: true, comment: true, shopId: true, customerId: true, createdAt: true } }),
-      prisma.subscription.findMany({ select: { id: true, plan: true, status: true, shopId: true, currentPeriodEnd: true } }),
       prisma.notification.findMany({ select: { id: true, type: true, title: true, customerId: true, read: true, createdAt: true } }),
     ]);
 
@@ -39,7 +37,6 @@ export async function GET(request: NextRequest) {
         workOrders: workOrders.length,
         appointments: appointments.length,
         reviews: reviews.length,
-        subscriptions: subscriptions.length,
         notifications: notifications.length,
       },
       data: {
@@ -49,7 +46,6 @@ export async function GET(request: NextRequest) {
         workOrders,
         appointments,
         reviews,
-        subscriptions,
         notifications,
       },
     };

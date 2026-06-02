@@ -31,6 +31,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '2FA is not configured for this account' }, { status: 400 });
     }
 
+    const shopSettings = await prisma.shopSettings.findUnique({
+      where: { shopId: shop.id },
+      select: { notificationPreferences: true },
+    });
+
+    const notificationPrefs =
+      shopSettings?.notificationPreferences &&
+      typeof shopSettings.notificationPreferences === 'object' &&
+      !Array.isArray(shopSettings.notificationPreferences)
+        ? (shopSettings.notificationPreferences as Record<string, unknown>)
+        : {};
+
+    const agreement = notificationPrefs.fixtrayAgreement as
+      | { accepted?: boolean; signedBy?: string; signedAt?: string }
+      | undefined;
+
+    const agreementAccepted = !!(agreement?.accepted && agreement?.signedBy && agreement?.signedAt);
+
     const valid = verifyTotpToken(decryptSecret(shop.twoFactorSecret), String(body.token));
     if (!valid) {
       return NextResponse.json({ error: 'Invalid TOTP token' }, { status: 401 });
@@ -50,6 +68,7 @@ export async function POST(request: NextRequest) {
       email: shop.email,
       phone: shop.phone,
       profileComplete: shop.profileComplete,
+      agreementAccepted,
       status: shop.status,
       accessToken,
     });

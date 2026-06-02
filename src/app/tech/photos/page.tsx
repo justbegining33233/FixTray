@@ -92,7 +92,7 @@ export default function TechPhotos() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto'}}>
-          <Link href="/tech/all-tools" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}><FaArrowLeft style={{marginRight:4}} /> Back to Tools</Link>
+          <Link href="/tech/all-tools" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}><FaArrowLeft style={{marginRight:4}} /> Back to Tools</Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaCamera style={{marginRight:4}} /> Tech Photos</h1>
           <div style={{fontSize:14, color:'#9aa3b2'}}>Upload and manage photos taken on jobs.</div>
         </div>
@@ -106,7 +106,7 @@ export default function TechPhotos() {
           </div>
 
           <div style={{display:'flex', gap:8, alignItems:'center'}}>
-            <button onClick={() => setShowUploadModal(true)} style={{background:'#111827', color:'#fff', padding:'8px 12px', borderRadius:8, cursor:'pointer'}}>Upload Photo</button>
+            <button onClick={() => setShowUploadModal(true)} style={{background:'#000000', color:'#fff', padding:'8px 12px', borderRadius:8, cursor:'pointer'}}>Upload Photo</button>
 
             {/* Upload modal (popup window) */}
             {showUploadModal && (
@@ -149,7 +149,7 @@ export default function TechPhotos() {
                           setShowUploadModal(false);
                           setModalFile(null);
                           setModalPreview('');
-                        }} style={{background:'#3b82f6', color:'#fff', padding:'8px 12px', borderRadius:8, border:'none'}}>Upload</button>
+                        }} style={{background:'#e5332a', color:'#fff', padding:'8px 12px', borderRadius:8, border:'none'}}>Upload</button>
 
                         <button onClick={() => { setShowUploadModal(false); setModalFile(null); setModalPreview(''); }} style={{background:'transparent', color:'#9aa3b2', padding:'8px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.04)'}}>Cancel</button>
                       </div>
@@ -207,7 +207,7 @@ export default function TechPhotos() {
                   if (res.ok) { const j = await res.json(); setPhotos(prev => prev.map(x => x.id === captionModal.id ? j.photo : x)); }
                 } catch (err) { console.error(err); }
                 setCaptionModal(null);
-              }} style={{flex:1, background:'#3b82f6', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>Save</button>
+              }} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>Save</button>
               <button onClick={() => setCaptionModal(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'10px 0', fontSize:14, cursor:'pointer'}}>Cancel</button>
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function TechPhotos() {
                   if (r.ok) { const j = await r.json(); setPhotos(prev => prev.map(x => x.id === assignModal.id ? j.photo : x)); }
                 } catch (err) { console.error(err); }
                 setAssignModal(null);
-              }} style={{flex:1, background:'#3b82f6', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>Assign</button>
+              }} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>Assign</button>
               <button onClick={() => setAssignModal(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'10px 0', fontSize:14, cursor:'pointer'}}>Cancel</button>
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function TechPhotos() {
       {photoMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:photoMsg.type==='success'?'#dcfce7':'#fde8e8',color:photoMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {photoMsg.text}
-          <button onClick={()=>setPhotoMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setPhotoMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
 
@@ -265,3 +265,4 @@ export default function TechPhotos() {
     </div>
   );
 }
+

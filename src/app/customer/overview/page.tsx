@@ -32,7 +32,8 @@ export default function CustomerOverview() {
 
       let activeOrders = 0, completedThisMonth = 0;
       if (woRes.status === 'fulfilled' && woRes.value.ok) {
-        const orders = await woRes.value.json();
+        const raw = await woRes.value.json();
+        const orders: any[] = Array.isArray(raw) ? raw : [];
         const now = new Date();
         activeOrders = orders.filter((o: any) => !['completed', 'closed'].includes(o.status?.toLowerCase())).length;
         completedThisMonth = orders.filter((o: any) => {
@@ -105,9 +106,9 @@ export default function CustomerOverview() {
 
         {/* Quick Stats */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:24, marginBottom:40}}>
-          <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:24}}>
+          <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>Active Orders</div>
-            <div style={{fontSize:36, fontWeight:700, color:'#3b82f6'}}>{loading ? '-' : stats.activeOrders}</div>
+            <div style={{fontSize:36, fontWeight:700, color:'#e5332a'}}>{loading ? '-' : stats.activeOrders}</div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>Completed This Month</div>
@@ -135,7 +136,7 @@ export default function CustomerOverview() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,
@@ -151,3 +152,4 @@ export default function CustomerOverview() {
     </div>
   );
 }
+

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FixTray – Subscription Plans</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6fa;
+      color: #222;
+      padding: 40px 20px;
+    }
+    .container { max-width: 980px; margin: 0 auto; }
+
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      border-radius: 10px;
+      padding: 32px 40px;
+      margin-bottom: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+    header p { font-size: 13px; color: #aaa; margin-top: 4px; }
+    .badge {
+      background: #e94560;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Plan cards row */
+    .plans-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+    .plan-card {
+      border-radius: 10px;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .plan-card .plan-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .plan-card .plan-price { font-size: 22px; font-weight: 800; }
+    .plan-card .plan-price span { font-size: 12px; font-weight: 400; opacity: 0.7; }
+    .plan-card .plan-cap { font-size: 11px; margin-top: 6px; opacity: 0.75; }
+    .plan-card .plan-tag { font-size: 11px; margin-top: 8px; font-style: italic; opacity: 0.8; line-height: 1.4; }
+
+    .starter    { background: #f0f4ff; border: 2px solid #c7d2fe; }
+    .starter .plan-name  { color: #3730a3; }
+    .starter .plan-price { color: #4338ca; }
+
+    .growth     { background: #f0fdf4; border: 2px solid #bbf7d0; }
+    .growth .plan-name   { color: #166534; }
+    .growth .plan-price  { color: #16a34a; }
+
+    .professional { background: #fff7ed; border: 2px solid #fed7aa; }
+    .professional .plan-name  { color: #9a3412; }
+    .professional .plan-price { color: #ea580c; }
+
+    .business   { background: #fdf4ff; border: 2px solid #e9d5ff; }
+    .business .plan-name   { color: #6b21a8; }
+    .business .plan-price  { color: #9333ea; }
+
+    .enterprise { background: #1a1a2e; border: 2px solid #e94560; color: #fff; }
+    .enterprise .plan-name  { color: #f87096; }
+    .enterprise .plan-price { color: #fff; }
+    .enterprise .plan-cap   { color: #ccc; }
+    .enterprise .plan-tag   { color: #bbb; }
+
+    /* Feature matrix */
+    .matrix-wrap {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    .matrix-wrap h2 {
+      font-size: 15px;
+      font-weight: 700;
+      padding: 16px 24px;
+      background: #f8f9fb;
+      border-bottom: 1px solid #e8eaf0;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead th {
+      padding: 12px 10px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 12px;
+      border-bottom: 2px solid #e8eaf0;
+    }
+    thead th:first-child { text-align: left; padding-left: 24px; width: 32%; }
+    thead th.h-starter    { background: #f0f4ff; color: #3730a3; }
+    thead th.h-growth     { background: #f0fdf4; color: #166534; }
+    thead th.h-professional { background: #fff7ed; color: #9a3412; }
+    thead th.h-business   { background: #fdf4ff; color: #6b21a8; }
+    thead th.h-enterprise { background: #1a1a2e; color: #f87096; }
+
+    tbody tr { border-bottom: 1px solid #f0f2f7; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafbfe; }
+    tbody tr.section-row td {
+      background: #f4f6fa;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #888;
+      padding: 8px 24px;
+      border-top: 2px solid #e8eaf0;
+    }
+    tbody td { padding: 9px 10px; text-align: center; }
+    tbody td:first-child { text-align: left; padding-left: 24px; color: #333; }
+    .yes { color: #16a34a; font-size: 17px; }
+    .no  { color: #d1d5db; font-size: 17px; }
+
+    /* Route gating table */
+    .routes-table td, .routes-table th { font-size: 12px; }
+    .routes-table td:first-child { font-family: monospace; color: #555; }
+    .pill {
+      display: inline-block;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pill-starter    { background: #e0e7ff; color: #3730a3; }
+    .pill-growth     { background: #dcfce7; color: #166534; }
+    .pill-professional { background: #ffedd5; color: #9a3412; }
+    .pill-business   { background: #f3e8ff; color: #6b21a8; }
+    .pill-enterprise { background: #1a1a2e; color: #f87096; }
+
+    footer {
+      text-align: center;
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .container { max-width: 100%; }
+      header { border-radius: 0; }
+      .matrix-wrap { box-shadow: none; border: 1px solid #ddd; }
+      .plans-row { page-break-inside: avoid; }
+      .enterprise { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>FixTray — Subscription Plans</h1>
+      <p>Features available by plan &nbsp;·&nbsp; Generated May 20, 2026</p>
+    </div>
+    <div class="badge">5 Plans</div>
+  </header>
+
+  <!-- Plan Summary Cards -->
+  <div class="plans-row">
+    <div class="plan-card starter">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$99<span>.88/mo</span></div>
+      <div class="plan-cap">1 user · 1 shop</div>
+      <div class="plan-tag">Solo operators &amp; owner-led shops going digital</div>
+    </div>
+    <div class="plan-card growth">
+      <div class="plan-name">Growth</div>
+      <div class="plan-price">$249<span>.88/mo</span></div>
+      <div class="plan-cap">5 users · 1 shop</div>
+      <div class="plan-tag">Small service teams needing live collaboration</div>
+    </div>
+    <div class="plan-card professional">
+      <div class="plan-name">Professional</div>
+      <div class="plan-price">$499<span>.88/mo</span></div>
+      <div class="plan-cap">15 users · 3 shops</div>
+      <div class="plan-tag">Established shops needing inventory, payroll &amp; multi-shop</div>
+    </div>
+    <div class="plan-card business">
+      <div class="plan-name">Business</div>
+      <div class="plan-price">$749<span>.88/mo</span></div>
+      <div class="plan-cap">40 users · 5 shops</div>
+      <div class="plan-tag">High-volume operators running multiple locations</div>
+    </div>
+    <div class="plan-card enterprise">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">$999<span>.88/mo</span></div>
+      <div class="plan-cap">Unlimited users · Unlimited shops</div>
+      <div class="plan-tag">Groups, fleets &amp; networks needing scale &amp; white-label</div>
+    </div>
+  </div>
+
+  <!-- Feature Matrix -->
+  <div class="matrix-wrap">
+    <h2>Feature Availability by Plan</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th class="h-starter">Starter</th>
+          <th class="h-growth">Growth</th>
+          <th class="h-professional">Professional</th>
+          <th class="h-business">Business</th>
+          <th class="h-enterprise">Enterprise</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="section-row"><td colspan="6">Core — Included in all plans</td></tr>
+        <tr><td>Work Orders</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Time Tracking</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Basic Reporting</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Email Notifications</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>File Uploads</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+
+        <tr class="section-row"><td colspan="6">Growth — Unlocked at Growth+</td></tr>
+        <tr><td>Multi-Role Users (Managers &amp; Techs)</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Break Tracking</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>GPS Verification</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Photo Capture &amp; DVI Inspections</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Messaging (Customer &amp; Team)</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Real-Time Dashboards</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Recurring Work Orders</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Waiting Room</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Team Scheduling &amp; Permissions</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+
+        <tr class="section-row"><td colspan="6">Professional — Unlocked at Professional+</td></tr>
+        <tr><td>Inventory Management</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Vendors &amp; Purchase Orders</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Parts &amp; Labor Management</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Payroll Management</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Budget Tracking</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Advanced Reporting &amp; Analytics</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Multi-Shop Management</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Fleet Management</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>AR Aging &amp; Profit Margins</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Campaigns, Referrals &amp; Branding</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Automations</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Admin Health &amp; Audit Logs</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Tax Settings</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Reviews Management</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+
+        <tr class="section-row"><td colspan="6">Business — Unlocked at Business+</td></tr>
+        <tr><td>Revenue Analytics &amp; Customer Reports</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Priority Support</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>Up to 40 Users / 5 Shops</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+
+        <tr class="section-row"><td colspan="6">Enterprise — Exclusive to Enterprise</td></tr>
+        <tr><td>Unlimited Users &amp; Shops</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td></tr>
+        <tr><td>Custom Integrations</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td></tr>
+        <tr><td>API Access</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td></tr>
+        <tr><td>Webhook Endpoints</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td></tr>
+        <tr><td>White-Label</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td></tr>
+        <tr><td>SLA Guarantees</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td></tr>
+        <tr><td>Dedicated Support</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✔</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Route Gating Reference -->
+  <div class="matrix-wrap">
+    <h2>Route Access — Minimum Plan Required</h2>
+    <table class="routes-table">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding-left:24px; width:55%">Route / Section</th>
+          <th style="text-align:left;">Minimum Plan</th>
+          <th style="text-align:left;">Feature</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>/shop/manage-team, /shop/settings/permissions, /shop/settings/schedule</td><td><span class="pill pill-growth">Growth</span></td><td>Multi-Role Users</td></tr>
+        <tr><td>/shop/customer-messages, /manager/messages, /tech/messages</td><td><span class="pill pill-growth">Growth</span></td><td>Messaging</td></tr>
+        <tr><td>/shop/recurring-workorders, /manager/recurring-workorders</td><td><span class="pill pill-growth">Growth</span></td><td>Messaging</td></tr>
+        <tr><td>/shop/waiting-room</td><td><span class="pill pill-growth">Growth</span></td><td>Messaging</td></tr>
+        <tr><td>/shop/dvi, /shop/condition-reports, /shop/inspections</td><td><span class="pill pill-growth">Growth</span></td><td>Photo Capture</td></tr>
+        <tr><td>/tech/photos, /tech/dvi</td><td><span class="pill pill-growth">Growth</span></td><td>Photo Capture</td></tr>
+        <tr><td>/shop/inventory/*, /manager/inventory, /tech/inventory</td><td><span class="pill pill-professional">Professional</span></td><td>Inventory</td></tr>
+        <tr><td>/shop/vendors, /shop/purchase-orders, /shop/core-returns</td><td><span class="pill pill-professional">Professional</span></td><td>Inventory</td></tr>
+        <tr><td>/shop/parts-labor</td><td><span class="pill pill-professional">Professional</span></td><td>Inventory</td></tr>
+        <tr><td>/shop/payroll, /manager/payroll, /shop/admin/payroll</td><td><span class="pill pill-professional">Professional</span></td><td>Payroll</td></tr>
+        <tr><td>/shop/analytics, /shop/ar-aging, /shop/profit-margins</td><td><span class="pill pill-professional">Professional</span></td><td>Advanced Reporting</td></tr>
+        <tr><td>/manager/reports, /shop/eod-report, /shop/payment-links</td><td><span class="pill pill-professional">Professional</span></td><td>Advanced Reporting</td></tr>
+        <tr><td>/shop/referrals, /shop/campaigns, /shop/branding, /shop/automations</td><td><span class="pill pill-professional">Professional</span></td><td>Advanced Reporting</td></tr>
+        <tr><td>/shop/tax-settings, /shop/reviews</td><td><span class="pill pill-professional">Professional</span></td><td>Advanced Reporting</td></tr>
+        <tr><td>/shop/admin/settings, /shop/admin/logs, /shop/admin/health</td><td><span class="pill pill-professional">Professional</span></td><td>Advanced Reporting</td></tr>
+        <tr><td>/shop/locations, /shop/fleet</td><td><span class="pill pill-professional">Professional</span></td><td>Multi-Shop Management</td></tr>
+        <tr><td>/shop/customer-reports</td><td><span class="pill pill-business">Business</span></td><td>Revenue Analytics</td></tr>
+        <tr><td>/shop/integrations</td><td><span class="pill pill-enterprise">Enterprise</span></td><td>Custom Integrations</td></tr>
+        <tr><td>/shop/settings/api-keys, /shop/settings/webhooks</td><td><span class="pill pill-enterprise">Enterprise</span></td><td>API Access</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    FixTray Work Order Software &nbsp;·&nbsp; Subscription Plans Reference &nbsp;·&nbsp; May 20, 2026
+  </footer>
+
+</div>
+</body>
+</html>

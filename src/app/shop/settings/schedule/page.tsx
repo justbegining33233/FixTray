@@ -97,7 +97,7 @@ export default function ScheduleSettingsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/shop/schedule/blocked-dates', {
+      const res = await fetch('/api/shop/schedule/blockedDates', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -128,7 +128,7 @@ export default function ScheduleSettingsPage() {
   const handleRemoveBlockedDate = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/shop/schedule/blocked-dates?id=${id}`, {
+      const res = await fetch(`/api/shop/schedule/blockedDates?id=${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -363,7 +363,7 @@ export default function ScheduleSettingsPage() {
               onClick={handleAddBlockedDate}
               disabled={!newBlockedDate}
               style={{
-                padding: '12px 20px', background: newBlockedDate ? '#3b82f6' : '#4b5563',
+                padding: '12px 20px', background: newBlockedDate ? '#e5332a' : '#4b5563',
                 border: 'none', borderRadius: 8, color: 'white',
                 fontSize: 14, fontWeight: 600, cursor: newBlockedDate ? 'pointer' : 'not-allowed',
                 whiteSpace: 'nowrap'
@@ -420,3 +420,4 @@ export default function ScheduleSettingsPage() {
     </div>
   );
 }
+

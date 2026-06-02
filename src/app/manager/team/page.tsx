@@ -65,7 +65,7 @@ export default function ManagerTeamPage() {
   }
 
   const roleColors: Record<string, { bg: string; color: string }> = {
-    tech:    { bg: 'rgba(59,130,246,0.2)',  color: '#93c5fd' },
+    tech:    { bg: 'rgba(229,51,42,0.2)',  color: '#ffb4ad' },
     manager: { bg: 'rgba(139,92,246,0.2)',  color: '#c4b5fd' },
     advisor: { bg: 'rgba(234,179,8,0.2)',   color: '#fde047' },
     shop:    { bg: 'rgba(34,197,94,0.2)',   color: '#86efac' },
@@ -86,7 +86,7 @@ export default function ManagerTeamPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#e5e7eb', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#000000', color: '#e5e7eb', display: 'flex' }}>
       <Sidebar role="manager" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -143,7 +143,7 @@ export default function ManagerTeamPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
                     <div style={{
                       width: '46px', height: '46px', borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                      background: 'linear-gradient(135deg, #e5332a, #6366f1)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '1.2rem', fontWeight: 700, color: '#fff', flexShrink: 0,
                     }}>
@@ -170,7 +170,7 @@ export default function ManagerTeamPage() {
                     }}>
                       <FaCircle style={{marginRight:4}} /> {member.status}
                     </span>
-                    <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '9999px', background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
+                    <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '9999px', background: 'rgba(229,51,42,0.15)', color: '#ff6b64' }}>
                       <FaFolder style={{marginRight:4}} /> {member.assignedJobs} job{member.assignedJobs !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -200,3 +200,5 @@ export default function ManagerTeamPage() {
     </div>
   );
 }
+
+

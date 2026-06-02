@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
 
 import { generateAccessToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
+import { isOwnerAdmin } from '@/lib/owner-access';
+import { logActivity } from '@/lib/activityLogger';
+import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +15,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
     }
 
+    const normalizedUsername = String(username).trim();
+
     // Lazy-load runtime-sensitive modules
     const prisma = (await import('@/lib/prisma')).default;
     const bcryptMod = await import('bcrypt');
@@ -19,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting - prevent brute force attacks
     const clientIP = getClientIP(request);
-    const rateLimitKey = `admin_login:${clientIP}:${username}`;
+    const rateLimitKey = `admin_login:${clientIP}:${normalizedUsername.toLowerCase()}`;
     const rateLimit = await checkRateLimit(rateLimitKey);
     
     if (!rateLimit.success) {
@@ -29,8 +34,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find admin by username
-    const admin = await prisma.admin.findUnique({ where: { username } });
+    // Find admin by username (trimmed), with a case-insensitive fallback
+    let admin = await prisma.admin.findUnique({ where: { username: normalizedUsername } });
+    if (!admin) {
+      const admins = await prisma.admin.findMany();
+      admin = admins.find((a) => a.username.toLowerCase() === normalizedUsername.toLowerCase()) || null;
+    }
 
     if (!admin) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -47,7 +56,14 @@ export async function POST(request: NextRequest) {
     resetRateLimit(rateLimitKey);
 
     // Generate short-lived access token
-    const accessToken = generateAccessToken({ id: admin.id, username: admin.username, role: 'admin' });
+    const ownerAccess = isOwnerAdmin({ id: admin.id, username: admin.username });
+    const accessToken = generateAccessToken({
+      id: admin.id,
+      username: admin.username,
+      role: 'superadmin',
+      isSuperAdmin: admin.isSuperAdmin,
+      isOwner: ownerAccess,
+    });
 
     // Create refresh token (store hashed) and set httpOnly cookie. We store cookie as "<id>:<raw>"
     const refreshRaw = generateRandomToken(48);
@@ -56,6 +72,8 @@ export async function POST(request: NextRequest) {
     const expiresAt = refreshExpiryDate();
     const userIp = request.headers.get('x-forwarded-for') || request.headers.get('host') || '';
     const userAgent = request.headers.get('user-agent') || '';
+    await enforceSingleActiveSession(prisma, { adminId: admin.id });
+
     const refresh = await prisma.refreshToken.create({
       data: {
         tokenHash: refreshHash,
@@ -70,7 +88,8 @@ export async function POST(request: NextRequest) {
       username: admin.username,
       email: admin.email,
       isSuperAdmin: admin.isSuperAdmin,
-      role: 'admin',
+      isOwner: ownerAccess,
+      role: 'superadmin',
       accessToken,
     });
     try {
@@ -122,6 +141,14 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.error('[admin/login] cookie set failed (sos_auth):', err);
     }
+
+    // Fire-and-forget activity log — never blocks the response
+    logActivity('login', admin.username, `Admin login from ${userIp}`, {
+      type: 'user',
+      severity: 'info',
+      email: admin.email,
+      metadata: { ip: userIp, agent: userAgent, role: 'superadmin' },
+    });
 
     return response;
 

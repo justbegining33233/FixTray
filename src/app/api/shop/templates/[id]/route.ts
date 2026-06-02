@@ -30,7 +30,7 @@ export async function PUT(
   if (!existing) return NextResponse.json({ error: 'Template not found' }, { status: 404 });
 
   const shopId = auth.shopId ?? auth.id;
-  if (existing.shopId !== shopId && existing.shopId !== '__demo__') {
+  if (existing.shopId !== shopId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -56,7 +56,7 @@ export async function DELETE(
   if (!existing) return NextResponse.json({ error: 'Template not found' }, { status: 404 });
 
   const shopId = auth.shopId ?? auth.id;
-  if (existing.shopId !== shopId && existing.shopId !== '__demo__') {
+  if (existing.shopId !== shopId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

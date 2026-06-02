@@ -5,6 +5,22 @@ import { useEffect } from 'react';
 export default function ServiceWorkerRegister() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
+      // In development, remove existing service workers/caches to avoid stale chunks.
+      if (process.env.NODE_ENV !== 'production') {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => {
+            registration.unregister();
+          });
+        });
+
+        if ('caches' in window) {
+          caches.keys().then((keys) => {
+            keys.forEach((key) => {
+              caches.delete(key);
+            });
+          });
+        }
+      } else {
       // Register service worker
       navigator.serviceWorker
         .register('/sw.js')
@@ -12,9 +28,10 @@ export default function ServiceWorkerRegister() {
         })
         .catch((_error) => {
         });
+      }
 
       // Request notification permission for mobile
-      if ('Notification' in window && 'serviceWorker' in navigator) {
+      if (process.env.NODE_ENV === 'production' && 'Notification' in window && 'serviceWorker' in navigator) {
         Notification.requestPermission().then((permission) => {
           if (permission === 'granted') {
           }

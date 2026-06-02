@@ -190,3 +190,79 @@ export async function getRateLimitStatus(
     resetTime: entry.resetTime,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Middleware-style rate limiter (used as Next.js route middleware)
+// ─────────────────────────────────────────────────────────────────────────────
+import { NextRequest, NextResponse } from 'next/server';
+
+export interface RateLimitConfig {
+  windowMs: number;
+  maxRequests: number;
+  message?: string;
+}
+
+export const rateLimitConfigs = {
+  auth: {
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 15,
+    message: 'Too many authentication attempts, please try again later',
+  },
+  api: {
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 100,
+    message: 'Too many requests, please try again later',
+  },
+  strict: {
+    windowMs: 60 * 1000,
+    maxRequests: 10,
+    message: 'Rate limit exceeded, please slow down',
+  },
+} satisfies Record<string, RateLimitConfig>;
+
+/**
+ * Returns a middleware function. Call it inside your route handler:
+ *   const limiter = rateLimit(rateLimitConfigs.auth);
+ *   const limited = await limiter(request);
+ *   if (limited) return limited;
+ */
+export function rateLimit(config: RateLimitConfig) {
+  return async (request: NextRequest): Promise<NextResponse | null> => {
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded
+      ? forwarded.split(',')[0].trim()
+      : request.headers.get('x-real-ip') || 'unknown';
+    const pathname = new URL(request.url).pathname;
+    const identifier = `rl-mw:${ip}:${pathname}`;
+    const result = await checkRateLimit(identifier, {
+      maxRequests: config.maxRequests,
+      windowMs:    config.windowMs,
+    });
+    if (!result.success) {
+      const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: config.message ?? 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After':          String(retryAfter),
+            'X-RateLimit-Limit':    String(config.maxRequests),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset':    String(result.resetTime),
+          },
+        },
+      );
+    }
+    return null;
+  };
+}
+
+export function addRateLimitHeaders(
+  response: NextResponse,
+  config: RateLimitConfig,
+  currentCount: number,
+): NextResponse {
+  response.headers.set('X-RateLimit-Limit', String(config.maxRequests));
+  response.headers.set('X-RateLimit-Remaining', String(config.maxRequests - currentCount));
+  return response;
+}

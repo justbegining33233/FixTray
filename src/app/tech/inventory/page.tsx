@@ -24,7 +24,7 @@ export default function TechInventory() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto'}}>
-          <Link href="/tech/all-tools" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/tech/all-tools" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Tools
           </Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaCog style={{marginRight:4}} /> Parts Inventory</h1>
@@ -53,7 +53,7 @@ export default function TechInventory() {
               <div style={{fontSize:32, marginBottom:8}}>{card.icon}</div>
               <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{card.label}</div>
               <div style={{fontSize:12, color:'#9aa3b2'}}>{card.desc}</div>
-              {card.ext && <div style={{fontSize:11, color:'#3b82f6', marginTop:6}}><FaExternalLinkAlt style={{marginRight:4}} /> External site</div>}
+              {card.ext && <div style={{fontSize:11, color:'#e5332a', marginTop:6}}><FaExternalLinkAlt style={{marginRight:4}} /> External site</div>}
             </a>
           ))}
         </div>
@@ -64,7 +64,7 @@ export default function TechInventory() {
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(180px, 1fr))', gap:12}}>
             {[
               { brand: 'ACDelco', info: 'GM OEM parts', color: '#facc15' },
-              { brand: 'Bosch', info: 'Ignition, sensors, starters', color: '#3b82f6' },
+              { brand: 'Bosch', info: 'Ignition, sensors, starters', color: '#e5332a' },
               { brand: 'Denso', info: 'O2 sensors, alternators', color: '#10b981' },
               { brand: 'Monroe', info: 'Shocks & struts', color: '#f97316' },
               { brand: 'Gates', info: 'Belts, hoses, timing kits', color: '#8b5cf6' },
@@ -83,3 +83,4 @@ export default function TechInventory() {
     </div>
   );
 }
+

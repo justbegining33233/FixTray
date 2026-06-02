@@ -104,7 +104,7 @@ export default function ShopLocationsPage() {
             <h1 style={{ color: '#f1f5f9', fontSize: 26, fontWeight: 700, margin: '4px 0 4px' }}><FaMapMarkerAlt style={{marginRight:4}} /> Shop Locations</h1>
             <p style={{ color: '#64748b', fontSize: 13, margin: 0 }}>Manage multiple shop branches and service locations</p>
           </div>
-          <button onClick={openCreate} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: 'pointer' }}>+ Add Location</button>
+          <button onClick={openCreate} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>+ Add Location</button>
         </div>
 
         {success && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#86efac', fontSize: 14 }}>{success}</div>}
@@ -113,7 +113,7 @@ export default function ShopLocationsPage() {
         {/* Stats pills */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
-            { label: 'Total Locations', value: locations.length, color: '#60a5fa' },
+            { label: 'Total Locations', value: locations.length, color: '#ff6b64' },
             { label: 'Active', value: locations.filter(l => l.status === 'active').length, color: '#34d399' },
           ].map(s => (
             <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 20px', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
@@ -209,7 +209,7 @@ export default function ShopLocationsPage() {
               </div>
               {error && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>{error}</p>}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
                   {saving ? 'Saving...' : editId ? 'Update Location' : 'Add Location'}
                 </button>
                 <button onClick={() => { setShowForm(false); setError(null); }} style={{ padding: '11px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Cancel</button>
@@ -234,3 +234,4 @@ export default function ShopLocationsPage() {
     </div>
   );
 }
+

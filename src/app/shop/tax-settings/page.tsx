@@ -79,7 +79,7 @@ export default function TaxSettingsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaReceipt style={{marginRight:4}} /> Tax Rules</h1>
@@ -109,11 +109,11 @@ export default function TaxSettingsPage() {
                         {!rule.isActive && <span style={{ background: 'rgba(107,114,128,0.2)', color: '#9ca3af', borderRadius: 20, padding: '1px 10px', fontSize: 11 }}>Inactive</span>}
                       </div>
                       <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 4 }}>
-                        {rule.state && `${rule.state}${rule.county ? ` · ${rule.county}` : ''} · `}
+                        {rule.state && `${rule.state}${rule.county ? `  ${rule.county}` : ''}  `}
                         {rule.appliesToParts && <><FaBox style={{marginRight:4}} /> Parts </>}{rule.appliesToLabor && <><FaWrench style={{marginRight:4}} /> Labor </>}{rule.appliesToFees && <><FaDollarSign style={{marginRight:4}} /> Fees</>}
                       </div>
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: '#60a5fa' }}>{rule.rate}%</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#ff6b64' }}>{rule.rate}%</div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <button onClick={() => { setEditRule(rule); setFormError(''); }} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7, padding: '6px 0', fontSize: 12, color: '#e5e7eb', cursor: 'pointer' }}>Edit</button>
@@ -236,9 +236,10 @@ export default function TaxSettingsPage() {
       {taxMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:taxMsg.type==='success'?'#dcfce7':'#fde8e8',color:taxMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {taxMsg.text}
-          <button onClick={()=>setTaxMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setTaxMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>
   );
 }
+

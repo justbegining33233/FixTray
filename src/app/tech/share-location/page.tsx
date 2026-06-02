@@ -63,9 +63,9 @@ export default function ShareLocation() {
 
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>
-      <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(59,130,246,0.3)', padding:'20px 32px'}}>
+      <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:900, margin:'0 auto'}}>
-          <Link href="/tech/home" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/tech/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaMapMarkerAlt style={{marginRight:4}} /> Share Location</h1>
@@ -82,15 +82,15 @@ export default function ShareLocation() {
             <div style={{textAlign:'center', padding:40}}>
               <div style={{fontSize:64, marginBottom:16}}><FaMapMarkerAlt style={{marginRight:4}} /></div>
               <p style={{fontSize:16, color:'#9aa3b2', marginBottom:24}}>Get your current GPS coordinates</p>
-              <button onClick={getCurrentLocation} style={{padding:'14px 32px', background:'#3b82f6', color:'white', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer'}}>
+              <button onClick={getCurrentLocation} style={{padding:'14px 32px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer'}}>
                 Get Current Location
               </button>
             </div>
           ) : (
             <div>
-              <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:8, padding:20, marginBottom:16}}>
+              <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, padding:20, marginBottom:16}}>
                 <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>GPS Coordinates</div>
-                <div style={{fontSize:20, fontWeight:700, color:'#3b82f6', fontFamily:'monospace'}}>{address}</div>
+                <div style={{fontSize:20, fontWeight:700, color:'#e5332a', fontFamily:'monospace'}}>{address}</div>
               </div>
               
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
@@ -125,13 +125,13 @@ export default function ShareLocation() {
                 <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:8, padding:20, marginBottom:16}}>
                   <div style={{fontSize:14, color:'#22c55e', marginBottom:8, fontWeight:600}}><FaCheck style={{marginRight:4}} /> Location Sharing Active</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>Share this link:</div>
-                  <div style={{background:'rgba(0,0,0,0.3)', padding:12, borderRadius:6, fontSize:13, color:'#3b82f6', wordBreak:'break-all', fontFamily:'monospace'}}>
+                  <div style={{background:'rgba(0,0,0,0.3)', padding:12, borderRadius:6, fontSize:13, color:'#e5332a', wordBreak:'break-all', fontFamily:'monospace'}}>
                     {shareLink}
                   </div>
                 </div>
 
                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
-                  <button onClick={copyLink} style={{padding:'14px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', border:'1px solid rgba(59,130,246,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
+                  <button onClick={copyLink} style={{padding:'14px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
                     <FaClipboardList style={{marginRight:4}} /> Copy Link
                   </button>
                   <a href={shareLink} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none'}}>
@@ -166,9 +166,10 @@ export default function ShareLocation() {
       {locationMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:locationMsg.type==='success'?'#dcfce7':'#fde8e8',color:locationMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {locationMsg.text}
-          <button onClick={()=>setLocationMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setLocationMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>
   );
 }
+

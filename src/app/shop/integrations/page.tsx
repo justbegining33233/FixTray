@@ -78,7 +78,7 @@ export default function IntegrationsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaPlug style={{marginRight:4}} /> Integrations</h1>
         <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>Connect your shop with accounting, payments, communications, and data services</p>

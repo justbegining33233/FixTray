@@ -56,69 +56,69 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', padding: 20 }}>
-      <div style={{ background: 'white', borderRadius: 12, padding: 40, width: '100%', maxWidth: 420, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', padding: 20 }}>
+      <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 40, width: '100%', maxWidth: 420, boxShadow: '0 8px 36px rgba(0,0,0,0.55)' }}>
         {step === 'done' ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}><FaCheckCircle style={{marginRight:4}} /></div>
-            <h2 style={{ marginBottom: 8, color: '#111827' }}>Password Updated</h2>
-            <p style={{ color: '#6b7280', marginBottom: 24 }}>Your password has been reset successfully.</p>
-            <Link href="/auth/login" style={{ display: 'inline-block', background: '#3b82f6', color: 'white', padding: '12px 32px', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
+            <h2 style={{ marginBottom: 8, color: '#f1f5f9' }}>Password Updated</h2>
+            <p style={{ color: '#94a3b8', marginBottom: 24 }}>Your password has been reset successfully.</p>
+            <Link href="/auth/login" style={{ display: 'inline-block', background: '#e5332a', color: 'white', padding: '12px 32px', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
               Back to Login
             </Link>
           </div>
         ) : step === 'confirm' ? (
           <>
-            <h2 style={{ marginBottom: 4, color: '#111827', fontSize: 22 }}>Enter your code</h2>
-            <p style={{ color: '#6b7280', marginBottom: 24, fontSize: 14 }}>
+            <h2 style={{ marginBottom: 4, color: '#f1f5f9', fontSize: 22 }}>Enter your code</h2>
+            <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>
               If <strong>{identifier}</strong> has an account, we emailed a verification code. Check your inbox.
             </p>
             <form onSubmit={handleConfirm}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#374151' }}>Verification Code</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>Verification Code</label>
                 <input
                   type="text"
                   value={token}
                   onChange={e => setToken(e.target.value)}
                   placeholder="Enter the code from your email"
                   required
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#374151' }}>New Password</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>New Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
                   required
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#374151' }}>Confirm Password</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>Confirm Password</label>
                 <input
                   type="password"
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
                   placeholder="Repeat new password"
                   required
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
               {error && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 12 }}>{error}</p>}
               <button
                 type="submit"
                 disabled={loading}
-                style={{ width: '100%', padding: '12px', background: loading ? '#93c5fd' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+                style={{ width: '100%', padding: '12px', background: loading ? 'rgba(229,51,42,0.5)' : '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
               >
                 {loading ? 'Updating...' : 'Reset Password'}
               </button>
               <button
                 type="button"
                 onClick={() => { setStep('request'); setToken(''); setPassword(''); setConfirm(''); setError(''); }}
-                style={{ width: '100%', padding: '10px', background: 'transparent', color: '#6b7280', border: 'none', fontSize: 14, cursor: 'pointer', marginTop: 8 }}
+                style={{ width: '100%', padding: '10px', background: 'transparent', color: '#94a3b8', border: 'none', fontSize: 14, cursor: 'pointer', marginTop: 8 }}
               >
                 <FaArrowLeft style={{marginRight:4}} /> Use a different email
               </button>
@@ -126,11 +126,11 @@ export default function ResetPasswordPage() {
           </>
         ) : (
           <>
-            <h2 style={{ marginBottom: 4, color: '#111827', fontSize: 22 }}>Forgot Password</h2>
-            <p style={{ color: '#6b7280', marginBottom: 24, fontSize: 14 }}>Enter your email or username and we'll send you a reset code.</p>
+            <h2 style={{ marginBottom: 4, color: '#f1f5f9', fontSize: 22 }}>Forgot Password</h2>
+            <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>Enter your email or username and we'll send you a reset code.</p>
             <form onSubmit={handleRequest}>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#374151' }}>Email or Username</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>Email or Username</label>
                 <input
                   type="text"
                   value={identifier}
@@ -138,21 +138,21 @@ export default function ResetPasswordPage() {
                   placeholder="you@example.com"
                   required
                   autoFocus
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
               {error && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 12 }}>{error}</p>}
               <button
                 type="submit"
                 disabled={loading}
-                style={{ width: '100%', padding: '12px', background: loading ? '#93c5fd' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+                style={{ width: '100%', padding: '12px', background: loading ? 'rgba(229,51,42,0.5)' : '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
               >
                 {loading ? 'Sending...' : 'Send Reset Code'}
               </button>
             </form>
-            <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
+            <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#94a3b8' }}>
               Remember it?{' '}
-              <Link href="/auth/login" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
+              <Link href="/auth/login" style={{ color: '#e5332a', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
             </p>
           </>
         )}

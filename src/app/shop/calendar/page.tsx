@@ -101,7 +101,8 @@ export default function ShopCalendar() {
     if (!isLoading && user) fetchEvents();
   }, [isLoading, user, fetchEvents]);
 
-  if (isLoading || !user) return null;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (!user) return null;
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -138,14 +139,14 @@ export default function ShopCalendar() {
   const statusColor = (status: string) => {
     switch (status) {
       case 'scheduled': case 'pending': return '#f59e0b';
-      case 'confirmed': case 'assigned': case 'in-progress': return '#3b82f6';
+      case 'confirmed': case 'assigned': case 'in-progress': return '#e5332a';
       case 'completed': case 'closed': return '#22c55e';
       case 'cancelled': case 'no-show': case 'denied-estimate': return '#ef4444';
       default: return '#9aa3b2';
     }
   };
 
-  const typeColor = (type: string) => type === 'appointment' ? 'rgba(59,130,246,0.15)' : 'rgba(168,85,247,0.15)';
+  const typeColor = (type: string) => type === 'appointment' ? 'rgba(229,51,42,0.15)' : 'rgba(168,85,247,0.15)';
 
   const selectedEvents = selectedDate ? eventsForDate(selectedDate) : [];
 
@@ -205,13 +206,13 @@ export default function ShopCalendar() {
                   <div key={day} onClick={() => setSelectedDate(isSelected ? null : dateStr)} style={{
                     minHeight:100, padding:8, cursor:'pointer',
                     borderRight:'1px solid rgba(255,255,255,0.05)', borderBottom:'1px solid rgba(255,255,255,0.05)',
-                    background: isSelected ? 'rgba(229,51,42,0.1)' : isToday ? 'rgba(59,130,246,0.08)' : 'transparent',
+                    background: isSelected ? 'rgba(229,51,42,0.1)' : isToday ? 'rgba(229,51,42,0.08)' : 'transparent',
                   }}>
                     <div style={{
                       fontSize:14, fontWeight: isToday ? 800 : 600,
-                      color: isToday ? '#3b82f6' : '#e5e7eb',
+                      color: isToday ? '#e5332a' : '#e5e7eb',
                       marginBottom:4,
-                      ...(isToday ? {background:'#3b82f6', color:'white', width:26, height:26, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center'} : {}),
+                      ...(isToday ? {background:'#e5332a', color:'white', width:26, height:26, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center'} : {}),
                     }}>
                       {day}
                     </div>
@@ -243,9 +244,9 @@ export default function ShopCalendar() {
                 const isToday = dateStr === today;
                 return (
                   <div key={dateStr} style={{borderRight:'1px solid rgba(255,255,255,0.05)', minHeight:400}}>
-                    <div style={{padding:12, textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', background: isToday ? 'rgba(59,130,246,0.1)' : 'transparent'}}>
+                    <div style={{padding:12, textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', background: isToday ? 'rgba(229,51,42,0.1)' : 'transparent'}}>
                       <div style={{fontSize:12, color:'#9aa3b2', fontWeight:600}}>{d.toLocaleDateString('en', { weekday: 'short' })}</div>
-                      <div style={{fontSize:20, fontWeight:800, color: isToday ? '#3b82f6' : '#e5e7eb'}}>{d.getDate()}</div>
+                      <div style={{fontSize:20, fontWeight:800, color: isToday ? '#e5332a' : '#e5e7eb'}}>{d.getDate()}</div>
                     </div>
                     <div style={{padding:8}}>
                       {dayEvents.map(ev => (
@@ -286,17 +287,17 @@ export default function ShopCalendar() {
                     <div style={{fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{ev.time}</div>
                     <div style={{
                       fontSize:10, fontWeight:600, textTransform:'uppercase',
-                      color: ev.type === 'appointment' ? '#3b82f6' : '#a78bfa',
+                      color: ev.type === 'appointment' ? '#e5332a' : '#a78bfa',
                     }}>{ev.type === 'appointment' ? 'APPT' : 'WO'}</div>
                   </div>
                   <div style={{flex:1}}>
                     <div style={{fontSize:15, fontWeight:600, color:'#e5e7eb'}}>{ev.title}</div>
-                    {ev.customer && <div style={{fontSize:13, color:'#9aa3b2'}}>{ev.customer}{ev.service ? ` · ${ev.service}` : ''}</div>}
+                    {ev.customer && <div style={{fontSize:13, color:'#9aa3b2'}}>{ev.customer}{ev.service ? `  ${ev.service}` : ''}</div>}
                   </div>
                   <span style={{padding:'4px 10px', borderRadius:12, fontSize:11, fontWeight:700, background:`${statusColor(ev.status)}20`, color: statusColor(ev.status), textTransform:'uppercase'}}>
                     {ev.status}
                   </span>
-                  <Link href={ev.type === 'appointment' ? `/shop/home` : `/workorders/${ev.id}`} style={{padding:'6px 12px', background:'#3b82f6', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
+                  <Link href={ev.type === 'appointment' ? `/shop/home` : `/workorders/${ev.id}`} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
                     View
                   </Link>
                 </div>
@@ -308,7 +309,7 @@ export default function ShopCalendar() {
         {/* Legend */}
         <div style={{marginTop:24, display:'flex', gap:24, flexWrap:'wrap'}}>
           <div style={{display:'flex', alignItems:'center', gap:8}}>
-            <div style={{width:12, height:12, borderRadius:3, background:'rgba(59,130,246,0.3)', border:'2px solid #3b82f6'}} />
+            <div style={{width:12, height:12, borderRadius:3, background:'rgba(229,51,42,0.3)', border:'2px solid #e5332a'}} />
             <span style={{fontSize:12, color:'#9aa3b2'}}>Appointment</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:8}}>
@@ -319,7 +320,7 @@ export default function ShopCalendar() {
             <div style={{width:8, height:8, borderRadius:'50%', background:'#f59e0b'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>Pending</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:6}}>
-            <div style={{width:8, height:8, borderRadius:'50%', background:'#3b82f6'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>In Progress</span>
+            <div style={{width:8, height:8, borderRadius:'50%', background:'#e5332a'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>In Progress</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:6}}>
             <div style={{width:8, height:8, borderRadius:'50%', background:'#22c55e'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>Completed</span>
@@ -332,3 +333,4 @@ export default function ShopCalendar() {
     </div>
   );
 }
+

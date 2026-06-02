@@ -27,7 +27,7 @@ export async function GET(
   if (!schedule) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const allowed =
-    auth.role === 'admin' ||
+    (auth.role === 'superadmin') ||
     (auth.role === 'shop' && schedule.shopId === auth.id) ||
     ((auth.role === 'tech' || auth.role === 'manager') && schedule.shopId === auth.shopId) ||
     (auth.role === 'customer' && schedule.customerId === auth.id);
@@ -49,7 +49,7 @@ export async function PUT(
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const allowed =
-    auth.role === 'admin' ||
+    (auth.role === 'superadmin') ||
     (auth.role === 'shop' && existing.shopId === auth.id) ||
     ((auth.role === 'tech' || auth.role === 'manager') && existing.shopId === auth.shopId);
 
@@ -89,7 +89,7 @@ export async function DELETE(
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const allowed =
-    auth.role === 'admin' ||
+    (auth.role === 'superadmin') ||
     (auth.role === 'shop' && existing.shopId === auth.id) ||
     ((auth.role === 'tech' || auth.role === 'manager') && existing.shopId === auth.shopId);
 

@@ -114,6 +114,9 @@ export interface Estimate {
   scheduledBy?: string; // tech or manager who scheduled the work
   lineItems?: EstimateLineItem[]; // itemized breakdown for customer approval (Feature 10)
   serviceFee?: number; // FixTray platform service fee (hardcoded $5 per work order)
+  subtotal?: number;
+  taxRate?: number;
+  taxAmount?: number;
 }
 
 // Payment tracking (Feature 1)
@@ -261,6 +264,8 @@ export interface WorkOrderFormData {
   vehicleType: VehicleType;
   serviceLocationType?: ServiceLocationType;
   services: Service;
+  estimatedCost?: number;
+  techLabor?: TechnicianLabor;
   partsMaterials?: PartsMaterials;
   issueDescription: IssueDescription;
   vehicleLocation?: VehicleLocation;

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
@@ -154,7 +155,7 @@ function ManagerEstimatesContent() {
       });
 
       if (response.ok) {
-        router.push(`/workorders/${workOrderId}`);
+        router.push(`/workorders/${workOrderId}` as Route);
       } else {
         setEstimateMsg({type:'error',text:'Failed to submit estimate'});
       }
@@ -177,7 +178,7 @@ function ManagerEstimatesContent() {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Link href="/manager/dashboard" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
+          <Link href="/manager/dashboard" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaClipboardList style={{marginRight:4}} /> Estimate Builder</h1>
@@ -190,7 +191,7 @@ function ManagerEstimatesContent() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         {/* Work Order Info */}
         {workOrder && (
-          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
             <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Work Order Details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
               <div>
@@ -308,7 +309,7 @@ function ManagerEstimatesContent() {
                         cursor: 'pointer'
                       }}
                     >
-                      ×
+                      
                     </button>
                   </div>
                 ))}
@@ -419,7 +420,7 @@ function ManagerEstimatesContent() {
       {estimateMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:estimateMsg.type==='success'?'#dcfce7':'#fde8e8',color:estimateMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {estimateMsg.text}
-          <button onClick={()=>setEstimateMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setEstimateMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>

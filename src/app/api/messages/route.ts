@@ -140,6 +140,7 @@ export async function GET(request: NextRequest) {
       tech: 0,
       manager: 0,
       admin: 0,
+      superadmin: 0,
       customer: 0,
       shop: 0,
     };
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest) {
       threadId,
     } = body;
 
-    const VALID_ROLES = ['customer', 'shop', 'manager', 'tech', 'admin'];
+    const VALID_ROLES = ['customer', 'shop', 'manager', 'tech', 'admin', 'superadmin'];
     if (!receiverId || !receiverRole || !receiverName || !messageBody) {
       return NextResponse.json(
         { error: 'Missing required fields: receiverId, receiverRole, receiverName, messageBody' },
@@ -204,10 +205,13 @@ export async function POST(request: NextRequest) {
 
     const senderId = decoded.id;
     const senderRole = decoded.role;
-    
-    // Get sender name from database
+    const staffRoles = ['admin', 'superadmin'];
+    const shopScopedRoles = ['shop', 'manager', 'tech'];
+    const isSenderStaff = staffRoles.includes(senderRole);
+
+    // Get sender identity and shop context first so permission checks can be scoped.
     let senderName = '';
-    let shopId = null;
+    let shopId: string | null = null;
 
     if (senderRole === 'manager' || senderRole === 'tech') {
       const tech = await prisma.tech.findUnique({
@@ -235,7 +239,7 @@ export async function POST(request: NextRequest) {
         senderName = shop.shopName;
         shopId = senderId;
       }
-    } else if (senderRole === 'admin') {
+    } else if (senderRole === 'admin' || senderRole === 'superadmin') {
       const admin = await prisma.admin.findUnique({
         where: { id: senderId },
         select: { username: true },
@@ -245,51 +249,113 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Ensure shop receiver names use the actual shop name
+    if (!isSenderStaff) {
+      const isShopScopedSender = shopScopedRoles.includes(senderRole);
+      const isReceiverStaff = staffRoles.includes(receiverRole);
+      const isReceiverCustomer = receiverRole === 'customer';
+      const isReceiverShop = receiverRole === 'shop';
+
+      if (!isShopScopedSender) {
+        const isCustomerSender = senderRole === 'customer';
+        if (isCustomerSender) {
+          if (!isReceiverStaff && !isReceiverShop) {
+            return NextResponse.json(
+              { error: 'Customers can only message FixTray staff or approved shops' },
+              { status: 403 }
+            );
+          }
+        } else if (!isReceiverStaff) {
+          return NextResponse.json(
+            { error: 'Only FixTray staff can be contacted from this account' },
+            { status: 403 }
+          );
+        }
+      } else if (!isReceiverStaff && !isReceiverCustomer) {
+        return NextResponse.json(
+          { error: 'Shop staff can only message FixTray staff or their customers' },
+          { status: 403 }
+        );
+      }
+
+      if (isShopScopedSender && isReceiverCustomer) {
+        if (!shopId) {
+          return NextResponse.json({ error: 'Shop context required for customer messaging' }, { status: 403 });
+        }
+
+        const customerLinkedToShop = await prisma.workOrder.findFirst({
+          where: {
+            shopId,
+            customerId: receiverId,
+          },
+          select: { id: true },
+        });
+
+        if (!customerLinkedToShop) {
+          return NextResponse.json(
+            { error: 'You can only message customers associated with your shop' },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     let normalizedReceiverName = receiverName;
+
+    if (receiverRole === 'customer') {
+      const customerTarget = await prisma.customer.findUnique({
+        where: { id: receiverId },
+        select: { firstName: true, lastName: true },
+      });
+
+      if (!customerTarget) {
+        return NextResponse.json({ error: 'Invalid customer recipient' }, { status: 400 });
+      }
+
+      normalizedReceiverName = `${customerTarget.firstName} ${customerTarget.lastName}`;
+    }
+
+    // Ensure admin/superadmin receiver names map to real FixTray staff records
+    if (receiverRole === 'admin' || receiverRole === 'superadmin') {
+      const adminTarget = await prisma.admin.findUnique({
+        where: { id: receiverId },
+        select: { username: true, isSuperAdmin: true },
+      });
+
+      if (!adminTarget) {
+        return NextResponse.json({ error: 'Invalid FixTray staff recipient' }, { status: 400 });
+      }
+
+      if ((receiverRole === 'superadmin' && !adminTarget.isSuperAdmin) || (receiverRole === 'admin' && adminTarget.isSuperAdmin)) {
+        return NextResponse.json({ error: 'Recipient role mismatch' }, { status: 400 });
+      }
+
+      normalizedReceiverName = adminTarget.username || receiverName;
+    }
+
+    // Ensure shop receiver names use the actual shop name
     if (receiverRole === 'shop') {
       const shop = await prisma.shop.findUnique({
         where: { id: receiverId },
-        select: { shopName: true },
+        select: { shopName: true, status: true },
       });
-      if (shop?.shopName) {
+
+      if (!shop) {
+        return NextResponse.json({ error: 'Invalid shop recipient' }, { status: 400 });
+      }
+
+      if (senderRole === 'customer' && shop.status !== 'approved') {
+        return NextResponse.json({ error: 'Customers can only message approved shops' }, { status: 403 });
+      }
+
+      if (shop.shopName) {
         normalizedReceiverName = shop.shopName;
         shopId = shopId || receiverId;
       }
     }
 
-    // Route customer → shop messages: deliver to shop owner and also to the shop's manager (if any)
     const targets: { id: string; role: string; name: string }[] = [
       { id: receiverId, role: receiverRole, name: normalizedReceiverName },
     ];
-
-    if (senderRole === 'customer' && receiverRole === 'shop') {
-      shopId = receiverId; // preserve shop context for all copies
-      const manager = await prisma.tech.findFirst({
-        where: { shopId: receiverId, role: 'manager' },
-        select: { id: true, firstName: true, lastName: true },
-      });
-
-      if (manager) {
-        targets.push({
-          id: manager.id,
-          role: 'manager',
-          name: `${manager.firstName} ${manager.lastName}`,
-        });
-      }
-    }
-
-    // When a customer messages a tech or manager directly, resolve their shopId so that
-    // conversations can be scoped to the correct shop on both sides.
-    if (senderRole === 'customer' && (receiverRole === 'tech' || receiverRole === 'manager')) {
-      if (!shopId) {
-        const staff = await prisma.tech.findUnique({
-          where: { id: receiverId },
-          select: { shopId: true },
-        });
-        if (staff) shopId = staff.shopId;
-      }
-    }
 
     const created = await Promise.all(targets.map((t) =>
       prisma.directMessage.create({

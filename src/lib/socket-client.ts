@@ -6,31 +6,34 @@ class SocketClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
 
+  private isRealtimeEnabled(): boolean {
+    return process.env.NEXT_PUBLIC_ENABLE_REALTIME === 'true';
+  }
+
+  private resolveSocketUrl(): string | null {
+    if (!this.isRealtimeEnabled()) return null;
+    // Require an explicit socket server URL — never fall back to window.location.origin.
+    // The standalone socket-server.js must be deployed separately (Railway/Render/Fly.io)
+    // and its URL set as NEXT_PUBLIC_SOCKET_URL.
+    return process.env.NEXT_PUBLIC_SOCKET_URL || null;
+  }
+
   connect(token: string) {
     if (this.socket?.connected) {
       return this.socket;
     }
 
-    // Connect to the in-app Socket.IO path by default (uses same origin)
-    const primaryUrl = process.env.NEXT_PUBLIC_SOCKET_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://fixtray.app');
-    const fallbackUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://fixtray.app';
+    // Always use configured socket URL or same-origin to avoid cross-origin fallbacks.
+    const socketUrl = this.resolveSocketUrl();
+    if (!socketUrl) {
+      return null;
+    }
 
-    this.socket = io(primaryUrl, {
-      path: '/api/socket',
+    this.socket = io(socketUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 1,
-      timeout: 10000, // Increased from 5000 to 10000ms
-    });
-
-    // If connection fails to primary, attempt fallback
-    this.socket.on('connect_error', (_err) => {
-      try {
-        this.socket?.disconnect();
-      } catch {}
-      // Ensure fallback uses the same server path
-      this.socket = io(fallbackUrl, { path: '/api/socket', auth: { token }, transports: ['websocket','polling'], timeout: 10000 }); // Increased timeout
-      this.setupEventHandlers();
+      timeout: 10000,
     });
 
     this.setupEventHandlers();

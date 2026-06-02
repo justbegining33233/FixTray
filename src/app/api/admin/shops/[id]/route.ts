@@ -15,14 +15,6 @@ export async function GET(
     const shop = await prisma.shop.findUnique({
       where: { id },
       include: {
-        subscription: {
-          select: {
-            plan: true,
-            status: true,
-            currentPeriodEnd: true,
-            trialEnd: true
-          }
-        },
         workOrders: {
           select: {
             id: true,
@@ -81,7 +73,6 @@ export async function GET(
       profileComplete: shop.profileComplete,
       createdAt: shop.createdAt,
       approvedAt: shop.approvedAt,
-      subscription: shop.subscription,
       stats: {
         totalWorkOrders,
         completedWorkOrders,

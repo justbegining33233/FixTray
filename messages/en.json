@@ -1,0 +1,111 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "export": "Export",
+    "import": "Import"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "loginTitle": "Sign in to your account",
+    "registerTitle": "Create your account",
+    "invalidCredentials": "Invalid email or password",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "emailInvalid": "Please enter a valid email address"
+  },
+  "workorders": {
+    "title": "Work Orders",
+    "createNew": "Create New Work Order",
+    "noWorkOrders": "No work orders found",
+    "status": {
+      "pending": "Pending",
+      "assigned": "Assigned",
+      "inProgress": "In Progress",
+      "waitingEstimate": "Waiting for Estimate",
+      "waitingPayment": "Waiting for Payment",
+      "completed": "Completed",
+      "denied": "Denied"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "vehicleType": "Vehicle Type",
+    "issueDescription": "Issue Description",
+    "assignedTo": "Assigned To",
+    "dueDate": "Due Date",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "customer": "Customer",
+    "shop": "Shop",
+    "location": "Location",
+    "services": "Services",
+    "parts": "Parts & Materials",
+    "estimate": "Estimate",
+    "totalCost": "Total Cost"
+  },
+  "dashboard": {
+    "welcome": "Welcome to FixTray",
+    "overview": "Dashboard Overview",
+    "totalWorkOrders": "Total Work Orders",
+    "pendingWorkOrders": "Pending Work Orders",
+    "completedWorkOrders": "Completed Work Orders",
+    "revenue": "Revenue",
+    "activeShops": "Active Shops",
+    "recentActivity": "Recent Activity"
+  },
+  "admin": {
+    "title": "Administration",
+    "users": "Users",
+    "shops": "Shops",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "reports": "Reports",
+    "permissions": "Permissions",
+    "auditLog": "Audit Log",
+    "systemHealth": "System Health"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "forbidden": "Access denied.",
+    "notFound": "The requested resource was not found.",
+    "validation": "Please check your input and try again.",
+    "server": "Server error. Please try again later."
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "minLength": "Must be at least {min} characters",
+    "maxLength": "Must be no more than {max} characters",
+    "numeric": "Must be a number",
+    "positive": "Must be a positive number",
+    "date": "Please enter a valid date",
+    "phone": "Please enter a valid phone number"
+  }
+}

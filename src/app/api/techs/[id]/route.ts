@@ -48,7 +48,7 @@ export async function GET(
     }
 
     // Scope: must belong to caller's shop (admins exempt)
-    if (decoded.role !== 'admin') {
+    if (decoded.role !== 'superadmin') {
       const callerShopId = decoded.role === 'shop' ? decoded.id : decoded.shopId;
       if (!callerShopId || tech.shopId !== callerShopId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -57,7 +57,7 @@ export async function GET(
 
     // Never return hourlyRate to techs (salary data)
     const { hourlyRate: _hourlyRate, ...safeTech } = tech as typeof tech & { hourlyRate: number };
-    const payload = (decoded.role === 'shop' || decoded.role === 'manager' || decoded.role === 'admin')
+    const payload = (decoded.role === 'shop' || decoded.role === 'manager' || (decoded.role === 'superadmin'))
       ? tech
       : safeTech;
 
@@ -89,13 +89,13 @@ export async function PUT(
     }
 
     // Only shop admins can update techs
-    if (decoded.role !== 'shop' && decoded.role !== 'admin') {
+    if (decoded.role !== 'shop' && (decoded.role !== 'superadmin')) {
       console.error('PUT /api/techs/[id] - Forbidden, role:', decoded.role);
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Verify the tech belongs to this shop (IDOR prevention)
-    if (decoded.role !== 'admin') {
+    if (decoded.role !== 'superadmin') {
       const existingTech = await prisma.tech.findUnique({ where: { id: params.id }, select: { shopId: true } });
       if (!existingTech || existingTech.shopId !== decoded.id) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -159,12 +159,12 @@ export async function DELETE(
     }
 
     // Only shop admins can delete techs
-    if (decoded.role !== 'shop' && decoded.role !== 'admin') {
+    if (decoded.role !== 'shop' && (decoded.role !== 'superadmin')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Verify the tech belongs to this shop (IDOR prevention)
-    if (decoded.role !== 'admin') {
+    if (decoded.role !== 'superadmin') {
       const existingTech = await prisma.tech.findUnique({ where: { id: params.id }, select: { shopId: true } });
       if (!existingTech || existingTech.shopId !== decoded.id) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });

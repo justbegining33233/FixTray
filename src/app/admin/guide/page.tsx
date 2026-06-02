@@ -2,6 +2,7 @@
 
 import { useState, ReactNode } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaArrowRight, FaBell, FaCar, FaCaretDown, FaClock, FaCloud, FaCreditCard, FaCrown, FaEnvelope, FaHardHat, FaInfoCircle, FaMicroscope, FaMobileAlt, FaPencilAlt, FaUserTie, FaWrench } from 'react-icons/fa';
 
@@ -56,10 +57,8 @@ export default function AppGuidePage() {
         { name: 'Pending Shop Approvals', description: 'Review and approve new shops', status: 'ready', route: '/admin/pending-shops', apiEndpoint: '/api/shops/pending' },
         { name: 'Manage All Shops', description: 'View and manage approved shops', status: 'ready', route: '/admin/accepted-shops', apiEndpoint: '/api/shops/accepted' },
         { name: 'User Management', description: 'View all users, roles, permissions', status: 'ready', route: '/admin/user-management', apiEndpoint: '/api/admin/users' },
-        { name: 'Subscription Management', description: 'Manage shop subscriptions', status: 'ready', route: '/admin/subscriptions', apiEndpoint: '/api/subscriptions' },
         { name: 'Platform Analytics', description: 'Usage stats and metrics', status: 'ready', route: '/admin/platform-analytics', apiEndpoint: '/api/admin/analytics' },
         { name: 'Activity Logs', description: 'Track user and system activity', status: 'ready', route: '/admin/activity-logs', apiEndpoint: '/api/admin/activity-logs' },
-        { name: 'Coupon Management', description: 'Create and manage discount codes', status: 'ready', apiEndpoint: '/api/admin/coupons' },
         { name: 'Financial Reports', description: 'Revenue and billing reports', status: 'ready', apiEndpoint: '/api/admin/financial-reports' },
         { name: 'System Settings', description: 'Configure platform settings', status: 'ready', route: '/admin/system-settings', apiEndpoint: '/api/admin/settings' },
       ]
@@ -70,14 +69,11 @@ export default function AppGuidePage() {
       description: 'Advanced admin tools and management',
       features: [
         { name: 'Command Center', description: 'Real-time platform monitoring', status: 'ready', route: '/admin/command-center', apiEndpoint: '/api/admin/command-center' },
-        { name: 'Enhanced Admin View', description: 'Advanced admin overview with enhanced metrics', status: 'ready', route: '/admin/enhanced' },
         { name: 'Email Templates', description: 'Manage system email templates', status: 'ready', route: '/admin/email-templates', apiEndpoint: '/api/admin/email-templates' },
         { name: 'Security Settings', description: 'Configure security policies', status: 'ready', route: '/admin/security-settings', apiEndpoint: '/api/admin/security' },
         { name: 'Backup & Restore', description: 'Database backup management', status: 'ready', route: '/admin/backup-restore', apiEndpoint: '/api/admin/backup' },
-        { name: 'Manage Tenants', description: 'Multi-tenant configuration', status: 'ready', route: '/admin/manage-tenants', apiEndpoint: '/api/tenants' },
-        { name: 'Admin Tools', description: 'Developer and admin utilities', status: 'ready', route: '/admin/admin-tools', apiEndpoint: '/api/admin/tools' },
         { name: 'Revenue Analytics', description: 'Detailed revenue reporting', status: 'ready', route: '/admin/revenue', apiEndpoint: '/api/admin/revenue' },
-        { name: 'Session Management', description: 'Monitor active user sessions', status: 'ready', route: '/admin/sessions', apiEndpoint: '/api/admin/sessions' },
+        { name: 'Session Management', description: 'Monitor active user sessions', status: 'ready', route: '/admin/sessions', apiEndpoint: '/api/auth/sessions' },
         { name: 'Shop Details', description: 'Detailed shop information and management', status: 'ready', route: '/admin/shop-details/[id]', apiEndpoint: '/api/admin/shops/[id]' },
         { name: 'Manage Customers', description: 'Platform-wide customer management', status: 'ready', route: '/admin/manage-customers', apiEndpoint: '/api/admin/customers' },
       ]
@@ -92,7 +88,7 @@ export default function AppGuidePage() {
         { name: 'Employee Profiles', description: 'Individual employee detail pages with hours, pay, and performance', status: 'ready', route: '/shop/admin/employee/[id]', apiEndpoint: '/api/shop/team' },
         { name: 'Budget Tracking', description: 'Weekly and monthly payroll budget vs actual spend', status: 'ready', route: '/shop/admin', apiEndpoint: '/api/shop/payroll' },
         { name: 'Admin Settings', description: 'Shop admin configuration panel', status: 'ready', route: '/shop/admin/settings' },
-        { name: 'Parts & Labor Management', description: 'Manage parts pricing, labor rates, and markups', status: 'ready', route: '/shop/parts-labor', apiEndpoint: '/api/shops/settings' },
+        { name: 'Parts & Labor Management', description: 'Manage parts pricing, labor rates, and markups', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shops/settings' },
         { name: 'Customer Messages (Shop View)', description: 'Manage all customer conversations from the shop side', status: 'ready', route: '/shop/customer-messages', apiEndpoint: '/api/shop/messages' },
         { name: 'Schedule Settings', description: 'Configure shop schedule and availability', status: 'ready', route: '/shop/settings/schedule' },
       ]
@@ -105,7 +101,7 @@ export default function AppGuidePage() {
         { name: 'Shop Dashboard', description: 'Shop overview and stats', status: 'ready', route: '/shop/home' },
         { name: 'Shop Profile', description: 'Edit shop info, hours, logo', status: 'ready', route: '/shop/settings', apiEndpoint: '/api/shop/profile' },
         { name: 'Service Catalog', description: 'Manage services offered', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shops/services' },
-        { name: 'Labor Rates', description: 'Set hourly labor rates', status: 'ready', route: '/shop/parts-labor', apiEndpoint: '/api/shops/labor-rates' },
+        { name: 'Labor Rates', description: 'Set hourly labor rates', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shops/labor-rates' },
         { name: 'Team Management', description: 'Add/manage technicians', status: 'ready', route: '/shop/manage-team', apiEndpoint: '/api/shop/team' },
         { name: 'Manager Role', description: 'Assign manager permissions', status: 'ready', apiEndpoint: '/api/manager/dashboard' },
         { name: 'Work Assignments', description: 'Assign jobs to technicians', status: 'ready', apiEndpoint: '/api/manager/assignments' },
@@ -170,8 +166,7 @@ export default function AppGuidePage() {
         { name: 'Automations', description: 'Workflow automation rules', status: 'ready', route: '/shop/automations', apiEndpoint: '/api/automations' },
         { name: 'Integrations', description: 'Third-party service connections', status: 'ready', route: '/shop/integrations', apiEndpoint: '/api/integrations' },
         { name: 'Referrals', description: 'Customer referral program', status: 'ready', route: '/shop/referrals', apiEndpoint: '/api/referrals' },
-        { name: 'Branding', description: 'Shop branding customization', status: 'ready', route: '/shop/branding', apiEndpoint: '/api/branding' },
-        { name: 'Bays Management', description: 'Service bay scheduling', status: 'ready', route: '/shop/bays', apiEndpoint: '/api/bays' },
+        { name: 'Ops Overview', description: 'Shop operations overview and bay activity', status: 'ready', route: '/shop/home', apiEndpoint: '/api/workorders' },
         { name: 'Distributors', description: 'Parts distributor management', status: 'ready', route: '/shop/distributors', apiEndpoint: '/api/shop/vendors' },
       ]
     },
@@ -190,7 +185,7 @@ export default function AppGuidePage() {
         { name: 'Invoice Generation', description: 'Create invoice from work order', status: 'ready', apiEndpoint: '/api/workorders/[id]/invoice' },
         { name: 'Payment Processing', description: 'Record payments on orders', status: 'ready', apiEndpoint: '/api/workorders/payment' },
         { name: 'Print Work Order', description: 'Print-friendly work order view', status: 'ready', notes: 'Print-optimized layout with CSS @media print' },
-        { name: 'Work Order Templates', description: 'Save common job templates', status: 'ready', route: '/shop/templates', apiEndpoint: '/api/shop/templates' },
+        { name: 'Work Order Templates', description: 'Save common job templates', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shop/templates' },
       ]
     },
     {
@@ -220,7 +215,6 @@ export default function AppGuidePage() {
         { name: 'Photo Upload', description: 'Upload work order photos', status: 'ready', route: '/tech/photos', apiEndpoint: '/api/photos' },
         { name: 'Inventory Access', description: 'Check parts availability', status: 'ready', route: '/tech/inventory', apiEndpoint: '/api/inventory' },
         { name: 'Messages', description: 'Communicate with shop and customers', status: 'ready', route: '/tech/messages', apiEndpoint: '/api/messages' },
-        { name: 'Enhanced Tools', description: 'Advanced technician features', status: 'ready', route: '/tech/enhanced' },
       ]
     },
     {
@@ -346,12 +340,12 @@ export default function AppGuidePage() {
       ]
     },
     {
-      name: 'Payments & Billing',
+      name: 'Payments & Invoicing',
       icon: '',
-      description: 'Payment processing and subscriptions',
+      description: 'Payment processing and invoice workflows',
       features: [
         { name: 'Stripe Integration', description: 'Credit card payments', status: 'setup-required', apiEndpoint: '/api/payment/create-intent', notes: 'Requires Stripe API keys' },
-        { name: 'Subscription Plans', description: 'Monthly/yearly shop plans', status: 'ready', apiEndpoint: '/api/subscriptions' },
+        { name: 'Account Tiers', description: 'Legacy tier configuration endpoint', status: 'not-implemented' },
         { name: 'Payment Recording', description: 'Record cash/check payments', status: 'ready', notes: 'Manual payment entry' },
         { name: 'Invoice Creation', description: 'Generate customer invoices', status: 'ready', apiEndpoint: '/api/workorders/[id]/invoice' },
         { name: 'Refunds', description: 'Process refunds', status: 'setup-required', notes: 'Requires Stripe setup' },
@@ -364,7 +358,7 @@ export default function AppGuidePage() {
       description: 'Business intelligence features',
       features: [
         { name: 'Work Order Analytics', description: 'Job completion metrics', status: 'ready', apiEndpoint: '/api/analytics' },
-        { name: 'Revenue Reports', description: 'Income and sales data', status: 'ready', route: '/shop/reports' },
+        { name: 'Revenue Reports', description: 'Income and sales data', status: 'ready', route: '/shop/analytics' },
         { name: 'Technician Performance', description: 'Tech productivity metrics', status: 'ready', notes: 'Based on work order completion' },
         { name: 'Customer Reports', description: 'Customer acquisition and retention', status: 'ready', route: '/shop/customer-reports', apiEndpoint: '/api/shop/customer-reports' },
         { name: 'Export to CSV', description: 'Download reports as CSV', status: 'ready', apiEndpoint: '/api/admin/export' },
@@ -390,7 +384,6 @@ export default function AppGuidePage() {
         { name: 'Health Check Endpoint', description: 'API health monitoring', status: 'ready', apiEndpoint: '/api/health' },
         { name: 'Neon (Postgres)', description: 'Production & development database', status: 'ready', notes: 'Set DATABASE_URL to your Neon connection string' },
         { name: 'PostgreSQL Support', description: 'Production database option', status: 'ready', notes: 'Using Neon' },
-        { name: 'Multi-tenant Architecture', description: 'Shop data isolation', status: 'ready', apiEndpoint: '/api/tenants' },
         { name: 'Audit Logging', description: 'Track system changes', status: 'ready', apiEndpoint: '/api/admin/audit-logs' },
         { name: 'Backup & Restore', description: 'Database backups', status: 'ready', route: '/admin/backup-restore', apiEndpoint: '/api/admin/backup' },
         { name: 'Docker Support', description: 'Container deployment', status: 'ready', notes: 'Dockerfile included' },
@@ -441,7 +434,6 @@ export default function AppGuidePage() {
         { name: 'Assign Technician', description: 'Assign a technician to a work order', status: 'ready', apiEndpoint: '/api/techs/assign' },
         { name: 'Clock Status Monitoring', description: 'See who is currently clocked in', status: 'ready', apiEndpoint: '/api/timeclock/status' },
         { name: 'Tech DVI Forms', description: 'Technician digital vehicle inspection forms', status: 'ready', route: '/tech/dvi', apiEndpoint: '/api/dvi' },
-        { name: 'Tech Enhanced Dashboard', description: 'Advanced tech view with all tools in one place', status: 'ready', route: '/tech/enhanced' },
       ]
     },
     // ---------------------------------------------
@@ -466,22 +458,6 @@ export default function AppGuidePage() {
       ]
     },
     // ---------------------------------------------
-    // SUBSCRIPTION MANAGEMENT
-    // ---------------------------------------------
-    {
-      name: 'Subscription Management',
-      icon: '',
-      description: 'Shop subscription plans, upgrades, cancellations, and suggestions',
-      features: [
-        { name: 'Update Subscription Plan', description: 'Upgrade or downgrade shop plan', status: 'ready', apiEndpoint: '/api/subscriptions/[shopId]/update-plan' },
-        { name: 'Cancel Subscription', description: 'Cancel shop subscription', status: 'ready', apiEndpoint: '/api/subscriptions/[shopId]/cancel' },
-        { name: 'Plan Suggestions', description: 'AI-based plan recommendation for shops', status: 'ready', apiEndpoint: '/api/subscriptions/[shopId]/suggestions' },
-        { name: 'Admin Subscription Management', description: 'Manage all shop subscriptions from admin', status: 'ready', route: '/admin/subscriptions', apiEndpoint: '/api/admin/subscriptions' },
-        { name: 'Shop Subscribe Page', description: 'Shop onboarding subscription selection', status: 'ready', route: '/shop/subscribe' },
-        { name: 'Payment Success / Cancel Pages', description: 'Post-payment flow pages', status: 'ready', route: '/payment/success' },
-      ]
-    },
-    // ---------------------------------------------
     // STRIPE CONNECT & ADVANCED PAYMENTS
     // ---------------------------------------------
     {
@@ -492,9 +468,9 @@ export default function AppGuidePage() {
         { name: 'Stripe Connect Onboarding', description: 'Onboard shops to accept payments via Stripe Connect', status: 'setup-required', apiEndpoint: '/api/stripe/connect', notes: 'Requires STRIPE_SECRET_KEY in Vercel env vars (already set)' },
         { name: 'Stripe Connect Callback', description: 'Handle OAuth callback after shop connects Stripe', status: 'setup-required', apiEndpoint: '/api/stripe/connect/callback' },
         { name: 'Stripe Connect Refresh', description: 'Refresh Stripe Connect auth link', status: 'setup-required', apiEndpoint: '/api/stripe/connect/refresh' },
-        { name: 'Stripe Customer Portal', description: 'Let shops manage their billing via Stripe-hosted portal', status: 'setup-required', apiEndpoint: '/api/stripe/portal' },
-        { name: 'Stripe Checkout Session', description: 'Create Stripe checkout for subscription or one-time payment', status: 'setup-required', apiEndpoint: '/api/stripe/checkout' },
-        { name: 'Stripe Webhook Handler', description: 'Process Stripe events (payment intents, subscription updates)', status: 'setup-required', apiEndpoint: '/api/stripe/webhook', notes: 'Set STRIPE_WEBHOOK_SECRET in Vercel' },
+        { name: 'Stripe Customer Portal', description: 'Let shops manage payment methods via Stripe-hosted portal', status: 'setup-required', apiEndpoint: '/api/stripe/portal' },
+        { name: 'Stripe Checkout Session', description: 'Create Stripe checkout for one-time or account charges', status: 'setup-required', apiEndpoint: '/api/stripe/checkout' },
+        { name: 'Stripe Webhook Handler', description: 'Process Stripe events (payment intents and account updates)', status: 'setup-required', apiEndpoint: '/api/stripe/webhook', notes: 'Set STRIPE_WEBHOOK_SECRET in Vercel' },
         { name: 'Payment Links', description: 'Generate shareable payment links for invoices', status: 'ready', apiEndpoint: '/api/payment-links' },
         { name: 'Online Checkout Flow', description: 'Web checkout for customers paying invoices', status: 'setup-required', apiEndpoint: '/api/payment/checkout' },
         { name: 'Customer Payment Methods', description: 'Save and manage customer payment methods', status: 'ready', apiEndpoint: '/api/customers/payment-methods' },
@@ -509,7 +485,7 @@ export default function AppGuidePage() {
       description: 'Push notifications, browser alerts, and scheduled background jobs',
       features: [
         { name: 'Push Notification Subscribe', description: 'Subscribe browser to push notifications', status: 'setup-required', apiEndpoint: '/api/push/subscribe', notes: 'Requires VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Vercel env vars' },
-        { name: 'Push Notification Unsubscribe', description: 'Remove push subscription', status: 'setup-required', apiEndpoint: '/api/push/unsubscribe' },
+        { name: 'Push Notification Unsubscribe', description: 'Remove push registration', status: 'setup-required', apiEndpoint: '/api/push/unsubscribe' },
         { name: 'Send Push Notification', description: 'Trigger push notification to user', status: 'setup-required', apiEndpoint: '/api/push/send' },
         { name: 'DB-backed Notifications', description: 'Persistent notifications stored in database', status: 'ready', apiEndpoint: '/api/notifications-db' },
         { name: 'Cron: DB Keepalive', description: 'Ping DB every 5 min to prevent Neon cold starts', status: 'ready', apiEndpoint: '/api/cron/keepalive', notes: 'CRON_SECRET must be set in Vercel (already done)' },
@@ -587,8 +563,8 @@ export default function AppGuidePage() {
   const statusInfo = {
     'ready': { label: 'Ready to Use', color: 'bg-emerald-500', textColor: 'text-emerald-500', bgLight: 'bg-emerald-500/10' },
     'partial': { label: 'Partially Implemented', color: 'bg-amber-500', textColor: 'text-amber-500', bgLight: 'bg-amber-500/10' },
-    'setup-required': { label: 'Needs Setup', color: 'bg-blue-500', textColor: 'text-blue-500', bgLight: 'bg-blue-500/10' },
-    'not-implemented': { label: 'Not Yet Available', color: 'bg-gray-500', textColor: 'text-gray-400', bgLight: 'bg-gray-500/10' },
+    'setup-required': { label: 'Needs Setup', color: 'bg-[#e5332a]', textColor: 'text-[#ff6b64]', bgLight: 'bg-[#e5332a]/10' },
+    'not-implemented': { label: 'Not Yet Available', color: 'bg-stone-500', textColor: 'text-stone-400', bgLight: 'bg-stone-500/10' },
   };
 
   const allFeatures = categories.flatMap(c => c.features);
@@ -606,8 +582,8 @@ export default function AppGuidePage() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-gray-300 text-lg">Loading...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-stone-300 text-lg">Loading...</div>
       </div>
     );
   }
@@ -618,7 +594,7 @@ export default function AppGuidePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <header className="bg-black/30 border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
@@ -629,10 +605,10 @@ export default function AppGuidePage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-white">FixTray Feature Guide</h1>
-                <p className="text-gray-400 text-sm">What you can and can't do</p>
+                <p className="text-stone-400 text-sm">What you can and can't do</p>
               </div>
             </div>
-            <Link href="/admin/home" className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 text-sm transition-colors">
+            <Link href="/admin/home" className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-stone-300 text-sm transition-colors">
               <FaArrowLeft style={{marginRight:4}} /> Back to Admin
             </Link>
           </div>
@@ -643,7 +619,7 @@ export default function AppGuidePage() {
         {/* Summary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-black/30 rounded-xl p-4 border border-white/10">
-            <p className="text-gray-400 text-sm">Total Features</p>
+            <p className="text-stone-400 text-sm">Total Features</p>
             <p className="text-3xl font-bold text-white">{totalFeatures}</p>
           </div>
           <div className="bg-emerald-500/10 rounded-xl p-4 border border-emerald-500/30">
@@ -654,13 +630,13 @@ export default function AppGuidePage() {
             <p className="text-amber-400 text-sm">Partial</p>
             <p className="text-3xl font-bold text-amber-500">{partialFeatures}</p>
           </div>
-          <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/30">
-            <p className="text-blue-400 text-sm">Needs Setup</p>
-            <p className="text-3xl font-bold text-blue-500">{setupFeatures}</p>
+          <div className="bg-[#e5332a]/10 rounded-xl p-4 border border-[#e5332a]/30">
+            <p className="text-[#ff6b64] text-sm">Needs Setup</p>
+            <p className="text-3xl font-bold text-[#e5332a]">{setupFeatures}</p>
           </div>
-          <div className="bg-gray-500/10 rounded-xl p-4 border border-gray-500/30">
-            <p className="text-gray-400 text-sm">Not Available</p>
-            <p className="text-3xl font-bold text-gray-500">{notImplemented}</p>
+          <div className="bg-stone-500/10 rounded-xl p-4 border border-stone-500/30">
+            <p className="text-stone-400 text-sm">Not Available</p>
+            <p className="text-3xl font-bold text-stone-400">{notImplemented}</p>
           </div>
         </div>
 
@@ -677,18 +653,18 @@ export default function AppGuidePage() {
                 <span className="text-gray-300 text-sm">Partial - Some limitations</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                <span className="w-3 h-3 rounded-full bg-[#e5332a]"></span>
                 <span className="text-gray-300 text-sm">Setup Required - Needs configuration</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-gray-500"></span>
+                <span className="w-3 h-3 rounded-full bg-stone-500"></span>
                 <span className="text-gray-300 text-sm">Not Available - Planned for future</span>
               </div>
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-black/30 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-red-500/50"
+              className="px-4 py-2 bg-black/30 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-[#e5332a]/50"
             >
               <option value="all">Show All</option>
               <option value="ready">Ready to Use</option>
@@ -751,7 +727,7 @@ export default function AppGuidePage() {
                             </div>
                             {feature.route && (
                               <Link
-                                href={feature.route}
+                                href={feature.route as Route}
                                 className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 text-xs transition-colors whitespace-nowrap"
                               >
                                 Open <FaArrowRight style={{marginRight:4}} />
@@ -769,48 +745,51 @@ export default function AppGuidePage() {
         </div>
 
         {/* Setup Required Section */}
-        <div className="mt-8 bg-blue-500/10 rounded-xl p-6 border border-blue-500/30">
-          <h2 className="text-xl font-bold text-blue-400 mb-4"><FaWrench style={{marginRight:4}} /> Features That Need Setup</h2>
+        <div className="mt-8 bg-[#e5332a]/10 rounded-xl p-6 border border-[#e5332a]/30">
+          <h2 className="text-xl font-bold text-[#ff6b64] mb-4"><FaWrench style={{marginRight:4}} /> Features That Need Setup</h2>
           <p className="text-gray-300 mb-4">These features are built but require external service configuration:</p>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-black/20 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2"><FaCreditCard style={{marginRight:4}} /> Stripe Payments</h3>
               <p className="text-gray-400 text-sm mb-2">For online payment processing</p>
-              <code className="text-xs text-blue-400 bg-black/30 px-2 py-1 rounded">STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY</code>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2"><FaEnvelope style={{marginRight:4}} /> Email Service</h3>
               <p className="text-gray-400 text-sm mb-2">For email notifications (SendGrid, Resend, etc.)</p>
-              <code className="text-xs text-blue-400 bg-black/30 px-2 py-1 rounded">EMAIL_API_KEY, EMAIL_FROM</code>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">EMAIL_API_KEY, EMAIL_FROM</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2"><FaMobileAlt style={{marginRight:4}} /> SMS (Twilio)</h3>
               <p className="text-gray-400 text-sm mb-2">For text message notifications</p>
-              <code className="text-xs text-blue-400 bg-black/30 px-2 py-1 rounded">TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN</code>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2"><FaBell style={{marginRight:4}} /> Push Notifications</h3>
               <p className="text-gray-400 text-sm mb-2">For browser push notifications</p>
-              <code className="text-xs text-blue-400 bg-black/30 px-2 py-1 rounded">VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY</code>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2"><FaCloud style={{marginRight:4}} /> Cloudinary</h3>
               <p className="text-gray-400 text-sm mb-2">For cloud image storage</p>
-              <code className="text-xs text-blue-400 bg-black/30 px-2 py-1 rounded">CLOUDINARY_URL</code>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">CLOUDINARY_URL</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2"> PostgreSQL</h3>
               <p className="text-gray-400 text-sm mb-2">For production database</p>
-              <code className="text-xs text-blue-400 bg-black/30 px-2 py-1 rounded">DATABASE_URL=&lt;your-neon-connection-string&gt;</code>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">DATABASE_URL=&lt;your-neon-connection-string&gt;</code>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-gray-500 text-sm">
+        <div className="mt-8 text-center text-stone-500 text-sm">
           <p>FixTray Work Order Management - {totalFeatures} Features - {readyFeatures} Ready to Use</p>
         </div>
       </div>
     </div>
   );
 }
+
+
+

@@ -1,0 +1,110 @@
+FixTray 404 Audit - Remove vs Keep
+Generated: 2026-05-23
+
+Scope
+- UI-level 404 pages/components
+- Runtime route checks performed in browser
+- API files that intentionally return HTTP 404
+
+==================================================
+A) UI 404 Pages (App Router)
+==================================================
+
+1) KEEP
+- src/app/not-found.tsx
+  Reason:
+  - This is the canonical Next.js App Router not-found boundary.
+  - Unknown/missing routes are correctly rendering this page.
+
+2) CANDIDATE TO REMOVE (or rename/move if intentional)
+- src/app/_not-found/page.tsx
+  Reason:
+  - This creates a direct route at /_not-found.
+  - It duplicates 404 behavior already handled by src/app/not-found.tsx.
+  - Keeping both can be confusing for maintenance.
+
+Recommendation:
+- Keep only one 404 UI strategy (prefer src/app/not-found.tsx).
+- Remove src/app/_not-found/page.tsx unless you explicitly want /_not-found as a public route.
+
+==================================================
+B) Browser Runtime Check Results
+==================================================
+
+Routes confirmed rendering 404 UI:
+- /_not-found
+- /this-route-does-not-exist-xyz
+
+Previously audited core role routes did NOT render 404 in the latest sweep:
+- Admin, Superadmin, Shop, Manager, Tech (sample set), Customer (sample set)
+
+==================================================
+C) API Endpoints Returning HTTP 404
+==================================================
+
+Status:
+- 133 matches of "status: 404" under src/app/api/**
+- This is normal API behavior for not-found resources (NOT UI pages).
+
+Representative files (not exhaustive):
+- src/app/api/workorders/[id]/route.ts
+- src/app/api/workorders/[id]/photos/route.ts
+- src/app/api/workorders/[id]/invoice/route.ts
+- src/app/api/customers/vehicles/[id]/route.ts
+- src/app/api/inventory/[id]/route.ts
+- src/app/api/appointments/[id]/route.ts
+- src/app/api/services/[id]/route.ts
+- src/app/api/shop/vendors/[id]/route.ts
+- src/app/api/automations/[id]/route.ts
+- src/app/api/tenants/route.ts
+
+Recommendation:
+- KEEP these API 404 responses.
+- Do NOT remove them unless you are changing API contract semantics.
+
+==================================================
+D) Cleanup Decision Summary
+==================================================
+
+Likely safe to remove:
+- src/app/_not-found/page.tsx (if /_not-found is not intentionally needed)
+
+Must stay:
+- src/app/not-found.tsx
+- API 404 handlers (status: 404) used for missing resources
+
+Optional next step:
+- If desired, run a full filesystem-derived route inventory and classify each route as:
+  - valid page
+  - login redirect
+  - 404
+  Then append that matrix to this file.
+
+==================================================
+E) Completed Fixes (2026-05-23)
+==================================================
+
+Implemented:
+- Added route alias:
+  - src/app/tech/work-orders/page.tsx
+  - Behavior: redirects to /workorders/list
+
+- Removed duplicate 404 route file:
+  - src/app/_not-found/page.tsx
+
+- Fixed broken onboarding targets in:
+  - src/components/UserOnboarding.tsx
+  - Updated routes:
+    - /customer/orders -> /customer/workorders
+    - /customer/orders/new -> /customer/appointments/new
+    - /tech/jobs -> /tech/home
+    - /manager/jobs -> /manager/assignments
+    - /admin/users -> /admin/user-management
+    - /admin/security -> /admin/security-settings
+    - /admin/analytics -> /admin/platform-analytics
+    - /shop/dashboard -> /shop/home
+    - /shop/jobs -> /workorders/list
+
+Validation:
+- Type checks on changed files passed.
+- Runtime navigation check confirms these targets now resolve to login redirect when unauthenticated, not the 404 UI.

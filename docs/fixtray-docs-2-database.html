@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FixTray Docs — Part 2: Database & Prisma</title>
+<style>
+  :root { --red:#e5332a; --bg:#080e1c; --surface:#0f172a; --border:#1e293b; --text:#e2e8f0; --muted:#94a3b8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+  header { background:linear-gradient(135deg,#0f172a,#1e1040); border-bottom:2px solid var(--red); padding:24px 40px; }
+  header h1 { color:var(--red); font-size:1.8rem; font-weight:700; }
+  header p { color:var(--muted); margin-top:4px; }
+  nav { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 40px; display:flex; gap:12px; flex-wrap:wrap; }
+  nav a { color:var(--muted); text-decoration:none; padding:6px 14px; border-radius:6px; border:1px solid var(--border); font-size:0.85rem; transition:all 0.2s; }
+  nav a:hover, nav a.active { color:var(--red); border-color:var(--red); background:rgba(229,51,42,0.08); }
+  main { padding:32px 40px; max-width:1400px; margin:0 auto; }
+  h2 { color:#f1f5f9; font-size:1.3rem; margin:32px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  h3 { color:var(--muted); font-size:0.95rem; margin:20px 0 10px; text-transform:uppercase; letter-spacing:0.05em; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
+  .crit { background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); }
+  .major { background:rgba(249,115,22,0.15); color:#fdba74; border:1px solid rgba(249,115,22,0.3); }
+  .minor { background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.3); }
+  .safe { background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3); }
+  .yes { background:rgba(34,197,94,0.1); color:#86efac; border:1px solid rgba(34,197,94,0.2); }
+  .no  { background:rgba(100,116,139,0.1); color:#94a3b8; border:1px solid rgba(100,116,139,0.2); }
+  .dev { background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2); }
+  table { width:100%; border-collapse:collapse; margin-bottom:32px; background:var(--surface); border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+  th { background:#0a1628; color:var(--muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; padding:12px 16px; text-align:left; border-bottom:1px solid var(--border); }
+  td { padding:14px 16px; border-bottom:1px solid var(--border); vertical-align:top; font-size:0.88rem; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  .filepath { font-family:'Cascadia Code','Consolas',monospace; color:#7dd3fc; font-size:0.82rem; background:rgba(125,211,252,0.06); padding:2px 6px; border-radius:4px; white-space:nowrap; }
+  .model-name { font-family:'Cascadia Code','Consolas',monospace; color:#c084fc; font-size:0.82rem; background:rgba(192,132,252,0.06); padding:2px 6px; border-radius:4px; }
+  .section-intro { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--red); border-radius:8px; padding:16px 20px; margin-bottom:24px; color:var(--muted); font-size:0.9rem; }
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:32px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px; text-align:center; }
+  .stat-num { font-size:2rem; font-weight:700; color:var(--red); }
+  .stat-label { color:var(--muted); font-size:0.85rem; margin-top:4px; }
+  .model-group { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-bottom:24px; }
+  .model-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
+  .model-card h4 { color:#c084fc; font-family:'Cascadia Code',monospace; font-size:0.85rem; margin-bottom:6px; }
+  .model-card p { color:var(--muted); font-size:0.8rem; line-height:1.5; }
+  .model-card .fields { color:#64748b; font-size:0.75rem; margin-top:6px; }
+  footer { text-align:center; padding:24px; color:var(--muted); font-size:0.8rem; border-top:1px solid var(--border); margin-top:40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FixTray — Project File Reference</h1>
+  <p>Part 2 of 6 &nbsp;·&nbsp; Database &amp; Prisma &nbsp;·&nbsp; Generated May 5, 2026</p>
+</header>
+<nav>
+  <a href="fixtray-docs-1-root-config.html">1 · Root &amp; Config</a>
+  <a href="fixtray-docs-2-database.html" class="active">2 · Database</a>
+  <a href="fixtray-docs-3-lib-core.html">3 · Core Services (lib/)</a>
+  <a href="fixtray-docs-4-app-pages-api.html">4 · Pages &amp; API Routes</a>
+  <a href="fixtray-docs-5-components.html">5 · Components</a>
+  <a href="fixtray-docs-6-types-hooks-scripts.html">6 · Types, Hooks, Scripts &amp; Public</a>
+</nav>
+<main>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-num">76</div><div class="stat-label">Prisma Models</div></div>
+  <div class="stat-card"><div class="stat-num">1,692</div><div class="stat-label">Lines in schema.prisma</div></div>
+  <div class="stat-card"><div class="stat-num">PostgreSQL</div><div class="stat-label">Production Database</div></div>
+  <div class="stat-card"><div class="stat-num">Neon</div><div class="stat-label">Hosted Provider</div></div>
+</div>
+
+<h2>Prisma Files</h2>
+<div class="section-intro">Prisma is the ORM layer between FixTray and PostgreSQL. Every database read/write goes through the Prisma client. These files are <strong>absolutely critical</strong> — the entire app depends on the schema and generated client.</div>
+<table>
+  <thead><tr><th style="width:22%">File</th><th style="width:40%">What It Holds / Internals</th><th style="width:10%">Used?</th><th style="width:12%">Impact if Removed</th><th style="width:16%">What Would Break</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="filepath">prisma/schema.prisma</span></td>
+      <td>The <strong>single source of truth</strong> for the entire database structure. Defines: the PostgreSQL provider using <code>DATABASE_URL</code> and <code>DATABASE_URL_UNPOOLED</code> env vars (Neon pooled + direct connections). Contains <strong>76 models</strong> covering every entity in the system. The <code>prisma generate</code> command reads this file and outputs the TypeScript <code>@prisma/client</code> package that every API route imports.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge crit">CRITICAL</span></td>
+      <td>Cannot generate Prisma client. All database operations fail. App cannot build or run at all.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">prisma/dev.db</span></td>
+      <td>Legacy <strong>SQLite</strong> database file from early development. The production schema now uses PostgreSQL. This file is a leftover from when the project used SQLite. It is NOT the active database and should not be committed.</td>
+      <td><span class="badge no">NO</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Nothing. The app uses PostgreSQL (Neon) in both dev and prod. This file is unused.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">prisma/migrations/</span></td>
+      <td>Contains Prisma migration files that track the history of schema changes. The <code>0_init</code> migration contains the initial full schema SQL. Running <code>prisma migrate deploy</code> applies all pending migrations to the target database. Required for production database setup and schema updates.</td>
+      <td><span class="badge yes">YES</span></td>
+      <td><span class="badge major">MAJOR</span></td>
+      <td>Cannot run <code>prisma migrate deploy</code>. Production database setup breaks. Existing data is safe but schema updates require manual SQL.</td>
+    </tr>
+    <tr>
+      <td><span class="filepath">prisma/migrations_sqlite_backup/</span></td>
+      <td>Backup of old SQLite migration files from when the project used SQLite as its database. These are archived and no longer run. The production database is PostgreSQL.</td>
+      <td><span class="badge no">NO</span></td>
+      <td><span class="badge safe">SAFE</span></td>
+      <td>Nothing. These are historical artifacts only.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>All 76 Database Models — Grouped by Domain</h2>
+<div class="section-intro">Every model in <code>schema.prisma</code> maps directly to a PostgreSQL table. Below is each model, what data it stores, and which part of the app depends on it.</div>
+
+<h3>Users & Authentication</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>Customer</h4>
+    <p>End customers who submit work orders. Holds email, password (bcrypt), name, phone, stripeCustomerId, tags, internalNotes, emailVerified status, and loyalty/reward data.</p>
+    <div class="fields">Tables: customers · Relations: WorkOrder, Vehicle, Notification, PaymentMethod, Review, Appointment, Message, RewardClaim</div>
+  </div>
+  <div class="model-card">
+    <h4>Shop</h4>
+    <p>Auto repair shop accounts. Holds credentials, contact info, business license, insurance, shop type (diesel/gas/etc), Stripe Connect account, 2FA settings, approval status, and profile completeness flag.</p>
+    <div class="fields">Tables: shops · 40+ relations to all shop-scoped entities</div>
+  </div>
+  <div class="model-card">
+    <h4>Tech</h4>
+    <p>Technicians and managers employed by a shop. Holds credentials, role (tech/manager), availability, GPS coordinates, hourly rate, pay type, bank account info (encrypted), emergency contact, hire/termination dates.</p>
+    <div class="fields">Tables: techs · Relations: WorkOrder, TimeEntry, Shift, PayStub</div>
+  </div>
+  <div class="model-card">
+    <h4>Admin</h4>
+    <p>Platform super-administrators. Holds username, email, password, role (superadmin/admin), 2FA secret (encrypted), and active status.</p>
+    <div class="fields">Tables: admins · Relations: AuditLog</div>
+  </div>
+  <div class="model-card">
+    <h4>RefreshToken</h4>
+    <p>JWT refresh tokens stored server-side. Holds hashed token (bcrypt), userId, role, associated shopId, IP address, user agent, expiry, revocation status, and CSRF token embedded in metadata JSON.</p>
+    <div class="fields">Tables: refresh_tokens · Used by: /api/auth/refresh</div>
+  </div>
+  <div class="model-card">
+    <h4>VerificationToken</h4>
+    <p>One-time tokens for email verification and password reset. Stores SHA-256 hashed token, userId, type (email_verify/password_reset), expiry, and optional metadata.</p>
+    <div class="fields">Tables: verification_tokens</div>
+  </div>
+  <div class="model-card">
+    <h4>Permission</h4>
+    <p>Per-tech granular permission overrides. Stores shopId, techId, permission key (e.g. workorders.create), and boolean granted/denied value. Overrides the default role-based permissions in <code>lib/permissions.ts</code>.</p>
+    <div class="fields">Tables: permissions</div>
+  </div>
+</div>
+
+<h3>Work Orders & Vehicle Services</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>WorkOrder</h4>
+    <p>The <strong>core entity</strong> of the entire app. Holds service location (roadside/in-shop), vehicle type, service details (JSON arrays: repairs, maintenance), parts info, issue description, symptoms, photos (JSON array of URLs), vehicle location (GPS or address), status (pending → assigned → in-progress → closed), assigned tech, estimated cost, amount paid, Stripe payment intent ID, DTC codes, completion date, customer/shop/vehicle references.</p>
+    <div class="fields">Tables: workorders · Most-queried table in the app</div>
+  </div>
+  <div class="model-card">
+    <h4>StatusHistory</h4>
+    <p>Immutable audit trail of every status change on a work order. Records old status, new status, who changed it (tech/shop/customer), and timestamp. Enables full work order history timeline.</p>
+    <div class="fields">Tables: status_history</div>
+  </div>
+  <div class="model-card">
+    <h4>Vehicle</h4>
+    <p>Customer-owned vehicles. Stores vehicle type, make, model, year, VIN, license plate, mileage, and fleet account association. Linked to Customer and WorkOrder.</p>
+    <div class="fields">Tables: vehicles</div>
+  </div>
+  <div class="model-card">
+    <h4>WorkAuthorization</h4>
+    <p>Digital repair authorizations sent to customers. Holds work order reference, authorization status (pending/approved/declined), authorized amount, signature data, and sent/signed timestamps.</p>
+    <div class="fields">Tables: work_authorizations</div>
+  </div>
+  <div class="model-card">
+    <h4>RecurringWorkOrder</h4>
+    <p>Templates for scheduled recurring work orders (e.g. oil change every 3 months). Holds frequency, next due date, service template data, and customer/shop references.</p>
+    <div class="fields">Tables: recurring_work_orders</div>
+  </div>
+  <div class="model-card">
+    <h4>WorkOrderTemplate</h4>
+    <p>Shop-specific work order templates to speed up common job creation. Stores service type, description, repairs/maintenance arrays, estimated cost, and labor hours.</p>
+    <div class="fields">Tables: work_order_templates</div>
+  </div>
+</div>
+
+<h3>Scheduling & Appointments</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>Appointment</h4>
+    <p>Customer-scheduled service appointments. Holds scheduled date/time, service type, vehicle, bay assignment, status (scheduled/confirmed/completed/cancelled), and customer notes.</p>
+    <div class="fields">Tables: appointments</div>
+  </div>
+  <div class="model-card">
+    <h4>Bay</h4>
+    <p>Physical service bays in a shop. Holds bay name, status (available/occupied/reserved), current work order assignment, and capacity settings.</p>
+    <div class="fields">Tables: bays</div>
+  </div>
+  <div class="model-card">
+    <h4>ShopSchedule</h4>
+    <p>Shop business hours per day of week. Holds dayOfWeek (0–6), isOpen flag, openTime and closeTime in "HH:MM" format. Used by the appointment booking system.</p>
+    <div class="fields">Tables: shop_schedules</div>
+  </div>
+  <div class="model-card">
+    <h4>ShopBlockedDate</h4>
+    <p>Dates when a shop is closed (holidays, vacations). Prevents appointment booking on those dates. Stores date and reason.</p>
+    <div class="fields">Tables: shop_blocked_dates</div>
+  </div>
+  <div class="model-card">
+    <h4>LoanerVehicle</h4>
+    <p>Loaner vehicles a shop can offer to customers. Holds vehicle details, availability status, current customer assignment, and check-in/out timestamps.</p>
+    <div class="fields">Tables: loaner_vehicles</div>
+  </div>
+</div>
+
+<h3>Inventory & Purchasing</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>InventoryItem</h4>
+    <p>Parts and supplies in a shop's inventory. Holds part name, SKU, part number, category, quantity on hand, reorder threshold, cost, sale price, vendor info, and location (bin/shelf). Core to the inventory management feature.</p>
+    <div class="fields">Tables: inventory_items</div>
+  </div>
+  <div class="model-card">
+    <h4>InventoryRequest</h4>
+    <p>Tech requests for inventory items. Holds item name, quantity, urgency level, status (pending/approved/denied), requesting tech, and manager response notes.</p>
+    <div class="fields">Tables: inventory_requests</div>
+  </div>
+  <div class="model-card">
+    <h4>InventoryStock</h4>
+    <p>Stock adjustment records. Tracks quantity changes (receive, issue, return, adjustment) with reason codes and before/after quantities. Audit trail for inventory movements.</p>
+    <div class="fields">Tables: inventory_stock</div>
+  </div>
+  <div class="model-card">
+    <h4>PurchaseOrder</h4>
+    <p>Purchase orders to vendors for parts/supplies. Holds vendor info, order status (draft/submitted/received), total amount, expected delivery date, and line items.</p>
+    <div class="fields">Tables: purchase_orders</div>
+  </div>
+  <div class="model-card">
+    <h4>PurchaseOrderItem</h4>
+    <p>Individual line items on a purchase order. Holds part number, description, quantity ordered, unit cost, and received quantity.</p>
+    <div class="fields">Tables: purchase_order_items</div>
+  </div>
+  <div class="model-card">
+    <h4>CoreReturn</h4>
+    <p>Core charge returns tracking. When a rebuilt part (alternator, starter, etc.) is returned as a "core" for credit, this records the part, core charge amount, return status, and credit applied.</p>
+    <div class="fields">Tables: core_returns</div>
+  </div>
+  <div class="model-card">
+    <h4>Vendor</h4>
+    <p>Parts suppliers and service vendors for a shop. Holds contact name, phone, email, website, category, account number, payment terms, rating, and active status.</p>
+    <div class="fields">Tables: vendors</div>
+  </div>
+</div>
+
+<h3>Payments & Subscriptions</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>Subscription</h4>
+    <p>Shop subscription to FixTray platform plans. Holds plan name (starter/growth/professional/business/enterprise), status (active/trialing/past_due/cancelled), Stripe subscription ID, price ID, current period start/end, trial end date, cancel at period end flag.</p>
+    <div class="fields">Tables: subscriptions · Gated by: subscription-limits middleware</div>
+  </div>
+  <div class="model-card">
+    <h4>PaymentMethod</h4>
+    <p>Stored customer payment methods (Stripe card tokens). Holds Stripe payment method ID, card brand, last 4 digits, expiry, and default flag.</p>
+    <div class="fields">Tables: payment_methods</div>
+  </div>
+  <div class="model-card">
+    <h4>PaymentHistory</h4>
+    <p>Record of all subscription payments. Holds amount, currency, Stripe charge ID, status, and billing period. Used in the admin billing dashboard.</p>
+    <div class="fields">Tables: payment_history</div>
+  </div>
+  <div class="model-card">
+    <h4>PaymentLink</h4>
+    <p>One-time payment links sent to customers for work order invoices. Holds Stripe Payment Link ID or custom token, amount, work order reference, expiry, and usage status.</p>
+    <div class="fields">Tables: payment_links</div>
+  </div>
+  <div class="model-card">
+    <h4>TaxRule</h4>
+    <p>Shop-specific tax configuration. Holds tax name, rate (percentage), applicable service categories, and active status. Applied during invoice generation.</p>
+    <div class="fields">Tables: tax_rules</div>
+  </div>
+  <div class="model-card">
+    <h4>EnvironmentalFee</h4>
+    <p>Environmental/disposal fees added to invoices (e.g. oil disposal, tire recycling). Holds fee name, amount, applicable service types, and active flag.</p>
+    <div class="fields">Tables: environmental_fees</div>
+  </div>
+</div>
+
+<h3>Communications</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>Message</h4>
+    <p>In-app messages between shops and customers regarding a work order. Holds sender role, content, work order reference, read status, and delivery timestamp.</p>
+    <div class="fields">Tables: messages</div>
+  </div>
+  <div class="model-card">
+    <h4>CustomerMessage</h4>
+    <p>Customer portal messages — general messages from customers that may not be tied to a specific work order. Distinct from the work-order-specific Message model.</p>
+    <div class="fields">Tables: customer_messages</div>
+  </div>
+  <div class="model-card">
+    <h4>DirectMessage</h4>
+    <p>Direct messages between shop staff (tech-to-manager, tech-to-tech). Separate from customer-facing messages. Holds sender ID, recipient ID, content, and read status.</p>
+    <div class="fields">Tables: direct_messages</div>
+  </div>
+  <div class="model-card">
+    <h4>Notification</h4>
+    <p>In-app notifications for customers. Holds type (work_order_update/payment_due/etc.), title, message, workOrderId reference, read flag, and delivery methods (in-app/email/sms CSV).</p>
+    <div class="fields">Tables: notifications</div>
+  </div>
+  <div class="model-card">
+    <h4>PortalChatMessage</h4>
+    <p>Internal staff chat messages in the shop/manager/tech portal. Holds role (shop/manager/tech/shared), channelId (global or pair:userId1:userId2), sender name, and message body.</p>
+    <div class="fields">Tables: portal_chat_messages</div>
+  </div>
+  <div class="model-card">
+    <h4>PushSubscription</h4>
+    <p>Web Push API subscription objects stored for sending browser push notifications. Holds endpoint URL, p256dh key, auth key, and customerId/shopId reference. Used by <code>lib/serverPush.ts</code>.</p>
+    <div class="fields">Tables: push_subscriptions</div>
+  </div>
+</div>
+
+<h3>Payroll & HR</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>TimeEntry</h4>
+    <p>Clock-in/clock-out records for technicians. Holds clock in time, clock out time, break duration, total hours calculated, work order reference (if clocked to a job), GPS coordinates at clock-in, and approval status.</p>
+    <div class="fields">Tables: time_entries</div>
+  </div>
+  <div class="model-card">
+    <h4>Shift</h4>
+    <p>Scheduled work shifts for technicians. Holds scheduled start/end times, actual start/end times, shift status, and any notes. Linked to the payroll system.</p>
+    <div class="fields">Tables: shifts</div>
+  </div>
+  <div class="model-card">
+    <h4>ShiftSwapRequest</h4>
+    <p>Tech-to-tech shift swap requests. Holds requester, target tech, original shift, requested shift, status (pending/approved/denied), and manager approval. Has dual relations to Tech (requester + target).</p>
+    <div class="fields">Tables: shift_swap_requests</div>
+  </div>
+  <div class="model-card">
+    <h4>LeaveRequest</h4>
+    <p>Time-off requests from technicians. Holds leave type (vacation/sick/personal), start/end dates, status (pending/approved/denied), reason, and manager notes.</p>
+    <div class="fields">Tables: leave_requests</div>
+  </div>
+  <div class="model-card">
+    <h4>PayPeriod</h4>
+    <p>Defined pay periods for a shop. Holds start date, end date, status (open/closed/paid), and totals. Groups time entries for payroll calculation.</p>
+    <div class="fields">Tables: pay_periods</div>
+  </div>
+  <div class="model-card">
+    <h4>PayStub</h4>
+    <p>Generated pay stubs for technicians. Holds pay period reference, regular hours, overtime hours, gross pay, deductions, net pay, and payment date. Encrypted bank account info for direct deposit.</p>
+    <div class="fields">Tables: pay_stubs</div>
+  </div>
+  <div class="model-card">
+    <h4>OvertimeRule</h4>
+    <p>Overtime calculation rules per shop. Defines daily OT threshold (e.g. over 8hrs), weekly OT threshold (e.g. over 40hrs), double-time rules, and multiplier rates.</p>
+    <div class="fields">Tables: overtime_rules</div>
+  </div>
+</div>
+
+<h3>Fleet & Enterprise</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>FleetAccount</h4>
+    <p>Business fleet accounts (companies with multiple vehicles). Holds company name, contact, credit terms, billing address, credit limit, and current balance. Enables B2B fleet billing.</p>
+    <div class="fields">Tables: fleet_accounts</div>
+  </div>
+  <div class="model-card">
+    <h4>FleetVehicle</h4>
+    <p>Individual vehicles belonging to a fleet account. Linked to both FleetAccount and Vehicle models.</p>
+    <div class="fields">Tables: fleet_vehicles</div>
+  </div>
+  <div class="model-card">
+    <h4>FleetInvoice</h4>
+    <p>Consolidated invoices for fleet accounts covering multiple work orders in a billing period. Holds total amount, work order references, due date, and payment status.</p>
+    <div class="fields">Tables: fleet_invoices</div>
+  </div>
+  <div class="model-card">
+    <h4>Tenant</h4>
+    <p>Enterprise multi-tenant organizations. Holds company name, subdomain (e.g. joes-auto.fixtray.app), logo, contact info, address, plan/status, maxUsers, maxWorkOrders, timezone, currency, and business hours. Enables white-label enterprise deployments.</p>
+    <div class="fields">Tables: tenants</div>
+  </div>
+  <div class="model-card">
+    <h4>MdmDevice</h4>
+    <p>Mobile Device Management enrolled devices. Holds device ID, platform (iOS/Android), model, OS version, enrollment status, last check-in, and assigned user.</p>
+    <div class="fields">Tables: mdm_devices</div>
+  </div>
+  <div class="model-card">
+    <h4>MdmPolicy</h4>
+    <p>MDM security policies. Holds policy name, config JSON (password requirements, encryption, app restrictions), and active status.</p>
+    <div class="fields">Tables: mdm_policies</div>
+  </div>
+  <div class="model-card">
+    <h4>MdmDevicePolicy</h4>
+    <p>Junction table linking MDM devices to applied policies. Tracks enforcement status and last applied timestamp.</p>
+    <div class="fields">Tables: mdm_device_policies</div>
+  </div>
+  <div class="model-card">
+    <h4>MdmCommand</h4>
+    <p>Remote commands sent to MDM devices (lock, wipe, install app, etc.). Holds command type, payload, status (queued/sent/executed/failed), and response.</p>
+    <div class="fields">Tables: mdm_commands</div>
+  </div>
+</div>
+
+<h3>Inspections & Compliance</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>DVIInspection</h4>
+    <p>Digital Vehicle Inspections. Holds vehicle reference, inspector tech, inspection date, overall result (pass/fail/advisory), customer approval status, and linked work order. Parent to DVIItem records.</p>
+    <div class="fields">Tables: dvi_inspections</div>
+  </div>
+  <div class="model-card">
+    <h4>DVIItem</h4>
+    <p>Individual inspection line items within a DVI. Holds system name (brakes, tires, fluids, etc.), condition (good/fair/poor/critical), tech notes, photos array (URLs), and recommended action.</p>
+    <div class="fields">Tables: dvi_items</div>
+  </div>
+  <div class="model-card">
+    <h4>VehicleConditionReport</h4>
+    <p>Pre-service condition reports documenting a vehicle's state when it arrives. Holds damage notes, photos, mileage, fuel level, and customer signature acknowledgment.</p>
+    <div class="fields">Tables: vehicle_condition_reports</div>
+  </div>
+  <div class="model-card">
+    <h4>StateInspection</h4>
+    <p>State emissions/safety inspection records. Holds inspection type, result (pass/fail), inspector tech, sticker number, expiry date, and notes. State-compliance record keeping.</p>
+    <div class="fields">Tables: state_inspections</div>
+  </div>
+  <div class="model-card">
+    <h4>DTCLookup</h4>
+    <p>Diagnostic Trouble Code lookup cache. Stores DTC code (e.g. P0301), description, severity, possible causes, and fix recommendations. Populated by the DTC lookup API and cached here to reduce external API calls.</p>
+    <div class="fields">Tables: dtc_lookup</div>
+  </div>
+</div>
+
+<h3>Reviews, Loyalty & Marketing</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>Review</h4>
+    <p>Customer reviews of a shop. Holds star rating (1-5), written review, work order reference, public/private flag, shop response, and moderation status.</p>
+    <div class="fields">Tables: reviews</div>
+  </div>
+  <div class="model-card">
+    <h4>RewardClaim</h4>
+    <p>Loyalty program reward claims. Holds tier ID (tier-1 through tier-4), status (pending/redeemed/expired), claimed and redeemed timestamps, and expiry date. Linked to Customer.</p>
+    <div class="fields">Tables: reward_claims</div>
+  </div>
+  <div class="model-card">
+    <h4>Referral</h4>
+    <p>Customer referral tracking. Holds referrer customer ID, referred email, referral code, conversion status (pending/converted), and reward credit applied.</p>
+    <div class="fields">Tables: referrals</div>
+  </div>
+  <div class="model-card">
+    <h4>Campaign</h4>
+    <p>Shop marketing campaigns (email/SMS blast campaigns). Holds campaign name, type, target audience (all customers, fleet, by service type), message template, send schedule, and delivery stats.</p>
+    <div class="fields">Tables: campaigns</div>
+  </div>
+  <div class="model-card">
+    <h4>FavoriteShop</h4>
+    <p>Customer's bookmarked/favorite shops. Simple junction of Customer → Shop with timestamp. Used in the customer portal "My Shops" view.</p>
+    <div class="fields">Tables: favorite_shops</div>
+  </div>
+</div>
+
+<h3>Shop Configuration & Settings</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>ShopSettings</h4>
+    <p>Configurable settings per shop. Holds notification preferences (email/SMS toggles), payment settings, tax config, default labor rate, invoice template, appointment settings, and feature toggles.</p>
+    <div class="fields">Tables: shop_settings · One-to-one with Shop</div>
+  </div>
+  <div class="model-card">
+    <h4>ShopBranding</h4>
+    <p>White-label branding settings per shop. Holds logo URL, primary color, secondary color, custom domain, header/footer text, and "powered by" visibility toggle.</p>
+    <div class="fields">Tables: shop_branding · One-to-one with Shop</div>
+  </div>
+  <div class="model-card">
+    <h4>ShopLaborRate</h4>
+    <p>Custom labor rate categories for a shop (e.g. Standard Rate, Premium Rate, Diesel Specialist). Each has a name, hourly rate, and category tag.</p>
+    <div class="fields">Tables: shop_labor_rates</div>
+  </div>
+  <div class="model-card">
+    <h4>ShopService</h4>
+    <p>Services a shop offers. Holds service name, category (diesel/gas), price, duration in minutes, and description. Displayed to customers when creating work orders.</p>
+    <div class="fields">Tables: shop_services</div>
+  </div>
+  <div class="model-card">
+    <h4>ShopLocation</h4>
+    <p>Multiple physical locations for a shop. Holds location name, address, city, state, zip, phone, email, isMain flag, and status. Enables multi-location shop management.</p>
+    <div class="fields">Tables: shop_locations</div>
+  </div>
+  <div class="model-card">
+    <h4>IntegrationConfig</h4>
+    <p>Third-party integration credentials and settings per shop. Holds provider name (QuickBooks, Mitchell1, etc.), API keys (encrypted), sync settings, and last sync timestamp.</p>
+    <div class="fields">Tables: integration_configs</div>
+  </div>
+</div>
+
+<h3>Automation & Workflow</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>AutomationRule</h4>
+    <p>Configurable workflow automation rules. Holds trigger event (status_changed, payment_received, etc.), conditions (JSON), actions (send_email, send_sms, create_notification, etc.), and enabled/disabled status.</p>
+    <div class="fields">Tables: automation_rules</div>
+  </div>
+  <div class="model-card">
+    <h4>AutomationExecution</h4>
+    <p>Audit log of automation rule executions. Records which rule fired, on which entity, what actions were taken, outcome (success/failure), and execution timestamp.</p>
+    <div class="fields">Tables: automation_executions</div>
+  </div>
+  <div class="model-card">
+    <h4>ApiKey</h4>
+    <p>API keys for third-party integrations and programmatic access. Holds SHA-256 hashed key (raw key shown once at creation), shop ID, scopes (CSV), label, last used timestamp, expiry, and revocation flag.</p>
+    <div class="fields">Tables: api_keys · Used by: apiKeyAuth.ts</div>
+  </div>
+  <div class="model-card">
+    <h4>Webhook</h4>
+    <p>Outbound webhook endpoints registered by shops. Holds target URL, HMAC-SHA256 secret, subscribed events (CSV), active flag, and failure count (auto-disables at 10 failures).</p>
+    <div class="fields">Tables: webhooks · Used by: webhookService.ts</div>
+  </div>
+</div>
+
+<h3>Analytics & Logging</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>ActivityLog</h4>
+    <p>General activity log for shop events (work order created, status changed, payment received, etc.). Holds entity type, entity ID, action, actor info, and timestamp.</p>
+    <div class="fields">Tables: activity_logs</div>
+  </div>
+  <div class="model-card">
+    <h4>AuditLog</h4>
+    <p>Admin/superadmin audit trail. Every admin action (approve shop, delete user, change settings) is recorded here with admin ID, action type, target entity, IP address, user agent, and shop context.</p>
+    <div class="fields">Tables: audit_logs · Written by: auditLog.ts</div>
+  </div>
+  <div class="model-card">
+    <h4>PageView</h4>
+    <p>Page view analytics records. Holds path, user ID (if authenticated), session ID, referrer, user agent, and timestamp. Used by the analytics dashboard.</p>
+    <div class="fields">Tables: page_views</div>
+  </div>
+  <div class="model-card">
+    <h4>TechTracking</h4>
+    <p>GPS location history for technicians. Stores latitude, longitude, accuracy, speed, heading, battery level, and timestamp per location ping. Powers the TechLiveMap component.</p>
+    <div class="fields">Tables: tech_tracking</div>
+  </div>
+  <div class="model-card">
+    <h4>ShopMonthlyReport</h4>
+    <p>Pre-aggregated monthly performance reports per shop. Holds revenue totals, work order counts, average ticket value, tech productivity metrics, and top services for the reporting period.</p>
+    <div class="fields">Tables: shop_monthly_reports</div>
+  </div>
+</div>
+
+<h3>Media & Documents</h3>
+<div class="model-group">
+  <div class="model-card">
+    <h4>Photo</h4>
+    <p>Work order photos stored in Cloudinary. Holds Cloudinary URL, public ID, filename, caption, work order reference, uploader ID, and upload timestamp. Used by the photo capture and gallery features.</p>
+    <div class="fields">Tables: photos · Companion file: data/photos.json (dev fallback)</div>
+  </div>
+  <div class="model-card">
+    <h4>CustomerDocument</h4>
+    <p>Documents uploaded by or for a customer (insurance cards, vehicle titles, etc.). Holds file URL, filename, document type, upload date, and visibility (customer-only vs shared with shop).</p>
+    <div class="fields">Tables: customer_documents</div>
+  </div>
+</div>
+
+<h2>data/ Directory</h2>
+<table>
+  <thead><tr><th style="width:22%">File</th><th>What It Holds</th><th style="width:10%">Used?</th><th style="width:12%">Impact</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="filepath">data/photos.json</span></td>
+      <td>A local JSON array of photo metadata objects. Serves as a <strong>development fallback</strong> when the PostgreSQL database is unavailable. The <code>/api/photos</code> route may fall back to this file if the DB query fails. Contains sample photo URL and metadata entries.</td>
+      <td><span class="badge minor">FALLBACK</span></td>
+      <td><span class="badge minor">MINOR</span></td>
+    </tr>
+  </tbody>
+</table>
+
+</main>
+<footer>FixTray Project File Reference &nbsp;·&nbsp; Part 2 of 6: Database &amp; Prisma &nbsp;·&nbsp; <a href="fixtray-docs-3-lib-core.html" style="color:var(--red)">Next: Core Services →</a></footer>
+</body>
+</html>

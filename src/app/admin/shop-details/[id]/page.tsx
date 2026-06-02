@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowLeft, FaBuilding, FaCalendarAlt, FaCheck, FaCreditCard, FaExclamationTriangle, FaHourglassHalf, FaPhone, FaStar, FaTimesCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaBuilding, FaCalendarAlt, FaCheck, FaExclamationTriangle, FaHourglassHalf, FaPhone, FaStar, FaTimesCircle } from 'react-icons/fa';
 
 type ShopDetails = {
   id: string;
@@ -23,11 +24,6 @@ type ShopDetails = {
   profileComplete: boolean;
   createdAt: string;
   approvedAt: string | null;
-  subscription: {
-    plan: string;
-    status: string;
-    currentPeriodEnd: string | null;
-  } | null;
   stats: {
     totalWorkOrders: number;
     completedWorkOrders: number;
@@ -79,7 +75,7 @@ export default function ShopDetailsPage() {
             setError('Shop not found');
           } else if (res.status === 401) {
             setError('Session expired. Please log in again.');
-            router.push('/auth/login');
+            router.push('/auth/login' as Route);
           } else {
             setError('Failed to load shop details');
           }
@@ -302,33 +298,6 @@ export default function ShopDetailsPage() {
             </div>
           </div>
 
-          {/* Subscription Information */}
-          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FaCreditCard style={{marginRight:4}} /> Subscription
-            </h3>
-            {shop.subscription ? (
-              <div style={{ display: 'grid', gap: 16 }}>
-                <div>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Plan</div>
-                  <div style={{ fontSize: 14, color: '#f97316', fontWeight: 600, textTransform: 'capitalize' }}>{shop.subscription.plan}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Status</div>
-                  <div style={{ fontSize: 14, color: shop.subscription.status === 'active' ? '#22c55e' : '#f59e0b', textTransform: 'capitalize' }}>{shop.subscription.status}</div>
-                </div>
-                {shop.subscription.currentPeriodEnd && (
-                  <div>
-                    <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Renews On</div>
-                    <div style={{ fontSize: 14, color: '#e5e7eb' }}>{new Date(shop.subscription.currentPeriodEnd).toLocaleDateString()}</div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ color: '#9aa3b2', fontSize: 14 }}>No active subscription</div>
-            )}
-          </div>
-
           {/* Account Dates */}
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -364,7 +333,7 @@ export default function ShopDetailsPage() {
       {shopMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:shopMsg.type==='success'?'#dcfce7':'#fde8e8',color:shopMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {shopMsg.text}
-          <button onClick={()=>setShopMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setShopMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>├ù</button>
         </div>
       )}
     </div>

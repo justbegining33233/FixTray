@@ -4,6 +4,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 
+function parseSessionMetadata(raw: string | null): { shopId?: string } {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as { shopId?: string };
+  } catch {
+    return {};
+  }
+}
+
+function getShopActivityStatus(hasActiveSession: boolean, lastLogin: Date | null, activeWindowStart: Date): 'active' | 'inactive' {
+  return hasActiveSession || (lastLogin ? lastLogin >= activeWindowStart : false) ? 'active' : 'inactive';
+}
+
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin']);
   if (auth instanceof NextResponse) return auth;
@@ -15,7 +28,9 @@ export async function GET(request: NextRequest) {
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
     // Fetch all shops with related data
     const shops: any[] = await prisma.shop.findMany({
@@ -34,22 +49,56 @@ export async function GET(request: NextRequest) {
         techs: {
           select: { id: true, available: true }
         },
-        subscription: {
-          select: {
-            id: true,
-            plan: true,
-            status: true,
-            trialStart: true,
-            trialEnd: true,
-            currentPeriodStart: true,
-            currentPeriodEnd: true,
-          }
-        },
         reviews: {
           select: { rating: true }
         }
       }
     });
+
+    const [loginEvents, activeRefreshSessions] = await Promise.all([
+      prisma.activityLog.findMany({
+        where: {
+          action: 'login',
+          type: 'user',
+          createdAt: { gte: ninetyDaysAgo },
+        },
+        select: {
+          createdAt: true,
+          shopId: true,
+          email: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.refreshToken.findMany({
+        where: {
+          revoked: false,
+          expiresAt: { gt: now },
+        },
+        select: {
+          metadata: true,
+        },
+      }),
+    ]);
+
+    const latestLoginByShopId = new Map<string, Date>();
+    const latestLoginByEmail = new Map<string, Date>();
+    for (const event of loginEvents) {
+      if (event.shopId && !latestLoginByShopId.has(event.shopId)) {
+        latestLoginByShopId.set(event.shopId, event.createdAt);
+      }
+      if (event.email) {
+        const key = event.email.trim().toLowerCase();
+        if (!latestLoginByEmail.has(key)) {
+          latestLoginByEmail.set(key, event.createdAt);
+        }
+      }
+    }
+
+    const activeShopIds = new Set<string>();
+    for (const session of activeRefreshSessions) {
+      const meta = parseSessionMetadata(session.metadata ?? null);
+      if (meta.shopId) activeShopIds.add(meta.shopId);
+    }
 
     // Process shop data with live metrics
     const formattedShops = shops.map((shop: any) => {
@@ -85,12 +134,10 @@ export async function GET(request: NextRequest) {
       // Active techs (using available field)
       const activeTechs = shop.techs.filter((t: any) => t.available === true).length;
 
-      // Subscription info
-      const subStatus = shop.subscription?.status || 'none';
-      const isTrialing = subStatus === 'trialing';
-      const trialDaysLeft = isTrialing && shop.subscription?.trialEnd 
-        ? Math.max(0, Math.ceil((new Date(shop.subscription.trialEnd).getTime() - now.getTime()) / (24 * 60 * 60 * 1000)))
-        : 0;
+      const emailKey = (shop.email || '').toLowerCase();
+      const lastLogin = latestLoginByShopId.get(shop.id) || latestLoginByEmail.get(emailKey) || null;
+      const hasActiveSession = activeShopIds.has(shop.id);
+      const activityStatus = getShopActivityStatus(hasActiveSession, lastLogin, twentyFourHoursAgo);
 
       return {
         id: shop.id,
@@ -105,6 +152,10 @@ export async function GET(request: NextRequest) {
         zipCode: shop.zipCode,
         shopType: shop.shopType || 'general',
         status: shop.status,
+        accountStatus: shop.status,
+        activityStatus,
+        hasActiveSession,
+        lastLogin,
         profileComplete: shop.profileComplete,
         createdAt: shop.createdAt,
         approvedAt: shop.approvedAt,
@@ -120,21 +171,15 @@ export async function GET(request: NextRequest) {
         rating: Math.round(avgRating * 10) / 10,
         reviewCount: shop.reviews.length,
         techCount: shop.techs.length,
-        activeTechs,
-        // Subscription
-        subscription: shop.subscription ? {
-          plan: shop.subscription.plan,
-          status: shop.subscription.status,
-          isTrialing,
-          trialDaysLeft,
-          currentPeriodEnd: shop.subscription.currentPeriodEnd,
-        } : null
+        activeTechs
       };
     });
 
     // Calculate aggregate stats
     const totalShops = shops.length;
-    const activeShops = shops.filter(s => s.status === 'approved').length;
+    const activeShops = formattedShops.filter(s => s.activityStatus === 'active').length;
+    const inactiveShops = formattedShops.filter(s => s.activityStatus === 'inactive').length;
+    const approvedShops = shops.filter(s => s.status === 'approved').length;
     const pendingShops = shops.filter(s => s.status === 'pending').length;
     const suspendedShops = shops.filter(s => s.status === 'suspended').length;
     
@@ -170,12 +215,11 @@ export async function GET(request: NextRequest) {
       ? Math.round(((totalJobsThisMonth - totalJobsLastMonth) / totalJobsLastMonth) * 100)
       : totalJobsThisMonth > 0 ? 100 : 0;
 
-    // Subscription breakdown
-    const subscriptionBreakdown = {
-      active: shops.filter((s: any) => s.subscription?.status === 'active').length,
-      trialing: shops.filter((s: any) => s.subscription?.status === 'trialing').length,
-      cancelled: shops.filter((s: any) => s.subscription?.status === 'cancelled' || s.subscription?.status === 'canceled').length,
-      none: shops.filter((s: any) => !s.subscription).length,
+    const accountBreakdown = {
+      active: 0,
+      trialing: 0,
+      cancelled: 0,
+      none: shops.length,
     };
 
     // Top performing shops (by revenue)
@@ -218,6 +262,8 @@ export async function GET(request: NextRequest) {
       liveMetrics: {
         totalShops,
         activeShops,
+        inactiveShops,
+        approvedShops,
         pendingShops,
         suspendedShops,
         newShopsThisMonth,
@@ -232,7 +278,7 @@ export async function GET(request: NextRequest) {
         totalJobsThisMonth,
         totalJobsLastMonth,
         jobsGrowth: `${jobsGrowth >= 0 ? '+' : ''}${jobsGrowth}%`,
-        subscriptionBreakdown,
+        accountBreakdown,
         topShops,
         recentActivity,
         shopTrend,

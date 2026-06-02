@@ -15,7 +15,7 @@ interface DTCResult {
 const SEVERITY_STYLE: Record<string, { bg: string; color: string }> = {
   critical: { bg: 'rgba(229,51,42,0.15)', color: '#e5332a' },
   moderate: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
-  minor:    { bg: 'rgba(96,165,250,0.15)', color: '#60a5fa' },
+  minor:    { bg: 'rgba(96,165,250,0.15)', color: '#ff6b64' },
 };
 
 export default function DTCLookupPage() {
@@ -53,7 +53,7 @@ export default function DTCLookupPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaSearch style={{marginRight:4}} /> DTC Code Lookup</h1>
         <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>Diagnose OBD-II fault codes with detailed repair information</p>
@@ -103,7 +103,7 @@ export default function DTCLookupPage() {
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Affected Systems</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {result.systems.map(s => <span key={s} style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)', borderRadius: 6, padding: '3px 10px', fontSize: 13 }}>{s}</span>)}
+                  {result.systems.map(s => <span key={s} style={{ background: 'rgba(96,165,250,0.15)', color: '#ff6b64', border: '1px solid rgba(96,165,250,0.3)', borderRadius: 6, padding: '3px 10px', fontSize: 13 }}>{s}</span>)}
                 </div>
               </div>
             )}
@@ -147,3 +147,4 @@ export default function DTCLookupPage() {
     </div>
   );
 }
+

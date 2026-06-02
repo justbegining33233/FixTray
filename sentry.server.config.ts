@@ -4,12 +4,22 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+const isProd = process.env.NODE_ENV === 'production';
+
 Sentry.init({
   dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'development',
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1.0,
+  // Sample 100% of traces in dev, 20% in production to control volume.
+  // Increase in production once baseline is established.
+  tracesSampleRate: isProd ? 0.2 : 1.0,
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  // Only send errors from the app's own code, not from third-party scripts.
+  ignoreErrors: [
+    'ResizeObserver loop limit exceeded',
+    'Non-Error exception captured',
+    /^Network request failed/,
+  ],
+
   debug: false,
 });

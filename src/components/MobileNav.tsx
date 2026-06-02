@@ -3,6 +3,7 @@ import { FaTimes } from 'react-icons/fa';
 
 import { useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import type { Route } from 'next';
 import {
   IconHome, IconOrders, IconMessages, IconTeam, IconCalendar,
   IconWrench, IconClock, IconSettings, IconInventory, IconDollar,
@@ -42,15 +43,15 @@ const navConfig: Record<string, { primary: NavItem[]; more: NavItem[] }> = {
   shop: {
     primary: [
       { icon: <IconHome size={22} />,     label: 'Home',     path: '/shop/home' },
-      { icon: <IconOrders size={22} />,   label: 'Orders',   path: '/workorders/list' },
+      { icon: <IconOrders size={22} />,   label: 'Orders',   path: '/shop/home' },
       { icon: <IconMessages size={22} />, label: 'Messages', path: '/shop/customer-messages' },
       { icon: <IconTeam size={22} />,     label: 'Team',     path: '/shop/manage-team' },
     ],
     more: [
       { icon: <IconInventory size={22} />, label: 'Inventory',  path: '/shop/inventory' },
       { icon: <IconDollar size={22} />,    label: 'Payroll',    path: '/shop/payroll' },
-      { icon: <IconChart size={22} />,     label: 'Reports',    path: '/shop/reports' },
-      { icon: <IconCar size={22} />,       label: 'Bay Board',  path: '/shop/bays' },
+      { icon: <IconChart size={22} />,     label: 'Reports',    path: '/shop/analytics' },
+      { icon: <IconCar size={22} />,       label: 'Ops Overview',  path: '/shop/home' },
       { icon: <IconStar size={22} />,      label: 'Reviews',    path: '/shop/reviews' },
       { icon: <IconSettings size={22} />,  label: 'Settings',   path: '/shop/settings' },
     ],
@@ -58,8 +59,8 @@ const navConfig: Record<string, { primary: NavItem[]; more: NavItem[] }> = {
   tech: {
     primary: [
       { icon: <IconHome size={22} />,       label: 'Home',     path: '/tech/home' },
-      { icon: <IconClipboard size={22} />,  label: 'My Jobs',  path: '/workorders/list' },
-      { icon: <IconClock size={22} />,      label: 'Clock',    path: '/tech/home#timeclock' },
+      { icon: <IconClipboard size={22} />,  label: 'My Jobs',  path: '/tech/home' },
+      { icon: <IconClock size={22} />,      label: 'Clock',    path: '/tech/timeclock' },
       { icon: <IconMessages size={22} />,   label: 'Messages', path: '/tech/messages' },
     ],
     more: [
@@ -76,13 +77,17 @@ const navConfig: Record<string, { primary: NavItem[]; more: NavItem[] }> = {
       { icon: <IconHome size={22} />,      label: 'Home',     path: '/manager/home' },
       { icon: <IconClipboard size={22} />, label: 'Assign',   path: '/manager/assignments' },
       { icon: <IconTeam size={22} />,      label: 'Team',     path: '/manager/team' },
-      { icon: <IconMessages size={22} />,  label: 'Messages', path: '/manager/home#messages' },
+      { icon: <IconMessages size={22} />,  label: 'Messages', path: '/manager/messages' },
     ],
     more: [
       { icon: <IconFileText size={22} />,   label: 'Estimates',  path: '/manager/estimates' },
-      { icon: <IconClock size={22} />,      label: 'Time Clock', path: '/manager/home#timeclock' },
-      { icon: <IconInventory size={22} />,  label: 'Inventory',  path: '/manager/home#inventory' },
-      { icon: <IconOrders size={22} />,     label: 'All Orders', path: '/workorders/list' },
+      { icon: <IconClock size={22} />,      label: 'Time Clock', path: '/manager/timeclock' },
+      { icon: <IconInventory size={22} />,  label: 'Inventory',  path: '/manager/inventory' },
+      { icon: <IconOrders size={22} />,     label: 'All Orders', path: '/manager/home' },
+      { icon: <IconChart size={22} />,      label: 'Overview',   path: '/manager/overview' },
+      { icon: <IconOrders size={22} />,     label: 'Work Orders', path: '/manager/home' },
+      { icon: <IconInventory size={22} />,  label: 'Parts',      path: '/manager/inventory' },
+      { icon: <IconSearch size={22} />,     label: 'Inspections', path: '/manager/inspections' },
     ],
   },
 };
@@ -157,7 +162,7 @@ export default function MobileNav({ role }: MobileNavProps) {
             return (
               <button
                 key={item.path}
-                onClick={() => { router.push(item.path); setDrawerOpen(false); }}
+                onClick={() => { router.push(item.path as Route); setDrawerOpen(false); }}
                 style={{
                   display: 'flex', flexDirection: 'column',
                   alignItems: 'center', gap: 6,
@@ -230,7 +235,7 @@ export default function MobileNav({ role }: MobileNavProps) {
           return (
             <button
               key={item.path}
-              onClick={() => router.push(item.path)}
+              onClick={() => router.push(item.path as Route)}
               style={{
                 flex: 1,
                 display: 'flex', flexDirection: 'column',

@@ -2,61 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowLeft, FaArrowRight, FaBolt, FaBullseye, FaChartBar, FaChartLine, FaCheckCircle, FaCreditCard, FaDollarSign, FaHourglassHalf, FaSyncAlt, FaTimesCircle, FaUniversity, FaWrench } from 'react-icons/fa';
-
-interface RevenueData {
-  mrr: number;
-  arr: number;
-  totalActiveSubscriptions: number;
-  planBreakdown: Record<string, { count: number; revenue: number }>;
-  recentPayments: Array<{
-    id: string;
-    shopName: string;
-    amount: number;
-    status: string;
-    date: string;
-  }>;
-  totals: {
-    grossRevenue: number;
-    estimatedStripeFees: number;
-    netRevenue: number;
-  };
-}
-
-interface LiveMetrics {
-  revenueTrend: number[];
-  momGrowth: string;
-  yoyGrowth: string;
-  churnRate: string;
-  retentionRate: string;
-  conversionRate: string;
-  arpu: number;
-  ltv: number;
-  avgLifetimeMonths: number;
-  newSubsThisMonth: number;
-  activeSubscriptions: number;
-  trialingSubscriptions: number;
-  canceledSubscriptions: number;
-  revenueThisMonth: number;
-  revenueLastMonth: number;
-  revenueLast3Months: number;
-}
+import { FaArrowLeft, FaChartBar, FaChartLine, FaCreditCard, FaDollarSign, FaStore, FaUniversity, FaWrench } from 'react-icons/fa';
 
 interface StripeLinks {
   dashboard: string;
   payments: string;
-  subscriptions: string;
   payouts: string;
   balances: string;
 }
 
 interface WorkOrderFees {
+  feePerWorkOrder: number;
   totalFees: number;
+  feesToday: number;
+  feesThisWeek: number;
   feesThisMonth: number;
+  feesLastMonth: number;
+  feesLast3Months: number;
+  momGrowth: number;
   totalPaidWorkOrders: number;
-  feesByShop: Array<{ shopName: string; count: number; fees: number }>;
+  paidWorkOrdersToday: number;
+  paidWorkOrdersThisWeek: number;
+  paidWorkOrdersThisMonth: number;
+  totalWorkOrderRevenue: number;
+  thisMonthWorkOrderRevenue: number;
+  lastMonthWorkOrderRevenue: number;
+  averageTicket: number;
+  dailyFeesTrend: number[];
+  dailyPaidOrdersTrend: number[];
+  dailyRevenueTrend: number[];
+  feesByShop: Array<{ shopId: string; shopName: string; count: number; fees: number; totalRevenue: number }>;
   recentTransactions: Array<{
     id: string;
     shopName: string;
@@ -97,10 +75,8 @@ function MiniLineChart({ data, color, height = 40 }: { data: number[]; color: st
 
 export default function AdminRevenuePage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useRequireAuth(['admin']);
+  const { user, isLoading: authLoading } = useRequireAuth(['admin', 'superadmin']);
   const [loading, setLoading] = useState(true);
-  const [revenue, setRevenue] = useState<RevenueData | null>(null);
-  const [liveMetrics, setLiveMetrics] = useState<LiveMetrics | null>(null);
   const [stripeLinks, setStripeLinks] = useState<StripeLinks | null>(null);
   const [workOrderFees, setWorkOrderFees] = useState<WorkOrderFees | null>(null);
   const [error, setError] = useState('');
@@ -128,15 +104,13 @@ export default function AdminRevenuePage() {
         }
       });
       if (res.status === 401 || res.status === 403) {
-        router.push('/auth/login');
+        router.push('/auth/login' as Route);
         return;
       }
       const data = await res.json();
       if (data.success) {
-        setRevenue(data.revenue);
-        setLiveMetrics(data.liveMetrics);
-        setStripeLinks(data.stripeLinks);
-        if (data.workOrderFees) setWorkOrderFees(data.workOrderFees);
+        setStripeLinks(data.stripeLinks || null);
+        setWorkOrderFees(data.workOrderFees || null);
       } else {
         setError(data.error || 'Failed to load revenue data');
       }
@@ -162,51 +136,65 @@ export default function AdminRevenuePage() {
     });
   };
 
-  const planColors: Record<string, string> = {
-    starter: 'bg-gray-500',
-    growth: 'bg-blue-500',
-    professional: 'bg-purple-500',
-    business: 'bg-orange-500',
-    enterprise: 'bg-red-500'
-  };
+  const momLabel = workOrderFees
+    ? `${workOrderFees.momGrowth >= 0 ? '+' : ''}${workOrderFees.momGrowth.toFixed(1)}%`
+    : '0.0%';
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#09090B] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-500"></div>
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-stone-500"></div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#09090B] flex items-center justify-center">
-        <div className="bg-[#111827] border border-[#1f2937] rounded-lg px-6 py-4 text-slate-400 text-sm">
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <div className="bg-[#000000] border border-[#1f2937] rounded-lg px-6 py-4 text-stone-400 text-sm">
           Redirecting to login...
         </div>
       </div>
     );
   }
 
+  if (!user.isOwner) {
+    return (
+      <div className="min-h-screen bg-[#000000] text-stone-100 flex items-center justify-center px-6">
+        <div className="max-w-xl w-full bg-[#000000] border border-[#1f2937] rounded-xl p-6 text-center">
+          <h1 className="text-xl font-semibold mb-2">Owner Access Required</h1>
+          <p className="text-stone-400 text-sm mb-5">
+            Platform revenue and FixTray earnings are visible only to the FixTray Owner account.
+          </p>
+          <Link
+            href="/admin/home"
+            className="inline-flex items-center gap-2 bg-[#e5332a] hover:bg-[#c62822] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#09090B] text-slate-100">
-      {/* Header */}
-      <header className="bg-[#0f172a] border-b border-[#1f2937] px-5 py-4">
+    <div className="min-h-screen bg-[#000000] text-stone-100">
+      <header className="bg-[#000000] border-b border-[#1f2937] px-5 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link 
               href="/admin/home"
-              className="text-slate-400 hover:text-slate-100 transition-colors text-sm"
+              className="text-stone-400 hover:text-stone-100 transition-colors text-sm"
             >
               <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-semibold text-slate-100"><FaDollarSign style={{marginRight:4}} /> Revenue & Payouts</h1>
+            <h1 className="text-2xl font-semibold text-stone-100"><FaDollarSign style={{marginRight:4}} /> Shop Fee Revenue</h1>
           </div>
           <a
             href={stripeLinks?.dashboard || 'https://dashboard.stripe.com'}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-[#635BFF] hover:bg-[#5851ea] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+            className="bg-[#e5332a] hover:bg-[#c62822] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
@@ -223,167 +211,117 @@ export default function AdminRevenuePage() {
           </div>
         )}
 
-        {/* Revenue Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-slate-900/70 to-slate-900 border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-slate-400 text-sm">Monthly Recurring Revenue</div>
-              {liveMetrics && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  liveMetrics.momGrowth.startsWith('+') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                }`}>
-                  {liveMetrics.momGrowth}
-                </span>
-              )}
-            </div>
-            <div className="text-3xl font-bold text-green-400">
-              {formatCurrency(revenue?.mrr || 0)}
-            </div>
-            <div className="text-slate-500 text-sm mt-1">MRR</div>
-            {liveMetrics && <MiniLineChart data={liveMetrics.revenueTrend} color="#22C55E" height={35} />}
-          </div>
-
-          <div className="bg-gradient-to-br from-slate-900/70 to-slate-900 border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-slate-400 text-sm">Annual Recurring Revenue</div>
-              {liveMetrics && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  liveMetrics.yoyGrowth.startsWith('+') ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
-                }`}>
-                  {liveMetrics.yoyGrowth}
-                </span>
-              )}
-            </div>
-            <div className="text-3xl font-bold text-blue-400">
-              {formatCurrency(revenue?.arr || 0)}
-            </div>
-            <div className="text-slate-500 text-sm mt-1">ARR (projected)</div>
-          </div>
-
-          <div className="bg-gradient-to-br from-slate-900/70 to-slate-900 border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <div className="text-slate-400 text-sm mb-1">Active Subscriptions</div>
-            <div className="text-3xl font-bold text-orange-400">
-              {liveMetrics?.activeSubscriptions || revenue?.totalActiveSubscriptions || 0}
-            </div>
-            <div className="text-slate-500 text-sm mt-1">
-              {liveMetrics?.trialingSubscriptions || 0} in trial
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-slate-900/70 to-slate-900 border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <div className="text-slate-400 text-sm mb-1">Net Revenue (after fees)</div>
-            <div className="text-3xl font-bold text-purple-400">
-              {formatCurrency(revenue?.totals.netRevenue || 0)}
-            </div>
-            <div className="text-slate-500 text-sm mt-1">Your earnings</div>
-          </div>
-        </div>
-
-        {/* NEW: Key Metrics Row */}
-        {liveMetrics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{liveMetrics.retentionRate}</div>
-              <div className="text-slate-400 text-xs">Retention Rate</div>
-            </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-red-400">{liveMetrics.churnRate}</div>
-              <div className="text-slate-400 text-xs">Churn Rate</div>
-            </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-blue-400">{liveMetrics.conversionRate}</div>
-              <div className="text-slate-400 text-xs">Trial <FaArrowRight style={{marginRight:4}} /> Paid</div>
-            </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-purple-400">{formatCurrency(liveMetrics.arpu)}</div>
-              <div className="text-slate-400 text-xs">ARPU</div>
-            </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-orange-400">{formatCurrency(liveMetrics.ltv)}</div>
-              <div className="text-slate-400 text-xs">Lifetime Value</div>
-            </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-cyan-400">{liveMetrics.avgLifetimeMonths} mo</div>
-              <div className="text-slate-400 text-xs">Avg Lifetime</div>
-            </div>
+        {!workOrderFees && !error && (
+          <div className="bg-[#000000] border border-[#1f2937] rounded-lg px-6 py-4 text-stone-400 text-sm">
+            No fee data available yet.
           </div>
         )}
 
-        {/* NEW: Subscription Status Cards */}
-        {liveMetrics && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4">
+        {workOrderFees && (
+          <>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-stone-400 text-sm">Total Shop Fees Collected</div>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  workOrderFees.momGrowth >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                }`}>
+                  {momLabel}
+                </span>
+            </div>
+            <div className="text-3xl font-bold text-green-400">
+              {formatCurrency(workOrderFees.totalFees)}
+            </div>
+            <div className="text-stone-500 text-sm mt-1">{workOrderFees.totalPaidWorkOrders.toLocaleString()} paid work orders</div>
+            <MiniLineChart data={workOrderFees.dailyFeesTrend} color="#22C55E" height={35} />
+          </div>
+
+          <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
+            <div className="text-stone-400 text-sm mb-1">Fees This Month</div>
+            <div className="text-3xl font-bold text-[#ff6b64]">{formatCurrency(workOrderFees.feesThisMonth)}</div>
+            <div className="text-stone-500 text-sm mt-1">{workOrderFees.paidWorkOrdersThisMonth.toLocaleString()} paid work orders</div>
+          </div>
+
+          <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
+            <div className="text-stone-400 text-sm mb-1">Fees This Week</div>
+            <div className="text-3xl font-bold text-orange-400">{formatCurrency(workOrderFees.feesThisWeek)}</div>
+            <div className="text-stone-500 text-sm mt-1">{workOrderFees.paidWorkOrdersThisWeek.toLocaleString()} paid work orders</div>
+          </div>
+
+          <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
+            <div className="text-stone-400 text-sm mb-1">Fee Per Paid Work Order</div>
+            <div className="text-3xl font-bold text-purple-400">{formatCurrency(workOrderFees.feePerWorkOrder)}</div>
+            <div className="text-stone-500 text-sm mt-1">Configured platform service fee</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-bold text-green-400">{formatCurrency(workOrderFees.feesToday)}</div>
+              <div className="text-stone-400 text-xs">Fees Today</div>
+            </div>
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-bold text-red-400">{formatCurrency(workOrderFees.feesLastMonth)}</div>
+              <div className="text-stone-400 text-xs">Fees Last Month</div>
+            </div>
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-bold text-[#ff6b64]">{formatCurrency(workOrderFees.feesLast3Months)}</div>
+              <div className="text-stone-400 text-xs">Fees Last 3 Months</div>
+            </div>
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-bold text-purple-400">{formatCurrency(workOrderFees.totalWorkOrderRevenue)}</div>
+              <div className="text-stone-400 text-xs">Total Paid Work Order Revenue</div>
+            </div>
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-bold text-orange-400">{formatCurrency(workOrderFees.thisMonthWorkOrderRevenue)}</div>
+              <div className="text-stone-400 text-xs">This Month Work Order Revenue</div>
+            </div>
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-bold text-cyan-400">{formatCurrency(workOrderFees.averageTicket)}</div>
+              <div className="text-stone-400 text-xs">Average Ticket</div>
+            </div>
+          </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-slate-400 text-sm">New This Month</div>
-                  <div className="text-2xl font-bold text-green-400">{liveMetrics.newSubsThisMonth}</div>
+                  <div className="text-stone-400 text-sm">Fees Trend (7 days)</div>
+                  <div className="text-2xl font-bold text-green-400">{formatCurrency(workOrderFees.dailyFeesTrend.reduce((a, b) => a + b, 0))}</div>
                 </div>
                 <div className="w-10 h-10 bg-green-500/15 rounded-lg flex items-center justify-center">
                   <span className="text-xl"><FaChartLine style={{marginRight:4}} /></span>
                 </div>
               </div>
+              <MiniLineChart data={workOrderFees.dailyFeesTrend} color="#22C55E" height={32} />
             </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4">
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-slate-400 text-sm">In Trial</div>
-                  <div className="text-2xl font-bold text-yellow-400">{liveMetrics.trialingSubscriptions}</div>
+                  <div className="text-stone-400 text-sm">Paid Work Orders (7 days)</div>
+                  <div className="text-2xl font-bold text-yellow-400">{workOrderFees.dailyPaidOrdersTrend.reduce((a, b) => a + b, 0)}</div>
                 </div>
                 <div className="w-10 h-10 bg-yellow-500/15 rounded-lg flex items-center justify-center">
-                  <span className="text-xl"><FaHourglassHalf style={{marginRight:4}} /></span>
+                  <span className="text-xl"><FaWrench style={{marginRight:4}} /></span>
                 </div>
               </div>
+              <MiniLineChart data={workOrderFees.dailyPaidOrdersTrend} color="#EAB308" height={32} />
             </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4">
+            <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-slate-400 text-sm">Active</div>
-                  <div className="text-2xl font-bold text-blue-400">{liveMetrics.activeSubscriptions}</div>
+                  <div className="text-stone-400 text-sm">Work Order Revenue (7 days)</div>
+                  <div className="text-2xl font-bold text-[#ff6b64]">{formatCurrency(workOrderFees.dailyRevenueTrend.reduce((a, b) => a + b, 0))}</div>
                 </div>
-                <div className="w-10 h-10 bg-blue-500/15 rounded-lg flex items-center justify-center">
-                  <span className="text-xl"><FaCheckCircle style={{marginRight:4}} /></span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-slate-400 text-sm">Canceled</div>
-                  <div className="text-2xl font-bold text-red-400">{liveMetrics.canceledSubscriptions}</div>
-                </div>
-                <div className="w-10 h-10 bg-red-500/15 rounded-lg flex items-center justify-center">
-                  <span className="text-xl"><FaTimesCircle style={{marginRight:4}} /></span>
+                <div className="w-10 h-10 bg-[#e5332a]/15 rounded-lg flex items-center justify-center">
+                  <span className="text-xl"><FaDollarSign style={{marginRight:4}} /></span>
                 </div>
               </div>
+              <MiniLineChart data={workOrderFees.dailyRevenueTrend} color="#FF6B64" height={32} />
             </div>
           </div>
-        )}
 
-        {/* NEW: Revenue by Period */}
-        {liveMetrics && (
-          <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-6 mb-8 shadow-lg shadow-black/30">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <span className="text-green-400"><FaChartBar style={{marginRight:4}} /></span> Revenue by Period (Work Orders)
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-[#111827]/70 border border-[#1f2937] rounded-xl">
-                <div className="text-3xl font-bold text-green-400">{formatCurrency(liveMetrics.revenueThisMonth)}</div>
-                <div className="text-slate-400 text-sm mt-1">This Month</div>
-              </div>
-              <div className="text-center p-4 bg-[#111827]/70 border border-[#1f2937] rounded-xl">
-                <div className="text-3xl font-bold text-blue-400">{formatCurrency(liveMetrics.revenueLastMonth)}</div>
-                <div className="text-slate-400 text-sm mt-1">Last Month</div>
-              </div>
-              <div className="text-center p-4 bg-[#111827]/70 border border-[#1f2937] rounded-xl">
-                <div className="text-3xl font-bold text-purple-400">{formatCurrency(liveMetrics.revenueLast3Months)}</div>
-                <div className="text-slate-400 text-sm mt-1">Last 3 Months</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Stripe Quick Links */}
-        <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-6 mb-8 shadow-lg shadow-black/30">
+        <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-6 mb-8 shadow-lg shadow-black/30">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <span className="text-[#635BFF]"><FaCreditCard style={{marginRight:4}} /></span> Stripe Quick Actions
           </h2>
@@ -392,218 +330,100 @@ export default function AdminRevenuePage() {
               href={stripeLinks?.payouts || 'https://dashboard.stripe.com/payouts'}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#111827] hover:bg-[#0f172a] border border-[#1f2937] rounded-xl p-4 text-center transition-colors"
+              className="bg-[#000000] hover:bg-[#000000] border border-[#1f2937] rounded-xl p-4 text-center transition-colors"
             >
               <div className="text-2xl mb-2"><FaUniversity style={{marginRight:4}} /></div>
               <div className="font-medium">Payouts</div>
-              <div className="text-slate-400 text-sm">View bank transfers</div>
+              <div className="text-stone-400 text-sm">View bank transfers</div>
             </a>
             <a
               href={stripeLinks?.balances || 'https://dashboard.stripe.com/balance/overview'}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#111827] hover:bg-[#0f172a] border border-[#1f2937] rounded-xl p-4 text-center transition-colors"
+              className="bg-[#000000] hover:bg-[#000000] border border-[#1f2937] rounded-xl p-4 text-center transition-colors"
             >
               <div className="text-2xl mb-2"><FaDollarSign style={{marginRight:4}} /></div>
               <div className="font-medium">Balance</div>
-              <div className="text-slate-400 text-sm">Available funds</div>
+              <div className="text-stone-400 text-sm">Available funds</div>
             </a>
             <a
               href={stripeLinks?.payments || 'https://dashboard.stripe.com/payments'}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#111827] hover:bg-[#0f172a] border border-[#1f2937] rounded-xl p-4 text-center transition-colors"
+              className="bg-[#000000] hover:bg-[#000000] border border-[#1f2937] rounded-xl p-4 text-center transition-colors"
             >
               <div className="text-2xl mb-2"><FaCreditCard style={{marginRight:4}} /></div>
               <div className="font-medium">Payments</div>
-              <div className="text-slate-400 text-sm">Transaction history</div>
+              <div className="text-stone-400 text-sm">Transaction history</div>
             </a>
-            <a
-              href={stripeLinks?.subscriptions || 'https://dashboard.stripe.com/subscriptions'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[#111827] hover:bg-[#0f172a] border border-[#1f2937] rounded-xl p-4 text-center transition-colors"
-            >
-              <div className="text-2xl mb-2"><FaSyncAlt style={{marginRight:4}} /></div>
-              <div className="font-medium">Subscriptions</div>
-              <div className="text-slate-400 text-sm">Manage recurring</div>
-            </a>
+            <div className="bg-[#000000] border border-[#1f2937] rounded-xl p-4 text-center">
+              <div className="text-2xl mb-2"><FaChartBar style={{marginRight:4}} /></div>
+              <div className="font-medium">Shop Fees</div>
+              <div className="text-stone-400 text-sm">Based on paid work orders only</div>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Plan Breakdown */}
-          <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <h2 className="text-lg font-semibold mb-4"><FaChartBar style={{marginRight:4}} /> Revenue by Plan</h2>
-            {revenue?.planBreakdown && Object.keys(revenue.planBreakdown).length > 0 ? (
+          <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
+            <h2 className="text-lg font-semibold mb-4"><FaStore style={{marginRight:4}} /> Fees by Shop</h2>
+            {workOrderFees.feesByShop.length > 0 ? (
               <div className="space-y-4">
-                {Object.entries(revenue.planBreakdown).map(([plan, data]) => (
-                  <div key={plan} className="flex items-center justify-between">
+                {workOrderFees.feesByShop.slice(0, 12).map((shop) => (
+                  <div key={shop.shopId} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${planColors[plan] || 'bg-gray-500'}`}></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
                       <div>
-                        <div className="font-medium capitalize">{plan}</div>
-                        <div className="text-slate-400 text-sm">{data.count} subscriber{data.count !== 1 ? 's' : ''}</div>
+                        <div className="font-medium">{shop.shopName}</div>
+                        <div className="text-stone-400 text-sm">{shop.count} paid work orders</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium text-green-400">{formatCurrency(data.revenue)}/mo</div>
+                      <div className="font-medium text-green-400">{formatCurrency(shop.fees)}</div>
+                      <div className="text-stone-500 text-xs">Jobs {formatCurrency(shop.totalRevenue)}</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-slate-500 text-center py-8">
-                No active subscriptions yet
+              <div className="text-stone-500 text-center py-8">
+                No shop fee data yet
               </div>
             )}
           </div>
 
-          {/* Recent Payments */}
-          <div className="bg-[#0f172a] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <h2 className="text-lg font-semibold mb-4"><FaDollarSign style={{marginRight:4}} /> Recent Payments</h2>
-            {revenue?.recentPayments && revenue.recentPayments.length > 0 ? (
+          <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
+            <h2 className="text-lg font-semibold mb-4"><FaWrench style={{marginRight:4}} /> Recent Fee Transactions</h2>
+            {workOrderFees.recentTransactions.length > 0 ? (
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {revenue.recentPayments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between py-2 border-b border-[#1f2937] last:border-0">
+                {workOrderFees.recentTransactions.map((txn) => (
+                  <div key={txn.id} className="flex items-center justify-between py-2 border-b border-[#1f2937] last:border-0">
                     <div>
-                      <div className="font-medium">{payment.shopName}</div>
-                      <div className="text-slate-400 text-sm">{formatDate(payment.date)}</div>
+                      <div className="font-medium">{txn.shopName}</div>
+                      <div className="text-stone-400 text-sm">{txn.customerName}</div>
+                      <div className="text-stone-500 text-xs">{formatDate(txn.date)}</div>
                     </div>
                     <div className="text-right">
-                      <div className={`font-medium ${payment.status === 'succeeded' ? 'text-green-400' : 'text-yellow-400'}`}>
-                        {formatCurrency(payment.amount)}
-                      </div>
-                      <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${
-                        payment.status === 'succeeded' 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : 'bg-yellow-500/20 text-yellow-400'
-                      }`}>
-                        {payment.status}
+                      <div className="font-medium text-green-400">+{formatCurrency(txn.fee)}</div>
+                      <div className="text-stone-500 text-xs">Job {formatCurrency(txn.amountPaid)}</div>
+                      <div className="text-stone-500 text-xs">{txn.description.slice(0, 28)}</div>
                       </div>
                     </div>
-                  </div>
                 ))}
               </div>
             ) : (
-              <div className="text-slate-500 text-center py-8">
-                No payments recorded yet
+              <div className="text-stone-500 text-center py-8">
+                No fee transactions recorded yet
               </div>
             )}
           </div>
         </div>
-
-        {/* FixTray Work Order Fees */}
-        {workOrderFees && (
-          <div className="bg-gradient-to-br from-slate-900/70 to-slate-900 border border-[#1f2937] rounded-2xl p-6 mt-8 shadow-lg shadow-black/30">
-            <h2 className="text-lg font-semibold mb-2"><FaWrench style={{marginRight:4}} /> FixTray Work Order Fees</h2>
-            <p className="text-slate-400 text-sm mb-6">$5.00 collected per completed work order payment</p>
-
-            {/* Fee Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-[#0f172a] border border-[#1f2937] rounded-xl p-4">
-                <div className="text-slate-400 text-sm mb-1">Total Fees Collected</div>
-                <div className="text-2xl font-bold text-green-400">{formatCurrency(workOrderFees.totalFees)}</div>
-                <div className="text-slate-500 text-xs mt-1">{workOrderFees.totalPaidWorkOrders} paid work orders</div>
-              </div>
-              <div className="bg-[#0f172a] border border-[#1f2937] rounded-xl p-4">
-                <div className="text-slate-400 text-sm mb-1">This Month</div>
-                <div className="text-2xl font-bold text-blue-400">{formatCurrency(workOrderFees.feesThisMonth)}</div>
-                <div className="text-slate-500 text-xs mt-1">{workOrderFees.feesThisMonth / 5} work orders</div>
-              </div>
-              <div className="bg-[#0f172a] border border-[#1f2937] rounded-xl p-4">
-                <div className="text-slate-400 text-sm mb-1">Fee Per Transaction</div>
-                <div className="text-2xl font-bold text-orange-400">$5.00</div>
-                <div className="text-slate-500 text-xs mt-1">Fixed platform fee</div>
-              </div>
-            </div>
-
-            {/* Fees by Shop */}
-            {workOrderFees.feesByShop.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-slate-300 mb-3">Fees by Shop</h3>
-                <div className="space-y-2">
-                  {workOrderFees.feesByShop.map((shop, i) => (
-                    <div key={i} className="flex items-center justify-between bg-[#0f172a] border border-[#1f2937] rounded-lg px-4 py-3">
-                      <div>
-                        <div className="font-medium text-slate-200 text-sm">{shop.shopName}</div>
-                        <div className="text-slate-500 text-xs">{shop.count} work orders</div>
-                      </div>
-                      <div className="text-green-400 font-semibold">{formatCurrency(shop.fees)}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Recent Fee Transactions */}
-            {workOrderFees.recentTransactions.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-slate-300 mb-3">Recent Transactions</h3>
-                <div className="space-y-2">
-                  {workOrderFees.recentTransactions.map((txn) => (
-                    <div key={txn.id} className="flex items-center justify-between bg-[#0f172a] border border-[#1f2937] rounded-lg px-4 py-3">
-                      <div>
-                        <div className="font-medium text-slate-200 text-sm">{txn.shopName}</div>
-                        <div className="text-slate-400 text-xs">{txn.customerName} · {txn.description.slice(0, 40)}</div>
-                        <div className="text-slate-500 text-xs">{formatDate(txn.date)}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-green-400 font-semibold">+${txn.fee.toFixed(2)}</div>
-                        <div className="text-slate-500 text-xs">Job: ${txn.amountPaid.toFixed(2)}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {workOrderFees.totalPaidWorkOrders === 0 && (
-              <div className="text-slate-500 text-center py-8">No completed work order payments yet</div>
-            )}
-          </div>
+        </>
         )}
-
-        {/* How It Works */}
-        <div className="bg-gradient-to-br from-slate-900/70 via-[#0f172a] to-[#0b1220] border border-[#1f2937] rounded-2xl p-6 mt-8 shadow-lg shadow-black/30">
-          <h2 className="text-lg font-semibold mb-4"><FaBullseye style={{marginRight:4}} /> How You Get Paid</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-slate-800/70 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-2xl">1</span>
-              </div>
-              <div className="font-medium">Shop Subscribes</div>
-              <div className="text-slate-400 text-sm">Shops choose a plan</div>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-slate-800/70 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-2xl">2</span>
-              </div>
-              <div className="font-medium">Stripe Collects</div>
-              <div className="text-slate-400 text-sm">Secure payment processing</div>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-slate-800/70 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-2xl">3</span>
-              </div>
-              <div className="font-medium">Fees Deducted</div>
-              <div className="text-slate-400 text-sm">~2.9% + $0.30 per txn</div>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-2xl">4</span>
-              </div>
-              <div className="font-medium">You Get Paid</div>
-              <div className="text-slate-400 text-sm">Deposited to your bank</div>
-            </div>
-          </div>
-          <div className="mt-4 p-4 bg-[#111827]/60 border border-[#1f2937] rounded-xl">
-            <p className="text-slate-300 text-sm">
-              <strong><FaBolt style={{marginRight:4}} /> Setup Required:</strong> Go to <a href="https://dashboard.stripe.com/settings/payouts" target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:underline">Stripe Dashboard <FaArrowRight style={{marginRight:4}} /> Settings {'>'} Payouts</a> to connect your bank account and set your payout schedule (daily, weekly, or monthly).
-            </p>
-          </div>
-        </div>
       </main>
     </div>
   );
 }
+
+
+

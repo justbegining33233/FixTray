@@ -16,6 +16,7 @@ export default function ShopInventoryPage() {
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [reportSummary, setReportSummary] = useState<{ totalItems: number; lowStockItems: number; totalInventoryValue: number; totalUsageQuantity: number } | null>(null);
   
   const [formData, setFormData] = useState({
     type: '',
@@ -32,7 +33,40 @@ export default function ShopInventoryPage() {
     const id = localStorage.getItem('shopId');
     setShopId(id || '');
     fetchInventory(id || '');
+    if (id) fetchReportSummary(id);
   }, []);
+
+  const fetchReportSummary = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/inventory/reports?shopId=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.summary) setReportSummary(data.summary);
+    } catch (error) {
+      console.error('Error fetching report summary:', error);
+    }
+  };
+
+  const downloadReport = async (section: 'stock' | 'usage' | 'reorder') => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/api/inventory/reports?shopId=${shopId}&format=csv&section=${section}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return;
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventory-${section}-report.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
 
   const fetchInventory = async (id: string, lowStockOverride?: boolean) => {
     try {
@@ -172,25 +206,60 @@ export default function ShopInventoryPage() {
             <h1 style={{ color: '#fff', fontSize: 32, margin: 0 }}>Inventory Management</h1>
             <p style={{ color: '#9aa3b2', margin: '8px 0 0 0' }}>Track parts and supplies</p>
           </div>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            style={{
-              background: '#e5332a',
-              color: '#fff',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: 8,
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            + Add Item
-          </button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => downloadReport('stock')}
+              style={{ background: 'rgba(229,51,42,0.2)', color: '#ffb4ad', border: '1px solid rgba(229,51,42,0.4)', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+            >
+              Export Stock CSV
+            </button>
+            <button
+              onClick={() => downloadReport('usage')}
+              style={{ background: 'rgba(34,197,94,0.2)', color: '#86efac', border: '1px solid rgba(34,197,94,0.4)', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+            >
+              Export Usage CSV
+            </button>
+            <button
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              style={{
+                background: '#e5332a',
+                color: '#fff',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: 8,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              + Add Item
+            </button>
+          </div>
         </div>
+
+        {reportSummary && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 20 }}>
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 12 }}>
+              <div style={{ color: '#9aa3b2', fontSize: 12 }}>Inventory Items</div>
+              <div style={{ color: '#f8fafc', fontSize: 20, fontWeight: 700 }}>{reportSummary.totalItems}</div>
+            </div>
+            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: 12 }}>
+              <div style={{ color: '#fca5a5', fontSize: 12 }}>Low Stock</div>
+              <div style={{ color: '#fecaca', fontSize: 20, fontWeight: 700 }}>{reportSummary.lowStockItems}</div>
+            </div>
+            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: 12 }}>
+              <div style={{ color: '#86efac', fontSize: 12 }}>Inventory Value</div>
+              <div style={{ color: '#dcfce7', fontSize: 20, fontWeight: 700 }}>${reportSummary.totalInventoryValue.toFixed(2)}</div>
+            </div>
+            <div style={{ background: 'rgba(229,51,42,0.08)', border: '1px solid rgba(229,51,42,0.25)', borderRadius: 10, padding: 12 }}>
+              <div style={{ color: '#ffb4ad', fontSize: 12 }}>Parts Used</div>
+              <div style={{ color: '#ffe4e1', fontSize: 20, fontWeight: 700 }}>{reportSummary.totalUsageQuantity}</div>
+            </div>
+          </div>
+        )}
 
         {/* Low Stock Alert */}
         {lowStockItems.length > 0 && (
@@ -295,7 +364,7 @@ export default function ShopInventoryPage() {
                             style={{
                               background: 'rgba(59, 130, 246, 0.2)',
                               border: 'none',
-                              color: '#60a5fa',
+                              color: '#ff6b64',
                               padding: '6px 12px',
                               borderRadius: 6,
                               cursor: 'pointer',
@@ -606,3 +675,4 @@ export default function ShopInventoryPage() {
     </div>
   );
 }
+

@@ -68,10 +68,10 @@ export default function TechTwoFactorPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ maxWidth: 480, width: '100%' }}>
         <button onClick={() => router.back()}
-          style={{ color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, marginBottom: 16 }}>
+          style={{ color: '#ff6b64', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, marginBottom: 16 }}>
           <FaArrowLeft style={{marginRight:4}} /> Back
         </button>
         <div style={{ background: '#1e293b', borderRadius: 16, padding: 32, border: '1px solid #334155' }}>
@@ -91,7 +91,7 @@ export default function TechTwoFactorPage() {
             </div>
           ) : step === 'idle' ? (
             <button onClick={startSetup} disabled={fetching}
-              style={{ width: '100%', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', cursor: 'pointer', fontWeight: 600, fontSize: 16, opacity: fetching ? 0.5 : 1 }}>
+              style={{ width: '100%', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', cursor: 'pointer', fontWeight: 600, fontSize: 16, opacity: fetching ? 0.5 : 1 }}>
               {fetching ? 'Setting up...' : 'Enable 2FA'}
             </button>
           ) : (
@@ -107,7 +107,7 @@ export default function TechTwoFactorPage() {
               {secret && (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ color: '#9ca3af', fontSize: 12, marginBottom: 4 }}>Or enter this key manually:</div>
-                  <div style={{ background: '#0f172a', color: '#e5e7eb', fontFamily: 'monospace', fontSize: 14, padding: '10px 12px', borderRadius: 8, wordBreak: 'break-all' }}>
+                  <div style={{ background: '#000000', color: '#e5e7eb', fontFamily: 'monospace', fontSize: 14, padding: '10px 12px', borderRadius: 8, wordBreak: 'break-all' }}>
                     {secret}
                   </div>
                 </div>
@@ -116,10 +116,10 @@ export default function TechTwoFactorPage() {
                 <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Enter 6-digit code from your app</label>
                 <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000" maxLength={6}
-                  style={{ width: '100%', background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '12px', fontSize: 20, textAlign: 'center', letterSpacing: 8, fontFamily: 'monospace' }} />
+                  style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '12px', fontSize: 20, textAlign: 'center', letterSpacing: 8, fontFamily: 'monospace' }} />
               </div>
               <button onClick={verify} disabled={fetching || code.length !== 6}
-                style={{ width: '100%', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', cursor: 'pointer', fontWeight: 600, fontSize: 16, opacity: fetching || code.length !== 6 ? 0.5 : 1 }}>
+                style={{ width: '100%', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', cursor: 'pointer', fontWeight: 600, fontSize: 16, opacity: fetching || code.length !== 6 ? 0.5 : 1 }}>
                 {fetching ? 'Verifying...' : 'Verify & Enable'}
               </button>
             </>
@@ -129,3 +129,5 @@ export default function TechTwoFactorPage() {
     </div>
   );
 }
+
+

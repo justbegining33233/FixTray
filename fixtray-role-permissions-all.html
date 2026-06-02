@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FixTray – Role Permissions (All Roles)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6fa;
+      color: #222;
+      padding: 40px 20px;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      border-radius: 10px;
+      padding: 32px 40px;
+      margin-bottom: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+    header p { font-size: 13px; color: #aaa; margin-top: 4px; }
+    .badge {
+      background: #e94560;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .role-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      margin-bottom: 28px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .role-header {
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .role-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .role-title { font-size: 20px; font-weight: 700; }
+    .role-subtitle { font-size: 12px; margin-top: 2px; opacity: 0.8; }
+
+    /* SuperAdmin */
+    .superadmin .role-header   { background: #1a1a2e; }
+    .superadmin .role-icon     { background: #e94560; color: #fff; }
+    .superadmin .role-title    { color: #e94560; }
+    .superadmin .role-subtitle { color: #bbb; }
+    .superadmin .role-body     { background: #12121f; }
+    .superadmin .section-title { color: #888; border-bottom-color: #2a2a40; }
+    .superadmin .item          { background: #1e1e30; border-color: #2e2e45; color: #e0e0ff; }
+    .superadmin .item .dot     { background: #e94560; }
+    .superadmin .note          { background: rgba(233,69,96,0.12); color: #f87096; border-left: 3px solid #e94560; }
+
+    /* Shop Owner */
+    .shop .role-header   { background: #fff8e1; }
+    .shop .role-icon     { background: #ffc107; }
+    .shop .role-title    { color: #e65100; }
+    .shop .item .dot     { background: #ffc107; }
+    .shop .note          { background: #fff8e1; color: #795548; border-left: 3px solid #ffc107; }
+
+    /* Manager */
+    .manager .role-header { background: #e8f5e9; }
+    .manager .role-icon   { background: #43a047; color: #fff; }
+    .manager .role-title  { color: #1b5e20; }
+    .manager .item .dot   { background: #43a047; }
+    .manager .note        { background: #e8f5e9; color: #2e7d32; border-left: 3px solid #43a047; }
+
+    /* Technician */
+    .tech .role-header   { background: #e3f2fd; }
+    .tech .role-icon     { background: #1976d2; color: #fff; }
+    .tech .role-title    { color: #0d47a1; }
+    .tech .item .dot     { background: #1976d2; }
+    .tech .note          { background: #e3f2fd; color: #1565c0; border-left: 3px solid #1976d2; }
+
+    /* Customer */
+    .customer .role-header { background: #f3e5f5; }
+    .customer .role-icon   { background: #8e24aa; color: #fff; }
+    .customer .role-title  { color: #4a148c; }
+    .customer .item .dot   { background: #8e24aa; }
+    .customer .note        { background: #f3e5f5; color: #6a1b9a; border-left: 3px solid #8e24aa; }
+
+    .role-body { padding: 20px 28px 24px; }
+    .section { margin-bottom: 16px; }
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 4px;
+    }
+    .items { display: flex; flex-wrap: wrap; gap: 8px; }
+    .item {
+      display: flex; align-items: center; gap: 6px;
+      background: #f7f8fc;
+      border: 1px solid #e8eaf0;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 13px;
+    }
+    .item .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .note {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-style: italic;
+    }
+    footer {
+      text-align: center;
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .container { max-width: 100%; }
+      header { border-radius: 0; }
+      .role-card { box-shadow: none; border: 1px solid #ddd; }
+      .superadmin .role-body { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>FixTray — Role Permissions</h1>
+      <p>All 5 roles &amp; what they can do &nbsp;·&nbsp; Generated May 19, 2026</p>
+    </div>
+    <div class="badge">All Roles</div>
+  </header>
+
+  <!-- SUPERADMIN -->
+  <div class="role-card superadmin">
+    <div class="role-header">
+      <div class="role-icon">🛡️</div>
+      <div>
+        <div class="role-title">Super Admin</div>
+        <div class="role-subtitle">Full platform access — overrides all role checks across every tenant</div>
+      </div>
+    </div>
+    <div class="role-body">
+      <div class="section">
+        <div class="section-title">Tenant &amp; Shop Management</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View &amp; manage all shops/tenants</div>
+          <div class="item"><span class="dot"></span>Approve or reject shop registrations</div>
+          <div class="item"><span class="dot"></span>Suspend or deactivate any shop</div>
+          <div class="item"><span class="dot"></span>Access any shop's data directly</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">User Management</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View all platform users</div>
+          <div class="item"><span class="dot"></span>Filter users by role</div>
+          <div class="item"><span class="dot"></span>Manage any user account</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Platform Operations</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View platform-wide analytics</div>
+          <div class="item"><span class="dot"></span>Monitor infrastructure &amp; system health</div>
+          <div class="item"><span class="dot"></span>View audit logs &amp; security settings</div>
+          <div class="item"><span class="dot"></span>Manage deployments</div>
+          <div class="item"><span class="dot"></span>System settings &amp; maintenance mode</div>
+          <div class="item"><span class="dot"></span>View all work orders across all tenants</div>
+          <div class="item"><span class="dot"></span>Bypass subscription gates for any shop</div>
+        </div>
+      </div>
+      <div class="note">⚠️ Super Admin has unrestricted access to every route and resource on the platform. Use with care.</div>
+    </div>
+  </div>
+
+  <!-- SHOP OWNER -->
+  <div class="role-card shop">
+    <div class="role-header">
+      <div class="role-icon">🏪</div>
+      <div>
+        <div class="role-title">Shop Owner</div>
+        <div class="role-subtitle">Full control over their shop — operations, team, billing, and settings</div>
+      </div>
+    </div>
+    <div class="role-body">
+      <div class="section">
+        <div class="section-title">Work Orders</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Create work orders</div>
+          <div class="item"><span class="dot"></span>View all work orders</div>
+          <div class="item"><span class="dot"></span>Edit work orders</div>
+          <div class="item"><span class="dot"></span>Delete work orders</div>
+          <div class="item"><span class="dot"></span>Assign to technicians</div>
+          <div class="item"><span class="dot"></span>Create work order templates</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Team Management</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Invite managers &amp; technicians</div>
+          <div class="item"><span class="dot"></span>Remove team members</div>
+          <div class="item"><span class="dot"></span>Set custom per-user permissions</div>
+          <div class="item"><span class="dot"></span>Manage shift schedules</div>
+          <div class="item"><span class="dot"></span>Approve shift swaps &amp; leave requests</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Estimates &amp; Inventory</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Create estimates</div>
+          <div class="item"><span class="dot"></span>Approve estimates</div>
+          <div class="item"><span class="dot"></span>View inventory</div>
+          <div class="item"><span class="dot"></span>Edit inventory</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Finance &amp; Payroll</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View &amp; manage employee payroll</div>
+          <div class="item"><span class="dot"></span>View full reports &amp; analytics</div>
+          <div class="item"><span class="dot"></span>Export report data</div>
+          <div class="item"><span class="dot"></span>Manage tax settings</div>
+          <div class="item"><span class="dot"></span>Manage vendors</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Timeclock</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View all employee time tracking</div>
+          <div class="item"><span class="dot"></span>Manage timeclock entries</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Business Settings</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Set shop hours &amp; blocked dates</div>
+          <div class="item"><span class="dot"></span>Set appointment capacity</div>
+          <div class="item"><span class="dot"></span>Manage labor rates &amp; services</div>
+          <div class="item"><span class="dot"></span>Configure webhook endpoints</div>
+          <div class="item"><span class="dot"></span>Manage API keys</div>
+          <div class="item"><span class="dot"></span>Upgrade/downgrade subscription plan</div>
+          <div class="item"><span class="dot"></span>Access billing portal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANAGER -->
+  <div class="role-card manager">
+    <div class="role-header">
+      <div class="role-icon">👔</div>
+      <div>
+        <div class="role-title">Manager</div>
+        <div class="role-subtitle">Day-to-day operations — permissions customizable by Shop Owner</div>
+      </div>
+    </div>
+    <div class="role-body">
+      <div class="section">
+        <div class="section-title">Work Orders</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Create work orders</div>
+          <div class="item"><span class="dot"></span>View all shop work orders</div>
+          <div class="item"><span class="dot"></span>Edit work orders</div>
+          <div class="item"><span class="dot"></span>Delete work orders</div>
+          <div class="item"><span class="dot"></span>Assign work orders to technicians</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Estimates &amp; Inventory</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Create estimates</div>
+          <div class="item"><span class="dot"></span>Approve estimates</div>
+          <div class="item"><span class="dot"></span>View inventory</div>
+          <div class="item"><span class="dot"></span>Edit inventory</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Team</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View technicians</div>
+          <div class="item"><span class="dot"></span>Manage technicians</div>
+          <div class="item"><span class="dot"></span>View team via shop admin panel</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Finance, Reports &amp; Timeclock</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View &amp; manage employee payroll</div>
+          <div class="item"><span class="dot"></span>Full access to analytics &amp; reports</div>
+          <div class="item"><span class="dot"></span>View &amp; manage employee time tracking</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Settings &amp; Security</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View and edit shop settings</div>
+          <div class="item"><span class="dot"></span>Enable/disable two-factor authentication</div>
+        </div>
+      </div>
+      <div class="note">⚠️ Shop Owner can restrict or expand any of these permissions per individual manager. Managers cannot manage subscriptions or override permissions.</div>
+    </div>
+  </div>
+
+  <!-- TECHNICIAN -->
+  <div class="role-card tech">
+    <div class="role-header">
+      <div class="role-icon">🔧</div>
+      <div>
+        <div class="role-title">Technician</div>
+        <div class="role-subtitle">Job execution and field tools — permissions customizable by Shop Owner</div>
+      </div>
+    </div>
+    <div class="role-body">
+      <div class="section">
+        <div class="section-title">Work Orders</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View assigned work orders</div>
+          <div class="item"><span class="dot"></span>Edit assigned work orders</div>
+          <div class="item"><span class="dot"></span>Mark jobs as complete</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Estimates &amp; Inventory</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Create estimates</div>
+          <div class="item"><span class="dot"></span>View inventory (read-only)</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Inspections &amp; Diagnostics</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Create DVI (Digital Vehicle Inspection) reports</div>
+          <div class="item"><span class="dot"></span>Perform and view diagnostics</div>
+          <div class="item"><span class="dot"></span>Upload and manage work photos</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Timeclock &amp; Timesheets</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Clock in/out</div>
+          <div class="item"><span class="dot"></span>View own timesheet</div>
+          <div class="item"><span class="dot"></span>Submit time entries</div>
+          <div class="item"><span class="dot"></span>Request shifts and time off</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Customer &amp; Vehicle</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Access customer vehicle history</div>
+          <div class="item"><span class="dot"></span>Send messages to customers &amp; manager</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Tools &amp; Field</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Access technical manuals &amp; documentation</div>
+          <div class="item"><span class="dot"></span>Access all tech tools</div>
+          <div class="item"><span class="dot"></span>Share real-time location</div>
+          <div class="item"><span class="dot"></span>Create and manage roadside/emergency jobs</div>
+        </div>
+      </div>
+      <div class="note">⚠️ Techs cannot create/delete work orders, approve estimates, view payroll/reports, or manage other techs by default. Shop Owner can grant additional permissions individually.</div>
+    </div>
+  </div>
+
+  <!-- CUSTOMER -->
+  <div class="role-card customer">
+    <div class="role-header">
+      <div class="role-icon">🚗</div>
+      <div>
+        <div class="role-title">Customer</div>
+        <div class="role-subtitle">Self-service portal — view own jobs, pay invoices, manage vehicles</div>
+      </div>
+    </div>
+    <div class="role-body">
+      <div class="section">
+        <div class="section-title">Work Orders</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>View own work orders only</div>
+          <div class="item"><span class="dot"></span>View estimates for own work orders</div>
+          <div class="item"><span class="dot"></span>Respond to recurring work order requests</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Payments</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Pay invoices online</div>
+          <div class="item"><span class="dot"></span>Manage saved payment methods</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Vehicles &amp; Profile</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Add and manage vehicle profiles</div>
+          <div class="item"><span class="dot"></span>Upload and manage documents</div>
+          <div class="item"><span class="dot"></span>Update personal profile information</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Communication</div>
+        <div class="items">
+          <div class="item"><span class="dot"></span>Send and receive messages with the shop</div>
+          <div class="item"><span class="dot"></span>Receive work order status notifications</div>
+          <div class="item"><span class="dot"></span>Submit reviews for shops</div>
+        </div>
+      </div>
+      <div class="note">⚠️ Customers can only see their own data. Accessing another customer's work order returns a 403 Forbidden error.</div>
+    </div>
+  </div>
+
+  <footer>
+    FixTray Work Order Software &nbsp;·&nbsp; Role Permissions Reference — All Roles &nbsp;·&nbsp; May 19, 2026
+  </footer>
+
+</div>
+</body>
+</html>

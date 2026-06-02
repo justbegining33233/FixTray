@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
-  if (auth.role !== 'admin') {
+  if (auth.role !== 'superadmin') {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 

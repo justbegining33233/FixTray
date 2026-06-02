@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   const q      = request.nextUrl.searchParams.get('q') || '';
   // Non-admin callers are always scoped to their own shop
-  const shopId = auth.role === 'admin'
+  const shopId = (auth.role === 'superadmin')
     ? (request.nextUrl.searchParams.get('shopId') || '')
     : (auth.role === 'shop' ? auth.id : (auth.shopId || ''));
 

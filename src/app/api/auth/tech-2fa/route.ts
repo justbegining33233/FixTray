@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
       const refreshHash = await bcrypt.hash(refreshRaw, 12);
       const expiresAt = refreshExpiryDate();
       const csrf = (await import('@/lib/csrf')).generateCsrfToken();
+      await enforceSingleActiveSession(prisma, { techId: tech.id });
       const refresh = await prisma.refreshToken.create({
         data: {
           tokenHash: refreshHash,

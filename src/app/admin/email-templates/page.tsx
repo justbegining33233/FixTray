@@ -46,8 +46,8 @@ export default function EmailTemplates() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(139,92,246,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1400, margin:'0 auto'}}>
-          <Link href="/admin/admin-tools" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Admin Tools
+          <Link href="/admin/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaEnvelope style={{marginRight:4}} /> Email Templates</h1>
           <p style={{fontSize:14, color:'#9aa3b2'}}>Manage email notifications and templates</p>
@@ -109,8 +109,8 @@ export default function EmailTemplates() {
                       style={{width:'100%', padding:'12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#e5e7eb', fontSize:14, fontFamily:'monospace', resize:'vertical'}}
                     />
                   </div>
-                  <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:8, padding:12}}>
-                    <div style={{fontSize:12, fontWeight:600, color:'#3b82f6', marginBottom:8}}>Available Variables:</div>
+                  <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, padding:12}}>
+                    <div style={{fontSize:12, fontWeight:600, color:'#e5332a', marginBottom:8}}>Available Variables:</div>
                     <div style={{fontSize:12, color:'#9aa3b2', fontFamily:'monospace'}}>
                       {`{{name}}, {{email}}, {{shopName}}, {{workOrderId}}, {{date}}`}
                     </div>
@@ -141,3 +141,4 @@ export default function EmailTemplates() {
     </div>
   );
 }
+

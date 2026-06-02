@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowDown, FaArrowLeft, FaArrowUp, FaChartBar, FaDownload, FaStar } from 'react-icons/fa';
 
@@ -93,11 +94,11 @@ export default function ReportsAnalytics() {
     switch (userRole) {
       case 'admin': return '/admin/home';
       case 'superadmin': return '/admin/home';
-      case 'shop': return '/shop/home';
+      case 'shop': return '/shop/admin';
       case 'tech': return '/tech/home';
       case 'manager': return '/tech/home';
       case 'customer': return '/customer/home';
-      default: return '/dashboard';
+      default: return '/';
     }
   };
 
@@ -112,7 +113,7 @@ export default function ReportsAnalytics() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1600, margin:'0 auto'}}>
-          <Link href={getDashboardLink()} style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href={getDashboardLink() as Route} style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
@@ -143,10 +144,10 @@ export default function ReportsAnalytics() {
             <div style={{fontSize:32, fontWeight:700, color:'#22c55e', marginBottom:4}}>${stats.totalRevenue.toLocaleString()}</div>
             <div style={{fontSize:12, color:'#22c55e'}}><FaArrowUp style={{marginRight:4}} /> 12% from last period</div>
           </div>
-          <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:24}}>
+          <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Total Jobs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#3b82f6', marginBottom:4}}>{stats.totalJobs}</div>
-            <div style={{fontSize:12, color:'#3b82f6'}}><FaArrowUp style={{marginRight:4}} /> 8% from last period</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a', marginBottom:4}}>{stats.totalJobs}</div>
+            <div style={{fontSize:12, color:'#e5332a'}}><FaArrowUp style={{marginRight:4}} /> 8% from last period</div>
           </div>
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Avg Job Value</div>
@@ -229,7 +230,7 @@ export default function ReportsAnalytics() {
                 {techPerformance.map((tech, idx) => (
                   <tr key={idx} style={{background:'rgba(255,255,255,0.05)', borderRadius:8}}>
                     <td style={{padding:'16px', fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{tech.name}</td>
-                    <td style={{padding:'16px', fontSize:14, color:'#3b82f6', fontWeight:600}}>{tech.jobs}</td>
+                    <td style={{padding:'16px', fontSize:14, color:'#e5332a', fontWeight:600}}>{tech.jobs}</td>
                     <td style={{padding:'16px', fontSize:14, color:'#22c55e', fontWeight:600}}>${tech.revenue.toLocaleString()}</td>
                     <td style={{padding:'16px', fontSize:14, color:'#f59e0b', fontWeight:600}}><FaStar style={{marginRight:4}} /> {tech.rating}</td>
                     <td style={{padding:'16px'}}>
@@ -256,7 +257,7 @@ export default function ReportsAnalytics() {
                 <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{item.metric}</div>
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline'}}>
                   <div style={{fontSize:28, fontWeight:700, color:'#e5e7eb'}}>{item.value}</div>
-                  <div style={{fontSize:14, fontWeight:600, color:item.change.startsWith('+') || item.change.startsWith('^') ? '#22c55e' : item.change.startsWith('-') || item.change.startsWith('v') ? '#e5332a' : '#3b82f6'}}>
+                  <div style={{fontSize:14, fontWeight:600, color:item.change.startsWith('+') || item.change.startsWith('^') ? '#22c55e' : item.change.startsWith('-') || item.change.startsWith('v') ? '#e5332a' : '#e5332a'}}>
                     {item.change}
                   </div>
                 </div>
@@ -268,3 +269,4 @@ export default function ReportsAnalytics() {
     </div>
   );
 }
+

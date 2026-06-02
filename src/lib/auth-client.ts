@@ -6,6 +6,8 @@ interface JWTPayload {
   email?: string;
   role: string;
   shopId?: string;
+  isSuperAdmin?: boolean;
+  isOwner?: boolean;
   iat?: number;
   exp?: number;
 }
@@ -16,10 +18,7 @@ interface JWTPayload {
 // (expiry, role) in the UI to avoid a full round-trip.
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.decode(token) as JWTPayload;
-    if (!decoded) return null;
-    if (decoded.exp && decoded.exp * 1000 < Date.now()) return null;
-    return decoded;
+    return jwt.decode(token) as JWTPayload;
   } catch {
     return null;
   }

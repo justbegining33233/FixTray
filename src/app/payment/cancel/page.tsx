@@ -56,7 +56,7 @@ function CancelContent() {
           style={{
             display: 'block',
             marginTop: 16,
-            color: '#3b82f6',
+            color: '#e5332a',
             fontSize: 14,
             textDecoration: 'none',
           }}
@@ -75,3 +75,4 @@ export default function PaymentCancel() {
     </Suspense>
   );
 }
+

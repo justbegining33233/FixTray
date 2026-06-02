@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyPassword, generateToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
 import { z } from 'zod';
+import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 const loginSchema = z.object({
   email: z.string().optional(),
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
     const userIp = request.headers.get('x-forwarded-for') || request.headers.get('host') || '';
     const userAgent = request.headers.get('user-agent') || '';
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
+    await enforceSingleActiveSession(prisma, { customerId: customer.id });
 
     const refresh = await prisma.refreshToken.create({
       data: {

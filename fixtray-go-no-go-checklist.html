@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FixTray Go/No-Go Checklist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
+        .checklist-item { transition: all 0.2s ease-in-out; }
+        .go { border-left-color: #10b981 !important; background-color: #ecfdf5; }
+        .no-go { border-left-color: #ef4444 !important; background-color: #fef2f2; }
+    </style>
+</head>
+<body class="p-6 text-gray-800">
+    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">FixTray Complete Go/No-Go Checklist</h1>
+                <p class="opacity-80 mt-1">Website pages, links, cards, and endpoints testing tracker</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="clearData()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-semibold text-sm transition transition">Clear Data</button>
+                <button onclick="window.print()" class="bg-indigo-500 hover:bg-indigo-400 px-4 py-2 rounded font-semibold text-sm transition">Save as PDF</button>
+            </div>
+        </div>
+
+        <div class="p-6 space-y-8" id="checklist-container">
+            <!-- Content will be injected here by JS -->
+        </div>
+    </div>
+
+<script>
+    const checklistData = [
+        {
+            role: "Global / Authentication",
+            items: [
+                { id: "auth-1", type: "Page", title: "Login Page (/login)", expected: "Displays email/password fields. Redirects to appropriate role dashboard upon success.", comments: "" },
+                { id: "auth-2", type: "Endpoint", title: "POST /api/auth/login", expected: "Validates credentials, sets secure HttpOnly cookie or returns JWT token, returns 200 OK.", comments: "" },
+                { id: "auth-3", type: "Link", title: "Forgot Password Link", expected: "Navigates to password reset request page.", comments: "" },
+                { id: "auth-4", type: "Page", title: "Register/Sign Up", expected: "Allows creation of new shop account. Verifies email uniqueness.", comments: "" },
+                { id: "auth-5", type: "Header/Nav", title: "Logout Button", expected: "Clears session/cookies and redirects to login page. Validates logged out securely.", comments: "" }
+            ]
+        },
+        {
+            role: "Shop Owner Role",
+            items: [
+                { id: "shop-1", type: "Page", title: "Shop Dashboard (/shop/home)", expected: "Loads metric cards (active, pending, completed work orders). Navigation sidebar is visible.", comments: "" },
+                { id: "shop-2", type: "Card", title: "Dashboard Metric Cards", expected: "Clicking cards filters the work orders list or routes to the list with query params applied.", comments: "" },
+                { id: "shop-3", type: "Page", title: "Work Order List (/shop/workorders)", expected: "Displays paginated or scrollable list of all shop work orders. Sorting by date/priority works.", comments: "" },
+                { id: "shop-4", type: "Link", title: "+ New Work Order Button", expected: "Opens modal or navigates to /shop/workorders/new.", comments: "" },
+                { id: "shop-5", type: "Page", title: "Create Work Order (/shop/workorders/new)", expected: "Form validates required fields. Dropdowns (customer, tech, vehicle) load existing data.", comments: "" },
+                { id: "shop-6", type: "Endpoint", title: "POST /api/workorders", expected: "Saves new WO to DB, assigns properly, returns 201 Created and new WO object.", comments: "" },
+                { id: "shop-7", type: "Card", title: "Work Order Detail View", expected: "Shows full details, notes, history. Status dropdown allows admin overrides.", comments: "" },
+                { id: "shop-8", type: "Page", title: "Team Management (/shop/team)", expected: "List of technicians and admins. Can invite new members or deactivate accounts.", comments: "" },
+                { id: "shop-9", type: "Page", title: "Customers List (/shop/customers)", expected: "Shows customer directory. Can view individual customer history and vehicles.", comments: "" },
+                { id: "shop-10", type: "Page", title: "Shop Settings (/shop/settings)", expected: "Update business info, labor rates, tax rates, standard messaging templates.", comments: "" }
+            ]
+        },
+        {
+            role: "Technician Role",
+            items: [
+                { id: "tech-1", type: "Page", title: "Tech Dashboard (/tech/home)", expected: "Displays ONLY work orders assigned to the logged-in tech (or unassigned if config allows).", comments: "" },
+                { id: "tech-2", type: "Card", title: "Assigned Work Order Card", expected: "Shows vehicle, issue summary, priority, and time since created.", comments: "" },
+                { id: "tech-3", type: "Dropdown", title: "Status Update", expected: "Tech can change status (Pending -> In Progress -> Completed -> On Hold). Immediate UI update.", comments: "" },
+                { id: "tech-4", type: "Endpoint", title: "PUT /api/workorders/[id]", expected: "Saves status change, appends status change to history/timeline log.", comments: "" },
+                { id: "tech-5", type: "Section", title: "Internal Notes", expected: "Tech can add hidden notes (visible to shop, hidden from customer).", comments: "" },
+                { id: "tech-6", type: "Section", title: "Checklists/Inspections", expected: "If applicable, tech can mark inspection items (Tires, Brakes, etc.) as Green/Yellow/Red.", comments: "" },
+                { id: "tech-7", type: "Feature", title: "Photo Upload", expected: "Can attach images to work orders from camera or file system. Saves successfully.", comments: "" }
+            ]
+        },
+        {
+            role: "Customer Role",
+            items: [
+                { id: "cust-1", type: "Page", title: "Customer Dashboard (/customer/dashboard)", expected: "Shows active work orders/status updates for their vehicles.", comments: "" },
+                { id: "cust-2", type: "Card", title: "Vehicle/WO Status Tracker", expected: "Clear visual indicator of current step (Received -> Inspecting -> Working -> Ready).", comments: "" },
+                { id: "cust-3", type: "Endpoint", title: "GET /api/workorders (Customer Scope)", expected: "Must NEVER return work orders belonging to other customers (Security Check).", comments: "" },
+                { id: "cust-4", type: "Section", title: "Messaging/Chat", expected: "Customer can send messages to shop regarding specific work orders.", comments: "" },
+                { id: "cust-5", type: "Feature", title: "Estimate Approval", expected: "Can view uploaded estimate and click 'Approve' or 'Decline'. Records IP, timestamp.", comments: "" },
+                { id: "cust-6", type: "Page", title: "Invoice History", expected: "Can view and download past paid/unpaid invoices.", comments: "" }
+            ]
+        },
+        {
+            role: "Admin (Superuser) Role",
+            items: [
+                { id: "admin-1", type: "Page", title: "Admin Portal (/admin)", expected: "Shows high-level metrics across ALL shops.", comments: "" },
+                { id: "admin-2", type: "Page", title: "Tenant/Shop Management", expected: "Can view all registered shops, impersonate accounts for support, suspend unpaid accounts.", comments: "" },
+                { id: "admin-3", type: "Endpoint", title: "Admin API Authorization", expected: "Ensures /api/admin endpoints strictly reject shop owners/techs/customers (403 Forbidden).", comments: "" }
+            ]
+        }
+    ];
+
+    function renderChecklist() {
+        const container = document.getElementById('checklist-container');
+        container.innerHTML = '';
+
+        checklistData.forEach(section => {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm';
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'bg-gray-100 p-4 border-b border-gray-200 font-bold text-lg text-gray-700 flex justify-between items-center cursor-pointer';
+            header.innerHTML = `<span>${section.role}</span> <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+            
+            // Content
+            const content = document.createElement('div');
+            content.className = 'divide-y divide-gray-100';
+
+            section.items.forEach(item => {
+                const savedState = localStorage.getItem(`status-${item.id}`);
+                const savedText = localStorage.getItem(`text-${item.id}`) || "";
+                
+                let itemClass = "p-5 border-l-4 border-transparent checklist-item flex flex-col md:flex-row gap-6 hover:bg-gray-50";
+                if (savedState === 'go') itemClass += " go";
+                if (savedState === 'no-go') itemClass += " no-go";
+
+                content.innerHTML += `
+                    <div class="${itemClass}" id="container-${item.id}">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded font-semibold uppercase">${item.type}</span>
+                                <h3 class="text-xl font-semibold text-gray-800">${item.title}</h3>
+                            </div>
+                            <p class="text-gray-600 mt-2 text-sm"><strong>Expected Behavior:</strong> ${item.expected}</p>
+                            
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Actual Result / Notes</label>
+                                <textarea id="text-${item.id}" rows="2" 
+                                    class="w-full text-sm border-gray-300 border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    placeholder="Type what is actually happening right now..." 
+                                    onchange="saveText('${item.id}', this.value)">${savedText}</textarea>
+                            </div>
+                        </div>
+                        <div class="flex flex-row md:flex-col justify-center gap-3 md:w-32">
+                            <label class="cursor-pointer border select-none rounded p-2 text-center text-sm font-bold ${savedState === 'go' ? 'bg-green-500 text-white border-green-600' : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-600'}" onclick="setStatus('${item.id}', 'go')">
+                                <input type="radio" name="status-${item.id}" value="go" class="hidden" ${savedState === 'go' ? 'checked' : ''}>
+                                ✅ GO
+                            </label>
+                            <label class="cursor-pointer border select-none rounded p-2 text-center text-sm font-bold ${savedState === 'no-go' ? 'bg-red-500 text-white border-red-600' : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-600'}" onclick="setStatus('${item.id}', 'no-go')">
+                                <input type="radio" name="status-${item.id}" value="no-go" class="hidden" ${savedState === 'no-go' ? 'checked' : ''}>
+                                ❌ NO-GO
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+
+            header.onclick = () => {
+                content.classList.toggle('hidden');
+                header.querySelector('svg').classList.toggle('rotate-180');
+            };
+
+            sectionDiv.appendChild(header);
+            sectionDiv.appendChild(content);
+            container.appendChild(sectionDiv);
+        });
+    }
+
+    function setStatus(id, status) {
+        localStorage.setItem(`status-${id}`, status);
+        renderChecklist();
+    }
+
+    function saveText(id, value) {
+        localStorage.setItem(`text-${id}`, value);
+    }
+
+    function clearData() {
+        if(confirm("Are you sure you want to clear all your saved checklist progress?")) {
+            localStorage.clear();
+            renderChecklist();
+        }
+    }
+
+    // Initialize
+    renderChecklist();
+</script>
+</body>
+</html>

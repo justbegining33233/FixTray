@@ -61,7 +61,7 @@ export default function TechCustomers() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto'}}>
-          <Link href="/tech/all-tools" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/tech/all-tools" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Tools
           </Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaUsers style={{marginRight:4}} /> Customer Portal</h1>
@@ -82,7 +82,7 @@ export default function TechCustomers() {
               style={{flex:1, padding:'14px 18px', borderRadius:12, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.02)', color:'#e5e7eb', fontSize:16}}
               onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
             />
-            <button onClick={() => setQuery('')} style={{padding:'10px 14px', borderRadius:10, background:'#3b82f6', color:'white', fontWeight:700}}>Clear</button>
+            <button onClick={() => setQuery('')} style={{padding:'10px 14px', borderRadius:10, background:'#e5332a', color:'white', fontWeight:700}}>Clear</button>
           </div>
 
           {/* Results */}

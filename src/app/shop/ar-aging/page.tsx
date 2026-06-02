@@ -57,7 +57,7 @@ export default function ARAgingPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}><FaChartBar style={{fontSize:26}} /> Accounts Receivable Aging</h1>
         <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>Track outstanding balances by age  -  follow up on overdue accounts</p>
@@ -106,7 +106,7 @@ export default function ARAgingPage() {
                               <span style={{ color: c.color, fontWeight: 700 }}>${(inv.remaining ?? inv.total).toFixed(2)}</span>
                               <span style={{ color: '#6b7280' }}>{inv.daysOutstanding}d overdue</span>
                             </div>
-                            {inv.customer?.phone && <div style={{ color: '#60a5fa', marginTop: 4 }}><FaPhone style={{marginRight:4}} />{inv.customer.phone}</div>}
+                            {inv.customer?.phone && <div style={{ color: '#ff6b64', marginTop: 4 }}><FaPhone style={{marginRight:4}} />{inv.customer.phone}</div>}
                           </div>
                         ))}
                       </div>
@@ -120,3 +120,4 @@ export default function ARAgingPage() {
     </div>
   );
 }
+

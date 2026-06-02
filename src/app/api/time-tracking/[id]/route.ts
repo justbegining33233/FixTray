@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const updates: any = {};
 
     // Techs can update their own notes and link to a work order
-    if (decoded.id === timeEntry.techId || decoded.role === 'manager' || decoded.role === 'admin') {
+    if (decoded.id === timeEntry.techId || decoded.role === 'manager' || (decoded.role === 'superadmin')) {
       if (body.notes !== undefined) updates.notes = body.notes;
       if (body.workOrderId !== undefined) updates.workOrderId = body.workOrderId || null;
       if (body.isPto !== undefined) updates.isPto = !!body.isPto;
@@ -28,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Manager / admin only: approve / lock / override hoursWorked
     if (body.approved !== undefined || body.locked !== undefined || body.approvedBy !== undefined || body.hoursWorked !== undefined) {
-      if (decoded.role !== 'manager' && decoded.role !== 'admin') {
+      if (decoded.role !== 'manager' && (decoded.role !== 'superadmin')) {
         return NextResponse.json({ error: 'Manager role required for approvals/locks' }, { status: 403 });
       }
 

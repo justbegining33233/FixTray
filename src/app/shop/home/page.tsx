@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FaBolt, FaBox, FaBoxes, FaBuilding, FaBullhorn, FaCalendarAlt, FaChartBar, FaCircle, FaClipboardList, FaCodeBranch, FaCog, FaComments, FaCreditCard, FaDesktop, FaEdit, FaGift, FaHeartbeat, FaIndustry, FaListAlt, FaLock, FaMapMarkerAlt, FaPaintBrush, FaPlug, FaReceipt, FaRoad, FaScroll, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaTruck, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
+import type { Route } from 'next';
+import { FaBox, FaChartBar, FaCog, FaIndustry, FaLock, FaMapMarkerAlt, FaStore, FaSyncAlt, FaTools, FaTruck, FaWrench } from 'react-icons/fa';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import MessagingCard from '@/components/MessagingCard';
 import RealTimeWorkOrders from '@/components/RealTimeWorkOrders';
-import ShopBaysCard from '@/components/ShopBaysCard';
 import MobileLayout from '@/components/MobileLayout';
+import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsNative } from '@/context/NativeContext';
 
 interface Job {
   id: string;
@@ -23,14 +24,7 @@ interface Job {
   time: string;
   tech: string;
   status: string;
-}
-
-interface TeamMember {
-  name: string;
-  role: string;
-  avatar: React.ReactNode;
-  status: string;
-  jobs: number;
+  bay?: number | null;
 }
 
 type QuickAction = {
@@ -48,15 +42,8 @@ export default function ShopHome() {
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['shop']);
   const isMobile = useIsMobile();
+  const isNative = useIsNative();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [newMember, setNewMember] = useState({
-    name: '',
-    role: 'tech' as 'tech' | 'manager',
-    email: '',
-    phone: '',
-    password: ''
-  });
   const [_todayJobs, _setTodayJobs] = useState<Job[]>([]);
   const [shopStats, setShopStats] = useState({
     openJobs: 0,
@@ -66,15 +53,14 @@ export default function ShopHome() {
     activeTechs: 0,
     pendingApprovals: 0
   });
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [addMemberError, setAddMemberError] = useState('');
-  const [addMemberSaving, setAddMemberSaving] = useState(false);
   const [selectedDestinations, setSelectedDestinations] = useState<Record<string, string>>({});
   const [pendingWorkOrders, setPendingWorkOrders] = useState<Job[]>([]);
   const [bays, setBays] = useState<Array<{ id: string; name: string; tech: string; jobs: Job[] }>>([]);
   const [_roadcallJobs, setRoadcallJobs] = useState<Job[]>([]);
-  const userId = (user as any)?.id ?? '';
-  const shopId = (user as any)?.shopId ?? user?.id ?? '';
+  const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
+  const [dragSourceBayId, setDragSourceBayId] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [dashboardReady, setDashboardReady] = useState(false);
 
   // Fetch live dashboard data whenever the authenticated user is ready
   useEffect(() => {
@@ -84,15 +70,31 @@ export default function ShopHome() {
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const toJob = (wo: any, statusLabel: string): Job => ({
+      id: wo.id,
+      service: wo.issueDescription || wo.repairs || 'Service',
+      priority: wo.priority || 'Medium',
+      customer: wo.customer
+        ? `${wo.customer.firstName} ${wo.customer.lastName?.charAt(0) ?? ''}.`
+        : 'Walk-in',
+      vehicle: wo.vehicleType || '',
+      time: new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      tech: wo.assignedTo
+        ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName?.charAt(0) ?? ''}.`
+        : 'Unassigned',
+      status: statusLabel,
+      bay: typeof wo.bay === 'number' ? wo.bay : null,
+    });
 
     const fetchDashboard = async () => {
       try {
-        const [statsRes, finRes, woRes, teamRes, shopRes] = await Promise.all([
+        const [statsRes, finRes, woRes, activeWoRes, teamRes, scheduleRes] = await Promise.all([
           fetch(`/api/shop/workorder-stats?shopId=${id}`, { headers }),
           fetch(`/api/shop/financial-summary?shopId=${id}`, { headers }),
           fetch(`/api/workorders?shopId=${id}&status=pending`, { headers }),
+          fetch(`/api/workorders?shopId=${id}&status=assigned,in-progress,waiting-estimate,waiting-for-payment`, { headers }),
           fetch(`/api/shop/team?shopId=${id}`, { headers }),
-          fetch(`/api/shop/stats?shopId=${id}`, { headers }),
+          fetch('/api/shop/schedule', { headers }),
         ]);
 
         // Work order stats (open jobs, completed today, pending approvals)
@@ -121,20 +123,7 @@ export default function ShopHome() {
         // Pending work orders queue
         if (woRes.ok) {
           const data = await woRes.json();
-          const orders: Job[] = (data.workOrders || []).map((wo: any) => ({
-            id: wo.id,
-            service: wo.issueDescription || wo.repairs || 'Service',
-            priority: wo.priority || 'Medium',
-            customer: wo.customer
-              ? `${wo.customer.firstName} ${wo.customer.lastName?.charAt(0) ?? ''}.`
-              : 'Walk-in',
-            vehicle: wo.vehicleType || '',
-            time: new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            tech: wo.assignedTo
-              ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName?.charAt(0) ?? ''}.`
-              : 'Unassigned',
-            status: 'Pending',
-          }));
+          const orders: Job[] = (data.workOrders || []).map((wo: any) => toJob(wo, 'Pending'));
           setPendingWorkOrders(orders);
         }
 
@@ -143,35 +132,50 @@ export default function ShopHome() {
           const data = await teamRes.json();
           const members: any[] = data.teamMembers || [];
           setShopStats(prev => ({ ...prev, activeTechs: members.filter((m) => m.available).length }));
-          setTeamMembers(members.map((m: any) => ({
-            name: `${m.firstName} ${m.lastName}`,
-            role: m.role,
-            avatar: <FaUser />,
-            status: m.available ? 'Active' : 'Offline',
-            jobs: 0,
-          })));
         }
 
-        // Bays � derive from shop's capacity
-        if (shopRes.ok) {
-          const data = await shopRes.json();
-          const cap: number = data.capacity || data.shop?.capacity || 3;
-          setBays(Array.from({ length: cap }, (_, i) => ({
+        // Bays derive from schedule capacity settings
+        if (scheduleRes.ok) {
+          const data = await scheduleRes.json();
+          const cap: number = Math.max(1, Number(data.capacity) || 1);
+          const nextBays: Array<{ id: string; name: string; tech: string; jobs: Job[] }> = Array.from({ length: cap }, (_, i) => ({
             id: `bay-${i + 1}`,
             name: `Bay ${i + 1}`,
             tech: '',
             jobs: [],
-          })));
+          }));
+
+          if (activeWoRes.ok) {
+            const activeData = await activeWoRes.json();
+            const activeOrders: any[] = activeData.workOrders || [];
+            activeOrders.forEach((wo) => {
+              const bayNumber = Number(wo.bay);
+              if (!Number.isInteger(bayNumber) || bayNumber < 1 || bayNumber > cap) return;
+
+              const targetBay = nextBays[bayNumber - 1];
+              targetBay.jobs.push(toJob(wo, 'In Bay'));
+            });
+          }
+
+          setBays(nextBays);
         }
       } catch {
-        // Dashboard will show zeros/empty � not a crash
+        // Dashboard will show zeros/empty  not a crash
       }
     };
 
-    fetchDashboard();
+    setDashboardReady(false);
+    fetchDashboard().finally(() => setDashboardReady(true));
+
+    const refresh = setInterval(() => {
+      fetchDashboard();
+    }, 30 * 1000);
+
+    return () => clearInterval(refresh);
   }, [user]);
+
   const quickActions: QuickAction[] = [
-    { label: <><FaBox style={{marginRight:6}}/>Parts</>, href: '/shop/parts-labor', tint: 'rgba(59,130,246,0.18)', color: '#3b82f6', border: 'rgba(59,130,246,0.28)' },
+    { label: <><FaBox style={{marginRight:6}}/>Service Catalog</>, href: '/shop/services', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
     {
       label:
         user?.role === 'manager'
@@ -187,19 +191,19 @@ export default function ShopHome() {
           : '/shop/admin',
       tint:
         user?.role === 'manager'
-          ? 'rgba(59,130,246,0.18)'
+          ? 'rgba(229,51,42,0.18)'
           : user?.role === 'tech'
           ? 'rgba(34,197,94,0.18)'
           : 'rgba(229,51,42,0.2)',
       color:
         user?.role === 'manager'
-          ? '#3b82f6'
+          ? '#e5332a'
           : user?.role === 'tech'
           ? '#22c55e'
           : '#e5332a',
       border:
         user?.role === 'manager'
-          ? 'rgba(59,130,246,0.28)'
+          ? 'rgba(229,51,42,0.28)'
           : user?.role === 'tech'
           ? 'rgba(34,197,94,0.28)'
           : 'rgba(229,51,42,0.3)',
@@ -210,17 +214,26 @@ export default function ShopHome() {
     { label: <><FaBox style={{marginRight:6}}/>Parts Orders</>, href: '/shop/purchase-orders', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
     { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
     { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/shop/new-inshop-job', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
-    { label: <><FaClipboardList style={{marginRight:6}}/>WO Templates</>, href: '/shop/templates', tint: 'rgba(251,191,36,0.18)', color: '#fbbf24', border: 'rgba(251,191,36,0.28)' },
     { label: <><FaIndustry style={{marginRight:6}}/>Vendors</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
     { label: <><FaMapMarkerAlt style={{marginRight:6}}/>Locations</>, href: '/shop/locations', tint: 'rgba(20,184,166,0.18)', color: '#14b8a6', border: 'rgba(20,184,166,0.28)' },
     { label: <><FaSyncAlt style={{marginRight:6}}/>Recurring Orders</>, href: '/shop/recurring-workorders', tint: 'rgba(34,197,94,0.18)', color: '#22c55e', border: 'rgba(34,197,94,0.28)' },
-    { label: <><FaLock style={{marginRight:6}}/>Two-Factor Auth</>, href: '/shop/settings/two-factor', tint: 'rgba(59,130,246,0.18)', color: '#3b82f6', border: 'rgba(59,130,246,0.28)' }
+    { label: <><FaLock style={{marginRight:6}}/>Two-Factor Auth</>, href: '/shop/settings/two-factor', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' }
   ];
   const priorityStyles: Record<string, { bg: string; color: string }> = {
     High: { bg: 'rgba(229,51,42,0.2)', color: '#e5332a' },
     Medium: { bg: 'rgba(245,158,11,0.2)', color: '#f59e0b' },
-    Low: { bg: 'rgba(59,130,246,0.18)', color: '#3b82f6' }
+    Low: { bg: 'rgba(229,51,42,0.18)', color: '#e5332a' }
   };
+
+  //  Mobile / native: show the tile-grid shell immediately 
+  // This check MUST come before the isLoading guard so that:
+  //  1. The server renders MobileShell (not a Loading spinner) for mobile UAs,
+  //     giving mobile users the correct view from byte 1.
+  //  2. The client never flashes the desktop layout while auth is resolving.
+  // The MobileShell itself handles the case where user is still loading.
+  if (isNative || isMobile) {
+    return <MobileShell role="shop" isHome userName={user?.name} />;
+  }
 
   if (isLoading) {
     return (
@@ -247,38 +260,7 @@ export default function ShopHome() {
   const _handleSignOut = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
-    router.push('/auth/login');
-  };
-
-  const handleAddMember = async () => {
-    setAddMemberError('');
-    setAddMemberSaving(true);
-    try {
-      const token = localStorage.getItem('token');
-      const r = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          name: newMember.name,
-          email: newMember.email,
-          phone: newMember.phone,
-          password: newMember.password,
-          role: newMember.role,
-          shopId: (user as any)?.shopId ?? user?.id,
-        }),
-      });
-      if (r.ok) {
-        setNewMember({ name: '', role: 'tech', email: '', phone: '', password: '' });
-        setShowAddMember(false);
-      } else {
-        const body = await r.json().catch(() => ({}));
-        setAddMemberError(body.error || 'Failed to add team member. Please try again.');
-      }
-    } catch {
-      setAddMemberError('Network error. Please try again.');
-    } finally {
-      setAddMemberSaving(false);
-    }
+    router.push('/auth/login' as Route);
   };
 
   const _handleOrderPart = async (partName: string, currentStock: number, reorderLevel: number) => {
@@ -296,7 +278,7 @@ export default function ShopHome() {
       });
       if (r.ok) {
         // Redirect to purchase orders page so user can complete the PO
-        router.push('/shop/purchase-orders');
+        router.push('/shop/purchase-orders' as Route);
       }
     } catch {
       // Silently ignore  -  non-critical path
@@ -304,7 +286,19 @@ export default function ShopHome() {
   };
 
   const _handleOpenWorkorder = (orderId: string) => {
-    router.push(`/workorders/${orderId}`);
+    router.push(`/workorders/${orderId}` as Route);
+  };
+
+  const persistPlacement = async (orderId: string, bay: number | null, status: 'assigned' | 'pending') => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    await fetch(`/api/workorders/${orderId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ bay, status }),
+    });
   };
 
   const handleAssign = async (orderId: string, destinationId: string) => {
@@ -332,24 +326,14 @@ export default function ShopHome() {
 
     // Persist assignment to server
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      await fetch(`/api/workorders/${orderId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          bayId: destinationId === 'roadcall' ? null : destinationId,
-          status: destinationId === 'roadcall' ? 'Roadcall' : 'In Bay',
-        }),
-      });
+      const bayNumber = destinationId.startsWith('bay-') ? Number(destinationId.replace('bay-', '')) : null;
+      await persistPlacement(orderId, destinationId === 'roadcall' ? null : bayNumber, 'assigned');
     } catch {
       console.error('Failed to persist bay assignment');
     }
   };
 
-  const _handleReturnToPending = (bayId: string, orderId: string) => {
+  const handleReturnToPending = async (bayId: string, orderId: string) => {
     let moved: Job | undefined;
     setBays(current => {
       const updated = current.map(bay => {
@@ -366,7 +350,98 @@ export default function ShopHome() {
     if (moved) {
       const movedJob: Job = moved;
       setPendingWorkOrders(prev => [...prev, { ...movedJob, status: 'Pending' }]);
+
+      try {
+        await persistPlacement(orderId, null, 'pending');
+      } catch {
+        console.error('Failed to persist return to pending');
+      }
     }
+  };
+
+  const handleMoveFromBay = async (orderId: string, sourceBayId: string, destinationId: string) => {
+    if (sourceBayId === destinationId) return;
+
+    let moved: Job | undefined;
+    setBays((current) => {
+      const withoutSourceJob = current.map((bay) => {
+        if (bay.id !== sourceBayId) return bay;
+        const job = bay.jobs.find((j) => j.id === orderId);
+        if (job) moved = job;
+        return { ...bay, jobs: bay.jobs.filter((j) => j.id !== orderId) };
+      });
+
+      if (!moved) return current;
+
+      if (destinationId === 'roadcall') {
+        setRoadcallJobs((currentRoadcall) => {
+          const exists = currentRoadcall.some((job) => job.id === orderId);
+          return exists ? currentRoadcall : [...currentRoadcall, { ...moved!, status: 'Roadcall', bay: null }];
+        });
+        return withoutSourceJob;
+      }
+
+      return withoutSourceJob.map((bay) => {
+        if (bay.id !== destinationId) return bay;
+        const exists = bay.jobs.some((job) => job.id === orderId);
+        return exists ? bay : { ...bay, jobs: [...bay.jobs, { ...moved!, status: 'In Bay' }] };
+      });
+    });
+
+    const bayNumber = destinationId.startsWith('bay-') ? Number(destinationId.replace('bay-', '')) : null;
+    try {
+      await persistPlacement(orderId, destinationId === 'roadcall' ? null : bayNumber, 'assigned');
+    } catch {
+      console.error('Failed to persist bay move');
+    }
+  };
+
+  const handleDragStart = (event: React.DragEvent<HTMLDivElement>, orderId: string, sourceBayId?: string) => {
+    event.dataTransfer.setData('application/json', JSON.stringify({ orderId, sourceBayId: sourceBayId ?? null }));
+    event.dataTransfer.setData('text/plain', orderId);
+    event.dataTransfer.effectAllowed = 'move';
+    setDraggedOrderId(orderId);
+    setDragSourceBayId(sourceBayId ?? null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedOrderId(null);
+    setDragSourceBayId(null);
+    setDragOverTarget(null);
+  };
+
+  const handleDropToDestination = (event: React.DragEvent<HTMLDivElement>, destinationId: string) => {
+    event.preventDefault();
+    const payloadRaw = event.dataTransfer.getData('application/json');
+    const payload = payloadRaw ? JSON.parse(payloadRaw) as { orderId?: string; sourceBayId?: string | null } : null;
+    const orderId = payload?.orderId || event.dataTransfer.getData('text/plain') || draggedOrderId;
+    const sourceBayId = payload?.sourceBayId ?? dragSourceBayId;
+    setDragOverTarget(null);
+    setDraggedOrderId(null);
+    setDragSourceBayId(null);
+    if (!orderId) return;
+
+    if (sourceBayId) {
+      void handleMoveFromBay(orderId, sourceBayId, destinationId);
+      return;
+    }
+
+    handleAssign(orderId, destinationId);
+  };
+
+  const handleDropToPending = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const payloadRaw = event.dataTransfer.getData('application/json');
+    const payload = payloadRaw ? JSON.parse(payloadRaw) as { orderId?: string; sourceBayId?: string | null } : null;
+    const orderId = payload?.orderId || event.dataTransfer.getData('text/plain') || draggedOrderId;
+    const sourceBayId = payload?.sourceBayId ?? dragSourceBayId;
+
+    setDragOverTarget(null);
+    setDraggedOrderId(null);
+    setDragSourceBayId(null);
+
+    if (!orderId || !sourceBayId) return;
+    void handleReturnToPending(sourceBayId, orderId);
   };
 
   const _handleReturnRoadcallToPending = (orderId: string) => {
@@ -379,6 +454,8 @@ export default function ShopHome() {
     const movedJob: Job = moved;
     setPendingWorkOrders(prev => [...prev, { ...movedJob, status: 'Pending' }]);
   };
+
+  // (Mobile check was moved before the isLoading guard above)
 
   return (
     <MobileLayout
@@ -402,7 +479,7 @@ export default function ShopHome() {
             return (
               <Link
                 key={action.href}
-                href={action.href}
+                href={action.href as Route}
                 style={{
                   padding:'10px 14px',
                   background:action.tint,
@@ -424,37 +501,35 @@ export default function ShopHome() {
 
         {/* Shop Stats */}
         <div style={{display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? 10 : 16, marginBottom: isMobile ? 16 : 32}}>
-          <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:20}}>
+          <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Open Jobs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#3b82f6'}}>{shopStats.openJobs}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{dashboardReady ? shopStats.openJobs : '...'} </div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Completed Today</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStats.completedToday}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.completedToday : '...'} </div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Today's Revenue</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStats.todayRevenue}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.todayRevenue : 'Syncing...'} </div>
           </div>
           <div style={{background:'rgba(168,85,247,0.1)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>This Week</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#a855f7'}}>{shopStats.weekRevenue}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#a855f7'}}>{dashboardReady ? shopStats.weekRevenue : 'Syncing...'} </div>
           </div>
           <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Active Techs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{shopStats.activeTechs}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{dashboardReady ? shopStats.activeTechs : '...'} </div>
           </div>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Pending Approvals</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{shopStats.pendingApprovals}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{dashboardReady ? shopStats.pendingApprovals : '...'} </div>
           </div>
         </div>
 
-        <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? 16 : 24, alignItems:'start'}}>
-          {/* Main Column */}
-          <div>
+        <div style={{display:'flex', flexDirection:'column', gap: isMobile ? 16 : 24}}>
             {/* Tall Insight Card above today's schedule */}
-            <div style={{background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:12, padding:24, marginBottom:24, minHeight:800}}>
+            <div style={{background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:12, padding:24, minHeight:800}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, gap:12, flexWrap:'wrap'}}>
                 <div>
                   <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Ops Overview</h2>
@@ -462,8 +537,8 @@ export default function ShopHome() {
                     <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#e5332a', borderRadius:12, fontSize:11, fontWeight:700}}>
                       Pending: {pendingWorkOrders.length}
                     </span>
-                    <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.16)', color:'#60a5fa', borderRadius:12, fontSize:11, fontWeight:700}}>
-                      Bays: {bays.reduce((sum, bay) => sum + bay.jobs.length, 0)} active
+                    <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
+                      Bays: {bays.length} configured ({bays.reduce((sum, bay) => sum + bay.jobs.length, 0)} active)
                     </span>
                   </div>
                 </div>
@@ -474,11 +549,30 @@ export default function ShopHome() {
 
               <div style={{display:'grid', gridTemplateColumns:'1fr', gap:16, alignItems:'start'}}>
                 {/* Pending Queue */}
-                <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14, minHeight:220}}>
+                <div
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDragOverTarget('pending');
+                  }}
+                  onDragLeave={() => setDragOverTarget((current) => current === 'pending' ? null : current)}
+                  onDrop={handleDropToPending}
+                  style={{
+                    background: dragOverTarget === 'pending' ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.03)',
+                    border: dragOverTarget === 'pending' ? '1px solid rgba(245,158,11,0.45)' : '1px solid rgba(255,255,255,0.08)',
+                    borderRadius:12,
+                    padding:14,
+                    minHeight:220,
+                  }}
+                >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>Tap a bay to dispatch</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drag work orders into a bay</span>
                   </div>
+                  {dragOverTarget === 'pending' && (
+                    <div style={{marginBottom:10, padding:'10px 12px', border:'1px dashed rgba(245,158,11,0.7)', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#f59e0b', fontSize:12, fontWeight:700}}>
+                      Release to return this work order to pending queue
+                    </div>
+                  )}
                   <div style={{display:'flex', flexDirection:'column', gap:10}}>
                     {pendingWorkOrders.length === 0 && (
                       <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
@@ -490,7 +584,23 @@ export default function ShopHome() {
                       const destinationOptions = [...bays.map(b => ({ id: b.id, label: b.name })), { id: 'roadcall', label: <><FaTruck style={{marginRight:4}} /> Roadcall</> }];
                       const selected = selectedDestinations[order.id] || destinationOptions[0]?.id || 'roadcall';
                       return (
-                        <div key={order.id} style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:12, display:'flex', flexDirection:'column', gap:8}}>
+                        <div
+                          key={order.id}
+                          draggable
+                          onDragStart={(event) => handleDragStart(event, order.id)}
+                          onDragEnd={handleDragEnd}
+                          style={{
+                            background:'rgba(255,255,255,0.04)',
+                            border:'1px solid rgba(255,255,255,0.08)',
+                            borderRadius:10,
+                            padding:12,
+                            display:'flex',
+                            flexDirection:'column',
+                            gap:8,
+                            cursor:'grab',
+                            opacity: draggedOrderId === order.id ? 0.6 : 1,
+                          }}
+                        >
                           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                             <div style={{fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{order.service}</div>
                             <span style={{padding:'4px 8px', background:style.bg, color:style.color, borderRadius:8, fontSize:11, fontWeight:700}}>{order.priority}</span>
@@ -509,7 +619,7 @@ export default function ShopHome() {
                                   style={{width:'100%', background:'transparent', color:'#e5e7eb', border:'none', outline:'none', fontSize:12, cursor:'pointer', height:'100%'}}
                                 >
                                   {destinationOptions.map(opt => (
-                                    <option key={opt.id} value={opt.id} style={{background:'#111827', color:'#e5e7eb'}}>
+                                    <option key={opt.id} value={opt.id} style={{background:'#000000', color:'#e5e7eb'}}>
                                       {opt.label}
                                     </option>
                                   ))}
@@ -530,121 +640,113 @@ export default function ShopHome() {
                     })}
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Team Overview */}
-            <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
-              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
-                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Team Status</h2>
-                {user.isShopAdmin && (
-                  <button onClick={() => setShowAddMember(true)} style={{padding:'8px 16px', background:'#22c55e', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:12, fontWeight:600}}>
-                    + Add Team Member
-                  </button>
-                )}
-              </div>
-              <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:12}}>
-                {teamMembers.map((member, idx) => (
-                  <div key={idx} style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:16}}>
-                    <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:12}}>
-                      <span style={{fontSize:32}}>{member.avatar}</span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{member.name}</div>
-                        <div style={{display:'flex', alignItems:'center', gap:6, marginTop:4}}>
-                          <span style={{padding:'2px 8px', background:member.status === 'Active' ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)', color:member.status === 'Active' ? '#22c55e' : '#f59e0b', borderRadius:8, fontSize:11, fontWeight:600}}>
-                            <FaCircle style={{marginRight:4}} /> {member.status}
-                          </span>
-                          <span style={{padding:'2px 8px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', borderRadius:8, fontSize:10, fontWeight:600}}>
-                            {member.role === 'tech' ? <><FaWrench style={{marginRight:4}} /> Tech</> : <><FaUserTie style={{marginRight:4}} /> Manager</>}
-                          </span>
+                {/* Bays Board */}
+                <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
+                    <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Service Bays</div>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drop to assign</span>
+                  </div>
+
+                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10}}>
+                    {bays.map((bay) => (
+                      <div
+                        key={bay.id}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          setDragOverTarget(bay.id);
+                        }}
+                        onDragLeave={() => setDragOverTarget((current) => current === bay.id ? null : current)}
+                        onDrop={(event) => handleDropToDestination(event, bay.id)}
+                        style={{
+                          border: dragOverTarget === bay.id ? '1px solid rgba(34,197,94,0.7)' : '1px solid rgba(255,255,255,0.1)',
+                          background: dragOverTarget === bay.id ? 'rgba(34,197,94,0.08)' : 'rgba(0,0,0,0.25)',
+                          borderRadius: 10,
+                          padding: 12,
+                          minHeight: 120,
+                        }}
+                      >
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+                          <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13}}>{bay.name}</div>
+                          <span style={{color: bay.jobs.length ? '#22c55e' : '#9aa3b2', fontSize:11}}>{bay.jobs.length} job(s)</span>
                         </div>
+
+                        {bay.jobs.length === 0 ? (
+                          <div style={{fontSize:12, color:'#9aa3b2'}}>Drop work order here</div>
+                        ) : (
+                          <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                            {bay.jobs.map((job) => (
+                              <div
+                                key={job.id}
+                                draggable
+                                onDragStart={(event) => handleDragStart(event, job.id, bay.id)}
+                                onDragEnd={handleDragEnd}
+                                style={{
+                                  background:'rgba(255,255,255,0.06)',
+                                  border:'1px solid rgba(255,255,255,0.08)',
+                                  borderRadius:8,
+                                  padding:8,
+                                  cursor:'grab',
+                                  opacity: draggedOrderId === job.id ? 0.6 : 1,
+                                }}
+                              >
+                                <div style={{fontSize:12, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{job.service}</div>
+                                <div style={{fontSize:11, color:'#9aa3b2'}}>{job.customer}</div>
+                                <button
+                                  onClick={() => void handleReturnToPending(bay.id, job.id)}
+                                  style={{marginTop:8, width:'100%', padding:'6px 8px', background:'rgba(245,158,11,0.12)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.3)', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer'}}
+                                >
+                                  Return To Queue
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {dragOverTarget === bay.id && (
+                          <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(34,197,94,0.75)', borderRadius:8, background:'rgba(34,197,94,0.12)', color:'#22c55e', fontSize:11, fontWeight:700}}>
+                            Release to assign here
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div style={{fontSize:12, color:'#9aa3b2'}}>
-                      Assigned Jobs: {member.jobs}
+                    ))}
+
+                    <div
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDragOverTarget('roadcall');
+                      }}
+                      onDragLeave={() => setDragOverTarget((current) => current === 'roadcall' ? null : current)}
+                      onDrop={(event) => handleDropToDestination(event, 'roadcall')}
+                      style={{
+                        border: dragOverTarget === 'roadcall' ? '1px solid rgba(59,130,246,0.7)' : '1px solid rgba(255,255,255,0.1)',
+                        background: dragOverTarget === 'roadcall' ? 'rgba(59,130,246,0.08)' : 'rgba(0,0,0,0.25)',
+                        borderRadius: 10,
+                        padding: 12,
+                        minHeight: 120,
+                      }}
+                    >
+                      <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13, marginBottom:8}}><FaTruck style={{marginRight:4}} /> Roadcall Queue</div>
+                      <div style={{fontSize:12, color:'#9aa3b2'}}>Drop work order here for mobile service dispatch</div>
+                      {dragOverTarget === 'roadcall' && (
+                        <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(59,130,246,0.75)', borderRadius:8, background:'rgba(59,130,246,0.12)', color:'#60a5fa', fontSize:11, fontWeight:700}}>
+                          Release to dispatch as roadcall
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Customer Messages */}
-          <div style={{background:'rgba(0,0,0,0.32)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:14, padding:16, boxShadow:'0 10px 30px rgba(0,0,0,0.35)'}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-              <h2 style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>Customer Messages</h2>
-              <span style={{fontSize:12, color:'#9aa3b2'}}>Live inbox</span>
-            </div>
-            <MessagingCard userId={userId} shopId={shopId} />
-          </div>
         </div>
 
-        {/* Shop Bays */}
-        <div style={{marginTop: 32}}>
-          <ShopBaysCard shopId={shopId} />
-        </div>
       </div>
-
-      {/* Add Team Member Modal */}
-      {showAddMember && (
-        <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
-          <div style={{background:'linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 50%, #525252 100%)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
-              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Add Team Member</h2>
-              <button onClick={() => setShowAddMember(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}>×</button>
-            </div>
-
-            <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Role *</label>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
-                <button type="button" onClick={() => setNewMember({...newMember, role: 'tech'})} style={{padding:16, background:newMember.role === 'tech' ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${newMember.role === 'tech' ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
-                  <div style={{fontSize:24, marginBottom:8}}><FaWrench style={{marginRight:4}} /></div>
-                  Technician
-                </button>
-                <button type="button" onClick={() => setNewMember({...newMember, role: 'manager'})} style={{padding:16, background:newMember.role === 'manager' ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${newMember.role === 'manager' ? '#3b82f6' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
-                  <div style={{fontSize:24, marginBottom:8}}><FaUserTie style={{marginRight:4}} /></div>
-                  Manager
-                </button>
-              </div>
-            </div>
-
-            <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Full Name *</label>
-              <input type="text" value={newMember.name} onChange={(e) => setNewMember({...newMember, name: e.target.value})} placeholder="John Doe" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
-            </div>
-
-            <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Email Address *</label>
-              <input type="email" value={newMember.email} onChange={(e) => setNewMember({...newMember, email: e.target.value})} placeholder="john@example.com" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
-            </div>
-
-            <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Phone Number *</label>
-              <input type="tel" value={newMember.phone} onChange={(e) => setNewMember({...newMember, phone: e.target.value})} placeholder="(555) 123-4567" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
-            </div>
-
-            <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Set Login Password *</label>
-              <input type="password" value={newMember.password} onChange={(e) => setNewMember({...newMember, password: e.target.value})} placeholder="Create password for employee" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
-              <p style={{fontSize:11, color:'#6b7280', marginTop:6}}>Employee will receive an account and can login with email or phone</p>
-            </div>
-
-            {addMemberError && <div style={{background:'rgba(229,51,42,0.12)',border:'1px solid rgba(229,51,42,0.3)',borderRadius:8,padding:'10px 14px',marginBottom:12,color:'#fca5a5',fontSize:13}}>{addMemberError}</div>}
-
-            <div style={{display:'flex', gap:12}}>
-              <button onClick={() => { setShowAddMember(false); setAddMemberError(''); }} style={{flex:1, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
-                Cancel
-              </button>
-              <button onClick={handleAddMember} disabled={addMemberSaving || !newMember.name || !newMember.email || !newMember.phone || !newMember.password} style={{flex:1, padding:'12px', background:(addMemberSaving || !newMember.name || !newMember.email || !newMember.phone || !newMember.password) ? 'rgba(34,197,94,0.3)' : '#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:(addMemberSaving || !newMember.name || !newMember.email || !newMember.phone || !newMember.password) ? 'not-allowed' : 'pointer'}}>
-                {addMemberSaving ? 'Adding...' : 'Add Member'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Real-Time Work Orders Updates */}
       <RealTimeWorkOrders userId={user.id} />
     </MobileLayout>
   );
 }
+
+

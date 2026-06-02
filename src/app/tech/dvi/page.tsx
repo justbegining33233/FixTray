@@ -114,7 +114,7 @@ export default function TechDVIPage() {
           <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14, marginBottom: 20, wordBreak: 'break-all', fontSize: 13 }}>{inspectionLink}</div>
         )}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          {inspectionLink && <button onClick={() => { navigator.clipboard.writeText(inspectionLink); }} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}><FaClipboardList style={{marginRight:4}} /> Copy Link</button>}
+          {inspectionLink && <button onClick={() => { navigator.clipboard.writeText(inspectionLink); }} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}><FaClipboardList style={{marginRight:4}} /> Copy Link</button>}
           <button onClick={() => { setSaved(false); setVehicleDesc(''); setMileage(''); setWorkOrderId(''); setItems(INSPECTION_TEMPLATE.map(t => ({ ...t, condition: 'green', notes: '', estimatedCost: '' }))); }} style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 20px', fontSize: 14, cursor: 'pointer' }}>New Inspection</button>
           <Link href="/shop/dvi" style={{ background: '#e5332a', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>View All DVIs</Link>
         </div>
@@ -129,7 +129,7 @@ export default function TechDVIPage() {
   }, {});
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}><FaWrench style={{marginRight:4}} /> Digital Vehicle Inspection</h1>
         <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 13 }}>Rate each item green/yellow/red and add notes for any concerns</p>
@@ -223,3 +223,4 @@ export default function TechDVIPage() {
     </div>
   );
 }
+

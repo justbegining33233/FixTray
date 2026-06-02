@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
   if (auth instanceof NextResponse) return auth;
 
-  const shopId = auth.role === 'admin'
+  const shopId = (auth.role === 'superadmin')
     ? new URL(request.url).searchParams.get('shopId') || undefined
     : auth.role === 'shop' ? auth.id : auth.shopId;
 

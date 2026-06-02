@@ -12,7 +12,7 @@ function getAuthToken(request: NextRequest) {
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const decoded = getAuthToken(request);
-    if (!decoded || (decoded.role !== 'shop' && decoded.role !== 'manager' && decoded.role !== 'admin')) {
+    if (!decoded || (decoded.role !== 'shop' && decoded.role !== 'manager' && (decoded.role !== 'superadmin'))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

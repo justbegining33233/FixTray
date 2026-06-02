@@ -1,15 +1,20 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import TopNavBar from '../../../components/TopNavBar';
 import RealTimeWorkOrders from '../../../components/RealTimeWorkOrders';
 import { useRequireAuth, useAuth } from '../../../contexts/AuthContext';
 import '../../../styles/sos-theme.css';
 import { FaBolt, FaChartBar, FaHeart, FaSearch, FaSyncAlt, FaUser } from 'react-icons/fa';
+import MobileShell from '../../../components/MobileShell';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useIsNative } from '../../../context/NativeContext';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
   const { logout } = useAuth();
+  const isMountedRef = useRef(true);
   const [_userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
   const [_mounted, setMounted] = useState(false);
@@ -57,48 +62,61 @@ export default function CustomerDashboard() {
     messages: 0,
     appointments: 0
   });
+  const [statsReady, setStatsReady] = useState(false);
 
-  const fetchStats = async () => {
-    try {
-      const fetchOpts = { credentials: 'include' } as RequestInit;
+  const fetchStats = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setStatsReady(true);
+      return;
+    }
+
+    const fetchOpts = {
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${token}` },
+    } as RequestInit;
+    const safeFetchJson = async (url: string) => {
+      try {
+        const response = await fetch(url, fetchOpts);
+        if (!response.ok) return null;
+        return await response.json();
+      } catch {
+        return null;
+      }
+    };
 
       // Fetch appointments
-      const apptRes = await fetch('/api/appointments', fetchOpts);
-      const apptData = await apptRes.json();
-      const appointments = apptData.appointments || [];
+      const apptData = await safeFetchJson('/api/appointments');
+      const appointments = Array.isArray(apptData?.appointments) ? apptData.appointments : [];
       const upcoming = appointments.filter((a: any) => 
         a.status === 'Scheduled' || a.status === 'Confirmed'
       ).length;
       
       // Fetch vehicles
-      const vehicleRes = await fetch('/api/customers/vehicles', fetchOpts);
-      const vehicles = await vehicleRes.json();
+      const vehicles = await safeFetchJson('/api/customers/vehicles');
       
       // Fetch reviews
-      const reviewRes = await fetch('/api/reviews', fetchOpts);
-      const reviews = await reviewRes.json();
+      const reviews = await safeFetchJson('/api/reviews');
       
       // Fetch favorites
-      const favRes = await fetch('/api/customers/favorites', fetchOpts);
-      const favorites = await favRes.json();
+      const favorites = await safeFetchJson('/api/customers/favorites');
       
       // Fetch work orders for history
-      const historyRes = await fetch('/api/workorders', fetchOpts);
-      const workorders = await historyRes.json();
+      const workorders = await safeFetchJson('/api/workorders');
       const completed = Array.isArray(workorders) ? workorders.filter((w: any) => w.status === 'Completed') : [];
       
       // Fetch documents
-      const docRes = await fetch('/api/customers/documents', fetchOpts);
-      const documents = await docRes.json();
+      const documents = await safeFetchJson('/api/customers/documents');
       
       // Fetch messages
-      const msgRes = await fetch('/api/customers/messages', fetchOpts);
-      const messages = await msgRes.json();
+      const messages = await safeFetchJson('/api/customers/messages');
       const unread = Array.isArray(messages) ? messages.filter((m: any) => !m.read && m.from !== 'customer').length : 0;
       
       // Fetch payment methods
-      const paymentRes = await fetch('/api/customers/payment-methods', fetchOpts);
-      const paymentMethods = await paymentRes.json();
+      const paymentMethods = await safeFetchJson('/api/customers/payment-methods');
+
+      if (!isMountedRef.current) return;
 
       setStats({
         appointmentCount: appointments.length,
@@ -117,10 +135,8 @@ export default function CustomerDashboard() {
 
       // Fetch loyalty points from API; fall back to client-side calculation
       let pts = completed.length * 50;
-      try {
-        const rewardsRes = await fetch('/api/customers/rewards', fetchOpts);
-        if (rewardsRes.ok) {
-          const rewardsData = await rewardsRes.json();
+      const rewardsData = await safeFetchJson('/api/customers/rewards');
+        if (rewardsData) {
           if (typeof rewardsData.points === 'number') pts = rewardsData.points;
           if (typeof rewardsData.tier === 'string') {
             setTier(rewardsData.tier);
@@ -130,10 +146,6 @@ export default function CustomerDashboard() {
             setTier(pts >= 1000 ? 'Gold' : pts >= 200 ? 'Silver' : 'Bronze');
           }
         } else {
-          setLoyaltyPoints(pts);
-          setTier(pts >= 1000 ? 'Gold' : pts >= 200 ? 'Silver' : 'Bronze');
-        }
-      } catch {
         setLoyaltyPoints(pts);
         setTier(pts >= 1000 ? 'Gold' : pts >= 200 ? 'Silver' : 'Bronze');
       }
@@ -160,20 +172,33 @@ export default function CustomerDashboard() {
         documents: Array.isArray(documents) ? documents.slice(0, 3) : [],
         payments: Array.isArray(paymentMethods) ? paymentMethods.slice(0, 3) : [],
       }));
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
+      setStatsReady(true);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
     const name = localStorage.getItem('userName');
     const id = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
     
     if (name) setUserName(name);
     if (id) setUserId(id);
-    fetchStats();
-  }, []);
+    if (id && token) {
+      fetchStats();
+      const refresh = setInterval(fetchStats, 60 * 1000);
+      return () => clearInterval(refresh);
+    }
+
+    if (id) {
+      setStatsReady(true);
+    }
+  }, [fetchStats]);
 
   // Live updates: listen for socket events dispatched by `useSocket`
   useEffect(() => {
@@ -207,7 +232,7 @@ export default function CustomerDashboard() {
       window.removeEventListener('chat:new-message', onNewMessage as EventListener);
       window.removeEventListener('tech:location_updated', onLocationUpdate as EventListener);
     };
-  }, []);
+  }, [fetchStats]);
 
   const _handleSignOut = () => {
     logout();
@@ -221,7 +246,7 @@ export default function CustomerDashboard() {
       desc: 'Discover service centers near you', 
       detail: 'Search by location and compare ratings', 
       badge: 'Popular', 
-      badgeColor: '#3b82f6', 
+      badgeColor: '#e5332a', 
       link: '/customer/findshops',
       getData: () => []
     },
@@ -390,6 +415,21 @@ export default function CustomerDashboard() {
     },
   ];
 
+  const isMobile = useIsMobile();
+  const isNative = useIsNative();
+
+  if (isNative || isMobile) {
+    return <MobileShell role="customer" isHome userName={_userName} />;
+  }
+
+  if (!statsReady) {
+    return (
+      <div style={{minHeight:'100vh', background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', color:'#e5e7eb', fontSize:18}}>
+        Syncing your live dashboard data...
+      </div>
+    );
+  }
+
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       {/* Top Navigation */}
@@ -401,9 +441,9 @@ export default function CustomerDashboard() {
       <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
         {/* Customer Stats */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16, marginBottom:32}}>
-          <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:20}}>
+          <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Active Jobs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#3b82f6'}}>{customerStats.openOrders}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{customerStats.openOrders}</div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Total Vehicles</div>
@@ -512,9 +552,9 @@ export default function CustomerDashboard() {
               {discoverFeatures.map(feature => {
                 const recentItems = feature.getData();
                 return (
-              <Link key={feature.id} href={feature.link} style={{textDecoration:'none'}}>
+              <Link key={feature.id} href={feature.link as Route} style={{textDecoration:'none'}}>
                 <div style={{
-                  background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                  background:'#000000',
                   border:'1px solid rgba(255,255,255,0.15)',
                   borderRadius:16,
                   padding:24,
@@ -577,9 +617,9 @@ export default function CustomerDashboard() {
             {activeFeatures.map(feature => {
               const recentItems = feature.getData();
               return (
-              <Link key={feature.id} href={feature.link} style={{textDecoration:'none'}}>
+              <Link key={feature.id} href={feature.link as Route} style={{textDecoration:'none'}}>
                 <div style={{
-                  background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                  background:'#000000',
                   border:'1px solid rgba(255,255,255,0.15)',
                   borderRadius:16,
                   padding:24,
@@ -641,9 +681,9 @@ export default function CustomerDashboard() {
             {accountFeatures.map(feature => {
               const recentItems = feature.getData();
               return (
-              <Link key={feature.id} href={feature.link} style={{textDecoration:'none'}}>
+              <Link key={feature.id} href={feature.link as Route} style={{textDecoration:'none'}}>
                 <div style={{
-                  background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                  background:'#000000',
                   border:'1px solid rgba(255,255,255,0.15)',
                   borderRadius:16,
                   padding:24,
@@ -705,9 +745,9 @@ export default function CustomerDashboard() {
             {recordsFeatures.map(feature => {
               const recentItems = feature.getData();
               return (
-              <Link key={feature.id} href={feature.link} style={{textDecoration:'none'}}>
+              <Link key={feature.id} href={feature.link as Route} style={{textDecoration:'none'}}>
                 <div style={{
-                  background:'linear-gradient(145deg, rgba(42,42,42,0.9) 0%, rgba(32,32,32,0.9) 100%)',
+                  background:'#000000',
                   border:'1px solid rgba(255,255,255,0.15)',
                   borderRadius:16,
                   padding:24,
@@ -765,3 +805,4 @@ export default function CustomerDashboard() {
     </div>
   );
 }
+

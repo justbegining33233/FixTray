@@ -1,4 +1,3 @@
-import { FaCheckCircle } from 'react-icons/fa';
 // Email service for notifications
 // Configure with Resend or SendGrid API key in environment variables
 
@@ -348,7 +347,7 @@ export async function sendRecurringApprovalEmail(
 ) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
   const reviewUrl = `${appUrl}/customer/recurring-approvals`;
-  const subject = `Your ${serviceName} Is Due â€” Confirm or Skip`;
+  const subject = `Your ${serviceName} Is Due - Confirm or Skip`;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e5e7eb; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #e5332a, #c0392b); padding: 32px; text-align: center;">
@@ -360,19 +359,19 @@ export async function sendRecurringApprovalEmail(
         <p style="color: #9aa3b2; line-height: 1.6; margin-bottom: 24px;">
           <strong style="color: #e5e7eb;">${shopName}</strong> has your scheduled
           <strong style="color: #e5e7eb;">${serviceName}</strong> coming up.
-          Let them know if you want to come in â€” <strong>no bay will be reserved until you confirm.</strong>
+          Let them know if you want to come in - <strong>no bay will be reserved until you confirm.</strong>
         </p>
         <div style="background: rgba(229,51,42,0.1); border: 1px solid rgba(229,51,42,0.3); border-radius: 12px; padding: 20px; margin-bottom: 28px;">
-          <div style="font-size: 18px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">ðŸ“‹ ${serviceName}</div>
+          <div style="font-size: 18px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">[Service] ${serviceName}</div>
           <div style="color: #9aa3b2; font-size: 14px;">Shop: ${shopName}</div>
           ${estimatedCost ? `<div style="color: #9aa3b2; font-size: 14px; margin-top: 4px;">Estimated cost: <strong style="color: #22c55e;">$${estimatedCost.toFixed(2)}</strong></div>` : ''}
         </div>
         <table width="100%" style="margin-bottom: 28px;"><tr>
           <td style="padding-right: 8px;">
-            <a href="${reviewUrl}" style="display: block; background: #22c55e; color: white; padding: 14px; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px;">âœ… Yes, Schedule Me In</a>
+            <a href="${reviewUrl}" style="display: block; background: #22c55e; color: white; padding: 14px; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px;">Yes, Schedule Me In</a>
           </td>
           <td style="padding-left: 8px;">
-            <a href="${reviewUrl}" style="display: block; background: rgba(255,255,255,0.08); color: #9aa3b2; padding: 14px; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; border: 1px solid rgba(255,255,255,0.15);">â­ Skip This Time</a>
+            <a href="${reviewUrl}" style="display: block; background: rgba(255,255,255,0.08); color: #9aa3b2; padding: 14px; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; border: 1px solid rgba(255,255,255,0.15);">Skip This Time</a>
           </td>
         </tr></table>
         <p style="color: #6b7280; font-size: 12px; text-align: center; line-height: 1.6;">
@@ -384,7 +383,7 @@ export async function sendRecurringApprovalEmail(
   `;
   return sendEmail({ to: customerEmail, subject, html });
 }
-// â”€â”€ Recurring service reminders (14-day and 7-day advance notice) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Recurring service reminders (14-day and 7-day advance notice)
 export async function sendRecurringReminderEmail(
   customerEmail: string,
   customerName: string,
@@ -397,29 +396,29 @@ export async function sendRecurringReminderEmail(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
   const scheduleUrl = `${appUrl}/book/${shopId}`;
   const urgency = daysUntilDue === 7 ? 'coming up in ONE WEEK' : 'coming up in 2 weeks';
-  const emoji = daysUntilDue === 7 ? 'âš¡' : 'ðŸ“…';
-  const subject = `${emoji} Your ${serviceName} is due in ${daysUntilDue} days â€” ${shopName}`;
+  const marker = daysUntilDue === 7 ? '[Urgent]' : '[Reminder]';
+  const subject = `${marker} Your ${serviceName} is due in ${daysUntilDue} days - ${shopName}`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e5e7eb; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #e5332a, #c0392b); padding: 32px; text-align: center;">
         <div style="font-size: 36px; font-weight: 900; color: white; letter-spacing: -1px;">FixTray</div>
-        <div style="color: rgba(255,255,255,0.85); font-size: 14px; margin-top: 6px;">Service Reminder â€” ${daysUntilDue} Days Notice</div>
+        <div style="color: rgba(255,255,255,0.85); font-size: 14px; margin-top: 6px;">Service Reminder - ${daysUntilDue} Days Notice</div>
       </div>
       <div style="padding: 32px;">
-        <h2 style="color: #e5e7eb; margin: 0 0 12px;">Hey ${customerName}! ðŸ‘‹</h2>
+        <h2 style="color: #e5e7eb; margin: 0 0 12px;">Hey ${customerName}!</h2>
         <p style="color: #9aa3b2; line-height: 1.6; margin-bottom: 24px;">
           Your <strong style="color: #e5e7eb;">${serviceName}</strong> at 
           <strong style="color: #e5e7eb;">${shopName}</strong> is <strong style="color: ${daysUntilDue === 7 ? '#f59e0b' : '#e5e7eb'};">${urgency}.</strong>
           Would you like to schedule it?
         </p>
         <div style="background: rgba(229,51,42,0.1); border: 1px solid rgba(229,51,42,0.3); border-radius: 12px; padding: 20px; margin-bottom: 28px;">
-          <div style="font-size: 20px; font-weight: 700; color: #e5e7eb; margin-bottom: 6px;">${emoji} ${serviceName}</div>
+          <div style="font-size: 20px; font-weight: 700; color: #e5e7eb; margin-bottom: 6px;">${marker} ${serviceName}</div>
           <div style="color: #9aa3b2; font-size: 14px; margin-bottom: 4px;">Shop: <strong style="color: #e5e7eb;">${shopName}</strong></div>
           ${estimatedCost ? `<div style="color: #9aa3b2; font-size: 14px;">Estimated cost: <strong style="color: #22c55e;">$${estimatedCost.toFixed(2)}</strong></div>` : ''}
         </div>
         <a href="${scheduleUrl}" style="display: block; background: #22c55e; color: white; padding: 16px; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px; margin-bottom: 16px;">
-          âœ… Yes, Schedule Me In at ${shopName}
+          Yes, Schedule Me In at ${shopName}
         </a>
         <p style="color: #6b7280; font-size: 12px; text-align: center; line-height: 1.6; margin: 0;">
           If you don't want to schedule, simply ignore this email.<br/>
@@ -468,12 +467,12 @@ export async function sendPaymentConfirmationEmail(toEmail: string, workOrderId:
   return sendEmail({
     to: toEmail,
     subject: `Payment Confirmation — $${amount.toFixed(2)}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;border-radius:10px;overflow:hidden;"><div style="background:#e5332a;padding:32px;text-align:center;"><h1 style="color:white;margin:0;font-size:28px;font-weight:900;">FixTray</h1></div><div style="padding:32px;"><h2 style="color:#22c55e;"><FaCheckCircle style={{marginRight:4}} /> Payment Confirmed</h2><p style="color:#6b7280;">Payment of <strong>$${amount.toFixed(2)}</strong> received for work order <strong>#${workOrderId.slice(-8).toUpperCase()}</strong>.</p><a href="${url}" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:700;">View Invoice</a></div></div>`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;border-radius:10px;overflow:hidden;"><div style="background:#e5332a;padding:32px;text-align:center;"><h1 style="color:white;margin:0;font-size:28px;font-weight:900;">FixTray</h1></div><div style="padding:32px;"><h2 style="color:#22c55e;">Payment Confirmed</h2><p style="color:#6b7280;">Payment of <strong>$${amount.toFixed(2)}</strong> received for work order <strong>#${workOrderId.slice(-8).toUpperCase()}</strong>.</p><a href="${url}" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:700;">View Invoice</a></div></div>`,
   });
 }
 
 /**
- * Notify a shop owner that their trial subscription is ending in ~3 days.
+ * Notify a shop owner that their trial period is ending in ~3 days.
  */
 export async function sendTrialEndingEmail(
   shopEmail: string,
@@ -500,10 +499,10 @@ export async function sendTrialEndingEmail(
           </p>
           <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:20px;margin-bottom:28px;">
             <div style="font-size:16px;font-weight:700;color:#f59e0b;margin-bottom:6px;">⏳ Trial ends: ${formattedDate}</div>
-            <div style="color:#9aa3b2;font-size:14px;">After your trial, your current plan will begin billing automatically.</div>
+            <div style="color:#9aa3b2;font-size:14px;">After your trial, paid access will begin automatically.</div>
           </div>
           <a href="${settingsUrl}" style="display:block;background:#e5332a;color:white;padding:14px;text-align:center;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:16px;">
-            Manage Subscription
+            Manage Billing
           </a>
           <p style="color:#6b7280;font-size:12px;text-align:center;line-height:1.6;">
             Questions? Reply to this email or contact support.<br/>

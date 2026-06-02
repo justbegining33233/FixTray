@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { validateCsrf } from '@/lib/csrf';
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     // Scope shopId: admins choose; shop owners use their id; managers/techs use their shopId
-    const shopId = auth.role === 'admin'
+    const shopId = (auth.role === 'superadmin')
       ? searchParams.get('shopId')
       : (auth.role === 'shop' ? auth.id : auth.shopId);
 
@@ -24,7 +25,6 @@ export async function GET(request: NextRequest) {
       where: { id: shopId },
       include: {
         services: true, // Include related services
-        subscription: true, // Include subscription data
       },
     });
 
@@ -57,19 +57,18 @@ export async function GET(request: NextRequest) {
           category: s.category,
           price: s.price,
         })),
-        subscription: shop.subscription ? {
-          plan: shop.subscription.plan,
-          status: shop.subscription.status,
-          currentPeriodEnd: shop.subscription.currentPeriodEnd,
-          trialEnd: shop.subscription.trialEnd,
-          cancelAtPeriodEnd: shop.subscription.cancelAtPeriodEnd,
-        } : null,
         stripeConnected: !!shop.stripeAccountId,
       },
       settings: {
         notificationsEnabled: shopSettings.notificationsEnabled,
         notificationSoundEnabled: shopSettings.notificationSoundEnabled,
         notificationPreferences: shopSettings.notificationPreferences || {},
+        fixtrayAgreement:
+          (shopSettings.notificationPreferences &&
+          typeof shopSettings.notificationPreferences === 'object' &&
+          !Array.isArray(shopSettings.notificationPreferences)
+            ? (shopSettings.notificationPreferences as Record<string, unknown>).fixtrayAgreement
+            : null) || null,
       },
     }, { status: 200 });
   } catch (error) {
@@ -91,14 +90,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { shopId, shopName, email, phone, address, city, state, zipCode, notificationSettings } = body;
+    const { shopId, shopName, email, phone, address, city, state, zipCode, notificationSettings, fixtrayAgreement } = body;
 
     if (!shopId) {
       return NextResponse.json({ error: 'Shop ID is required' }, { status: 400 });
     }
 
     // Only allow shop owner or admin to update
-    if (auth.role !== 'admin' && auth.id !== shopId) {
+    if (auth.role !== 'superadmin' && auth.id !== shopId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -117,19 +116,55 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    if (notificationSettings) {
+    if (notificationSettings || fixtrayAgreement) {
+      const existingSettings = await prisma.shopSettings.findUnique({
+        where: { shopId },
+        select: { notificationPreferences: true },
+      });
+
+      const existingPrefs =
+        existingSettings?.notificationPreferences &&
+        typeof existingSettings.notificationPreferences === 'object' &&
+        !Array.isArray(existingSettings.notificationPreferences)
+          ? (existingSettings.notificationPreferences as Record<string, unknown>)
+          : {};
+
+      const incomingPrefs =
+        notificationSettings?.notificationPreferences &&
+        typeof notificationSettings.notificationPreferences === 'object' &&
+        !Array.isArray(notificationSettings.notificationPreferences)
+          ? (notificationSettings.notificationPreferences as Record<string, unknown>)
+          : {};
+
+      const mergedPrefs: Record<string, unknown> = {
+        ...existingPrefs,
+        ...incomingPrefs,
+      };
+
+      if (fixtrayAgreement) {
+        mergedPrefs.fixtrayAgreement = fixtrayAgreement;
+      }
+
+      const settingsUpdateData: Prisma.ShopSettingsUpdateInput = {
+        notificationPreferences: mergedPrefs as Prisma.InputJsonValue,
+      };
+
+      if (notificationSettings?.notificationsEnabled !== undefined) {
+        settingsUpdateData.notificationsEnabled = notificationSettings.notificationsEnabled;
+      }
+
+      if (notificationSettings?.notificationSoundEnabled !== undefined) {
+        settingsUpdateData.notificationSoundEnabled = notificationSettings.notificationSoundEnabled;
+      }
+
       await prisma.shopSettings.upsert({
         where: { shopId },
-        update: {
-          notificationsEnabled: notificationSettings.notificationsEnabled,
-          notificationSoundEnabled: notificationSettings.notificationSoundEnabled,
-          notificationPreferences: notificationSettings.notificationPreferences || {},
-        },
+        update: settingsUpdateData,
         create: {
           shopId,
-          notificationsEnabled: notificationSettings.notificationsEnabled ?? true,
-          notificationSoundEnabled: notificationSettings.notificationSoundEnabled ?? true,
-          notificationPreferences: notificationSettings.notificationPreferences || {},
+          notificationsEnabled: notificationSettings?.notificationsEnabled ?? true,
+          notificationSoundEnabled: notificationSettings?.notificationSoundEnabled ?? true,
+          notificationPreferences: mergedPrefs as Prisma.InputJsonValue,
         },
       });
     }

@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validatePublicCsrf } from '@/lib/csrf';
 import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
-import { sendWelcomeEmail, sendVerificationEmail } from '@/lib/emailService';
-import { generateTokenHex, hashTokenSha256 } from '@/lib/verification';
+import { sendWelcomeEmail } from '@/lib/emailService';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Guard: reject shop-like payloads sent to the customer registration
     // endpoint — client should use /api/shops/register for shop owners.
-    if (body && (body.shopName || body.ownerName || body.shopType || body.address || body.subscriptionPlan)) {
+    if (body && (body.shopName || body.ownerName || body.shopType || body.address)) {
       return NextResponse.json({ error: 'Shop registration detected. Use /api/shops/register to register a shop.' }, { status: 400 });
     }
 
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(data.password);
     
-// Create customer (emailVerified defaults to false — must click link)
+// Create customer with email pre-verified (no verification step required)
     const customer = await prisma.customer.create({
       data: {
         email: data.email,
@@ -63,24 +62,10 @@ export async function POST(request: NextRequest) {
         lastName: data.lastName,
         phone: data.phone,
         company: data.company,
-        emailVerified: false,
+        emailVerified: true,
       },
     });
 
-    // Create a 24-hour email verification token
-    const rawToken = generateTokenHex(32);
-    const tokenHash = hashTokenSha256(rawToken);
-    await prisma.verificationToken.create({
-      data: {
-        userId: customer.id,
-        type: 'email_verify',
-        tokenHash,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-    });
-
-    // Send verification email (don't await — don't block response)
-    sendVerificationEmail(customer.email, customer.firstName, rawToken).catch(console.error);
     // Also send welcome email
     sendWelcomeEmail(customer.email, customer.firstName).catch(console.error);
     

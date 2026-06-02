@@ -10,10 +10,10 @@ export default function OfflinePage() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#080e1c',
+      background: '#000000',
       color: '#f1f5f9',
       fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
-      padding: '24px',
+      padding: 'calc(24px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px))',
       textAlign: 'center',
     }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}><FaSatelliteDish style={{marginRight:4}} /></div>
@@ -23,15 +23,11 @@ export default function OfflinePage() {
       </p>
       <button
         onClick={() => window.location.reload()}
+        className="btn-primary"
         style={{
-          background: '#e5332a',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 8,
           padding: '12px 24px',
           fontSize: 14,
-          fontWeight: 600,
-          cursor: 'pointer',
+          fontWeight: 700,
         }}
       >
         Try Again

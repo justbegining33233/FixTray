@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCalendarAlt, FaCamera, FaCheck, FaFrown, FaMapMarkerAlt, FaSearch, FaStar, FaTag } from 'react-icons/fa';
@@ -253,7 +254,7 @@ export default function NewAppointmentClient() {
       });
 
       if (res.ok) {
-        router.push('/customer/appointments?success=true');
+        router.push('/customer/appointments?success=true' as Route);
       } else {
         const error = await res.json();
         setBookingMsg({type:'error',text:error.error || 'Failed to book appointment'});
@@ -415,7 +416,7 @@ export default function NewAppointmentClient() {
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginTop: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 12 }}><FaCamera style={{marginRight:4}} /> Pre-Visit Photos (Optional)</h3>
             <p style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 12 }}>Upload photos of your vehicle issue to help the shop prepare</p>
-            <label style={{ display: 'inline-block', padding: '10px 20px', background: '#3b82f6', color: 'white', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: uploadingPhoto ? 0.6 : 1 }}>
+            <label style={{ display: 'inline-block', padding: '10px 20px', background: '#e5332a', color: 'white', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: uploadingPhoto ? 0.6 : 1 }}>
               {uploadingPhoto ? 'Uploading...' : <><FaCamera style={{marginRight:4}} /> Add Photos</>}
               <input
                 type="file"

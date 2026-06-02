@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 // Lazy-load prisma & bcrypt inside handler
+import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 
 export async function POST(request: NextRequest) {
@@ -63,6 +64,23 @@ export async function POST(request: NextRequest) {
     const newExpires = (await import('@/lib/auth')).refreshExpiryDate();
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
 
+    if (record.adminId) {
+      await enforceSingleActiveSession(prisma, { adminId: record.adminId });
+    } else if (record.metadata) {
+      try {
+        const meta = JSON.parse(record.metadata) as { customerId?: string; shopId?: string; techId?: string };
+        if (meta.customerId) {
+          await enforceSingleActiveSession(prisma, { customerId: meta.customerId });
+        } else if (meta.shopId) {
+          await enforceSingleActiveSession(prisma, { shopId: meta.shopId });
+        } else if (meta.techId) {
+          await enforceSingleActiveSession(prisma, { techId: meta.techId });
+        }
+      } catch {
+        // Ignore metadata parse issues here; the record validation below still protects refresh flow.
+      }
+    }
+
     const newRecord = await prisma.refreshToken.create({
       data: {
         tokenHash: newHash,
@@ -80,7 +98,7 @@ export async function POST(request: NextRequest) {
     if (record.adminId) {
       const admin = await prisma.admin.findUnique({ where: { id: record.adminId } });
       if (!admin) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-      payload = { id: admin.id, username: admin.username, role: 'admin' };
+      payload = { id: admin.id, username: admin.username, role: 'superadmin', isSuperAdmin: admin.isSuperAdmin };
     } else if (record.metadata) {
       let meta: { customerId?: string; shopId?: string; techId?: string } = {};
       try { meta = JSON.parse(record.metadata) as typeof meta; } catch { return NextResponse.json({ error: 'Invalid session' }, { status: 401 }); }
@@ -91,11 +109,11 @@ export async function POST(request: NextRequest) {
       } else if (meta.shopId) {
         const s = await prisma.shop.findUnique({ where: { id: meta.shopId } });
         if (!s) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-        payload = { id: s.id, username: s.username, role: 'shop' };
+        payload = { id: s.id, shopId: s.id, username: s.username, role: 'shop' };
       } else if (meta.techId) {
         const t = await prisma.tech.findUnique({ where: { id: meta.techId } });
         if (!t) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-        payload = { id: t.id, username: t.email, role: t.role };
+        payload = { id: t.id, shopId: t.shopId, username: t.email, role: t.role };
       }
     }
 

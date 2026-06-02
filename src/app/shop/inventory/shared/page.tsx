@@ -68,7 +68,7 @@ export default function SharedInventoryPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Transfer failed');
-      setToast(`Transferred ${transferQty} × ${transferModal.name}`);
+      setToast(`Transferred ${transferQty}  ${transferModal.name}`);
       setTimeout(() => setToast(null), 3000);
       setTransferModal(null);
       fetchShared();
@@ -84,20 +84,20 @@ export default function SharedInventoryPage() {
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 1100, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <Link href="/shop/inventory" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Inventory</Link>
+              <Link href="/shop/inventory" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Inventory</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Shared Inventory</h1>
               <p style={{ color: '#9ca3af', fontSize: 14 }}>View inventory across all your shops and transfer parts</p>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input type="checkbox" checked={lowStockOnly} onChange={e => setLowStockOnly(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: '#2563eb' }} />
+                style={{ width: 18, height: 18, accentColor: '#e5332a' }} />
               <span style={{ color: '#e5e7eb', fontSize: 14 }}>Low Stock Only</span>
             </label>
           </div>
@@ -137,7 +137,7 @@ export default function SharedInventoryPage() {
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                         <span style={{
                           padding: '2px 10px', borderRadius: 12, fontSize: 13, fontWeight: 600,
-                          background: item.quantity <= item.reorderPoint ? '#450a0a' : item.quantity <= item.reorderPoint * 2 ? '#422006' : '#0f172a',
+                          background: item.quantity <= item.reorderPoint ? '#450a0a' : item.quantity <= item.reorderPoint * 2 ? '#422006' : '#000000',
                           color: item.quantity <= item.reorderPoint ? '#ef4444' : item.quantity <= item.reorderPoint * 2 ? '#eab308' : '#e5e7eb',
                         }}>{item.quantity}</span>
                       </td>
@@ -163,14 +163,14 @@ export default function SharedInventoryPage() {
                 <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Transfer: {transferModal.name}</h3>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>From</label>
-                  <div style={{ color: '#e5e7eb', fontSize: 14, background: '#0f172a', padding: '10px 12px', borderRadius: 8 }}>
+                  <div style={{ color: '#e5e7eb', fontSize: 14, background: '#000000', padding: '10px 12px', borderRadius: 8 }}>
                     {transferModal.shopName} (Qty: {transferModal.quantity})
                   </div>
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>To Shop</label>
                   <select value={targetShopId} onChange={e => setTargetShopId(e.target.value)}
-                    style={{ width: '100%', background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }}>
+                    style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }}>
                     <option value="">Select target shop</option>
                     {shopOptions.filter(s => s.id !== transferModal.shopId).map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
@@ -181,11 +181,11 @@ export default function SharedInventoryPage() {
                   <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Quantity</label>
                   <input type="number" min="1" max={transferModal.quantity} value={transferQty}
                     onChange={e => setTransferQty(e.target.value)}
-                    style={{ width: '100%', background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
+                    style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={handleTransfer} disabled={transferring || !targetShopId}
-                    style={{ flex: 1, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', cursor: 'pointer', fontWeight: 600, opacity: transferring || !targetShopId ? 0.5 : 1 }}>
+                    style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', cursor: 'pointer', fontWeight: 600, opacity: transferring || !targetShopId ? 0.5 : 1 }}>
                     {transferring ? 'Transferring...' : 'Transfer'}
                   </button>
                   <button onClick={() => setTransferModal(null)}
@@ -201,3 +201,6 @@ export default function SharedInventoryPage() {
     </div>
   );
 }
+
+
+

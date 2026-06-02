@@ -3,8 +3,9 @@
 // Use react-icons for all icons
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaChevronDown, FaChevronLeft, FaChevronRight, FaChevronUp, FaClipboardList, FaClock, FaCodeBranch, FaCog, FaCogs, FaComments, FaCreditCard, FaDesktop, FaDownload, FaEdit, FaEnvelope, FaGift, FaHeartbeat, FaHome, FaIndustry, FaKey, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPaintBrush, FaPlug, FaPrint, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaShoppingCart, FaSignOutAlt, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaClipboardList, FaClock, FaCodeBranch, FaCog, FaComments, FaCreditCard, FaDesktop, FaEdit, FaGift, FaHeartbeat, FaHome, FaIndustry, FaKey, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 
 interface MenuItem {
@@ -45,10 +46,10 @@ const shopGroups: MenuGroup[] = [
     icon: <FaClipboardList />,
     defaultOpen: true,
     items: [
-      { icon: <FaListAlt />,  label: 'All Orders',       href: '/workorders/list' },
-      { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/workorders/inshop' },
+      { icon: <FaListAlt />,  label: 'All Orders',       href: '/shop/home' },
+      { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
       { icon: <FaEdit />,  label: 'Authorizations',    href: '/shop/work-authorizations' },
-      { icon: <FaTools />,  label: 'Templates',          href: '/shop/templates' },
+      { icon: <FaTools />,  label: 'Templates',          href: '/shop/services' },
       { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/shop/recurring-workorders' },
       { icon: <FaDesktop />,  label: 'Waiting Room',       href: '/shop/waiting-room' },
     ],
@@ -61,7 +62,7 @@ const shopGroups: MenuGroup[] = [
       { icon: <FaUsers />, label: 'Manage Team',  href: '/shop/manage-team' },
       { icon: <FaLock />, label: 'Permissions',  href: '/shop/settings/permissions' },
       { icon: <FaMoneyBill />, label: 'Payroll',      href: '/shop/payroll' },
-      { icon: <FaClock />, label: 'Time Clock',   href: '/shop/admin#timeclock' },
+      { icon: <FaClock />, label: 'Time Clock',   href: '/shop/timeclock' },
       { icon: <FaCalendarAlt />, label: 'Schedule',     href: '/shop/settings/schedule' },
     ]
   },
@@ -83,7 +84,6 @@ const shopGroups: MenuGroup[] = [
     defaultOpen: false,
     items: [
       { icon: <FaTools />, label: 'Services',            href: '/shop/services' },
-      { icon: <FaCar />, label: 'Bay Board',            href: '/shop/bays' },
       { icon: <FaRoad />, label: 'Loaners',              href: '/shop/loaners' },
       { icon: <FaBuilding />, label: 'Fleet Accounts',       href: '/shop/fleet' },
       { icon: <FaSearch />, label: 'DVI Inspections',      href: '/shop/dvi' },
@@ -97,7 +97,7 @@ const shopGroups: MenuGroup[] = [
     icon: <FaChartBar />,
     defaultOpen: false,
     items: [
-      { icon: <FaChartBar />, label: 'Reports',           href: '/shop/reports' },
+      { icon: <FaChartBar />, label: 'Reports',           href: '/shop/analytics' },
       { icon: <FaClipboardList />, label: 'EOD Report',          href: '/shop/eod-report' },
       { icon: <FaClock />, label: 'SLA Metrics',        href: '/shop/analytics/sla' },
       { icon: <FaUserTie />, label: 'Employee Perf',      href: '/shop/analytics/performance' },
@@ -115,7 +115,6 @@ const shopGroups: MenuGroup[] = [
     items: [
       { icon: <FaGift />, label: 'Referrals',    href: '/shop/referrals' },
       { icon: <FaBullhorn />, label: 'Campaigns',    href: '/shop/campaigns' },
-      { icon: <FaPaintBrush />, label: 'Branding',     href: '/shop/branding' },
       { icon: <FaPlug />, label: 'Integrations', href: '/shop/integrations' },
       { icon: <FaBolt />, label: 'Automations',  href: '/shop/automations' },
       { icon: <FaMapMarkerAlt />, label: 'Locations',    href: '/shop/locations' },
@@ -154,8 +153,8 @@ const managerGroups: MenuGroup[] = [
     icon: <FaClipboardList />,
     defaultOpen: true,
     items: [
-      { icon: <FaListAlt />,  label: 'All Orders',       href: '/workorders/list' },
-      { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/workorders/inshop' },
+      { icon: <FaListAlt />,  label: 'All Orders',       href: '/manager/home' },
+      { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
       { icon: <FaEdit />,  label: 'Authorizations',    href: '/manager/work-authorizations' },
       { icon: <FaTools />,  label: 'Templates',          href: '/manager/templates' },
       { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/manager/recurring-workorders' },
@@ -166,11 +165,11 @@ const managerGroups: MenuGroup[] = [
     icon: <FaUsers />,
     defaultOpen: false,
     items: [
-      { icon: <FaUsers />, label: 'Manage Team',  href: '/manager/manage-team' },
+      { icon: <FaUsers />, label: 'Manage Team',  href: '/manager/team' },
       { icon: <FaLock />, label: 'Permissions',  href: '/manager/settings/permissions' },
       { icon: <FaMoneyBill />, label: 'Payroll',      href: '/manager/payroll' },
-      { icon: <FaClock />, label: 'Time Clock',   href: '/manager/home#timeclock' },
-      { icon: <FaBoxes />, label: 'Inventory',    href: '/manager/home#inventory' },
+      { icon: <FaClock />, label: 'Time Clock',   href: '/manager/timeclock' },
+      { icon: <FaBoxes />, label: 'Inventory',    href: '/manager/inventory' },
     ]
   },
   {
@@ -193,7 +192,7 @@ const techGroups: MenuGroup[] = [
     defaultOpen: true,
     items: [
       { icon: <FaHome />, label: 'Home',      href: '/tech/home' },
-      { icon: <FaClipboardList />, label: 'My Jobs',   href: '/tech/home#jobs' },
+      { icon: <FaClipboardList />, label: 'My Jobs',   href: '/tech/home' },
       { icon: <FaComments />, label: 'Messages',  href: '/tech/messages' },
     ],
   },
@@ -202,8 +201,8 @@ const techGroups: MenuGroup[] = [
     icon: <FaClock />,
     defaultOpen: true,
     items: [
-      { icon: <FaClock />, label: 'Time Clock',       href: '/tech/home#timeclock' },
-      { icon: <FaListAlt />,  label: 'All Work Orders',  href: '/workorders/list' },
+      { icon: <FaClock />, label: 'Time Clock',       href: '/tech/timeclock' },
+      { icon: <FaListAlt />,  label: 'All Work Orders',  href: '/tech/home' },
       { icon: <FaIndustry />,  label: 'New In-Shop Job',  href: '/tech/new-inshop-job' },
       { icon: <FaRoad />,  label: 'New Roadside Job', href: '/tech/new-roadside-job' },
     ],
@@ -230,16 +229,22 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isCompactDesktop, setIsCompactDesktop] = useState(false);
   const [currentHash, setCurrentHash] = useState('');
 
   const groups = role === 'shop' ? shopGroups : role === 'manager' ? managerGroups : techGroups;
+  const filteredGroups = groups;
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(groups.map(g => [g.label, g.defaultOpen ?? false]))
   );
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsCompactDesktop(width >= 768 && width <= 1200);
+    };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     const handleHashChange = () => setCurrentHash(window.location.hash || '');
@@ -250,6 +255,22 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
       window.removeEventListener('hashchange', handleHashChange);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setCollapsed(isCompactDesktop);
+    }
+  }, [isCompactDesktop, isMobile]);
+
+  useEffect(() => {
+    setOpenGroups(prev => {
+      const next: Record<string, boolean> = {};
+      for (const group of filteredGroups) {
+        next[group.label] = prev[group.label] ?? (group.defaultOpen ?? false);
+      }
+      return next;
+    });
+  }, [role]);
 
   const isActive = (href: string) => {
     if (href.includes('#')) {
@@ -279,6 +300,9 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
 
   if (!isOpen) return null;
 
+  const expandedWidth = isCompactDesktop ? 206 : 230;
+  const collapsedWidth = 58;
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -293,8 +317,8 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
       )}
 
       <aside style={{
-        width: collapsed ? 58 : 230,
-        minWidth: collapsed ? 58 : 230,
+        width: collapsed ? collapsedWidth : expandedWidth,
+        minWidth: collapsed ? collapsedWidth : expandedWidth,
         height: '100vh',
         background: 'rgba(8, 12, 24, 0.82)',
         backdropFilter: 'blur(20px)',
@@ -302,7 +326,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
         borderRight: '1px solid rgba(255,255,255,0.07)',
         position: isMobile ? 'fixed' : 'sticky',
         top: 0,
-        left: isMobile && !isOpen ? -230 : 0,
+        left: isMobile && !isOpen ? -expandedWidth : 0,
         transition: 'width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)',
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -358,7 +382,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
 
         {/* Nav Groups */}
         <nav style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
-          {groups.map((group) => {
+          {filteredGroups.map((group) => {
             const isGroupOpen = collapsed ? false : (openGroups[group.label] ?? group.defaultOpen);
             const hasActiveItem = group.items.some(item => isActive(item.href));
 
@@ -413,7 +437,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
                       return (
                         <Link
                           key={idx}
-                          href={item.href}
+                          href={item.href as Route}
                           onClick={(e) => handleItemClick(e, item.href)}
                           style={{
                             display: 'flex',
@@ -467,7 +491,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
                       return (
                         <Link
                           key={idx}
-                          href={item.href}
+                          href={item.href as Route}
                           onClick={(e) => handleItemClick(e, item.href)}
                           title={item.label}
                           style={{

@@ -24,7 +24,7 @@ export default function Documents() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'Invoice': return '#3b82f6';
+      case 'Invoice': return '#e5332a';
       case 'Estimate': return '#f59e0b';
       case 'Warranty': return '#22c55e';
       case 'Receipt': return '#a855f7';
@@ -57,7 +57,7 @@ export default function Documents() {
           <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb'}}>My Documents</h1>
           <button style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,
@@ -84,7 +84,7 @@ export default function Documents() {
                   <div style={{display:'flex', alignItems:'center', gap:16}}>
                     <span style={{
                       padding:'4px 8px',
-                      background:`rgba(${getTypeColor(document.type) === '#3b82f6' ? '59,130,246' : getTypeColor(document.type) === '#f59e0b' ? '245,158,11' : getTypeColor(document.type) === '#22c55e' ? '34,197,94' : getTypeColor(document.type) === '#a855f7' ? '168,85,247' : '239,68,68'},0.2)`,
+                      background:`rgba(${getTypeColor(document.type) === '#e5332a' ? '229,51,42' : getTypeColor(document.type) === '#f59e0b' ? '245,158,11' : getTypeColor(document.type) === '#22c55e' ? '34,197,94' : getTypeColor(document.type) === '#a855f7' ? '168,85,247' : '239,68,68'},0.2)`,
                       color:getTypeColor(document.type),
                       borderRadius:6,
                       fontSize:12,
@@ -99,7 +99,7 @@ export default function Documents() {
                 <div style={{display:'flex', gap:12}}>
                   <button style={{
                     padding:'8px 16px',
-                    background:'#3b82f6',
+                    background:'#e5332a',
                     color:'white',
                     border:'none',
                     borderRadius:6,
@@ -137,7 +137,7 @@ export default function Documents() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,

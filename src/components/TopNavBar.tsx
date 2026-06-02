@@ -4,6 +4,7 @@ import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { useSocket } from '@/lib/socket';
 import OilSlickNavCanvas from '@/components/OilSlickNavCanvas';
 import ShopSwitcher from '@/components/ShopSwitcher';
@@ -19,43 +20,84 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   const router = useRouter();
   const { isConnected, emit, on, off } = useSocket();
   const [userRole, setUserRole] = useState('');
+  const [userName, setUserName] = useState('');
   const [shopName, setShopName] = useState('');
   const [shopId, setShopId] = useState('');
   const [userId, setUserId] = useState('');
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [navMsg, setNavMsg] = useState<{type:'success'|'error';text:string}|null>(null);
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; time: string; read?: boolean; type?: string }>>([]);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; time: string; read?: boolean; type?: string; icon?: string }>>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationSoundEnabled, setNotificationSoundEnabled] = useState(true);
-  const [notificationPreferences, setNotificationPreferences] = useState<Record<string, boolean>>({});
+  const [_notificationPreferences, setNotificationPreferences] = useState<Record<string, boolean>>({});
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    messages: true,
+    workOrders: true,
+    system: true,
+  });
   const lastUnreadRef = useRef(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const role = localStorage.getItem('userRole');
-    const shop = localStorage.getItem('shopId');
-    const user = localStorage.getItem('userId');
+    const roleFromStorage = localStorage.getItem('userRole');
+    const nameFromStorage = localStorage.getItem('userName');
+    const shopFromStorage = localStorage.getItem('shopId');
+    const userFromStorage = localStorage.getItem('userId');
 
-    setUserRole(role || '');
-    setUserId(user || '');
+    let resolvedRole = roleFromStorage || '';
+    let resolvedName = nameFromStorage || 'User';
+    let resolvedShop = shopFromStorage || '';
+    let resolvedUserId = userFromStorage || '';
 
-    if (shop) {
-      setShopId(shop);
-      fetchShopName(shop);
+    try {
+      const rawUser = localStorage.getItem('user');
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser) as Record<string, unknown>;
+        if (typeof parsed.role === 'string') resolvedRole = parsed.role;
+        if (typeof parsed.name === 'string' && parsed.name.trim()) resolvedName = parsed.name;
+        if (typeof parsed.id === 'string' && parsed.id.trim()) resolvedUserId = parsed.id;
+        if (typeof parsed.shopId === 'string' && parsed.shopId.trim()) resolvedShop = parsed.shopId;
+      }
+    } catch {
+      // Ignore malformed legacy payloads.
     }
 
-    if (user && (role === 'tech' || role === 'manager')) {
-      checkClockInStatus(user);
+    if (resolvedRole) localStorage.setItem('userRole', resolvedRole);
+    if (resolvedName) localStorage.setItem('userName', resolvedName);
+    if (resolvedUserId) localStorage.setItem('userId', resolvedUserId);
+    if (resolvedShop) localStorage.setItem('shopId', resolvedShop);
+
+    setUserRole(resolvedRole);
+    setUserName(resolvedName);
+    setUserId(resolvedUserId);
+
+    if (resolvedShop) {
+      setShopId(resolvedShop);
+      fetchShopName(resolvedShop);
+    }
+
+    if (resolvedUserId && (resolvedRole === 'tech' || resolvedRole === 'manager')) {
+      checkClockInStatus(resolvedUserId);
+    }
+
+    // Load notification preferences from localStorage
+    const savedPrefs = localStorage.getItem('notificationPrefs');
+    if (savedPrefs) {
+      try {
+        setNotificationPrefs(JSON.parse(savedPrefs));
+      } catch (error) {
+        console.error('Error parsing notification preferences:', error);
+      }
     }
 
     const interval = setInterval(() => {
-      if (user && (role === 'tech' || role === 'manager')) checkClockInStatus(user);
+      if (resolvedUserId && (resolvedRole === 'tech' || resolvedRole === 'manager')) checkClockInStatus(resolvedUserId);
     }, 10000);
 
     return () => clearInterval(interval);
@@ -67,22 +109,22 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     const fetchNotificationSettings = async () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!token) return;
         const response = await fetch(`/api/shops/settings?shopId=${shopId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           credentials: 'include',
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          const settings = data.settings || data.shop?.settings || {};
-          if (settings) {
-            setNotificationsEnabled(settings.notificationsEnabled ?? true);
-            setNotificationSoundEnabled(settings.notificationSoundEnabled ?? true);
-            setNotificationPreferences(settings.notificationPreferences || {});
-          }
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const settings = data.settings || data.shop?.settings || {};
+        if (settings) {
+          setNotificationsEnabled(settings.notificationsEnabled ?? true);
+          setNotificationSoundEnabled(settings.notificationSoundEnabled ?? true);
+          setNotificationPreferences(settings.notificationPreferences || {});
         }
-      } catch (error) {
-        console.error('Error loading notification settings:', error);
+      } catch {
       }
     };
 
@@ -126,11 +168,49 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           time: formatTimeAgo(conv.lastMessageAt),
           read: false,
           type: 'messages',
+          icon: '💬',
         }));
 
-      setNotifications(messageNotifications);
-    } catch (error) {
-      console.error('Error fetching message notifications:', error);
+      // Add work order notifications for shop owners/managers
+      let workOrderNotifications: any[] = [];
+      if (userRole === 'shop' || userRole === 'manager') {
+        try {
+          const woResponse = await fetch('/api/workorders?status=pending&limit=5', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (woResponse.ok) {
+            const woData = await woResponse.json();
+            const workOrders = Array.isArray(woData) ? woData : woData.workOrders || [];
+            workOrderNotifications = workOrders
+              .filter((wo: any) => {
+                const createdAt = new Date(wo.createdAt);
+                const hoursAgo = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+                return hoursAgo < 24; // Only show work orders from last 24 hours
+              })
+              .slice(0, 3)
+              .map((wo: any) => ({
+                id: `wo-${wo.id}`,
+                title: `New work order: ${wo.serviceType || 'Service'}`,
+                body: `${wo.customerName || 'Customer'} - ${wo.vehicleType || 'Vehicle'}`,
+                time: formatTimeAgo(wo.createdAt),
+                read: false,
+                type: 'workorders',
+                icon: '🔧',
+              }));
+          }
+        } catch (_error) {
+          // Ignore transient notification fetch failures.
+        }
+      }
+
+      // Add system notifications
+      const systemNotifications: Array<{ id: string; type: string; title: string; message: string; time: string }> = [
+        // You can add system-wide notifications here
+        // For example: maintenance notices, feature updates, etc.
+      ];
+
+      setNotifications([...messageNotifications, ...workOrderNotifications, ...systemNotifications]);
+    } catch {
     }
   };
 
@@ -201,11 +281,11 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
 
   const getRoleBadge = () => {
     const roles: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-      shop: { icon: <FaStore />, label: 'Shop Owner', color: '#3b82f6' },
-      manager: { icon: <FaUserTie />, label: 'Manager', color: '#f59e0b' },
-      tech: { icon: <FaWrench />, label: 'Tech', color: '#10b981' },
-      admin: { icon: <FaCog />, label: 'Admin', color: '#8b5cf6' },
-      customer: { icon: <FaUser />, label: 'Customer', color: '#6b7280' },
+      shop: { icon: <FaStore />, label: 'Shop Owner', color: '#e5332a' },
+      manager: { icon: <FaUserTie />, label: 'Manager', color: '#e5332a' },
+      tech: { icon: <FaWrench />, label: 'Tech', color: '#e5332a' },
+      admin: { icon: <FaCog />, label: 'Admin', color: '#e5332a' },
+      customer: { icon: <FaUser />, label: 'Customer', color: '#e5332a' },
     };
 
     const role = roles[userRole] || { icon: '', label: 'User', color: '#6b7280' };
@@ -238,8 +318,21 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       case 'manager': return '/manager/home';
       case 'tech': return '/tech/home';
       case 'admin': return '/admin/home';
-      case 'customer': return '/customer/home';
+      case 'superadmin': return '/admin/home';
+      case 'customer': return '/customer/dashboard';
       default: return '/';
+    }
+  };
+
+  const getProfileLink = (): Route => {
+    switch (userRole) {
+      case 'shop': return '/shop/profile' as Route;
+      case 'manager': return '/manager/profile' as Route;
+      case 'tech': return '/tech/profile' as Route;
+      case 'admin': return '/admin/profile' as Route;
+      case 'superadmin': return '/superadmin/profile' as Route;
+      case 'customer': return '/customer/profile' as Route;
+      default: return '/' as Route;
     }
   };
 
@@ -294,25 +387,43 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   const handleNotificationClick = (n: { id: string; type?: string }) => {
     markAsRead(n.id);
     setShowNotifications(false);
-    router.push(getMessagesLink());
+
+    // Handle different notification types
+    switch (n.type) {
+      case 'messages':
+        router.push(getMessagesLink() as Route);
+        break;
+      case 'workorders':
+        const workOrderId = n.id.replace('wo-', '');
+        router.push(`/workorders/${workOrderId}` as Route);
+        break;
+      default:
+        router.push(getMessagesLink() as Route);
+    }
   };
 
   const handleSignOut = () => {
     if (typeof window === 'undefined') return;
 
     localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     localStorage.removeItem('shopId');
     localStorage.removeItem('userId');
+    localStorage.removeItem('user');
     window.location.href = '/auth/login';
   };
 
   const filteredNotifications = notificationsEnabled
-    ? notifications.filter((n) => (n.type ? notificationPreferences[n.type] !== false : true))
+    ? notifications.filter((n) => {
+        if (!n.type) return true;
+        return notificationPrefs[n.type as 'messages' | 'workOrders' | 'system'] !== false;
+      })
     : [];
 
   const unreadCount = filteredNotifications.filter(n => !n.read).length;
+  const displayUserName = userName || shopName || 'User';
 
   const markAsRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -320,6 +431,18 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
 
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const updateNotificationPrefs = (type: string, enabled: boolean) => {
+    const newPrefs = {
+      ...notificationPrefs,
+      [type]: enabled,
+    };
+    setNotificationPrefs(newPrefs);
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('notificationPrefs', JSON.stringify(newPrefs));
+    }
   };
 
   const playNotificationChime = () => {
@@ -365,8 +488,14 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           alignItems: 'center',
           gap: 8,
         }}
+        title={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'No new notifications'}
       >
-        <span role="img" aria-label="Notifications"><FaBell style={{marginRight:4}} /></span>
+        <span role="img" aria-label="Notifications">
+          <FaBell style={{
+            marginRight: 4,
+            color: unreadCount > 0 ? '#ef4444' : '#e5e7eb'
+          }} />
+        </span>
         {unreadCount > 0 && (
           <span style={{
             background: '#ef4444',
@@ -376,7 +505,14 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
             fontSize: 11,
             fontWeight: 700,
             lineHeight: 1,
-          }}>{unreadCount}</span>
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: 20,
+            height: 20,
+          }}>
+            !
+          </span>
         )}
       </button>
 
@@ -394,29 +530,149 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           zIndex: 2000,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ color: '#e5e7eb', fontWeight: 700, fontSize: 14 }}>Notifications</div>
-            <button onClick={markAllAsRead} style={{ background: 'transparent', border: 'none', color: '#93c5fd', fontSize: 12, cursor: 'pointer' }}>
-              Mark all read
-            </button>
+            <div style={{ color: '#e5e7eb', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FaBell style={{ fontSize: 14 }} />
+              Recent Notifications
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={markAllAsRead}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#93c5fd',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 4,
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(147, 197, 253, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                Mark all read
+              </button>
+            </div>
           </div>
 
           <div style={{ maxHeight: 360, overflowY: 'auto' }}>
             {filteredNotifications.length === 0 ? (
-              <div style={{ padding: 16, color: '#9ca3af', fontSize: 13 }}>No notifications</div>
+              <div style={{ padding: 16, color: '#9ca3af', fontSize: 13, textAlign: 'center' }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>🔔</div>
+                No new notifications
+              </div>
             ) : filteredNotifications.map(n => (
               <div
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
-                style={{ padding: 12, borderBottom: '1px solid rgba(255,255,255,0.05)', background: n.read ? 'transparent' : 'rgba(37,99,235,0.08)', cursor: 'pointer' }}
+                style={{
+                  padding: 12,
+                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  background: n.read ? 'transparent' : 'rgba(37,99,235,0.08)',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = n.read ? 'rgba(255,255,255,0.02)' : 'rgba(37,99,235,0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(37,99,235,0.08)';
+                }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                  <div style={{ color: '#e5e7eb', fontWeight: 700, fontSize: 13 }}>{n.title}</div>
-                  <span style={{ color: '#9ca3af', fontSize: 12 }}>{n.time}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{
+                    fontSize: 16,
+                    lineHeight: 1,
+                    marginTop: 2,
+                    opacity: n.read ? 0.6 : 1,
+                  }}>
+                    {n.icon || '🔔'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: 8,
+                      marginBottom: 4,
+                    }}>
+                      <div style={{
+                        color: '#e5e7eb',
+                        fontWeight: 600,
+                        fontSize: 13,
+                        lineHeight: 1.3,
+                        opacity: n.read ? 0.8 : 1,
+                      }}>
+                        {n.title}
+                      </div>
+                      <span style={{
+                        color: '#9ca3af',
+                        fontSize: 11,
+                        whiteSpace: 'nowrap',
+                        opacity: n.read ? 0.6 : 0.8,
+                      }}>
+                        {n.time}
+                      </span>
+                    </div>
+                    <div style={{
+                      color: '#cbd5e1',
+                      fontSize: 12,
+                      lineHeight: 1.4,
+                      marginBottom: 6,
+                      opacity: n.read ? 0.7 : 0.9,
+                    }}>
+                      {n.body}
+                    </div>
+                    <div style={{
+                      color: '#93c5fd',
+                      fontSize: 11,
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}>
+                      {n.type === 'messages' && 'View messages'}
+                      {n.type === 'workorders' && 'View work order'}
+                      {!n.type && 'View details'}
+                      <FaArrowRight style={{ fontSize: 10 }} />
+                    </div>
+                  </div>
                 </div>
-                <div style={{ color: '#cbd5e1', fontSize: 12, marginTop: 4 }}>{n.body}</div>
-                <div style={{ color: '#93c5fd', fontSize: 11, marginTop: 6 }}>Click to view messages <FaArrowRight style={{marginRight:4}} /></div>
               </div>
             ))}
+          </div>
+
+          {/* Notification Preferences */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px' }}>
+            <div style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Preferences</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: '#d1d5db' }}>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.messages !== false}
+                  onChange={(e) => updateNotificationPrefs('messages', e.target.checked)}
+                  style={{ accentColor: '#3b82f6' }}
+                />
+                Messages
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: '#d1d5db' }}>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.workOrders !== false}
+                  onChange={(e) => updateNotificationPrefs('workOrders', e.target.checked)}
+                  style={{ accentColor: '#3b82f6' }}
+                />
+                Work Orders
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: '#d1d5db' }}>
+                <input
+                  type="checkbox"
+                  checked={notificationPrefs.system !== false}
+                  onChange={(e) => updateNotificationPrefs('system', e.target.checked)}
+                  style={{ accentColor: '#3b82f6' }}
+                />
+                System Updates
+              </label>
+            </div>
           </div>
         </div>
       )}
@@ -458,20 +714,23 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           {showMenuButton && (
             <button
               onClick={onMenuToggle}
+              aria-label="Toggle menu"
               style={{
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.10)',
-                color: '#64748b',
                 width: 34, height: 34,
                 borderRadius: 8,
                 cursor: 'pointer',
-                fontSize: 16,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              
+              <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ width: 16, height: 2, borderRadius: 2, background: '#e5332a', display: 'block' }} />
+                <span style={{ width: 16, height: 2, borderRadius: 2, background: '#e5332a', display: 'block' }} />
+                <span style={{ width: 16, height: 2, borderRadius: 2, background: '#e5332a', display: 'block' }} />
+              </span>
             </button>
           )}
 
@@ -516,6 +775,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           <div style={{ position: 'relative' }} ref={profileMenuRef}>
             <button
               onClick={() => setShowProfileMenu(prev => !prev)}
+              aria-haspopup="menu"
+              aria-expanded={showProfileMenu}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -531,6 +792,22 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
+              <span style={{
+                width: 22,
+                height: 22,
+                borderRadius: 6,
+                background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                color: '#fff',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 11,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}>
+                {displayUserName.charAt(0).toUpperCase()}
+              </span>
+              <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayUserName}</span>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: liveIndicator ? '#22c55e' : '#475569', display: 'inline-block', flexShrink: 0 }} />
               <span style={{ fontSize: 14 }}><FaCaretDown style={{marginRight:4}} /></span>
             </button>
@@ -549,11 +826,41 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                 zIndex: 2000,
               }}>
                 {/* Role badge */}
-                <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {getRoleBadge()}
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: liveIndicator ? '#22c55e' : '#475569', display: 'inline-block', flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: liveIndicator ? '#4ade80' : '#475569', fontWeight: 600 }}>{liveIndicator ? 'Live' : 'Offline'}</span>
+                <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {displayUserName}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {getRoleBadge()}
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: liveIndicator ? '#22c55e' : '#475569', display: 'inline-block', flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, color: liveIndicator ? '#4ade80' : '#475569', fontWeight: 600 }}>{liveIndicator ? 'Live' : 'Offline'}</span>
+                  </div>
                 </div>
+
+                {/* My Profile */}
+                <Link
+                  href={getProfileLink()}
+                  onClick={() => setShowProfileMenu(false)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    color: '#e2e8f0',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    textDecoration: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <FaUser style={{marginRight:4}} /> My Profile
+                </Link>
 
                 {/* Clock In/Out for tech/manager */}
                 {(userRole === 'tech' || userRole === 'manager') && (

@@ -2,6 +2,7 @@ package com.fixtray.app;
 
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import androidx.activity.OnBackPressedCallback;
@@ -13,6 +14,14 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Set the native-app cookie BEFORE super.onCreate loads the first URL.
+        // Vercel's server reads this cookie to server-render the mobile shell
+        // from byte 1 — no flash, no client-side detection needed.
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setCookie("https://fixtray.app", "x-fixtray-native=android; Path=/; SameSite=Lax");
+        cookieManager.flush();
+
         super.onCreate(savedInstanceState);
 
         // System bars sit above WebView, not overlapping

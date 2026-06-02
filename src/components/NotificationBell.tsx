@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { Notification } from '@/types/customer';
 
 export default function NotificationBell() {
@@ -93,7 +94,7 @@ export default function NotificationBell() {
   const handleNotifClick = (notif: Notification) => {
     if (!notif.read) markAsRead(notif.id);
     setShowDropdown(false);
-    router.push(getMessagesLink());
+    router.push(getMessagesLink() as Route);
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

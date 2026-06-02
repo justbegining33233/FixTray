@@ -10,7 +10,7 @@ import prisma from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   const shopId = new URL(request.url).searchParams.get('shopId');
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
-  const errorRedirect = `${appUrl}/shop/settings?stripe_connect=error&tab=billing`;
+  const errorRedirect = `${appUrl}/shop/settings?stripe_connect=error&tab=general`;
 
   if (!shopId) return NextResponse.redirect(errorRedirect);
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const accountLink = await stripe.accountLinks.create({
       account: shop.stripeAccountId,
       refresh_url: `${appUrl}/api/stripe/connect/refresh?shopId=${shopId}`,
-      return_url: `${appUrl}/shop/settings?stripe_connect=success&tab=billing`,
+      return_url: `${appUrl}/shop/settings?stripe_connect=success&tab=general`,
       type: 'account_onboarding',
     });
 

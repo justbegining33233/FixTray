@@ -253,9 +253,9 @@ export default function FindShops() {
                     <Link href={`/customer/shop/${fav.shop.id}`} style={{
                       flex:1,
                       padding:'12px',
-                      background:'rgba(59,130,246,0.1)',
-                      color:'#3b82f6',
-                      border:'1px solid rgba(59,130,246,0.3)',
+                      background:'rgba(229,51,42,0.1)',
+                      color:'#e5332a',
+                      border:'1px solid rgba(229,51,42,0.3)',
                       borderRadius:8,
                       fontSize:14,
                       fontWeight:600,
@@ -380,9 +380,9 @@ export default function FindShops() {
                     <Link href={`/customer/shop/${shop.id}`} style={{
                       flex:1,
                       padding:'12px',
-                      background:'rgba(59,130,246,0.1)',
-                      color:'#3b82f6',
-                      border:'1px solid rgba(59,130,246,0.3)',
+                      background:'rgba(229,51,42,0.1)',
+                      color:'#e5332a',
+                      border:'1px solid rgba(229,51,42,0.3)',
                       borderRadius:8,
                       fontSize:14,
                       fontWeight:600,
@@ -442,7 +442,7 @@ export default function FindShops() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/home" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,
@@ -458,3 +458,4 @@ export default function FindShops() {
     </div>
   );
 }
+

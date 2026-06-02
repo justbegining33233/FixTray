@@ -3,6 +3,7 @@
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaComments, FaExclamationTriangle, FaShieldAlt, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
+import { useSocket } from '@/lib/socket';
 
 // --- Types --------------------------------------------------------------------
 
@@ -46,21 +47,25 @@ interface MessagingCardProps {
 
 // --- Constants ----------------------------------------------------------------
 
-const ROLE_ICON: Record<string, React.ReactNode> = { customer: <FaUser />, tech: <FaWrench />, manager: <FaUserTie />, shop: <FaStore />, admin: <FaShieldAlt /> };
-const ROLE_LABEL: Record<string, string> = { customer: 'Customer', tech: 'Tech', manager: 'Manager', shop: 'Shop', admin: 'Admin' };
-const ROLE_COLOR: Record<string, string> = { customer: '#3b82f6', tech: '#10b981', manager: '#8b5cf6', shop: '#f59e0b', admin: '#ef4444' };
+const ROLE_ICON: Record<string, React.ReactNode> = { customer: <FaUser />, tech: <FaWrench />, manager: <FaUserTie />, shop: <FaStore />, admin: <FaShieldAlt />, superadmin: <FaShieldAlt /> };
+const ROLE_LABEL: Record<string, string> = { customer: 'Customer', tech: 'Tech', manager: 'Manager', shop: 'Shop', admin: 'FixTray Employee', superadmin: 'Super Admin' };
+const ROLE_COLOR: Record<string, string> = { customer: '#3b82f6', tech: '#10b981', manager: '#8b5cf6', shop: '#f59e0b', admin: '#ef4444', superadmin: '#f43f5e' };
 
-type TabKey = 'all' | 'customer' | 'tech' | 'manager';
-const TABS: { key: TabKey; label: string }[] = [
+type TabKey = 'all' | 'customer' | 'shop' | 'tech' | 'manager' | 'admin' | 'superadmin';
+const ROLE_FILTERS: { key: TabKey; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'customer', label: 'Customers' },
+  { key: 'shop', label: 'Shops' },
   { key: 'manager', label: 'Managers' },
   { key: 'tech', label: 'Techs' },
+  { key: 'admin', label: 'Employees' },
+  { key: 'superadmin', label: 'Super Admin' },
 ];
 
 // --- Component ----------------------------------------------------------------
 
 export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
+  const { on, off } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const selectedConversationRef = useRef<Conversation | null>(null);
@@ -76,6 +81,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   const [showCompose, setShowCompose] = useState(false);
   const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
   const [newRecipient, setNewRecipient] = useState<Contact | null>(null);
+  const [composeRoleFilter, setComposeRoleFilter] = useState<TabKey>('all');
   const [contactsLoading, setContactsLoading] = useState(false);
 
   // Conversations filtered by active tab
@@ -86,7 +92,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
 
   // Unread counts per tab
   const unreadByTab = useMemo(() => {
-    const counts: Record<string, number> = { all: 0, customer: 0, tech: 0, manager: 0 };
+    const counts: Record<string, number> = { all: 0, customer: 0, shop: 0, tech: 0, manager: 0, admin: 0, superadmin: 0 };
     for (const c of conversations) {
       counts.all += c.unreadCount;
       if (counts[c.contactRole] !== undefined) counts[c.contactRole] += c.unreadCount;
@@ -94,27 +100,44 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
     return counts;
   }, [conversations]);
 
+  const filteredAvailableContacts = useMemo(() => {
+    if (composeRoleFilter === 'all') return availableContacts;
+    return availableContacts.filter((c) => c.role === composeRoleFilter);
+  }, [availableContacts, composeRoleFilter]);
+
   // Auto-scroll to the bottom whenever thread messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [threadMessages]);
 
-  // Poll the active thread every 5 s for new messages from the other party
+  // Poll the active thread every 30s as fallback; socket events trigger immediate refresh
   useEffect(() => {
     if (!selectedConversation) return;
-    const interval = setInterval(() => fetchThread(selectedConversation), 5000);
+    const interval = setInterval(() => fetchThread(selectedConversation), 30000);
     return () => clearInterval(interval);
      
   }, [selectedConversation?.contactId, selectedConversation?.contactRole]);
 
   useEffect(() => {
-    if (shopId && userId) {
+    if (userId) {
       fetchMessages();
     }
-    const interval = setInterval(fetchMessages, 5000);
+    const interval = setInterval(fetchMessages, 30000);
     return () => clearInterval(interval);
      
   }, [shopId, userId]);
+
+  // Listen for real-time new-message events from Socket.IO
+  useEffect(() => {
+    const handleNewMessage = () => {
+      fetchMessages();
+      if (selectedConversationRef.current) {
+        fetchThread(selectedConversationRef.current);
+      }
+    };
+    on('new-message', handleNewMessage);
+    return () => { off('new-message', handleNewMessage); };
+  }, [on, off]);
 
   // Keep ref in sync with state so stale-closure polls can read the current selection
   useEffect(() => {
@@ -258,29 +281,35 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', margin: 0 }}><FaComments style={{marginRight:4}} /> Messages</h2>
           <button
-            onClick={() => { setShowCompose(true); setSelectedConversation(null); fetchAvailableContacts(); }}
+            onClick={() => { setShowCompose(true); setSelectedConversation(null); setComposeRoleFilter(activeTab); fetchAvailableContacts(); }}
             style={{ padding: '6px 14px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             + New
           </button>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 6 }}>
-          {TABS.map((tab) => {
-            const count = unreadByTab[tab.key] || 0;
-            const active = activeTab === tab.key;
-            return (
-              <button key={tab.key} onClick={() => { setActiveTab(tab.key); setSelectedConversation(null); }}
-                style={{ flex: 1, padding: '7px 8px', background: active ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', border: active ? '1px solid #3b82f6' : '1px solid transparent', borderRadius: 6, color: active ? '#93c5fd' : '#9aa3b2', fontSize: 12, fontWeight: active ? 700 : 500, cursor: 'pointer', position: 'relative' }}>
-                {tab.label}
-                {count > 0 && (
-                  <span style={{ position: 'absolute', top: -5, right: -4, background: '#e5332a', color: 'white', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
-                    {count > 99 ? '99+' : count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Category dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label style={{ color: '#9aa3b2', fontSize: 12, fontWeight: 600 }}>Category</label>
+          <select
+            value={activeTab}
+            onChange={(e) => {
+              const next = e.target.value as TabKey;
+              setActiveTab(next);
+              setSelectedConversation(null);
+            }}
+            style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#e5e7eb', fontSize: 12, fontWeight: 600 }}>
+            {ROLE_FILTERS.map((filter) => {
+              const count = unreadByTab[filter.key] || 0;
+              return (
+                <option key={filter.key} value={filter.key}>
+                  {filter.label}{count > 0 ? ` (${count > 99 ? '99+' : count} unread)` : ''}
+                </option>
+              );
+            })}
+          </select>
+          <span style={{ fontSize: 11, color: '#6b7280' }}>
+            {filteredConversations.length} thread{filteredConversations.length === 1 ? '' : 's'}
+          </span>
         </div>
       </div>
 
@@ -338,12 +367,25 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
             /* Compose */
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 16, gap: 12 }}>
               <div>
+                <label style={{ display: 'block', color: '#9aa3b2', fontSize: 12, marginBottom: 6 }}>Recipient type:</label>
+                <select
+                  value={composeRoleFilter}
+                  onChange={(e) => {
+                    setComposeRoleFilter(e.target.value as TabKey);
+                    setNewRecipient(null);
+                  }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13, marginBottom: 10 }}>
+                  {ROLE_FILTERS.map((filter) => (
+                    <option key={`compose-${filter.key}`} value={filter.key}>{filter.label}</option>
+                  ))}
+                </select>
+
                 <label style={{ display: 'block', color: '#9aa3b2', fontSize: 12, marginBottom: 6 }}>To:</label>
                 {contactsLoading ? (
                   <div style={{ color: '#6b7280', fontSize: 12 }}>Loading contacts...</div>
-                ) : availableContacts.length === 0 ? (
+                ) : filteredAvailableContacts.length === 0 ? (
                   <div style={{ color: '#f59e0b', fontSize: 13, padding: '10px 12px', background: 'rgba(245,158,11,0.08)', borderRadius: 8 }}>
-                    No contacts available yet. Contacts appear when customers have active work orders or appointments.
+                    No contacts in this category yet.
                   </div>
                 ) : (
                   <select
@@ -354,11 +396,11 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                       const idx = val.indexOf('_');
                       const role = val.slice(0, idx);
                       const id = val.slice(idx + 1);
-                      setNewRecipient(availableContacts.find((c) => c.id === id && c.role === role) ?? null);
+                      setNewRecipient(filteredAvailableContacts.find((c) => c.id === id && c.role === role) ?? null);
                     }}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13 }}>
                     <option value=''> -  Select recipient  - </option>
-                    {availableContacts.map((c) => (
+                    {filteredAvailableContacts.map((c) => (
                       <option key={`${c.role}_${c.id}`} value={`${c.role}_${c.id}`}>
                         {ROLE_ICON[c.role]} {c.name} ({ROLE_LABEL[c.role] ?? c.role})  -  {c.contextLabel}
                       </option>
@@ -379,7 +421,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                   style={{ flex: 1, padding: 10, background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || !messageText.trim() || !newRecipient ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || !messageText.trim() || !newRecipient ? 0.5 : 1 }}>
                   {loading ? 'Sending...' : 'Send Message'}
                 </button>
-                <button onClick={() => { setShowCompose(false); setMessageText(''); setNewRecipient(null); }}
+                <button onClick={() => { setShowCompose(false); setMessageText(''); setNewRecipient(null); setComposeRoleFilter(activeTab); }}
                   style={{ padding: '10px 20px', background: '#6b7280', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
                   Cancel
                 </button>

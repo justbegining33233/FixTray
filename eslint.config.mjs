@@ -28,10 +28,14 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "coverage/**",
     "next-env.d.ts",
     // Ignore root JS scripts and scripts folder
     "*.js",
     "scripts/**",
+    // Ignore temporary helper scripts and Android build output
+    "tmp/**",
+    "android/**",
   ]),
 ]);
 

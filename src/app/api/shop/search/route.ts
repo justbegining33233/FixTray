@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get('q')?.trim();
 
   if (!q || q.length < 2) {
-    return NextResponse.json({ customers: [], workOrders: [], vehicles: [] });
+    return NextResponse.json({ customers: [], workOrders: [], vehicles: [], parts: [], laborRates: [] });
   }
 
   try {
@@ -86,7 +86,48 @@ export async function GET(request: NextRequest) {
       take: 5,
     });
 
-    return NextResponse.json({ customers, workOrders, vehicles });
+    // Search parts/inventory
+    const parts = await prisma.inventoryItem.findMany({
+      where: {
+        shopId,
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { sku: { contains: q, mode: 'insensitive' } },
+          { type: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        type: true,
+        quantity: true,
+        price: true,
+      },
+      take: 5,
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // Search labor rates
+    const laborRates = await prisma.shopLaborRate.findMany({
+      where: {
+        shopId,
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { category: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        rate: true,
+      },
+      take: 5,
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return NextResponse.json({ customers, workOrders, vehicles, parts, laborRates });
   } catch (error) {
     console.error('Global search error:', error);
     return NextResponse.json({ error: 'Search failed' }, { status: 500 });

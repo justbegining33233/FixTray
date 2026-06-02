@@ -9,10 +9,7 @@ export interface PlatformSettings {
   enableCustomerPortal: boolean;
   enableEmailNotifications: boolean;
   enableSmsNotifications: boolean;
-  maxShopsPerPlan: Record<string, number>;
   serviceFee: number; // flat fee per work order in cents
-  trialDays: number;
-  defaultSubscriptionPlan: string;
 }
 
 const defaults: PlatformSettings = {
@@ -24,10 +21,7 @@ const defaults: PlatformSettings = {
   enableCustomerPortal: true,
   enableEmailNotifications: true,
   enableSmsNotifications: false,
-  maxShopsPerPlan: { starter: 1, growth: 5, professional: 15, business: 40, enterprise: 999 },
   serviceFee: 500,
-  trialDays: 7,
-  defaultSubscriptionPlan: 'starter',
 };
 
 let current: PlatformSettings = { ...defaults };

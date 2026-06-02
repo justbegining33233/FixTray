@@ -146,10 +146,10 @@ export default function TwoFactorSettingsPage() {
             </div>
           )}
 
-          {/* â"EURâ"EURâ"EUR SETUP STEP: show QR code â"EURâ"EURâ"EUR */}
+          {/* "EUR"EUR"EUR SETUP STEP: show QR code "EUR"EUR"EUR */}
           {step === 'verify' && qrCode && (
-            <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-              <p style={{ color: '#93c5fd', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
+            <div style={{ background: 'rgba(229,51,42,0.08)', border: '1px solid rgba(229,51,42,0.25)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+              <p style={{ color: '#ffb4ad', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
                 1. Scan this QR code with your authenticator app
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
@@ -161,7 +161,7 @@ export default function TwoFactorSettingsPage() {
                   {secret}
                 </div>
               </details>
-              <p style={{ color: '#93c5fd', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
+              <p style={{ color: '#ffb4ad', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
                 2. Enter the 6-digit code your app shows
               </p>
               <input
@@ -189,7 +189,7 @@ export default function TwoFactorSettingsPage() {
             </div>
           )}
 
-          {/* â"EURâ"EURâ"EUR DISABLE STEP: confirm with TOTP â"EURâ"EURâ"EUR */}
+          {/* "EUR"EUR"EUR DISABLE STEP: confirm with TOTP "EUR"EUR"EUR */}
           {step === 'disable' && (
             <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <p style={{ color: '#fca5a5', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
@@ -220,11 +220,11 @@ export default function TwoFactorSettingsPage() {
             </div>
           )}
 
-          {/* â"EURâ"EURâ"EUR IDLE STATE: action buttons â"EURâ"EURâ"EUR */}
+          {/* "EUR"EUR"EUR IDLE STATE: action buttons "EUR"EUR"EUR */}
           {step === 'idle' && (
             <div>
               {!enabled ? (
-                <button onClick={handleSetup} disabled={fetching} style={{ width: '100%', padding: '13px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+                <button onClick={handleSetup} disabled={fetching} style={{ width: '100%', padding: '13px', borderRadius: 10, border: 'none', background: '#e5332a', color: 'white', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
                   {fetching ? 'Generating...' : <><FaLock style={{marginRight:4}} /> Enable Two-Factor Authentication</>}
                 </button>
               ) : (
@@ -246,3 +246,4 @@ export default function TwoFactorSettingsPage() {
     </div>
   );
 }
+

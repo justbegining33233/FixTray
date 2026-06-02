@@ -4,6 +4,70 @@ import { requireAuth } from '@/lib/middleware';
 import { sendEmail } from '@/lib/emailService';
 import { sendSms } from '@/lib/smsService';
 
+async function deliverCampaign(campaign: {
+  id: string;
+  type: string;
+  subject: string | null;
+  body: string;
+  shopId: string;
+}, shopName: string) {
+  const customerIds = await prisma.workOrder.findMany({
+    where: { shopId: campaign.shopId },
+    select: { customerId: true },
+    distinct: ['customerId'],
+  });
+
+  const customers = await prisma.customer.findMany({
+    where: { id: { in: customerIds.map((c) => c.customerId) } },
+    select: { id: true, email: true, phone: true, firstName: true },
+  });
+
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const customer of customers) {
+    try {
+      if ((campaign.type === 'email' || campaign.type === 'both') && customer.email) {
+        const sent = await sendEmail({
+          to: customer.email,
+          subject: campaign.subject || `${shopName} Update`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #e5332a;">${shopName}</h2>
+              <div>${campaign.body}</div>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;"/>
+              <p style="color: #888; font-size: 12px;">You received this because you're a customer of ${shopName}.</p>
+            </div>
+          `,
+        });
+        if (sent) sentCount++;
+        else failedCount++;
+      }
+
+      if ((campaign.type === 'sms' || campaign.type === 'both') && customer.phone) {
+        const plainText = campaign.body.replace(/<[^>]*>/g, '').substring(0, 160);
+        const sent = await sendSms(customer.phone, `${shopName}: ${plainText}`);
+        if (sent) sentCount++;
+        else failedCount++;
+      }
+    } catch {
+      failedCount++;
+    }
+  }
+
+  const updated = await prisma.campaign.update({
+    where: { id: campaign.id },
+    data: {
+      status: 'sent',
+      sentCount,
+      failedCount,
+      sentAt: new Date(),
+    },
+  });
+
+  return updated;
+}
+
 // GET /api/shop/campaigns — List campaigns
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -45,7 +109,45 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, type, subject, messageBody, sendNow } = body;
+    const { name, type, subject, messageBody, sendNow, campaignId } = body;
+
+    // Send an existing draft campaign
+    if (campaignId && sendNow) {
+      const existing = await prisma.campaign.findFirst({
+        where: { id: campaignId, shopId },
+      });
+
+      if (!existing) {
+        return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
+      }
+
+      if (existing.status === 'sent') {
+        return NextResponse.json({ error: 'Campaign already sent' }, { status: 400 });
+      }
+
+      await prisma.campaign.update({
+        where: { id: existing.id },
+        data: { status: 'sending' },
+      });
+
+      const shop = await prisma.shop.findUnique({
+        where: { id: shopId },
+        select: { shopName: true },
+      });
+
+      const delivered = await deliverCampaign(
+        {
+          id: existing.id,
+          type: existing.type,
+          subject: existing.subject,
+          body: existing.body,
+          shopId,
+        },
+        shop?.shopName || 'Your Auto Shop'
+      );
+
+      return NextResponse.json(delivered);
+    }
 
     if (!name || !type || !messageBody) {
       return NextResponse.json({ error: 'Name, type, and message body are required' }, { status: 400 });
@@ -66,11 +168,6 @@ export async function POST(request: NextRequest) {
       distinct: ['customerId'],
     });
 
-    const customers = await prisma.customer.findMany({
-      where: { id: { in: customerIds.map(c => c.customerId) } },
-      select: { id: true, email: true, phone: true, firstName: true },
-    });
-
     // Get shop name
     const shop = await prisma.shop.findUnique({
       where: { id: shopId },
@@ -84,59 +181,26 @@ export async function POST(request: NextRequest) {
         type,
         subject: subject || null,
         body: messageBody,
-        recipientCount: customers.length,
+        recipientCount: customerIds.length,
         status: sendNow ? 'sending' : 'draft',
       },
     });
 
     if (sendNow) {
-      // Send in background
-      let sentCount = 0;
-      let failedCount = 0;
       const shopName = shop?.shopName || 'Your Auto Shop';
 
-      for (const customer of customers) {
-        try {
-          if ((type === 'email' || type === 'both') && customer.email) {
-            const sent = await sendEmail({
-              to: customer.email,
-              subject: subject!,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #e5332a;">${shopName}</h2>
-                  <div>${messageBody}</div>
-                  <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;"/>
-                  <p style="color: #888; font-size: 12px;">You received this because you're a customer of ${shopName}.</p>
-                </div>
-              `,
-            });
-            if (sent) sentCount++;
-            else failedCount++;
-          }
-
-          if ((type === 'sms' || type === 'both') && customer.phone) {
-            // Strip HTML for SMS — simple approach
-            const plainText = messageBody.replace(/<[^>]*>/g, '').substring(0, 160);
-            const sent = await sendSms(customer.phone, `${shopName}: ${plainText}`);
-            if (sent) sentCount++;
-            else failedCount++;
-          }
-        } catch {
-          failedCount++;
-        }
-      }
-
-      await prisma.campaign.update({
-        where: { id: campaign.id },
-        data: {
-          status: 'sent',
-          sentCount,
-          failedCount,
-          sentAt: new Date(),
+      const delivered = await deliverCampaign(
+        {
+          id: campaign.id,
+          type,
+          subject: subject || null,
+          body: messageBody,
+          shopId,
         },
-      });
+        shopName
+      );
 
-      return NextResponse.json({ ...campaign, status: 'sent', sentCount, failedCount });
+      return NextResponse.json(delivered);
     }
 
     return NextResponse.json(campaign);

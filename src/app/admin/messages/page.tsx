@@ -10,7 +10,7 @@ export default function AdminMessages() {
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#09090B', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
+      <div style={{ minHeight: '100vh', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
         Loading...
       </div>
     );
@@ -21,7 +21,7 @@ export default function AdminMessages() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#09090B' }}>
+    <div style={{ minHeight: '100vh', background: '#000000' }}>
       <div style={{ background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(99,102,241,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <Link
@@ -45,3 +45,4 @@ export default function AdminMessages() {
     </div>
   );
 }
+

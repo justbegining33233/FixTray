@@ -27,7 +27,7 @@ interface StoredEmployee {
 }
 
 export default function ManageTeamPage() {
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
@@ -292,7 +292,7 @@ export default function ManageTeamPage() {
                         <div>
                           <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{member.name}</h3>
                           <div style={{display:'flex', gap:8}}>
-                            <span style={{padding:'4px 12px', background:member.role === 'tech' ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.2)', color:member.role === 'tech' ? '#22c55e' : '#3b82f6', borderRadius:12, fontSize:12, fontWeight:600}}>
+                            <span style={{padding:'4px 12px', background:member.role === 'tech' ? 'rgba(34,197,94,0.2)' : 'rgba(229,51,42,0.2)', color:member.role === 'tech' ? '#22c55e' : '#e5332a', borderRadius:12, fontSize:12, fontWeight:600}}>
                               {member.role === 'tech' ? 'Technician' : 'Manager'}
                             </span>
                             <span style={{padding:'4px 12px', background: member.status === 'active' ? 'rgba(34,197,94,0.2)' : 'rgba(107,114,128,0.2)', color: member.status === 'active' ? '#22c55e' : '#9ca3af', borderRadius:12, fontSize:12, fontWeight:600}}>
@@ -323,7 +323,7 @@ export default function ManageTeamPage() {
                     <div style={{display:'flex', gap:8}}>
                       <button 
                         onClick={() => handleEditMember(member)}
-                        style={{padding:'8px 16px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', border:'1px solid rgba(59,130,246,0.3)', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer'}}
+                        style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer'}}
                       >
                         Edit
                       </button>
@@ -345,10 +345,10 @@ export default function ManageTeamPage() {
       {/* Add Member Modal */}
       {showAddModal && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
-          <div style={{background:'linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 50%, #525252 100%)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
+          <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Add Team Member</h2>
-              <button onClick={() => setShowAddModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}>×</button>
+              <button onClick={() => setShowAddModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
             <div style={{marginBottom:20}}>
@@ -358,7 +358,7 @@ export default function ManageTeamPage() {
                   <div style={{fontSize:24, marginBottom:8}}><FaWrench style={{marginRight:4}} /></div>
                   Technician
                 </button>
-                <button type="button" onClick={() => setNewMember({...newMember, role: 'manager'})} style={{padding:16, background:newMember.role === 'manager' ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${newMember.role === 'manager' ? '#3b82f6' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
+                <button type="button" onClick={() => setNewMember({...newMember, role: 'manager'})} style={{padding:16, background:newMember.role === 'manager' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${newMember.role === 'manager' ? '#e5332a' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
                   <div style={{fontSize:24, marginBottom:8}}><FaUserTie style={{marginRight:4}} /></div>
                   Manager
                 </button>
@@ -401,10 +401,10 @@ export default function ManageTeamPage() {
       {/* Edit Member Modal */}
       {showEditModal && editingMember && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
-          <div style={{background:'linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 50%, #525252 100%)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
+          <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Edit Team Member</h2>
-              <button onClick={() => setShowEditModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}>×</button>
+              <button onClick={() => setShowEditModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
             <div style={{marginBottom:20}}>
@@ -414,7 +414,7 @@ export default function ManageTeamPage() {
                   <div style={{fontSize:24, marginBottom:8}}><FaWrench style={{marginRight:4}} /></div>
                   Technician
                 </button>
-                <button type="button" onClick={() => setEditingMember({...editingMember, role: 'manager'})} style={{padding:16, background:editingMember.role === 'manager' ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${editingMember.role === 'manager' ? '#3b82f6' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
+                <button type="button" onClick={() => setEditingMember({...editingMember, role: 'manager'})} style={{padding:16, background:editingMember.role === 'manager' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${editingMember.role === 'manager' ? '#e5332a' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
                   <div style={{fontSize:24, marginBottom:8}}><FaUserTie style={{marginRight:4}} /></div>
                   Manager
                 </button>
@@ -459,7 +459,7 @@ export default function ManageTeamPage() {
               <button onClick={() => setShowEditModal(false)} style={{flex:1, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
                 Cancel
               </button>
-              <button onClick={handleUpdateMember} style={{flex:1, padding:'12px', background:'#3b82f6', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
+              <button onClick={handleUpdateMember} style={{flex:1, padding:'12px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
                 Update Member
               </button>
             </div>
@@ -494,3 +494,4 @@ export default function ManageTeamPage() {
     </div>
   );
 }
+

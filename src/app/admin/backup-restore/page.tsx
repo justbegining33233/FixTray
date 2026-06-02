@@ -62,7 +62,7 @@ export default function BackupRestore() {
       </div>
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px' }}>
-        <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 28, display: 'flex', gap: 12 }}>
+        <div style={{ background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 28, display: 'flex', gap: 12 }}>
           <div style={{ fontSize: 20 }}><FaInfoCircle style={{marginRight:4}} /></div>
           <div style={{ fontSize: 13, color: '#9aa3b2', lineHeight: 1.6 }}>
             Backups export a JSON snapshot of all platform data. Sensitive fields (passwords, payment tokens) are excluded. Store backups securely.
@@ -93,7 +93,7 @@ export default function BackupRestore() {
         <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 24, marginBottom: 24 }}>
           <div style={{ fontWeight: 700, color: '#e5e7eb', fontSize: 15, marginBottom: 16 }}>What's included</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            {['Shops', 'Customers', 'Technicians', 'Work Orders', 'Appointments', 'Reviews', 'Subscriptions', 'Invoices', 'Notifications'].map(item => (
+            {['Shops', 'Customers', 'Technicians', 'Work Orders', 'Appointments', 'Reviews', 'Invoices', 'Notifications'].map(item => (
               <div key={item} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#d1d5db', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ color: '#22c55e' }}><FaCheck style={{marginRight:4}} /></span> {item}
               </div>
@@ -114,3 +114,4 @@ export default function BackupRestore() {
     </div>
   );
 }
+

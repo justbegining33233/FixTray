@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { FaBatteryFull, FaCheckCircle, FaExclamationTriangle, FaFlagCheckered, FaHourglassHalf, FaMobileAlt, FaOilCan, FaStar, FaWrench } from 'react-icons/fa';
 
 interface WaitingRoomEntry {
@@ -22,7 +23,7 @@ interface WaitingRoomData {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: ReactNode }> = {
   pending:     { label: 'Waiting', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', icon: <FaHourglassHalf style={{marginRight:4}} /> },
-  in_progress: { label: 'In Progress', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)', icon: <FaWrench style={{marginRight:4}} /> },
+  in_progress: { label: 'In Progress', color: '#ff6b64', bg: 'rgba(96,165,250,0.15)', icon: <FaWrench style={{marginRight:4}} /> },
   completed:   { label: 'Ready!', color: '#22c55e', bg: 'rgba(34,197,94,0.2)', icon: <FaCheckCircle style={{marginRight:4}} /> },
   on_hold:     { label: 'On Hold', color: '#f97316', bg: 'rgba(249,115,22,0.15)', icon: <FaExclamationTriangle style={{marginRight:4}} /> },
 };
@@ -66,10 +67,14 @@ function WaitingRoomContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: '"Inter",system-ui,sans-serif', overflow: 'hidden' }}>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Waiting Room Status Board</h1>
       {/* Header */}
       <div style={{ background: 'rgba(229,51,42,0.9)', padding: '16px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ fontSize: 32 }}><FaWrench style={{marginRight:4}} /></div>
+          <Link href="/shop/home" style={{ textDecoration: 'none', color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 40, height: 40, background: '#000000', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}><FaWrench style={{marginRight:4}} /></div>
+            <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>FixTray</div>
+          </Link>
           <div>
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px' }}>{data?.shopName || 'Service Status'}</div>
             <div style={{ fontSize: 14, opacity: 0.85 }}>Live Vehicle Status Board</div>
@@ -80,6 +85,18 @@ function WaitingRoomContent() {
             {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
           <div style={{ fontSize: 14, opacity: 0.8 }}>{time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+        </div>
+      </div>
+
+      <div style={{ padding: '10px 48px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.35)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, color: '#ffb4ad', background: 'rgba(229,51,42,0.18)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 999, padding: '4px 10px' }}>
+          Active Bays: {inProgress.length}
+        </div>
+        <div style={{ fontSize: 12, color: '#fbbf24', background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 999, padding: '4px 10px' }}>
+          Waiting: {waiting.length}
+        </div>
+        <div style={{ fontSize: 12, color: '#22c55e', background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 999, padding: '4px 10px' }}>
+          Ready: {completed.length}
         </div>
       </div>
 
@@ -96,7 +113,7 @@ function WaitingRoomContent() {
 
           {inProgress.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaWrench style={{marginRight:4}} /> Currently Working On</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#ff6b64', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaWrench style={{marginRight:4}} /> Currently Working On</div>
               {inProgress.map(o => <StatusCard key={o.id} order={o} />)}
             </div>
           )}
@@ -161,3 +178,5 @@ export default function WaitingRoomPage() {
     </Suspense>
   );
 }
+
+

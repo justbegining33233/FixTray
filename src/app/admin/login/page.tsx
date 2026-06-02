@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { FaLock } from 'react-icons/fa';
 
 export default function AdminLoginPage() {
@@ -19,7 +20,7 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/admin', {
+      const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -29,22 +30,24 @@ export default function AdminLoginPage() {
 
       if (response.ok) {
         // Store admin credentials
-        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('token', data.token);
         localStorage.setItem('userRole', 'admin');
         // Keep legacy admin keys and populate shared user keys for AuthContext
-        localStorage.setItem('adminId', data.id);
-        localStorage.setItem('adminUsername', data.username);
-        localStorage.setItem('isSuperAdmin', data.isSuperAdmin.toString());
+        localStorage.setItem('adminId', data.admin.id);
+        localStorage.setItem('adminUsername', data.admin.username);
+        localStorage.setItem('isSuperAdmin', data.admin.isSuperAdmin.toString());
+        if (data.admin?.isOwner) localStorage.setItem('isOwner', 'true');
+        else localStorage.removeItem('isOwner');
 
         // Also set shared user keys so the AuthContext picks up the admin as an authenticated user
-        localStorage.setItem('userId', data.id);
-        localStorage.setItem('userName', data.username);
+        localStorage.setItem('userId', data.admin.id);
+        localStorage.setItem('userName', data.admin.username);
 
         // Redirect to super-admin portal if flagged, otherwise admin dashboard
-        if (data.isSuperAdmin) {
-          router.push('/admin/home');
+        if (data.admin?.isSuperAdmin) {
+          router.push('/admin/home' as Route);
         } else {
-          router.push('/admin/dashboard');
+          router.push('/admin/dashboard' as Route);
         }
       } else {
         setError(data.error || 'Login failed');

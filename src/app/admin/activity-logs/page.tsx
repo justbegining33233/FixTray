@@ -20,7 +20,7 @@ type ActivityLog = {
 };
 
 export default function ActivityLogs() {
-  const { user, isLoading: authLoading } = useRequireAuth(['admin']);
+  const { user, isLoading: authLoading } = useRequireAuth(['admin', 'superadmin']);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>('all');
@@ -73,7 +73,7 @@ export default function ActivityLogs() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'shop': return '#3b82f6';
+      case 'shop': return '#e5332a';
       case 'revenue': return '#22c55e';
       case 'user': return '#8b5cf6';
       case 'alert': return '#f59e0b';
@@ -84,7 +84,7 @@ export default function ActivityLogs() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'success': return '#22c55e';
-      case 'info': return '#3b82f6';
+      case 'info': return '#e5332a';
       case 'warning': return '#f59e0b';
       case 'error': return '#e5332a';
       default: return '#9aa3b2';
@@ -128,7 +128,7 @@ export default function ActivityLogs() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(255,255,255,0.1)', padding:'20px 32px'}}>
         <div style={{maxWidth:1400, margin:'0 auto'}}>
-          <Link href="/admin/home" style={{color:'#3b82f6', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href="/admin/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
@@ -136,7 +136,7 @@ export default function ActivityLogs() {
               <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>Activity Logs</h1>
               <p style={{fontSize:14, color:'#9aa3b2'}}>Complete system activity history</p>
             </div>
-            <div style={{padding:'8px 16px', background:'rgba(59,130,246,0.2)', color:'#3b82f6', borderRadius:8, fontSize:14, fontWeight:700}}>
+            <div style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', borderRadius:8, fontSize:14, fontWeight:700}}>
               {logs.length} Total Logs
             </div>
           </div>
@@ -253,9 +253,9 @@ export default function ActivityLogs() {
         {/* Summary Stats */}
         {!loading && logs.length > 0 && (
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16, marginTop:24}}>
-            <div style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:20}}>
+            <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
               <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Shop Activities</div>
-              <div style={{fontSize:28, fontWeight:700, color:'#3b82f6'}}>
+              <div style={{fontSize:28, fontWeight:700, color:'#e5332a'}}>
                 {logs.filter(l => l.type === 'shop').length}
               </div>
             </div>
@@ -283,3 +283,4 @@ export default function ActivityLogs() {
     </div>
   );
 }
+

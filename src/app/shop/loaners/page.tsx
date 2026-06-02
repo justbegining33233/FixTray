@@ -29,8 +29,10 @@ const statusColor: Record<string, string> = { available: '#22c55e', out: '#e5332
 const fuelOptions = ['Full', '3/4', '1/2', '1/4', 'Empty'];
 
 export default function LoanersPage() {
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [loaners, setLoaners] = useState<Loaner[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'out' | 'maintenance'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [modalLoaner, setModalLoaner] = useState<Loaner | null>(null);
@@ -107,6 +109,14 @@ export default function LoanersPage() {
 
   const available = loaners.filter(l => l.status === 'available').length;
   const out = loaners.filter(l => l.status === 'out').length;
+  const maintenance = loaners.filter(l => l.status === 'maintenance').length;
+
+  const filteredLoaners = loaners.filter((l) => {
+    const statusOk = statusFilter === 'all' ? true : l.status === statusFilter;
+    const haystack = `${l.year} ${l.make} ${l.model} ${l.licensePlate || ''} ${l.vin || ''}`.toLowerCase();
+    const searchOk = searchTerm.trim() ? haystack.includes(searchTerm.toLowerCase()) : true;
+    return statusOk && searchOk;
+  });
 
   const F = (k: keyof Loaner) => (
     <div key={String(k)} style={{ marginBottom: 14 }}>
@@ -122,26 +132,60 @@ export default function LoanersPage() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaCar style={{marginRight:4}} /> Loaner Vehicles</h1>
-          <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>{available} available · {out} checked out</p>
+          <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>{available} available · {out} checked out · {maintenance} in maintenance</p>
         </div>
         <button onClick={() => { setShowAdd(true); setForm({}); }} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ Add Loaner</button>
       </div>
 
+      <div style={{ padding: '16px 32px 0', display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center' }}>
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search make, model, plate, VIN"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 14 }}
+        />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'available', label: 'Available' },
+            { id: 'out', label: 'Checked Out' },
+            { id: 'maintenance', label: 'Maintenance' },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatusFilter(f.id as typeof statusFilter)}
+              style={{
+                background: statusFilter === f.id ? '#e5332a' : 'rgba(255,255,255,0.05)',
+                color: statusFilter === f.id ? 'white' : '#cbd5e1',
+                border: `1px solid ${statusFilter === f.id ? '#e5332a' : 'rgba(255,255,255,0.15)'}`,
+                borderRadius: 8,
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div style={{ padding: 32 }}>
         {loading ? <div style={{ textAlign: 'center', color: '#6b7280', padding: 64 }}>Loading...</div> :
-          loaners.length === 0 ? (
+          filteredLoaners.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 80 }}>
               <div style={{ fontSize: 64 }}><FaCar style={{marginRight:4}} /></div>
-              <div style={{ fontSize: 20, fontWeight: 600, margin: '16px 0 8px' }}>No loaner vehicles</div>
+              <div style={{ fontSize: 20, fontWeight: 600, margin: '16px 0 8px' }}>{loaners.length === 0 ? 'No loaner vehicles' : 'No loaners match your filters'}</div>
               <button onClick={() => { setShowAdd(true); setForm({}); }} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>+ Add First Loaner</button>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-              {loaners.map(loaner => (
+              {filteredLoaners.map(loaner => (
                 <div key={loaner.id} style={{ background: 'rgba(255,255,255,0.04)', border: `2px solid ${statusColor[loaner.status]}40`, borderRadius: 14, padding: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div>

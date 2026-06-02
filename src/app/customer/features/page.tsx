@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 
 export default function CustomerBookingFeatures() {
   return (
@@ -19,10 +20,10 @@ export default function CustomerBookingFeatures() {
             Offer a frictionless way for customers to request work orders, pick time windows, and get instant confirmations. All bookings sync to your shop schedule so your team stays in lockstep.
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Link href="/customer/signup" style={ctaStyle('#38bdf8')}>
+            <Link href={"/customer/signup" as Route} style={ctaStyle('#38bdf8')}>
               Start accepting bookings
             </Link>
-            <Link href="/customer/dashboard" style={ctaStyle('#e5e7eb', true)}>
+            <Link href={"/customer/dashboard" as Route} style={ctaStyle('#e5e7eb', true)}>
               View customer portal
             </Link>
           </div>
@@ -75,7 +76,7 @@ export default function CustomerBookingFeatures() {
         <div style={{ textAlign: 'center', padding: 24, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: 12 }}>
           <h2 style={{ margin: '0 0 8px', fontSize: 24 }}>Ready to open your booking portal?</h2>
           <p style={{ margin: '0 0 16px', color: '#cbd5e1' }}>Enable self-serve appointments and keep every job on schedule.</p>
-          <Link href="/customer/signup" style={ctaStyle('#0ea5e9')}>
+          <Link href={"/customer/signup" as Route} style={ctaStyle('#0ea5e9')}>
             Enable customer bookings
           </Link>
         </div>

@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FaRecycle, FaPlus, FaQuestionCircle } from 'react-icons/fa';
+import { FaRecycle, FaPlus } from 'react-icons/fa';
 import useRequireAuth from '@/lib/useRequireAuth';
 
 interface CoreReturn { id: string; partName: string; partNumber?: string; vendor?: string; coreValue: number; creditReceived?: number; status: string; workOrderId?: string; notes?: string; createdAt: string; returnedAt?: string; }
-const statusColor: Record<string, string> = { pending: '#f59e0b', returned: '#60a5fa', credited: '#22c55e', waived: '#6b7280' };
+const statusColor: Record<string, string> = { pending: '#f59e0b', returned: '#ff6b64', credited: '#22c55e', waived: '#6b7280' };
 
 export default function CoreReturnsPage() {
   const { user, isLoading } = useRequireAuth(['shop']);
@@ -61,12 +61,12 @@ export default function CoreReturnsPage() {
   const recoveredValue = items.filter(i => i.status === 'credited').reduce((s, i) => s + (i.creditReceived || i.coreValue), 0);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}><FaRecycle style={{fontSize:26}} /> Core Returns</h1>
           <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>
-            ${pendingValue.toFixed(2)} pending recovery · ${recoveredValue.toFixed(2)} credited
+            ${pendingValue.toFixed(2)} pending recovery  ${recoveredValue.toFixed(2)} credited
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -110,10 +110,10 @@ export default function CoreReturnsPage() {
                       <td style={{ padding: '12px 14px' }}>
                         <span style={{ background: statusColor[item.status] + '22', color: statusColor[item.status], border: `1px solid ${statusColor[item.status]}`, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700, textTransform: 'capitalize' }}>{item.status}</span>
                       </td>
-                      <td style={{ padding: '12px 14px', color: '#60a5fa' }}>{item.workOrderId ? `#${item.workOrderId.slice(-6).toUpperCase()}` : ' - '}</td>
+                      <td style={{ padding: '12px 14px', color: '#ff6b64' }}>{item.workOrderId ? `#${item.workOrderId.slice(-6).toUpperCase()}` : ' - '}</td>
                       <td style={{ padding: '12px 14px' }}>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          {item.status === 'pending' && <button onClick={() => updateStatus(item.id, 'returned')} style={{ background: 'rgba(96,165,250,0.2)', color: '#60a5fa', border: '1px solid #60a5fa', borderRadius: 5, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>Returned</button>}
+                          {item.status === 'pending' && <button onClick={() => updateStatus(item.id, 'returned')} style={{ background: 'rgba(96,165,250,0.2)', color: '#ff6b64', border: '1px solid #ff6b64', borderRadius: 5, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>Returned</button>}
                           {item.status === 'returned' && <button onClick={() => { setCreditAmt(String(item.coreValue)); setCreditModal({ id: item.id, defaultAmt: item.coreValue }); }} style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid #22c55e', borderRadius: 5, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>Credited</button>}
                           {item.status === 'pending' && <button onClick={() => updateStatus(item.id, 'waived')} style={{ background: 'rgba(107,114,128,0.2)', color: '#9ca3af', border: '1px solid #6b7280', borderRadius: 5, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>Waive</button>}
                         </div>
@@ -177,3 +177,4 @@ export default function CoreReturnsPage() {
     </div>
   );
 }
+

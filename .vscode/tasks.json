@@ -13,16 +13,6 @@
 			"type": "shell",
 			"command": "npm run dev",
 			"isBackground": true
-		},
-		{
-			"label": "Deploy to Vercel Prod",
-			"type": "shell",
-			"command": "cmd",
-			"args": [
-				"/c",
-				"npx vercel --prod --yes --token dpl_2BrHLVmUPWJNBbhC7GmdyuZFfAVE"
-			],
-			"isBackground": false
 		}
 	]
 }

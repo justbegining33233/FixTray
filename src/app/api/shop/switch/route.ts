@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    if (auth.role === 'admin') {
+    if (auth.role === 'superadmin') {
       // Admin can see all shops
       const shops = await prisma.shop.findMany({
         where: { status: 'approved' },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Issue new access token for the target shop
     const { generateAccessToken } = await import('@/lib/auth');
-    const accessToken = generateAccessToken({ id: targetShop.id, username: targetShop.username, role: 'shop' });
+    const accessToken = generateAccessToken({ id: targetShop.id, shopId: targetShop.id, username: targetShop.username, role: 'shop' });
 
     const response = NextResponse.json({
       id: targetShop.id,

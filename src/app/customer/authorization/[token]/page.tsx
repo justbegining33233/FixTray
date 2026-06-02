@@ -113,7 +113,7 @@ export default function CustomerAuthorizationPage() {
     <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 64 }}><FaExclamationTriangle style={{marginRight:4}} /></div>
-        <h2 style={{ color: '#111827', margin: '16px 0 8px' }}>Authorization Not Found</h2>
+        <h2 style={{ color: '#0b1220', margin: '16px 0 8px' }}>Authorization Not Found</h2>
         <p style={{ color: '#6b7280' }}>{error}</p>
       </div>
     </div>
@@ -123,7 +123,7 @@ export default function CustomerAuthorizationPage() {
     <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', padding: 32 }}>
         <div style={{ fontSize: 80 }}><FaCheckCircle style={{marginRight:4}} /></div>
-        <h2 style={{ color: '#111827', margin: '16px 0 8px', fontSize: 26 }}>Authorization Signed!</h2>
+        <h2 style={{ color: '#0b1220', margin: '16px 0 8px', fontSize: 26 }}>Authorization Signed!</h2>
         <p style={{ color: '#6b7280', marginBottom: 8 }}>Thank you, <strong>{signerName}</strong>. Your digital authorization has been received.</p>
         <p style={{ color: '#6b7280' }}>The shop will now proceed with the approved work. You&apos;ll receive updates on the progress.</p>
       </div>
@@ -134,7 +134,7 @@ export default function CustomerAuthorizationPage() {
     <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', padding: 32 }}>
         <div style={{ fontSize: 80 }}><FaBan style={{marginRight:4}} /></div>
-        <h2 style={{ color: '#111827', margin: '16px 0 8px', fontSize: 26 }}>Authorization Declined</h2>
+        <h2 style={{ color: '#0b1220', margin: '16px 0 8px', fontSize: 26 }}>Authorization Declined</h2>
         <p style={{ color: '#6b7280' }}>You have declined this work authorization. The shop has been notified. Please contact them if you have questions.</p>
       </div>
     </div>
@@ -145,7 +145,7 @@ export default function CustomerAuthorizationPage() {
   const isDeclined = auth?.status === 'declined';
 
   return (
-    <div style={{ minHeight: "100vh", background: 'transparent', fontFamily: 'system-ui,sans-serif' }}>
+    <div style={{ minHeight: "100vh", background: '#000000', fontFamily: 'system-ui,sans-serif' }}>
       {/* Header */}
       <div style={{ background: '#1a1a2e', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 40, height: 40, background: '#e5332a', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}><FaWrench style={{marginRight:4}} /></div>
@@ -163,7 +163,7 @@ export default function CustomerAuthorizationPage() {
 
         {/* Work Summary */}
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 24, marginBottom: 20 }}>
-          <h2 style={{ margin: '0 0 16px', fontSize: 20, color: '#111827' }}>Proposed Work Summary</h2>
+          <h2 style={{ margin: '0 0 16px', fontSize: 20, color: '#0b1220' }}>Proposed Work Summary</h2>
           {auth?.workOrder?.vehicle && (
             <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 14, color: '#374151' }}>
               <FaCar style={{marginRight:4}} /> <strong>Vehicle:</strong> {auth.workOrder.vehicle}
@@ -181,13 +181,13 @@ export default function CustomerAuthorizationPage() {
         {/* Signature section (only show if pending) */}
         {!isExpired && !isAlreadySigned && !isDeclined && (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 24 }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: 17, color: '#111827' }}>Your Authorization</h3>
+            <h3 style={{ margin: '0 0 8px', fontSize: 17, color: '#0b1220' }}>Your Authorization</h3>
             <p style={{ color: '#6b7280', fontSize: 13, marginTop: 0, marginBottom: 16 }}>By signing below, you authorize the shop to complete the described work at the estimated price. Additional charges require separate approval.</p>
 
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 13, color: '#374151', display: 'block', marginBottom: 6, fontWeight: 600 }}>Full Name *</label>
               <input value={signerName} onChange={e => setSignerName(e.target.value)} placeholder="Your full name"
-                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '10px 14px', fontSize: 15, color: '#111827', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '10px 14px', fontSize: 15, color: '#0b1220', outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ marginBottom: 8 }}>
@@ -226,7 +226,7 @@ export default function CustomerAuthorizationPage() {
       {declineConfirm && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
           <div style={{background:'#fff',borderRadius:12,padding:32,maxWidth:400,width:'90%'}}>
-            <h3 style={{margin:'0 0 12px',fontSize:18,color:'#111827'}}>Decline Authorization?</h3>
+            <h3 style={{margin:'0 0 12px',fontSize:18,color:'#0b1220'}}>Decline Authorization?</h3>
             <p style={{color:'#6b7280',fontSize:14,margin:'0 0 24px'}}>Are you sure you want to decline this work authorization? The shop will be notified.</p>
             <div style={{display:'flex',gap:12}}>
               <button onClick={decline} style={{flex:1,padding:'11px 0',background:'#e5332a',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Yes, Decline</button>

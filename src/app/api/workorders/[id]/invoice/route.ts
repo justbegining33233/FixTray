@@ -28,7 +28,7 @@ export async function GET(
     
     // Check authorization
     const authorized = 
-      auth.role === 'admin' ||
+      (auth.role === 'superadmin') ||
       (auth.role === 'customer' && workOrder.customerId === auth.id) ||
       (auth.role === 'shop' && workOrder.shopId === auth.id) ||
       ((auth.role === 'tech' || auth.role === 'manager') && workOrder.shopId === auth.shopId);

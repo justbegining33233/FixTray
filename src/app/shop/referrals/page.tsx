@@ -79,7 +79,7 @@ export default function ReferralsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaGift style={{marginRight:4}} /> Referral Program</h1>
@@ -116,7 +116,7 @@ export default function ReferralsPage() {
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{ref.referredName || 'Unknown Referral'}</div>
                       <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>
-                        {ref.referredEmail || ref.referredPhone || ''} · {new Date(ref.createdAt).toLocaleDateString()}
+                        {ref.referredEmail || ref.referredPhone || ''}  {new Date(ref.createdAt).toLocaleDateString()}
                       </div>
                       {ref.referrer?.name && <div style={{ fontSize: 12, color: '#a78bfa', marginTop: 4 }}>Referred by: {ref.referrer.name}</div>}
                     </div>
@@ -124,7 +124,7 @@ export default function ReferralsPage() {
                       {ref.rewardValue && <span style={{ color: '#22c55e', fontWeight: 700, fontSize: 15 }}>${ref.rewardValue} reward</span>}
                       <span style={{ background: st.bg, color: st.color, border: `1px solid ${st.color}`, borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>{ref.status}</span>
                       <button onClick={() => copyCode(ref.referralCode)}
-                        style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid #3b82f6', borderRadius: 7, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'monospace' }}>
+                        style={{ background: 'rgba(96,165,250,0.15)', color: '#ff6b64', border: '1px solid #e5332a', borderRadius: 7, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'monospace' }}>
                         {copied === ref.referralCode ? <FaCheckCircle style={{marginRight:4}} /> : ref.referralCode}
                       </button>
                     </div>
@@ -176,3 +176,4 @@ export default function ReferralsPage() {
     </div>
   );
 }
+

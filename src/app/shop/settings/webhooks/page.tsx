@@ -92,19 +92,19 @@ export default function WebhooksPage() {
   if (!user) return null;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
       <Sidebar role="shop" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div>
-              <Link href="/shop/settings" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Settings</Link>
+              <Link href="/shop/settings" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Settings</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Webhooks</h1>
               <p style={{ color: '#9ca3af', fontSize: 14 }}>Send real-time event notifications to external services</p>
             </div>
             <button onClick={() => setShowCreate(true)}
-              style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
+              style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
               + New Webhook
             </button>
           </div>
@@ -117,7 +117,7 @@ export default function WebhooksPage() {
               <div style={{ marginBottom: 16 }}>
                 <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Endpoint URL</label>
                 <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com/webhook"
-                  style={{ width: '100%', background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
+                  style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 8 }}>Events</label>
@@ -126,7 +126,7 @@ export default function WebhooksPage() {
                     <button key={event} onClick={() => toggleEvent(event)}
                       style={{
                         padding: '6px 12px', borderRadius: 20, fontSize: 13, cursor: 'pointer', border: 'none',
-                        background: selectedEvents.includes(event) ? '#1d4ed8' : '#0f172a',
+                        background: selectedEvents.includes(event) ? '#1d4ed8' : '#000000',
                         color: selectedEvents.includes(event) ? '#fff' : '#9ca3af',
                       }}>
                       {event === '*' ? ' All Events' : event}
@@ -136,7 +136,7 @@ export default function WebhooksPage() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={createWebhook} disabled={saving}
-                  style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.5 : 1 }}>
+                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.5 : 1 }}>
                   {saving ? 'Creating...' : 'Create Webhook'}
                 </button>
                 <button onClick={() => setShowCreate(false)}
@@ -170,7 +170,7 @@ export default function WebhooksPage() {
                       </div>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 8 }}>
                         {wh.events.map(e => (
-                          <span key={e} style={{ background: '#0f172a', color: '#60a5fa', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>
+                          <span key={e} style={{ background: '#000000', color: '#ff6b64', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>
                             {e === '*' ? 'All Events' : e}
                           </span>
                         ))}
@@ -197,3 +197,5 @@ export default function WebhooksPage() {
     </div>
   );
 }
+
+

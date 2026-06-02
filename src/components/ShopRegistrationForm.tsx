@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import {
   ShopFormData,
   ShopType,
@@ -14,7 +15,6 @@ import {
   WeldingServiceType,
   TireServiceType,
 } from '../types/shop';
-import { SUBSCRIPTION_PLANS } from '../lib/subscription';
 import '../styles/sos-theme.css';
 import { FaArrowLeft, FaArrowRight, FaSmile } from 'react-icons/fa';
 
@@ -219,7 +219,6 @@ export default function ShopRegistrationForm() {
     mobileServiceRadius: 50,
     emergencyService24_7: false,
     acceptedPaymentMethods: ['cash', 'credit-card'],
-    subscriptionPlan: 'starter',
     couponCode: '',
   });
 
@@ -374,11 +373,11 @@ export default function ShopRegistrationForm() {
       if (res.ok) {
         const data = await res.json();
         if (data.checkoutUrl) {
-          // Redirect to Stripe hosted checkout to collect payment for the subscription
+          // Redirect to hosted onboarding flow when enabled on the backend
           window.location.href = data.checkoutUrl;
         } else {
           // Fallback: Stripe wasn't configured  -  go to thank-you page
-          router.push('/auth/thank-you');
+          router.push('/auth/thank-you' as Route);
         }
       } else {
         const errorData = await res.json();
@@ -743,80 +742,29 @@ export default function ShopRegistrationForm() {
               </div>
             )}
 
-            {/* Step 5: Subscription Plan */}
+            {/* Step 5: Final Review */}
             {step === 5 && (
               <div>
-                <div className="sos-title">Choose Your Plan</div>
-                <p className="sos-desc">Start with a 7-day free trial. No credit card required to begin.</p>
+                <div className="sos-title">Final Review</div>
+                <p className="sos-desc">Review your setup details before completing registration.</p>
 
                 <div style={{marginTop:24}}>
-                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:16}}>
-                    {Object.entries(SUBSCRIPTION_PLANS).map(([planKey, plan]) => (
-                      <div
-                        key={planKey}
-                        style={{
-                          border: formData.subscriptionPlan === planKey ? '2px solid #3b82f6' : '1px solid #e5e7eb',
-                          borderRadius: 12,
-                          padding: 20,
-                          cursor: 'pointer',
-                          backgroundColor: formData.subscriptionPlan === planKey ? '#eff6ff' : '#fff',
-                        }}
-                        onClick={() => setFormData({...formData, subscriptionPlan: planKey as any})}
-                      >
-                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12}}>
-                          <div>
-                            <div style={{fontSize:18, fontWeight:700, color:'#1f2937'}}>{plan.name}</div>
-                            <div style={{fontSize:14, color:'#6b7280', marginTop:2}}>${plan.price}/month</div>
-                          </div>
-                          <input
-                            type="radio"
-                            checked={formData.subscriptionPlan === planKey}
-                            onChange={() => setFormData({...formData, subscriptionPlan: planKey as any})}
-                            style={{width:16, height:16}}
-                          />
-                        </div>
-
-                        <div style={{fontSize:13, color:'#6b7280', marginBottom:12}}>
-                          Up to {plan.maxUsers} users - Up to {plan.maxShops} shop{plan.maxShops !== 1 ? 's' : ''}
-                        </div>
-
-                        <div style={{display:'flex', flexWrap:'wrap', gap:4}}>
-                          {Object.entries(plan.features).slice(0, 4).map(([feature, enabled]) => (
-                            enabled && (
-                              <span key={feature} style={{
-                                fontSize:11,
-                                backgroundColor:'#f3f4f6',
-                                color:'#374151',
-                                padding:'2px 6px',
-                                borderRadius:4,
-                                textTransform:'capitalize'
-                              }}>
-                                {feature.replace(/([A-Z])/g, ' $1').toLowerCase()}
-                              </span>
-                            )
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  <div style={{padding:16, backgroundColor:'rgba(255,255,255,0.04)', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)'}}>
+                    <div style={{fontSize:14, color:'#f1f5f9', fontWeight:600, marginBottom:8}}>Registration Summary</div>
+                    <div style={{fontSize:13, color:'#94a3b8', lineHeight:1.7}}>
+                      <div><strong>Shop:</strong> {formData.shopName || 'Not provided'}</div>
+                      <div><strong>Owner:</strong> {formData.ownerName || 'Not provided'}</div>
+                      <div><strong>Primary contact:</strong> {formData.email || 'Not provided'}</div>
+                      <div><strong>Location:</strong> {[formData.city, formData.state].filter(Boolean).join(', ') || 'Not provided'}</div>
+                      <div><strong>Selected services:</strong> {totalSelectedServices}</div>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{marginTop:24}}>
-                  <label className="sos-label">Coupon Code (Optional)</label>
-                  <input
-                    type="text"
-                    className="sos-input"
-                    value={formData.couponCode || ''}
-                    onChange={e => setFormData({...formData, couponCode: e.target.value})}
-                    placeholder="Enter coupon code for discount"
-                  />
-                </div>
-
-                <div style={{marginTop:16, padding:16, backgroundColor:'#f8fafc', borderRadius:8, border:'1px solid #e2e8f0'}}>
-                  <div style={{fontSize:14, fontWeight:600, color:'#1e293b', marginBottom:8}}><FaSmile style={{marginRight:4}} /> Free 7-Day Trial</div>
-                  <div style={{fontSize:13, color:'#64748b'}}>
-                    Your selected plan includes a 7-day free trial. You'll only be charged after the trial period ends.
-                    Cancel anytime during the trial with no charges.
+                <div style={{marginTop:16, padding:16, backgroundColor:'rgba(255,255,255,0.04)', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)'}}>
+                  <div style={{fontSize:14, fontWeight:600, color:'#f1f5f9', marginBottom:8}}><FaSmile style={{marginRight:4}} /> Ready to Launch</div>
+                  <div style={{fontSize:13, color:'#94a3b8'}}>
+                    Complete registration to activate your shop workspace and finish onboarding in the dashboard.
                   </div>
                 </div>
               </div>

@@ -26,12 +26,110 @@ interface POItem {
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   pending:   { bg: 'rgba(245,158,11,0.15)',  color: '#f59e0b',  label: 'Pending' },
-  ordered:   { bg: 'rgba(59,130,246,0.15)',  color: '#3b82f6',  label: 'Ordered' },
+  ordered:   { bg: 'rgba(229,51,42,0.15)',  color: '#e5332a',  label: 'Ordered' },
   received:  { bg: 'rgba(34,197,94,0.15)',   color: '#22c55e',  label: 'Received' },
   cancelled: { bg: 'rgba(229,51,42,0.15)',   color: '#e5332a',  label: 'Cancelled' },
 };
 
 const EMPTY_ITEM: Omit<POItem, 'id'> = { partNumber: '', description: '', qty: 1, unitCost: 0 };
+
+const toUiOrder = (order: any): PurchaseOrder => ({
+  id: order.id,
+  poNumber: `PO-${String(order.id).slice(-8).toUpperCase()}`,
+  vendor: order.vendor || 'Vendor',
+  status: order.status || 'pending',
+  createdAt: order.createdAt,
+  expectedDate: order.expectedDate,
+  total: Number(order.totalCost || 0),
+  notes: order.notes || '',
+  items: Array.isArray(order.items)
+    ? order.items.map((item: any) => ({
+        id: item.id,
+        partNumber: item.sku || '',
+        description: item.itemName || '',
+        qty: Number(item.quantity || 0),
+        unitCost: Number(item.unitCost || 0),
+      }))
+    : [],
+});
+
+const openPurchaseOrderPdf = (order: PurchaseOrder) => {
+  const rows = order.items
+    .map(
+      (item, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${item.description || '-'}</td>
+          <td>${item.partNumber || '-'}</td>
+          <td>${item.qty}</td>
+          <td>$${item.unitCost.toFixed(2)}</td>
+          <td>$${(item.qty * item.unitCost).toFixed(2)}</td>
+        </tr>
+      `
+    )
+    .join('');
+
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <title>${order.poNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 32px; color: #000000; }
+          .header { display:flex; justify-content:space-between; margin-bottom:24px; }
+          .brand { font-size: 26px; font-weight: 800; color: #e5332a; }
+          .meta { text-align:right; font-size:12px; color:#4b5563; }
+          h1 { margin: 0 0 8px 0; font-size: 22px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; font-size: 12px; }
+          th { background: #f3f4f6; text-align: left; }
+          .total { margin-top: 16px; text-align: right; font-size: 18px; font-weight: 700; }
+          .note { margin-top: 20px; font-size: 12px; color: #374151; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">FixTray</div>
+            <h1>Purchase Order</h1>
+          </div>
+          <div class="meta">
+            <div><strong>PO #:</strong> ${order.poNumber}</div>
+            <div><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</div>
+            <div><strong>Status:</strong> ${order.status}</div>
+          </div>
+        </div>
+
+        <div><strong>Vendor:</strong> ${order.vendor}</div>
+        <div><strong>Expected Date:</strong> ${order.expectedDate ? new Date(order.expectedDate).toLocaleDateString() : 'N/A'}</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Description</th>
+              <th>Part #</th>
+              <th>Qty</th>
+              <th>Unit Cost</th>
+              <th>Line Total</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <div class="total">Total: $${order.total.toFixed(2)}</div>
+        <div class="note"><strong>Notes:</strong> ${order.notes || 'None'}</div>
+        <script>window.onload = function(){ window.print(); };</script>
+      </body>
+    </html>
+  `;
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) return;
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
 
 export default function PurchaseOrdersPage() {
   const { user, isLoading } = useRequireAuth(['shop']);
@@ -45,14 +143,18 @@ export default function PurchaseOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [form, setForm] = useState({ vendor: '', expectedDate: '', notes: '', items: [{ ...EMPTY_ITEM }] });
 
+  const shopId = user?.shopId || user?.id || '';
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const r = await fetch('/api/purchase-orders', { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(`/api/purchase-orders?shopId=${encodeURIComponent(shopId)}`, { headers: { Authorization: `Bearer ${token}` } });
       if (r.ok) {
-        setOrders(await r.json());
+        const data = await r.json();
+        const apiOrders = Array.isArray(data?.orders) ? data.orders : [];
+        setOrders(apiOrders.map(toUiOrder));
       } else if (r.status === 404) {
         setOrders([]); // API not yet implemented  -  show empty state gracefully
       } else {
@@ -63,7 +165,7 @@ export default function PurchaseOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [shopId]);
 
   useEffect(() => { if (!user) return; load(); }, [user, load]);
 
@@ -72,12 +174,29 @@ export default function PurchaseOrdersPage() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
+      const payload = {
+        shopId,
+        vendor: form.vendor,
+        expectedDate: form.expectedDate || undefined,
+        notes: form.notes,
+        items: form.items.map((item) => ({
+          itemName: item.description,
+          sku: item.partNumber,
+          quantity: item.qty,
+          unitCost: item.unitCost,
+        })),
+      };
       const r = await fetch('/api/purchase-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (r.ok) {
+        const data = await r.json();
+        if (data?.order) {
+          const newOrder = toUiOrder(data.order);
+          openPurchaseOrderPdf(newOrder);
+        }
         setShowNew(false);
         setForm({ vendor: '', expectedDate: '', notes: '', items: [{ ...EMPTY_ITEM }] });
         load();
@@ -100,8 +219,12 @@ export default function PurchaseOrdersPage() {
         body: JSON.stringify({ status }),
       });
       if (r.ok) {
-        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: status as PurchaseOrder['status'] } : o));
-        if (selected?.id === id) setSelected(prev => prev ? { ...prev, status: status as PurchaseOrder['status'] } : prev);
+        const data = await r.json();
+        const updated = data?.order ? toUiOrder(data.order) : null;
+        if (updated) {
+          setOrders(prev => prev.map(o => o.id === id ? updated : o));
+          if (selected?.id === id) setSelected(updated);
+        }
       }
     } catch { /* ignore */ }
   };
@@ -119,7 +242,7 @@ export default function PurchaseOrdersPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
+    <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
@@ -210,7 +333,7 @@ export default function PurchaseOrdersPage() {
                 <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{selected.poNumber}</h2>
                 <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 4 }}><FaIndustry style={{marginRight:4}} /> {selected.vendor}</div>
               </div>
-              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 22 }}>×</button>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 22 }}></button>
             </div>
 
             <div style={{ marginBottom: 20 }}>
@@ -257,7 +380,7 @@ export default function PurchaseOrdersPage() {
           <div style={{ background: '#1a1d27', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: 32, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>New Purchase Order</h2>
-              <button onClick={() => setShowNew(false)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 22 }}>×</button>
+              <button onClick={() => setShowNew(false)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 22 }}></button>
             </div>
 
             <div style={{ marginBottom: 16 }}>
@@ -276,7 +399,7 @@ export default function PurchaseOrdersPage() {
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <label style={{ fontSize: 13, color: '#9ca3af', fontWeight: 700 }}>Line Items</label>
-                <button onClick={addItem} style={{ background: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 13 }}>+ Add Item</button>
+                <button onClick={addItem} style={{ background: 'rgba(229,51,42,0.2)', color: '#e5332a', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 13 }}>+ Add Item</button>
               </div>
               {form.items.map((item, i) => (
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 0.7fr 0.9fr auto', gap: 8, marginBottom: 8 }}>
@@ -314,3 +437,5 @@ export default function PurchaseOrdersPage() {
     </div>
   );
 }
+
+

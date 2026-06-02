@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
@@ -196,7 +197,7 @@ export default function CustomerCRMPage({ params }: { params: Promise<{ id: stri
                   {tags.map(tag => (
                     <span key={tag} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 999, fontSize: 12, color: '#3b82f6' }}>
                       {tag}
-                      <button onClick={() => removeTag(tag)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+                      <button onClick={() => removeTag(tag)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }}>├ù</button>
                     </span>
                   ))}
                   {tags.length === 0 && <span style={{ fontSize: 13, color: '#9aa3b2' }}>No tags yet</span>}
@@ -248,7 +249,7 @@ export default function CustomerCRMPage({ params }: { params: Promise<{ id: stri
                     </thead>
                     <tbody>
                       {data.workOrders.map(wo => (
-                        <tr key={wo.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }} onClick={() => router.push(`/workorders/${wo.id}`)}>
+                        <tr key={wo.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }} onClick={() => router.push(`/workorders/${wo.id}` as Route)}>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#3b82f6' }}>{wo.id.slice(0, 8)}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{new Date(wo.createdAt).toLocaleDateString()}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{wo.vehicleType}</td>

@@ -7,10 +7,9 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Get all shops with their subscriptions (these are your clients)
+    // Get all shops (these are your clients)
     const clients = await prisma.shop.findMany({
       include: {
-        subscription: true,
         _count: {
           select: {
             workOrders: true,
@@ -31,8 +30,6 @@ export async function GET(request: NextRequest) {
       'Phone',
       'Shop Type',
       'Status',
-      'Subscription Plan',
-      'Subscription Status',
       'Work Orders',
       'Technicians',
       'Created At'
@@ -45,8 +42,6 @@ export async function GET(request: NextRequest) {
       client.phone || '',
       client.shopType || '',
       client.status || '',
-      client.subscription?.plan || 'none',
-      client.subscription?.status || 'none',
       client._count?.workOrders?.toString() || '0',
       client._count?.techs?.toString() || '0',
       client.createdAt ? new Date(client.createdAt).toISOString().split('T')[0] : ''

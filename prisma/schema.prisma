@@ -1,52 +1,40 @@
-// Prisma Schema for Multi-Tenant Work Order Management System
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider  = "postgresql"
-  // DATABASE_URL         → Neon POOLED connection string (set by Vercel-Neon integration)
-  //                        Host has "-pooler" suffix: ep-xxx-pooler.region.neon.tech
-  // DATABASE_URL_UNPOOLED → Neon DIRECT connection string (also set by integration)
-  //                        Used here as directUrl for migrations (prisma migrate / db push)
   url       = env("DATABASE_URL")
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
-// Customer model
-// IMPORTANT: Do NOT commit connection strings or secrets into the repo.
-// Keep the real connection string in a local `.env` file and in your
-// deployment platform's env settings (Vercel/Neon). Set `DATABASE_URL` in
-// your local `.env` (do not commit the file with real credentials).
 model Customer {
-  id               String   @id @default(cuid())
-  email            String   @unique
-  username         String?  @unique
-  password         String
-  firstName        String
-  lastName         String
-  phone            String?
-  company          String?
-  stripeCustomerId String?  @unique
-  internalNotes    String?
-  tags             String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  workOrders          WorkOrder[]
-  notifications       Notification[]
-  vehicles            Vehicle[]
-  paymentMethods      PaymentMethod[]
-  reviews             Review[]
+  id                  String               @id @default(cuid())
+  username            String?              @unique
+  email               String               @unique
+  password            String
+  firstName           String
+  lastName            String
+  phone               String?
+  company             String?
+  stripeCustomerId    String?              @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  emailVerified       Boolean              @default(true)
+  emailVerifiedAt     DateTime?
+  internalNotes       String?
+  tags                String?
   appointments        Appointment[]
-  favoriteShops       FavoriteShop[]
   documents           CustomerDocument[]
   messages            CustomerMessage[]
+  favoriteShops       FavoriteShop[]
+  notifications       Notification[]
+  paymentMethods      PaymentMethod[]
   recurringWorkOrders RecurringWorkOrder[]
+  reviews             Review[]
   rewardClaims        RewardClaim[]
-
-  emailVerified   Boolean   @default(true)
-  emailVerifiedAt DateTime?
+  vehicles            Vehicle[]
+  workOrders          WorkOrder[]
 
   @@map("customers")
 }
@@ -67,128 +55,108 @@ model VerificationToken {
 model RewardClaim {
   id         String    @id @default(cuid())
   customerId String
-  tierId     String    // 'tier-1', 'tier-2', 'tier-3', 'tier-4'
-  status     String    @default("pending") // pending, redeemed, expired
+  tierId     String
+  status     String    @default("pending")
   claimedAt  DateTime  @default(now())
   redeemedAt DateTime?
   expiresAt  DateTime
-
-  customer Customer @relation(fields: [customerId], references: [id])
+  customer   Customer  @relation(fields: [customerId], references: [id])
 
   @@index([customerId])
   @@map("reward_claims")
 }
 
-// Shop model
 model Shop {
-  id        String  @id @default(cuid())
-  username  String  @unique
-  password  String
-  shopName  String
-  ownerName String? // Owner's full name
-  email     String
-  phone     String
-  zipCode   String
-  address   String?
-  city      String?
-  state     String?
-
-  businessLicense String?
-  insurancePolicy String?
-  shopType        String? // diesel, gas, both
-  profileComplete Boolean @default(false)
-
-  // Stripe Connect - payout account for work order payment splitting
-  stripeAccountId String? // Stripe connected account ID (acct_...)
-  capacity        Int     @default(1) // Number of bays/simultaneous appointments
-  slotDuration    Int     @default(30) // Default time slot duration in minutes
-
-  // Two-Factor Authentication
-  twoFactorEnabled Boolean @default(false)
-  twoFactorSecret  String? // TOTP secret (base32 encoded, store encrypted in prod)
-
-  status String @default("pending") // pending, approved, suspended
-
-  emailVerified   Boolean   @default(true)
-  emailVerifiedAt DateTime?
-
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  approvedAt DateTime?
-
-  services            ShopService[]
-  shopLaborRates      ShopLaborRate[]
-  workOrders          WorkOrder[]
-  techs               Tech[]
-  inventory           InventoryItem[]
-  settings            ShopSettings?
-  reviews             Review[]
+  id                  String                   @id @default(cuid())
+  username            String                   @unique
+  password            String
+  shopName            String
+  ownerName           String?
+  email               String
+  phone               String
+  zipCode             String
+  address             String?
+  city                String?
+  state               String?
+  businessLicense     String?
+  insurancePolicy     String?
+  shopType            String?
+  profileComplete     Boolean                  @default(false)
+  capacity            Int                      @default(1)
+  slotDuration        Int                      @default(30)
+  status              String                   @default("pending")
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  approvedAt          DateTime?
+  stripeAccountId     String?
+  twoFactorEnabled    Boolean                  @default(false)
+  twoFactorSecret     String?
+  emailVerified       Boolean                  @default(true)
+  emailVerifiedAt     DateTime?
   appointments        Appointment[]
-  subscription        Subscription?
-  schedules           ShopSchedule[]
-  blockedDates        ShopBlockedDate[]
-  purchaseOrders      PurchaseOrder[]
-  recurringWorkOrders RecurringWorkOrder[]
-  monthlyReports      ShopMonthlyReport[]
+  automationRules     AutomationRule[]
   bays                Bay[]
-  loanerVehicles      LoanerVehicle[]
-  fleetAccounts       FleetAccount[]
+  campaigns           Campaign[]
   coreReturns         CoreReturn[]
   dviInspections      DVIInspection[]
-  automationRules     AutomationRule[]
-  referrals           Referral[]
-  stateInspections    StateInspection[]
   environmentalFees   EnvironmentalFee[]
-  taxRules            TaxRule[]
+  fleetAccounts       FleetAccount[]
   integrations        IntegrationConfig[]
-  branding            ShopBranding?            @relation(fields: [shopBrandingId], references: [id])
-  paymentLinks        PaymentLink[]
-  workAuthorizations  WorkAuthorization[]
-  conditionReports    VehicleConditionReport[]
-  shopBrandingId      String?
-  shifts              Shift[]
-  shiftSwapRequests   ShiftSwapRequest[]
+  inventory           InventoryItem[]
   leaveRequests       LeaveRequest[]
+  loanerVehicles      LoanerVehicle[]
+  overtimeRule        OvertimeRule?
   payPeriods          PayPeriod[]
   payStubs            PayStub[]
-  overtimeRule        OvertimeRule?
-  vendors             Vendor[]
-  workOrderTemplates  WorkOrderTemplate[]
+  paymentLinks        PaymentLink[]
+  purchaseOrders      PurchaseOrder[]
+  recurringWorkOrders RecurringWorkOrder[]
+  referrals           Referral[]
+  reviews             Review[]
+  shiftSwapRequests   ShiftSwapRequest[]
+  shifts              Shift[]
+  blockedDates        ShopBlockedDate[]
+  shopLaborRates      ShopLaborRate[]
   shopLocations       ShopLocation[]
-  campaigns           Campaign[]
+  monthlyReports      ShopMonthlyReport[]
+  schedules           ShopSchedule[]
+  services            ShopService[]
+  settings            ShopSettings?
+  stateInspections    StateInspection[]
+  taxRules            TaxRule[]
+  techs               Tech[]
+  conditionReports    VehicleConditionReport[]
+  vendors             Vendor[]
+  workAuthorizations  WorkAuthorization[]
+  workOrders          WorkOrder[]
+  workOrderTemplates  WorkOrderTemplate[]
 
   @@map("shops")
 }
 
-// Shop Business Hours (per day of week)
 model ShopSchedule {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  dayOfWeek Int // 0=Sunday, 1=Monday, ... 6=Saturday
-  isOpen    Boolean @default(true)
-  openTime  String // "09:00" format (24hr)
-  closeTime String // "17:00" format (24hr)
-
+  id        String   @id @default(cuid())
+  shopId    String
+  dayOfWeek Int
+  isOpen    Boolean  @default(true)
+  openTime  String
+  closeTime String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, dayOfWeek])
   @@index([shopId])
   @@map("shop_schedules")
 }
 
-// Shop Blocked Dates (vacations, holidays, closures)
 model ShopBlockedDate {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  date   DateTime // The blocked date
-  reason String? // "Holiday", "Vacation", "Maintenance", etc.
-
+  id        String   @id @default(cuid())
+  shopId    String
+  date      DateTime
+  reason    String?
   createdAt DateTime @default(now())
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, date])
   @@index([shopId])
@@ -196,189 +164,140 @@ model ShopBlockedDate {
   @@map("shop_blocked_dates")
 }
 
-// Shop Services (51 services)
 model ShopService {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
+  id          String   @id @default(cuid())
+  shopId      String
   serviceName String
-  category    String // diesel, gas
-  price       Float? // optional price for the service
-  duration    Int? // labor time in minutes
-  description String? // notes about the service
-
-  createdAt DateTime @default(now())
+  category    String
+  price       Float?
+  duration    Int?
+  description String?
+  createdAt   DateTime @default(now())
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, serviceName, category])
   @@index([shopId])
   @@map("shop_services")
 }
 
-// Labor rates for shops
 model ShopLaborRate {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  name     String
-  rate     Float
-  category String
-
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  rate      Float
+  category  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@map("shop_labor_rates")
 }
 
-// Tech/Manager Users
 model Tech {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  email     String  @unique
-  password  String
-  firstName String
-  lastName  String
-  phone     String?
-  role      String // tech, manager
-
-  available Boolean @default(true)
-
-  // Two-Factor Authentication for techs/managers
-  twoFactorEnabled Boolean @default(false)
-  twoFactorSecret  String?
-
-  // Labor rate for payroll
-  hourlyRate Float @default(0)
-
-  // Location tracking
-  latitude           Float?
-  longitude          Float?
-  locationAccuracy   Float?
-  lastLocationUpdate DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Payroll settings
-  payType           String  @default("hourly") // hourly, salary
-  salary            Float?  // annual salary if payType = salary
-  overtimeRate      Float?  // defaults to 1.5x hourlyRate
-  department        String? // service, parts, admin, management
-  jobTitle          String?
-  employmentType    String  @default("full-time") // full-time, part-time, contractor
-  hireDate          DateTime?
-  terminatedAt      DateTime?
-  taxWithholding    String? // JSON: federal/state allowances
-  bankAccountInfo   String? // encrypted JSON: routing/account
-  emergencyContact  String? // JSON: name/phone/relationship
-
-  assignedWorkOrders WorkOrder[]
-  statusHistory      StatusHistory[]
-  timeEntries        TimeEntry[]
-  shifts             Shift[]
+  id                    String             @id @default(cuid())
+  shopId                String
+  email                 String             @unique
+  password              String
+  firstName             String
+  lastName              String
+  phone                 String?
+  role                  String
+  available             Boolean            @default(true)
+  hourlyRate            Float              @default(0)
+  latitude              Float?
+  longitude             Float?
+  locationAccuracy      Float?
+  lastLocationUpdate    DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  bankAccountInfo       String?
+  department            String?
+  emergencyContact      String?
+  employmentType        String             @default("full-time")
+  hireDate              DateTime?
+  jobTitle              String?
+  overtimeRate          Float?
+  payType               String             @default("hourly")
+  salary                Float?
+  taxWithholding        String?
+  terminatedAt          DateTime?
+  twoFactorEnabled      Boolean            @default(false)
+  twoFactorSecret       String?
+  leaveRequests         LeaveRequest[]
+  payStubs              PayStub[]
   shiftSwapsAsRequester ShiftSwapRequest[] @relation("SwapRequester")
   shiftSwapsAsTarget    ShiftSwapRequest[] @relation("SwapTarget")
-  leaveRequests      LeaveRequest[]
-  payStubs           PayStub[]
+  shifts                Shift[]
+  statusHistory         StatusHistory[]
+  shop                  Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  timeEntries           TimeEntry[]
+  assignedWorkOrders    WorkOrder[]
 
   @@index([shopId])
   @@map("techs")
 }
 
-// Vehicle model
 model Vehicle {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  vehicleType  String // semi-truck, trailer, equipment, personal-vehicle
-  make         String?
-  model        String?
-  year         Int?
-  vin          String?
-  licensePlate String?
-
-  createdAt DateTime @default(now())
-
-  workOrders          WorkOrder[]
+  id                  String               @id @default(cuid())
+  customerId          String
+  vehicleType         String
+  make                String?
+  model               String?
+  year                Int?
+  vin                 String?
+  licensePlate        String?
+  createdAt           DateTime             @default(now())
   appointments        Appointment[]
   recurringWorkOrders RecurringWorkOrder[]
+  customer            Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  workOrders          WorkOrder[]
 
   @@index([customerId])
   @@map("vehicles")
 }
 
-// Work Order model
 model WorkOrder {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
-
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id])
-
-  vehicleId String?
-  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
-
-  vehicleType     String
-  serviceLocation String // roadside, in-shop
-
-  // Services requested
-  repairs     Json? // RepairService[]
-  maintenance Json? // MaintenanceService[]
-
-  // Parts
-  partsMaterials Json? // PartsMaterials
-
-  // Issue description
-  issueDescription String
-  pictures         Json? // string[]
-  vinPhoto         String?
-
-  // Location
-  location Json? // VehicleLocation
-
-  // Assignment
-  assignedTechId String?
-  assignedTo     Tech?   @relation(fields: [assignedTechId], references: [id])
-  bay            Int? // Bay number (1-999) where work is being performed
-
-  // Status
-  status String @default("pending") // pending, assigned, in-progress, waiting-estimate, waiting-for-payment, closed, denied-estimate
-
-  // Estimate
-  estimate Json? // Estimate with line items
-
-  // Work details
-  techLabor  Json? // TechnicianLabor
-  partsUsed  Json? // PartLaborBreakdown
-  workPhotos Json? // WorkPhoto[]
-
-  // Completion
-  completion Json? // CompletionVerification
-
-  // Payment
-  paymentStatus   String    @default("unpaid") // unpaid, pending, paid, refunded
-  paymentIntentId String?
-  amountPaid      Float?
-  estimatedCost   Float? // Total cost estimate for the work order
-  dueDate         DateTime?
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  completedAt DateTime?
-
-  reviews            Review[]
-  messages           Message[]
-  statusHistory      StatusHistory[]
+  id                 String              @id @default(cuid())
+  customerId         String
+  shopId             String
+  vehicleId          String?
+  vehicleType        String
+  serviceLocation    String
+  issueDescription   String
+  vinPhoto           String?
+  assignedTechId     String?
+  bay                Int?
+  status             String              @default("pending")
+  paymentStatus      String              @default("unpaid")
+  paymentIntentId    String?
+  amountPaid         Float?
+  estimatedCost      Float?
+  dueDate            DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  completedAt        DateTime?
+  repairs            Json?
+  maintenance        Json?
+  partsMaterials     Json?
+  pictures           Json?
+  location           Json?
+  estimate           Json?
+  techLabor          Json?
+  partsUsed          Json?
+  workPhotos         Json?
+  completion         Json?
   customerMessages   CustomerMessage[]
-  tracking           TechTracking?
+  messages           Message[]
   purchaseOrderItems PurchaseOrderItem[]
+  reviews            Review[]
+  statusHistory      StatusHistory[]
+  tracking           TechTracking?
   timeEntries        TimeEntry[]
+  assignedTo         Tech?               @relation(fields: [assignedTechId], references: [id])
+  customer           Customer            @relation(fields: [customerId], references: [id])
+  shop               Shop                @relation(fields: [shopId], references: [id])
+  vehicle            Vehicle?            @relation(fields: [vehicleId], references: [id])
 
   @@index([customerId])
   @@index([shopId])
@@ -388,65 +307,49 @@ model WorkOrder {
   @@map("work_orders")
 }
 
-// Status History
 model StatusHistory {
   id          String    @id @default(cuid())
   workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
-  fromStatus String
-  toStatus   String
-  reason     String?
-
+  fromStatus  String
+  toStatus    String
+  reason      String?
   changedById String?
-  changedBy   Tech?   @relation(fields: [changedById], references: [id])
-
-  createdAt DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  changedBy   Tech?     @relation(fields: [changedById], references: [id])
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@map("status_history")
 }
 
-// Messages
 model Message {
   id          String    @id @default(cuid())
   workOrderId String
+  sender      String
+  senderName  String
+  body        String
+  createdAt   DateTime  @default(now())
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
-  sender     String // customer, tech, manager
-  senderName String
-  body       String
-
-  createdAt DateTime @default(now())
 
   @@index([workOrderId])
   @@map("messages")
 }
 
-// Notifications
 model Notification {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  type    String // status_update, estimate_ready, payment_due, appointment_reminder, etc.
-  title   String
-  message String
-  read    Boolean   @default(false)
-  readAt  DateTime?
-
-  // Related entities
-  workOrderId   String?
-  appointmentId String?
-
-  // Delivery methods
-  deliveryMethod String // 'email,sms,push,in-app' (comma-separated)
-
-  // Metadata
-  metadata String? // JSON string for additional data
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  customerId     String
+  type           String
+  title          String
+  message        String
+  read           Boolean   @default(false)
+  readAt         DateTime?
+  workOrderId    String?
+  appointmentId  String?
+  deliveryMethod String
+  metadata       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@index([read])
@@ -455,73 +358,54 @@ model Notification {
   @@map("notifications")
 }
 
-// Inventory
 model InventoryItem {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  type String // part, labor
-  name String
-  sku  String?
-
-  // For parts
-  quantity     Int   @default(0)
-  price        Float @default(0)
+  id           String   @id @default(cuid())
+  shopId       String
+  type         String
+  name         String
+  sku          String?
+  quantity     Int      @default(0)
+  price        Float    @default(0)
   reorderPoint Int?
-
-  // For labor
-  rate Float? // hourly rate
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  rate         Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@map("inventory")
 }
 
-// Payment Methods
 model PaymentMethod {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  type        String // card, bank
-  last4       String
-  brand       String?
-  expiryMonth Int?
-  expiryYear  Int?
-
-  isDefault Boolean @default(false)
-
+  id                    String   @id @default(cuid())
+  customerId            String
+  type                  String
+  last4                 String
+  brand                 String?
+  expiryMonth           Int?
+  expiryYear            Int?
+  isDefault             Boolean  @default(false)
   stripePaymentMethodId String?
-
-  createdAt DateTime @default(now())
+  createdAt             DateTime @default(now())
+  customer              Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@map("payment_methods")
 }
 
-// Reviews
-// Removed duplicate - using enhanced Review model at end of file
-
-// Activity Logs
 model ActivityLog {
-  id String @id @default(cuid())
-
-  type     String // shop, revenue, user, alert
-  action   String
-  details  String
-  location String?
-  email    String?
-  amount   String?
-  severity String // info, success, warning, error
-  user     String
-  shopId   String? // Shop scope for shop-facing logs
-
-  metadata String?
-
+  id        String   @id @default(cuid())
+  type      String
+  action    String
+  details   String
+  location  String?
+  email     String?
+  amount    String?
+  severity  String
+  user      String
+  metadata  String?
   createdAt DateTime @default(now())
+  shopId    String?
 
   @@index([type])
   @@index([createdAt])
@@ -529,83 +413,58 @@ model ActivityLog {
   @@map("activity_logs")
 }
 
-// Admin model
 model Admin {
-  id       String @id @default(cuid())
-  username String @unique
-  password String
-  email    String @unique
-
-  isSuperAdmin Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
+  id            String         @id @default(cuid())
+  username      String         @unique
+  password      String
+  email         String         @unique
+  isSuperAdmin  Boolean        @default(false)
+  createdAt     DateTime       @default(now())
   refreshTokens RefreshToken[]
 
   @@map("admins")
 }
 
-// Refresh tokens for long-lived sessions
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   tokenHash String
   adminId   String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   expiresAt DateTime
   metadata  String?
-  revoked   Boolean  @default(false) // Session revocation support
+  revoked   Boolean   @default(false)
   revokedAt DateTime?
-
-  admin Admin? @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  admin     Admin?    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([revoked])
   @@map("refresh_tokens")
 }
 
-// Time tracking for employees (techs and managers)
 model TimeEntry {
-  id     String @id @default(cuid())
-  techId String
-  tech   Tech   @relation(fields: [techId], references: [id], onDelete: Cascade)
-  shopId String
-
-  clockIn  DateTime
-  clockOut DateTime?
-
-  // Break tracking (backwards-compatible single break fields kept for older code)
+  id            String     @id @default(cuid())
+  techId        String
+  shopId        String
+  clockIn       DateTime
+  clockOut      DateTime?
   breakStart    DateTime?
   breakEnd      DateTime?
-  breakDuration Float? // Minutes
-
-  // Support multiple breaks and historical break records
-  breaks Json? // [{ start: string, end?: string, durationMinutes?: number, type?: 'break'|'pto' }]
-
-  // Link a time entry to a Work Order (optional)
-  workOrderId String?
-  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id])
-
-  // PTO / manual entries
-  isPto Boolean @default(false)
-
-  // Approval & locking workflow
-  approved   Boolean   @default(false)
-  approvedBy String?
-  approvedAt DateTime?
-  locked     Boolean   @default(false)
-
-  // Calculated fields
-  hoursWorked Float? // Calculated when clocked out (excluding breaks)
-  notes       String?
-
-  // Location tracking (optional)
-  location String?
-
-  // Photo verification (optional - stored as URLs)
+  breakDuration Float?
+  breaks        Json?
+  workOrderId   String?
+  isPto         Boolean    @default(false)
+  approved      Boolean    @default(false)
+  approvedBy    String?
+  approvedAt    DateTime?
+  locked        Boolean    @default(false)
+  hoursWorked   Float?
+  notes         String?
+  location      String?
   clockInPhoto  String?
   clockOutPhoto String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  tech          Tech       @relation(fields: [techId], references: [id], onDelete: Cascade)
+  workOrder     WorkOrder? @relation(fields: [workOrderId], references: [id])
 
   @@index([techId])
   @@index([shopId])
@@ -614,73 +473,48 @@ model TimeEntry {
   @@map("time_entries")
 }
 
-// Shop-specific settings for labor rates, margins, etc.
 model ShopSettings {
-  id     String @id @default(cuid())
-  shopId String @unique
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  // Labor settings
-  defaultLaborRate   Float @default(0) // Default hourly rate for labor
-  overtimeMultiplier Float @default(1.5) // Overtime pay multiplier (1.5x standard)
-
-  // Inventory markup (profit margin for parts)
-  inventoryMarkup Float @default(0.30) // 30% markup on parts cost
-
-  // Business hours
-  businessHours String? // { monday: { open: '08:00', close: '17:00' }, ... }
-
-  // Other settings
-  taxRate           Float   @default(0)
-  allowTimeTracking Boolean @default(true)
-  requireClockInOut Boolean @default(false)
-
-  // GPS verification settings
-  gpsVerificationEnabled Boolean @default(false)
-  shopLatitude           Float?
-  shopLongitude          Float?
-  gpsRadiusMeters        Int?    @default(100) // Allow clock in within 100m
-
-  // Payroll budgets
-  weeklyPayrollBudget  Float?
-  monthlyPayrollBudget Float?
-
-  // Shop-wide notification preferences
-  notificationsEnabled     Boolean @default(true)
-  notificationSoundEnabled Boolean @default(true)
+  id                       String   @id @default(cuid())
+  shopId                   String   @unique
+  defaultLaborRate         Float    @default(0)
+  overtimeMultiplier       Float    @default(1.5)
+  inventoryMarkup          Float    @default(0.30)
+  businessHours            String?
+  taxRate                  Float    @default(0)
+  allowTimeTracking        Boolean  @default(true)
+  requireClockInOut        Boolean  @default(false)
+  gpsVerificationEnabled   Boolean  @default(false)
+  shopLatitude             Float?
+  shopLongitude            Float?
+  gpsRadiusMeters          Int?     @default(100)
+  weeklyPayrollBudget      Float?
+  monthlyPayrollBudget     Float?
+  notificationsEnabled     Boolean  @default(true)
+  notificationSoundEnabled Boolean  @default(true)
   notificationPreferences  Json?
-
-  // Security settings
-  require2FA Boolean @default(false) // Require techs/managers to set up 2FA
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  require2FA               Boolean  @default(false)
+  shop                     Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@map("shop_settings")
 }
 
-// Inventory requests from managers
 model InventoryRequest {
-  id            String @id @default(cuid())
-  shopId        String
-  requestedById String // Tech ID (manager)
-
-  itemName String
-  quantity Int
-  reason   String?
-  urgency  String  @default("normal") // low, normal, high, urgent
-  status   String  @default("pending") // pending, approved, ordered, received, denied
-
-  approvedBy String?
-  approvedAt DateTime?
-
-  // Link to actual inventory item if approved
+  id              String    @id @default(cuid())
+  shopId          String
+  requestedById   String
+  itemName        String
+  quantity        Int
+  reason          String?
+  urgency         String    @default("normal")
+  status          String    @default("pending")
+  approvedBy      String?
+  approvedAt      DateTime?
   inventoryItemId String?
-
-  orderDetails String? // Purchase order info, tracking, etc.
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  orderDetails    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([shopId])
   @@index([requestedById])
@@ -688,79 +522,66 @@ model InventoryRequest {
   @@map("inventory_requests")
 }
 
-// Full inventory management (created when inventory requests are approved or manually added)
 model InventoryStock {
-  id     String @id @default(cuid())
-  shopId String
-
-  itemName String
-  sku      String?
-  category String? // parts, fluids, tires, tools, etc.
-
-  quantity        Int   @default(0)
-  unitCost        Float @default(0)
-  sellingPrice    Float @default(0)
-  reorderPoint    Int   @default(10)
-  reorderQuantity Int   @default(50)
-
-  supplier    String?
-  supplierSKU String?
-  location    String? // shelf/bin location in shop
-
-  // Tracking
-  lastRestocked DateTime?
-  notes         String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id                 String              @id @default(cuid())
+  shopId             String
+  itemName           String
+  sku                String?
+  category           String?
+  quantity           Int                 @default(0)
+  unitCost           Float               @default(0)
+  sellingPrice       Float               @default(0)
+  reorderPoint       Int                 @default(10)
+  reorderQuantity    Int                 @default(50)
+  supplier           String?
+  supplierSKU        String?
+  location           String?
+  lastRestocked      DateTime?
+  notes              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   purchaseOrderItems PurchaseOrderItem[]
 
   @@index([shopId])
   @@index([category])
-  @@index([quantity]) // For low stock alerts
+  @@index([quantity])
   @@map("inventory_stock")
 }
 
 model PurchaseOrder {
-  id                     String    @id @default(cuid())
+  id                     String              @id @default(cuid())
   shopId                 String
-  shop                   Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
   vendor                 String?
-  status                 String    @default("ordered") // ordered, shipped, received, cancelled
-  customerApprovalStatus String    @default("pending") // pending, approved, rejected
+  status                 String              @default("ordered")
   expectedDate           DateTime?
   notes                  String?
   createdById            String?
   totalCost              Float?
-
-  items     PurchaseOrderItem[]
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  customerApprovalStatus String              @default("pending")
+  items                  PurchaseOrderItem[]
+  shop                   Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@map("purchase_orders")
 }
 
 model PurchaseOrderItem {
-  id              String        @id @default(cuid())
-  purchaseOrderId String
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-
-  workOrderId String?
-  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id])
-
+  id               String          @id @default(cuid())
+  purchaseOrderId  String
+  workOrderId      String?
   inventoryStockId String?
+  itemName         String
+  sku              String?
+  quantity         Int
+  unitCost         Float           @default(0)
+  status           String          @default("ordered")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   inventoryStock   InventoryStock? @relation(fields: [inventoryStockId], references: [id])
-
-  itemName String
-  sku      String?
-  quantity Int
-  unitCost Float   @default(0)
-  status   String  @default("ordered") // ordered, shipped, received, cancelled
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  purchaseOrder    PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  workOrder        WorkOrder?      @relation(fields: [workOrderId], references: [id])
 
   @@index([purchaseOrderId])
   @@index([workOrderId])
@@ -768,19 +589,17 @@ model PurchaseOrderItem {
   @@map("purchase_order_items")
 }
 
-// Audit Log for admin actions
 model AuditLog {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   adminId    String
-  action     String // user_updated, user_deleted, shop_approved, etc.
-  targetId   String? // ID of affected resource
-  targetType String? // user, shop, workorder, etc.
-  details    String? // Additional context
+  action     String
+  targetId   String?
+  targetType String?
+  details    String?
   ipAddress  String?
   userAgent  String?
-  shopId     String? // Shop scope for shop-facing logs
-
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  shopId     String?
 
   @@index([adminId])
   @@index([action])
@@ -789,36 +608,22 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// Direct Messages (Manager ↔ Tech, Manager ↔ Admin, Manager ↔ Customer)
 model DirectMessage {
-  id String @id @default(cuid())
-
-  // Sender
-  senderId   String
-  senderRole String // manager, tech, admin, customer, shop
-  senderName String
-
-  // Receiver
+  id           String    @id @default(cuid())
+  senderId     String
+  senderRole   String
+  senderName   String
   receiverId   String
-  receiverRole String // manager, tech, admin, customer, shop
+  receiverRole String
   receiverName String
-
-  // Shop context (for managers/techs)
-  shopId String?
-
-  // Message content
-  subject String?
-  body    String
-
-  // Status
-  isRead Boolean   @default(false)
-  readAt DateTime?
-
-  // Reply thread
-  threadId String? // ID of the first message in conversation
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  shopId       String?
+  subject      String?
+  body         String
+  isRead       Boolean   @default(false)
+  readAt       DateTime?
+  threadId     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([senderId, senderRole])
   @@index([receiverId, receiverRole])
@@ -828,27 +633,21 @@ model DirectMessage {
   @@map("direct_messages")
 }
 
-// Appointments - Customer booking system
 model Appointment {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  vehicleId String?
-  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
-
+  id            String            @id @default(cuid())
+  customerId    String
+  shopId        String
+  vehicleId     String?
   scheduledDate DateTime
-  serviceType   String // oil-change, inspection, repair, etc.
+  serviceType   String
   notes         String?
-  status        String   @default("scheduled") // scheduled, confirmed, completed, cancelled, no-show
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  messages CustomerMessage[]
+  status        String            @default("scheduled")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  shop          Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle?          @relation(fields: [vehicleId], references: [id])
+  messages      CustomerMessage[]
 
   @@index([customerId])
   @@index([shopId])
@@ -857,26 +656,20 @@ model Appointment {
   @@map("appointments")
 }
 
-// Reviews - Customer feedback system
 model Review {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  workOrderId String
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
-  rating  Int // 1-5 stars
-  comment String?
-
+  id             String    @id @default(cuid())
+  customerId     String
+  shopId         String
+  workOrderId    String
+  rating         Int
+  comment        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   shopResponse   String?
   shopResponseAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  shop           Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@unique([workOrderId, customerId])
   @@index([customerId])
@@ -885,58 +678,46 @@ model Review {
   @@map("reviews")
 }
 
-// Favorite Shops - Customer saved shops
 model FavoriteShop {
   id         String   @id @default(cuid())
   customerId String
+  shopId     String
+  createdAt  DateTime @default(now())
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  shopId String
-
-  createdAt DateTime @default(now())
 
   @@unique([customerId, shopId])
   @@index([customerId])
   @@map("favorite_shops")
 }
 
-// Customer Documents - Invoices, receipts, warranties
 model CustomerDocument {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  name     String
-  type     String @default("other") // invoice, receipt, warranty, contract, other
-  url      String // Cloudinary URL
-  fileSize Int    @default(0)
-
+  id          String   @id @default(cuid())
+  customerId  String
+  name        String
+  type        String   @default("other")
+  url         String
+  fileSize    Int      @default(0)
   workOrderId String?
-
-  uploadedAt DateTime @default(now())
+  uploadedAt  DateTime @default(now())
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@index([workOrderId])
   @@map("customer_documents")
 }
 
-// Customer Messages - Chat between customer and tech
 model CustomerMessage {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  // Can be linked to workOrder OR appointment (at least one required)
+  id            String       @id @default(cuid())
+  customerId    String
   workOrderId   String?
-  workOrder     WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   appointmentId String?
+  from          String
+  content       String
+  read          Boolean      @default(false)
+  sentAt        DateTime     @default(now())
   appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-
-  from    String // 'customer' or 'tech' or 'shop'
-  content String
-  read    Boolean @default(false)
-
-  sentAt DateTime @default(now())
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  workOrder     WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@index([workOrderId])
@@ -945,67 +726,28 @@ model CustomerMessage {
   @@map("customer_messages")
 }
 
-// Tech Tracking - Real-time GPS location for active work orders
 model TechTracking {
-  id          String    @id @default(cuid())
-  workOrderId String    @unique
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-
+  id               String    @id @default(cuid())
+  workOrderId      String    @unique
   latitude         Float
   longitude        Float
   estimatedArrival DateTime?
-
-  updatedAt DateTime @updatedAt
+  updatedAt        DateTime  @updatedAt
+  workOrder        WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@map("tech_tracking")
 }
 
-// Push Subscriptions - Web push notifications
 model PushSubscription {
-  id           String @id @default(cuid())
-  customerId   String @unique
-  subscription String // JSON string of push subscription
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  customerId   String   @unique
+  subscription String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([customerId])
   @@map("push_subscriptions")
-}
-
-// Subscription Management
-model Subscription {
-  id     String @id @default(cuid())
-  shopId String @unique
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  plan                 String
-  status               String  @default("active")
-  stripeSubscriptionId String? @unique
-  stripeCustomerId     String?
-
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-  cancelAtPeriodEnd  Boolean   @default(false)
-  canceledAt         DateTime?
-
-  trialStart DateTime?
-  trialEnd   DateTime?
-
-  lastPaymentDate   DateTime?
-  lastPaymentAmount Float?
-
-  maxUsers Int @default(1)
-  maxShops Int @default(1)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([shopId])
-  @@index([stripeSubscriptionId])
-  @@index([stripeCustomerId])
-  @@map("subscriptions")
 }
 
 model PaymentHistory {
@@ -1027,12 +769,11 @@ model PaymentHistory {
   @@map("payment_history")
 }
 
-// Analytics tracking for website visits
 model PageView {
   id        String   @id @default(cuid())
   path      String
   userAgent String?
-  ipHash    String? // Hashed IP for privacy
+  ipHash    String?
   sessionId String?
   referrer  String?
   createdAt DateTime @default(now())
@@ -1042,44 +783,30 @@ model PageView {
   @@map("page_views")
 }
 
-// Recurring Work Order schedules
 model RecurringWorkOrder {
-  id String @id @default(cuid())
-
-  // Who scheduled it
-  shopId     String
-  shop       Shop     @relation(fields: [shopId], references: [id])
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
-
-  vehicleId String?
-  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
-
-  // What to do
-  title            String // e.g. "Oil Change"
+  id               String    @id @default(cuid())
+  shopId           String
+  customerId       String
+  vehicleId        String?
+  title            String
   issueDescription String
-  vehicleType      String @default("car")
-  serviceLocation  String @default("in-shop")
-
-  // Recurrence
-  frequency String // weekly | biweekly | monthly | quarterly | annually
-  nextRunAt DateTime // When the next work order should be created
-  lastRunAt DateTime? // When the last work order was created
-
-  // Template values carried into each new work order
-  estimatedCost Float?
-  priority      String  @default("medium")
-  notes         String?
-
-  active           Boolean @default(true)
-  requiresApproval Boolean @default(true) // If true, customer must confirm before WO is created
-
-  // Reminder tracking — prevents double-sending
-  reminder14SentAt DateTime? // When the 14-day reminder was last sent
-  reminder7SentAt  DateTime? // When the 7-day reminder was last sent
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  vehicleType      String    @default("car")
+  serviceLocation  String    @default("in-shop")
+  frequency        String
+  nextRunAt        DateTime
+  lastRunAt        DateTime?
+  estimatedCost    Float?
+  priority         String    @default("medium")
+  notes            String?
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  requiresApproval Boolean   @default(true)
+  reminder14SentAt DateTime?
+  reminder7SentAt  DateTime?
+  customer         Customer  @relation(fields: [customerId], references: [id])
+  shop             Shop      @relation(fields: [shopId], references: [id])
+  vehicle          Vehicle?  @relation(fields: [vehicleId], references: [id])
 
   @@index([shopId])
   @@index([customerId])
@@ -1087,37 +814,28 @@ model RecurringWorkOrder {
   @@map("recurring_work_orders")
 }
 
-// ─────────────────────────────────────────────
-//  NEW FEATURE MODELS
-// ─────────────────────────────────────────────
-
-// Bay / Lift Scheduling Board
 model Bay {
-  id     String @id @default(cuid())
-  shopId String
-  name   String // "Bay 1", "Lift 2", "Alignment Bay"
-  type   String @default("general") // general, alignment, tire, lube, inspection
-
-  workOrderId String? // currently assigned WO
-  techId      String? // currently assigned tech
-  vehicleDesc String? // year/make/model summary
-  status      String    @default("empty") // empty, occupied, reserved
+  id          String    @id @default(cuid())
+  shopId      String
+  name        String
+  type        String    @default("general")
+  workOrderId String?
+  techId      String?
+  vehicleDesc String?
+  status      String    @default("empty")
   startedAt   DateTime?
   notes       String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Shop        Shop      @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@map("bays")
 }
 
-// Loaner Vehicle Management
 model LoanerVehicle {
-  id     String @id @default(cuid())
-  shopId String
-
+  id           String    @id @default(cuid())
+  shopId       String
   make         String
   model        String
   year         Int
@@ -1126,51 +844,43 @@ model LoanerVehicle {
   vin          String?
   mileageOut   Int?
   mileageIn    Int?
-  fuelLevelOut String? // full, 3/4, 1/2, 1/4, empty
+  fuelLevelOut String?
   fuelLevelIn  String?
   damageNotes  String?
-  photos       String? // JSON array of photo URLs
-
-  // Assignment
+  photos       String?
   customerId   String?
   workOrderId  String?
   checkedOutAt DateTime?
   expectedBack DateTime?
   checkedInAt  DateTime?
-
-  status String @default("available") // available, out, maintenance
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  status       String    @default("available")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  Shop         Shop      @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@index([status])
   @@map("loaner_vehicles")
 }
 
-// Fleet Accounts — B2B clients with multiple vehicles
 model FleetAccount {
-  id     String @id @default(cuid())
-  shopId String
-
+  id             String         @id @default(cuid())
+  shopId         String
   companyName    String
   contactName    String
   contactEmail   String
   contactPhone   String?
   billingAddress String?
   taxId          String?
-  netTerms       Int     @default(30) // Net-30, Net-60, etc.
-  creditLimit    Float   @default(0)
+  netTerms       Int            @default(30)
+  creditLimit    Float          @default(0)
   notes          String?
-  status         String  @default("active") // active, suspended, closed
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  vehicles FleetVehicle[]
-  invoices FleetInvoice[]
-  Shop     Shop           @relation(fields: [shopId], references: [id])
+  status         String         @default("active")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  Shop           Shop           @relation(fields: [shopId], references: [id])
+  invoices       FleetInvoice[]
+  vehicles       FleetVehicle[]
 
   @@index([shopId])
   @@map("fleet_accounts")
@@ -1179,19 +889,17 @@ model FleetAccount {
 model FleetVehicle {
   id             String       @id @default(cuid())
   fleetAccountId String
+  make           String
+  model          String
+  year           Int
+  vin            String?
+  licensePlate   String?
+  unitNumber     String?
+  mileage        Int?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   fleetAccount   FleetAccount @relation(fields: [fleetAccountId], references: [id], onDelete: Cascade)
-
-  make         String
-  model        String
-  year         Int
-  vin          String?
-  licensePlate String?
-  unitNumber   String? // fleet unit number
-  mileage      Int?
-  notes        String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([fleetAccountId])
   @@map("fleet_vehicles")
@@ -1200,20 +908,18 @@ model FleetVehicle {
 model FleetInvoice {
   id             String       @id @default(cuid())
   fleetAccountId String
-  fleetAccount   FleetAccount @relation(fields: [fleetAccountId], references: [id], onDelete: Cascade)
   shopId         String
-
-  invoiceNumber String    @unique
-  workOrderIds  String // JSON array of work order IDs
-  totalAmount   Float
-  amountPaid    Float     @default(0)
-  dueDate       DateTime
-  paidAt        DateTime?
-  status        String    @default("unpaid") // unpaid, partial, paid, overdue
-
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  invoiceNumber  String       @unique
+  workOrderIds   String
+  totalAmount    Float
+  amountPaid     Float        @default(0)
+  dueDate        DateTime
+  paidAt         DateTime?
+  status         String       @default("unpaid")
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  fleetAccount   FleetAccount @relation(fields: [fleetAccountId], references: [id], onDelete: Cascade)
 
   @@index([fleetAccountId])
   @@index([shopId])
@@ -1221,51 +927,44 @@ model FleetInvoice {
   @@map("fleet_invoices")
 }
 
-// Core Return Tracking
 model CoreReturn {
-  id          String  @id @default(cuid())
-  shopId      String
-  workOrderId String?
-
-  partName       String // e.g. "Alternator", "Starter"
+  id             String    @id @default(cuid())
+  shopId         String
+  workOrderId    String?
+  partName       String
   partNumber     String?
   vendor         String?
   coreValue      Float     @default(0)
   returnedAt     DateTime?
   creditReceived Float?    @default(0)
-  status         String    @default("pending") // pending, returned, credited, waived
-
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  status         String    @default("pending")
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  Shop           Shop      @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@index([status])
   @@map("core_returns")
 }
 
-// Digital Vehicle Inspection (DVI)
 model DVIInspection {
-  id          String  @id @default(cuid())
-  shopId      String
-  workOrderId String?
-  techId      String?
-  customerId  String?
-
-  vehicleDesc      String? // year/make/model
+  id               String    @id @default(cuid())
+  shopId           String
+  workOrderId      String?
+  techId           String?
+  customerId       String?
+  vehicleDesc      String?
   mileage          Int?
   customerApproved Boolean   @default(false)
   approvedAt       DateTime?
-  approvalToken    String?   @unique // shared link token
+  approvalToken    String?   @unique
   notes            String?
-  status           String    @default("in-progress") // in-progress, sent, approved, declined
-
-  items DVIItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  status           String    @default("in-progress")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  Shop             Shop      @relation(fields: [shopId], references: [id])
+  items            DVIItem[]
 
   @@index([shopId])
   @@index([workOrderId])
@@ -1274,44 +973,39 @@ model DVIInspection {
 }
 
 model DVIItem {
-  id           String        @id @default(cuid())
-  inspectionId String
-  inspection   DVIInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-
-  category      String // Engine, Brakes, Tires, Fluids, Lights, etc.
-  itemName      String // e.g. "Front Brake Pads"
-  condition     String  @default("green") // green, yellow, red
+  id            String        @id @default(cuid())
+  inspectionId  String
+  category      String
+  itemName      String
+  condition     String        @default("green")
   notes         String?
-  photos        String? // JSON array of photo URLs
+  photos        String?
   estimatedCost Float?
-  approved      Boolean @default(false)
+  approved      Boolean       @default(false)
+  inspection    DVIInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
 
   @@index([inspectionId])
   @@map("dvi_items")
 }
 
-// Work Authorization / E-Signatures
 model WorkAuthorization {
-  id          String  @id @default(cuid())
-  shopId      String
-  workOrderId String?
-  customerId  String?
-
-  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  authToken     String    @unique // shared link token
+  id            String    @id @default(cuid())
+  shopId        String
+  workOrderId   String?
+  customerId    String?
+  authToken     String    @unique
   estimateTotal Float?
-  workSummary   String // describes the work being authorized
-  signatureData String? // base64 SVG signature
+  workSummary   String
+  signatureData String?
   signedAt      DateTime?
   signerName    String?
   signerIP      String?
-  status        String    @default("pending") // pending, signed, declined, expired
-
-  expiresAt DateTime?
-  notes     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status        String    @default("pending")
+  expiresAt     DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@index([workOrderId])
@@ -1319,24 +1013,20 @@ model WorkAuthorization {
   @@map("work_authorizations")
 }
 
-// Automated Reminders & Marketing Campaigns
 model AutomationRule {
-  id     String @id @default(cuid())
-  shopId String
-
+  id              String                @id @default(cuid())
+  shopId          String
   name            String
-  type            String // service_reminder, appointment_reminder, review_request, win_back, referral
-  trigger         String // mileage_since_service, days_since_service, days_before_appt, days_after_close, days_inactive
-  triggerValue    Int    @default(0) // e.g. 5000 (miles) or 90 (days)
-  channel         String @default("sms") // sms, email, both
+  type            String
+  trigger         String
+  triggerValue    Int                   @default(0)
+  channel         String                @default("sms")
   messageTemplate String
-
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  executions AutomationExecution[]
-  Shop       Shop                  @relation(fields: [shopId], references: [id])
+  active          Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  executions      AutomationExecution[]
+  Shop            Shop                  @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@index([type])
@@ -1344,39 +1034,34 @@ model AutomationRule {
 }
 
 model AutomationExecution {
-  id     String         @id @default(cuid())
-  ruleId String
-  rule   AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-
+  id          String         @id @default(cuid())
+  ruleId      String
   customerId  String?
   workOrderId String?
-  channel     String // sms, email
-  status      String   @default("sent") // sent, delivered, failed, clicked
-  sentAt      DateTime @default(now())
+  channel     String
+  status      String         @default("sent")
+  sentAt      DateTime       @default(now())
+  rule        AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 
   @@index([ruleId])
   @@index([customerId])
   @@map("automation_executions")
 }
 
-// Referral Program
 model Referral {
-  id     String @id @default(cuid())
-  shopId String
-
+  id                 String    @id @default(cuid())
+  shopId             String
   referrerCustomerId String
   referredEmail      String?
   referredCustomerId String?
-  referralCode       String  @unique
-
-  referrerReward Float     @default(0)
-  referredReward Float     @default(0)
-  status         String    @default("pending") // pending, completed, paid
-  workOrderId    String? // qualifying work order
-  completedAt    DateTime?
-
-  createdAt DateTime @default(now())
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  referralCode       String    @unique
+  referrerReward     Float     @default(0)
+  referredReward     Float     @default(0)
+  status             String    @default("pending")
+  workOrderId        String?
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  Shop               Shop      @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@index([referrerCustomerId])
@@ -1384,46 +1069,40 @@ model Referral {
   @@map("referrals")
 }
 
-// State Inspection / Emissions Tracking
 model StateInspection {
-  id          String  @id @default(cuid())
-  shopId      String
-  workOrderId String?
-  customerId  String?
-
+  id             String    @id @default(cuid())
+  shopId         String
+  workOrderId    String?
+  customerId     String?
   vehicleDesc    String?
   vin            String?
   licensePlate   String?
-  inspectionType String    @default("state") // state, emissions, safety, commercial
-  result         String    @default("pass") // pass, fail, rejected
+  inspectionType String    @default("state")
+  result         String    @default("pass")
   stickerNumber  String?
-  inspectorId    String? // Tech ID
+  inspectorId    String?
   inspectedAt    DateTime  @default(now())
   expiresAt      DateTime?
   failReason     String?
   notes          String?
   reportUrl      String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  Shop           Shop      @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@index([vin])
   @@map("state_inspections")
 }
 
-// Environmental Fee Templates
 model EnvironmentalFee {
-  id     String @id @default(cuid())
-  shopId String
-
-  name      String // "Used Oil Disposal", "Tire Disposal", "Refrigerant Recovery"
-  feeAmount Float   @default(0)
-  unit      String  @default("per_job") // per_job, per_quart, per_tire, per_lb
-  taxable   Boolean @default(false)
-  active    Boolean @default(true)
-
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  feeAmount Float    @default(0)
+  unit      String   @default("per_job")
+  taxable   Boolean  @default(false)
+  active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   Shop      Shop     @relation(fields: [shopId], references: [id])
@@ -1432,175 +1111,128 @@ model EnvironmentalFee {
   @@map("environmental_fees")
 }
 
-// Tax Rules
 model TaxRule {
-  id     String @id @default(cuid())
-  shopId String
-
-  name           String // e.g. "State Sales Tax", "Labor Exempt"
-  rate           Float   @default(0) // percentage, e.g. 7.5
-  appliesToLabor Boolean @default(false)
-  appliesToParts Boolean @default(true)
-  appliesToFees  Boolean @default(false)
-  exemptServices String? // JSON array of exempt service names
-  active         Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  id             String   @id @default(cuid())
+  shopId         String
+  name           String
+  rate           Float    @default(0)
+  appliesToLabor Boolean  @default(false)
+  appliesToParts Boolean  @default(true)
+  appliesToFees  Boolean  @default(false)
+  exemptServices String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  Shop           Shop     @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@map("tax_rules")
 }
 
-// Integration Configurations (QuickBooks, Xero, Google Calendar, etc.)
 model IntegrationConfig {
-  id     String @id @default(cuid())
-  shopId String
-
-  provider       String // quickbooks, xero, google_calendar, carfax, twilio, affirm
+  id             String    @id @default(cuid())
+  shopId         String
+  provider       String
   enabled        Boolean   @default(false)
-  accessToken    String? // encrypted
-  refreshToken   String? // encrypted
+  accessToken    String?
+  refreshToken   String?
   tokenExpiry    DateTime?
   accountId      String?
-  settings       String? // JSON for provider-specific config
+  settings       String?
   lastSyncAt     DateTime?
-  lastSyncStatus String? // success, error
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  lastSyncStatus String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  Shop           Shop      @relation(fields: [shopId], references: [id])
 
   @@unique([shopId, provider])
   @@index([shopId])
   @@map("integration_configs")
 }
 
-// Custom Shop Branding
-model ShopBranding {
-  id     String @id @default(cuid())
-  shopId String @unique
-
-  logoUrl        String?
-  primaryColor   String  @default("#e5332a")
-  accentColor    String  @default("#1f2937")
-  customDomain   String? @unique
-  tagline        String?
-  welcomeMessage String?
-  footerText     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop[]
-
-  @@map("shop_branding")
-}
-
-// Check-in / Check-out Condition Photos
 model VehicleConditionReport {
-  id          String  @id @default(cuid())
-  shopId      String
-  workOrderId String?
-  customerId  String?
-
-  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  type          String // checkin, checkout
+  id            String    @id @default(cuid())
+  shopId        String
+  workOrderId   String?
+  customerId    String?
+  type          String
   vehicleDesc   String?
   mileage       Int?
   fuelLevel     String?
   damageNotes   String?
-  photos        String? // JSON array of {url, timestamp, note}
+  photos        String?
   techId        String?
-  signatureData String? // customer sign-off
+  signatureData String?
   signedAt      DateTime?
-
-  createdAt DateTime @default(now())
+  createdAt     DateTime  @default(now())
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@index([workOrderId])
   @@map("vehicle_condition_reports")
 }
 
-// DTC Code lookup cache / history
 model DTCLookup {
-  id          String  @id @default(cuid())
-  shopId      String?
-  techId      String?
-  workOrderId String?
-
-  code           String // e.g. "P0300"
-  system         String? // engine, transmission, abs, etc.
+  id             String   @id @default(cuid())
+  shopId         String?
+  techId         String?
+  workOrderId    String?
+  code           String
+  system         String?
   description    String
-  possibleCauses String? // JSON array
-  commonFixes    String? // JSON array
-  severity       String  @default("moderate") // minor, moderate, severe
-
-  lookedUpAt DateTime @default(now())
+  possibleCauses String?
+  commonFixes    String?
+  severity       String   @default("moderate")
+  lookedUpAt     DateTime @default(now())
 
   @@index([code])
   @@index([shopId])
   @@map("dtc_lookups")
 }
 
-// Online Payment Links (pay without login)
 model PaymentLink {
-  id          String  @id @default(cuid())
-  shopId      String
-  workOrderId String?
-  customerId  String?
-
-  token       String    @unique
-  amount      Float
-  description String?
-  status      String    @default("pending") // pending, paid, expired
-  paidAt      DateTime?
-  expiresAt   DateTime?
-
+  id                      String    @id @default(cuid())
+  shopId                  String
+  workOrderId             String?
+  customerId              String?
+  token                   String    @unique
+  amount                  Float
+  description             String?
+  status                  String    @default("pending")
+  paidAt                  DateTime?
+  expiresAt               DateTime?
   stripePaymentIntentId   String?
   stripeCheckoutSessionId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Shop      Shop     @relation(fields: [shopId], references: [id])
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  Shop                    Shop      @relation(fields: [shopId], references: [id])
 
   @@index([shopId])
   @@index([token])
   @@map("payment_links")
 }
 
-// ─────────────────────────────────────────────────────────────────
-// PAYROLL & SCHEDULING MODELS
-// ─────────────────────────────────────────────────────────────────
-
-// Scheduled shifts for team members
 model Shift {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  techId String
-  tech   Tech   @relation(fields: [techId], references: [id], onDelete: Cascade)
-
-  date      DateTime // The date of the shift (UTC midnight)
-  startTime String   // "08:00" 24-hour format
-  endTime   String   // "17:00" 24-hour format
-  shiftType String   @default("regular") // regular, on-call, overtime, training
-  position  String?  // e.g. "Lead Tech", "Service Advisor"
-  notes     String?
-
-  // Status
-  status          String    @default("scheduled") // scheduled, confirmed, no-show, late, worked, cancelled
-  confirmedAt     DateTime?
-  actualClockIn   DateTime?
-  actualClockOut  DateTime?
-  lateMinutes     Int       @default(0)
-  earlyDepartureMins Int    @default(0)
-
-  // Swap tracking
-  swapRequests ShiftSwapRequest[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String             @id @default(cuid())
+  shopId             String
+  techId             String
+  date               DateTime
+  startTime          String
+  endTime            String
+  shiftType          String             @default("regular")
+  position           String?
+  notes              String?
+  status             String             @default("scheduled")
+  confirmedAt        DateTime?
+  actualClockIn      DateTime?
+  actualClockOut     DateTime?
+  lateMinutes        Int                @default(0)
+  earlyDepartureMins Int                @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  swapRequests       ShiftSwapRequest[]
+  shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  tech               Tech               @relation(fields: [techId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@index([techId])
@@ -1608,53 +1240,45 @@ model Shift {
   @@map("shifts")
 }
 
-// Shift swap requests between employees
 model ShiftSwapRequest {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  shiftId     String
-  shift       Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  requesterId String
-  requester   Tech   @relation("SwapRequester", fields: [requesterId], references: [id])
-  targetId    String?
-  target      Tech?  @relation("SwapTarget", fields: [targetId], references: [id])
-
+  id           String    @id @default(cuid())
+  shopId       String
+  shiftId      String
+  requesterId  String
+  targetId     String?
   reason       String?
-  status       String    @default("pending") // pending, approved, denied, withdrawn
+  status       String    @default("pending")
   approvedById String?
   approvedAt   DateTime?
-
-  createdAt DateTime @default(now())
+  createdAt    DateTime  @default(now())
+  requester    Tech      @relation("SwapRequester", fields: [requesterId], references: [id])
+  shift        Shift     @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shop         Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  target       Tech?     @relation("SwapTarget", fields: [targetId], references: [id])
 
   @@index([shopId])
   @@index([requesterId])
   @@map("shift_swap_requests")
 }
 
-// PTO / Leave requests
 model LeaveRequest {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  techId String
-  tech   Tech   @relation(fields: [techId], references: [id], onDelete: Cascade)
-
-  leaveType  String   // pto, vacation, sick, personal, unpaid, bereavement, jury
-  startDate  DateTime
-  endDate    DateTime
-  totalHours Float    @default(0)
-  reason     String?
-
-  status       String    @default("pending") // pending, approved, denied, withdrawn
+  id           String    @id @default(cuid())
+  shopId       String
+  techId       String
+  leaveType    String
+  startDate    DateTime
+  endDate      DateTime
+  totalHours   Float     @default(0)
+  reason       String?
+  status       String    @default("pending")
   approvedById String?
   approvedAt   DateTime?
   deniedReason String?
   notes        String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  shop         Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  tech         Tech      @relation(fields: [techId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@index([techId])
@@ -1662,92 +1286,73 @@ model LeaveRequest {
   @@map("leave_requests")
 }
 
-// Pay periods (weekly, biweekly, etc.)
 model PayPeriod {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  periodType  String   @default("biweekly") // weekly, biweekly, semimonthly, monthly
-  startDate   DateTime
-  endDate     DateTime
-  payDate     DateTime?
-  status      String   @default("open") // open, processing, approved, paid, locked
-
-  // Totals (computed when period is run)
-  totalGross       Float @default(0)
-  totalNet         Float @default(0)
-  totalTaxes       Float @default(0)
-  totalDeductions  Float @default(0)
-  totalOvertimePay Float @default(0)
-  employeeCount    Int   @default(0)
-
-  notes     String?
-  processedAt DateTime?
-  processedBy String?
-
-  payStubs PayStub[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String    @id @default(cuid())
+  shopId           String
+  periodType       String    @default("biweekly")
+  startDate        DateTime
+  endDate          DateTime
+  payDate          DateTime?
+  status           String    @default("open")
+  totalGross       Float     @default(0)
+  totalNet         Float     @default(0)
+  totalTaxes       Float     @default(0)
+  totalDeductions  Float     @default(0)
+  totalOvertimePay Float     @default(0)
+  employeeCount    Int       @default(0)
+  notes            String?
+  processedAt      DateTime?
+  processedBy      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  shop             Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  payStubs         PayStub[]
 
   @@index([shopId])
   @@index([status])
   @@map("pay_periods")
 }
 
-// Individual employee pay stubs per period
 model PayStub {
-  id          String    @id @default(cuid())
-  shopId      String
-  shop        Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  techId      String
-  tech        Tech      @relation(fields: [techId], references: [id], onDelete: Cascade)
-  payPeriodId String
-  payPeriod   PayPeriod @relation(fields: [payPeriodId], references: [id], onDelete: Cascade)
-
-  // Hours breakdown
-  regularHours    Float @default(0)
-  overtimeHours   Float @default(0)
-  doubleTimeHours Float @default(0)
-  ptoHours        Float @default(0)
-  sickHours       Float @default(0)
-  holidayHours    Float @default(0)
-
-  // Pay breakdown
-  regularPay    Float @default(0)
-  overtimePay   Float @default(0)
-  doubleTimePay Float @default(0)
-  ptoPay        Float @default(0)
-  bonusPay      Float @default(0)
-  reimbursements Float @default(0)
-  grossPay      Float @default(0)
-
-  // Deductions
-  federalTax     Float @default(0)
-  stateTax       Float @default(0)
-  socialSecurity Float @default(0)
-  medicare       Float @default(0)
-  healthInsurance Float @default(0)
-  retirement401k Float @default(0)
-  otherDeductions Float @default(0)
-  totalDeductions Float @default(0)
-
-  netPay Float @default(0)
-
-  // YTD totals
-  ytdGross    Float @default(0)
-  ytdTaxes    Float @default(0)
-  ytdNet      Float @default(0)
-
-  status    String    @default("draft") // draft, approved, paid
-  paidAt    DateTime?
-  paidVia   String?   // direct-deposit, check, cash
-  checkNumber String?
-  notes     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String    @id @default(cuid())
+  shopId          String
+  techId          String
+  payPeriodId     String
+  regularHours    Float     @default(0)
+  overtimeHours   Float     @default(0)
+  doubleTimeHours Float     @default(0)
+  ptoHours        Float     @default(0)
+  sickHours       Float     @default(0)
+  holidayHours    Float     @default(0)
+  regularPay      Float     @default(0)
+  overtimePay     Float     @default(0)
+  doubleTimePay   Float     @default(0)
+  ptoPay          Float     @default(0)
+  bonusPay        Float     @default(0)
+  reimbursements  Float     @default(0)
+  grossPay        Float     @default(0)
+  federalTax      Float     @default(0)
+  stateTax        Float     @default(0)
+  socialSecurity  Float     @default(0)
+  medicare        Float     @default(0)
+  healthInsurance Float     @default(0)
+  retirement401k  Float     @default(0)
+  otherDeductions Float     @default(0)
+  totalDeductions Float     @default(0)
+  netPay          Float     @default(0)
+  ytdGross        Float     @default(0)
+  ytdTaxes        Float     @default(0)
+  ytdNet          Float     @default(0)
+  status          String    @default("draft")
+  paidAt          DateTime?
+  paidVia         String?
+  checkNumber     String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  payPeriod       PayPeriod @relation(fields: [payPeriodId], references: [id], onDelete: Cascade)
+  shop            Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  tech            Tech      @relation(fields: [techId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@index([techId])
@@ -1755,64 +1360,47 @@ model PayStub {
   @@map("pay_stubs")
 }
 
-// Shop overtime rules configuration
 model OvertimeRule {
-  id     String @id @default(cuid())
-  shopId String @unique
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  // Weekly OT
-  weeklyOvertimeEnabled   Boolean @default(true)
-  weeklyOvertimeThreshold Float   @default(40) // hours
-  overtimeMultiplier      Float   @default(1.5)
-
-  // Daily OT (California-style)
-  dailyOvertimeEnabled   Boolean @default(false)
-  dailyOvertimeThreshold Float   @default(8) // hours in a day
-  dailyOTMultiplier      Float   @default(1.5)
-
-  // Double time
-  doubleTimeEnabled   Boolean @default(false)
-  doubleTimeThreshold Float   @default(12) // hours in a day OR weekly hours
-  doubleTimeMultiplier Float  @default(2.0)
-
-  // 7th day rule (California)
-  seventhDayRule Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  shopId                  String   @unique
+  weeklyOvertimeEnabled   Boolean  @default(true)
+  weeklyOvertimeThreshold Float    @default(40)
+  overtimeMultiplier      Float    @default(1.5)
+  dailyOvertimeEnabled    Boolean  @default(false)
+  dailyOvertimeThreshold  Float    @default(8)
+  dailyOTMultiplier       Float    @default(1.5)
+  doubleTimeEnabled       Boolean  @default(false)
+  doubleTimeThreshold     Float    @default(12)
+  doubleTimeMultiplier    Float    @default(2.0)
+  seventhDayRule          Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  shop                    Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@map("overtime_rules")
 }
 
-// Monthly report snapshots per shop (for /shop/reports)
 model ShopMonthlyReport {
-  id     String @id @default(cuid())
-  shopId String
-  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  year  Int // e.g. 2026
-  month Int // 1-12
-
-  totalRevenue    Float  @default(0)
-  totalJobs       Int    @default(0)
-  completedJobs   Int    @default(0)
-  pendingJobs     Int    @default(0)
-  avgJobValue     Float  @default(0)
-  topServicesJson String @default("[]") // JSON array of {service, count, revenue}
-
-  frozenAt  DateTime? // Set when month is over and snapshot is locked
-  updatedAt DateTime  @updatedAt
-  createdAt DateTime  @default(now())
+  id              String    @id @default(cuid())
+  shopId          String
+  year            Int
+  month           Int
+  totalRevenue    Float     @default(0)
+  totalJobs       Int       @default(0)
+  completedJobs   Int       @default(0)
+  pendingJobs     Int       @default(0)
+  avgJobValue     Float     @default(0)
+  topServicesJson String    @default("[]")
+  frozenAt        DateTime?
+  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  shop            Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, year, month])
   @@index([shopId])
   @@map("shop_monthly_reports")
 }
 
-// ─── Photo Gallery ────────────────────────────────────────────────────────────
-// Persists metadata for photos uploaded via /api/photos.
-// Actual image binary lives in Cloudinary; only the URL + metadata go here.
 model Photo {
   id          String   @id @default(cuid())
   url         String
@@ -1826,12 +1414,9 @@ model Photo {
   @@map("photos")
 }
 
-// ─── Portal Chat ──────────────────────────────────────────────────────────────
-// Persists staff-facing (tech / manager) portal chat messages.
-// channelId = "global" for broadcast channels, "pair:<id1>:<id2>" for DMs.
 model PortalChatMessage {
   id        String   @id @default(cuid())
-  role      String   // 'tech' | 'manager' | 'shared'
+  role      String
   channelId String   @default("global")
   sender    String
   body      String
@@ -1841,37 +1426,35 @@ model PortalChatMessage {
   @@map("portal_chat_messages")
 }
 
-// ─── Tenant ───────────────────────────────────────────────────────────────────
 model Tenant {
-  id             String   @id @default(cuid())
-  companyName    String
-  subdomain      String   @unique
-  logo           String?
-  contactEmail   String
-  contactPhone   String
-  street         String?
-  city           String?
-  state          String?
-  zip            String?
-  plan           String   @default("free") // free | basic | pro | enterprise
-  planStatus     String   @default("active") // active | suspended | cancelled
-  planStartDate  DateTime @default(now())
+  id              String    @id @default(cuid())
+  companyName     String
+  subdomain       String    @unique
+  logo            String?
+  contactEmail    String
+  contactPhone    String
+  street          String?
+  city            String?
+  state           String?
+  zip             String?
+  plan            String    @default("free")
+  planStatus      String    @default("active")
+  planStartDate   DateTime  @default(now())
   planRenewalDate DateTime?
-  maxUsers       Int      @default(5)
-  maxWorkOrders  Int      @default(100)
-  timezone       String   @default("America/New_York")
-  currency       String   @default("USD")
-  businessStart  String   @default("08:00")
-  businessEnd    String   @default("17:00")
-  emailNotifs    Boolean  @default(true)
-  smsNotifs      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  maxUsers        Int       @default(5)
+  maxWorkOrders   Int       @default(100)
+  timezone        String    @default("America/New_York")
+  currency        String    @default("USD")
+  businessStart   String    @default("08:00")
+  businessEnd     String    @default("17:00")
+  emailNotifs     Boolean   @default(true)
+  smsNotifs       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@map("tenants")
 }
 
-// ─── Vendor ───────────────────────────────────────────────────────────────────
 model Vendor {
   id            String   @id @default(cuid())
   shopId        String
@@ -1880,7 +1463,7 @@ model Vendor {
   phone         String   @default("")
   email         String   @default("")
   website       String   @default("")
-  category      String   @default("parts") // parts | fluids | tires | tools | other
+  category      String   @default("parts")
   accountNumber String   @default("")
   paymentTerms  String   @default("Net 30")
   rating        Int      @default(0)
@@ -1888,14 +1471,12 @@ model Vendor {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@map("vendors")
 }
 
-// ─── Work Order Template ──────────────────────────────────────────────────────
 model WorkOrderTemplate {
   id            String   @id @default(cuid())
   shopId        String
@@ -1909,94 +1490,78 @@ model WorkOrderTemplate {
   notes         String   @default("")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@map("workorder_templates")
 }
 
-// ─── Shop Location ────────────────────────────────────────────────────────────
 model ShopLocation {
-  id       String  @id @default(cuid())
-  shopId   String
-  name     String
-  address  String  @default("")
-  city     String  @default("")
-  state    String  @default("")
-  zip      String  @default("")
-  phone    String  @default("")
-  email    String  @default("")
-  isMain   Boolean @default(false)
-  status   String  @default("active") // active | inactive
-  notes    String  @default("")
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  address   String   @default("")
+  city      String   @default("")
+  state     String   @default("")
+  zip       String   @default("")
+  phone     String   @default("")
+  email     String   @default("")
+  isMain    Boolean  @default(false)
+  status    String   @default("active")
+  notes     String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@map("shop_locations")
 }
 
-// ─── API Keys ─────────────────────────────────────────────────────────────────
 model ApiKey {
-  id       String  @id @default(cuid())
-  shopId   String
-  name     String  // "Production Key", "Staging Key", etc.
-  keyHash  String  @unique // SHA-256 hash of the raw key
-  prefix   String  // First 8 chars of the key for identification (ft_live_xxxx...)
-  scopes   String  @default("read") // comma-separated: read, write, workorders, inventory, etc.
-
+  id         String    @id @default(cuid())
+  shopId     String
+  name       String
+  keyHash    String    @unique
+  prefix     String
+  scopes     String    @default("read")
   lastUsedAt DateTime?
   expiresAt  DateTime?
   revoked    Boolean   @default(false)
   revokedAt  DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([shopId])
   @@index([keyHash])
   @@map("api_keys")
 }
 
-// ─── Webhooks ─────────────────────────────────────────────────────────────────
 model Webhook {
-  id     String @id @default(cuid())
-  shopId String
-
-  url    String // Endpoint to call
-  secret String // HMAC signing secret
-  events String // Comma-separated: workorder.created, workorder.updated, payment.received, etc.
-  active Boolean @default(true)
-
+  id              String    @id @default(cuid())
+  shopId          String
+  url             String
+  secret          String
+  events          String
+  active          Boolean   @default(true)
   lastTriggeredAt DateTime?
-  lastStatus      Int?       // HTTP status of last delivery
-  failureCount    Int        @default(0) // Consecutive failures (auto-disable at 10)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  lastStatus      Int?
+  failureCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([shopId])
   @@map("webhooks")
 }
 
-// ─── Permissions ──────────────────────────────────────────────────────────────
 model Permission {
-  id     String @id @default(cuid())
-  shopId String
-
-  // Who: either a techId or a role name (tech, manager)
-  techId String?
-  role   String? // If set, applies to all users with this role in the shop
-
-  // What: specific permission keys
-  permission String // e.g. "workorders.create", "inventory.edit", "payroll.view", "settings.manage"
-  allowed    Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  shopId     String
+  techId     String?
+  role       String?
+  permission String
+  allowed    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([shopId, techId, permission])
   @@index([shopId])
@@ -2005,21 +1570,82 @@ model Permission {
 }
 
 model Campaign {
-  id         String   @id @default(cuid())
-  shopId     String
-  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  name       String
-  type       String   // "email" | "sms" | "both"
-  subject    String?  // Email subject
-  body       String   // Message body (HTML for email, plain for SMS)
-  status     String   @default("draft") // "draft" | "sending" | "sent" | "failed"
-  recipientCount Int  @default(0)
-  sentCount  Int      @default(0)
-  failedCount Int     @default(0)
-  sentAt     DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String    @id @default(cuid())
+  shopId         String
+  name           String
+  type           String
+  subject        String?
+  body           String
+  status         String    @default("draft")
+  recipientCount Int       @default(0)
+  sentCount      Int       @default(0)
+  failedCount    Int       @default(0)
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  shop           Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
   @@map("campaigns")
+}
+
+model MdmDevice {
+  id              String            @id @default(cuid())
+  deviceId        String            @unique
+  platform        String
+  model           String
+  operatingSystem String
+  osVersion       String
+  manufacturer    String
+  isVirtual       Boolean           @default(false)
+  userId          String
+  status          String            @default("active")
+  enrolledAt      DateTime          @default(now())
+  unenrolledAt    DateTime?
+  commands        MdmCommand[]
+  policies        MdmDevicePolicy[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("mdm_devices")
+}
+
+model MdmCommand {
+  id         String    @id @default(cuid())
+  deviceId   String
+  command    String
+  parameters Json?
+  createdBy  String
+  status     String    @default("pending")
+  executedAt DateTime?
+  createdAt  DateTime  @default(now())
+  device     MdmDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([status])
+  @@map("mdm_commands")
+}
+
+model MdmPolicy {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  rules       Json              @default("{}")
+  enabled     Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  devices     MdmDevicePolicy[]
+
+  @@map("mdm_policies")
+}
+
+model MdmDevicePolicy {
+  id       String    @id @default(cuid())
+  deviceId String
+  policyId String
+  device   MdmDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  policy   MdmPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, policyId])
+  @@map("mdm_device_policies")
 }

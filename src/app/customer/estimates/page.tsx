@@ -325,7 +325,7 @@ export default function Estimates() {
                         {estimate.status === 'pending' ? 'PENDING' : estimate.status === 'accepted' ? 'APPROVED' : 'DENIED'}
                       </span>
                     </div>
-                    <div style={{fontSize:18, color:'#3b82f6', fontWeight:700, marginBottom:8}}>${estimate.price.toFixed(2)}</div>
+                    <div style={{fontSize:18, color:'#e5332a', fontWeight:700, marginBottom:8}}>${estimate.price.toFixed(2)}</div>
                     <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{estimate.shop}</div>
                     <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5, marginBottom:12}}>{estimate.description}</div>
                     <div style={{fontSize:12, color:'#6b7280'}}>Valid until: {estimate.validUntil}</div>
@@ -386,7 +386,7 @@ export default function Estimates() {
               <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb'}}>Request Estimate</h1>
               <button style={{
                 padding:'12px 24px',
-                background:'#3b82f6',
+                background:'#e5332a',
                 color:'white',
                 border:'none',
                 borderRadius:8,
@@ -494,9 +494,9 @@ export default function Estimates() {
                   <div style={{textAlign:'center'}}>
                     <button onClick={() => handleRequestEstimate(estimate)} disabled={loading === estimate.id} style={{
                       padding:'8px 16px',
-                      background: loading === estimate.id ? 'rgba(59,130,246,0.06)' : 'rgba(59,130,246,0.1)',
-                      color:'#3b82f6',
-                      border:'1px solid rgba(59,130,246,0.3)',
+                      background: loading === estimate.id ? 'rgba(229,51,42,0.06)' : 'rgba(229,51,42,0.1)',
+                      color:'#e5332a',
+                      border:'1px solid rgba(229,51,42,0.3)',
                       borderRadius:8,
                       fontSize:12,
                       fontWeight:600,
@@ -553,7 +553,7 @@ export default function Estimates() {
                     <button style={{
                       flex:1,
                       padding:'12px',
-                      background:'#3b82f6',
+                      background:'#e5332a',
                       color:'white',
                       border:'none',
                       borderRadius:8,
@@ -594,7 +594,7 @@ export default function Estimates() {
         <div style={{marginTop:32, textAlign:'center'}}>
           <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
-            background:'#3b82f6',
+            background:'#e5332a',
             color:'white',
             border:'none',
             borderRadius:8,
@@ -611,7 +611,7 @@ export default function Estimates() {
       {estimateMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:estimateMsg.type==='success'?'#dcfce7':'#fde8e8',color:estimateMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {estimateMsg.text}
-          <button onClick={()=>setEstimateMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          <button onClick={()=>setEstimateMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>

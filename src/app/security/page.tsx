@@ -24,7 +24,7 @@ export default function SecurityPage() {
             { title: "Input validation", detail: "Requests are validated and sanitized before persistence." },
             { title: "Audit logging", detail: "Admin activity logs are recorded and retrievable via API." }
           ].map((item) => (
-            <div key={item.title} className="rounded-3xl border border-slate-800/70 bg-slate-950/70 p-6">
+            <div key={item.title} className="rounded-3xl border border-white/10 bg-black p-6">
               <p className="text-lg font-semibold text-white">{item.title}</p>
               <p className="mt-3 text-sm text-slate-300">{item.detail}</p>
             </div>

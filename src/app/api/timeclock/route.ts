@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Enforce ownership: caller must be this tech, belong to the same shop, or be admin
-    if (auth.id !== userId && auth.role !== 'admin') {
+    if (auth.id !== userId && (auth.role !== 'superadmin')) {
       const callerShopId = auth.role === 'shop' ? auth.id : auth.shopId;
       if (!callerShopId || callerShopId !== tech.shopId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enforce ownership: caller must be this tech, belong to the same shop, or be admin
-    if (auth.id !== userId && auth.role !== 'admin') {
+    if (auth.id !== userId && (auth.role !== 'superadmin')) {
       const callerShopId = auth.role === 'shop' ? auth.id : auth.shopId;
       if (!callerShopId || callerShopId !== tech.shopId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });

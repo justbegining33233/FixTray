@@ -11,6 +11,7 @@ import { z } from 'zod';
 export const workOrderUpdateSchema = z.object({
   issueDescription: z.string().max(5000).optional(),
   status: z.enum(['pending', 'assigned', 'in-progress', 'waiting-estimate', 'waiting-for-payment', 'closed', 'denied-estimate']).optional(),
+  bay: z.number().int().min(1).max(999).nullable().optional(),
   assignedTechId: z.string().uuid().nullable().optional(),
   customerId: z.string().uuid().optional(),
   vehicleId: z.string().uuid().nullable().optional(),
@@ -20,6 +21,26 @@ export const workOrderUpdateSchema = z.object({
   completedAt: z.string().datetime().nullable().optional(),
   notes: z.string().max(2000).optional(),
   statusReason: z.string().optional(),
+  estimate: z.object({
+    lineItems: z.array(z.object({
+      description: z.string().max(500),
+      quantity: z.number().min(0),
+      unitPrice: z.number().min(0),
+      total: z.number().min(0),
+    })).optional(),
+    subtotal: z.number().min(0).optional(),
+    taxRate: z.number().min(0).max(100).optional(),
+    tax: z.number().min(0).optional(),
+    total: z.number().min(0).optional(),
+    notes: z.string().max(2000).optional(),
+  }).optional(),
+  techLabor: z.any().optional(),
+  partsUsed: z.array(z.object({
+    name: z.string().min(1),
+    quantity: z.number().min(0),
+    unitPrice: z.number().min(0).optional(),
+    sku: z.string().optional(),
+  })).optional(),
 }).strict(); // Reject unknown fields
 
 // User Update Schemas

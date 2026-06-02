@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { FaArrowRight, FaCreditCard, FaLink, FaQuestionCircle } from 'react-icons/fa';
+import { FaArrowRight, FaCreditCard, FaLink } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Link from 'next/link';
 import useRequireAuth from '@/lib/useRequireAuth';
 
@@ -199,6 +200,8 @@ const CATEGORY_CONFIG: Array<{ id: CategoryId; label: string; note?: string }> =
   { id: 'tire', label: 'Tire Shop Services' },
 ];
 
+const FIXTRAY_AGREEMENT_VERSION = '2026-06-01';
+
 export default function CompleteProfile() {
   const { user, isLoading: _isLoading } = useRequireAuth(['shop']);
   const router = useRouter();
@@ -217,6 +220,8 @@ export default function CompleteProfile() {
     resurfacingServices: [] as string[],
     weldingServices: [] as string[],
     tireServices: [] as string[],
+    agreementAccepted: false,
+    agreementSignature: '',
   });
 
   const handleServiceToggle = (service: string, category: CategoryId) => {
@@ -283,6 +288,11 @@ export default function CompleteProfile() {
       return;
     }
 
+    if (!formData.agreementAccepted || !formData.agreementSignature.trim()) {
+      setSubmitError('You must accept and sign the FixTray agreement before continuing.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -302,13 +312,15 @@ export default function CompleteProfile() {
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf || '' },
         body: JSON.stringify({
           shopId,
-          ...formData
+          ...formData,
+          agreementVersion: FIXTRAY_AGREEMENT_VERSION,
         }),
       });
 
       if (response.ok) {
         // Mark profile as complete in localStorage
         localStorage.setItem('shopProfileComplete', 'true');
+        localStorage.setItem('fixtrayAgreementAccepted', 'true');
         setStep(2);
       } else {
         let errorMessage = 'Failed to complete profile';
@@ -389,7 +401,7 @@ export default function CompleteProfile() {
               {stripeLoading ? 'Connecting...' : <><FaLink style={{marginRight:8}} />Connect with Stripe</>}
             </button>
             <button
-              onClick={() => { router.push('/shop/home'); }}
+              onClick={() => { router.push('/shop/admin' as Route); }}
               style={{
                 display:'block',
                 width:'100%',
@@ -583,6 +595,44 @@ export default function CompleteProfile() {
                   </div>
                 );
               })}
+            </div>
+
+            <div style={{ marginBottom: 24, padding: 16, borderRadius: 10, background: 'rgba(229,51,42,0.10)', border: '1px solid rgba(229,51,42,0.35)' }}>
+              <label style={{display:'block', color:'#e5e7eb', fontWeight:600, marginBottom:8}}>
+                FixTray Shop Agreement <span style={{color:'#e5332a'}}>*</span>
+              </label>
+              <p style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 10, lineHeight: 1.6 }}>
+                By signing, you confirm your shop details are accurate, you are authorized to operate this business,
+                and you agree to use FixTray in compliance with applicable laws and customer data requirements.
+              </p>
+              <p style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 12 }}>
+                Agreement version: {FIXTRAY_AGREEMENT_VERSION}
+              </p>
+              <label style={{display:'flex', alignItems:'center', gap:8, color:'#e5e7eb', marginBottom:12, cursor:'pointer'}}>
+                <input
+                  type="checkbox"
+                  checked={formData.agreementAccepted}
+                  onChange={(e) => setFormData({...formData, agreementAccepted: e.target.checked})}
+                  style={{cursor:'pointer'}}
+                />
+                I have read and accept the FixTray Shop Agreement.
+              </label>
+              <input
+                type="text"
+                value={formData.agreementSignature}
+                onChange={(e) => setFormData({...formData, agreementSignature: e.target.value})}
+                placeholder="Type your full legal name as your digital signature"
+                style={{
+                  width:'100%',
+                  padding:'12px 16px',
+                  background:'rgba(0,0,0,0.3)',
+                  border:'1px solid rgba(229,51,42,0.3)',
+                  borderRadius:8,
+                  color:'#e5e7eb',
+                  fontSize:14
+                }}
+                required
+              />
             </div>
 
             {/* Submit Button */}

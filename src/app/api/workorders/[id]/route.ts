@@ -67,7 +67,7 @@ export async function GET(
     
     // Check authorization
     const authorized = 
-      auth.role === 'admin' ||
+      (auth.role === 'superadmin') ||
       (auth.role === 'customer' && workOrder.customerId === auth.id) ||
       (auth.role === 'shop' && workOrder.shopId === auth.id) ||
       ((auth.role === 'tech' || auth.role === 'manager') && workOrder.shopId === auth.shopId);
@@ -117,7 +117,7 @@ export async function PUT(
     
     // Check authorization
     const canUpdate = 
-      auth.role === 'admin' ||
+      (auth.role === 'superadmin') ||
       (auth.role === 'shop' && current.shopId === auth.id) ||
       ((auth.role === 'tech' || auth.role === 'manager') && current.shopId === auth.shopId) ||
       (auth.role === 'customer' && current.customerId === auth.id);
@@ -215,11 +215,15 @@ export async function PUT(
       data: {
         issueDescription: data.issueDescription,
         status: data.status,
+        bay: data.bay,
         assignedTechId: data.assignedTechId,
         customerId: data.customerId,
         vehicleId: data.vehicleId,
         estimatedCost: data.estimatedCost,
         amountPaid: data.amountPaid,
+        estimate: data.estimate,
+        techLabor: data.techLabor,
+        partsUsed: data.partsUsed,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         completedAt: data.completedAt ? new Date(data.completedAt) : (data.status === 'closed' ? new Date() : undefined),
       },
@@ -265,6 +269,34 @@ export async function PUT(
       }
     }
 
+    // Auto-deduct inventory when a work order is closed with parts usage.
+    if (data.status === 'closed' && current.status !== 'closed' && Array.isArray(data.partsUsed) && data.partsUsed.length > 0) {
+      for (const part of data.partsUsed) {
+        const qty = Number(part?.quantity) || 0;
+        if (qty <= 0) continue;
+        if (!part?.sku && !part?.name) continue;
+
+        const inventoryItem = await prisma.inventoryItem.findFirst({
+          where: {
+            shopId: current.shopId,
+            OR: [
+              ...(part?.sku ? [{ sku: String(part.sku) }] : []),
+              ...(part?.name ? [{ name: String(part.name) }] : []),
+            ],
+          },
+        });
+
+        if (!inventoryItem) continue;
+
+        await prisma.inventoryItem.update({
+          where: { id: inventoryItem.id },
+          data: {
+            quantity: Math.max(0, inventoryItem.quantity - qty),
+          },
+        });
+      }
+    }
+
     return NextResponse.json(updatedWorkOrder);
   } catch (error) {
     console.error('Error updating work order:', error);
@@ -291,7 +323,7 @@ export async function DELETE(
     }
     
     // Only admin or customer who created it can delete
-    if (auth.role !== 'admin' && (auth.role !== 'customer' || workOrder.customerId !== auth.id)) {
+    if (auth.role !== 'superadmin' && (auth.role !== 'customer' || workOrder.customerId !== auth.id)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     

@@ -89,7 +89,7 @@ export default function PasswordResetForm({ onClose }: Props) {
             <input value={identifier} onChange={e=>setIdentifier(e.target.value)} className="sos-input w-full" />
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1 bg-blue-600 text-white rounded" disabled={loading}>Send Code</button>
+            <button className="px-3 py-1 text-white rounded" style={{background:'#e5332a'}} disabled={loading}>Send Code</button>
             <span className="text-sm text-gray-700">{status}</span>
           </div>
         </form>
@@ -109,8 +109,8 @@ export default function PasswordResetForm({ onClose }: Props) {
             <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} className="sos-input w-full" />
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1 bg-blue-600 text-white rounded" disabled={loading}>{loading ? 'Processing...' : 'Confirm & Set Password'}</button>
-            <span className="text-sm text-gray-700">{status}</span>
+            <button className="px-3 py-1 text-white rounded" style={{background:'#e5332a'}} disabled={loading}>{loading ? 'Processing...' : 'Confirm & Set Password'}</button>
+            <span className="text-sm text-[#94a3b8]">{status}</span>
           </div>
         </form>
       )}

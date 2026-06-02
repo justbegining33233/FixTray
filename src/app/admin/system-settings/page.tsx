@@ -94,7 +94,7 @@ export default function SystemSettings() {
       )}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(107,114,128,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <Link href="/admin/admin-tools" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 12, display: 'inline-block' }}>? Back to Admin Tools</Link>
+          <Link href="/admin/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 12, display: 'inline-block' }}>? Back to Dashboard</Link>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>?? System Settings</h1>
           <p style={{ fontSize: 13, color: '#9aa3b2' }}>Configure platform-wide settings and feature flags</p>
         </div>
@@ -123,20 +123,7 @@ export default function SystemSettings() {
                 <option value="Pacific/Honolulu">Hawaii (HST)</option>
               </select>
             </div>
-            <div>
-              <label style={labelStyle}>Default Subscription Plan</label>
-              <select style={fieldStyle} value={settings.defaultSubscriptionPlan || 'starter'} onChange={e => set('defaultSubscriptionPlan', e.target.value)}>
-                <option value="starter">Starter</option>
-                <option value="growth">Growth</option>
-                <option value="professional">Professional</option>
-                <option value="business">Business</option>
-                <option value="enterprise">Enterprise</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Free Trial Days</label>
-              <input style={fieldStyle} type="number" min={0} max={90} value={settings.trialDays ?? 7} onChange={e => set('trialDays', Number(e.target.value))} />
-            </div>
+            
             <div>
               <label style={labelStyle}>Service Fee (cents per work order)</label>
               <input style={fieldStyle} type="number" min={0} value={settings.serviceFee ?? 500} onChange={e => set('serviceFee', Number(e.target.value))} />
@@ -184,3 +171,4 @@ export default function SystemSettings() {
     </div>
   );
 }
+

@@ -54,13 +54,13 @@ export default function CustomerNotificationsPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: '#000000', padding: 24 }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
-        <Link href="/customer/dashboard" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Dashboard</Link>
+        <Link href="/customer/dashboard" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Dashboard</Link>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 24 }}>
           <div>
             <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700 }}>Notifications</h1>
-            {unreadCount > 0 && <p style={{ color: '#60a5fa', fontSize: 14 }}>{unreadCount} unread</p>}
+            {unreadCount > 0 && <p style={{ color: '#ff6b64', fontSize: 14 }}>{unreadCount} unread</p>}
           </div>
         </div>
 
@@ -83,7 +83,7 @@ export default function CustomerNotificationsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {!n.read && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />}
+                      {!n.read && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e5332a', flexShrink: 0 }} />}
                       <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 14 }}>{n.title}</span>
                     </div>
                     <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 4, lineHeight: 1.4 }}>{n.body}</div>
@@ -100,3 +100,6 @@ export default function CustomerNotificationsPage() {
     </div>
   );
 }
+
+
+

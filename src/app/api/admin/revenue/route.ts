@@ -1,307 +1,171 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { getSettings } from '@/lib/platform-settings';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
+  if (!auth.isOwner) {
+    return NextResponse.json({ error: 'Only FixTray Owner can access platform revenue.' }, { status: 403 });
+  }
+
   try {
     const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const threeMonthsAgo = new Date();
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const threeMonthsAgo = new Date(now);
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const feePerWorkOrder = (getSettings().serviceFee || 500) / 100;
 
-    // Get subscription stats
-    const subscriptions = await prisma.subscription.findMany({
-      where: {
-        status: { in: ['active', 'trialing'] }
-      },
-      include: {
-        shop: {
-          select: {
-            id: true,
-            shopName: true,
-            email: true
-          }
-        }
-      }
-    });
+    const [paidWorkOrders, revenueThisMonth, revenueLastMonth, revenueLast3Months] = await Promise.all([
+      prisma.workOrder.findMany({
+        where: { paymentStatus: 'paid' },
+        select: {
+          id: true,
+          amountPaid: true,
+          createdAt: true,
+          issueDescription: true,
+          shop: { select: { id: true, shopName: true } },
+          customer: { select: { firstName: true, lastName: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.workOrder.aggregate({
+        _sum: { amountPaid: true },
+        where: { paymentStatus: 'paid', createdAt: { gte: startOfThisMonth } },
+      }),
+      prisma.workOrder.aggregate({
+        _sum: { amountPaid: true },
+        where: { paymentStatus: 'paid', createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } },
+      }),
+      prisma.workOrder.aggregate({
+        _sum: { amountPaid: true },
+        where: { paymentStatus: 'paid', createdAt: { gte: threeMonthsAgo } },
+      }),
+    ]);
 
-    // Get all subscriptions for lifecycle stats
-    const allSubscriptions = await prisma.subscription.findMany();
-    const activeSubscriptions = allSubscriptions.filter(s => s.status === 'active');
-    const trialingSubscriptions = allSubscriptions.filter(s => s.status === 'trialing');
-    const canceledSubscriptions = allSubscriptions.filter(s => s.status === 'cancelled' || s.status === 'canceled');
+    const totalWorkOrderRevenue = paidWorkOrders.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
+    const paidTodayCount = paidWorkOrders.filter((wo) => wo.createdAt >= todayStart).length;
+    const paidWeekCount = paidWorkOrders.filter((wo) => wo.createdAt >= weekAgo).length;
+    const paidThisMonthCount = paidWorkOrders.filter((wo) => wo.createdAt >= startOfThisMonth).length;
+    const paidLastMonthCount = paidWorkOrders.filter((wo) => wo.createdAt >= startOfLastMonth && wo.createdAt < startOfThisMonth).length;
 
-    // Plan pricing
-    const planPricing: Record<string, number> = {
-      starter: 99,
-      growth: 199,
-      professional: 349,
-      business: 599,
-      enterprise: 999
-    };
-
-    // Calculate Monthly Recurring Revenue (MRR)
-    let mrr = 0;
-    const planBreakdown: Record<string, { count: number; revenue: number }> = {};
-
-    subscriptions.forEach(sub => {
-      const plan = sub.plan.toLowerCase();
-      const price = planPricing[plan] || 0;
-      mrr += price;
-
-      if (!planBreakdown[plan]) {
-        planBreakdown[plan] = { count: 0, revenue: 0 };
-      }
-      planBreakdown[plan].count++;
-      planBreakdown[plan].revenue += price;
-    });
-
-    // Get payment history if available
-    let recentPayments: any[] = [];
-    try {
-      recentPayments = await prisma.paymentHistory.findMany({
-        take: 20,
-        orderBy: { createdAt: 'desc' }
-      });
-    } catch {
-      // PaymentHistory table might not exist yet
-    }
-
-    // Calculate totals
-    const totalRevenue = recentPayments
-      .filter(p => p.status === 'succeeded')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-
-    // Stripe fees (approximately 2.9% + $0.30 per transaction)
-    const stripeFeePercent = 0.029;
-    const stripeFeeFixed = 0.30;
-    const estimatedStripeFees = recentPayments
-      .filter(p => p.status === 'succeeded')
-      .reduce((sum, p) => sum + (p.amount * stripeFeePercent + stripeFeeFixed), 0);
-
-    const netRevenue = totalRevenue - estimatedStripeFees;
-
-    // Annual Recurring Revenue
-    const arr = mrr * 12;
-
-    // ===== NEW LIVE METRICS =====
-    
-    // Revenue trend (last 7 days from work orders)
-    const revenueTrend: number[] = [];
+    const dailyFeesTrend: number[] = [];
+    const dailyPaidOrdersTrend: number[] = [];
+    const dailyRevenueTrend: number[] = [];
     for (let i = 6; i >= 0; i--) {
       const dayStart = new Date(now);
       dayStart.setDate(now.getDate() - i);
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(dayStart);
       dayEnd.setHours(23, 59, 59, 999);
-      
-      const dayRevenue = await prisma.workOrder.aggregate({
-        _sum: { amountPaid: true },
-        where: { paymentStatus: 'paid', createdAt: { gte: dayStart, lte: dayEnd } }
-      });
-      revenueTrend.push(dayRevenue._sum.amountPaid || 0);
+
+      const dayPaidWorkOrders = paidWorkOrders.filter((wo) => wo.createdAt >= dayStart && wo.createdAt <= dayEnd);
+      const dayRevenue = dayPaidWorkOrders.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
+
+      dailyPaidOrdersTrend.push(dayPaidWorkOrders.length);
+      dailyFeesTrend.push(dayPaidWorkOrders.length * feePerWorkOrder);
+      dailyRevenueTrend.push(dayRevenue);
     }
 
-    // MoM Growth - compare new subs this month vs last month
-    const subsThisMonth = await prisma.subscription.count({
-      where: { createdAt: { gte: startOfThisMonth } }
-    });
-    const subsLastMonth = await prisma.subscription.count({
-      where: { createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } }
-    });
-    const momGrowth = subsLastMonth > 0 
-      ? (((subsThisMonth - subsLastMonth) / subsLastMonth) * 100).toFixed(1)
-      : '0.0';
+    const totalWorkOrderFees = paidWorkOrders.length * feePerWorkOrder;
+    const workOrderFeesToday = paidTodayCount * feePerWorkOrder;
+    const workOrderFeesThisWeek = paidWeekCount * feePerWorkOrder;
+    const workOrderFeesThisMonth = paidThisMonthCount * feePerWorkOrder;
+    const workOrderFeesLastMonth = paidLastMonthCount * feePerWorkOrder;
+    const workOrderFeesLast3Months = (paidWorkOrders.filter((wo) => wo.createdAt >= threeMonthsAgo).length) * feePerWorkOrder;
+    const momGrowth = workOrderFeesLastMonth > 0
+      ? Number((((workOrderFeesThisMonth - workOrderFeesLastMonth) / workOrderFeesLastMonth) * 100).toFixed(1))
+      : (workOrderFeesThisMonth > 0 ? 100 : 0);
 
-    // YoY Growth
-    const subsLastYear = await prisma.subscription.count({
-      where: { createdAt: { lt: oneYearAgo } }
-    });
-    const yoyGrowth = subsLastYear > 0 
-      ? (((allSubscriptions.length - subsLastYear) / subsLastYear) * 100).toFixed(1)
-      : '0.0';
-
-    // Churn rate (cancelled in last 3 months / total at start of period)
-    const churnedLast3Months = await prisma.subscription.count({
-      where: { 
-        status: { in: ['cancelled', 'canceled'] },
-        canceledAt: { gte: threeMonthsAgo }
-      }
-    });
-    const totalAtStartOf3Months = await prisma.subscription.count({
-      where: { createdAt: { lt: threeMonthsAgo } }
-    });
-    const churnRate = totalAtStartOf3Months > 0 
-      ? ((churnedLast3Months / totalAtStartOf3Months) * 100).toFixed(1)
-      : '0.0';
-
-    // Retention rate
-    const shopsOlderThan30Days = await prisma.shop.count({
-      where: { createdAt: { lt: thirtyDaysAgo } }
-    });
-    const activeShopsOlderThan30Days = await prisma.shop.count({
-      where: { createdAt: { lt: thirtyDaysAgo }, status: 'approved' }
-    });
-    const retentionRate = shopsOlderThan30Days > 0 
-      ? ((activeShopsOlderThan30Days / shopsOlderThan30Days) * 100).toFixed(1)
-      : '100.0';
-
-    // Conversion rate (trial to paid)
-    const totalEverTrialed = await prisma.subscription.count({
-      where: { trialStart: { not: null } }
-    });
-    const convertedFromTrial = await prisma.subscription.count({
-      where: { 
-        status: 'active',
-        trialStart: { not: null }
-      }
-    });
-    const conversionRate = totalEverTrialed > 0 
-      ? ((convertedFromTrial / totalEverTrialed) * 100).toFixed(1)
-      : '0.0';
-
-    // Average revenue per user (ARPU)
-    const arpu = activeSubscriptions.length > 0 
-      ? mrr / activeSubscriptions.length
-      : 0;
-
-    // Lifetime value estimate (ARPU * avg lifetime in months)
-    const oldestActiveShop = await prisma.shop.findFirst({
-      where: { status: 'approved' },
-      orderBy: { approvedAt: 'asc' },
-      select: { approvedAt: true }
-    });
-    const avgLifetimeMonths = oldestActiveShop?.approvedAt 
-      ? Math.round((now.getTime() - new Date(oldestActiveShop.approvedAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
-      : 12;
-    const ltv = arpu * Math.max(avgLifetimeMonths, 12);
-
-    // New subscriptions this month
-    const newSubsThisMonth = subsThisMonth;
-
-    // Revenue by time period
-    const revenueThisMonth = await prisma.workOrder.aggregate({
-      _sum: { amountPaid: true },
-      where: { paymentStatus: 'paid', createdAt: { gte: startOfThisMonth } }
-    });
-    const revenueLastMonth = await prisma.workOrder.aggregate({
-      _sum: { amountPaid: true },
-      where: { paymentStatus: 'paid', createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } }
-    });
-    const revenueLast3Months = await prisma.workOrder.aggregate({
-      _sum: { amountPaid: true },
-      where: { paymentStatus: 'paid', createdAt: { gte: threeMonthsAgo } }
-    });
-
-    // ===== FIXTRAY WORK ORDER FEES ($5 per completed payment) =====
-    const paidWorkOrders = await prisma.workOrder.findMany({
-      where: { paymentStatus: 'paid' },
-      select: {
-        id: true,
-        amountPaid: true,
-        createdAt: true,
-        shop: { select: { id: true, shopName: true } },
-        customer: { select: { firstName: true, lastName: true } },
-        issueDescription: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const FIXTRAY_FEE = 5;
-    const totalWorkOrderFees = paidWorkOrders.length * FIXTRAY_FEE;
-    const workOrderFeesThisMonth = paidWorkOrders.filter(
-      wo => wo.createdAt >= startOfThisMonth
-    ).length * FIXTRAY_FEE;
-
-    // Group fees by shop
-    const feesByShopMap: Record<string, { shopName: string; count: number; fees: number }> = {};
+    const feesByShopMap: Record<string, { shopId: string; shopName: string; count: number; fees: number; totalRevenue: number }> = {};
     for (const wo of paidWorkOrders) {
       const shopId = wo.shop?.id || 'unknown';
       const shopName = wo.shop?.shopName || 'Unknown Shop';
-      if (!feesByShopMap[shopId]) feesByShopMap[shopId] = { shopName, count: 0, fees: 0 };
+      if (!feesByShopMap[shopId]) {
+        feesByShopMap[shopId] = { shopId, shopName, count: 0, fees: 0, totalRevenue: 0 };
+      }
       feesByShopMap[shopId].count++;
-      feesByShopMap[shopId].fees += FIXTRAY_FEE;
+      feesByShopMap[shopId].fees += feePerWorkOrder;
+      feesByShopMap[shopId].totalRevenue += wo.amountPaid || 0;
     }
+
     const feesByShop = Object.values(feesByShopMap).sort((a, b) => b.fees - a.fees);
 
-    const recentWorkOrderFees = paidWorkOrders.slice(0, 10).map(wo => ({
+    const recentWorkOrderFees = paidWorkOrders.slice(0, 10).map((wo) => ({
       id: wo.id,
       shopName: wo.shop?.shopName || 'Unknown',
       customerName: wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : 'Unknown',
       description: wo.issueDescription || 'Service',
       amountPaid: wo.amountPaid || 0,
-      fee: FIXTRAY_FEE,
+      fee: feePerWorkOrder,
       date: wo.createdAt,
     }));
 
+    const currentMonthRevenue = revenueThisMonth._sum.amountPaid || 0;
+    const lastMonthRevenue = revenueLastMonth._sum.amountPaid || 0;
+
     return NextResponse.json({
       success: true,
+      generatedAt: now.toISOString(),
       revenue: {
-        mrr,
-        arr,
-        totalActiveSubscriptions: subscriptions.length,
-        planBreakdown,
-        recentPayments: recentPayments.map(p => ({
-          id: p.id,
-          shopName: p.shop?.shopName || 'Unknown',
-          amount: p.amount,
-          status: p.status,
-          date: p.paidAt || p.createdAt
-        })),
         totals: {
-          grossRevenue: totalRevenue,
-          estimatedStripeFees: Math.round(estimatedStripeFees * 100) / 100,
-          netRevenue: Math.round(netRevenue * 100) / 100
-        }
+          grossRevenue: totalWorkOrderRevenue,
+          netRevenue: totalWorkOrderFees,
+        },
       },
-      // NEW: Live metrics
       liveMetrics: {
-        revenueTrend,
-        momGrowth: `${parseFloat(momGrowth) >= 0 ? '+' : ''}${momGrowth}%`,
-        yoyGrowth: `${parseFloat(yoyGrowth) >= 0 ? '+' : ''}${yoyGrowth}%`,
-        churnRate: `${churnRate}%`,
-        retentionRate: `${retentionRate}%`,
-        conversionRate: `${conversionRate}%`,
-        arpu: Math.round(arpu),
-        ltv: Math.round(ltv),
-        avgLifetimeMonths,
-        newSubsThisMonth,
-        activeSubscriptions: activeSubscriptions.length,
-        trialingSubscriptions: trialingSubscriptions.length,
-        canceledSubscriptions: canceledSubscriptions.length,
-        revenueThisMonth: revenueThisMonth._sum.amountPaid || 0,
-        revenueLastMonth: revenueLastMonth._sum.amountPaid || 0,
-        revenueLast3Months: revenueLast3Months._sum.amountPaid || 0
+        revenueTrend: dailyFeesTrend,
+        momGrowth: `${momGrowth >= 0 ? '+' : ''}${momGrowth}%`,
+        revenueThisMonth: currentMonthRevenue,
+        revenueLastMonth: lastMonthRevenue,
+        revenueLast3Months: revenueLast3Months._sum.amountPaid || 0,
       },
-      // FixTray work order fees ($5 per paid work order)
       workOrderFees: {
+        feePerWorkOrder,
         totalFees: totalWorkOrderFees,
+        feesToday: workOrderFeesToday,
+        feesThisWeek: workOrderFeesThisWeek,
         feesThisMonth: workOrderFeesThisMonth,
+        feesLastMonth: workOrderFeesLastMonth,
+        feesLast3Months: workOrderFeesLast3Months,
+        momGrowth,
         totalPaidWorkOrders: paidWorkOrders.length,
+        paidWorkOrdersToday: paidTodayCount,
+        paidWorkOrdersThisWeek: paidWeekCount,
+        paidWorkOrdersThisMonth: paidThisMonthCount,
+        totalWorkOrderRevenue,
+        thisMonthWorkOrderRevenue: currentMonthRevenue,
+        lastMonthWorkOrderRevenue: lastMonthRevenue,
+        averageTicket: paidWorkOrders.length > 0 ? totalWorkOrderRevenue / paidWorkOrders.length : 0,
+        dailyFeesTrend,
+        dailyPaidOrdersTrend,
+        dailyRevenueTrend,
         feesByShop,
         recentTransactions: recentWorkOrderFees,
       },
       stripeLinks: {
         dashboard: 'https://dashboard.stripe.com',
         payments: 'https://dashboard.stripe.com/payments',
-        subscriptions: 'https://dashboard.stripe.com/subscriptions',
+        billing: 'https://dashboard.stripe.com/billing/overview',
         payouts: 'https://dashboard.stripe.com/payouts',
-        balances: 'https://dashboard.stripe.com/balance/overview'
-      }
+        balances: 'https://dashboard.stripe.com/balance/overview',
+      },
+      ranges: {
+        todayStart: todayStart.toISOString(),
+        weekAgo: weekAgo.toISOString(),
+        thisMonthStart: startOfThisMonth.toISOString(),
+        lastMonthStart: startOfLastMonth.toISOString(),
+        nextMonthStart: startOfNextMonth.toISOString(),
+      },
     });
   } catch (error) {
-    console.error('Revenue API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch revenue data' },
-      { status: 500 }
-    );
+    console.error('Error fetching revenue data:', error);
+    return NextResponse.json({ error: 'Failed to fetch revenue data' }, { status: 500 });
   }
 }

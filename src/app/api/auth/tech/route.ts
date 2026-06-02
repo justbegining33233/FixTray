@@ -19,9 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username and password required' }, { status: 400 });
     }
 
+    const rawIdentifier = String(username).trim();
+    const identifierLower = rawIdentifier.toLowerCase();
+    const normalizedPhone = rawIdentifier.replace(/\D/g, '');
+
     // Rate limiting - prevent brute force attacks
     const clientIP = getClientIP(request);
-    const rateLimitKey = `tech_login:${clientIP}:${username}`;
+    const rateLimitKey = `tech_login:${clientIP}:${identifierLower}`;
     const rateLimit = await checkRateLimit(rateLimitKey);
     
     if (!rateLimit.success) {
@@ -31,12 +35,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find tech by email or phone
-    const tech = await prisma.tech.findFirst({
+    // Find tech by normalized email or phone first.
+    let tech = await prisma.tech.findFirst({
       where: {
         OR: [
-          { email: username },
-          { phone: username },
+          { email: identifierLower },
+          { phone: rawIdentifier },
+          ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
         ],
       },
       include: {
@@ -48,6 +53,33 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Support username-style tech login with email local-part (e.g. "jdoe" for jdoe@shop.com).
+    if (!tech && !identifierLower.includes('@')) {
+      const possibleTechs = await prisma.tech.findMany({
+        where: {
+          OR: [
+            { email: { contains: '@' } },
+            ...(normalizedPhone ? [{ phone: { not: null } }] : []),
+          ],
+        },
+        include: {
+          shop: {
+            select: {
+              id: true,
+              shopName: true,
+            },
+          },
+        },
+      });
+
+      tech = possibleTechs.find((t) => {
+        const email = (t.email || '').toLowerCase();
+        const localPart = email.includes('@') ? email.split('@')[0] : '';
+        const phone = (t.phone || '').replace(/\D/g, '');
+        return localPart === identifierLower || (normalizedPhone && phone === normalizedPhone);
+      }) || null;
+    }
 
     if (!tech) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

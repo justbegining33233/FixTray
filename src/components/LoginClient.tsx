@@ -96,6 +96,23 @@ export default function LoginClient() {
         const techResponse = await fetch('/api/auth/tech', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: loginForm.username, password: loginForm.password }), credentials: 'include' });
         if (techResponse.ok) {
           const techData = await techResponse.json();
+
+          if ((techData.requires2FA || techData.requires2FASetup) && techData.tempToken) {
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('tech2fa_temp_token', techData.tempToken);
+            }
+            setLoading(false);
+            const mode = techData.requires2FASetup ? 'setup' : 'challenge';
+            navigateAfterLogin(`/auth/tech-2fa?mode=${encodeURIComponent(mode)}`);
+            return;
+          }
+
+          if (!techData.accessToken) {
+            setErrors({ username: 'Tech login requires additional verification. Please try again.' });
+            setLoading(false);
+            return;
+          }
+
           login({ token: techData.accessToken, role: techData.role, name: techData.name, id: techData.id, shopId: techData.shopId });
           setLoading(false);
           if (techData.role === 'tech') navigateAfterLogin(getPostLoginRoute('/tech/home'));
@@ -250,7 +267,7 @@ export default function LoginClient() {
               <form onSubmit={handleLoginSubmit} className="sos-form" autoComplete="off">
                 <div className="sos-field">
                   <label>Username</label>
-                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="sos-input" placeholder="Username or email" autoComplete="off" />
+                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="sos-input" placeholder="Username, email, or phone" autoComplete="off" />
                   {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.username}</p>)}
                 </div>
                 <div className="sos-field">

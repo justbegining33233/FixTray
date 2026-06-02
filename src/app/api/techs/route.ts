@@ -71,10 +71,17 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const shopId = auth.role === 'shop' ? auth.id : auth.shopId;
+    const normalizedEmail = String(data.email || '').trim().toLowerCase();
+    const rawPhone = String(data.phone || '').trim();
+    const normalizedPhone = rawPhone.replace(/\D/g, '');
+
+    if (!normalizedEmail || !data.password || !data.firstName || !data.lastName) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
 
     // Check if email exists
     const existing = await prisma.tech.findUnique({
-      where: { email: data.email },
+      where: { email: normalizedEmail },
     });
     
     if (existing) {
@@ -87,11 +94,11 @@ export async function POST(request: NextRequest) {
     const tech = await prisma.tech.create({
       data: {
         shopId: shopId!,
-        email: data.email,
+        email: normalizedEmail,
         password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
-        phone: data.phone,
+        phone: normalizedPhone || rawPhone,
         role: data.role || 'tech',
       },
       select: {

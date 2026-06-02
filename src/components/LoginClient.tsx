@@ -41,6 +41,21 @@ export default function LoginClient() {
     return fallback as Route;
   };
 
+  const navigateAfterLogin = (target: string) => {
+    const route = target as Route;
+    router.push(route);
+
+    // Some runtime environments can remain on /auth/login after push.
+    // Fall back to a hard navigation if that happens.
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        if (window.location.pathname.startsWith('/auth/login')) {
+          window.location.assign(target);
+        }
+      }, 350);
+    }
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -67,9 +82,9 @@ export default function LoginClient() {
           login({ token: adminData.accessToken, role: 'admin', name: adminData.username, id: adminData.id, isSuperAdmin: adminData.isSuperAdmin, isOwner: adminData.isOwner });
           setLoading(false);
           if (adminData.isSuperAdmin) {
-            router.push('/admin/home' as Route);
+            navigateAfterLogin('/admin/home');
           } else {
-            router.push(getPostLoginRoute('/admin/home'));
+            navigateAfterLogin(getPostLoginRoute('/admin/home'));
           }
           return;
         }
@@ -83,7 +98,8 @@ export default function LoginClient() {
           const techData = await techResponse.json();
           login({ token: techData.accessToken, role: techData.role, name: techData.name, id: techData.id, shopId: techData.shopId });
           setLoading(false);
-          if (techData.role === 'tech') router.push(getPostLoginRoute('/tech/home')); else if (techData.role === 'manager') router.push(getPostLoginRoute('/manager/home'));
+          if (techData.role === 'tech') navigateAfterLogin(getPostLoginRoute('/tech/home'));
+          else if (techData.role === 'manager') navigateAfterLogin(getPostLoginRoute('/manager/home'));
           return;
         }
         if (techResponse.status >= 500) serverError = true;
@@ -99,7 +115,7 @@ export default function LoginClient() {
           login({ token: shopAccount.accessToken, role: 'shop', name: shopAccount.shopName, id: shopAccount.id, shopId: shopAccount.id, isShopAdmin: true, shopProfileComplete: profileComplete });
           setLoading(false);
           const nextRoute = profileComplete ? '/shop/home' : '/shop/complete-profile';
-          router.push(getPostLoginRoute(nextRoute));
+          navigateAfterLogin(getPostLoginRoute(nextRoute));
           return;
         }
         if (shopResponse.status >= 500) serverError = true;
@@ -115,7 +131,7 @@ export default function LoginClient() {
           const id = customerData.id || (customerData.user && customerData.user.id);
           login({ token, role: 'customer', name: name || 'Customer', id: id || '' });
           setLoading(false);
-          router.push(getPostLoginRoute('/customer/dashboard'));
+          navigateAfterLogin(getPostLoginRoute('/customer/dashboard'));
           return;
         }
         if (customerResponse.status >= 500) serverError = true;

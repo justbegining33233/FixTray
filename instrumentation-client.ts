@@ -12,15 +12,7 @@ Sentry.init({
   // Sample 100% of traces in dev, 10% in production (client traces are high volume).
   tracesSampleRate: isProd ? 0.1 : 1.0,
 
-  // Capture all sessions that contain errors; sample 5% of error-free sessions.
-  replaysOnErrorSampleRate: 1.0,
-  replaysSessionSampleRate: isProd ? 0.05 : 0,
-
   integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
     Sentry.browserTracingIntegration(),
   ],
 

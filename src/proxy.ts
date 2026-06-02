@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+
+  // Keep proxy verification behavior aligned with token signing in src/lib/auth.ts.
+  // This preserves local/dev behavior even when JWT_SECRET is unset.
+  return 'dev-only-insecure-secret-do-not-use-in-prod';
+}
+
 function resolveAllowedOrigin(request: NextRequest): string | null {
   const origin = request.headers.get('origin');
   if (!origin) return null;
@@ -45,8 +54,7 @@ const ROLE_HOME: Record<string, string> = {
 
 async function verifyJwt(token: string): Promise<Record<string, unknown> | null> {
   try {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return null;
+    const secret = getJwtSecret();
 
     const parts = token.split('.');
     if (parts.length !== 3) return null;

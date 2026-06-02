@@ -57,6 +57,34 @@ const SPARK_COL = "rgba(255,200, 80,"; // spark orange-yellow
 
 // ─── Drawing helpers ─────────────────────────────────────────────────────────
 
+function pathRoundRect(
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const rr = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+  if (typeof c.roundRect === "function") {
+    c.beginPath();
+    c.roundRect(x, y, width, height, rr);
+    return;
+  }
+
+  c.beginPath();
+  c.moveTo(x + rr, y);
+  c.lineTo(x + width - rr, y);
+  c.quadraticCurveTo(x + width, y, x + width, y + rr);
+  c.lineTo(x + width, y + height - rr);
+  c.quadraticCurveTo(x + width, y + height, x + width - rr, y + height);
+  c.lineTo(x + rr, y + height);
+  c.quadraticCurveTo(x, y + height, x, y + height - rr);
+  c.lineTo(x, y + rr);
+  c.quadraticCurveTo(x, y, x + rr, y);
+  c.closePath();
+}
+
 /** Draw a spur gear centred at origin. */
 function drawGear(
   c: CanvasRenderingContext2D,
@@ -133,8 +161,7 @@ function drawPiston(c: CanvasRenderingContext2D, r: number, alpha: number) {
   c.stroke();
 
   // Piston body
-  c.beginPath();
-  c.roundRect(-w / 2, -h * 0.35, w, h * 0.7, 4);
+  pathRoundRect(c, -w / 2, -h * 0.35, w, h * 0.7, 4);
   c.fillStyle = IRON + "0.7)";
   c.fill();
   c.strokeStyle = STEEL + "0.9)";
@@ -287,8 +314,7 @@ function drawWrench(c: CanvasRenderingContext2D, len: number, alpha: number) {
   c.globalAlpha = alpha;
 
   // Handle
-  c.beginPath();
-  c.roundRect(-handleW / 2, -len * 0.25, handleW, len * 0.7, handleW / 2);
+  pathRoundRect(c, -handleW / 2, -len * 0.25, handleW, len * 0.7, handleW / 2);
   c.fillStyle = STEEL + "0.55)";
   c.fill();
   c.strokeStyle = CHROME + "0.7)";
@@ -324,8 +350,7 @@ function drawWrench(c: CanvasRenderingContext2D, len: number, alpha: number) {
   }
 
   // Chrome sheen stripe
-  c.beginPath();
-  c.roundRect(-handleW * 0.25, -len * 0.1, handleW * 0.5, len * 0.45, handleW * 0.25);
+  pathRoundRect(c, -handleW * 0.25, -len * 0.1, handleW * 0.5, len * 0.45, handleW * 0.25);
   c.fillStyle = CHROME + "0.22)";
   c.fill();
 

@@ -114,70 +114,15 @@ export default function ManageTenants() {
   };
 
   const handleUpdatePlan = async (shopId: string, newPlan: string) => {
-    setUpdatingSubscription(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/subscriptions/${shopId}/update-plan`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          plan: newPlan,
-          billingCycle: 'monthly'
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setTenantMsg({type:'success',text:result.message});
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        setTenantMsg({type:'error',text:error.error || 'Failed to update subscription plan'});
-      }
-    } catch (error) {
-      console.error('Error updating plan:', error);
-      setTenantMsg({type:'error',text:'Failed to update subscription plan'});
-    } finally {
-      setUpdatingSubscription(false);
-    }
+    void shopId;
+    void newPlan;
+    setTenantMsg({ type: 'error', text: 'Plan management has been removed.' });
   };
 
   const handleCancelSubscription = async (shopId: string) => {
+    void shopId;
     setCancelConfirmId(null);
-    setUpdatingSubscription(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/subscriptions/${shopId}/cancel`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          reason: 'Admin cancellation',
-          immediate: false
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setTenantMsg({type:'success',text:result.message});
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        setTenantMsg({type:'error',text:error.error || 'Failed to cancel subscription'});
-      }
-    } catch (error) {
-      console.error('Error cancelling subscription:', error);
-      setTenantMsg({type:'error',text:'Failed to cancel subscription'});
-    } finally {
-      setUpdatingSubscription(false);
-    }
+    setTenantMsg({ type: 'error', text: 'Cancellation controls have been removed.' });
   };
 
   useEffect(() => {

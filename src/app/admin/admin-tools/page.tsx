@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaArrowRight, FaBuilding, FaChartBar, FaCheck, FaClipboardList, FaCog, FaDollarSign, FaEnvelope, FaHourglassHalf, FaLock, FaSave, FaStore, FaUsers, FaWrench } from 'react-icons/fa';
 
@@ -55,20 +56,20 @@ export default function AdminTools() {
     return null;
   }
 
-  const tools = [
-    { name: 'Manage Customers', description: 'View and manage all paying customers (shop owners)', icon: <FaUsers style={{marginRight:4}} />, href: '/admin/manage-customers', color: '#22c55e' },
-    { name: 'Manage Tenants', description: 'Manage all tenant organizations and subscriptions', icon: <FaBuilding style={{marginRight:4}} />, href: '/admin/manage-tenants', color: '#3b82f6' },
-    { name: 'Manage Shops', description: 'Manage all auto repair shops in the network', icon: <FaStore style={{marginRight:4}} />, href: '/admin/manage-shops', color: '#22c55e' },
-    { name: 'Financial Reports', description: 'Revenue, payouts, and financial analytics', icon: <FaDollarSign style={{marginRight:4}} />, href: '/admin/financial-reports', color: '#f59e0b' },
-    { name: 'User Management', description: 'Manage all platform users and roles', icon: <FaWrench style={{marginRight:4}} />, href: '/admin/user-management', color: '#a855f7' },
-    { name: 'Approved Shops', description: 'View all verified and active shop partners', icon: <FaCheck style={{marginRight:4}} />, href: '/admin/accepted-shops', color: '#22c55e' },
-    { name: 'Pending Shops', description: 'Review and approve new shop applications', icon: <FaHourglassHalf style={{marginRight:4}} />, href: '/admin/pending-shops', color: '#e5332a' },
-    { name: 'Activity Logs', description: 'Complete system activity history', icon: <FaClipboardList style={{marginRight:4}} />, href: '/admin/activity-logs', color: '#3b82f6' },
-    { name: 'System Settings', description: 'Configure platform settings and preferences', icon: <FaCog style={{marginRight:4}} />, href: '/admin/system-settings', color: '#6b7280' },
-    { name: 'Email Templates', description: 'Manage email notifications and templates', icon: <FaEnvelope style={{marginRight:4}} />, href: '/admin/email-templates', color: '#8b5cf6' },
-    { name: 'Platform Analytics', description: 'Detailed analytics and performance metrics', icon: <FaChartBar style={{marginRight:4}} />, href: '/admin/platform-analytics', color: '#f59e0b' },
-    { name: 'Security Settings', description: 'Manage security policies and permissions', icon: <FaLock style={{marginRight:4}} />, href: '/admin/security-settings', color: '#e5332a' },
-    { name: 'Backup & Restore', description: 'Database backup and restore operations', icon: <FaSave style={{marginRight:4}} />, href: '/admin/backup-restore', color: '#3b82f6' },
+  const tools: Array<{ name: string; description: string; icon: ReactElement; href: Route; color: string }> = [
+    { name: 'Manage Customers', description: 'View and manage all paying customers (shop owners)', icon: <FaUsers style={{marginRight:4}} />, href: '/admin/manage-customers' as Route, color: '#22c55e' },
+    { name: 'Manage Tenants', description: 'Manage all tenant organizations', icon: <FaBuilding style={{marginRight:4}} />, href: '/admin/manage-tenants' as Route, color: '#3b82f6' },
+    { name: 'Manage Shops', description: 'Manage all auto repair shops in the network', icon: <FaStore style={{marginRight:4}} />, href: '/admin/manage-shops' as Route, color: '#22c55e' },
+    { name: 'Financial Reports', description: 'Revenue, payouts, and financial analytics', icon: <FaDollarSign style={{marginRight:4}} />, href: '/admin/financial-reports' as Route, color: '#f59e0b' },
+    { name: 'User Management', description: 'Manage all platform users and roles', icon: <FaWrench style={{marginRight:4}} />, href: '/admin/user-management' as Route, color: '#a855f7' },
+    { name: 'Approved Shops', description: 'View all verified and active shop partners', icon: <FaCheck style={{marginRight:4}} />, href: '/admin/accepted-shops' as Route, color: '#22c55e' },
+    { name: 'Pending Shops', description: 'Review and approve new shop applications', icon: <FaHourglassHalf style={{marginRight:4}} />, href: '/admin/pending-shops' as Route, color: '#e5332a' },
+    { name: 'Activity Logs', description: 'Complete system activity history', icon: <FaClipboardList style={{marginRight:4}} />, href: '/admin/activity-logs' as Route, color: '#3b82f6' },
+    { name: 'System Settings', description: 'Configure platform settings and preferences', icon: <FaCog style={{marginRight:4}} />, href: '/admin/system-settings' as Route, color: '#6b7280' },
+    { name: 'Email Templates', description: 'Manage email notifications and templates', icon: <FaEnvelope style={{marginRight:4}} />, href: '/admin/email-templates' as Route, color: '#8b5cf6' },
+    { name: 'Platform Analytics', description: 'Detailed analytics and performance metrics', icon: <FaChartBar style={{marginRight:4}} />, href: '/admin/platform-analytics' as Route, color: '#f59e0b' },
+    { name: 'Security Settings', description: 'Manage security policies and permissions', icon: <FaLock style={{marginRight:4}} />, href: '/admin/security-settings' as Route, color: '#e5332a' },
+    { name: 'Backup & Restore', description: 'Database backup and restore operations', icon: <FaSave style={{marginRight:4}} />, href: '/admin/backup-restore' as Route, color: '#3b82f6' },
   ];
 
   return (

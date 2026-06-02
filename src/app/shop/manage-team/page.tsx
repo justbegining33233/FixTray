@@ -34,7 +34,7 @@ export default function ManageTeamPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newMember, setNewMember] = useState({ name: '', role: 'tech', email: '', phone: '', password: '' });
+  const [newMember, setNewMember] = useState({ employeeNumber: '', name: '', role: 'tech', email: '', phone: '', password: '' });
   
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
@@ -42,6 +42,31 @@ export default function ManageTeamPage() {
   const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
   const [editError, setEditError] = useState('');
+
+  const fetchAutoEmployeeNumber = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/techs/next-employee-number', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data.employeeNumber) {
+        setNewMember((prev) => ({ ...prev, employeeNumber: String(data.employeeNumber) }));
+      }
+    } catch {
+      // Keep form usable even if auto-number lookup fails.
+    }
+  };
+
+  const openAddModal = async () => {
+    setFormError('');
+    setNewMember({ employeeNumber: '', name: '', role: 'tech', email: '', phone: '', password: '' });
+    setShowAddModal(true);
+    await fetchAutoEmployeeNumber();
+  };
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -153,7 +178,15 @@ export default function ManageTeamPage() {
       const response = await fetch('/api/techs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ email: newMember.email, password: newMember.password, firstName, lastName, phone: newMember.phone, role: newMember.role }),
+        body: JSON.stringify({
+          employeeNumber: newMember.employeeNumber || undefined,
+          email: newMember.email,
+          password: newMember.password,
+          firstName,
+          lastName,
+          phone: newMember.phone,
+          role: newMember.role,
+        }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -162,7 +195,7 @@ export default function ManageTeamPage() {
       }
       const created = await response.json();
       setShowAddModal(false);
-      setNewMember({ name: '', role: 'tech', email: '', phone: '', password: '' });
+      setNewMember({ employeeNumber: '', name: '', role: 'tech', email: '', phone: '', password: '' });
       showToast(created.employeeNumber ? `Team member added. Employee #: ${created.employeeNumber}` : 'Team member added successfully!');
       loadTeamMembers();
     } catch (error) {
@@ -265,7 +298,7 @@ export default function ManageTeamPage() {
               <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaUsers style={{marginRight:4}} /> Manage Team</h1>
               <p style={{fontSize:14, color:'#9aa3b2'}}>Add and manage your shop team members</p>
               <button 
-                onClick={() => setShowAddModal(true)}
+                onClick={openAddModal}
                 style={{marginTop:16, padding:'12px 24px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
                 + Add Team Member
@@ -281,7 +314,7 @@ export default function ManageTeamPage() {
               <h3 style={{fontSize:20, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>No Team Members Yet</h3>
               <p style={{color:'#9aa3b2', marginBottom:20}}>Add technicians and managers to your team</p>
               <button 
-                onClick={() => setShowAddModal(true)}
+                onClick={openAddModal}
                 style={{padding:'12px 24px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
                 + Add First Team Member
@@ -373,6 +406,17 @@ export default function ManageTeamPage() {
                   Manager
                 </button>
               </div>
+            </div>
+
+            <div style={{marginBottom:16}}>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Employee # (Auto)</label>
+              <input
+                type="text"
+                value={newMember.employeeNumber}
+                readOnly
+                placeholder="Generating..."
+                style={{width:'100%', padding:'12px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
+              />
             </div>
 
             <div style={{marginBottom:16}}>

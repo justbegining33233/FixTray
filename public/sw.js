@@ -17,9 +17,11 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(PRECACHE_URLS).catch(() => {/* ignore individual failures */})
-    )
+    caches.open(CACHE_NAME)
+      .then((cache) =>
+        cache.addAll(PRECACHE_URLS).catch(() => {/* ignore individual failures */})
+      )
+      .catch(() => undefined)
   );
 });
 
@@ -51,7 +53,9 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(API_CACHE).then((cache) => cache.put(request, clone));
+            caches.open(API_CACHE)
+              .then((cache) => cache.put(request, clone))
+              .catch(() => undefined);
           }
           return response;
         })
@@ -73,7 +77,9 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(request, clone))
+            .catch(() => undefined);
           return response;
         })
         .catch(() =>
@@ -91,7 +97,9 @@ self.addEventListener('fetch', (event) => {
       (cached) => cached || fetch(request).then((response) => {
         if (response.ok && url.origin === self.location.origin) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(request, clone))
+            .catch(() => undefined);
         }
         return response;
       })

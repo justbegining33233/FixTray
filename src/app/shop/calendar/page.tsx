@@ -2,6 +2,7 @@
 import { FaArrowLeft, FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 
 interface CalendarEvent {
@@ -297,7 +298,7 @@ export default function ShopCalendar() {
                   <span style={{padding:'4px 10px', borderRadius:12, fontSize:11, fontWeight:700, background:`${statusColor(ev.status)}20`, color: statusColor(ev.status), textTransform:'uppercase'}}>
                     {ev.status}
                   </span>
-                  <Link href={ev.type === 'appointment' ? `/shop/home` : `/workorders/${ev.id}`} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
+                  <Link href={(ev.type === 'appointment' ? `/shop/home` : `/workorders/${ev.id}`) as Route} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
                     View
                   </Link>
                 </div>

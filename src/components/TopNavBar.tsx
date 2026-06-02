@@ -734,7 +734,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
             </button>
           )}
 
-          <Link href={getHomeLink()} style={{ textDecoration: 'none' }}>
+          <Link href={getHomeLink() as Route} style={{ textDecoration: 'none' }}>
             <span style={{
               fontSize: 17,
               fontWeight: 800,

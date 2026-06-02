@@ -130,8 +130,25 @@ model Shop {
   workAuthorizations  WorkAuthorization[]
   workOrders          WorkOrder[]
   workOrderTemplates  WorkOrderTemplate[]
+  branding            ShopBranding?
 
   @@map("shops")
+}
+
+model ShopBranding {
+  id             String   @id @default(cuid())
+  shopId         String   @unique
+  shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  logoUrl        String?
+  primaryColor   String   @default("#e5332a")
+  accentColor    String   @default("#1f2937")
+  tagline        String?
+  welcomeMessage String?
+  footerText     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("shop_branding")
 }
 
 model ShopSchedule {

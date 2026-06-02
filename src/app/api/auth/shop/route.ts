@@ -59,29 +59,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account not fully set up. Please contact support.' }, { status: 401 });
     }
 
-    const isValid = await bcrypt.compare(password, shop.password).catch(() => false);
+    const isValid = await bcrypt.compare(password, shop.password);
 
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-
-    const shopSettings = await prisma.shopSettings.findUnique({
-      where: { shopId: shop.id },
-      select: { notificationPreferences: true },
-    });
-
-    const notificationPrefs =
-      shopSettings?.notificationPreferences &&
-      typeof shopSettings.notificationPreferences === 'object' &&
-      !Array.isArray(shopSettings.notificationPreferences)
-        ? (shopSettings.notificationPreferences as Record<string, unknown>)
-        : {};
-
-    const agreement = notificationPrefs.fixtrayAgreement as
-      | { accepted?: boolean; signedBy?: string; signedAt?: string }
-      | undefined;
-
-    const agreementAccepted = !!(agreement?.accepted && agreement?.signedBy && agreement?.signedAt);
 
     // Reset rate limit counter on successful login
     resetRateLimit(rateLimitKey);
@@ -122,7 +104,6 @@ export async function POST(request: NextRequest) {
       email: shop.email,
       phone: shop.phone,
       profileComplete: shop.profileComplete,
-      agreementAccepted,
       status: shop.status,
       accessToken,
     }, { status: 200 });

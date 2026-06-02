@@ -274,7 +274,7 @@ export function useAuth() {
 const ROLE_HOME_MAP: Record<string, string> = {
   admin:      '/admin/home',
   superadmin: '/admin/home',
-  shop:       '/shop/admin',
+  shop:       '/shop/home',
   manager:    '/manager/home',
   tech:       '/tech/home',
   customer:   '/customer/dashboard',

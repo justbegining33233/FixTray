@@ -31,15 +31,6 @@ export default function LoginClient() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showReset, setShowReset] = useState(false);
   const [regMsg, setRegMsg] = useState<{type:'success'|'error';text:string}|null>(null);
-  const [tech2FA, setTech2FA] = useState<{
-    tempToken: string;
-    mode: 'setup' | 'challenge';
-    role: 'tech' | 'manager';
-    secret?: string;
-    otpauthUrl?: string;
-    code: string;
-    error?: string;
-  } | null>(null);
 
   const getPostLoginRoute = (fallback: string): Route => {
     const redirect = searchParams?.get('redirect') || '';
@@ -82,13 +73,6 @@ export default function LoginClient() {
           }
           return;
         }
-        if (adminResponse.status === 429) {
-          const payload = await adminResponse.json().catch(() => ({}));
-          const retryAfter = Number(payload?.retryAfter || 0);
-          setErrors({ username: retryAfter > 0 ? `Too many attempts. Try again in ${retryAfter}s.` : 'Too many attempts. Try again shortly.' });
-          setLoading(false);
-          return;
-        }
         if (adminResponse.status >= 500) serverError = true;
       } catch { serverError = true; }
 
@@ -97,52 +81,6 @@ export default function LoginClient() {
         const techResponse = await fetch('/api/auth/tech', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: loginForm.username, password: loginForm.password }), credentials: 'include' });
         if (techResponse.ok) {
           const techData = await techResponse.json();
-
-          // Handle required tech 2FA setup/challenge before issuing access token.
-          if (techData.requires2FASetup && techData.tempToken) {
-            const setupResponse = await fetch('/api/auth/tech-2fa', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ tempToken: techData.tempToken, action: 'setup' }),
-              credentials: 'include',
-            });
-
-            if (setupResponse.ok) {
-              const setupData = await setupResponse.json();
-              setTech2FA({
-                tempToken: techData.tempToken,
-                mode: 'setup',
-                role: techData.role === 'manager' ? 'manager' : 'tech',
-                secret: setupData.base32,
-                otpauthUrl: setupData.otpauthUrl,
-                code: '',
-              });
-              setLoading(false);
-              return;
-            }
-
-            setErrors({ username: '2FA setup failed. Please try again.' });
-            setLoading(false);
-            return;
-          }
-
-          if (techData.requires2FA && techData.tempToken) {
-            setTech2FA({
-              tempToken: techData.tempToken,
-              mode: 'challenge',
-              role: techData.role === 'manager' ? 'manager' : 'tech',
-              code: '',
-            });
-            setLoading(false);
-            return;
-          }
-
-          if (!techData.accessToken) {
-            setErrors({ username: 'Login could not be completed. Please try again.' });
-            setLoading(false);
-            return;
-          }
-
           login({ token: techData.accessToken, role: techData.role, name: techData.name, id: techData.id, shopId: techData.shopId });
           setLoading(false);
           if (techData.role === 'tech') router.push(getPostLoginRoute('/tech/home')); else if (techData.role === 'manager') router.push(getPostLoginRoute('/manager/home'));
@@ -157,17 +95,10 @@ export default function LoginClient() {
         if (shopResponse.ok) {
           const shopAccount = await shopResponse.json();
           const profileComplete = !!shopAccount.profileComplete;
-          const agreementAccepted = !!shopAccount.agreementAccepted;
           if (!profileComplete && typeof window !== 'undefined') localStorage.removeItem('shopProfileComplete');
-          if (typeof window !== 'undefined') {
-            if (agreementAccepted) localStorage.setItem('fixtrayAgreementAccepted', 'true');
-            else localStorage.removeItem('fixtrayAgreementAccepted');
-          }
           login({ token: shopAccount.accessToken, role: 'shop', name: shopAccount.shopName, id: shopAccount.id, shopId: shopAccount.id, isShopAdmin: true, shopProfileComplete: profileComplete });
           setLoading(false);
-          const nextRoute = !profileComplete
-            ? '/shop/complete-profile'
-            : (agreementAccepted ? '/shop/admin' : '/shop/settings?tab=general');
+          const nextRoute = profileComplete ? '/shop/home' : '/shop/complete-profile';
           router.push(getPostLoginRoute(nextRoute));
           return;
         }
@@ -282,39 +213,6 @@ export default function LoginClient() {
 
   const toggleReset = () => setShowReset(s => !s);
 
-  const handleVerifyTech2FA = async () => {
-    if (!tech2FA) return;
-    if (!tech2FA.code.trim()) {
-      setTech2FA({ ...tech2FA, error: 'Enter the 6-digit code from your authenticator app.' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const verifyResponse = await fetch('/api/auth/tech-2fa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tempToken: tech2FA.tempToken, action: 'verify', token: tech2FA.code.trim() }),
-        credentials: 'include',
-      });
-
-      const verifyData = await verifyResponse.json().catch(() => ({}));
-      if (!verifyResponse.ok) {
-        setTech2FA({ ...tech2FA, error: verifyData.error || 'Invalid verification code.' });
-        setLoading(false);
-        return;
-      }
-
-      login({ token: verifyData.accessToken, role: verifyData.role, name: verifyData.name, id: verifyData.id, shopId: verifyData.shopId });
-      setLoading(false);
-      if (verifyData.role === 'manager') router.push(getPostLoginRoute('/manager/home'));
-      else router.push(getPostLoginRoute('/tech/home'));
-    } catch {
-      setTech2FA({ ...tech2FA, error: '2FA verification failed. Please try again.' });
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="sos-wrap" style={{ background: '#09090b' }}>
       <OilSlickCanvas />
@@ -351,49 +249,6 @@ export default function LoginClient() {
                   <button type="button" onClick={toggleReset} className="btn-link" style={{fontSize:13}}>{showReset ? 'Hide password reset' : 'Forgot / Reset password'}</button>
                 </div>
                 {showReset && (<PasswordResetForm onClose={() => setShowReset(false)} />)}
-
-                {tech2FA && (
-                  <div style={{ marginTop: 14, padding: 12, borderRadius: 10, border: '1px solid rgba(229,51,42,0.35)', background: 'rgba(229,51,42,0.08)' }}>
-                    <div style={{ fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>
-                      {tech2FA.mode === 'setup' ? 'Set Up Employee 2FA' : 'Employee 2FA Verification'}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#cbd5e1', marginBottom: 8 }}>
-                      {tech2FA.mode === 'setup'
-                        ? 'Scan/add this authenticator secret, then enter your current 6-digit code to finish login.'
-                        : 'Enter your current 6-digit authenticator code to complete login.'}
-                    </div>
-                    {tech2FA.mode === 'setup' && tech2FA.secret && (
-                      <div style={{ fontSize: 12, color: '#fde68a', marginBottom: 8, wordBreak: 'break-all' }}>
-                        Secret: {tech2FA.secret}
-                      </div>
-                    )}
-                    {tech2FA.mode === 'setup' && tech2FA.otpauthUrl && (
-                      <div style={{ marginBottom: 8 }}>
-                        <a href={tech2FA.otpauthUrl} style={{ color: '#93c5fd', fontSize: 12 }}>
-                          Open authenticator link
-                        </a>
-                      </div>
-                    )}
-                    <input
-                      type="text"
-                      value={tech2FA.code}
-                      onChange={(e) => setTech2FA({ ...tech2FA, code: e.target.value, error: undefined })}
-                      className="sos-input"
-                      placeholder="6-digit code"
-                      inputMode="numeric"
-                      maxLength={8}
-                    />
-                    {tech2FA.error && <p style={{ color: '#ff948d', fontSize: 12, marginTop: 6 }}>{tech2FA.error}</p>}
-                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                      <button type="button" className="btn-primary" onClick={handleVerifyTech2FA} disabled={loading} style={{ flex: 1 }}>
-                        {loading ? 'Verifying...' : 'Verify and Sign In'}
-                      </button>
-                      <button type="button" className="btn-outline" onClick={() => setTech2FA(null)} style={{ flex: 1 }}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
               </form>
             )}
             {activeTab === 'signup' && (

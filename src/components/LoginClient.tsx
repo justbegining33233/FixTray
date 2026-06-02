@@ -82,6 +82,13 @@ export default function LoginClient() {
           }
           return;
         }
+        if (adminResponse.status === 429) {
+          const payload = await adminResponse.json().catch(() => ({}));
+          const retryAfter = Number(payload?.retryAfter || 0);
+          setErrors({ username: retryAfter > 0 ? `Too many attempts. Try again in ${retryAfter}s.` : 'Too many attempts. Try again shortly.' });
+          setLoading(false);
+          return;
+        }
         if (adminResponse.status >= 500) serverError = true;
       } catch { serverError = true; }
 

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Verify hashed password
+    // Verify password using bcrypt-hashed credentials only.
     const isValid = await bcrypt.compare(password, customer.password).catch(() => false);
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

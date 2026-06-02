@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account not fully set up. Please contact support.' }, { status: 401 });
     }
 
-    const isValid = await bcrypt.compare(password, shop.password);
+    const isValid = await bcrypt.compare(password, shop.password).catch(() => false);
 
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

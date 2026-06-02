@@ -214,6 +214,7 @@ model ShopLaborRate {
 model Tech {
   id                    String             @id @default(cuid())
   shopId                String
+  employeeNumber        String?            @unique
   email                 String             @unique
   password              String
   firstName             String

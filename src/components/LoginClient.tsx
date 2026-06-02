@@ -61,7 +61,7 @@ export default function LoginClient() {
     setErrors({});
 
     const newErrors: Record<string, string> = {};
-    if (!loginForm.username) newErrors.username = 'Username is required';
+    if (!loginForm.username) newErrors.username = 'Login identifier is required';
     if (!loginForm.password) newErrors['password'] = 'Password is required';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
@@ -267,7 +267,7 @@ export default function LoginClient() {
               <form onSubmit={handleLoginSubmit} className="sos-form" autoComplete="off">
                 <div className="sos-field">
                   <label>Username</label>
-                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="sos-input" placeholder="Username, email, or phone" autoComplete="off" />
+                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="sos-input" placeholder="Employee #, username, email, or phone" autoComplete="off" />
                   {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.username}</p>)}
                 </div>
                 <div className="sos-field">

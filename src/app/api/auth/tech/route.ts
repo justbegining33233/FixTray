@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
 import { generateAccessToken, generateRandomToken, generateTempToken, refreshExpiryDate } from '@/lib/auth';
 import { logActivity } from '@/lib/activityLogger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
+import { normalizeEmployeeNumber } from '@/lib/employeeNumber';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
     const rawIdentifier = String(username).trim();
     const identifierLower = rawIdentifier.toLowerCase();
     const normalizedPhone = rawIdentifier.replace(/\D/g, '');
+    const normalizedEmployeeNumber = normalizeEmployeeNumber(rawIdentifier);
 
     // Rate limiting - prevent brute force attacks
     const clientIP = getClientIP(request);
@@ -39,6 +41,7 @@ export async function POST(request: NextRequest) {
     let tech = await prisma.tech.findFirst({
       where: {
         OR: [
+          { employeeNumber: normalizedEmployeeNumber },
           { email: identifierLower },
           { phone: rawIdentifier },
           ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
@@ -145,6 +148,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       id: tech.id,
+      employeeNumber: tech.employeeNumber,
       email: tech.email,
       firstName: tech.firstName,
       lastName: tech.lastName,

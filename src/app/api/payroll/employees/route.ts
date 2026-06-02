@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     where: { shopId },
     select: {
       id: true,
+      employeeNumber: true,
       firstName: true,
       lastName: true,
       email: true,

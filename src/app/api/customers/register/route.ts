@@ -3,6 +3,7 @@ import { validatePublicCsrf } from '@/lib/csrf';
 import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { sendWelcomeEmail } from '@/lib/emailService';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -29,22 +30,26 @@ export async function POST(request: NextRequest) {
     }
 
     const data = registerSchema.parse(body);
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const normalizedUsername = data.username?.trim().toLowerCase();
     
     // Check if customer exists
     const existing = await prisma.customer.findFirst({
       where: {
         OR: [
-          { email: data.email },
-          ...(data.username ? [{ username: data.username }] : [])
+          { email: { equals: normalizedEmail, mode: 'insensitive' } },
+          ...(normalizedUsername
+            ? [{ username: { equals: normalizedUsername, mode: 'insensitive' as const } }]
+            : [])
         ]
       },
     });
     
     if (existing) {
-      if (existing.email === data.email) {
+      if (existing.email.toLowerCase() === normalizedEmail) {
         return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
       }
-      if (existing.username === data.username) {
+      if (normalizedUsername && existing.username?.toLowerCase() === normalizedUsername) {
         return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
       }
     }
@@ -55,8 +60,8 @@ export async function POST(request: NextRequest) {
 // Create customer with email pre-verified (no verification step required)
     const customer = await prisma.customer.create({
       data: {
-        email: data.email,
-        username: data.username,
+        email: normalizedEmail,
+        username: normalizedUsername,
         password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -78,6 +83,18 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const target = Array.isArray((error.meta as { target?: string[] } | undefined)?.target)
+        ? (error.meta as { target?: string[] }).target || []
+        : [];
+      if (target.includes('username')) {
+        return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
+      }
+      if (target.includes('email')) {
+        return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Account already exists' }, { status: 400 });
     }
     console.error('Registration error:', error);
     return NextResponse.json({ error: 'Registration failed' }, { status: 500 });

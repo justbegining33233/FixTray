@@ -98,6 +98,9 @@ export default function TeamTab({ teamData }: TeamTabProps) {
                   </div>
                   {member.isClockedIn && <div style={{ color: '#22c55e', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Currently clocked in</div>}
                   <div style={{ color: '#9aa3b2', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}><FaEnvelope /> {member.email}</div>
+                  {member.employeeNumber && (
+                    <div style={{ color: '#9aa3b2', fontSize: 12, marginTop: 4 }}>Employee #: {member.employeeNumber}</div>
+                  )}
                   <div style={{ color: '#9aa3b2', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}><FaPhone /> {member.phone || 'No phone'}</div>
                 </div>
 

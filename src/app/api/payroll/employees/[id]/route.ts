@@ -36,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     where: { id, shopId },
     data,
     select: {
-      id: true, firstName: true, lastName: true, email: true,
+      id: true, employeeNumber: true, firstName: true, lastName: true, email: true,
       role: true, jobTitle: true, department: true, employmentType: true,
       payType: true, hourlyRate: true, salary: true, overtimeRate: true,
       hireDate: true, terminatedAt: true, available: true,

@@ -9,6 +9,7 @@ import { FaCircle, FaEnvelope, FaFolder, FaPhone, FaUsers } from 'react-icons/fa
 
 interface TeamMember {
   id: string;
+  employeeNumber?: string;
   name: string;
   role: string;
   email: string;
@@ -47,6 +48,7 @@ export default function ManagerTeamPage() {
         setTeamMembers(
           techs.map((t: any) => ({
             id: t.id,
+            employeeNumber: t.employeeNumber || '',
             name: `${t.firstName} ${t.lastName}`,
             role: t.role || 'tech',
             email: t.email || '',
@@ -74,7 +76,8 @@ export default function ManagerTeamPage() {
   const filtered = teamMembers.filter(
     m =>
       m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.role.toLowerCase().includes(search.toLowerCase())
+      m.role.toLowerCase().includes(search.toLowerCase()) ||
+      (m.employeeNumber || '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (isLoading)
@@ -177,6 +180,11 @@ export default function ManagerTeamPage() {
 
                   {/* Contact info */}
                   <div style={{ borderTop: '1px solid #334155', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {member.employeeNumber && (
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>
+                        Employee #: {member.employeeNumber}
+                      </p>
+                    )}
                     {member.email && (
                       <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>
                         <FaEnvelope style={{marginRight:4}} /> {member.email}

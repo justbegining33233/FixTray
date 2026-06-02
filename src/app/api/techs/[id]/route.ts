@@ -24,6 +24,7 @@ export async function GET(
       where: { id: params.id },
       select: {
         id: true,
+        employeeNumber: true,
         email: true,
         firstName: true,
         lastName: true,

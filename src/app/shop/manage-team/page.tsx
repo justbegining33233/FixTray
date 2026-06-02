@@ -9,6 +9,7 @@ import { FaCircle, FaUserTie, FaUsers, FaWrench } from 'react-icons/fa';
 
 interface TeamMember {
   id: string;
+  employeeNumber?: string;
   name: string;
   role: string;
   email: string;
@@ -19,6 +20,7 @@ interface TeamMember {
 }
 
 interface StoredEmployee {
+  employeeNumber?: string;
   name: string;
   role: string;
   email: string;
@@ -77,6 +79,7 @@ export default function ManageTeamPage() {
         
         const loadedMembers = techs.map((tech: any) => ({
           id: tech.id,
+          employeeNumber: tech.employeeNumber || '',
           name: `${tech.firstName} ${tech.lastName}`,
           role: tech.role,
           email: tech.email,
@@ -96,6 +99,7 @@ export default function ManageTeamPage() {
             const shopEmployees = employees.filter((emp: any) => emp.shopId === shopId);
             const loadedMembers = shopEmployees.map((emp: StoredEmployee, idx: number) => ({
               id: `emp-${idx}`,
+              employeeNumber: emp.employeeNumber || '',
               name: emp.name,
               role: emp.role,
               email: emp.email,
@@ -120,6 +124,7 @@ export default function ManageTeamPage() {
           const shopEmployees = employees.filter((emp: any) => emp.shopId === shopId);
           const loadedMembers = shopEmployees.map((emp: StoredEmployee, idx: number) => ({
             id: `emp-${idx}`,
+            employeeNumber: emp.employeeNumber || '',
             name: emp.name,
             role: emp.role,
             email: emp.email,
@@ -155,9 +160,10 @@ export default function ManageTeamPage() {
         setFormError(error.error || 'Failed to add team member');
         return;
       }
+      const created = await response.json();
       setShowAddModal(false);
       setNewMember({ name: '', role: 'tech', email: '', phone: '', password: '' });
-      showToast('Team member added successfully!');
+      showToast(created.employeeNumber ? `Team member added. Employee #: ${created.employeeNumber}` : 'Team member added successfully!');
       loadTeamMembers();
     } catch (error) {
       console.error('Error adding team member:', error);
@@ -302,6 +308,10 @@ export default function ManageTeamPage() {
                         </div>
                       </div>
                       <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16}}>
+                        <div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>Employee #</div>
+                          <div style={{fontSize:14, color:'#e5e7eb'}}>{member.employeeNumber || 'Pending'}</div>
+                        </div>
                         <div>
                           <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>Email</div>
                           <div style={{fontSize:14, color:'#e5e7eb'}}>{member.email}</div>

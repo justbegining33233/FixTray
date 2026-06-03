@@ -94,9 +94,13 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
 
   // Narrow by active tab
   const filteredConversations = useMemo(() => {
-    if (activeTab === "all") return shopStaffConversations;
-    return shopStaffConversations.filter((c) => c.contactRole === activeTab);
-  }, [shopStaffConversations, activeTab]);
+    let base = shopStaffConversations;
+    if (initialShopId) {
+      base = base.filter((c) => c.shopId === initialShopId || c.contactId === initialShopId);
+    }
+    if (activeTab === "all") return base;
+    return base.filter((c) => c.contactRole === activeTab);
+  }, [shopStaffConversations, activeTab, initialShopId]);
 
   // Unread counts per tab
   const unreadByTab = useMemo(() => {
@@ -109,9 +113,13 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
   }, [shopStaffConversations]);
 
   const filteredAvailableContacts = useMemo(() => {
-    if (composeRoleFilter === "all") return availableContacts;
-    return availableContacts.filter((c) => c.role === composeRoleFilter);
-  }, [availableContacts, composeRoleFilter]);
+    let contacts = availableContacts;
+    if (initialShopId) {
+      contacts = contacts.filter((c) => c.shopId === initialShopId || c.id === initialShopId);
+    }
+    if (composeRoleFilter === "all") return contacts;
+    return contacts.filter((c) => c.role === composeRoleFilter);
+  }, [availableContacts, composeRoleFilter, initialShopId]);
 
   // Auto-select the conversation matching initialShopId on first data load
   useEffect(() => {

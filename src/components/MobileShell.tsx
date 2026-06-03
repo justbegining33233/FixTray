@@ -272,6 +272,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     tiles: [
       { ico: '🚗', name: 'My Vehicles', sub: 'Your cars', href: '/customer/vehicles', color: '#0f1e3a', span2: true },
       { ico: '🗂️', name: 'Service History', sub: 'Past jobs', href: '/customer/history', color: '#0f2214' },
+      { ico: '🛠️', name: 'Work Orders', sub: 'Track active jobs', href: '/customer/workorders', color: '#2a1a0f' },
       { ico: '📅', name: 'Appointments', sub: 'Scheduled visits', href: '/customer/appointments', color: '#1a0f2e' },
       { ico: '💬', name: 'Messages', sub: 'Shop chat', href: '/customer/messages', color: '#0f0f2e' },
       { ico: '💰', name: 'Estimates', sub: 'Pending approval', href: '/customer/estimates', color: '#2e1a0a' },
@@ -283,7 +284,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       { ico: '🏠', label: 'Home', href: '/customer/dashboard' },
       { ico: '🗂️', label: 'History', href: '/customer/history' },
       { ico: '💬', label: 'Chat', href: '/customer/messages' },
-      { ico: '👤', label: 'Profile', href: '/customer/overview' },
+      { ico: '👤', label: 'Profile', href: '/customer/profile' },
     ],
     tabGroups: [
       {
@@ -295,8 +296,9 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         ],
       },
       {
-        match: ['/customer/appointments', '/customer/recurring-approvals'],
+        match: ['/customer/appointments', '/customer/recurring-approvals', '/customer/workorders'],
         tabs: [
+          { ico: '🛠️', label: 'Work Orders', href: '/customer/workorders' },
           { ico: '📅', label: 'Appointments', href: '/customer/appointments' },
           { ico: '🔄', label: 'Recurring', href: '/customer/recurring-approvals' },
         ],
@@ -327,6 +329,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       },
     ],
     newOptions: [
+      { ico: '🛠️', title: 'View Work Orders', sub: 'Track active and past jobs', href: '/customer/workorders' },
       { ico: '📅', title: 'Book Appointment', sub: 'Schedule at a shop near you', href: '/customer/appointments' },
       { ico: '🔔', title: 'Request Service', sub: 'Send a service request', href: '/customer/findshops' },
     ],
@@ -342,6 +345,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       {
         title: 'Appointments',
         items: [
+          { ico: '🛠️', label: 'Work Orders', href: '/customer/workorders' },
           { ico: '📅', label: 'Appointments', href: '/customer/appointments' },
           { ico: '🔄', label: 'Recurring Approvals', href: '/customer/recurring-approvals' },
         ],

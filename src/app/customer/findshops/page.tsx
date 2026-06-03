@@ -159,18 +159,17 @@ export default function FindShops() {
       // Search by zip code - exact match or starts with
       return shop.zipCode?.startsWith(searchTerm);
     } else {
-      // Search by name or service
-      return shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shop.services?.some(service => service.toLowerCase().includes(searchTerm.toLowerCase()));
+      // Search by shop name only
+      return shop.name.toLowerCase().includes(searchTerm.toLowerCase());
     }
   });
 
   // Check if input looks like a zip code (5 digits)
   const detectSearchType = (value: string) => {
-    const isZipLike = /^\d{1,5}$/.test(value);
-    if (isZipLike && value.length >= 3) {
+    const isZipLike = /^\d+$/.test(value);
+    if (isZipLike) {
       setSearchType('zip');
-    } else if (!/^\d+$/.test(value)) {
+    } else {
       setSearchType('name');
     }
   };
@@ -195,6 +194,22 @@ export default function FindShops() {
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
+        <div style={{marginBottom:20}}>
+          <Link href="/customer/dashboard" style={{
+            display:'inline-flex',
+            alignItems:'center',
+            color:'#3b82f6',
+            textDecoration:'none',
+            fontSize:14,
+            fontWeight:600,
+            padding:'8px 16px',
+            background:'rgba(59,130,246,0.1)',
+            borderRadius:8,
+            border:'1px solid rgba(59,130,246,0.3)'
+          }}>
+            Back to Dashboard
+          </Link>
+        </div>
         <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Find Auto Shops</h1>
 
         {/* Single Search Bar, auto-detects zip vs name/service */}
@@ -202,7 +217,7 @@ export default function FindShops() {
           <div style={{position:'relative'}}>
             <input
               type="text"
-              placeholder="(Search by shop name, service, or zip code...)"
+              placeholder="(Search by shop name or zip code...)"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);

@@ -87,7 +87,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { shopId, vehicleId, scheduledDate, serviceType, notes } = body;
+    const {
+      shopId,
+      vehicleId,
+      scheduledDate,
+      serviceType,
+      notes,
+      appointmentType,
+      vehicleInfo,
+      mediaUrls,
+    } = body;
+
+    const normalizedAppointmentType = appointmentType === 'road-call' ? 'road-call' : 'in-shop';
 
     if (!shopId || !scheduledDate || !serviceType) {
       return NextResponse.json(
@@ -174,9 +185,21 @@ export async function POST(request: NextRequest) {
         shopId,
         vehicleId: vehicleId || null,
         vehicleType: vehicle?.vehicleType || appointment.vehicle?.vehicleType || 'gas',
-        serviceLocation: 'in-shop',
-        issueDescription: `Appointment: ${serviceType}${notes ? `\n\nCustomer Notes: ${notes}` : ''}`,
+        serviceLocation: normalizedAppointmentType,
+        issueDescription: `Appointment: ${serviceType}${normalizedAppointmentType === 'road-call' ? ' (Road Call)' : ''}${notes ? `\n\nCustomer Notes: ${notes}` : ''}`,
         maintenance: [serviceType],
+        location: normalizedAppointmentType === 'road-call'
+          ? {
+              type: 'road-call',
+              vehicleInfo: vehicleInfo || null,
+              mediaUrls: Array.isArray(mediaUrls) ? mediaUrls : [],
+            }
+          : {
+              type: 'in-shop',
+              vehicleInfo: vehicleInfo || null,
+              mediaUrls: Array.isArray(mediaUrls) ? mediaUrls : [],
+            },
+        pictures: Array.isArray(mediaUrls) ? mediaUrls : [],
         status: 'pending',
         dueDate: new Date(scheduledDate),
       },
@@ -184,12 +207,16 @@ export async function POST(request: NextRequest) {
 
     // If customer provided notes, start a message thread
     if (notes && notes.trim()) {
+      const vehicleSummary = vehicleInfo
+        ? [vehicleInfo.year, vehicleInfo.make, vehicleInfo.model, vehicleInfo.licensePlate].filter(Boolean).join(' ')
+        : '';
+      const mediaCount = Array.isArray(mediaUrls) ? mediaUrls.length : 0;
       await prisma.customerMessage.create({
         data: {
           customerId: user.id,
           workOrderId: workOrder.id,
           from: 'customer',
-          content: notes.trim(),
+          content: `${notes.trim()}\n\nVisit Type: ${normalizedAppointmentType === 'road-call' ? 'Road Call' : 'In Shop'}${vehicleSummary ? `\nVehicle: ${vehicleSummary}` : ''}${mediaCount > 0 ? `\nMedia attached: ${mediaCount}` : ''}`,
           read: false,
         },
       });

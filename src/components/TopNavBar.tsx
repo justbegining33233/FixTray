@@ -3,7 +3,7 @@
 import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useSocket } from '@/lib/socket';
 import OilSlickNavCanvas from '@/components/OilSlickNavCanvas';
@@ -18,6 +18,7 @@ interface TopNavBarProps {
 
 export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopNavBarProps) {
   const router = useRouter();
+  const pathname = usePathname() ?? '';
   const { isConnected, emit, on, off } = useSocket();
   const [userRole, setUserRole] = useState('');
   const [userName, setUserName] = useState('');
@@ -41,6 +42,9 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     system: true,
   });
   const lastUnreadRef = useRef(0);
+
+  const pathRole = pathname.split('/')[1] || '';
+  const activeRole = userRole || pathRole;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -173,7 +177,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
 
       // Add work order notifications for shop owners/managers
       let workOrderNotifications: any[] = [];
-      if (userRole === 'shop' || userRole === 'manager') {
+      if (activeRole === 'shop' || activeRole === 'manager') {
         try {
           const woResponse = await fetch('/api/workorders?status=pending&limit=5', {
             headers: { Authorization: `Bearer ${token}` },
@@ -288,7 +292,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       customer: { icon: <FaUser />, label: 'Customer', color: '#e5332a' },
     };
 
-    const role = roles[userRole] || { icon: '', label: 'User', color: '#6b7280' };
+    const role = roles[activeRole] || { icon: '', label: 'User', color: '#6b7280' };
 
     return (
       <span style={{
@@ -313,7 +317,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   };
 
   const getHomeLink = () => {
-    switch (userRole) {
+    switch (activeRole) {
       case 'shop': return '/shop/admin';
       case 'manager': return '/manager/home';
       case 'tech': return '/tech/home';
@@ -325,7 +329,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   };
 
   const getProfileLink = (): Route => {
-    switch (userRole) {
+    switch (activeRole) {
       case 'shop': return '/shop/profile' as Route;
       case 'manager': return '/manager/profile' as Route;
       case 'tech': return '/tech/profile' as Route;
@@ -374,7 +378,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   };
 
   const getMessagesLink = () => {
-    switch (userRole) {
+    switch (activeRole) {
       case 'tech': return '/tech/messages';
       case 'manager': return '/manager/home';
       case 'shop': return '/shop/admin';
@@ -776,8 +780,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
               {shopName}
             </div>
           )}
-          {userRole === 'shop' && <ShopSwitcher />}
-          {['shop', 'manager', 'tech'].includes(userRole) && <GlobalSearch />}
+          {activeRole === 'shop' && <ShopSwitcher />}
+          {['shop', 'manager', 'tech'].includes(activeRole) && <GlobalSearch />}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, overflow: 'hidden' }}>
@@ -875,7 +879,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                 </Link>
 
                 {/* Clock In/Out for tech/manager */}
-                {(userRole === 'tech' || userRole === 'manager') && (
+                {(activeRole === 'tech' || activeRole === 'manager') && (
                   <button
                     onClick={() => { handleClockToggle(); setShowProfileMenu(false); }}
                     disabled={loading}

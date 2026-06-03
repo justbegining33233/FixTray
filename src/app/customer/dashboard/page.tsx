@@ -261,6 +261,17 @@ export default function CustomerDashboard() {
       link: '/customer/appointments',
       getData: () => recentData.appointments
     },
+    {
+      id: 'workorders',
+      icon: '',
+      name: 'Work Orders',
+      desc: 'Track all your repair and service work orders',
+      detail: `${stats.historyCount} completed`,
+      badge: stats.historyCount > 0 ? 'History' : '',
+      badgeColor: '#f59e0b',
+      link: '/customer/workorders',
+      getData: () => recentData.history
+    },
     { 
       id: 'quotes', 
       icon: '', 

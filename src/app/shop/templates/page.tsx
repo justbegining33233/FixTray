@@ -55,11 +55,11 @@ export default function WorkOrderTemplatesPage() {
       if (servicesRes.ok) {
         const servicesData = await servicesRes.json().catch(() => ({}));
         const services = Array.isArray(servicesData?.services) ? servicesData.services : [];
-        const names = Array.from(
-          new Set(
+        const names: string[] = Array.from(
+          new Set<string>(
             services
               .map((svc: any) => String(svc?.serviceName || svc?.name || '').trim())
-              .filter(Boolean)
+              .filter((name: string) => name.length > 0)
           )
         );
         setServiceOptions(names);

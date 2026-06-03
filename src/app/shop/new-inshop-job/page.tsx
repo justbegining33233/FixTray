@@ -58,11 +58,11 @@ export default function ShopNewInShopJob() {
         if (servicesRes.ok) {
           const data = await servicesRes.json();
           const services = Array.isArray(data?.services) ? data.services : [];
-          const uniqueNames = Array.from(
-            new Set(
+          const uniqueNames: string[] = Array.from(
+            new Set<string>(
               services
                 .map((svc: any) => String(svc?.serviceName || '').trim())
-                .filter(Boolean)
+                .filter((name: string) => name.length > 0)
             )
           );
           setServiceOptions(uniqueNames.map((name) => ({ value: name, label: name })));

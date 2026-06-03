@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { getTemplateById, updateTemplate, deleteTemplate } from '@/lib/workorder-templates';
+import { findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
 
 // GET /api/shop/templates/[id] — Get a single template
 export async function GET(
@@ -38,6 +39,29 @@ export async function PUT(
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
+
+  if (typeof (body as Record<string, unknown>).serviceType === 'string') {
+    const serviceValidation = await findUnconfiguredShopServices(
+      shopId,
+      [(body as Record<string, unknown>).serviceType as string]
+    );
+    if (!serviceValidation.hasConfiguredServices) {
+      return NextResponse.json(
+        { error: 'This shop has no services configured. Add services before updating templates.' },
+        { status: 400 }
+      );
+    }
+    if (serviceValidation.invalidServices.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Template service type must be one of this shop\'s configured services.',
+          invalidServices: serviceValidation.invalidServices,
+        },
+        { status: 400 }
+      );
+    }
+  }
+
   const template = await updateTemplate(id, body);
 
   return NextResponse.json({ template });

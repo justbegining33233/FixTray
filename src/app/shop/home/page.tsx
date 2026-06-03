@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Route } from 'next';
-import { FaBox, FaChartBar, FaCog, FaIndustry, FaLock, FaMapMarkerAlt, FaStore, FaSyncAlt, FaTools, FaTruck, FaWrench } from 'react-icons/fa';
+import { FaBox, FaCar, FaChartBar, FaCog, FaIndustry, FaLock, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck, FaWrench } from 'react-icons/fa';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -213,7 +213,8 @@ export default function ShopHome() {
     },
     { label: <><FaBox style={{marginRight:6}}/>Parts Orders</>, href: '/shop/purchase-orders', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
     { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
-    { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/shop/new-inshop-job', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
+    { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/workorders/inshop', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
+    { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/workorders/roadside', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
     { label: <><FaIndustry style={{marginRight:6}}/>Vendors</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
     { label: <><FaMapMarkerAlt style={{marginRight:6}}/>Locations</>, href: '/shop/locations', tint: 'rgba(20,184,166,0.18)', color: '#14b8a6', border: 'rgba(20,184,166,0.28)' },
     { label: <><FaSyncAlt style={{marginRight:6}}/>Recurring Orders</>, href: '/shop/recurring-workorders', tint: 'rgba(34,197,94,0.18)', color: '#22c55e', border: 'rgba(34,197,94,0.28)' },
@@ -545,9 +546,47 @@ export default function ShopHome() {
                     </span>
                   </div>
                 </div>
-                <span style={{padding:'4px 10px', background:'rgba(34,197,94,0.2)', color:'#22c55e', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  Drag-free handoff
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <Link
+                    href={'/workorders/inshop' as Route}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      background: 'rgba(229,51,42,0.18)',
+                      border: '1px solid rgba(229,51,42,0.35)',
+                      color: '#ff6b64',
+                      textDecoration: 'none',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <FaCar /> In-Shop Work Order
+                  </Link>
+                  <Link
+                    href={'/workorders/roadside' as Route}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      background: 'rgba(59,130,246,0.16)',
+                      border: '1px solid rgba(59,130,246,0.35)',
+                      color: '#93c5fd',
+                      textDecoration: 'none',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <FaRoad /> Roadside Work Order
+                  </Link>
+                  <span style={{padding:'4px 10px', background:'rgba(34,197,94,0.2)', color:'#22c55e', borderRadius:12, fontSize:11, fontWeight:700}}>
+                    Drag-free handoff
+                  </span>
+                </div>
               </div>
 
               <div style={{display:'grid', gridTemplateColumns:'1fr', gap:16, alignItems:'start'}}>

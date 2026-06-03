@@ -11,6 +11,7 @@ import { queryCache } from '@/lib/queryCache';
 import { compression } from '@/lib/compression';
 import { featureFlags } from '@/lib/featureFlags';
 import logger from '@/lib/logger';
+import { extractServiceNames, findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -283,6 +284,36 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    if (!shopId) {
+      return NextResponse.json({ error: 'shopId is required' }, { status: 400 });
+    }
+
+    const requestedServices = [
+      ...extractServiceNames(sanitizedData.services?.repairs),
+      ...extractServiceNames(sanitizedData.services?.maintenance),
+      ...extractServiceNames(sanitizedData.serviceType),
+    ];
+
+    const serviceValidation = await findUnconfiguredShopServices(shopId, requestedServices);
+    if (!serviceValidation.hasConfiguredServices) {
+      return NextResponse.json(
+        {
+          error: 'This shop has no services configured. Ask the shop admin to add services before creating work orders.',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (serviceValidation.invalidServices.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'One or more requested services are not offered by this shop.',
+          invalidServices: serviceValidation.invalidServices,
+        },
+        { status: 400 }
+      );
     }
 
     const workOrder = await prisma.workOrder.create({

@@ -34,11 +34,12 @@ export default function CustomerAppointmentsPage() {
   const [showBookForm, setShowBookForm] = useState(false);
   const [shops, setShops] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [shopServiceOptions, setShopServiceOptions] = useState<string[]>([]);
   const [newAppointment, setNewAppointment] = useState({
     shopId: '',
     vehicleId: '',
     scheduledDate: '',
-    serviceType: 'oil-change',
+    serviceType: '',
     notes: ''
   });
   const [apptMsg, setApptMsg] = useState<{type:'success'|'error';text:string}|null>(null);
@@ -49,6 +50,32 @@ export default function CustomerAppointmentsPage() {
     fetchShops();
     fetchVehicles();
   }, [router]);
+
+  useEffect(() => {
+    const selectedShop = shops.find((shop) => shop.id === newAppointment.shopId);
+
+    if (!selectedShop) {
+      setShopServiceOptions([]);
+      setNewAppointment((prev) => ({ ...prev, serviceType: '' }));
+      return;
+    }
+
+    const allServiceNames = [
+      ...((selectedShop.dieselServices || []) as Array<{ serviceName?: string }>),
+      ...((selectedShop.gasServices || []) as Array<{ serviceName?: string }>),
+    ]
+      .map((service) => (service?.serviceName || '').trim())
+      .filter((serviceName) => serviceName.length > 0);
+
+    const uniqueServiceNames = Array.from(new Set(allServiceNames));
+    setShopServiceOptions(uniqueServiceNames);
+    setNewAppointment((prev) => ({
+      ...prev,
+      serviceType: uniqueServiceNames.includes(prev.serviceType)
+        ? prev.serviceType
+        : (uniqueServiceNames[0] || ''),
+    }));
+  }, [newAppointment.shopId, shops]);
 
   const fetchAppointments = async () => {
     try {
@@ -139,8 +166,8 @@ export default function CustomerAppointmentsPage() {
   };
 
   const handleBookAppointment = async () => {
-    if (!newAppointment.shopId || !newAppointment.scheduledDate) {
-      setApptMsg({type:'error',text:'Please select a shop and date/time'});
+    if (!newAppointment.shopId || !newAppointment.scheduledDate || !newAppointment.serviceType) {
+      setApptMsg({type:'error',text:'Please select a shop, service, and date/time'});
       return;
     }
 
@@ -161,7 +188,7 @@ export default function CustomerAppointmentsPage() {
       if (response.ok) {
         setApptMsg({type:'success',text:'Appointment booked successfully!'});
         setShowBookForm(false);
-        setNewAppointment({ shopId: '', vehicleId: '', scheduledDate: '', serviceType: 'oil-change', notes: '' });
+        setNewAppointment({ shopId: '', vehicleId: '', scheduledDate: '', serviceType: '', notes: '' });
         fetchAppointments();
       } else {
         const error = await response.json();
@@ -346,16 +373,14 @@ export default function CustomerAppointmentsPage() {
                 <select
                   value={newAppointment.serviceType}
                   onChange={(e) => setNewAppointment({ ...newAppointment, serviceType: e.target.value })}
+                  disabled={!newAppointment.shopId || shopServiceOptions.length === 0}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
-                  <option value="oil-change">Oil Change</option>
-                  <option value="inspection">Inspection</option>
-                  <option value="brake-service">Brake Service</option>
-                  <option value="tire-service">Tire Service</option>
-                  <option value="engine-repair">Engine Repair</option>
-                  <option value="transmission">Transmission</option>
-                  <option value="electrical">Electrical</option>
-                  <option value="general-repair">General Repair</option>
+                  {!newAppointment.shopId && <option value="">Select a shop first</option>}
+                  {newAppointment.shopId && shopServiceOptions.length === 0 && <option value="">No services configured for this shop</option>}
+                  {shopServiceOptions.map((serviceName) => (
+                    <option key={serviceName} value={serviceName}>{serviceName}</option>
+                  ))}
                 </select>
               </div>
 
@@ -395,7 +420,7 @@ export default function CustomerAppointmentsPage() {
                 <button
                   onClick={() => {
                     setShowBookForm(false);
-                    setNewAppointment({ shopId: '', vehicleId: '', scheduledDate: '', serviceType: 'oil-change', notes: '' });
+                    setNewAppointment({ shopId: '', vehicleId: '', scheduledDate: '', serviceType: '', notes: '' });
                   }}
                   style={{ flex: 1, padding: 12, background: 'rgba(255,255,255,0.1)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                 >

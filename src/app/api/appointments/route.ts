@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { AuthUser } from '@/lib/auth';
 import { sendSms } from '@/lib/smsService';
+import { findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
 
 // GET - Get appointments
 export async function GET(request: NextRequest) {
@@ -95,6 +96,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const serviceValidation = await findUnconfiguredShopServices(shopId, [String(serviceType)]);
+    if (!serviceValidation.hasConfiguredServices) {
+      return NextResponse.json(
+        { error: 'This shop has no services configured. Ask the shop admin to add services first.' },
+        { status: 400 }
+      );
+    }
+    if (serviceValidation.invalidServices.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Selected service is not offered by this shop.',
+          invalidServices: serviceValidation.invalidServices,
+        },
+        { status: 400 }
+      );
+    }
+
     const user = auth as AuthUser;
 
     // Get vehicle info if provided
@@ -158,7 +176,7 @@ export async function POST(request: NextRequest) {
         vehicleType: vehicle?.vehicleType || appointment.vehicle?.vehicleType || 'gas',
         serviceLocation: 'in-shop',
         issueDescription: `Appointment: ${serviceType}${notes ? `\n\nCustomer Notes: ${notes}` : ''}`,
-        maintenance: serviceType,
+        maintenance: [serviceType],
         status: 'pending',
         dueDate: new Date(scheduledDate),
       },

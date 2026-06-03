@@ -29,6 +29,13 @@ export default function Estimates() {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [shops, setShops] = useState<any[]>([]);
+  const [requestServices, setRequestServices] = useState<string[]>([]);
+  const [requestForm, setRequestForm] = useState({
+    shopId: '',
+    serviceType: '',
+    description: '',
+  });
   const [estimateMsg, setEstimateMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
   const fetchEstimates = useCallback(async () => {
@@ -78,6 +85,49 @@ export default function Estimates() {
     setUserName(name);
     fetchEstimates();
   }, [fetchEstimates]);
+
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/shops/accepted', {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setShops(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching shops:', error);
+      }
+    };
+
+    fetchShops();
+  }, []);
+
+  useEffect(() => {
+    const selectedShop = shops.find((shop) => shop.id === requestForm.shopId);
+
+    if (!selectedShop) {
+      setRequestServices([]);
+      setRequestForm((prev) => ({ ...prev, serviceType: '' }));
+      return;
+    }
+
+    const names = [
+      ...((selectedShop.dieselServices || []) as Array<{ serviceName?: string }>),
+      ...((selectedShop.gasServices || []) as Array<{ serviceName?: string }>),
+    ]
+      .map((service) => (service?.serviceName || '').trim())
+      .filter((serviceName) => serviceName.length > 0);
+
+    const uniqueNames = Array.from(new Set(names));
+    setRequestServices(uniqueNames);
+    setRequestForm((prev) => ({
+      ...prev,
+      serviceType: uniqueNames.includes(prev.serviceType) ? prev.serviceType : (uniqueNames[0] || ''),
+    }));
+  }, [requestForm.shopId, shops]);
 
   const handleAccept = async (estimateId: string) => {
     setLoading(estimateId);
@@ -403,7 +453,11 @@ export default function Estimates() {
                 <div style={{display:'grid', gap:20}}>
                   <div>
                     <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>Service Type</label>
-                    <select style={{
+                    <select
+                      value={requestForm.serviceType}
+                      onChange={(e) => setRequestForm({ ...requestForm, serviceType: e.target.value })}
+                      disabled={!requestForm.shopId || requestServices.length === 0}
+                      style={{
                       width:'100%',
                       padding:'12px',
                       background:'rgba(255,255,255,0.1)',
@@ -412,17 +466,18 @@ export default function Estimates() {
                       color:'#e5e7eb',
                       fontSize:16
                     }}>
-                      <option value="">Select a service</option>
-                      <option value="oil-change">Oil Change</option>
-                      <option value="brake-service">Brake Service</option>
-                      <option value="tire-service">Tire Service</option>
-                      <option value="engine-repair">Engine Repair</option>
-                      <option value="other">Other</option>
+                      {!requestForm.shopId && <option value="">Select a shop first</option>}
+                      {requestForm.shopId && requestServices.length === 0 && <option value="">No services configured for this shop</option>}
+                      {requestServices.map((serviceName) => (
+                        <option key={serviceName} value={serviceName}>{serviceName}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
                     <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>Description</label>
                     <textarea 
+                      value={requestForm.description}
+                      onChange={(e) => setRequestForm({ ...requestForm, description: e.target.value })}
                       placeholder="Describe the service you need..."
                       style={{
                         width:'100%',
@@ -439,7 +494,10 @@ export default function Estimates() {
                   </div>
                   <div>
                     <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>Preferred Shop (Optional)</label>
-                    <select style={{
+                    <select
+                      value={requestForm.shopId}
+                      onChange={(e) => setRequestForm({ ...requestForm, shopId: e.target.value })}
+                      style={{
                       width:'100%',
                       padding:'12px',
                       background:'rgba(255,255,255,0.1)',
@@ -449,7 +507,9 @@ export default function Estimates() {
                       fontSize:16
                     }}>
                       <option value="">Any available shop</option>
-                      <option value="allentown">Allentown 24/7 Auto & Diesel</option>
+                      {shops.map((shop) => (
+                        <option key={shop.id} value={shop.id}>{shop.shopName || shop.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>

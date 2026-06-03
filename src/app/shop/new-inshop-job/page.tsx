@@ -10,18 +10,10 @@ import { FaArrowLeft, FaBuilding } from 'react-icons/fa';
 
 export default function ShopNewInShopJob() {
   const router = useRouter();
-  const { user, isLoading } = useRequireAuth(['shop', 'tech']);
+  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'tech']);
   const [userName, setUserName] = useState('');
-  const [serviceOptions, setServiceOptions] = useState<Array<{ value: string; label: string }>>([
-    { value: 'oil-change', label: 'Oil Change' },
-    { value: 'brake-service', label: 'Brake Service' },
-    { value: 'tire-rotation', label: 'Tire Rotation' },
-    { value: 'engine-diagnostic', label: 'Engine Diagnostic' },
-    { value: 'transmission-service', label: 'Transmission Service' },
-    { value: 'electrical-repair', label: 'Electrical Repair' },
-    { value: 'air-conditioning', label: 'A/C Service' },
-    { value: 'suspension', label: 'Suspension Repair' },
-  ]);
+  const [serviceOptions, setServiceOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [servicesLoaded, setServicesLoaded] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -33,7 +25,7 @@ export default function ShopNewInShopJob() {
     vehicleYear: '',
     vin: '',
     mileage: '',
-    serviceType: 'maintenance',
+    serviceType: '',
     services: [] as string[],
     appointmentDate: '',
     appointmentTime: '',
@@ -66,15 +58,17 @@ export default function ShopNewInShopJob() {
         if (servicesRes.ok) {
           const data = await servicesRes.json();
           const services = Array.isArray(data?.services) ? data.services : [];
-          if (services.length > 0) {
-            setServiceOptions(
-              services.map((svc: any) => ({
-                value: String(svc.id),
-                label: String(svc.serviceName || 'Service'),
-              }))
-            );
-          }
+          const uniqueNames = Array.from(
+            new Set(
+              services
+                .map((svc: any) => String(svc?.serviceName || '').trim())
+                .filter(Boolean)
+            )
+          );
+          setServiceOptions(uniqueNames.map((name) => ({ value: name, label: name })));
         }
+
+        setServicesLoaded(true);
 
         if (workOrdersRes.ok) {
           const data = await workOrdersRes.json();
@@ -82,7 +76,7 @@ export default function ShopNewInShopJob() {
           setCustomerSuggestions(items);
         }
       } catch {
-        // Keep default behavior if fetch fails.
+        setServicesLoaded(true);
       }
     };
 
@@ -113,6 +107,10 @@ export default function ShopNewInShopJob() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (serviceOptions.length === 0) {
+      console.error('Cannot create in-shop work order without configured shop services');
+      return;
+    }
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const response = await fetch('/api/workorders', {
@@ -343,6 +341,15 @@ export default function ShopNewInShopJob() {
             <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Service Details</h2>
             <div style={{marginBottom:20}}>
               <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:12}}>Select Services *</label>
+              {!servicesLoaded ? (
+                <div style={{ padding: '12px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', color: '#9aa3b2', fontSize: 13 }}>
+                  Loading live shop services...
+                </div>
+              ) : serviceOptions.length === 0 ? (
+                <div style={{ padding: '12px 14px', borderRadius: 8, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontSize: 13, fontWeight: 600 }}>
+                  No services are configured for this shop. Add services in Shop Services before creating work orders.
+                </div>
+              ) : (
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:12}}>
                 {serviceOptions.map(option => (
                   <button
@@ -361,10 +368,11 @@ export default function ShopNewInShopJob() {
                       textAlign:'left'
                     }}
                   >
-                    {formData.services.includes(option.value) ? '<FaCheck style={{marginRight:4}} /> ' : ''}{option.label}
+                    {option.label}
                   </button>
                 ))}
               </div>
+              )}
             </div>
 
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20}}>

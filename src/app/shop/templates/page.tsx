@@ -18,23 +18,20 @@ interface WorkOrderTemplate {
   createdAt: string;
 }
 
-const SERVICE_TYPES = [
-  'oil-change', 'brake-service', 'tire-service', 'inspection', 'engine-repair',
-  'transmission', 'electrical', 'ac-service', 'exhaust', 'suspension', 'alignment', 'other',
-];
-
-const BLANK_FORM = {
-  name: '', serviceType: 'oil-change', description: '',
+const createBlankForm = (serviceType = '') => ({
+  name: '', serviceType, description: '',
   repairs: '', maintenance: '', estimatedCost: '', laborHours: '', notes: '',
-};
+});
 
 export default function WorkOrderTemplatesPage() {
   const { user, isLoading } = useRequireAuth(['shop']);
   const [templates, setTemplates] = useState<WorkOrderTemplate[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<string[]>([]);
+  const [servicesLoaded, setServicesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState(BLANK_FORM);
+  const [form, setForm] = useState(createBlankForm());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -46,19 +43,45 @@ export default function WorkOrderTemplatesPage() {
 
   const load = async () => {
     try {
-      const res = await fetch('/api/shop/templates', { headers });
-      const data = await res.json();
-      setTemplates(data.templates ?? []);
+      const shopId = user?.shopId || user?.id;
+      const [templatesRes, servicesRes] = await Promise.all([
+        fetch('/api/shop/templates', { headers }),
+        fetch(`/api/services?shopId=${encodeURIComponent(shopId || '')}`, { headers }),
+      ]);
+
+      const templatesData = await templatesRes.json().catch(() => ({}));
+      setTemplates(templatesData.templates ?? []);
+
+      if (servicesRes.ok) {
+        const servicesData = await servicesRes.json().catch(() => ({}));
+        const services = Array.isArray(servicesData?.services) ? servicesData.services : [];
+        const names = Array.from(
+          new Set(
+            services
+              .map((svc: any) => String(svc?.serviceName || svc?.name || '').trim())
+              .filter(Boolean)
+          )
+        );
+        setServiceOptions(names);
+        setForm((prev) => ({
+          ...prev,
+          serviceType: names.includes(prev.serviceType) ? prev.serviceType : (prev.serviceType || names[0] || ''),
+        }));
+      } else {
+        setServiceOptions([]);
+      }
     } catch {
       setError('Failed to load templates');
+      setServiceOptions([]);
     } finally {
       setLoading(false);
+      setServicesLoaded(true);
     }
   };
 
   useEffect(() => { if (user) load(); }, [user]);
 
-  const openCreate = () => { setEditId(null); setForm(BLANK_FORM); setShowForm(true); };
+  const openCreate = () => { setEditId(null); setForm(createBlankForm(serviceOptions[0] || '')); setShowForm(true); };
   const openEdit = (t: WorkOrderTemplate) => {
     setEditId(t.id);
     setForm({
@@ -103,6 +126,9 @@ export default function WorkOrderTemplatesPage() {
   };
 
   const bg = 'transparent';
+  const serviceSelectOptions = form.serviceType && !serviceOptions.includes(form.serviceType)
+    ? [form.serviceType, ...serviceOptions]
+    : serviceOptions;
 
   if (isLoading || loading) {
     return <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
@@ -189,9 +215,17 @@ export default function WorkOrderTemplatesPage() {
               <div style={{ marginBottom: 14 }}>
                 <label style={{ color: '#94a3b8', fontSize: 13, display: 'block', marginBottom: 4 }}>Service Type *</label>
                 <select value={form.serviceType} onChange={(e) => setForm({ ...form, serviceType: e.target.value })}
+                  disabled={!servicesLoaded || serviceSelectOptions.length === 0}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: '#1e293b', color: '#f1f5f9', fontSize: 14 }}>
-                  {SERVICE_TYPES.map(s => <option key={s} value={s}>{s.replace(/-/g, ' ')}</option>)}
+                  {!servicesLoaded && <option value="">Loading services...</option>}
+                  {servicesLoaded && serviceSelectOptions.length === 0 && <option value="">No live services configured</option>}
+                  {serviceSelectOptions.map((serviceName) => <option key={serviceName} value={serviceName}>{serviceName}</option>)}
                 </select>
+                {servicesLoaded && serviceSelectOptions.length === 0 && (
+                  <p style={{ color: '#f59e0b', fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                    Add services in Shop Services before saving templates.
+                  </p>
+                )}
               </div>
               {[
                 { label: 'Description', key: 'description', placeholder: 'Brief description...' },

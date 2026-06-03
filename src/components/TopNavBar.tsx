@@ -472,10 +472,20 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     lastUnreadRef.current = unreadCount;
   }, [unreadCount, notificationsEnabled, notificationSoundEnabled]);
 
+  const toggleNotificationsMenu = () => {
+    setShowNotifications((prev) => !prev);
+    setShowProfileMenu(false);
+  };
+
+  const toggleProfileMenu = () => {
+    setShowProfileMenu((prev) => !prev);
+    setShowNotifications(false);
+  };
+
   const NotificationButton = () => (
     <div style={{ position: 'relative' }} ref={dropdownRef}>
       <button
-        onClick={() => setShowNotifications(prev => !prev)}
+        onClick={toggleNotificationsMenu}
         style={{
           position: 'relative',
           padding: '8px 12px',
@@ -689,7 +699,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       minHeight: 48,
       display: 'flex',
       alignItems: 'center',
-      overflow: 'hidden',
+      overflowX: 'hidden',
+      overflowY: 'visible',
       borderBottom: '1px solid rgba(255,255,255,0.07)',
       width: '100%',
       maxWidth: '100vw',
@@ -698,7 +709,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       <OilSlickNavCanvas />
 
       {/* Nav content sits above the canvas */}
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', padding: '0 10px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', padding: '0 10px', display: 'flex', alignItems: 'center', overflowX: 'hidden', overflowY: 'visible' }}>
       <div style={{
         maxWidth: 1400,
         margin: '0 auto',
@@ -708,7 +719,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         justifyContent: 'space-between',
         gap: 8,
         flexWrap: 'nowrap',
-        overflow: 'hidden',
+        overflowX: 'hidden',
+        overflowY: 'visible',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           {showMenuButton && (
@@ -774,7 +786,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           {/* Profile / Menu dropdown */}
           <div style={{ position: 'relative' }} ref={profileMenuRef}>
             <button
-              onClick={() => setShowProfileMenu(prev => !prev)}
+              onClick={toggleProfileMenu}
               aria-haspopup="menu"
               aria-expanded={showProfileMenu}
               style={{

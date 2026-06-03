@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { FaCheckCircle, FaClipboardList, FaExclamationTriangle, FaFilter, FaPlus, FaTimes, FaWarehouse } from 'react-icons/fa';
 
 interface InventoryTabProps {
@@ -39,8 +40,19 @@ export default function InventoryTab({
   handleCreatePurchaseOrder,
   handleReceivePurchaseOrder,
 }: InventoryTabProps) {
+  const [inventorySearch, setInventorySearch] = useState('');
   const lowStockCount = inventoryStock.filter((i: any) => i.quantity <= i.reorderPoint).length;
   const totalUnits = inventoryStock.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0);
+  const normalizedSearch = inventorySearch.trim().toLowerCase();
+  const filteredInventory = normalizedSearch
+    ? inventoryStock.filter((item: any) => {
+        const text = [item.itemName, item.sku, item.category, item.location]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return text.includes(normalizedSearch);
+      })
+    : inventoryStock;
 
   return (
     <div>
@@ -236,6 +248,29 @@ export default function InventoryTab({
       )}
 
       <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ padding: 14, borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <h3 style={{ color: '#e5e7eb', fontSize: 18, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FaWarehouse /> Inventory
+            </h3>
+            <input
+              type="text"
+              value={inventorySearch}
+              onChange={(e) => setInventorySearch(e.target.value)}
+              placeholder="Search inventory by item, SKU, category, or location"
+              style={{
+                width: '100%',
+                maxWidth: 420,
+                padding: '9px 12px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(0,0,0,0.35)',
+                color: '#e5e7eb',
+                fontSize: 13,
+              }}
+            />
+          </div>
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -251,15 +286,15 @@ export default function InventoryTab({
               </tr>
             </thead>
             <tbody>
-              {inventoryStock.length === 0 ? (
+              {filteredInventory.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#9aa3b2' }}>
                     <div style={{ fontSize: 42, marginBottom: 10 }}><FaWarehouse /></div>
-                    <div>No inventory items found</div>
+                    <div>{inventoryStock.length === 0 ? 'No inventory items found' : 'No matching inventory items found'}</div>
                   </td>
                 </tr>
               ) : (
-                inventoryStock.map((item: any) => {
+                filteredInventory.map((item: any) => {
                   const isLowStock = item.quantity <= item.reorderPoint;
                   return (
                     <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: isLowStock ? 'rgba(239,68,68,0.05)' : 'transparent' }}>

@@ -15,8 +15,12 @@ jest.mock('@/lib/prisma', () => ({
       findFirst: jest.fn(),
       update: jest.fn(),
     },
+    activityLog: {
+      create: jest.fn(),
+    },
     refreshToken: {
       create: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -53,6 +57,7 @@ const mockCustomer = {
   id: 'cust-001',
   email: 'alice@example.com',
   username: 'alice',
+  phone: '5550004321',
   password: '$2b$12$hashedpassword',
   firstName: 'Alice',
   lastName: 'Smith',
@@ -91,7 +96,7 @@ beforeEach(() => {
 // ── tests ────────────────────────────────────────────────────────────────────
 
 describe('POST /api/auth/customer', () => {
-  it('returns 400 when body is missing email', async () => {
+  it('returns 400 when body is missing an identifier', async () => {
     allowRateLimit();
     const res = await POST(makeRequest({ password: 'secret123' }));
     expect(res.status).toBe(400);
@@ -146,6 +151,26 @@ describe('POST /api/auth/customer', () => {
     expect(json.role).toBe('customer');
   });
 
+  it('accepts username logins', async () => {
+    allowRateLimit();
+    (prisma.customer.findFirst as jest.Mock).mockResolvedValue(mockCustomer);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-refresh');
+
+    const res = await POST(makeRequest({ username: 'alice', password: 'correct' }));
+    expect(res.status).toBe(200);
+  });
+
+  it('accepts phone logins', async () => {
+    allowRateLimit();
+    (prisma.customer.findFirst as jest.Mock).mockResolvedValue(mockCustomer);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-refresh');
+
+    const res = await POST(makeRequest({ phone: '5550004321', password: 'correct' }));
+    expect(res.status).toBe(200);
+  });
+
   it('login is case-insensitive for email', async () => {
     allowRateLimit();
     (prisma.customer.findFirst as jest.Mock).mockResolvedValue(mockCustomer);
@@ -156,8 +181,8 @@ describe('POST /api/auth/customer', () => {
     expect(res.status).toBe(200);
     // The findFirst call should have received the lower-cased email
     const callArg = (prisma.customer.findFirst as jest.Mock).mock.calls[0][0];
-    const emailConditions = callArg.where.OR.map((c: { email?: string }) => c.email).filter(Boolean);
-    expect(emailConditions[0]).toBe('alice@example.com');
+    const emailConditions = callArg.where.OR.map((c: { email?: { equals?: string } }) => c.email).filter(Boolean);
+    expect(emailConditions[0]).toEqual({ equals: 'alice@example.com', mode: 'insensitive' });
   });
 
   it('sets httpOnly cookies on successful login', async () => {

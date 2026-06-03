@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
     // serverless ESM/CJS runtime incompatibilities.
     const sanitizedBody = {
       email: typeof body?.email === 'string' ? body.email.trim() : body?.email,
+      username: typeof body?.username === 'string' ? body.username.trim() : body?.username,
+      phone: typeof body?.phone === 'string' ? body.phone.trim() : body?.phone,
       password: typeof body?.password === 'string' ? body.password : body?.password,
     };
 
@@ -25,12 +27,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email: rawEmail, password } = validationResult.data;
-    const email = rawEmail.trim().toLowerCase();
+    const { email: rawIdentifier, username: rawUsername, phone: rawPhone, password } = validationResult.data;
+    const identifier = String(rawIdentifier || rawUsername || rawPhone || '').trim();
+    const identifierLower = identifier.toLowerCase();
+    const phoneDigits = identifier.replace(/\D/g, '');
 
     // Rate limiting - prevent brute force attacks
     const clientIP = getClientIP(request);
-    const rateLimitKey = `customer_login:${clientIP}:${email}`;
+    const rateLimitKey = `customer_login:${clientIP}:${identifierLower || phoneDigits}`;
     const rateLimit = await checkRateLimit(rateLimitKey);
     
     if (!rateLimit.success) {
@@ -49,8 +53,10 @@ export async function POST(request: NextRequest) {
     const customer = await prisma.customer.findFirst({
       where: {
         OR: [
-          { email: email },
-          { username: email } // Allow login with username too
+          { email: { equals: identifierLower, mode: 'insensitive' } },
+          { username: { equals: identifierLower, mode: 'insensitive' } },
+          ...(phoneDigits ? [{ phone: phoneDigits }] : []),
+          ...(identifierLower ? [{ phone: identifier }] : []),
         ]
       },
     });

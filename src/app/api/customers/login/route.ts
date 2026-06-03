@@ -8,9 +8,10 @@ import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 const loginSchema = z.object({
   email: z.string().optional(),
   username: z.string().optional(),
+  phone: z.string().optional(),
   password: z.string(),
-}).refine(data => data.email || data.username, {
-  message: "Either email or username must be provided",
+}).refine(data => data.email || data.username || data.phone, {
+  message: "Either email, username, or phone must be provided",
 });
 
 export async function POST(request: NextRequest) {
@@ -20,7 +21,9 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting � 5 attempts per 15 minutes per IP + identifier
     const clientIP = getClientIP(request);
-    const identifier = String(data.email || data.username || '').toLowerCase();
+    const identifier = String(data.email || data.username || data.phone || '').trim();
+    const identifierLower = identifier.toLowerCase();
+    const phoneDigits = identifier.replace(/\D/g, '');
     const rateLimitKey = `customer_login:${clientIP}:${identifier}`;
     const rateLimit = await checkRateLimit(rateLimitKey);
     if (!rateLimit.success) {
@@ -39,8 +42,10 @@ export async function POST(request: NextRequest) {
     const customer = await prisma.customer.findFirst({
       where: {
         OR: [
-          { email: data.email },
-          { username: data.username },
+          { email: { equals: identifierLower, mode: 'insensitive' } },
+          { username: { equals: identifierLower, mode: 'insensitive' } },
+          ...(phoneDigits ? [{ phone: phoneDigits }] : []),
+          ...(identifier ? [{ phone: identifier }] : []),
         ].filter(Boolean),
       },
     });

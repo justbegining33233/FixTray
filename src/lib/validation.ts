@@ -12,8 +12,12 @@ export const customerRegistrationSchema = z.object({
 });
 
 export const customerLoginSchema = z.object({
-  email: z.string().min(1, 'Email or username is required'),
+  email: z.string().optional(),
+  username: z.string().optional(),
+  phone: z.string().optional(),
   password: z.string().min(1, 'Password is required'),
+}).refine(data => data.email || data.username || data.phone, {
+  message: 'Email, username, or phone is required',
 });
 
 // Shop validation

@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedUsername = String(username).trim();
+    const identifierLower = normalizedUsername.toLowerCase();
 
     // Lazy-load runtime-sensitive modules
     const prisma = (await import('@/lib/prisma')).default;
@@ -34,11 +35,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find admin by username (trimmed), with a case-insensitive fallback
+    // Find admin by username or email (trimmed), with case-insensitive fallbacks.
     let admin = await prisma.admin.findUnique({ where: { username: normalizedUsername } });
     if (!admin) {
-      const admins = await prisma.admin.findMany();
-      admin = admins.find((a) => a.username.toLowerCase() === normalizedUsername.toLowerCase()) || null;
+      const admins = await prisma.admin.findMany({ select: { id: true, username: true, email: true, password: true, isSuperAdmin: true } });
+      admin = admins.find((a) => {
+        const adminUsername = String(a.username || '').trim().toLowerCase();
+        const adminEmail = String(a.email || '').trim().toLowerCase();
+        return adminUsername === identifierLower || adminEmail === identifierLower;
+      }) || null;
     }
 
     if (!admin) {

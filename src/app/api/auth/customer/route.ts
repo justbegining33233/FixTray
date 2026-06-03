@@ -50,14 +50,15 @@ export async function POST(request: NextRequest) {
     const bcrypt = (bcryptMod && (bcryptMod.default ?? bcryptMod)) as typeof import('bcrypt');
 
     // Find customer by email OR username
+    const customerLookups = [
+      { email: { equals: identifierLower, mode: 'insensitive' as const } },
+      { username: { equals: identifierLower, mode: 'insensitive' as const } },
+      ...(phoneDigits ? [{ phone: phoneDigits }] : []),
+      ...(identifierLower ? [{ phone: identifier }] : []),
+    ];
     const customer = await prisma.customer.findFirst({
       where: {
-        OR: [
-          { email: { equals: identifierLower, mode: 'insensitive' } },
-          { username: { equals: identifierLower, mode: 'insensitive' } },
-          ...(phoneDigits ? [{ phone: phoneDigits }] : []),
-          ...(identifierLower ? [{ phone: identifier }] : []),
-        ]
+        OR: customerLookups,
       },
     });
     if (!customer) {

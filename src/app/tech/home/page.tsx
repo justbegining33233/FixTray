@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import TimeClock from '@/components/TimeClock';
 import TechLiveMap from '@/components/TechLiveMap';
 import TopNavBar from '@/components/TopNavBar';

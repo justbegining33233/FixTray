@@ -346,16 +346,16 @@ export default function ShopAdminPage() {
     }
   };
 
-  const fetchShopMessages = async (id: string) => {
+  const fetchShopMessages = async (_id: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/shop/messages?shopId=${id}&limit=20`, {
+      const response = await fetch('/api/messages', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
-        setShopMessages(data.messages || []);
-        setMessageStats(data.stats || null);
+        setShopMessages(data.conversations || []);
+        setMessageStats({ totalUnread: data.totalUnread ?? 0 });
       } else {
         setShopMessages([]);
         setMessageStats(null);

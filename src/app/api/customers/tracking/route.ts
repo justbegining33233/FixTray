@@ -49,6 +49,7 @@ export async function GET(request: Request) {
         },
         shop: {
           select: {
+            id: true,
             shopName: true,
             phone: true,
             address: true,
@@ -77,6 +78,7 @@ export async function GET(request: Request) {
           phone: wo.assignedTo.phone,
         } : null,
         shop: {
+          shopId: wo.shop.id,
           shopName: wo.shop.shopName,
           address: wo.shop.address,
           phone: wo.shop.phone,

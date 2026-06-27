@@ -14,6 +14,7 @@ interface TrackingOrder {
     phone: string;
   } | null;
   shop: {
+    shopId?: string;
     shopName: string;
     address: string;
     phone: string;
@@ -131,17 +132,25 @@ export default function LiveTracking() {
 
     try {
       const token = localStorage.getItem('token');
-      const recipientType = messageModal.order.isInShop ? 'shop' : 'technician';
-      const response = await fetch('/api/customers/messages', {
+      const order = messageModal.order;
+      const shopId = order.shop.shopId;
+
+      if (!shopId) {
+        setTrackingMsg({type:'error', text:'Unable to identify shop. Please try again.'});
+        return;
+      }
+
+      const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          workOrderId: messageModal.order.workOrderId,
-          message: messageModal.message.trim(),
-          recipientType,
+          receiverId: shopId,
+          receiverRole: 'shop',
+          receiverName: order.shop.shopName,
+          messageBody: messageModal.message.trim(),
         }),
       });
 

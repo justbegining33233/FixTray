@@ -209,19 +209,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // If customer provided notes, start a message thread
+    // If customer provided notes, start a message thread in the DirectMessage system (visible in shop MessagingCard)
     if (notes && notes.trim()) {
       const vehicleSummary = vehicleInfo
         ? [vehicleInfo.year, vehicleInfo.make, vehicleInfo.model, vehicleInfo.licensePlate].filter(Boolean).join(' ')
         : '';
       const mediaCount = Array.isArray(mediaUrls) ? mediaUrls.length : 0;
-      await prisma.customerMessage.create({
+      const customerName = `${appointment.customer.firstName} ${appointment.customer.lastName}`;
+      const messageBody = `${notes.trim()}\n\nVisit Type: ${normalizedAppointmentType === 'road-call' ? 'Road Call' : 'In Shop'}${vehicleSummary ? `\nVehicle: ${vehicleSummary}` : ''}${mediaCount > 0 ? `\nMedia attached: ${mediaCount}` : ''}`;
+      await prisma.directMessage.create({
         data: {
-          customerId: user.id,
-          workOrderId: workOrder.id,
-          from: 'customer',
-          content: `${notes.trim()}\n\nVisit Type: ${normalizedAppointmentType === 'road-call' ? 'Road Call' : 'In Shop'}${vehicleSummary ? `\nVehicle: ${vehicleSummary}` : ''}${mediaCount > 0 ? `\nMedia attached: ${mediaCount}` : ''}`,
-          read: false,
+          senderId: user.id,
+          senderRole: 'customer',
+          senderName: customerName,
+          receiverId: shopId,
+          receiverRole: 'shop',
+          receiverName: appointment.shop.shopName,
+          body: messageBody,
+          shopId,
         },
       });
     }

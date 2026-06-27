@@ -91,27 +91,34 @@ export default function CustomerDashboard() {
         a.status === 'Scheduled' || a.status === 'Confirmed'
       ).length;
       
-      // Fetch vehicles
-      const vehicles = await safeFetchJson('/api/customers/vehicles');
+      // Fetch vehicles — API returns { vehicles: [...] }
+      const vehiclesData = await safeFetchJson('/api/customers/vehicles');
+      const vehicles = Array.isArray(vehiclesData?.vehicles) ? vehiclesData.vehicles : [];
       
-      // Fetch reviews
-      const reviews = await safeFetchJson('/api/reviews');
+      // Fetch reviews — must pass customerId or it returns all reviews in the system
+      const currentUserId = localStorage.getItem('userId') || '';
+      const reviewsData = await safeFetchJson(`/api/reviews?customerId=${encodeURIComponent(currentUserId)}`);
+      const reviews = Array.isArray(reviewsData?.reviews) ? reviewsData.reviews : [];
       
-      // Fetch favorites
-      const favorites = await safeFetchJson('/api/customers/favorites');
+      // Fetch favorites — API returns { favorites: [...] }, unwrap the array
+      const favoritesResponse = await safeFetchJson('/api/customers/favorites');
+      const favorites = Array.isArray(favoritesResponse?.favorites) ? favoritesResponse.favorites : [];
       
-      // Fetch work orders for history
-      const workorders = await safeFetchJson('/api/workorders');
-      const completed = Array.isArray(workorders) ? workorders.filter((w: any) => w.status === 'Completed') : [];
+      // Fetch work orders — API returns { workOrders: [...] }
+      const workordersData = await safeFetchJson('/api/workorders');
+      const allWorkOrders = Array.isArray(workordersData?.workOrders) ? workordersData.workOrders : [];
+      const completed = allWorkOrders.filter((w: any) => w.status === 'completed' || w.status === 'Completed');
+      const openOrders = allWorkOrders.filter((w: any) => !['closed', 'completed', 'Completed'].includes(w.status)).length;
       
-      // Fetch documents
-      const documents = await safeFetchJson('/api/customers/documents');
+      // Fetch documents — API returns { documents: [...] }
+      const documentsData = await safeFetchJson('/api/customers/documents');
+      const documents = Array.isArray(documentsData?.documents) ? documentsData.documents : [];
       
-      // Fetch messages
-      const messages = await safeFetchJson('/api/customers/messages');
-      const unread = Array.isArray(messages) ? messages.filter((m: any) => !m.read && m.from !== 'customer').length : 0;
+      // Fetch messages — read from DirectMessage system so count matches MessagingCard
+      const messagesData = await safeFetchJson('/api/messages');
+      const unread = (messagesData?.totalUnread ?? 0) as number;
       
-      // Fetch payment methods
+      // Fetch payment methods — returns plain array
       const paymentMethods = await safeFetchJson('/api/customers/payment-methods');
 
       if (!isMountedRef.current) return;
@@ -119,17 +126,14 @@ export default function CustomerDashboard() {
       setStats({
         appointmentCount: appointments.length,
         upcomingAppointments: upcoming,
-        vehicleCount: Array.isArray(vehicles) ? vehicles.length : 0,
-        reviewCount: Array.isArray(reviews) ? reviews.length : 0,
-        favoriteCount: Array.isArray(favorites) ? favorites.length : 0,
+        vehicleCount: vehicles.length,
+        reviewCount: reviews.length,
+        favoriteCount: favorites.length,
         historyCount: completed.length,
-        documentCount: Array.isArray(documents) ? documents.length : 0,
+        documentCount: documents.length,
         unreadMessages: unread,
         paymentMethods: Array.isArray(paymentMethods) ? paymentMethods.length : 0,
       });
-
-      const allOrders = Array.isArray(workorders) ? workorders : [];
-      const openOrders = allOrders.filter((w: any) => !['closed', 'completed', 'Completed'].includes(w.status)).length;
 
       // Fetch loyalty points from API; fall back to client-side calculation
       let pts = completed.length * 50;
@@ -162,12 +166,12 @@ export default function CustomerDashboard() {
       // Store recent data (last 3 items)
       setRecentData(prev => ({
         appointments: appointments.slice(0, 3),
-        vehicles: Array.isArray(vehicles) ? vehicles.slice(0, 3) : [],
-        messages: Array.isArray(messages) ? messages.slice(0, 3) : prev.messages,
-        reviews: Array.isArray(reviews) ? reviews.slice(0, 3) : [],
-        favorites: Array.isArray(favorites) ? favorites.slice(0, 3) : [],
+        vehicles: vehicles.slice(0, 3),
+        messages: Array.isArray(messagesData?.conversations) ? messagesData.conversations.slice(0, 3) : [],
+        reviews: reviews.slice(0, 3),
+        favorites: favorites.slice(0, 3),
         history: completed.slice(0, 3),
-        documents: Array.isArray(documents) ? documents.slice(0, 3) : [],
+        documents: documents.slice(0, 3),
         payments: Array.isArray(paymentMethods) ? paymentMethods.slice(0, 3) : [],
       }));
       setStatsReady(true);
@@ -597,7 +601,7 @@ export default function CustomerDashboard() {
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {item.serviceName || item.make || item.shopName || item.title || 'Item'}
+                            {item.serviceType || item.shop?.shopName || (typeof item.issueDescription === 'string' ? item.issueDescription : item.issueDescription?.symptoms) || 'Item'}
                           </span>
                         </div>
                       ))}
@@ -661,7 +665,7 @@ export default function CustomerDashboard() {
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {item.message || item.subject || item.make || item.content || 'Item'}
+                            {item.lastMessage || item.contactName || [item.year, item.make, item.model].filter(Boolean).join(' ') || 'Item'}
                           </span>
                         </div>
                       ))}
@@ -725,7 +729,7 @@ export default function CustomerDashboard() {
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {item.shopName || item.rating || item.last4 || item.comment || 'Item'}
+                            {item.shop?.shopName || item.comment || (item.brand && item.last4 ? `${item.brand} ••••${item.last4}` : item.brand || item.type) || 'Item'}
                           </span>
                         </div>
                       ))}
@@ -789,7 +793,7 @@ export default function CustomerDashboard() {
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {item.title || item.fileName || item.serviceName || 'Item'}
+                            {(typeof item.issueDescription === 'string' ? item.issueDescription : item.issueDescription?.symptoms) || item.name || 'Item'}
                           </span>
                         </div>
                       ))}

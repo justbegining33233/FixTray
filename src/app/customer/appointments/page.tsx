@@ -145,10 +145,16 @@ export default function CustomerAppointmentsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/customers/messages', {
+      const appt = messageModal.appointment;
+      const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ appointmentId: messageModal.appointment.id, content: messageModal.message.trim() }),
+        body: JSON.stringify({
+          receiverId: appt.shop.id,
+          receiverRole: 'shop',
+          receiverName: appt.shop.shopName,
+          messageBody: messageModal.message.trim(),
+        }),
       });
 
       if (response.ok) {

@@ -92,5 +92,5 @@ export function sanitizeSqlLike(str: string): string {
 
 // Strip all HTML tags
 export function stripHtml(html: string): string {
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  return sanitizeHtml(html);
 }

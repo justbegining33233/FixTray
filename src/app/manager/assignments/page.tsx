@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCheck, FaHandPointLeft, FaUsers } from 'react-icons/fa';
@@ -26,7 +25,6 @@ interface Tech {
 }
 
 export default function AssignmentsPage() {
-  const _router = useRouter();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [techs, setTechs] = useState<Tech[]>([]);

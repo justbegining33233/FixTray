@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TechLiveMap from '@/components/TechLiveMap';
@@ -49,7 +49,6 @@ interface WorkOrderDetails {
 export default function WorkOrderDetailsPage() {
   useRequireAuth(['customer']);
   const params = useParams();
-  const _router = useRouter();
   const [userName, setUserName] = useState('');
   const [workOrder, setWorkOrder] = useState<WorkOrderDetails | null>(null);
   const [loading, setLoading] = useState(true);

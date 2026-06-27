@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FixTray Work Orders Flow Diagram</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --line: #1f2937;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #b45309;
+      --node-a: #dbeafe;
+      --node-b: #dcfce7;
+      --node-c: #ffedd5;
+      --node-d: #fce7f3;
+      --node-e: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(145deg, #eef2f7 0%, #f8fafc 55%, #eceff3 100%);
+      color: var(--text);
+      padding: 28px;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+      padding: 20px 20px 14px;
+    }
+
+    h1 {
+      margin: 4px 0 6px;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0.1px;
+    }
+
+    .sub {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fcfdff;
+    }
+
+    .node {
+      stroke: #1e293b;
+      stroke-width: 1.5;
+      rx: 12;
+      ry: 12;
+    }
+
+    .title {
+      font-size: 15px;
+      font-weight: 700;
+      fill: #0f172a;
+    }
+
+    .meta {
+      font-size: 12px;
+      fill: #334155;
+    }
+
+    .small {
+      font-size: 11px;
+      fill: #475569;
+    }
+
+    .legend {
+      margin: 12px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid #334155;
+    }
+
+    .foot {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>FixTray Work Orders Flow</h1>
+    <p class="sub">Visual wiring for customer flow: entry points, pages, APIs, and data creation path.</p>
+
+    <svg viewBox="0 0 1160 760" role="img" aria-label="Work order flow diagram">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"></path>
+        </marker>
+      </defs>
+
+      <!-- Row 1 -->
+      <rect class="node" x="30" y="40" width="260" height="95" fill="var(--node-a)"></rect>
+      <text class="title" x="50" y="70">Customer Entry Points</text>
+      <text class="meta" x="50" y="92">Dashboard card / Nav / Mobile tab</text>
+      <text class="small" x="50" y="112">/customer/dashboard, CustomerNavigation, MobileShell</text>
+
+      <rect class="node" x="330" y="40" width="260" height="95" fill="var(--node-b)"></rect>
+      <text class="title" x="350" y="70">Work Orders List Page</text>
+      <text class="meta" x="350" y="92">Shows all customer work orders</text>
+      <text class="small" x="350" y="112">/customer/workorders</text>
+
+      <rect class="node" x="630" y="40" width="260" height="95" fill="var(--node-c)"></rect>
+      <text class="title" x="650" y="70">GET /api/workorders</text>
+      <text class="meta" x="650" y="92">Fetch list data for customer view</text>
+      <text class="small" x="650" y="112">src/app/api/workorders/route.ts</text>
+
+      <rect class="node" x="930" y="40" width="200" height="95" fill="var(--node-e)"></rect>
+      <text class="title" x="950" y="70">Data Store</text>
+      <text class="meta" x="950" y="92">WorkOrder records</text>
+      <text class="small" x="950" y="112">Prisma-backed persistence</text>
+
+      <!-- Row 2 -->
+      <rect class="node" x="330" y="210" width="260" height="95" fill="var(--node-b)"></rect>
+      <text class="title" x="350" y="240">Work Order Detail Page</text>
+      <text class="meta" x="350" y="262">Open one job with full timeline</text>
+      <text class="small" x="350" y="282">/customer/workorders/[id]</text>
+
+      <rect class="node" x="630" y="210" width="260" height="95" fill="var(--node-c)"></rect>
+      <text class="title" x="650" y="240">GET /api/workorders/[id]</text>
+      <text class="meta" x="650" y="262">Fetch one work order by id</text>
+      <text class="small" x="650" y="282">src/app/api/workorders/[id]/route.ts</text>
+
+      <!-- Row 3 appointment to workorder creation -->
+      <rect class="node" x="30" y="410" width="260" height="95" fill="var(--node-d)"></rect>
+      <text class="title" x="50" y="440">Appointment Booking UI</text>
+      <text class="meta" x="50" y="462">Shop - Type - Service - Date/Details</text>
+      <text class="small" x="50" y="482">NewAppointmentClient</text>
+
+      <rect class="node" x="330" y="410" width="260" height="95" fill="var(--node-d)"></rect>
+      <text class="title" x="350" y="440">POST /api/appointments</text>
+      <text class="meta" x="350" y="462">Creates appointment request</text>
+      <text class="small" x="350" y="482">src/app/api/appointments/route.ts</text>
+
+      <rect class="node" x="630" y="410" width="260" height="95" fill="var(--node-c)"></rect>
+      <text class="title" x="650" y="440">Work Order Created</text>
+      <text class="meta" x="650" y="462">Linked work order generated in API</text>
+      <text class="small" x="650" y="482">Returns id used by customer flows</text>
+
+      <rect class="node" x="930" y="410" width="200" height="95" fill="var(--node-a)"></rect>
+      <text class="title" x="950" y="440">Notifications</text>
+      <text class="meta" x="950" y="462">Push/email to work order URL</text>
+      <text class="small" x="950" y="482">/customer/workorders/[id]</text>
+
+      <!-- Connectors top row -->
+      <line x1="290" y1="88" x2="330" y2="88" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="590" y1="88" x2="630" y2="88" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="890" y1="88" x2="930" y2="88" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+
+      <!-- List to detail -->
+      <line x1="460" y1="135" x2="460" y2="210" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <text class="small" x="472" y="178">click one order</text>
+
+      <line x1="590" y1="258" x2="630" y2="258" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+
+      <!-- Appointment creation flow -->
+      <line x1="290" y1="458" x2="330" y2="458" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="590" y1="458" x2="630" y2="458" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="890" y1="458" x2="930" y2="458" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+
+      <!-- Created workorder feeds list -->
+      <path d="M 760 410 C 760 350, 520 350, 460 305" fill="none" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></path>
+      <text class="small" x="620" y="345">new work order appears in list</text>
+
+      <!-- Notification to detail -->
+      <path d="M 1030 410 C 1030 330, 920 320, 760 305" fill="none" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></path>
+      <text class="small" x="900" y="334">deep-link opens detail page</text>
+
+      <!-- Data links -->
+      <path d="M 1030 135 C 1040 190, 1030 310, 1030 410" fill="none" stroke="var(--line)" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrow)"></path>
+      <text class="small" x="1044" y="280">state updates</text>
+    </svg>
+
+    <div class="legend">
+      <span class="pill"><span class="swatch" style="background: var(--node-a);"></span>Navigation/UI entry</span>
+      <span class="pill"><span class="swatch" style="background: var(--node-b);"></span>Customer page</span>
+      <span class="pill"><span class="swatch" style="background: var(--node-c);"></span>Work order API/data</span>
+      <span class="pill"><span class="swatch" style="background: var(--node-d);"></span>Appointment to work order path</span>
+    </div>
+
+    <p class="foot">Generated for visual flow review. File: docs/workorders-flow-diagram.html</p>
+  </div>
+</body>
+</html>

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
-const IDLE_MS = 5 * 60 * 1000;   // 5 minutes until warning shows
-const WARN_MS = 30 * 1000;        // 30-second countdown after warning
+const INACTIVITY_MS_BEFORE_WARNING = 10 * 60 * 1000; // 10 minutes idle before warning
+const WARN_MS = 30 * 1000;                           // 30-second countdown after warning
 
 interface Options {
   onIdle: () => void;       // called when countdown hits 0 → logout
@@ -52,7 +52,7 @@ export function useIdleTimeout({ onIdle, onWarning, onActive, enabled }: Options
           isWarning.current = false;
           onIdleRef.current();
         }, WARN_MS);
-      }, IDLE_MS - WARN_MS);
+      }, INACTIVITY_MS_BEFORE_WARNING);
     };
 
     // Remove previous handler if any

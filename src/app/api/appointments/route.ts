@@ -191,11 +191,15 @@ export async function POST(request: NextRequest) {
         location: normalizedAppointmentType === 'road-call'
           ? {
               type: 'road-call',
+              source: 'appointment',
+              createdFrom: 'appointment',
               vehicleInfo: vehicleInfo || null,
               mediaUrls: Array.isArray(mediaUrls) ? mediaUrls : [],
             }
           : {
               type: 'in-shop',
+              source: 'appointment',
+              createdFrom: 'appointment',
               vehicleInfo: vehicleInfo || null,
               mediaUrls: Array.isArray(mediaUrls) ? mediaUrls : [],
             },

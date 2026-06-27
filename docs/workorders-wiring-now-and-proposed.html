@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FixTray Work Orders Wiring - Current and Proposed</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #1e293b;
+      --ok: #dcfce7;
+      --warn: #fef3c7;
+      --risk: #fee2e2;
+      --api: #dbeafe;
+      --ui: #f1f5f9;
+      --db: #ede9fe;
+      --plan: #ffedd5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(150deg, #eef2f7 0%, #f8fafc 60%, #eef3f8 100%);
+      padding: 20px;
+    }
+
+    .sheet {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      padding: 16px 16px 12px;
+    }
+
+    h1 {
+      margin: 2px 0 4px;
+      font-size: 26px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fcfdff;
+    }
+
+    .node {
+      stroke: #1e293b;
+      stroke-width: 1.3;
+      rx: 12;
+      ry: 12;
+    }
+
+    .ttl {
+      font-size: 14px;
+      font-weight: 700;
+      fill: #0f172a;
+    }
+
+    .txt {
+      font-size: 11px;
+      fill: #334155;
+    }
+
+    .hint {
+      font-size: 10px;
+      fill: #64748b;
+    }
+
+    .legend {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid #334155;
+    }
+
+    .notes {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #475569;
+      line-height: 1.4;
+    }
+
+    .notes strong { color: #0f172a; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <h1>FixTray Work Orders Wiring: Current Code vs Proposed Wiring</h1>
+    <p class="sub">Built from current files: customer workorders pages, history page, appointments API, workorders APIs, customer workorder detail API, dashboard/navigation links.</p>
+
+    <svg viewBox="0 0 1360 960" role="img" aria-label="Current and proposed wiring diagram">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e293b"></path>
+        </marker>
+        <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"></path>
+        </marker>
+      </defs>
+
+      <!-- Headers -->
+      <rect x="20" y="20" width="640" height="42" fill="#eef2ff" stroke="#94a3b8"></rect>
+      <text x="40" y="47" class="ttl">AS-IS (Current Wiring In Code Today)</text>
+
+      <rect x="700" y="20" width="640" height="42" fill="#fff7ed" stroke="#f59e0b"></rect>
+      <text x="720" y="47" class="ttl">TO-BE (How I Would Wire It Now)</text>
+
+      <!-- AS-IS nodes -->
+      <rect class="node" x="40" y="90" width="260" height="90" fill="var(--ui)"></rect>
+      <text class="ttl" x="56" y="116">Customer Entry Links</text>
+      <text class="txt" x="56" y="136">Dashboard / Nav / Mobile</text>
+      <text class="hint" x="56" y="154">/customer/workorders link exists</text>
+
+      <rect class="node" x="330" y="90" width="300" height="90" fill="var(--risk)"></rect>
+      <text class="ttl" x="346" y="116">/customer/workorders page</text>
+      <text class="txt" x="346" y="136">Immediately redirects to /customer/history</text>
+      <text class="hint" x="346" y="154">No dedicated active workorders list view</text>
+
+      <rect class="node" x="330" y="220" width="300" height="90" fill="var(--ui)"></rect>
+      <text class="ttl" x="346" y="246">/customer/history page</text>
+      <text class="txt" x="346" y="266">Fetches /api/workorders?status=closed</text>
+      <text class="hint" x="346" y="284">Renders service history cards</text>
+
+      <rect class="node" x="40" y="350" width="260" height="90" fill="var(--ui)"></rect>
+      <text class="ttl" x="56" y="376">Work Order Detail Page</text>
+      <text class="txt" x="56" y="396">/customer/workorders/[id]</text>
+      <text class="hint" x="56" y="414">Detail, tracking, payment CTA</text>
+
+      <rect class="node" x="330" y="350" width="300" height="90" fill="var(--api)"></rect>
+      <text class="ttl" x="346" y="376">GET /api/customers/workorders/[id]</text>
+      <text class="txt" x="346" y="396">Bearer token + verifyToken path</text>
+      <text class="hint" x="346" y="414">Separate from /api/workorders auth style</text>
+
+      <rect class="node" x="330" y="480" width="300" height="90" fill="var(--api)"></rect>
+      <text class="ttl" x="346" y="506">GET /api/workorders</text>
+      <text class="txt" x="346" y="526">Role-filtered query + pagination</text>
+      <text class="hint" x="346" y="544">Returns { workOrders, pagination }</text>
+
+      <rect class="node" x="40" y="610" width="260" height="90" fill="var(--ui)"></rect>
+      <text class="ttl" x="56" y="636">NewAppointmentClient</text>
+      <text class="txt" x="56" y="656">4-step booking flow</text>
+      <text class="hint" x="56" y="674">shop -> visit -> service -> details</text>
+
+      <rect class="node" x="330" y="610" width="300" height="90" fill="var(--api)"></rect>
+      <text class="ttl" x="346" y="636">POST /api/appointments</text>
+      <text class="txt" x="346" y="656">Creates appointment + workOrder</text>
+      <text class="hint" x="346" y="674">Returns workOrderId</text>
+
+      <rect class="node" x="330" y="740" width="300" height="90" fill="var(--db)"></rect>
+      <text class="ttl" x="346" y="766">Prisma WorkOrder Record</text>
+      <text class="txt" x="346" y="786">serviceLocation, maintenance, location, pictures</text>
+      <text class="hint" x="346" y="804">Source of list/detail/tracking/payment</text>
+
+      <!-- TO-BE nodes -->
+      <rect class="node" x="730" y="90" width="260" height="90" fill="var(--ui)"></rect>
+      <text class="ttl" x="746" y="116">Customer Entry Links</text>
+      <text class="txt" x="746" y="136">Keep same links</text>
+      <text class="hint" x="746" y="154">Dashboard / Nav / Mobile</text>
+
+      <rect class="node" x="1020" y="90" width="300" height="90" fill="var(--plan)"></rect>
+      <text class="ttl" x="1036" y="116">/customer/workorders = Real List</text>
+      <text class="txt" x="1036" y="136">Tabs: Active | Waiting Payment | Closed</text>
+      <text class="hint" x="1036" y="154">No redirect to history</text>
+
+      <rect class="node" x="1020" y="220" width="300" height="90" fill="var(--plan)"></rect>
+      <text class="ttl" x="1036" y="246">/customer/history = Closed only</text>
+      <text class="txt" x="1036" y="266">Read-only completed history + analytics</text>
+      <text class="hint" x="1036" y="284">Optional CSV export remains</text>
+
+      <rect class="node" x="730" y="350" width="260" height="90" fill="var(--plan)"></rect>
+      <text class="ttl" x="746" y="376">Detail Page Keeps Route</text>
+      <text class="txt" x="746" y="396">/customer/workorders/[id]</text>
+      <text class="hint" x="746" y="414">Single canonical detail experience</text>
+
+      <rect class="node" x="1020" y="350" width="300" height="90" fill="var(--plan)"></rect>
+      <text class="ttl" x="1036" y="376">Use /api/workorders/[id]</text>
+      <text class="txt" x="1036" y="396">with requireAuth role filtering</text>
+      <text class="hint" x="1036" y="414">Retire duplicate /api/customers/workorders/[id]</text>
+
+      <rect class="node" x="1020" y="480" width="300" height="90" fill="var(--ok)"></rect>
+      <text class="ttl" x="1036" y="506">Normalized list contract</text>
+      <text class="txt" x="1036" y="526">Always parse data.workOrders</text>
+      <text class="hint" x="1036" y="544">Fix array/object mismatch risk</text>
+
+      <rect class="node" x="730" y="610" width="260" height="90" fill="var(--ok)"></rect>
+      <text class="ttl" x="746" y="636">Appointment flow stays</text>
+      <text class="txt" x="746" y="656">POST /api/appointments</text>
+      <text class="hint" x="746" y="674">continues creating workOrder</text>
+
+      <rect class="node" x="1020" y="610" width="300" height="90" fill="var(--plan)"></rect>
+      <text class="ttl" x="1036" y="636">Direct post-booking handoff</text>
+      <text class="txt" x="1036" y="656">router.push(/customer/workorders/[id])</text>
+      <text class="hint" x="1036" y="674">Use returned workOrderId immediately</text>
+
+      <rect class="node" x="1020" y="740" width="300" height="90" fill="var(--db)"></rect>
+      <text class="ttl" x="1036" y="766">Single WorkOrder Source</text>
+      <text class="txt" x="1036" y="786">One API family, one auth style</text>
+      <text class="hint" x="1036" y="804">cleaner tracking + payments + messaging</text>
+
+      <!-- As-is connectors -->
+      <line x1="300" y1="135" x2="330" y2="135" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="480" y1="180" x2="480" y2="220" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="300" y1="395" x2="330" y2="395" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="480" y1="310" x2="480" y2="480" stroke="#64748b" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#arrow)"></line>
+      <line x1="300" y1="655" x2="330" y2="655" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <line x1="480" y1="700" x2="480" y2="740" stroke="var(--line)" stroke-width="2" marker-end="url(#arrow)"></line>
+      <path d="M 630 655 C 680 655, 680 785, 630 785" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow)"></path>
+
+      <!-- To-be connectors -->
+      <line x1="990" y1="135" x2="1020" y2="135" stroke="#b45309" stroke-width="2.2" marker-end="url(#arrow-orange)"></line>
+      <line x1="1170" y1="180" x2="1170" y2="220" stroke="#b45309" stroke-width="2.2" marker-end="url(#arrow-orange)"></line>
+      <line x1="990" y1="395" x2="1020" y2="395" stroke="#b45309" stroke-width="2.2" marker-end="url(#arrow-orange)"></line>
+      <line x1="1170" y1="570" x2="1170" y2="740" stroke="#b45309" stroke-width="2.2" marker-end="url(#arrow-orange)"></line>
+      <line x1="990" y1="655" x2="1020" y2="655" stroke="#b45309" stroke-width="2.2" marker-end="url(#arrow-orange)"></line>
+      <path d="M 1170 310 C 1120 330, 1120 350, 1020 350" fill="none" stroke="#b45309" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrow-orange)"></path>
+      <path d="M 1020 526 C 960 526, 920 526, 900 570" fill="none" stroke="#b45309" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrow-orange)"></path>
+
+      <!-- bridge arrows current -> proposed -->
+      <line x1="660" y1="135" x2="700" y2="135" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"></line>
+      <line x1="660" y1="395" x2="700" y2="395" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"></line>
+      <line x1="660" y1="655" x2="700" y2="655" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"></line>
+
+      <text class="hint" x="447" y="207">redirect</text>
+      <text class="hint" x="517" y="413">custom detail API</text>
+      <text class="hint" x="1136" y="208">separate closed history</text>
+      <text class="hint" x="1136" y="333">unified detail API</text>
+      <text class="hint" x="1090" y="606">after create appointment</text>
+    </svg>
+
+    <div class="legend">
+      <span class="chip"><span class="dot" style="background: var(--ui)"></span>UI page or entry</span>
+      <span class="chip"><span class="dot" style="background: var(--api)"></span>API endpoint</span>
+      <span class="chip"><span class="dot" style="background: var(--risk)"></span>Current friction/risk</span>
+      <span class="chip"><span class="dot" style="background: var(--plan)"></span>Proposed wiring</span>
+      <span class="chip"><span class="dot" style="background: var(--db)"></span>WorkOrder data source</span>
+    </div>
+
+    <div class="notes">
+      <div><strong>Key implementation moves shown in proposed side:</strong> 1) make /customer/workorders a real active list page, 2) keep /customer/history strictly for closed jobs, 3) unify detail fetch to /api/workorders/[id] with existing requireAuth style, 4) keep appointment work order creation, then route directly to /customer/workorders/[id] using returned workOrderId.</div>
+      <div><strong>Reference files used:</strong> src/app/customer/workorders/page.tsx, src/app/customer/history/page.tsx, src/app/customer/workorders/[id]/page.tsx, src/app/api/workorders/route.ts, src/app/api/customers/workorders/[id]/route.ts, src/app/api/appointments/route.ts, src/components/NewAppointmentClient.tsx, src/components/CustomerNavigation.tsx, src/components/MobileShell.tsx.</div>
+    </div>
+  </div>
+</body>
+</html>

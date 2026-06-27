@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import TopNavBar from '../../../components/TopNavBar';
 import RealTimeWorkOrders from '../../../components/RealTimeWorkOrders';
-import { useRequireAuth, useAuth } from '../../../contexts/AuthContext';
+import { useRequireAuth } from '../../../contexts/AuthContext';
 import '../../../styles/sos-theme.css';
 import { FaBolt, FaChartBar, FaHeart, FaSearch, FaSyncAlt, FaUser } from 'react-icons/fa';
 import MobileShell from '../../../components/MobileShell';
@@ -13,11 +13,9 @@ import { useIsNative } from '../../../context/NativeContext';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
-  const { logout } = useAuth();
   const isMountedRef = useRef(true);
-  const [_userName, setUserName] = useState('');
+  const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
-  const [_mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('discover');
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [tier, setTier] = useState('Bronze');
@@ -182,7 +180,6 @@ export default function CustomerDashboard() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
     const name = localStorage.getItem('userName');
     const id = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
@@ -233,10 +230,6 @@ export default function CustomerDashboard() {
       window.removeEventListener('tech:location_updated', onLocationUpdate as EventListener);
     };
   }, [fetchStats]);
-
-  const _handleSignOut = () => {
-    logout();
-  };
 
   const discoverFeatures = [
     { 
@@ -430,7 +423,7 @@ export default function CustomerDashboard() {
   const isNative = useIsNative();
 
   if (isNative || isMobile) {
-    return <MobileShell role="customer" isHome userName={_userName} />;
+    return <MobileShell role="customer" isHome userName={userName} />;
   }
 
   if (!statsReady) {

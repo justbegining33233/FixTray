@@ -12,24 +12,12 @@ function formatTime(dt?: string | Date | null) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-function fmtDurationMs(ms: number) {
-  if (ms < 0) ms = 0;
-  const hours = Math.floor(ms / (1000 * 60 * 60));
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
 export default function TechTimesheet() {
   const { user, isLoading } = useRequireAuth(['tech']);
   const [entries, setEntries] = useState<any[]>([]);
   const [range, setRange] = useState<'week' | 'month'>('week');
   const [loading, setLoading] = useState(false);
   const refreshRef = useRef<number | null>(null);
-
-  // --- Work-order assignment / job-time UI state
-  const [_assigningEntryId, _setAssigningEntryId] = useState<string | null>(null);
-  const [_woInputs, _setWoInputs] = useState<Record<string, string>>({});
 
 
   // edit state for inline row editing
@@ -127,78 +115,6 @@ export default function TechTimesheet() {
 
     return { totalHours, billableHours, nonBillableHours, billableEst };
   }, [entries, user]);
-
-  const _downloadCsv = () => {
-    const rows = [ ['Date','Clock In','Clock Out','Duration (hh:mm:ss)','Hours','Notes'] ];
-    entries.forEach(e => {
-      const date = new Date(e.clockIn).toISOString().split('T')[0];
-      const clockIn = formatTime(e.clockIn);
-      const clockOut = e.clockOut ? formatTime(e.clockOut) : ' - ';
-      const durationMs = e.clockOut ? (new Date(e.clockOut).getTime() - new Date(e.clockIn).getTime()) : (Date.now() - new Date(e.clockIn).getTime());
-      const duration = fmtDurationMs(durationMs);
-      const hours = e.hoursWorked ?? (durationMs / (1000*60*60));
-      rows.push([date, clockIn, clockOut, duration, hours.toFixed(2), (e.notes || '')]);
-    });
-
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `timesheet_${user?.id || 'me'}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const _downloadPayrollCsv = () => {
-    if (!user) return;
-    // Compute weekly totals, split regular/overtime (40h threshold)
-    const rows = [ ['Employee','Week Start','Week End','Regular Hours','Overtime Hours','Hourly Rate','Regular Pay','Overtime Pay','Total Pay'] ];
-    const weekHours = totals.totalHours;
-    const regularHours = Math.min(40, weekHours);
-    const overtimeHours = Math.max(0, weekHours - 40);
-    const rate = (user as any)?.hourlyRate || 0;
-    const overtimeMultiplier = 1.5; // default; shop setting not loaded here
-    const regularPay = regularHours * rate;
-    const overtimePay = overtimeHours * rate * overtimeMultiplier;
-    const totalPay = regularPay + overtimePay;
-
-    const { start, end } = getRangeDates();
-    rows.push([`${user.name}`, start.toLocaleDateString(), end.toLocaleDateString(), regularHours.toFixed(2), overtimeHours.toFixed(2), rate.toFixed(2), regularPay.toFixed(2), overtimePay.toFixed(2), totalPay.toFixed(2)]);
-
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `payroll_${user?.id || 'me'}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const _printPayroll = () => {
-    if (!user) return;
-    const { start, end } = getRangeDates();
-    const html = `
-      <html><head><title>Payroll ${start.toLocaleDateString()} - ${end.toLocaleDateString()}</title>
-      <style>body{font-family:Arial,sans-serif;padding:20px;color:#111}table{width:100%;border-collapse:collapse}th,td{padding:8px;border:1px solid #ddd;text-align:left}</style>
-      </head><body>
-        <h2>Payroll  -  ${user.name}</h2>
-        <div>${start.toLocaleDateString()} <FaArrowRight style={{marginRight:4}} /> ${end.toLocaleDateString()}</div>
-        <table>
-          <thead><tr><th>Regular Hours</th><th>Overtime Hours</th><th>Hourly Rate</th><th>Regular Pay</th><th>Overtime Pay</th><th>Total Pay</th></tr></thead>
-          <tbody>
-            <tr><td>${Math.min(40, totals.totalHours).toFixed(2)}</td><td>${Math.max(0, totals.totalHours - 40).toFixed(2)}</td><td>$${((user as any)?.hourlyRate||0).toFixed(2)}</td><td>$${(Math.min(40, totals.totalHours)*((user as any)?.hourlyRate||0)).toFixed(2)}</td><td>$${(Math.max(0, totals.totalHours - 40)*((user as any)?.hourlyRate||0)*1.5).toFixed(2)}</td><td>$${( (Math.min(40, totals.totalHours)*((user as any)?.hourlyRate||0)) + (Math.max(0, totals.totalHours - 40)*((user as any)?.hourlyRate||0)*1.5) ).toFixed(2)}</td></tr>
-          </tbody>
-        </table>
-      </body></html>
-    `;
-    const w = window.open('', '_blank');
-    if (!w) { setTimesheetMsg({type:'error',text:'Unable to open print window'}); return; }
-    w.document.write(html);
-    w.document.close();
-    w.print();
-  };
 
   if (isLoading) {
     return (
@@ -316,7 +232,6 @@ export default function TechTimesheet() {
                 const clockOut = e.clockOut ? new Date(e.clockOut) : null;
                 const now = new Date();
                 const durationMs = clockOut ? (clockOut.getTime() - clockIn.getTime()) : (now.getTime() - clockIn.getTime());
-                const _duration = fmtDurationMs(durationMs);
                 const hours = e.hoursWorked ?? (durationMs / (1000*60*60));
 
                 const isEditing = editingId === e.id;

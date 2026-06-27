@@ -2,8 +2,6 @@
 import { FaBox, FaCalendarAlt, FaChartBar, FaClipboardList, FaDollarSign, FaExclamationCircle, FaUsers } from 'react-icons/fa';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Route } from 'next';
 import Link from 'next/link';
 import TimeClock from '@/components/TimeClock';
 import MessagingCard from '@/components/MessagingCard';
@@ -16,7 +14,6 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsNative } from '@/context/NativeContext';
 
 export default function ManagerHome() {
-  const router = useRouter();
   const { user, isLoading } = useRequireAuth(['manager']);
   const isMobile = useIsMobile();
   const isNative = useIsNative();
@@ -24,7 +21,6 @@ export default function ManagerHome() {
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
   const [shopId, setShopId] = useState('');
-  const [_shopName, setShopName] = useState('');
   const [inventoryRequests, setInventoryRequests] = useState<any[]>([]);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [newRequest, setNewRequest] = useState({
@@ -53,22 +49,6 @@ export default function ManagerHome() {
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const [metricsReady, setMetricsReady] = useState(false);
   const [managerMsg, setManagerMsg] = useState<{type:'success'|'error';text:string}|null>(null);
-  async function fetchShopName(shop?: string) {
-    if (!shop) return;
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/shop?shopId=${shop}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const { shop: shopData } = await response.json();
-        setShopName(shopData.shopName || 'Shop');
-      }
-    } catch (error) {
-      console.error('Error fetching shop name:', error);
-    }
-  }
-
   async function fetchInventoryRequests(shop?: string) {
     if (!shop) return;
     try {
@@ -208,7 +188,6 @@ export default function ManagerHome() {
     setShopId(currentShopId);
     const loadDashboard = async () => {
       await Promise.all([
-        fetchShopName(currentShopId),
         fetchInventoryRequests(currentShopId),
         fetchTeamPerformance(currentShopId),
         fetchWorkOrderStats(currentShopId),
@@ -229,15 +208,6 @@ export default function ManagerHome() {
     return () => clearInterval(refresh);
 
   }, [user?.id, user?.name, user?.shopId]);
-
-  const _handleSignOut = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('shopId');
-    localStorage.removeItem('token');
-    router.push('/auth/login' as Route);
-  };
 
   const handleSubmitRequest = async () => {
     try {

@@ -4,20 +4,15 @@ import { useEffect, useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import Link from 'next/link';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import {
-  FaArrowRight,
   FaBox,
   FaBuilding,
-  FaChartBar,
   FaClock,
-  FaCog,
   FaDollarSign,
-  FaUserCog,
   FaUsers,
 } from 'react-icons/fa';
 import OverviewTab from './tabs/OverviewTab';
@@ -643,14 +638,6 @@ export default function ShopAdminPage() {
     { label: 'Weekly Revenue', value: `$${Number(weeklyRevenue).toFixed(2)}`, sub: `${completionRate}% weekly completion rate`, color: '#22c55e', icon: <FaDollarSign /> },
     { label: 'Team Coverage', value: `${clockedInCount}/${teamCount}`, sub: 'Clocked in right now', color: '#f59e0b', icon: <FaUsers /> },
     { label: 'Inventory Health', value: String(inventoryCount), sub: `${pendingActions} pending admin actions`, color: '#a855f7', icon: <FaBox /> },
-  ];
-
-  const quickLinks = [
-    { href: '/shop/analytics', label: 'Shop Analytics', desc: 'Performance trends, SLA, profit', color: '#8b5cf6', icon: <FaChartBar /> },
-    { href: '/shop/analytics', label: 'Reports Center', desc: 'Payroll, exports, and summaries', color: '#22c55e', icon: <FaBuilding /> },
-    { href: '/shop/manage-team', label: 'Team Operations', desc: 'Roles, staffing, and access', color: '#e5332a', icon: <FaUserCog /> },
-    { href: '/shop/inventory', label: 'Inventory Control', desc: 'Stock, POs, and reorders', color: '#f59e0b', icon: <FaBox /> },
-    { href: '/shop/settings', label: 'Shop Settings', desc: 'Rates, alerts, and configuration', color: '#e5332a', icon: <FaCog /> },
   ];
 
   return (

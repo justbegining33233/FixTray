@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCheck, FaCheckCircle, FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
@@ -23,7 +22,6 @@ type PendingShop = {
 };
 
 export default function PendingShops() {
-  const _router = useRouter();
   const { user, isLoading } = useRequireAuth(['admin']);
   const [mounted, setMounted] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');

@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Route } from 'next';
 import TimeClock from '@/components/TimeClock';
 import TechLiveMap from '@/components/TechLiveMap';
 import TopNavBar from '@/components/TopNavBar';
@@ -18,7 +16,6 @@ import { useIsNative } from '@/context/NativeContext';
 import { FaArrowRight, FaBook, FaBox, FaCamera, FaCar, FaChartBar, FaCheckCircle, FaCircle, FaClipboardList, FaCog, FaComments, FaExclamationCircle, FaMapMarkerAlt, FaRegCircle, FaSearch, FaStopwatch, FaSyncAlt, FaTools, FaUser, FaWrench } from 'react-icons/fa';
 
 export default function TechHome() {
-  const router = useRouter();
   const { user, isLoading } = useRequireAuth(['tech']);
   const isMobile = useIsMobile();
   const isNative = useIsNative();
@@ -69,7 +66,7 @@ export default function TechHome() {
         // Read response body for helpful debugging info
         let bodyText = '';
         try { bodyText = await response.text(); } catch { bodyText = '<no body>'; }
-        const _msg = `status:${response.status} body:${bodyText}`;
+        console.error(`Shop profile lookup failed: status:${response.status} body:${bodyText}`);
         setShopProfile(undefined);
       }
     } catch (error) {
@@ -235,15 +232,6 @@ export default function TechHome() {
   if (!user) {
     return null;
   }
-
-  const _handleSignOut = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('shopId');
-    localStorage.removeItem('token');
-    router.push('/auth/login' as Route);
-  };
 
   const jobCreationTools = [
     { title: 'New Roadside Job', description: 'Create emergency roadside assistance work orders', icon: <FaCar style={{marginRight:4}} />, link: '/tech/new-roadside-job' },

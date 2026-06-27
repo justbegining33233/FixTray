@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaChartBar, FaDollarSign, FaHourglassHalf, FaStore } from 'react-icons/fa';
@@ -30,7 +29,6 @@ type TopShop = {
 };
 
 export default function FinancialReports() {
-  const _router = useRouter();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<FinancialStats>({

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaBox, FaExclamationTriangle, FaPlus, FaSearch, FaEdit, FaTrash } from 'react-icons/fa';
@@ -20,7 +19,6 @@ interface InventoryItem {
 }
 
 export default function ManagerInventory() {
-  const _router = useRouter();
   const { user } = useRequireAuth(['manager']);
   const [hasInventoryAccess] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);

@@ -8,7 +8,7 @@ import { FaArrowLeft, FaCamera, FaTimes } from 'react-icons/fa';
 export default function TechPhotos() {
   const { user, isLoading } = useRequireAuth(['tech']);
   const [photos, setPhotos] = useState<Array<{ id: string; url: string; filename?: string; caption?: string; workOrderId?: string }>>([]);
-  const [_uploading, setUploading] = useState(false);
+  const [, setUploading] = useState(false);
   const [caption, setCaption] = useState('');
   const [workOrderInput, setWorkOrderInput] = useState('');
 

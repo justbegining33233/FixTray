@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import {
-  FaBuilding, FaSearch, FaChartBar, FaUsers, FaCheckCircle,
+  FaBuilding, FaSearch, FaCheckCircle,
   FaExclamationTriangle, FaArrowLeft,
 } from 'react-icons/fa';
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { FaBox, FaCar, FaChartBar, FaCog, FaIndustry, FaLock, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck, FaWrench } from 'react-icons/fa';
@@ -17,6 +16,10 @@ import { useIsNative } from '@/context/NativeContext';
 
 interface Job {
   id: string;
+  sourceId?: string;
+  sourceType?: 'workorder';
+  serviceLocation?: 'in-shop' | 'road-call' | 'other';
+  isAppointment?: boolean;
   service: string;
   priority: string;
   customer: string;
@@ -39,12 +42,10 @@ type QuickAction = {
 };
 
 export default function ShopHome() {
-  const router = useRouter();
   const { user, isLoading } = useRequireAuth(['shop']);
   const isMobile = useIsMobile();
   const isNative = useIsNative();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [_todayJobs, _setTodayJobs] = useState<Job[]>([]);
   const [shopStats, setShopStats] = useState({
     openJobs: 0,
     completedToday: 0,
@@ -56,7 +57,6 @@ export default function ShopHome() {
   const [selectedDestinations, setSelectedDestinations] = useState<Record<string, string>>({});
   const [pendingWorkOrders, setPendingWorkOrders] = useState<Job[]>([]);
   const [bays, setBays] = useState<Array<{ id: string; name: string; tech: string; jobs: Job[] }>>([]);
-  const [_roadcallJobs, setRoadcallJobs] = useState<Job[]>([]);
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
   const [dragSourceBayId, setDragSourceBayId] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
@@ -72,6 +72,8 @@ export default function ShopHome() {
     const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
     const toJob = (wo: any, statusLabel: string): Job => ({
       id: wo.id,
+      sourceId: wo.id,
+      sourceType: 'workorder',
       service: wo.issueDescription || wo.repairs || 'Service',
       priority: wo.priority || 'Medium',
       customer: wo.customer
@@ -83,6 +85,17 @@ export default function ShopHome() {
         ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName?.charAt(0) ?? ''}.`
         : 'Unassigned',
       status: statusLabel,
+      serviceLocation: (() => {
+        const raw = String(wo.serviceLocation || '').toLowerCase();
+        if (raw === 'road-call' || raw === 'roadside') return 'road-call';
+        if (raw === 'in-shop') return 'in-shop';
+        return 'other';
+      })(),
+      isAppointment: Boolean(
+        wo?.location?.source === 'appointment' ||
+        wo?.location?.createdFrom === 'appointment' ||
+        (typeof wo.issueDescription === 'string' && wo.issueDescription.startsWith('Appointment:'))
+      ),
       bay: typeof wo.bay === 'number' ? wo.bay : null,
     });
 
@@ -120,12 +133,12 @@ export default function ShopHome() {
           }));
         }
 
-        // Pending work orders queue
-        if (woRes.ok) {
-          const data = await woRes.json();
-          const orders: Job[] = (data.workOrders || []).map((wo: any) => toJob(wo, 'Pending'));
-          setPendingWorkOrders(orders);
-        }
+        // Pending queue from work orders (supports both in-shop and road-call)
+        const pendingOrders: Job[] = woRes.ok
+          ? ((await woRes.json()).workOrders || []).map((wo: any) => toJob(wo, 'Pending'))
+          : [];
+
+        setPendingWorkOrders(pendingOrders);
 
         // Team members + active tech count
         if (teamRes.ok) {
@@ -257,37 +270,109 @@ export default function ShopHome() {
   }
 
   const isManager = user.role === 'manager';
+  const pendingRoadcalls = pendingWorkOrders.filter((order) => order.serviceLocation === 'road-call');
+  const pendingInShopAppointments = pendingWorkOrders.filter((order) => order.serviceLocation === 'in-shop' && order.isAppointment);
+  const pendingInShopWalkIns = pendingWorkOrders.filter((order) => order.serviceLocation === 'in-shop' && !order.isAppointment);
+  const pendingOther = pendingWorkOrders.filter((order) => order.serviceLocation !== 'in-shop' && order.serviceLocation !== 'road-call');
 
-  const _handleSignOut = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    router.push('/auth/login' as Route);
-  };
-
-  const _handleOrderPart = async (partName: string, currentStock: number, reorderLevel: number) => {
-    const orderQuantity = reorderLevel * 2;
-    try {
-      const token = localStorage.getItem('token');
-      const r = await fetch('/api/purchase-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          vendor: 'Auto-reorder',
-          notes: `Auto-reorder: ${partName}  -  current stock ${currentStock}, order qty ${orderQuantity}`,
-          items: [{ partNumber: '', description: partName, qty: orderQuantity, unitCost: 0 }],
-        }),
-      });
-      if (r.ok) {
-        // Redirect to purchase orders page so user can complete the PO
-        router.push('/shop/purchase-orders' as Route);
-      }
-    } catch {
-      // Silently ignore  -  non-critical path
+  const renderPendingCard = (
+    order: Job,
+    config: {
+      badgeLabel: string;
+      badgeBackground: string;
+      badgeColor: string;
+      defaultDestination: 'roadcall' | 'bay';
+      dispatchFallback: string;
     }
-  };
+  ) => {
+    const style = priorityStyles[order.priority] || priorityStyles.Medium;
+    const destinationOptions = [
+      ...bays.map((b) => ({ id: b.id, label: b.name })),
+      { id: 'roadcall', label: <><FaTruck style={{ marginRight: 4 }} /> Roadcall</> },
+    ];
+    const defaultDestinationId =
+      config.defaultDestination === 'roadcall' ? 'roadcall' : (destinationOptions[0]?.id || 'roadcall');
+    const selected = selectedDestinations[order.id] || defaultDestinationId;
 
-  const _handleOpenWorkorder = (orderId: string) => {
-    router.push(`/workorders/${orderId}` as Route);
+    return (
+      <div
+        key={order.id}
+        draggable
+        onDragStart={(event) => handleDragStart(event, order.id)}
+        onDragEnd={handleDragEnd}
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 10,
+          padding: 12,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          cursor: 'grab',
+          opacity: draggedOrderId === order.id ? 0.6 : 1,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e5e7eb' }}>{order.service}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+              style={{
+                padding: '4px 8px',
+                background: config.badgeBackground,
+                color: config.badgeColor,
+                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: 700,
+              }}
+            >
+              {config.badgeLabel}
+            </span>
+            <span
+              style={{
+                padding: '4px 8px',
+                background: style.bg,
+                color: style.color,
+                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: 700,
+              }}
+            >
+              {order.priority}
+            </span>
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: '#9aa3b2' }}>
+          {order.customer} - {order.vehicle} - {order.sourceId || order.id}
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ fontSize: 12, color: '#9aa3b2' }}>Destination</div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 4, maxHeight: 200, overflowY: 'auto', height: '100%' }}>
+              <select
+                value={selected}
+                onChange={(e) => setSelectedDestinations((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                size={destinationOptions.length}
+                style={{ width: '100%', background: 'transparent', color: '#e5e7eb', border: 'none', outline: 'none', fontSize: 12, cursor: 'pointer', height: '100%' }}
+              >
+                {destinationOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id} style={{ background: '#000000', color: '#e5e7eb' }}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              onClick={() => handleAssign(order.id, selected)}
+              style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.16)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', alignSelf: 'stretch' }}
+            >
+              Dispatch to {destinationOptions.find((opt) => opt.id === selected)?.label || config.dispatchFallback}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const persistPlacement = async (orderId: string, bay: number | null, status: 'assigned' | 'pending') => {
@@ -307,12 +392,7 @@ export default function ShopHome() {
       const order = prev.find(o => o.id === orderId);
       if (!order) return prev;
 
-      if (destinationId === 'roadcall') {
-        setRoadcallJobs(current => {
-          const exists = current.some(job => job.id === order.id);
-          return exists ? current : [...current, { ...order, status: 'Roadcall' }];
-        });
-      } else {
+      if (destinationId !== 'roadcall') {
         setBays(current =>
           current.map(bay => {
             if (bay.id !== destinationId) return bay;
@@ -374,13 +454,7 @@ export default function ShopHome() {
 
       if (!moved) return current;
 
-      if (destinationId === 'roadcall') {
-        setRoadcallJobs((currentRoadcall) => {
-          const exists = currentRoadcall.some((job) => job.id === orderId);
-          return exists ? currentRoadcall : [...currentRoadcall, { ...moved!, status: 'Roadcall', bay: null }];
-        });
-        return withoutSourceJob;
-      }
+      if (destinationId === 'roadcall') return withoutSourceJob;
 
       return withoutSourceJob.map((bay) => {
         if (bay.id !== destinationId) return bay;
@@ -443,17 +517,6 @@ export default function ShopHome() {
 
     if (!orderId || !sourceBayId) return;
     void handleReturnToPending(sourceBayId, orderId);
-  };
-
-  const _handleReturnRoadcallToPending = (orderId: string) => {
-    let moved: Job | undefined;
-    setRoadcallJobs(current => {
-      moved = current.find(j => j.id === orderId);
-      return current.filter(j => j.id !== orderId);
-    });
-    if (!moved) return;
-    const movedJob: Job = moved;
-    setPendingWorkOrders(prev => [...prev, { ...movedJob, status: 'Pending' }]);
   };
 
   // (Mobile check was moved before the isLoading guard above)
@@ -538,8 +601,14 @@ export default function ShopHome() {
                 <div>
                   <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Ops Overview</h2>
                   <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
-                    <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#e5332a', borderRadius:12, fontSize:11, fontWeight:700}}>
-                      Pending: {pendingWorkOrders.length}
+                    <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.16)', color:'#93c5fd', borderRadius:12, fontSize:11, fontWeight:700}}>
+                      Roadcalls: {pendingRoadcalls.length}
+                    </span>
+                    <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
+                      In-Shop Appointments: {pendingInShopAppointments.length}
+                    </span>
+                    <span style={{padding:'4px 10px', background:'rgba(245,158,11,0.16)', color:'#fbbf24', borderRadius:12, fontSize:11, fontWeight:700}}>
+                      In-Shop Walk-ins: {pendingInShopWalkIns.length}
                     </span>
                     <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
                       Bays: {bays.length} configured ({bays.reduce((sum, bay) => sum + bay.jobs.length, 0)} active)
@@ -608,78 +677,55 @@ export default function ShopHome() {
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drag work orders into a bay</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>Roadcalls and in-shop jobs are split below. All items are dispatchable.</span>
                   </div>
                   {dragOverTarget === 'pending' && (
                     <div style={{marginBottom:10, padding:'10px 12px', border:'1px dashed rgba(245,158,11,0.7)', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#f59e0b', fontSize:12, fontWeight:700}}>
                       Release to return this work order to pending queue
                     </div>
                   )}
-                  <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                  <div style={{display:'flex', flexDirection:'column', gap:14}}>
                     {pendingWorkOrders.length === 0 && (
                       <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
                         No customers waiting  -  nice work.
                       </div>
                     )}
-                    {pendingWorkOrders.map(order => {
-                      const style = priorityStyles[order.priority] || priorityStyles.Medium;
-                      const destinationOptions = [...bays.map(b => ({ id: b.id, label: b.name })), { id: 'roadcall', label: <><FaTruck style={{marginRight:4}} /> Roadcall</> }];
-                      const selected = selectedDestinations[order.id] || destinationOptions[0]?.id || 'roadcall';
-                      return (
-                        <div
-                          key={order.id}
-                          draggable
-                          onDragStart={(event) => handleDragStart(event, order.id)}
-                          onDragEnd={handleDragEnd}
-                          style={{
-                            background:'rgba(255,255,255,0.04)',
-                            border:'1px solid rgba(255,255,255,0.08)',
-                            borderRadius:10,
-                            padding:12,
-                            display:'flex',
-                            flexDirection:'column',
-                            gap:8,
-                            cursor:'grab',
-                            opacity: draggedOrderId === order.id ? 0.6 : 1,
-                          }}
-                        >
-                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                            <div style={{fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{order.service}</div>
-                            <span style={{padding:'4px 8px', background:style.bg, color:style.color, borderRadius:8, fontSize:11, fontWeight:700}}>{order.priority}</span>
-                          </div>
-                          <div style={{fontSize:12, color:'#9aa3b2'}}>
-                            {order.customer} - {order.vehicle} - {order.id}
-                          </div>
-                          <div style={{display:'flex', gap:8, alignItems:'stretch'}}>
-                            <div style={{flex:1, display:'flex', flexDirection:'column', gap:6}}>
-                              <div style={{fontSize:12, color:'#9aa3b2'}}>Destination</div>
-                              <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:4, maxHeight:200, overflowY:'auto', height:'100%'}}>
-                                <select
-                                  value={selected}
-                                  onChange={(e) => setSelectedDestinations(prev => ({ ...prev, [order.id]: e.target.value }))}
-                                  size={destinationOptions.length}
-                                  style={{width:'100%', background:'transparent', color:'#e5e7eb', border:'none', outline:'none', fontSize:12, cursor:'pointer', height:'100%'}}
-                                >
-                                  {destinationOptions.map(opt => (
-                                    <option key={opt.id} value={opt.id} style={{background:'#000000', color:'#e5e7eb'}}>
-                                      {opt.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                            <div style={{display:'flex', alignItems:'flex-end'}}>
-                              <button
-                                onClick={() => handleAssign(order.id, selected)}
-                                style={{padding:'8px 12px', background:'rgba(34,197,94,0.16)', color:'#22c55e', border:'1px solid rgba(34,197,94,0.3)', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', alignSelf:'stretch'}}
-                              >
-                                Dispatch to {destinationOptions.find(opt => opt.id === selected)?.label || 'Bay'}
-                              </button>
-                            </div>
-                          </div>
+                    {(pendingWorkOrders.length > 0) && (
+                      <>
+                        <div style={{padding:'6px 10px', borderRadius:8, background:'rgba(59,130,246,0.12)', color:'#93c5fd', fontSize:12, fontWeight:700}}>
+                          Roadcalls ({pendingRoadcalls.length})
                         </div>
-                      );
-                    })}
+                        {[...pendingRoadcalls, ...pendingOther].map((order) => renderPendingCard(order, {
+                          badgeLabel: 'Roadcall',
+                          badgeBackground: 'rgba(59,130,246,0.18)',
+                          badgeColor: '#93c5fd',
+                          defaultDestination: 'roadcall',
+                          dispatchFallback: 'Roadcall',
+                        }))}
+
+                        <div style={{padding:'6px 10px', borderRadius:8, background:'rgba(229,51,42,0.12)', color:'#ff6b64', fontSize:12, fontWeight:700}}>
+                          In-Shop Appointments ({pendingInShopAppointments.length})
+                        </div>
+                        {pendingInShopAppointments.map((order) => renderPendingCard(order, {
+                          badgeLabel: 'Appointment',
+                          badgeBackground: 'rgba(229,51,42,0.18)',
+                          badgeColor: '#ff6b64',
+                          defaultDestination: 'bay',
+                          dispatchFallback: 'Bay',
+                        }))}
+
+                        <div style={{padding:'6px 10px', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#fbbf24', fontSize:12, fontWeight:700}}>
+                          In-Shop Walk-ins ({pendingInShopWalkIns.length})
+                        </div>
+                        {pendingInShopWalkIns.map((order) => renderPendingCard(order, {
+                          badgeLabel: 'Walk-in',
+                          badgeBackground: 'rgba(245,158,11,0.18)',
+                          badgeColor: '#fbbf24',
+                          defaultDestination: 'bay',
+                          dispatchFallback: 'Bay',
+                        }))}
+                      </>
+                    )}
                   </div>
                 </div>
 

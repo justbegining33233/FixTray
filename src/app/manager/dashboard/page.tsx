@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import QuickActionCard from '@/components/QuickActionCard';
@@ -22,7 +21,6 @@ interface ManagerDashboardData {
 }
 
 export default function ManagerDashboard() {
-  const _router = useRouter();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [data, setData] = useState<ManagerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);

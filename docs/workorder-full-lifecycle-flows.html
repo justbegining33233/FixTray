@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FixTray Work Order End-to-End Flows</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #1f2937;
+      --ui: #e2e8f0;
+      --api: #dbeafe;
+      --status: #dcfce7;
+      --pay: #fef3c7;
+      --post: #fce7f3;
+      --risk: #fee2e2;
+      --plan: #ffedd5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(140deg, #eef2f7 0%, #f8fafc 58%, #edf1f6 100%);
+      color: var(--ink);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      padding: 18px;
+    }
+
+    .sheet {
+      max-width: 1500px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.09);
+      padding: 14px;
+    }
+
+    h1 {
+      margin: 2px 0 4px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fcfdff;
+      display: block;
+    }
+
+    .node {
+      stroke: #1e293b;
+      stroke-width: 1.4;
+      rx: 11;
+      ry: 11;
+    }
+
+    .t {
+      font-size: 14px;
+      font-weight: 700;
+      fill: #0f172a;
+    }
+
+    .m {
+      font-size: 11px;
+      fill: #334155;
+    }
+
+    .x {
+      font-size: 10px;
+      fill: #64748b;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: #fff;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border: 1px solid #334155;
+      border-radius: 2px;
+    }
+
+    .grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    ol {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 11px;
+      color: #334155;
+      line-height: 1.45;
+    }
+
+    li { margin-bottom: 4px; }
+
+    .foot {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <h1>FixTray Full Work Order Flows: In-Shop + Road-Call, Customer + Shop Staff</h1>
+    <p class="sub">Page by page and step by step from creation through completion, payment, and post-payment effects based on current code.</p>
+
+    <svg viewBox="0 0 1460 980" role="img" aria-label="Full lifecycle wiring">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"></path>
+        </marker>
+        <marker id="warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"></path>
+        </marker>
+      </defs>
+
+      <!-- Left starts -->
+      <rect class="node" x="20" y="40" width="280" height="100" fill="var(--ui)"></rect>
+      <text class="t" x="36" y="68">A) Customer Starts In-Shop</text>
+      <text class="m" x="36" y="88">/customer/appointments/new</text>
+      <text class="x" x="36" y="106">NewAppointmentClient step 1-4</text>
+      <text class="x" x="36" y="122">POST /api/appointments appointmentType=in-shop</text>
+
+      <rect class="node" x="20" y="170" width="280" height="100" fill="var(--ui)"></rect>
+      <text class="t" x="36" y="198">B) Customer Starts Road-Call</text>
+      <text class="m" x="36" y="218">/customer/appointments/new</text>
+      <text class="x" x="36" y="236">visitType=road-call + media/vehicle info</text>
+      <text class="x" x="36" y="252">POST /api/appointments appointmentType=road-call</text>
+
+      <rect class="node" x="20" y="300" width="280" height="100" fill="var(--ui)"></rect>
+      <text class="t" x="36" y="328">C) Shop Staff Starts In-Shop</text>
+      <text class="m" x="36" y="348">/workorders/inshop -> /shop/new-inshop-job</text>
+      <text class="x" x="36" y="366">Submit form -> POST /api/workorders</text>
+      <text class="x" x="36" y="382">serviceLocationType=in-shop</text>
+
+      <rect class="node" x="20" y="430" width="280" height="100" fill="var(--risk)"></rect>
+      <text class="t" x="36" y="458">D) Shop Staff Starts Road-Call</text>
+      <text class="m" x="36" y="478">/workorders/roadside -> /shop/new-roadside-job</text>
+      <text class="x" x="36" y="496">Current submit only routes to dashboard</text>
+      <text class="x" x="36" y="512">No POST /api/workorders call yet</text>
+
+      <!-- Unified creation output -->
+      <rect class="node" x="350" y="190" width="300" height="120" fill="var(--api)"></rect>
+      <text class="t" x="368" y="220">Work Order Created (Data Layer)</text>
+      <text class="m" x="368" y="240">Prisma workOrder status=pending</text>
+      <text class="x" x="368" y="258">A/B via /api/appointments creates appointment + workOrder</text>
+      <text class="x" x="368" y="274">C via /api/workorders directly</text>
+      <text class="x" x="368" y="290">D currently missing API create path</text>
+
+      <!-- Queue and operations -->
+      <rect class="node" x="700" y="40" width="320" height="120" fill="var(--ui)"></rect>
+      <text class="t" x="718" y="70">Shop Queue + Assignment</text>
+      <text class="m" x="718" y="90">/shop/home</text>
+      <text class="x" x="718" y="108">loads /api/workorders for pending/assigned/in-progress</text>
+      <text class="x" x="718" y="124">PUT /api/workorders/[id] sets bay + assigned/pending</text>
+
+      <rect class="node" x="700" y="185" width="320" height="120" fill="var(--status)"></rect>
+      <text class="t" x="718" y="215">Status Lifecycle Core</text>
+      <text class="m" x="718" y="235">pending -> assigned -> in-progress</text>
+      <text class="x" x="718" y="253">optional waiting-estimate</text>
+      <text class="x" x="718" y="269">then waiting-for-payment -> closed</text>
+      <text class="x" x="718" y="285">changes through PUT /api/workorders/[id]</text>
+
+      <rect class="node" x="700" y="330" width="320" height="120" fill="var(--ui)"></rect>
+      <text class="t" x="718" y="360">Customer Views</text>
+      <text class="m" x="718" y="380">/customer/workorders currently redirects to history</text>
+      <text class="x" x="718" y="398">detail page /customer/workorders/[id]</text>
+      <text class="x" x="718" y="414">fetches /api/customers/workorders/[id]</text>
+
+      <rect class="node" x="700" y="475" width="320" height="120" fill="var(--ui)"></rect>
+      <text class="t" x="718" y="505">Estimate Decisions</text>
+      <text class="m" x="718" y="525">/customer/estimates</text>
+      <text class="x" x="718" y="543">Accept -> PUT /api/workorders/[id] status=in-progress</text>
+      <text class="x" x="718" y="559">Deny -> status=denied-estimate</text>
+      <text class="x" x="718" y="575">Optional e-sign flow: /customer/authorization/[token]</text>
+
+      <!-- Payment zone -->
+      <rect class="node" x="1070" y="120" width="360" height="130" fill="var(--pay)"></rect>
+      <text class="t" x="1088" y="150">Customer Payment Start</text>
+      <text class="m" x="1088" y="170">from /customer/workorders/[id] or /customer/payments</text>
+      <text class="x" x="1088" y="188">POST /api/payment/checkout</text>
+      <text class="x" x="1088" y="204">creates Stripe Checkout Session</text>
+      <text class="x" x="1088" y="220">redirect to Stripe hosted payment page</text>
+      <text class="x" x="1088" y="236">success_url=/payment/success, cancel_url=/payment/cancel</text>
+
+      <rect class="node" x="1070" y="285" width="360" height="130" fill="var(--pay)"></rect>
+      <text class="t" x="1088" y="315">Stripe Webhook Closes Work Order</text>
+      <text class="m" x="1088" y="335">/api/stripe/webhook checkout.session.completed</text>
+      <text class="x" x="1088" y="353">updates status=closed, paymentStatus=paid, amountPaid</text>
+      <text class="x" x="1088" y="369">sends payment receipt + push confirmation</text>
+      <text class="x" x="1088" y="385">alt path also exists: /api/payment/webhook</text>
+      <text class="x" x="1088" y="401">(payment_intent.succeeded)</text>
+
+      <rect class="node" x="1070" y="450" width="360" height="130" fill="var(--post)"></rect>
+      <text class="t" x="1088" y="480">After Payment / Closed Effects</text>
+      <text class="m" x="1088" y="500">customer sees closed state + receipt messaging</text>
+      <text class="x" x="1088" y="518">invoice endpoints: /api/workorders/[id]/invoice</text>
+      <text class="x" x="1088" y="534">shop can email invoice: /email-invoice</text>
+      <text class="x" x="1088" y="550">if closed via PUT /api/workorders/[id]:</text>
+      <text class="x" x="1088" y="566">loyalty, review email/SMS, inventory deduction</text>
+
+      <rect class="node" x="1070" y="615" width="360" height="130" fill="var(--risk)"></rect>
+      <text class="t" x="1088" y="645">Current Gaps To Note</text>
+      <text class="m" x="1088" y="665">shop roadside creation page does not persist</text>
+      <text class="x" x="1088" y="683">customer workorders route redirects to history</text>
+      <text class="x" x="1088" y="699">detail uses /api/customers/workorders/[id], list uses /api/workorders</text>
+      <text class="x" x="1088" y="715">multiple close/webhook paths can diverge side effects</text>
+
+      <!-- connectors from starts to creation -->
+      <line x1="300" y1="90" x2="350" y2="225" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="300" y1="220" x2="350" y2="240" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="300" y1="350" x2="350" y2="255" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="300" y1="480" x2="350" y2="285" stroke="#b45309" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#warn)"></line>
+
+      <!-- central pipeline -->
+      <line x1="650" y1="250" x2="700" y2="100" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="860" y1="160" x2="860" y2="185" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="860" y1="305" x2="860" y2="330" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="860" y1="450" x2="860" y2="475" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+
+      <!-- to payment -->
+      <line x1="1020" y1="245" x2="1070" y2="185" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="1250" y1="250" x2="1250" y2="285" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="1250" y1="415" x2="1250" y2="450" stroke="var(--line)" stroke-width="2" marker-end="url(#arr)"></line>
+      <line x1="1250" y1="580" x2="1250" y2="615" stroke="#b45309" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#warn)"></line>
+
+      <!-- annotation -->
+      <text class="x" x="326" y="536">dashed orange = known gap/inconsistency</text>
+      <text class="x" x="736" y="620">all branches converge on same payment + closed lifecycle</text>
+    </svg>
+
+    <div class="legend">
+      <span class="chip"><span class="dot" style="background: var(--ui)"></span>Pages and user actions</span>
+      <span class="chip"><span class="dot" style="background: var(--api)"></span>API creation layer</span>
+      <span class="chip"><span class="dot" style="background: var(--status)"></span>Status transitions</span>
+      <span class="chip"><span class="dot" style="background: var(--pay)"></span>Payment flow</span>
+      <span class="chip"><span class="dot" style="background: var(--post)"></span>Post-payment actions</span>
+      <span class="chip"><span class="dot" style="background: var(--risk)"></span>Current gaps</span>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>A and B: Customer-Created Flows</h2>
+        <ol>
+          <li>Customer opens appointments flow at /customer/appointments/new.</li>
+          <li>NewAppointmentClient selects shop, visit type (in-shop or road-call), service, date/details, optional media.</li>
+          <li>Submit calls POST /api/appointments.</li>
+          <li>API creates appointment plus linked workOrder with status pending and serviceLocation from appointmentType.</li>
+          <li>Customer can monitor through detail route /customer/workorders/[id] and payment list /customer/payments.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>C and D: Shop-Employee-Created Flows</h2>
+        <ol>
+          <li>In-shop: /workorders/inshop routes to /shop/new-inshop-job, then submit calls POST /api/workorders.</li>
+          <li>Road-call: /workorders/roadside routes to /shop/new-roadside-job.</li>
+          <li>Current road-call submit does not call a create API and only navigates back home.</li>
+          <li>Result: in-shop creates real work orders; roadside UI currently acts as a draft-only path.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Completion and Payment Steps</h2>
+        <ol>
+          <li>Shop updates work order state through PUT /api/workorders/[id] across pending, assigned, in-progress, waiting-estimate, waiting-for-payment, closed.</li>
+          <li>When set to waiting-for-payment, customer receives completion and payment-ready notifications.</li>
+          <li>Customer pays from /customer/workorders/[id] or /customer/payments via POST /api/payment/checkout.</li>
+          <li>Stripe returns to /payment/success or /payment/cancel.</li>
+          <li>Stripe webhook marks work order paid and closed.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>What Work Order Does After Payment</h2>
+        <ol>
+          <li>Status and payment fields update to closed and paid.</li>
+          <li>Customer gets receipt email and push confirmation.</li>
+          <li>Customer sees closed confirmation on work order detail and payment pages.</li>
+          <li>Invoice generation and email endpoints are available for retrieval and sending.</li>
+          <li>If closure happens through PUT /api/workorders/[id], extra side effects run: loyalty points, review request email/SMS, and inventory deduction.</li>
+        </ol>
+      </section>
+    </div>
+
+    <p class="foot">Source files used: customer appointments pages and API, shop new in-shop and roadside pages, workorders APIs, customer workorder detail and payments pages, stripe and payment webhooks, invoice endpoints.</p>
+  </div>
+</body>
+</html>

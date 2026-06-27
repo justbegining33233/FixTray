@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaBuilding, FaChartBar, FaClipboardList, FaCreditCard, FaHourglassHalf, FaMapMarkerAlt, FaStore, FaTimes } from 'react-icons/fa';
@@ -92,7 +91,6 @@ function MiniLineChart({ data, color, height = 40 }: { data: number[]; color: st
 }
 
 export default function ManageTenants() {
-  const _router = useRouter();
   const { user, isLoading } = useRequireAuth(['admin']);
   const [loading, setLoading] = useState(true);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -100,7 +98,7 @@ export default function ManageTenants() {
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showSubscription, setShowSubscription] = useState(false);
-  const [updatingSubscription, setUpdatingSubscription] = useState(false);
+  const [updatingSubscription] = useState(false);
   const [tenantMsg, setTenantMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const [cancelConfirmId, setCancelConfirmId] = useState<string|null>(null);
 

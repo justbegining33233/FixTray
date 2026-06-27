@@ -1,20 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowDown, FaArrowLeft, FaArrowUp, FaChartBar, FaDownload, FaStar } from 'react-icons/fa';
 
 export default function ReportsAnalytics() {
-  const _router = useRouter();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin', 'shop', 'manager']);
-  const [_userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
   const [dateRange, setDateRange] = useState('30days');
-  const [_selectedMetric, _setSelectedMetric] = useState('revenue');
-  const [_reportLoading, setReportLoading] = useState(false);
+  const [, setReportLoading] = useState(false);
 
   // Live data states
   const [stats, setStats] = useState({
@@ -64,7 +60,6 @@ export default function ReportsAnalytics() {
   }, [user]);
 
   useEffect(() => {
-    if (user?.name) setUserName(user.name);
     if (user?.role) setUserRole(user.role);
   }, [user]);
 

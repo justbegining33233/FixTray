@@ -74,7 +74,7 @@ export default function ShopHome() {
       id: wo.id,
       sourceId: wo.id,
       sourceType: 'workorder',
-      service: wo.issueDescription || wo.repairs || 'Service',
+      service: (typeof wo.issueDescription === 'string' ? wo.issueDescription : wo.issueDescription?.symptoms) || (typeof wo.repairs === 'string' ? wo.repairs : '') || 'Service',
       priority: wo.priority || 'Medium',
       customer: wo.customer
         ? `${wo.customer.firstName} ${wo.customer.lastName?.charAt(0) ?? ''}.`
@@ -94,7 +94,8 @@ export default function ShopHome() {
       isAppointment: Boolean(
         wo?.location?.source === 'appointment' ||
         wo?.location?.createdFrom === 'appointment' ||
-        (typeof wo.issueDescription === 'string' && wo.issueDescription.startsWith('Appointment:'))
+        (typeof wo.issueDescription === 'string' && wo.issueDescription.startsWith('Appointment:')) ||
+        (typeof wo.issueDescription?.symptoms === 'string' && wo.issueDescription.symptoms.startsWith('Appointment:'))
       ),
       bay: typeof wo.bay === 'number' ? wo.bay : null,
     });

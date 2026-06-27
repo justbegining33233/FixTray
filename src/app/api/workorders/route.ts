@@ -63,13 +63,17 @@ export async function GET(request: NextRequest) {
     // Build cache key
     const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}`;
 
-    // Try to get from cache first
-    const cachedResult = await queryCache.get(cacheKey);
-    if (cachedResult) {
-      logger.debug('Serving work orders from cache', { cacheKey, userId: auth.id });
-      const response = NextResponse.json(cachedResult);
-      compression.addCompressionHeaders(response);
-      return response;
+    // Skip cache for live ops queries (pending / active status filters) so the
+    // shop ops board reflects new customer-created work orders immediately.
+    const isOpsQuery = !!status;
+    if (!isOpsQuery) {
+      const cachedResult = await queryCache.get(cacheKey);
+      if (cachedResult) {
+        logger.debug('Serving work orders from cache', { cacheKey, userId: auth.id });
+        const response = NextResponse.json(cachedResult);
+        compression.addCompressionHeaders(response);
+        return response;
+      }
     }
 
     // Build where clause
@@ -84,8 +88,11 @@ export async function GET(request: NextRequest) {
       where.shopId = auth.id;
     }
 
-    // Additional filters
-    if (status) where.status = status;
+    // Additional filters — support single value or comma-separated list
+    if (status) {
+      const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
+      where.status = statuses.length > 1 ? { in: statuses } : statuses[0];
+    }
     if (shopId && (auth.role === 'superadmin' || auth.role === 'customer')) {
       where.shopId = shopId;
     }
@@ -193,8 +200,10 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    // Cache the result
-    await queryCache.set(cacheKey, result, undefined, 300); // Cache for 5 minutes
+    // Cache the result — skip for live ops queries
+    if (!isOpsQuery) {
+      await queryCache.set(cacheKey, result, undefined, 300); // Cache for 5 minutes
+    }
 
     // Log performance metrics
     const duration = Date.now() - startTime;

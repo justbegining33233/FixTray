@@ -21,12 +21,22 @@ export default function ServiceWorkerRegister() {
           });
         }
       } else {
-      // Register service worker
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((_registration) => {
-        })
-        .catch((_error) => {
+        // updateViaCache:'none' forces the browser to always fetch the latest sw.js
+        // from the network, bypassing HTTP cache, so every new deployment is picked
+        // up immediately without a hard refresh.
+        navigator.serviceWorker
+          .register('/sw.js', { updateViaCache: 'none' })
+          .catch(() => {});
+
+        // When a new service worker takes control (skipWaiting + clients.claim),
+        // reload automatically so clients get the latest HTML/JS without ever
+        // needing Ctrl+Shift+R.
+        let reloading = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!reloading) {
+            reloading = true;
+            window.location.reload();
+          }
         });
       }
 

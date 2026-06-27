@@ -390,22 +390,22 @@ export default function ShopHome() {
   };
 
   const handleAssign = async (orderId: string, destinationId: string) => {
-    setPendingWorkOrders(prev => {
-      const order = prev.find(o => o.id === orderId);
-      if (!order) return prev;
+    const order = pendingWorkOrders.find(o => o.id === orderId);
+    if (!order) return;
 
-      if (destinationId !== 'roadcall') {
-        setBays(current =>
-          current.map(bay => {
-            if (bay.id !== destinationId) return bay;
-            const exists = bay.jobs.some(job => job.id === order.id);
-            return exists ? bay : { ...bay, jobs: [...bay.jobs, { ...order, status: 'In Bay' }] };
-          })
-        );
-      }
-
-      return prev.filter(o => o.id !== orderId);
-    });
+    if (destinationId === 'roadcall') {
+      // Keep in pending queue but mark as road-call so it appears in the Roadcalls section
+      setPendingWorkOrders(prev => prev.map(o =>
+        o.id === orderId ? { ...o, serviceLocation: 'road-call' } : o
+      ));
+    } else {
+      setBays(current => current.map(bay => {
+        if (bay.id !== destinationId) return bay;
+        const exists = bay.jobs.some(job => job.id === orderId);
+        return exists ? bay : { ...bay, jobs: [...bay.jobs, { ...order, status: 'In Bay' }] };
+      }));
+      setPendingWorkOrders(prev => prev.filter(o => o.id !== orderId));
+    }
 
     // Persist assignment to server
     try {
@@ -417,23 +417,16 @@ export default function ShopHome() {
   };
 
   const handleReturnToPending = async (bayId: string, orderId: string) => {
-    let moved: Job | undefined;
-    setBays(current => {
-      const updated = current.map(bay => {
-        if (bay.id !== bayId) return bay;
-        const job = bay.jobs.find(j => j.id === orderId);
-        if (job) {
-          moved = job;
-        }
-        return { ...bay, jobs: bay.jobs.filter(j => j.id !== orderId) };
-      });
-      return updated;
-    });
+    // Read job BEFORE setState — updater functions run at render time, not synchronously
+    const sourceBay = bays.find(b => b.id === bayId);
+    const moved = sourceBay?.jobs.find(j => j.id === orderId);
+
+    setBays(current => current.map(bay =>
+      bay.id !== bayId ? bay : { ...bay, jobs: bay.jobs.filter(j => j.id !== orderId) }
+    ));
 
     if (moved) {
-      const movedJob: Job = moved;
-      setPendingWorkOrders(prev => [...prev, { ...movedJob, status: 'Pending' }]);
-
+      setPendingWorkOrders(prev => [...prev, { ...moved, status: 'Pending' }]);
       try {
         await persistPlacement(orderId, null, 'pending');
       } catch {
@@ -445,25 +438,29 @@ export default function ShopHome() {
   const handleMoveFromBay = async (orderId: string, sourceBayId: string, destinationId: string) => {
     if (sourceBayId === destinationId) return;
 
-    let moved: Job | undefined;
-    setBays((current) => {
-      const withoutSourceJob = current.map((bay) => {
-        if (bay.id !== sourceBayId) return bay;
-        const job = bay.jobs.find((j) => j.id === orderId);
-        if (job) moved = job;
-        return { ...bay, jobs: bay.jobs.filter((j) => j.id !== orderId) };
-      });
+    // Read job BEFORE setState — updater functions run at render time, not synchronously
+    const sourceBay = bays.find(b => b.id === sourceBayId);
+    const moved = sourceBay?.jobs.find(j => j.id === orderId);
+    if (!moved) return;
 
-      if (!moved) return current;
+    setBays((current) => {
+      const withoutSourceJob = current.map((bay) =>
+        bay.id !== sourceBayId ? bay : { ...bay, jobs: bay.jobs.filter((j) => j.id !== orderId) }
+      );
 
       if (destinationId === 'roadcall') return withoutSourceJob;
 
       return withoutSourceJob.map((bay) => {
         if (bay.id !== destinationId) return bay;
         const exists = bay.jobs.some((job) => job.id === orderId);
-        return exists ? bay : { ...bay, jobs: [...bay.jobs, { ...moved!, status: 'In Bay' }] };
+        return exists ? bay : { ...bay, jobs: [...bay.jobs, { ...moved, status: 'In Bay' }] };
       });
     });
+
+    // If dispatching as roadcall from a bay, add to pending queue with road-call location
+    if (destinationId === 'roadcall') {
+      setPendingWorkOrders(prev => [...prev, { ...moved, serviceLocation: 'road-call', status: 'Pending' }]);
+    }
 
     const bayNumber = destinationId.startsWith('bay-') ? Number(destinationId.replace('bay-', '')) : null;
     try {
@@ -517,8 +514,18 @@ export default function ShopHome() {
     setDraggedOrderId(null);
     setDragSourceBayId(null);
 
-    if (!orderId || !sourceBayId) return;
-    void handleReturnToPending(sourceBayId, orderId);
+    if (!orderId) return;
+
+    if (sourceBayId) {
+      // Job came from a bay — return it to the pending queue
+      void handleReturnToPending(sourceBayId, orderId);
+    } else {
+      // Job is already in pendingWorkOrders (e.g. roadcall section) — reset to in-shop walk-in
+      setPendingWorkOrders(prev => prev.map(o =>
+        o.id !== orderId ? o : { ...o, serviceLocation: 'in-shop', isAppointment: false }
+      ));
+      void persistPlacement(orderId, null, 'pending');
+    }
   };
 
   // (Mobile check was moved before the isLoading guard above)

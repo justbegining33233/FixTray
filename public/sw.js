@@ -1,20 +1,18 @@
 /* eslint-disable */
 // FixTray Service Worker — offline caching + background sync
-const CACHE_NAME = 'fixtray-v2';
-const API_CACHE   = 'fixtray-api-v2';
+const CACHE_NAME = 'fixtray-v3';
+const API_CACHE   = 'fixtray-api-v3';
 
-// App shell pages to pre-cache on install
+// Only pre-cache the offline fallback page — NOT app HTML pages.
+// HTML pages must always load from the network so clients get the
+// latest JS/CSS after every deployment without a hard refresh.
 const PRECACHE_URLS = [
-  '/auth/login',
-  '/tech/home',
-  '/manager/home',
-  '/shop/home',
-  '/workorders/list',
   '/offline',
 ];
 
-// ─── Install: pre-cache shell pages ──────────────────────────────────────────
+// ─── Install: pre-cache offline page only ────────────────────────────────────
 self.addEventListener('install', (event) => {
+  // Take control immediately so the new SW handles fetches right away.
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -43,10 +41,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET API calls — let them go to the network (mutations handled by queue)
+  // Skip non-GET requests — mutations go straight to the network.
   if (request.method !== 'GET') return;
 
-  // API routes: network-first, fall back to cached response
+  // API routes: network-first, fall back to cached response when offline.
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
@@ -71,39 +69,41 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests: network-first, fall back to cached page, then /offline
+  // Navigation requests (HTML pages): NEVER serve from cache.
+  // Always go to the network so clients get the latest HTML/JS after a deploy.
+  // Only fall back to the /offline page when there is genuinely no connection.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => cache.put(request, clone))
-            .catch(() => undefined);
-          return response;
-        })
-        .catch(() =>
-          caches.match(request).then(
-            (cached) => cached || caches.match('/auth/login')
-          )
+      fetch(request).catch(() =>
+        caches.match('/offline').then(
+          (cached) => cached || new Response('Offline', { status: 503 })
         )
+      )
     );
     return;
   }
 
-  // Static assets: cache-first
+  // Next.js hashed static assets: cache-first (filename already contains content hash).
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) => cached || fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(request, clone))
+              .catch(() => undefined);
+          }
+          return response;
+        })
+      )
+    );
+    return;
+  }
+
+  // Everything else (images, fonts, etc.): network-first.
   event.respondWith(
-    caches.match(request).then(
-      (cached) => cached || fetch(request).then((response) => {
-        if (response.ok && url.origin === self.location.origin) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => cache.put(request, clone))
-            .catch(() => undefined);
-        }
-        return response;
-      })
-    )
+    fetch(request).catch(() => caches.match(request))
   );
 });
 

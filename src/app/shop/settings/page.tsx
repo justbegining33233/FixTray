@@ -361,7 +361,9 @@ function ShopSettingsPageContent() {
           setAgreementAccepted(false);
           setAgreementSignature('');
           setAgreementSignedAt(null);
-          if (typeof window !== 'undefined') localStorage.removeItem('fixtrayAgreementAccepted');
+          // Don't clear localStorage here — only clear when the user explicitly revokes via the UI.
+          // Clearing it during load causes a redirect loop: settings clears it → layout redirects
+          // back to settings → settings clears it again, locking users out of the shop section.
         }
       }
       setSettingsLoaded(true);

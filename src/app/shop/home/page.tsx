@@ -186,7 +186,8 @@ export default function ShopHome() {
     }, 30 * 1000);
 
     return () => clearInterval(refresh);
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // use stable primitive — avoids re-fetch when checkAuth creates a new user object reference
 
   const quickActions: QuickAction[] = [
     { label: <><FaBox style={{marginRight:6}}/>Service Catalog</>, href: '/shop/services', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },

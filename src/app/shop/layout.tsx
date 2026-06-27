@@ -28,7 +28,14 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (!pathname.startsWith('/shop/')) return;
-    if (pathname.startsWith('/shop/settings') || pathname === '/shop/complete-profile') return;
+    // Home dashboard, settings, and complete-profile are always accessible
+    if (
+      pathname === '/shop/home' ||
+      pathname.startsWith('/shop/settings') ||
+      pathname === '/shop/complete-profile'
+    ) return;
+    // Only redirect authenticated users — don't interfere during auth loading
+    if (!user) return;
 
     const agreementAccepted =
       typeof window !== 'undefined' && localStorage.getItem('fixtrayAgreementAccepted') === 'true';
@@ -36,7 +43,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
     if (!agreementAccepted) {
       router.replace('/shop/settings?tab=general');
     }
-  }, [pathname, router]);
+  }, [pathname, router, user]);
 
   // /shop/home has its own MobileShell with the full tile-grid home screen.
   // All other /shop/* pages are wrapped here so they get the mobile shell chrome.

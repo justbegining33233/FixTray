@@ -220,10 +220,15 @@ export async function GET(request: NextRequest) {
     return response;
 
   } catch (error) {
-    logger.error('Error fetching work orders', error, {
-      userId: request.headers.get('x-user-id'),
-      duration: Date.now() - startTime
-    });
+    // console.error first so the error always appears in Vercel function logs
+    // even if the structured logger itself throws (e.g. winston bundling issue).
+    console.error('[workorders GET] error:', error);
+    try {
+      logger.error('Error fetching work orders', error, {
+        userId: request.headers.get('x-user-id'),
+        duration: Date.now() - startTime
+      });
+    } catch { /* logger failure must not swallow the JSON error response */ }
 
     return NextResponse.json({ error: 'Failed to fetch work orders' }, { status: 500 });
   }

@@ -68,7 +68,9 @@ const nextConfig: NextConfig = {
   },
   // Prevent Next.js from bundling optional server-side packages that are
   // dynamically imported at runtime only (e.g. email/SMS providers).
-  serverExternalPackages: ['resend', 'twilio'],
+  // winston uses dynamic requires and optional native bindings that cause
+  // webpack bundling failures in Vercel serverless functions.
+  serverExternalPackages: ['resend', 'twilio', 'winston'],
   async redirects() {
     return [
       // Legacy flat-path routes — redirect to correct nested paths

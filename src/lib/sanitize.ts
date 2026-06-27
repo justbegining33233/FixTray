@@ -1,13 +1,23 @@
-// XSS sanitization utilities — powered by DOMPurify
-import DOMPurify from 'isomorphic-dompurify';
+// XSS sanitization utilities — pure-JS server-safe implementation.
+// Previously used isomorphic-dompurify but that pulls in jsdom which has a
+// transitive dependency (html-encoding-sniffer → @exodus/bytes) that is
+// ESM-only and breaks Node.js 18 require() on Vercel (ERR_REQUIRE_ESM).
+// Work order fields are plain-text, not rich text, so stripping all HTML
+// is the correct behaviour.
 
-// Sanitize HTML using DOMPurify — strips scripts, event handlers, and dangerous content
+// Sanitize HTML — strips all tags, script blocks, and dangerous attributes.
+// Works in both browser and server without any runtime dependencies.
 export function sanitizeHtml(dirty: string): string {
   if (!dirty) return '';
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'span'],
-    ALLOWED_ATTR: ['href', 'target', 'rel'],
-  });
+  return dirty
+    // Remove complete <script>...</script> blocks first
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    // Remove all remaining HTML tags
+    .replace(/<[^>]*>/g, '')
+    // Strip javascript: URIs
+    .replace(/javascript\s*:/gi, '')
+    // Strip inline event handlers (onclick=, onload=, etc.)
+    .replace(/\bon\w+\s*=/gi, '');
 }
 
 // Sanitize string by escaping HTML special characters

@@ -40,7 +40,7 @@ export async function POST(
     if (!authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
 
     // Resolve sender display name
-    let senderName = auth.role;
+    let senderName: string = auth.role;
     if (auth.role === 'shop') {
       senderName = wo.shop?.shopName || 'Shop';
     } else if (auth.role === 'customer') {

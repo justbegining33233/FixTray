@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -192,7 +193,7 @@ export default function WorkOrderDetailPage() {
     } catch { /* ignore */ }
   }
 
-  const hasRepairs = wo.repairs || wo.maintenance || wo.partsMaterials || wo.partsUsed || wo.techLabor;
+  const hasRepairs = !!(wo.repairs || wo.maintenance || wo.partsMaterials || wo.partsUsed || wo.techLabor);
 
   return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e5e7eb' }}>

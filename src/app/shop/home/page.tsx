@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
-import { FaCar, FaIndustry, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck } from 'react-icons/fa';
+import { FaCar, FaExternalLinkAlt, FaIndustry, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck } from 'react-icons/fa';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -276,6 +276,14 @@ export default function ShopHome() {
         <span style={{ padding: '2px 6px', background: style.bg, color: style.color, borderRadius: 4, fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap' }}>
           {order.priority}
         </span>
+        <Link
+          href={`/workorders/${order.sourceId || order.id}` as Route}
+          onClick={(e) => e.stopPropagation()}
+          style={{ display: 'flex', alignItems: 'center', color: '#6b7280', fontSize: 10, padding: '2px 4px', borderRadius: 4, flexShrink: 0 }}
+          title="View work order"
+        >
+          <FaExternalLinkAlt />
+        </Link>
       </div>
     );
   };

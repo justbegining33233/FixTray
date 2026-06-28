@@ -58,6 +58,17 @@ export async function GET(
         messages: {
           orderBy: { createdAt: 'asc' },
         },
+        vehicle: {
+          select: {
+            id: true,
+            vehicleType: true,
+            make: true,
+            model: true,
+            year: true,
+            vin: true,
+            licensePlate: true,
+          },
+        },
       },
     });
     

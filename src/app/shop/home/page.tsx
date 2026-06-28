@@ -250,14 +250,6 @@ export default function ShopHome() {
     }
   ) => {
     const style = priorityStyles[order.priority] || priorityStyles.Medium;
-    const destinationOptions = [
-      ...bays.map((b) => ({ id: b.id, label: b.name })),
-      { id: 'roadcall', label: <><FaTruck style={{ marginRight: 4 }} /> Roadcall</> },
-    ];
-    const defaultDestinationId =
-      config.defaultDestination === 'roadcall' ? 'roadcall' : (destinationOptions[0]?.id || 'roadcall');
-    const selected = selectedDestinations[order.id] || defaultDestinationId;
-
     return (
       <div
         key={order.id}
@@ -266,75 +258,24 @@ export default function ShopHome() {
         onDragEnd={handleDragEnd}
         style={{
           background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 10,
-          padding: 12,
+          border: `1px solid ${config.badgeBackground}`,
+          borderRadius: 6,
+          padding: '4px 10px',
           display: 'flex',
-          flexDirection: 'column',
+          alignItems: 'center',
           gap: 8,
           cursor: 'grab',
-          opacity: draggedOrderId === order.id ? 0.6 : 1,
+          opacity: draggedOrderId === order.id ? 0.5 : 1,
+          userSelect: 'none',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#e5e7eb' }}>{order.service}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span
-              style={{
-                padding: '4px 8px',
-                background: config.badgeBackground,
-                color: config.badgeColor,
-                borderRadius: 8,
-                fontSize: 11,
-                fontWeight: 700,
-              }}
-            >
-              {config.badgeLabel}
-            </span>
-            <span
-              style={{
-                padding: '4px 8px',
-                background: style.bg,
-                color: style.color,
-                borderRadius: 8,
-                fontSize: 11,
-                fontWeight: 700,
-              }}
-            >
-              {order.priority}
-            </span>
-          </div>
-        </div>
-        <div style={{ fontSize: 12, color: '#9aa3b2' }}>
-          {order.customer} - {order.vehicle} - {order.sourceId || order.id}
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2' }}>Destination</div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 4, maxHeight: 200, overflowY: 'auto', height: '100%' }}>
-              <select
-                value={selected}
-                onChange={(e) => setSelectedDestinations((prev) => ({ ...prev, [order.id]: e.target.value }))}
-                size={destinationOptions.length}
-                style={{ width: '100%', background: 'transparent', color: '#e5e7eb', border: 'none', outline: 'none', fontSize: 12, cursor: 'pointer', height: '100%' }}
-              >
-                {destinationOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id} style={{ background: '#000000', color: '#e5e7eb' }}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button
-              onClick={() => handleAssign(order.id, selected)}
-              style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.16)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', alignSelf: 'stretch' }}
-            >
-              Dispatch to {destinationOptions.find((opt) => opt.id === selected)?.label || config.dispatchFallback}
-            </button>
-          </div>
-        </div>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#e5e7eb', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {order.service}
+        </span>
+        <span style={{ fontSize: 10, color: '#9aa3b2', whiteSpace: 'nowrap' }}>{order.customer}</span>
+        <span style={{ padding: '2px 6px', background: style.bg, color: style.color, borderRadius: 4, fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap' }}>
+          {order.priority}
+        </span>
       </div>
     );
   };

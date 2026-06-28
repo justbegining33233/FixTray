@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
 import { FaStore } from 'react-icons/fa';
 
 interface WorkOrder {
@@ -32,6 +33,7 @@ interface ShopBaysCardProps {
 }
 
 export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
+  const router = useRouter();
   const [bays, setBays] = useState<Bay[]>([]);
   const [_capacity, setCapacity] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -194,6 +196,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
           {bays.slice(0, 50).map((bay) => ( // Show first 50 bays for demo
             <div
               key={bay.id}
+              onClick={bay.isOccupied && bay.workOrder ? () => router.push(`/workorders/${bay.workOrder!.id}`) : undefined}
               style={{
                 background: bay.isOccupied
                   ? "rgba(59,130,246,0.1)"
@@ -203,7 +206,8 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                   : "1px solid rgba(255,255,255,0.06)",
                 borderRadius: 8,
                 padding: 16,
-                minHeight: 140
+                minHeight: 140,
+                cursor: bay.isOccupied && bay.workOrder ? 'pointer' : 'default',
               }}
             >
               <div style={{

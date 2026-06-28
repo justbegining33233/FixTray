@@ -20,6 +20,15 @@ interface Estimate {
   description: string;
   validUntil: string;
   lineItems?: EstimateItem[];
+  vehicle?: {
+    make?: string;
+    model?: string;
+    year?: number;
+    vehicleType?: string;
+    vin?: string;
+  };
+  techLabor?: Array<{ description?: string; hours?: number; rate?: number }>;
+  partsUsed?: Array<{ name?: string; quantity?: number; unitPrice?: number }>;
 }
 
 export default function Estimates() {
@@ -29,6 +38,7 @@ export default function Estimates() {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [shops, setShops] = useState<any[]>([]);
   const [requestServices, setRequestServices] = useState<string[]>([]);
   const [requestForm, setRequestForm] = useState({
@@ -53,22 +63,40 @@ export default function Estimates() {
 
       // Map work orders with estimates to our Estimate format
       const mapped: Estimate[] = workOrders
-        .filter((wo: any) => wo.estimate || wo.estimatedCost)
+        .filter((wo: any) => wo.estimate || wo.estimatedCost || wo.status === 'estimate-submitted')
         .map((wo: any) => {
           const est = wo.estimate || {};
           let status: 'pending' | 'accepted' | 'denied' = 'pending';
           if (wo.status === 'denied-estimate') status = 'denied';
           else if (['in-progress', 'assigned', 'closed', 'waiting-for-payment'].includes(wo.status)) status = 'accepted';
+          // estimate-submitted stays as 'pending'
+
+          const symptoms = typeof wo.issueDescription === 'object' && wo.issueDescription !== null
+            ? (wo.issueDescription as any).symptoms || JSON.stringify(wo.issueDescription)
+            : String(wo.issueDescription || '');
+
+          const techLabor = Array.isArray(wo.techLabor) ? wo.techLabor : [];
+          const partsUsed = Array.isArray(wo.partsUsed) ? wo.partsUsed : [];
+          const miscItems = Array.isArray(est.lineItems) ? est.lineItems : [];
 
           return {
             id: wo.id,
             status,
-            service: wo.issueDescription || 'Service',
+            service: symptoms.slice(0, 80) || 'Service',
             price: est.total || wo.estimatedCost || 0,
             shop: wo.shop?.shopName || 'Shop',
-            description: wo.issueDescription || '',
+            description: symptoms,
             validUntil: wo.updatedAt || wo.createdAt,
-            lineItems: est.lineItems || [],
+            lineItems: miscItems,
+            vehicle: wo.vehicle ? {
+              make: wo.vehicle.make,
+              model: wo.vehicle.model,
+              year: wo.vehicle.year,
+              vehicleType: wo.vehicle.vehicleType || wo.vehicleType,
+              vin: wo.vehicle.vin,
+            } : { vehicleType: wo.vehicleType },
+            techLabor,
+            partsUsed,
           };
         });
 
@@ -138,21 +166,20 @@ export default function Estimates() {
         return;
       }
 
-      const response = await fetch(`/api/workorders/${estimateId}`, {
-        method: 'PUT',
-        credentials: 'include',
+      const response = await fetch(`/api/workorders/${estimateId}/respond-estimate`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: 'in-progress' }),
+        body: JSON.stringify({ response: 'accepted' }),
       });
 
       if (response.ok) {
         setEstimates(prev => prev.map(est =>
           est.id === estimateId ? { ...est, status: 'accepted' as const } : est
         ));
-        setEstimateMsg({type:'success',text:'Estimate accepted successfully!'});
+        setEstimateMsg({type:'success',text:'Estimate accepted! The shop has been notified and will begin work.'});
       } else {
         const error = await response.json();
         setEstimateMsg({type:'error',text:`Error: ${error.error}`});
@@ -174,21 +201,20 @@ export default function Estimates() {
         return;
       }
 
-      const response = await fetch(`/api/workorders/${estimateId}`, {
-        method: 'PUT',
-        credentials: 'include',
+      const response = await fetch(`/api/workorders/${estimateId}/respond-estimate`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: 'denied-estimate' }),
+        body: JSON.stringify({ response: 'denied' }),
       });
 
       if (response.ok) {
         setEstimates(prev => prev.map(est =>
           est.id === estimateId ? { ...est, status: 'denied' as const } : est
         ));
-        setEstimateMsg({type:'success',text:'Estimate denied successfully!'});
+        setEstimateMsg({type:'success',text:'Estimate denied. The shop has been notified.'});
       } else {
         const error = await response.json();
         setEstimateMsg({type:'error',text:`Error: ${error.error}`});
@@ -361,61 +387,111 @@ export default function Estimates() {
                   borderRadius:12,
                   padding:24
                 }}>
-                  <div style={{marginBottom:20}}>
+                  <div style={{marginBottom:16}}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
-                      <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{estimate.service}</h3>
-                      <span style={{
-                        padding:'4px 12px',
-                        background: 'rgba(245,158,11,0.2)',
-                        color: '#f59e0b',
-                        borderRadius:12,
-                        fontSize:12,
-                        fontWeight:600
-                      }}>
-                        {estimate.status === 'pending' ? 'PENDING' : estimate.status === 'accepted' ? 'APPROVED' : 'DENIED'}
+                      <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>{estimate.shop}</h3>
+                      <span style={{padding:'4px 12px', background:'rgba(245,158,11,0.2)', color:'#f59e0b', borderRadius:12, fontSize:12, fontWeight:600}}>
+                        PENDING REVIEW
                       </span>
                     </div>
-                    <div style={{fontSize:18, color:'#e5332a', fontWeight:700, marginBottom:8}}>${estimate.price.toFixed(2)}</div>
-                    <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{estimate.shop}</div>
-                    <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5, marginBottom:12}}>{estimate.description}</div>
-                    <div style={{fontSize:12, color:'#6b7280'}}>Valid until: {estimate.validUntil}</div>
+                    <div style={{fontSize:24, color:'#e5332a', fontWeight:800, marginBottom:4}}>${estimate.price.toFixed(2)}</div>
+                    <div style={{fontSize:13, color:'#9aa3b2'}}>
+                      Submitted {new Date(estimate.validUntil).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'})}
+                    </div>
                   </div>
+
+                  {/* Expand / collapse full work order details */}
+                  <button
+                    onClick={() => setExpandedId(expandedId === estimate.id ? null : estimate.id)}
+                    style={{width:'100%', marginBottom:12, padding:'8px 0', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#9aa3b2', fontSize:13, fontWeight:600, cursor:'pointer'}}
+                  >
+                    {expandedId === estimate.id ? '▲ Hide Details' : '▼ View Full Work Order Details'}
+                  </button>
+
+                  {expandedId === estimate.id && (
+                    <div style={{marginBottom:16, background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:16}}>
+                      {/* Vehicle */}
+                      {estimate.vehicle && (
+                        <div style={{marginBottom:14}}>
+                          <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6}}>Vehicle</div>
+                          <div style={{fontSize:14, color:'#e5e7eb'}}>
+                            {[estimate.vehicle.year, estimate.vehicle.make, estimate.vehicle.model].filter(Boolean).join(' ') || estimate.vehicle.vehicleType || '—'}
+                            {estimate.vehicle.vin && <span style={{fontSize:12, color:'#6b7280', marginLeft:8}}>VIN: {estimate.vehicle.vin}</span>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Issue */}
+                      <div style={{marginBottom:14}}>
+                        <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6}}>Issue / Service</div>
+                        <div style={{fontSize:13, color:'#e5e7eb', lineHeight:1.6, whiteSpace:'pre-wrap'}}>{estimate.description || '—'}</div>
+                      </div>
+
+                      {/* Line Items */}
+                      {((estimate.techLabor?.length ?? 0) + (estimate.partsUsed?.length ?? 0) + (estimate.lineItems?.length ?? 0)) > 0 && (
+                        <div>
+                          <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>Estimate Breakdown</div>
+                          <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+                            <thead>
+                              <tr style={{borderBottom:'1px solid rgba(255,255,255,0.08)'}}>
+                                <th style={{textAlign:'left', padding:'4px 6px', color:'#6b7280', fontSize:11, fontWeight:700}}>Description</th>
+                                <th style={{textAlign:'right', padding:'4px 6px', color:'#6b7280', fontSize:11, fontWeight:700}}>Qty</th>
+                                <th style={{textAlign:'right', padding:'4px 6px', color:'#6b7280', fontSize:11, fontWeight:700}}>Rate</th>
+                                <th style={{textAlign:'right', padding:'4px 6px', color:'#6b7280', fontSize:11, fontWeight:700}}>Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {estimate.techLabor?.map((item, i) => (
+                                <tr key={`labor-${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb'}}>{item.description || 'Labor'} <span style={{fontSize:10, color:'#60a5fa', marginLeft:4}}>LABOR</span></td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>{item.hours ?? 1}</td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>${(item.rate ?? 0).toFixed(2)}/hr</td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right', fontWeight:600}}>${((item.hours ?? 1) * (item.rate ?? 0)).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              {estimate.partsUsed?.map((item, i) => (
+                                <tr key={`part-${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb'}}>{item.name || 'Part'} <span style={{fontSize:10, color:'#a78bfa', marginLeft:4}}>PART</span></td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>{item.quantity ?? 1}</td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>${(item.unitPrice ?? 0).toFixed(2)}</td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right', fontWeight:600}}>${((item.quantity ?? 1) * (item.unitPrice ?? 0)).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              {estimate.lineItems?.map((item, i) => (
+                                <tr key={`misc-${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb'}}>{item.description || 'Misc'}</td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>{item.quantity}</td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>${item.unitPrice.toFixed(2)}</td>
+                                  <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right', fontWeight:600}}>${item.total.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr style={{borderTop:'2px solid rgba(255,255,255,0.12)'}}>
+                                <td colSpan={3} style={{padding:'8px 6px', fontWeight:700, color:'#e5e7eb', textAlign:'right'}}>TOTAL</td>
+                                <td style={{padding:'8px 6px', fontWeight:800, color:'#22c55e', textAlign:'right', fontSize:15}}>${estimate.price.toFixed(2)}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div style={{display:'flex', gap:12}}>
                     <button
                       onClick={() => handleAccept(estimate.id)}
                       disabled={loading === estimate.id}
-                      style={{
-                        flex:1,
-                        padding:'12px',
-                        background: loading === estimate.id ? '#16a34a' : '#22c55e',
-                        color:'white',
-                        border:'none',
-                        borderRadius:8,
-                        fontSize:14,
-                        fontWeight:600,
-                        cursor: loading === estimate.id ? 'not-allowed' : 'pointer',
-                        opacity: loading === estimate.id ? 0.7 : 1
-                      }}
+                      style={{flex:1, padding:'12px', background: loading === estimate.id ? '#16a34a' : '#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor: loading === estimate.id ? 'not-allowed' : 'pointer', opacity: loading === estimate.id ? 0.7 : 1}}
                     >
-                      {loading === estimate.id ? 'Accepting...' : <><FaCheckCircle style={{marginRight:4}} /> Accept Estimate</>}
+                      {loading === estimate.id ? 'Processing...' : <><FaCheckCircle style={{marginRight:4}} /> Accept Estimate</>}
                     </button>
                     <button
                       onClick={() => handleDeny(estimate.id)}
                       disabled={loading === estimate.id}
-                      style={{
-                        flex:1,
-                        padding:'12px',
-                        background: loading === estimate.id ? '#dc2626' : '#ef4444',
-                        color:'white',
-                        border:'none',
-                        borderRadius:8,
-                        fontSize:14,
-                        fontWeight:600,
-                        cursor: loading === estimate.id ? 'not-allowed' : 'pointer',
-                        opacity: loading === estimate.id ? 0.7 : 1
-                      }}
+                      style={{flex:1, padding:'12px', background: loading === estimate.id ? '#dc2626' : '#ef4444', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor: loading === estimate.id ? 'not-allowed' : 'pointer', opacity: loading === estimate.id ? 0.7 : 1}}
                     >
-                      {loading === estimate.id ? 'Denying...' : <><FaTimesCircle style={{marginRight:4}} /> Deny Estimate</>}
+                      {loading === estimate.id ? 'Processing...' : <><FaTimesCircle style={{marginRight:4}} /> Deny Estimate</>}
                     </button>
                   </div>
                 </div>

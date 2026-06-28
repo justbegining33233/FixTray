@@ -6,7 +6,7 @@ import {
   FaArrowLeft, FaUser, FaCar, FaWrench, FaMapMarkerAlt,
   FaCalendarAlt, FaDollarSign, FaComment, FaBox, FaTruck,
   FaCheckCircle, FaClock, FaExclamationCircle, FaPlus, FaTrash,
-  FaPaperPlane, FaSave,
+  FaPaperPlane, FaSave, FaEnvelope, FaSearch, FaPaperclip, FaTimes, FaStopwatch,
 } from 'react-icons/fa';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,6 +29,9 @@ type WorkOrder = {
   vehicle?: Vehicle | null;
   messages?: WOMessage[];
 };
+
+type InvItem = { id: string; name: string; sku?: string | null; price: number; quantity: number; type: string; rate?: number | null };
+type SvcItem = { id: string; serviceName: string; category: string; price?: number | null; duration?: number | null; description?: string | null };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -71,6 +74,7 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; icon: React.Rea
   assigned:              { bg: 'rgba(59,130,246,0.15)',  color: '#60a5fa',  icon: <FaWrench /> },
   'in-progress':         { bg: 'rgba(59,130,246,0.15)',  color: '#60a5fa',  icon: <FaWrench /> },
   'waiting-estimate':    { bg: 'rgba(139,92,246,0.15)',  color: '#a78bfa',  icon: <FaClock /> },
+  'estimate-submitted':  { bg: 'rgba(96,165,250,0.15)',  color: '#60a5fa',  icon: <FaEnvelope /> },
   'waiting-for-payment': { bg: 'rgba(239,68,68,0.15)',   color: '#f87171',  icon: <FaDollarSign /> },
   completed:             { bg: 'rgba(34,197,94,0.15)',   color: '#22c55e',  icon: <FaCheckCircle /> },
   cancelled:             { bg: 'rgba(107,114,128,0.15)', color: '#9ca3af',  icon: <FaExclamationCircle /> },
@@ -135,15 +139,56 @@ export default function WorkOrderDetailPage() {
   const [saving,     setSaving]       = useState(false);
   const [saveMsg,    setSaveMsg]      = useState('');
 
+  // Submit estimate state
+  const [submittingEst, setSubmittingEst] = useState(false);
+  const [submitEstMsg,  setSubmitEstMsg]  = useState('');
+  const [userRole,      setUserRole]      = useState<string | null>(null);
+
   // Messaging state
   const [messages,   setMessages]     = useState<WOMessage[]>([]);
   const [msgText,    setMsgText]      = useState('');
   const [sending,    setSending]      = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load work order
+  // Media attachments in messages
+  const [pendingMedia,    setPendingMedia]    = useState<string[]>([]);
+  const [uploadingMedia,  setUploadingMedia]  = useState(false);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+
+  // Add line item modal
+  const [showItemModal,   setShowItemModal]   = useState(false);
+  const [modalTab,        setModalTab]        = useState<'inventory' | 'services' | 'pickup'>('inventory');
+  const [inventoryItems,  setInventoryItems]  = useState<InvItem[]>([]);
+  const [shopServices,    setShopServices]    = useState<SvcItem[]>([]);
+  const [shopMarkup,      setShopMarkup]      = useState(0.30);
+  const [itemSearch,      setItemSearch]      = useState('');
+  const [modalLoading,    setModalLoading]    = useState(false);
+  const [poVendor,        setPoVendor]        = useState('');
+  const [poPartName,      setPoPartName]      = useState('');
+  const [poSku,           setPoSku]           = useState('');
+  const [poCost,          setPoCost]          = useState<number>(0);
+  const [poQty,           setPoQty]           = useState<number>(1);
+
+  // Clock in / out
+  const [userId,       setUserId]       = useState<string | null>(null);
+  const [userShopId,   setUserShopId]   = useState<string | null>(null);
+  const [clockEntry,   setClockEntry]   = useState<{ id: string; clockIn: string } | null>(null);
+  const [clockLoading, setClockLoading] = useState(false);
+  const [clockMsg,     setClockMsg]     = useState('');
+  const [clockTimer,   setClockTimer]   = useState('');
+
+  // Load work order + read userRole/userId/shopId from localStorage
   useEffect(() => {
     if (!id) return;
+    let role: string | null = null;
+    let uid2: string | null = null;
+    if (typeof window !== 'undefined') {
+      role = localStorage.getItem('userRole');
+      uid2 = localStorage.getItem('userId');
+      setUserRole(role);
+      setUserId(uid2);
+      setUserShopId(localStorage.getItem('shopId'));
+    }
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     fetch(`/api/workorders/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -157,12 +202,53 @@ export default function WorkOrderDetailPage() {
         code === 404 ? 'Work order not found.' : code === 403 ? 'Not authorized.' : 'Failed to load work order.'
       ))
       .finally(() => setLoading(false));
+
+    // Check if tech/manager already has an open clock-in for today
+    if ((role === 'tech' || role === 'manager') && uid2 && token) {
+      const today = new Date().toISOString().split('T')[0];
+      fetch(`/api/time-tracking?techId=${uid2}&startDate=${today}&endDate=${today}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.timeEntries) {
+            const open = (d.timeEntries as Array<{ id: string; clockIn: string; clockOut?: string | null }>)
+              .find(e => !e.clockOut);
+            if (open) setClockEntry({ id: open.id, clockIn: open.clockIn });
+          }
+        })
+        .catch(() => {});
+    }
   }, [id]);
 
   // Scroll messages to bottom when new ones arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Live clock timer
+  useEffect(() => {
+    if (!clockEntry) { setClockTimer(''); return; }
+    const update = () => {
+      const elapsed = Date.now() - new Date(clockEntry.clockIn).getTime();
+      const h = Math.floor(elapsed / 3600000);
+      const m = Math.floor((elapsed % 3600000) / 60000);
+      const s = Math.floor((elapsed % 60000) / 1000);
+      setClockTimer(`${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [clockEntry]);
+
+  // ── Parse message body (supports embedded media JSON) ─────────────────────
+  function parseMessageBody(body: string): { text: string; media: string[] } {
+    try {
+      const p = JSON.parse(body);
+      if (p && typeof p.t === 'string' && Array.isArray(p.m)) return { text: p.t, media: p.m as string[] };
+    } catch { /* plain text */ }
+    return { text: body, media: [] };
+  }
 
   // ── Computed totals ────────────────────────────────────────────────────────
   const grandTotal = lineItems.reduce((s, li) => s + li.price * li.qty, 0);
@@ -199,23 +285,195 @@ export default function WorkOrderDetailPage() {
     finally { setSaving(false); }
   };
 
-  // ── Send message ──────────────────────────────────────────────────────────
+  // ── Submit estimate to customer ───────────────────────────────────────────
+  const handleSubmitEstimate = async () => {
+    if (!id) return;
+    if (grandTotal === 0) { setSubmitEstMsg('Add line items first.'); setTimeout(() => setSubmitEstMsg(''), 3000); return; }
+    setSubmittingEst(true); setSubmitEstMsg('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/workorders/${id}/submit-estimate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (res.ok) {
+        setSubmitEstMsg('Submitted!');
+        // Refresh work order to show updated status
+        const r = await fetch(`/api/workorders/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (r.ok) { const d = await r.json(); setWo(d?.workOrder ?? d); }
+        setTimeout(() => setSubmitEstMsg(''), 4000);
+      } else {
+        const d = await res.json();
+        setSubmitEstMsg(d.error || 'Failed.');
+        setTimeout(() => setSubmitEstMsg(''), 4000);
+      }
+    } catch { setSubmitEstMsg('Failed.'); setTimeout(() => setSubmitEstMsg(''), 3000); }
+    finally { setSubmittingEst(false); }
+  };
+
+  // ── Send message (with optional media) ───────────────────────────────────
   const handleSendMessage = async () => {
-    if (!id || !msgText.trim()) return;
+    if (!id || (!msgText.trim() && pendingMedia.length === 0)) return;
     setSending(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
+      const bodyVal = pendingMedia.length > 0
+        ? JSON.stringify({ t: msgText.trim(), m: pendingMedia })
+        : msgText.trim();
       const res = await fetch(`/api/workorders/${id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ body: msgText.trim() }),
+        body: JSON.stringify({ body: bodyVal }),
       });
       if (res.ok) {
         const data = await res.json();
         setMessages(prev => [...prev, data.message]);
         setMsgText('');
+        setPendingMedia([]);
       }
     } finally { setSending(false); }
+  };
+
+  // ── Upload media attachment ───────────────────────────────────────────────
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingMedia(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('folder', 'workorder-messages');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (res.ok) {
+        const { url } = await res.json();
+        setPendingMedia(prev => [...prev, url]);
+      }
+    } catch { /* ignore */ }
+    finally {
+      setUploadingMedia(false);
+      if (mediaInputRef.current) mediaInputRef.current.value = '';
+    }
+  };
+
+  // ── Open add-item modal + fetch shop data ─────────────────────────────────
+  const handleOpenItemModal = async () => {
+    setShowItemModal(true);
+    setModalTab('inventory');
+    setItemSearch('');
+    if (inventoryItems.length > 0 || shopServices.length > 0) return; // already loaded
+    setModalLoading(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const shopId2 = typeof window !== 'undefined' ? localStorage.getItem('shopId') : null;
+    if (!shopId2) { setModalLoading(false); return; }
+    try {
+      const [invRes, svcRes, settingsRes] = await Promise.all([
+        fetch(`/api/inventory?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+        fetch(`/api/services?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+        fetch(`/api/shop/settings?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+      ]);
+      if (invRes.ok) { const d = await invRes.json(); setInventoryItems(d.items || []); }
+      if (svcRes.ok) { const d = await svcRes.json(); setShopServices(d.services || []); }
+      if (settingsRes.ok) { const d = await settingsRes.json(); setShopMarkup(d.settings?.inventoryMarkup ?? 0.30); }
+    } catch { /* ignore */ }
+    finally { setModalLoading(false); }
+  };
+
+  // ── Add inventory item to line items ──────────────────────────────────────
+  const handleAddInventoryItem = (item: InvItem) => {
+    setLineItems(prev => [...prev, {
+      _key: uid(), type: item.type === 'labor' ? 'labor' : 'part',
+      description: item.name, partNumber: item.sku || '',
+      price: item.type === 'labor' ? (item.rate ?? item.price) : item.price,
+      qty: 1, status: 'new',
+    }]);
+    setShowItemModal(false);
+  };
+
+  // ── Add service to line items ─────────────────────────────────────────────
+  const handleAddService = (svc: SvcItem) => {
+    setLineItems(prev => [...prev, {
+      _key: uid(), type: 'labor',
+      description: svc.serviceName, partNumber: '',
+      price: svc.price ?? 0,
+      qty: svc.duration ? Math.round((svc.duration / 60) * 4) / 4 : 1, // duration in minutes → hours (0.25 increments)
+      status: 'new',
+    }]);
+    setShowItemModal(false);
+  };
+
+  // ── Add part pickup + create PO ───────────────────────────────────────────
+  const handleAddPartPickup = async () => {
+    if (!poPartName.trim() || !poVendor.trim()) return;
+    const sellingPrice = poCost * (1 + shopMarkup);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const shopId2 = typeof window !== 'undefined' ? localStorage.getItem('shopId') : null;
+    const userId2 = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+    if (shopId2 && poVendor.trim()) {
+      try {
+        await fetch('/api/purchase-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({
+            shopId: shopId2, vendor: poVendor.trim(), createdById: userId2,
+            items: [{ itemName: poPartName.trim(), sku: poSku.trim() || undefined, quantity: poQty, unitCost: poCost, workOrderId: id }],
+          }),
+        });
+      } catch { /* non-blocking */ }
+    }
+    setLineItems(prev => [...prev, {
+      _key: uid(), type: 'part',
+      description: `${poPartName.trim()} (PO: ${poVendor.trim()})`,
+      partNumber: poSku.trim(), price: sellingPrice, qty: poQty, status: 'new',
+    }]);
+    setPoVendor(''); setPoPartName(''); setPoSku(''); setPoCost(0); setPoQty(1);
+    setShowItemModal(false);
+  };
+
+  // ── Clock in ──────────────────────────────────────────────────────────────
+  const handleClockIn = async () => {
+    if (!userId || !userShopId) return;
+    setClockLoading(true); setClockMsg('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch('/api/time-tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ action: 'clock-in', techId: userId, shopId: userShopId, workOrderId: id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setClockEntry({ id: data.timeEntry.id, clockIn: data.timeEntry.clockIn });
+        setClockMsg('Clocked in!');
+      } else {
+        if (data.entry) setClockEntry({ id: data.entry.id, clockIn: data.entry.clockIn });
+        setClockMsg(data.error || 'Failed.');
+      }
+      setTimeout(() => setClockMsg(''), 3000);
+    } catch { setClockMsg('Failed.'); setTimeout(() => setClockMsg(''), 3000); }
+    finally { setClockLoading(false); }
+  };
+
+  // ── Clock out ─────────────────────────────────────────────────────────────
+  const handleClockOut = async () => {
+    if (!userId || !userShopId) return;
+    setClockLoading(true); setClockMsg('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch('/api/time-tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ action: 'clock-out', techId: userId, shopId: userShopId }),
+      });
+      if (res.ok) { setClockEntry(null); setClockMsg('Clocked out!'); }
+      else { const d = await res.json(); setClockMsg(d.error || 'Failed.'); }
+      setTimeout(() => setClockMsg(''), 3000);
+    } catch { setClockMsg('Failed.'); setTimeout(() => setClockMsg(''), 3000); }
+    finally { setClockLoading(false); }
   };
 
   // ─── Loading / error states ──────────────────────────────────────────────
@@ -272,6 +530,29 @@ export default function WorkOrderDetailPage() {
             </span>
           )}
         </div>
+
+        {/* ── Clock In / Out ── */}
+        {(userRole === 'tech' || userRole === 'manager') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {clockTimer && (
+              <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 700, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <FaStopwatch style={{ fontSize: 11 }} /> {clockTimer}
+              </span>
+            )}
+            {clockMsg && (
+              <span style={{ fontSize: 11, color: clockMsg.includes('!') ? '#22c55e' : '#f87171' }}>{clockMsg}</span>
+            )}
+            <button
+              onClick={clockEntry ? handleClockOut : handleClockIn}
+              disabled={clockLoading || !userId}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: clockEntry ? 'rgba(229,51,42,0.15)' : 'rgba(34,197,94,0.15)', border: `1px solid ${clockEntry ? 'rgba(229,51,42,0.3)' : 'rgba(34,197,94,0.3)'}`, color: clockEntry ? '#e5332a' : '#22c55e', fontSize: 12, fontWeight: 700, borderRadius: 8, padding: '7px 14px', cursor: clockLoading ? 'not-allowed' : 'pointer', opacity: clockLoading ? 0.6 : 1 }}
+            >
+              <FaClock style={{ fontSize: 11 }} />
+              {clockLoading ? '…' : clockEntry ? 'Clock Out' : 'Clock In'}
+            </button>
+          </div>
+        )}
+
         <span style={{ fontSize: 12, color: '#6b7280' }}>
           Created {new Date(wo.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}{' '}
           {new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -324,9 +605,16 @@ export default function WorkOrderDetailPage() {
             title="Line Items"
             icon={<FaBox />}
             action={
-              <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 5, background: saving ? 'transparent' : saveMsg === 'Saved!' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${saveMsg === 'Saved!' ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`, color: saveMsg === 'Saved!' ? '#22c55e' : '#e5e7eb', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
-                <FaSave style={{ fontSize: 11 }} /> {saving ? 'Saving…' : saveMsg || 'Save'}
-              </button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 5, background: saving ? 'transparent' : saveMsg === 'Saved!' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${saveMsg === 'Saved!' ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`, color: saveMsg === 'Saved!' ? '#22c55e' : '#e5e7eb', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                  <FaSave style={{ fontSize: 11 }} /> {saving ? 'Saving…' : saveMsg || 'Save'}
+                </button>
+                {userRole !== 'customer' && (
+                  <button onClick={handleSubmitEstimate} disabled={submittingEst} style={{ display: 'flex', alignItems: 'center', gap: 5, background: submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.15)' : 'rgba(96,165,250,0.12)', border: `1px solid ${submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.3)' : 'rgba(96,165,250,0.3)'}`, color: submitEstMsg === 'Submitted!' ? '#22c55e' : '#60a5fa', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: submittingEst ? 'not-allowed' : 'pointer', opacity: submittingEst ? 0.6 : 1 }}>
+                    <FaEnvelope style={{ fontSize: 11 }} /> {submittingEst ? 'Submitting…' : submitEstMsg || 'Submit Estimate'}
+                  </button>
+                )}
+              </div>
             }
           >
             <div style={{ overflowX: 'auto' }}>
@@ -385,7 +673,7 @@ export default function WorkOrderDetailPage() {
 
             {/* Add row + totals */}
             <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <button onClick={() => setLineItems(prev => [...prev, { _key: uid(), type: 'part', description: '', partNumber: '', price: 0, qty: 1, status: 'new' }])} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', color: '#9aa3b2', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer' }}>
+              <button onClick={handleOpenItemModal} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', color: '#9aa3b2', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer' }}>
                 <FaPlus style={{ fontSize: 10 }} /> Add Line Item
               </button>
               {grandTotal > 0 && (
@@ -420,6 +708,7 @@ export default function WorkOrderDetailPage() {
               )}
               {messages.map(msg => {
                 const isShop = ['shop', 'tech', 'manager'].includes(msg.sender);
+                const parsed = parseMessageBody(msg.body);
                 return (
                   <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isShop ? 'flex-end' : 'flex-start' }}>
                     <div style={{
@@ -428,7 +717,13 @@ export default function WorkOrderDetailPage() {
                       border: `1px solid ${isShop ? 'rgba(229,51,42,0.3)' : 'rgba(255,255,255,0.1)'}`,
                     }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: isShop ? '#e5332a' : '#60a5fa', marginBottom: 4 }}>{msg.senderName || msg.sender}</div>
-                      <p style={{ margin: 0, fontSize: 13, color: '#e5e7eb', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{msg.body}</p>
+                      {parsed.text && <p style={{ margin: 0, fontSize: 13, color: '#e5e7eb', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{parsed.text}</p>}
+                      {parsed.media.map((url, i) => {
+                        const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
+                        return isVid
+                          ? <video key={i} src={url} controls style={{ maxWidth: '100%', borderRadius: 6, marginTop: parsed.text ? 6 : 0, display: 'block' }} />
+                          : <img key={i} src={url} alt="attachment" onClick={() => window.open(url, '_blank')} style={{ maxWidth: '100%', borderRadius: 6, marginTop: parsed.text ? 6 : 0, display: 'block', cursor: 'pointer' }} />;
+                      })}
                     </div>
                     <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2, paddingInline: 4 }}>
                       {new Date(msg.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}{' '}
@@ -440,8 +735,35 @@ export default function WorkOrderDetailPage() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Pending media previews */}
+            {pendingMedia.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                {pendingMedia.map((url, i) => (
+                  <div key={i} style={{ position: 'relative', display: 'inline-block' }}>
+                    {/\.(mp4|webm|mov|avi)(\?|$)/i.test(url)
+                      ? <video src={url} style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, background: '#000' }} />
+                      : <img src={url} alt="" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6 }} />
+                    }
+                    <button onClick={() => setPendingMedia(prev => prev.filter((_, j) => j !== i))}
+                      style={{ position: 'absolute', top: -6, right: -6, background: '#e5332a', border: 'none', borderRadius: '50%', width: 18, height: 18, color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                      <FaTimes />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Compose */}
+            <input ref={mediaInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={handleMediaUpload} />
             <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => mediaInputRef.current?.click()}
+                disabled={uploadingMedia}
+                title="Attach photo or video"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: uploadingMedia ? '#f59e0b' : '#9aa3b2', cursor: 'pointer', fontSize: 15 }}
+              >
+                {uploadingMedia ? '⏳' : <FaPaperclip />}
+              </button>
               <textarea
                 value={msgText}
                 onChange={e => setMsgText(e.target.value)}
@@ -452,8 +774,8 @@ export default function WorkOrderDetailPage() {
               />
               <button
                 onClick={handleSendMessage}
-                disabled={sending || !msgText.trim()}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 16px', background: 'rgba(229,51,42,0.18)', border: '1px solid rgba(229,51,42,0.3)', color: '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!msgText.trim() || sending) ? 0.5 : 1 }}
+                disabled={sending || (!msgText.trim() && pendingMedia.length === 0)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 16px', background: 'rgba(229,51,42,0.18)', border: '1px solid rgba(229,51,42,0.3)', color: '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: ((!msgText.trim() && pendingMedia.length === 0) || sending) ? 0.5 : 1 }}
               >
                 <FaPaperPlane style={{ fontSize: 12 }} /> {sending ? '…' : 'Send'}
               </button>
@@ -472,6 +794,143 @@ export default function WorkOrderDetailPage() {
         </div>
 
       </div>
+
+      {/* ── Add Line Item Modal ── */}
+      {showItemModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setShowItemModal(false)}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, width: '100%', maxWidth: 620, maxHeight: '82vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#e5e7eb' }}>Add Line Item</span>
+              <button onClick={() => setShowItemModal(false)} style={{ background: 'none', border: 'none', color: '#9aa3b2', cursor: 'pointer', fontSize: 16, padding: 4 }}><FaTimes /></button>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              {(['inventory', 'services', 'pickup'] as const).map(tab => (
+                <button key={tab} onClick={() => { setModalTab(tab); setItemSearch(''); }}
+                  style={{ flex: 1, padding: '10px 4px', background: 'none', border: 'none', borderBottom: `2px solid ${modalTab === tab ? '#e5332a' : 'transparent'}`, color: modalTab === tab ? '#e5332a' : '#9aa3b2', fontSize: 12, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {tab === 'pickup' ? 'Part Pickup (PO)' : tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+              {modalLoading ? (
+                <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40, fontSize: 13 }}>Loading shop data…</div>
+              ) : modalTab === 'inventory' ? (
+                <>
+                  <div style={{ position: 'relative', marginBottom: 12 }}>
+                    <FaSearch style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: 12, pointerEvents: 'none' }} />
+                    <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder="Search inventory by name or SKU…" autoFocus
+                      style={{ ...inputStyle, paddingLeft: 30 }} />
+                  </div>
+                  {inventoryItems
+                    .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()) || (it.sku || '').toLowerCase().includes(itemSearch.toLowerCase()))
+                    .length === 0
+                    ? <div style={{ textAlign: 'center', color: '#6b7280', padding: '28px 0', fontSize: 13 }}>No inventory items found.</div>
+                    : inventoryItems
+                        .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()) || (it.sku || '').toLowerCase().includes(itemSearch.toLowerCase()))
+                        .map(item => (
+                          <div key={item.id} onClick={() => handleAddInventoryItem(item)}
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', marginBottom: 6, cursor: 'pointer' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(229,51,42,0.08)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb' }}>{item.name}</div>
+                              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                                {item.sku ? `SKU: ${item.sku}` : ''}{item.sku ? ' · ' : ''}Qty in stock: {item.quantity}{item.type === 'labor' ? ' · Labor' : ''}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#22c55e', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                              {item.type === 'labor' && item.rate != null ? `$${item.rate}/hr` : `$${item.price.toFixed(2)}`}
+                            </div>
+                          </div>
+                        ))
+                  }
+                </>
+              ) : modalTab === 'services' ? (
+                <>
+                  <div style={{ position: 'relative', marginBottom: 12 }}>
+                    <FaSearch style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: 12, pointerEvents: 'none' }} />
+                    <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder="Search services by name or category…" autoFocus
+                      style={{ ...inputStyle, paddingLeft: 30 }} />
+                  </div>
+                  {shopServices
+                    .filter(s => !itemSearch || s.serviceName.toLowerCase().includes(itemSearch.toLowerCase()) || s.category.toLowerCase().includes(itemSearch.toLowerCase()))
+                    .length === 0
+                    ? <div style={{ textAlign: 'center', color: '#6b7280', padding: '28px 0', fontSize: 13 }}>No services found.</div>
+                    : shopServices
+                        .filter(s => !itemSearch || s.serviceName.toLowerCase().includes(itemSearch.toLowerCase()) || s.category.toLowerCase().includes(itemSearch.toLowerCase()))
+                        .map(svc => (
+                          <div key={svc.id} onClick={() => handleAddService(svc)}
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', marginBottom: 6, cursor: 'pointer' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(229,51,42,0.08)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb' }}>{svc.serviceName}</div>
+                              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2, textTransform: 'capitalize' }}>
+                                {svc.category}{svc.duration ? ` · ${svc.duration} min` : ''}{svc.description ? ` · ${svc.description}` : ''}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#22c55e', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                              {svc.price != null ? `$${svc.price.toFixed(2)}` : 'Custom'}
+                            </div>
+                          </div>
+                        ))
+                  }
+                </>
+              ) : (
+                /* Part Pickup / PO form */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, fontSize: 12, color: '#f59e0b', lineHeight: 1.5 }}>
+                    A Purchase Order will be created automatically when you add this item. The shop markup of <strong>{(shopMarkup * 100).toFixed(0)}%</strong> is applied to your cost to set the customer price.
+                  </div>
+                  {([
+                    { label: 'Vendor / Supplier *', value: poVendor, set: setPoVendor, placeholder: 'e.g. NAPA Auto Parts' },
+                    { label: 'Part Name *', value: poPartName, set: setPoPartName, placeholder: 'e.g. Oil Filter' },
+                    { label: 'Part Number / SKU', value: poSku, set: setPoSku, placeholder: 'Optional' },
+                  ] as { label: string; value: string; set: (v: string) => void; placeholder: string }[]).map(({ label, value, set, placeholder }) => (
+                    <div key={label}>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{label}</div>
+                      <input value={value} onChange={e => set(e.target.value)} placeholder={placeholder} style={inputStyle} />
+                    </div>
+                  ))}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Your Cost ($) *</div>
+                      <input type="number" min={0} step={0.01} value={poCost} onChange={e => setPoCost(Number(e.target.value))} style={{ ...inputStyle, textAlign: 'right' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Quantity *</div>
+                      <input type="number" min={1} step={1} value={poQty} onChange={e => setPoQty(Math.max(1, Number(e.target.value)))} style={{ ...inputStyle, textAlign: 'right' }} />
+                    </div>
+                  </div>
+                  {poCost > 0 && (
+                    <div style={{ padding: '12px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#6b7280' }}>Unit cost: ${poCost.toFixed(2)} + {(shopMarkup * 100).toFixed(0)}% markup</div>
+                        <div style={{ fontSize: 11, color: '#6b7280' }}>Customer unit price: ${(poCost * (1 + shopMarkup)).toFixed(2)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#9aa3b2', textAlign: 'right' }}>Total (×{poQty})</div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: '#22c55e' }}>${(poCost * (1 + shopMarkup) * poQty).toFixed(2)}</div>
+                      </div>
+                    </div>
+                  )}
+                  <button onClick={handleAddPartPickup} disabled={!poPartName.trim() || !poVendor.trim() || poCost <= 0}
+                    style={{ padding: '10px 16px', background: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'rgba(255,255,255,0.04)' : 'rgba(229,51,42,0.18)', border: `1px solid ${(!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'rgba(255,255,255,0.08)' : 'rgba(229,51,42,0.3)'}`, color: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? '#4b5563' : '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'not-allowed' : 'pointer' }}>
+                    Add Part Pickup &amp; Create PO
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }

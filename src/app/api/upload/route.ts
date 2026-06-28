@@ -5,8 +5,8 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB (supports video)
 
 function sanitizeFolder(raw: string): string {
   return raw.replace(/[^a-zA-Z0-9_\-]/g, '').slice(0, 50) || 'work-orders';

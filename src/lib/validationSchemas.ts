@@ -10,7 +10,7 @@ import { z } from 'zod';
 // Work Order Schemas
 export const workOrderUpdateSchema = z.object({
   issueDescription: z.string().max(5000).optional(),
-  status: z.enum(['pending', 'assigned', 'in-progress', 'waiting-estimate', 'waiting-for-payment', 'closed', 'denied-estimate']).optional(),
+  status: z.enum(['pending', 'assigned', 'in-progress', 'waiting-estimate', 'estimate-submitted', 'waiting-for-payment', 'closed', 'denied-estimate']).optional(),
   bay: z.number().int().min(1).max(999).nullable().optional(),
   assignedTechId: z.string().uuid().nullable().optional(),
   customerId: z.string().uuid().optional(),

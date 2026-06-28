@@ -13,7 +13,6 @@ import {
   FaClipboardList,
   FaCar,
   FaHeart,
-  FaComments,
   FaUser,
   FaBell,
   FaSignOutAlt,
@@ -61,13 +60,6 @@ export default function CustomerNavigation({ unreadMessages = 0, activeOrders = 
       href: '/customer/favorites',
       icon: FaHeart,
       description: 'Saved shops and services'
-    },
-    {
-      name: 'Messages',
-      href: '/customer/messages',
-      icon: FaComments,
-      badge: unreadMessages > 0 ? unreadMessages : undefined,
-      description: 'Chat with service providers'
     },
     {
       name: 'Profile',

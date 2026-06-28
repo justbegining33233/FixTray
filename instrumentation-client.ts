@@ -19,4 +19,9 @@ Sentry.init({
   debug: false,
 });
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+// NOTE: onRouterTransitionStart (Sentry.captureRouterTransitionStart) is NOT
+// exported here because the installed Sentry version does not provide that
+// function.  Exporting undefined causes Next.js 15 to treat it as a lazy React
+// element that resolves to undefined, throwing "Element type is invalid" on
+// every router navigation and preventing page transitions (e.g. shop/home).
+// Re-add this export once Sentry is upgraded to a version that includes it.

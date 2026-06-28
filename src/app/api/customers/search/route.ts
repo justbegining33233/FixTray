@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   // Only shop staff and admins may search customer PII
-  if (!['shop', 'manager', 'admin'].includes(auth.role)) {
+  if (!['shop', 'manager', 'admin', 'tech'].includes(auth.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -51,6 +51,20 @@ export async function GET(request: NextRequest) {
         lastName: true,
         email: true,
         phone: true,
+        company: true,
+        vehicles: {
+          select: {
+            id: true,
+            vehicleType: true,
+            make: true,
+            model: true,
+            year: true,
+            vin: true,
+            licensePlate: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        },
       },
       take: 10,
     });

@@ -1,12 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowLeft, FaBuilding } from 'react-icons/fa';
+import { FaArrowLeft, FaBuilding, FaSearch, FaCar } from 'react-icons/fa';
+
+type CustomerVehicle = {
+  id: string;
+  vehicleType: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  vin?: string;
+  licensePlate?: string;
+};
+
+type CustomerResult = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  vehicles: CustomerVehicle[];
+};
 
 export default function ShopNewInShopJob() {
   const router = useRouter();
@@ -14,8 +34,17 @@ export default function ShopNewInShopJob() {
   const [userName, setUserName] = useState('');
   const [serviceOptions, setServiceOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [servicesLoaded, setServicesLoaded] = useState(false);
+
+  // Search state
   const [customerSearch, setCustomerSearch] = useState('');
-  const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<CustomerResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResult | null>(null);
+  const [vehiclePickerOpen, setVehiclePickerOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -37,26 +66,19 @@ export default function ShopNewInShopJob() {
     if (user?.name) setUserName(user.name);
   }, [user]);
 
+  // Load services for this shop
   useEffect(() => {
-    const loadData = async () => {
+    const loadServices = async () => {
       if (!user) return;
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) return;
-
       const shopId = user.shopId || user.id;
-
       try {
-        const [servicesRes, workOrdersRes] = await Promise.all([
-          fetch(`/api/services?shopId=${encodeURIComponent(shopId)}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch('/api/workorders?limit=100', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        if (servicesRes.ok) {
-          const data = await servicesRes.json();
+        const res = await fetch(`/api/services?shopId=${encodeURIComponent(shopId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
           const services = Array.isArray(data?.services) ? data.services : [];
           const uniqueNames: string[] = Array.from(
             new Set<string>(
@@ -67,21 +89,51 @@ export default function ShopNewInShopJob() {
           );
           setServiceOptions(uniqueNames.map((name) => ({ value: name, label: name })));
         }
-
-        setServicesLoaded(true);
-
-        if (workOrdersRes.ok) {
-          const data = await workOrdersRes.json();
-          const items = Array.isArray(data?.workOrders) ? data.workOrders : [];
-          setCustomerSuggestions(items);
-        }
-      } catch {
+      } finally {
         setServicesLoaded(true);
       }
     };
-
-    loadData();
+    loadServices();
   }, [user]);
+
+  // Debounced customer search — hits the real DB
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (customerSearch.trim().length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const shopId = user?.shopId || user?.id || '';
+        const res = await fetch(
+          `/api/customers/search?q=${encodeURIComponent(customerSearch.trim())}&shopId=${encodeURIComponent(shopId)}`,
+          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.customers || []);
+          setShowDropdown(true);
+        }
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+  }, [customerSearch, user]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -164,35 +216,34 @@ export default function ShopNewInShopJob() {
     }));
   };
 
-  const filteredSuggestions = customerSearch.trim().length < 2
-    ? []
-    : customerSuggestions
-      .filter((wo) => {
-        const q = customerSearch.toLowerCase();
-        const fullName = `${wo?.customer?.firstName || ''} ${wo?.customer?.lastName || ''}`.toLowerCase();
-        const email = String(wo?.customer?.email || '').toLowerCase();
-        const phone = String(wo?.customer?.phone || '').toLowerCase();
-        const make = String(wo?.vehicle?.make || '').toLowerCase();
-        const model = String(wo?.vehicle?.model || '').toLowerCase();
-        const vin = String(wo?.vehicle?.vin || '').toLowerCase();
-        const plate = String(wo?.vehicle?.licensePlate || '').toLowerCase();
-        const fleet = String(wo?.customer?.fleetAccountName || '').toLowerCase();
-        return [fullName, email, phone, make, model, vin, plate, fleet].some((v) => v.includes(q));
-      })
-      .slice(0, 8);
-
-  const applySuggestion = (wo: any) => {
-    setFormData((prev) => ({
+  // Apply a customer from search results — if they have 1 vehicle auto-fill, otherwise open picker
+  const applyCustomer = (customer: CustomerResult) => {
+    setSelectedCustomer(customer);
+    setFormData(prev => ({
       ...prev,
-      customerName: `${wo?.customer?.firstName || ''} ${wo?.customer?.lastName || ''}`.trim(),
-      customerPhone: wo?.customer?.phone || '',
-      customerEmail: wo?.customer?.email || '',
-      vehicleMake: wo?.vehicle?.make || prev.vehicleMake,
-      vehicleModel: wo?.vehicle?.model || prev.vehicleModel,
-      vehicleYear: wo?.vehicle?.year ? String(wo.vehicle.year) : prev.vehicleYear,
-      vin: wo?.vehicle?.vin || prev.vin,
+      customerName: `${customer.firstName} ${customer.lastName}`.trim(),
+      customerPhone: customer.phone || '',
+      customerEmail: customer.email || '',
     }));
-    setCustomerSearch('');
+    setCustomerSearch(`${customer.firstName} ${customer.lastName}`.trim());
+    setShowDropdown(false);
+
+    if (customer.vehicles.length === 1) {
+      applyVehicle(customer.vehicles[0]);
+    } else if (customer.vehicles.length > 1) {
+      setVehiclePickerOpen(true);
+    }
+  };
+
+  const applyVehicle = (v: CustomerVehicle) => {
+    setFormData(prev => ({
+      ...prev,
+      vehicleMake:  v.make  || prev.vehicleMake,
+      vehicleModel: v.model || prev.vehicleModel,
+      vehicleYear:  v.year  ? String(v.year) : prev.vehicleYear,
+      vin:          v.vin   || prev.vin,
+    }));
+    setVehiclePickerOpen(false);
   };
 
   return (
@@ -212,34 +263,100 @@ export default function ShopNewInShopJob() {
           {/* Customer Information */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginBottom:24}}>
             <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Customer Information</h2>
-            <div style={{ marginBottom: 16, position: 'relative' }}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Recurring Customer / Fleet Search</label>
-              <input
-                type="text"
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
-                placeholder="Search by name, phone, email, VIN, or license plate"
-              />
-              {filteredSuggestions.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, background: '#000000', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, overflow: 'hidden' }}>
-                  {filteredSuggestions.map((wo) => (
+
+            {/* Recurring Customer / Fleet Search */}
+            <div ref={searchBoxRef} style={{ marginBottom: 20, position: 'relative' }}>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8, fontWeight:600}}>
+                <FaSearch style={{marginRight:6, fontSize:11}} />Recurring Customer / Fleet Search
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={customerSearch}
+                  onChange={(e) => { setCustomerSearch(e.target.value); setSelectedCustomer(null); }}
+                  onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                  style={{
+                    width: '100%', padding: '12px 12px 12px 40px',
+                    background: 'rgba(0,0,0,0.4)',
+                    border: selectedCustomer ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: 8, color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box',
+                  }}
+                  placeholder="Search by name, phone, email, VIN, plate…"
+                  autoComplete="off"
+                />
+                <FaSearch style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: 13, pointerEvents: 'none' }} />
+                {searching && (
+                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: '#9aa3b2' }}>Searching…</span>
+                )}
+              </div>
+
+              {/* Results dropdown */}
+              {showDropdown && searchResults.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, marginTop: 4, background: '#111111', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+                  {searchResults.map((c) => (
                     <button
-                      key={wo.id}
+                      key={c.id}
                       type="button"
-                      onClick={() => applySuggestion(wo)}
-                      style={{ width: '100%', textAlign: 'left', background: 'transparent', color: '#e5e7eb', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 12px', cursor: 'pointer' }}
+                      onClick={() => applyCustomer(c)}
+                      style={{ width: '100%', textAlign: 'left', background: 'transparent', color: '#e5e7eb', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 14px', cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(229,51,42,0.1)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>{`${wo?.customer?.firstName || ''} ${wo?.customer?.lastName || ''}`.trim() || 'Customer'}</div>
-                      <div style={{ fontSize: 12, color: '#9aa3b2' }}>
-                        {wo?.vehicle?.year ? `${wo.vehicle.year} ` : ''}{wo?.vehicle?.make || ''} {wo?.vehicle?.model || ''}
-                        {wo?.vehicle?.licensePlate ? `  Plate ${wo.vehicle.licensePlate}` : ''}
+                      <div style={{ fontWeight: 700, fontSize: 13 }}>
+                        {c.firstName} {c.lastName}
+                        {c.company && <span style={{ fontWeight: 400, color: '#9aa3b2', marginLeft: 8 }}>· {c.company}</span>}
                       </div>
+                      <div style={{ fontSize: 11, color: '#9aa3b2', marginTop: 2 }}>
+                        {c.phone && <span style={{ marginRight: 10 }}>{c.phone}</span>}
+                        {c.email && <span>{c.email}</span>}
+                      </div>
+                      {c.vehicles.length > 0 && (
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {c.vehicles.slice(0, 3).map(v => (
+                            <span key={v.id} style={{ padding: '1px 6px', background: 'rgba(255,255,255,0.06)', borderRadius: 4 }}>
+                              <FaCar style={{ marginRight: 3, fontSize: 9 }} />
+                              {[v.year, v.make, v.model].filter(Boolean).join(' ') || v.vehicleType}
+                              {v.licensePlate ? ` · ${v.licensePlate}` : ''}
+                            </span>
+                          ))}
+                          {c.vehicles.length > 3 && <span style={{ color: '#6b7280' }}>+{c.vehicles.length - 3} more</span>}
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
+              {showDropdown && !searching && searchResults.length === 0 && customerSearch.trim().length >= 2 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, marginTop: 4, background: '#111111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#6b7280' }}>
+                  No existing customers found — fill in the form below to create one.
+                </div>
+              )}
             </div>
+
+            {/* Vehicle picker (multi-vehicle customers) */}
+            {vehiclePickerOpen && selectedCustomer && selectedCustomer.vehicles.length > 1 && (
+              <div style={{ marginBottom: 20, padding: 14, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#60a5fa', marginBottom: 10 }}>
+                  <FaCar style={{ marginRight: 6 }} />Select a vehicle for {selectedCustomer.firstName} {selectedCustomer.lastName}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {selectedCustomer.vehicles.map(v => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => applyVehicle(v)}
+                      style={{ textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#e5e7eb', cursor: 'pointer', fontSize: 13 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.12)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                    >
+                      <strong>{[v.year, v.make, v.model].filter(Boolean).join(' ') || v.vehicleType}</strong>
+                      {v.vin && <span style={{ color: '#9aa3b2', marginLeft: 10, fontSize: 11 }}>VIN {v.vin}</span>}
+                      {v.licensePlate && <span style={{ color: '#9aa3b2', marginLeft: 10, fontSize: 11 }}>Plate {v.licensePlate}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
               <div>
                 <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Customer Name *</label>

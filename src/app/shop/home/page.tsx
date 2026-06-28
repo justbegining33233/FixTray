@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
-import { FaBox, FaCar, FaChartBar, FaCog, FaIndustry, FaLock, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck, FaWrench } from 'react-icons/fa';
+import { FaCar, FaIndustry, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck } from 'react-icons/fa';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -190,50 +190,12 @@ export default function ShopHome() {
   }, [user?.id]); // use stable primitive — avoids re-fetch when checkAuth creates a new user object reference
 
   const quickActions: QuickAction[] = [
-    { label: <><FaBox style={{marginRight:6}}/>Service Catalog</>, href: '/shop/services', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
-    {
-      label:
-        user?.role === 'manager'
-          ? <><FaChartBar style={{marginRight:6}}/>Manager Panel</>
-          : user?.role === 'tech'
-          ? <><FaWrench style={{marginRight:6}}/>Tech Panel</>
-          : <><FaCog style={{marginRight:6}}/>Shop Admin Panel</>,
-      href:
-        user?.role === 'manager'
-          ? '/shop/manager'
-          : user?.role === 'tech'
-          ? '/shop/tech'
-          : '/shop/admin',
-      tint:
-        user?.role === 'manager'
-          ? 'rgba(229,51,42,0.18)'
-          : user?.role === 'tech'
-          ? 'rgba(34,197,94,0.18)'
-          : 'rgba(229,51,42,0.2)',
-      color:
-        user?.role === 'manager'
-          ? '#e5332a'
-          : user?.role === 'tech'
-          ? '#22c55e'
-          : '#e5332a',
-      border:
-        user?.role === 'manager'
-          ? 'rgba(229,51,42,0.28)'
-          : user?.role === 'tech'
-          ? 'rgba(34,197,94,0.28)'
-          : 'rgba(229,51,42,0.3)',
-      requiresAdmin: user?.role === 'admin',
-      requiresManagerOrAdmin: user?.role === 'manager',
-      hideForAdmin: user?.role === 'tech',
-    },
-    { label: <><FaBox style={{marginRight:6}}/>Parts Orders</>, href: '/shop/purchase-orders', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
-    { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
     { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/workorders/inshop', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
     { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/workorders/roadside', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
-    { label: <><FaIndustry style={{marginRight:6}}/>Vendors</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
+    { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
+    { label: <><FaIndustry style={{marginRight:6}}/>Vendors & Parts</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
     { label: <><FaMapMarkerAlt style={{marginRight:6}}/>Locations</>, href: '/shop/locations', tint: 'rgba(20,184,166,0.18)', color: '#14b8a6', border: 'rgba(20,184,166,0.28)' },
     { label: <><FaSyncAlt style={{marginRight:6}}/>Recurring Orders</>, href: '/shop/recurring-workorders', tint: 'rgba(34,197,94,0.18)', color: '#22c55e', border: 'rgba(34,197,94,0.28)' },
-    { label: <><FaLock style={{marginRight:6}}/>Two-Factor Auth</>, href: '/shop/settings/two-factor', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' }
   ];
   const priorityStyles: Record<string, { bg: string; color: string }> = {
     High: { bg: 'rgba(229,51,42,0.2)', color: '#e5332a' },

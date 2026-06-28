@@ -120,9 +120,7 @@ export default function SuperAdminDashboard() {
                       <p className="font-medium text-gray-900">{t.name || t.shopName || 'Unnamed'}</p>
                       <p className="text-sm text-gray-500">{t.ownerName || t.email || ''}</p>
                     </div>
-                    <span className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded-full">
-                      {t.subscription?.plan || 'Free'}
-                    </span>
+
                   </div>
                 ))}
               </div>

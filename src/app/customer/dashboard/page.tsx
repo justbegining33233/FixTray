@@ -211,13 +211,6 @@ export default function CustomerDashboard() {
       fetchStats();
     };
 
-    const onNewMessage = (e: any) => {
-      const data = e?.detail || e;
-      // Prepend to recent messages and increment unread count
-      setRecentData(prev => ({ ...prev, messages: [data, ...prev.messages].slice(0, 3) }));
-      setStats(prev => ({ ...prev, unreadMessages: (prev.unreadMessages || 0) + 1 }));
-    };
-
     const onLocationUpdate = (_e: any) => {
       // For live tracking card (if viewing an active tracking work order), we might refresh tracking data
       // For now just refresh stats to pick up any tracking-based changes
@@ -225,12 +218,10 @@ export default function CustomerDashboard() {
     };
 
     window.addEventListener('work-order:updated', onWorkOrderUpdated as EventListener);
-    window.addEventListener('chat:new-message', onNewMessage as EventListener);
     window.addEventListener('tech:location_updated', onLocationUpdate as EventListener);
 
     return () => {
       window.removeEventListener('work-order:updated', onWorkOrderUpdated as EventListener);
-      window.removeEventListener('chat:new-message', onNewMessage as EventListener);
       window.removeEventListener('tech:location_updated', onLocationUpdate as EventListener);
     };
   }, [fetchStats]);
@@ -293,17 +284,6 @@ export default function CustomerDashboard() {
       badgeColor: '#ef4444', 
       link: '/customer/tracking',
       getData: () => []
-    },
-    { 
-      id: 'messages', 
-      icon: '', 
-      name: 'Messages', 
-      desc: 'Chat with your technician', 
-      detail: stats.unreadMessages > 0 ? `${stats.unreadMessages} unread message${stats.unreadMessages !== 1 ? 's' : ''}` : 'Direct communication channel', 
-      badge: stats.unreadMessages > 0 ? 'New' : '', 
-      badgeColor: '#ef4444', 
-      link: '/customer/messages',
-      getData: () => recentData.messages
     },
     { 
       id: 'vehicles', 
@@ -456,10 +436,6 @@ export default function CustomerDashboard() {
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Total Vehicles</div>
             <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{stats.vehicleCount}</div>
-          </div>
-          <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Unread Messages</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{stats.unreadMessages}</div>
           </div>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Loyalty Points</div>

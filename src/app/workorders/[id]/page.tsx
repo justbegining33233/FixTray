@@ -14,7 +14,7 @@ import {
 type WOMessage = { id: string; sender: string; senderName: string; body: string; createdAt: string };
 type Vehicle   = { id: string; vehicleType: string; make?: string; model?: string; year?: number; vin?: string; licensePlate?: string };
 
-type LineItem = { _key: string; type: 'labor' | 'part' | 'misc'; description: string; partNumber: string; price: number; qty: number; status: 'new' | 'saved'; };
+type LineItem = { _key: string; type: 'labor' | 'part' | 'misc'; description: string; partNumber: string; price: number; qty: number; status: 'new' | 'saved'; poId?: string; poCost?: number; };
 
 type WorkOrder = {
   id: string; status: string; paymentStatus: string;
@@ -157,7 +157,7 @@ export default function WorkOrderDetailPage() {
 
   // Add line item modal
   const [showItemModal,   setShowItemModal]   = useState(false);
-  const [modalTab,        setModalTab]        = useState<'inventory' | 'services' | 'pickup'>('inventory');
+  const [modalTab,        setModalTab]        = useState<'inventory' | 'services' | 'pickup' | 'custom'>('inventory');
   const [inventoryItems,  setInventoryItems]  = useState<InvItem[]>([]);
   const [shopServices,    setShopServices]    = useState<SvcItem[]>([]);
   const [shopMarkup,      setShopMarkup]      = useState(0.30);
@@ -168,6 +168,15 @@ export default function WorkOrderDetailPage() {
   const [poSku,           setPoSku]           = useState('');
   const [poCost,          setPoCost]          = useState<number>(0);
   const [poQty,           setPoQty]           = useState<number>(1);
+  // Custom tab
+  const [customDesc,      setCustomDesc]      = useState('');
+  const [customType,      setCustomType]      = useState<'part' | 'labor' | 'misc'>('part');
+  const [customPrice,     setCustomPrice]     = useState<number>(0);
+  const [customQty,       setCustomQty]       = useState<number>(1);
+  // PO edit modal
+  const [editPoLine,      setEditPoLine]      = useState<LineItem | null>(null);
+  const [editPoCost,      setEditPoCost]      = useState<number>(0);
+  const [editPoQty,       setEditPoQty]       = useState<number>(1);
 
   // Clock in / out
   const [userId,       setUserId]       = useState<string | null>(null);
@@ -365,6 +374,7 @@ export default function WorkOrderDetailPage() {
     setShowItemModal(true);
     setModalTab('inventory');
     setItemSearch('');
+    setCustomDesc(''); setCustomType('part'); setCustomPrice(0); setCustomQty(1);
     if (inventoryItems.length > 0 || shopServices.length > 0) return; // already loaded
     setModalLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -413,9 +423,10 @@ export default function WorkOrderDetailPage() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const shopId2 = typeof window !== 'undefined' ? localStorage.getItem('shopId') : null;
     const userId2 = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+    let poId: string | undefined;
     if (shopId2 && poVendor.trim()) {
       try {
-        await fetch('/api/purchase-orders', {
+        const res = await fetch('/api/purchase-orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
@@ -423,14 +434,28 @@ export default function WorkOrderDetailPage() {
             items: [{ itemName: poPartName.trim(), sku: poSku.trim() || undefined, quantity: poQty, unitCost: poCost, workOrderId: id }],
           }),
         });
+        if (res.ok) { const d = await res.json(); poId = d.order?.id; }
       } catch { /* non-blocking */ }
     }
     setLineItems(prev => [...prev, {
       _key: uid(), type: 'part',
       description: `${poPartName.trim()} (PO: ${poVendor.trim()})`,
       partNumber: poSku.trim(), price: sellingPrice, qty: poQty, status: 'new',
+      poId, poCost,
     }]);
     setPoVendor(''); setPoPartName(''); setPoSku(''); setPoCost(0); setPoQty(1);
+    setShowItemModal(false);
+  };
+
+  // ── Add custom line item ──────────────────────────────────────────────────
+  const handleAddCustomItem = () => {
+    if (!customDesc.trim()) return;
+    setLineItems(prev => [...prev, {
+      _key: uid(), type: customType,
+      description: customDesc.trim(), partNumber: '',
+      price: customPrice, qty: customQty, status: 'new',
+    }]);
+    setCustomDesc(''); setCustomType('part'); setCustomPrice(0); setCustomQty(1);
     setShowItemModal(false);
   };
 
@@ -496,6 +521,11 @@ export default function WorkOrderDetailPage() {
   const shortId      = wo.id.slice(-8).toUpperCase();
   const customerName = wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}`.trim() : 'Unknown';
   const techName     = wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}`.trim() : null;
+
+  // Authorization gates clock-in: estimate must be accepted before tech can start
+  const awaitingAuth = wo.status === 'estimate-submitted';
+  const authDenied   = wo.status === 'denied-estimate';
+  const canClockIn   = ['pending', 'assigned', 'in-progress', 'waiting-estimate', 'waiting-for-payment'].includes(wo.status);
   const issueText    = parseIssue(wo.issueDescription);
   const locationLabel = wo.serviceLocation === 'road-call' ? 'Road Call' : wo.serviceLocation === 'in-shop' ? 'In Shop' : wo.serviceLocation;
 
@@ -531,25 +561,39 @@ export default function WorkOrderDetailPage() {
           )}
         </div>
 
-        {/* ── Clock In / Out ── */}
+        {/* ── Clock In / Out (gated by customer authorization) ── */}
         {(userRole === 'tech' || userRole === 'manager') && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {clockTimer && (
-              <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 700, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <FaStopwatch style={{ fontSize: 11 }} /> {clockTimer}
+            {awaitingAuth && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
+                <FaClock style={{ fontSize: 11 }} /> Awaiting Customer Authorization
               </span>
             )}
-            {clockMsg && (
-              <span style={{ fontSize: 11, color: clockMsg.includes('!') ? '#22c55e' : '#f87171' }}>{clockMsg}</span>
+            {authDenied && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
+                <FaExclamationCircle style={{ fontSize: 11 }} /> Authorization Denied
+              </span>
             )}
-            <button
-              onClick={clockEntry ? handleClockOut : handleClockIn}
-              disabled={clockLoading || !userId}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: clockEntry ? 'rgba(229,51,42,0.15)' : 'rgba(34,197,94,0.15)', border: `1px solid ${clockEntry ? 'rgba(229,51,42,0.3)' : 'rgba(34,197,94,0.3)'}`, color: clockEntry ? '#e5332a' : '#22c55e', fontSize: 12, fontWeight: 700, borderRadius: 8, padding: '7px 14px', cursor: clockLoading ? 'not-allowed' : 'pointer', opacity: clockLoading ? 0.6 : 1 }}
-            >
-              <FaClock style={{ fontSize: 11 }} />
-              {clockLoading ? '…' : clockEntry ? 'Clock Out' : 'Clock In'}
-            </button>
+            {canClockIn && (
+              <>
+                {clockTimer && (
+                  <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 700, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <FaStopwatch style={{ fontSize: 11 }} /> {clockTimer}
+                  </span>
+                )}
+                {clockMsg && (
+                  <span style={{ fontSize: 11, color: clockMsg.includes('!') ? '#22c55e' : '#f87171' }}>{clockMsg}</span>
+                )}
+                <button
+                  onClick={clockEntry ? handleClockOut : handleClockIn}
+                  disabled={clockLoading || !userId}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, background: clockEntry ? 'rgba(229,51,42,0.15)' : 'rgba(34,197,94,0.15)', border: `1px solid ${clockEntry ? 'rgba(229,51,42,0.3)' : 'rgba(34,197,94,0.3)'}`, color: clockEntry ? '#e5332a' : '#22c55e', fontSize: 12, fontWeight: 700, borderRadius: 8, padding: '7px 14px', cursor: clockLoading ? 'not-allowed' : 'pointer', opacity: clockLoading ? 0.6 : 1 }}
+                >
+                  <FaClock style={{ fontSize: 11 }} />
+                  {clockLoading ? '…' : clockEntry ? 'Clock Out' : 'Clock In'}
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -611,7 +655,7 @@ export default function WorkOrderDetailPage() {
                 </button>
                 {userRole !== 'customer' && (
                   <button onClick={handleSubmitEstimate} disabled={submittingEst} style={{ display: 'flex', alignItems: 'center', gap: 5, background: submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.15)' : 'rgba(96,165,250,0.12)', border: `1px solid ${submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.3)' : 'rgba(96,165,250,0.3)'}`, color: submitEstMsg === 'Submitted!' ? '#22c55e' : '#60a5fa', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: submittingEst ? 'not-allowed' : 'pointer', opacity: submittingEst ? 0.6 : 1 }}>
-                    <FaEnvelope style={{ fontSize: 11 }} /> {submittingEst ? 'Submitting…' : submitEstMsg || 'Submit Estimate'}
+                    <FaEnvelope style={{ fontSize: 11 }} /> {submittingEst ? 'Submitting…' : submitEstMsg || (wo.status === 'denied-estimate' ? 'Reissue Estimate' : 'Submit Estimate')}
                   </button>
                 )}
               </div>
@@ -644,10 +688,14 @@ export default function WorkOrderDetailPage() {
                         <input style={inputStyle} value={li.partNumber} onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, partNumber: e.target.value, status: 'new' } : x))} placeholder="—" />
                       </td>
                       <td style={tdStyle}>
-                        <input style={{ ...inputStyle, textAlign: 'right' }} type="number" min={0} step={0.01} value={li.price} onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, price: Number(e.target.value), status: 'new' } : x))} />
+                        <input style={{ ...inputStyle, textAlign: 'right' }} type="number" min={0} step={0.01} value={li.price}
+                          onFocus={e => e.target.select()}
+                          onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, price: parseFloat(e.target.value) || 0, status: 'new' } : x))} />
                       </td>
                       <td style={tdStyle}>
-                        <input style={{ ...inputStyle, textAlign: 'right' }} type="number" min={0} step={li.type === 'labor' ? 0.25 : 1} value={li.qty} onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, qty: Number(e.target.value), status: 'new' } : x))} />
+                        <input style={{ ...inputStyle, textAlign: 'right' }} type="number" min={0} step={li.type === 'labor' ? 0.25 : 1} value={li.qty}
+                          onFocus={e => e.target.select()}
+                          onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, qty: parseFloat(e.target.value) || 0, status: 'new' } : x))} />
                       </td>
                       <td style={{ ...tdStyle, fontSize: 13, color: '#e5e7eb', fontWeight: 600, textAlign: 'right', paddingRight: 8 }}>{fmt(li.price * li.qty)}</td>
                       <td style={tdStyle}>
@@ -663,6 +711,10 @@ export default function WorkOrderDetailPage() {
                         </span>
                       </td>
                       <td style={tdStyle}>
+                        {li.poId && (
+                          <button onClick={() => { setEditPoLine(li); setEditPoCost(li.poCost ?? li.price); setEditPoQty(li.qty); }}
+                            style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', cursor: 'pointer', fontSize: 10, padding: '3px 6px', borderRadius: 4, marginRight: 4, fontWeight: 700 }}>PO</button>
+                        )}
                         <button onClick={() => setLineItems(prev => prev.filter(x => x._key !== li._key))} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 13, padding: '4px' }}><FaTrash /></button>
                       </td>
                     </tr>
@@ -808,10 +860,10 @@ export default function WorkOrderDetailPage() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              {(['inventory', 'services', 'pickup'] as const).map(tab => (
+              {(['inventory', 'services', 'pickup', 'custom'] as const).map(tab => (
                 <button key={tab} onClick={() => { setModalTab(tab); setItemSearch(''); }}
                   style={{ flex: 1, padding: '10px 4px', background: 'none', border: 'none', borderBottom: `2px solid ${modalTab === tab ? '#e5332a' : 'transparent'}`, color: modalTab === tab ? '#e5332a' : '#9aa3b2', fontSize: 12, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  {tab === 'pickup' ? 'Part Pickup (PO)' : tab}
+                  {tab === 'pickup' ? 'Part Pickup (PO)' : tab === 'custom' ? 'Custom' : tab}
                 </button>
               ))}
             </div>
@@ -882,7 +934,7 @@ export default function WorkOrderDetailPage() {
                         ))
                   }
                 </>
-              ) : (
+              ) : modalTab === 'pickup' ? (
                 /* Part Pickup / PO form */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, fontSize: 12, color: '#f59e0b', lineHeight: 1.5 }}>
@@ -901,11 +953,15 @@ export default function WorkOrderDetailPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
                       <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Your Cost ($) *</div>
-                      <input type="number" min={0} step={0.01} value={poCost} onChange={e => setPoCost(Number(e.target.value))} style={{ ...inputStyle, textAlign: 'right' }} />
+                      <input type="number" min={0} step={0.01} value={poCost}
+                        onFocus={e => e.target.select()}
+                        onChange={e => setPoCost(parseFloat(e.target.value) || 0)} style={{ ...inputStyle, textAlign: 'right' }} />
                     </div>
                     <div>
                       <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Quantity *</div>
-                      <input type="number" min={1} step={1} value={poQty} onChange={e => setPoQty(Math.max(1, Number(e.target.value)))} style={{ ...inputStyle, textAlign: 'right' }} />
+                      <input type="number" min={1} step={1} value={poQty}
+                        onFocus={e => e.target.select()}
+                        onChange={e => setPoQty(Math.max(1, parseInt(e.target.value) || 1))} style={{ ...inputStyle, textAlign: 'right' }} />
                     </div>
                   </div>
                   {poCost > 0 && (
@@ -925,8 +981,106 @@ export default function WorkOrderDetailPage() {
                     Add Part Pickup &amp; Create PO
                   </button>
                 </div>
+              ) : (
+                /* Custom line item */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Description *</div>
+                    <input value={customDesc} onChange={e => setCustomDesc(e.target.value)} placeholder="e.g. Diagnostic fee, Shop supplies…" autoFocus style={inputStyle} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Type</div>
+                    <select value={customType} onChange={e => setCustomType(e.target.value as 'part' | 'labor' | 'misc')} style={{ ...inputStyle, padding: '8px 10px' }}>
+                      <option value="part">Part</option>
+                      <option value="labor">Labor</option>
+                      <option value="misc">Misc / Fee</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Unit Price ($)</div>
+                      <input type="number" min={0} step={0.01} value={customPrice}
+                        onFocus={e => e.target.select()}
+                        onChange={e => setCustomPrice(parseFloat(e.target.value) || 0)}
+                        style={{ ...inputStyle, textAlign: 'right' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Quantity</div>
+                      <input type="number" min={customType === 'labor' ? 0.25 : 1} step={customType === 'labor' ? 0.25 : 1} value={customQty}
+                        onFocus={e => e.target.select()}
+                        onChange={e => setCustomQty(parseFloat(e.target.value) || 1)}
+                        style={{ ...inputStyle, textAlign: 'right' }} />
+                    </div>
+                  </div>
+                  {customPrice > 0 && (
+                    <div style={{ padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#9aa3b2' }}>Total (×{customQty})</span>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: '#22c55e' }}>${(customPrice * customQty).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <button onClick={handleAddCustomItem} disabled={!customDesc.trim()}
+                    style={{ padding: '10px 16px', background: !customDesc.trim() ? 'rgba(255,255,255,0.04)' : 'rgba(229,51,42,0.18)', border: `1px solid ${!customDesc.trim() ? 'rgba(255,255,255,0.08)' : 'rgba(229,51,42,0.3)'}`, color: !customDesc.trim() ? '#4b5563' : '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: !customDesc.trim() ? 'not-allowed' : 'pointer' }}>
+                    Add Custom Line Item
+                  </button>
+                </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PO edit modal */}
+      {editPoLine && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setEditPoLine(null)}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, width: '100%', maxWidth: 420, padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#e5e7eb' }}>Edit PO Line Item</span>
+              <button onClick={() => setEditPoLine(null)} style={{ background: 'none', border: 'none', color: '#9aa3b2', cursor: 'pointer', fontSize: 16, padding: 4 }}><FaTimes /></button>
+            </div>
+            <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 16, padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 8 }}>
+              {editPoLine.description}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Your Cost ($)</div>
+                <input type="number" min={0} step={0.01} value={editPoCost}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setEditPoCost(parseFloat(e.target.value) || 0)}
+                  style={{ ...inputStyle, textAlign: 'right' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Quantity</div>
+                <input type="number" min={1} step={1} value={editPoQty}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setEditPoQty(Math.max(1, parseInt(e.target.value) || 1))}
+                  style={{ ...inputStyle, textAlign: 'right' }} />
+              </div>
+            </div>
+            <div style={{ padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>Unit cost: ${editPoCost.toFixed(2)} + {(shopMarkup * 100).toFixed(0)}% markup</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>Customer price: ${(editPoCost * (1 + shopMarkup)).toFixed(2)}/unit</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: '#9aa3b2' }}>Total (×{editPoQty})</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#22c55e' }}>${(editPoCost * (1 + shopMarkup) * editPoQty).toFixed(2)}</div>
+              </div>
+            </div>
+            <button onClick={() => {
+              const newPrice = editPoCost * (1 + shopMarkup);
+              setLineItems(prev => prev.map(x => x._key === editPoLine._key ? { ...x, price: newPrice, qty: editPoQty, poCost: editPoCost, status: 'new' } : x));
+              if (editPoLine.poId) {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                fetch(`/api/purchase-orders/${editPoLine.poId}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                  body: JSON.stringify({ notes: `Cost adjusted: $${editPoCost.toFixed(2)}/unit × ${editPoQty} on ${new Date().toLocaleDateString()}` }),
+                }).catch(() => {});
+              }
+              setEditPoLine(null);
+            }} style={{ width: '100%', padding: '10px 16px', background: 'rgba(229,51,42,0.18)', border: '1px solid rgba(229,51,42,0.3)', color: '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              Apply Price Changes
+            </button>
           </div>
         </div>
       )}

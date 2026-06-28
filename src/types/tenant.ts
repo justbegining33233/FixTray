@@ -11,14 +11,6 @@ export interface Tenant {
     state: string;
     zip: string;
   };
-  subscription: {
-    plan: 'free' | 'basic' | 'pro' | 'enterprise';
-    status: 'active' | 'suspended' | 'cancelled';
-    startDate: Date;
-    renewalDate: Date;
-    maxUsers: number;
-    maxWorkOrders: number;
-  };
   settings: {
     timezone: string;
     currency: string;

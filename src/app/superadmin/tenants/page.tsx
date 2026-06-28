@@ -24,14 +24,12 @@ type Tenant = {
   healthScore?: number;
   rating?: number;
   createdAt?: string;
-  subscription?: { plan: string; status: string; isActive: boolean } | null;
 };
 
 export default function SuperAdminTenants() {
   const { user, isLoading } = useRequireAuth(['superadmin']);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [search, setSearch] = useState('');
-  const [filterPlan, setFilterPlan] = useState('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,9 +59,7 @@ export default function SuperAdminTenants() {
   const filtered = tenants.filter(t => {
     const name = (t.name || t.shopName || '').toLowerCase();
     const owner = (t.ownerName || '').toLowerCase();
-    const matchSearch = !search || name.includes(search.toLowerCase()) || owner.includes(search.toLowerCase());
-    const matchPlan = filterPlan === 'all' || (t.subscription?.plan || 'free').toLowerCase() === filterPlan;
-    return matchSearch && matchPlan;
+    return !search || name.includes(search.toLowerCase()) || owner.includes(search.toLowerCase());
   });
 
   return (
@@ -84,13 +80,6 @@ export default function SuperAdminTenants() {
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input type="text" placeholder="Search shops or owners..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900" />
           </div>
-          <select value={filterPlan} onChange={e => setFilterPlan(e.target.value)} className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-gray-700">
-            <option value="all">All Plans</option>
-            <option value="free">Free</option>
-            <option value="starter">Starter</option>
-            <option value="professional">Professional</option>
-            <option value="enterprise">Enterprise</option>
-          </select>
         </div>
 
         {filtered.length === 0 ? (
@@ -112,8 +101,8 @@ export default function SuperAdminTenants() {
                       <p className="text-sm text-gray-500">{t.ownerName || t.email || ''}</p>
                     </div>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${t.subscription?.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                    {t.subscription?.plan || 'Free'}
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500`}>
+                    Active
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center py-3 border-t border-gray-100">

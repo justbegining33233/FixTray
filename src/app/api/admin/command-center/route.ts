@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { getSettings } from '@/lib/platform-settings';
 import { isOwnerAdmin } from '@/lib/owner-access';
 
 export async function GET(request: NextRequest) {
@@ -17,7 +16,8 @@ export async function GET(request: NextRequest) {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
-    const feePerWorkOrder = (getSettings().serviceFee || 500) / 100;
+    const platformConfig = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
+    const feePerWorkOrder = (platformConfig?.serviceFee || 500) / 100;
 
     const [
       clockedInEmployees,

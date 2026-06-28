@@ -2,7 +2,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle } from 'react-icons/fa';
+import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle, FaPaperPlane } from 'react-icons/fa';
+
+interface WOMessage { id: string; sender: string; senderName: string; body: string; createdAt: string }
+interface WOPhoto   { id: string; url: string; type: string; caption?: string; uploadedAt: string }
+interface WODetail  { messages: WOMessage[]; photos: WOPhoto[] }
 
 interface EstimateItem {
   description: string;
@@ -13,6 +17,7 @@ interface EstimateItem {
 
 interface Estimate {
   id: string; // work order id
+  woStatus: string; // actual WO status
   status: 'pending' | 'accepted' | 'denied';
   service: string;
   price: number;
@@ -48,6 +53,12 @@ export default function Estimates() {
   });
   const [estimateMsg, setEstimateMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
+  // Expanded work order detail (messages + photos)
+  const [expandedDetail, setExpandedDetail] = useState<Record<string, WODetail>>({});
+  const [detailLoading,  setDetailLoading]  = useState<string | null>(null);
+  const [msgTexts,       setMsgTexts]       = useState<Record<string, string>>({});
+  const [sendingMsg,     setSendingMsg]     = useState<string | null>(null);
+
   const fetchEstimates = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -61,14 +72,17 @@ export default function Estimates() {
       const data = await response.json();
       const workOrders = data.workOrders || [];
 
-      // Map work orders with estimates to our Estimate format
+      // Map work orders to our Estimate format — show all that have entered the estimate/work flow
       const mapped: Estimate[] = workOrders
-        .filter((wo: any) => wo.estimate || wo.estimatedCost || wo.status === 'estimate-submitted')
+        .filter((wo: any) =>
+          ['estimate-submitted','in-progress','waiting-estimate','waiting-for-payment','denied-estimate','completed'].includes(wo.status)
+          || wo.estimate || wo.estimatedCost
+        )
         .map((wo: any) => {
           const est = wo.estimate || {};
           let status: 'pending' | 'accepted' | 'denied' = 'pending';
           if (wo.status === 'denied-estimate') status = 'denied';
-          else if (['in-progress', 'assigned', 'closed', 'waiting-for-payment'].includes(wo.status)) status = 'accepted';
+          else if (['in-progress','assigned','waiting-estimate','waiting-for-payment','completed'].includes(wo.status)) status = 'accepted';
           // estimate-submitted stays as 'pending'
 
           const symptoms = typeof wo.issueDescription === 'object' && wo.issueDescription !== null
@@ -81,6 +95,7 @@ export default function Estimates() {
 
           return {
             id: wo.id,
+            woStatus: wo.status,
             status,
             service: symptoms.slice(0, 80) || 'Service',
             price: est.total || wo.estimatedCost || 0,
@@ -271,6 +286,63 @@ export default function Estimates() {
     window.location.href = '/auth/login';
   };
 
+  // Fetch full WO detail (messages + work photos) when customer expands a card
+  const fetchWODetail = useCallback(async (woId: string) => {
+    if (expandedDetail[woId]) return;
+    setDetailLoading(woId);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/workorders/${woId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const w = data.workOrder ?? data;
+        setExpandedDetail(prev => ({
+          ...prev,
+          [woId]: {
+            messages: Array.isArray(w.messages) ? w.messages : [],
+            photos: Array.isArray(w.workPhotos) ? w.workPhotos : [],
+          },
+        }));
+      }
+    } catch { /* ignore */ }
+    finally { setDetailLoading(null); }
+  }, [expandedDetail]);
+
+  // Customer sends a message inside the work order thread
+  const handleSendWOMessage = async (woId: string) => {
+    const text = (msgTexts[woId] || '').trim();
+    if (!text) return;
+    setSendingMsg(woId);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/workorders/${woId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ body: text }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setExpandedDetail(prev => ({
+          ...prev,
+          [woId]: { ...prev[woId], messages: [...(prev[woId]?.messages || []), data.message] },
+        }));
+        setMsgTexts(prev => ({ ...prev, [woId]: '' }));
+      }
+    } catch { /* ignore */ }
+    finally { setSendingMsg(null); }
+  };
+
+  // Parse message body — supports embedded media JSON {t:"text", m:["url"]}
+  function parseMessageBody(body: string): { text: string; media: string[] } {
+    try {
+      const p = JSON.parse(body);
+      if (p && typeof p.t === 'string' && Array.isArray(p.m)) return { text: p.t, media: p.m as string[] };
+    } catch { /* plain text */ }
+    return { text: body, media: [] };
+  }
+
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       {/* Header */}
@@ -364,7 +436,7 @@ export default function Estimates() {
                 whiteSpace:'nowrap'
               }}
             >
-              APPROVED ESTIMATES
+              ACTIVE WORK
             </button>
           </div>
         </div>
@@ -402,7 +474,11 @@ export default function Estimates() {
 
                   {/* Expand / collapse full work order details */}
                   <button
-                    onClick={() => setExpandedId(expandedId === estimate.id ? null : estimate.id)}
+                    onClick={() => {
+                      const newId = expandedId === estimate.id ? null : estimate.id;
+                      setExpandedId(newId);
+                      if (newId) fetchWODetail(newId);
+                    }}
                     style={{width:'100%', marginBottom:12, padding:'8px 0', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#9aa3b2', fontSize:13, fontWeight:600, cursor:'pointer'}}
                   >
                     {expandedId === estimate.id ? '▲ Hide Details' : '▼ View Full Work Order Details'}
@@ -475,6 +551,89 @@ export default function Estimates() {
                           </table>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* ── Messages & Photos (loaded on expand) ── */}
+                  {expandedId === estimate.id && (
+                    <div style={{marginBottom:16}}>
+                      {detailLoading === estimate.id ? (
+                        <div style={{padding:'10px 0', color:'#9aa3b2', fontSize:12, textAlign:'center'}}>Loading messages &amp; photos…</div>
+                      ) : expandedDetail[estimate.id] ? (
+                        <>
+                          {/* Work Photos / Videos */}
+                          {expandedDetail[estimate.id].photos.length > 0 && (
+                            <div style={{marginBottom:14, background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:14}}>
+                              <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>Work Photos &amp; Videos</div>
+                              <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
+                                {expandedDetail[estimate.id].photos.map(photo => {
+                                  const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(photo.url);
+                                  return isVid
+                                    ? <video key={photo.id} src={photo.url} controls style={{width:120, height:90, objectFit:'cover', borderRadius:6, background:'#000'}} />
+                                    : <img key={photo.id} src={photo.url} alt={photo.caption || 'Work photo'} onClick={() => window.open(photo.url, '_blank')} style={{width:120, height:90, objectFit:'cover', borderRadius:6, cursor:'pointer'}} />;
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Message Thread */}
+                          <div style={{background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:14}}>
+                            <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:10}}>
+                              Messages{expandedDetail[estimate.id].messages.length > 0 ? ` (${expandedDetail[estimate.id].messages.length})` : ''}
+                            </div>
+                            <div style={{maxHeight:220, overflowY:'auto', display:'flex', flexDirection:'column', gap:7, marginBottom:10, paddingRight:4}}>
+                              {expandedDetail[estimate.id].messages.length === 0
+                                ? <div style={{fontSize:12, color:'#6b7280', padding:'8px 0', textAlign:'center'}}>No messages yet — send the first one below.</div>
+                                : expandedDetail[estimate.id].messages.map(msg => {
+                                    const isShop = ['shop','tech','manager'].includes(msg.sender);
+                                    const parsed = parseMessageBody(msg.body);
+                                    return (
+                                      <div key={msg.id} style={{display:'flex', flexDirection:'column', alignItems: isShop ? 'flex-start' : 'flex-end'}}>
+                                        <div style={{
+                                          maxWidth:'85%', padding:'7px 10px',
+                                          borderRadius: isShop ? '10px 10px 10px 2px' : '10px 10px 2px 10px',
+                                          background: isShop ? 'rgba(96,165,250,0.1)' : 'rgba(229,51,42,0.12)',
+                                          border: `1px solid ${isShop ? 'rgba(96,165,250,0.2)' : 'rgba(229,51,42,0.2)'}`,
+                                        }}>
+                                          <div style={{fontSize:11, fontWeight:700, color: isShop ? '#60a5fa' : '#e5332a', marginBottom:3}}>{msg.senderName || msg.sender}</div>
+                                          {parsed.text && <p style={{margin:0, fontSize:12, color:'#e5e7eb', whiteSpace:'pre-wrap', lineHeight:1.5}}>{parsed.text}</p>}
+                                          {parsed.media.map((url, i) => {
+                                            const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
+                                            return isVid
+                                              ? <video key={i} src={url} controls style={{maxWidth:'100%', borderRadius:4, marginTop:4, display:'block'}} />
+                                              : <img key={i} src={url} alt="" onClick={() => window.open(url, '_blank')} style={{maxWidth:'100%', borderRadius:4, marginTop:4, display:'block', cursor:'pointer'}} />;
+                                          })}
+                                        </div>
+                                        <div style={{fontSize:10, color:'#6b7280', marginTop:2, paddingInline:4}}>
+                                          {new Date(msg.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}{' '}
+                                          {new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                              }
+                            </div>
+                            {/* Compose */}
+                            <div style={{display:'flex', gap:8}}>
+                              <textarea
+                                value={msgTexts[estimate.id] || ''}
+                                onChange={e => setMsgTexts(prev => ({...prev, [estimate.id]: e.target.value}))}
+                                onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSendWOMessage(estimate.id); }}
+                                placeholder="Type a message… (Ctrl+Enter to send)"
+                                rows={2}
+                                style={{flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#e5e7eb', fontSize:12, padding:'7px 10px', resize:'vertical', fontFamily:'inherit'}}
+                              />
+                              <button
+                                onClick={() => handleSendWOMessage(estimate.id)}
+                                disabled={sendingMsg === estimate.id || !msgTexts[estimate.id]?.trim()}
+                                style={{padding:'0 14px', background:'rgba(229,51,42,0.18)', border:'1px solid rgba(229,51,42,0.3)', color:'#e5332a', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer', opacity:(!msgTexts[estimate.id]?.trim() || sendingMsg === estimate.id) ? 0.5 : 1}}
+                              >
+                                {sendingMsg === estimate.id ? '…' : <FaPaperPlane />}
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
                     </div>
                   )}
 
@@ -655,72 +814,176 @@ export default function Estimates() {
 
         {activeTab === 'approved-estimates' && (
           <div>
-            <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Approved Estimates</h1>
-            <p style={{fontSize:16, color:'#9aa3b2', marginBottom:24}}>Estimates you have accepted and approved</p>
+            <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>Active Work</h1>
+            <p style={{fontSize:15, color:'#9aa3b2', marginBottom:24}}>Track work in progress, view photos, and message your shop — stays open until your job is paid out.</p>
 
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(400px, 1fr))', gap:24}}>
-              {estimates.filter(estimate => estimate.status === 'accepted').map(estimate => (
-                <div key={estimate.id} style={{
-                  background:'rgba(0,0,0,0.3)',
-                  border:'1px solid rgba(255,255,255,0.1)',
-                  borderRadius:12,
-                  padding:24
-                }}>
-                  <div style={{marginBottom:20}}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
-                      <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{estimate.service}</h3>
-                      <span style={{
-                        padding:'4px 12px',
-                        background: 'rgba(34,197,94,0.2)',
-                        color: '#22c55e',
-                        borderRadius:12,
-                        fontSize:12,
-                        fontWeight:600
-                      }}>
-                        {estimate.status}
-                      </span>
+              {estimates
+                .filter(e => ['in-progress','waiting-estimate','waiting-for-payment','completed'].includes(e.woStatus))
+                .map(estimate => {
+                  const statusBadge: Record<string, {bg:string;color:string;label:string}> = {
+                    'in-progress':         {bg:'rgba(59,130,246,0.15)',  color:'#60a5fa',  label:'IN PROGRESS'},
+                    'waiting-estimate':    {bg:'rgba(139,92,246,0.15)',  color:'#a78bfa',  label:'WAITING ESTIMATE'},
+                    'waiting-for-payment': {bg:'rgba(245,158,11,0.15)',  color:'#f59e0b',  label:'AWAITING PAYMENT'},
+                    'completed':           {bg:'rgba(34,197,94,0.15)',   color:'#22c55e',  label:'COMPLETED'},
+                  };
+                  const badge = statusBadge[estimate.woStatus] || {bg:'rgba(107,114,128,0.15)', color:'#9ca3af', label: estimate.woStatus.toUpperCase()};
+                  const isExpanded = expandedId === estimate.id;
+
+                  return (
+                    <div key={estimate.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
+                      {/* Card header */}
+                      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12}}>
+                        <div>
+                          <h3 style={{fontSize:17, fontWeight:700, color:'#e5e7eb', margin:'0 0 4px'}}>{estimate.shop}</h3>
+                          <div style={{fontSize:13, color:'#9aa3b2', lineHeight:1.5}}>{estimate.service.slice(0,80)}</div>
+                        </div>
+                        <span style={{padding:'4px 10px', background:badge.bg, color:badge.color, borderRadius:8, fontSize:11, fontWeight:700, whiteSpace:'nowrap', marginLeft:8}}>{badge.label}</span>
+                      </div>
+                      <div style={{fontSize:22, fontWeight:800, color:'#22c55e', marginBottom:14}}>${estimate.price.toFixed(2)}</div>
+
+                      {/* Expand toggle */}
+                      <button
+                        onClick={() => {
+                          const newId = isExpanded ? null : estimate.id;
+                          setExpandedId(newId);
+                          if (newId) fetchWODetail(newId);
+                        }}
+                        style={{width:'100%', marginBottom:12, padding:'8px 0', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#9aa3b2', fontSize:13, fontWeight:600, cursor:'pointer'}}
+                      >
+                        {isExpanded ? '▲ Hide Details & Messages' : '▼ View Details, Photos & Messages'}
+                      </button>
+
+                      {isExpanded && (
+                        <div>
+                          {/* Line item breakdown */}
+                          {((estimate.techLabor?.length ?? 0) + (estimate.partsUsed?.length ?? 0) + (estimate.lineItems?.length ?? 0)) > 0 && (
+                            <div style={{marginBottom:14, background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:14}}>
+                              <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>Work Breakdown</div>
+                              <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+                                <thead>
+                                  <tr style={{borderBottom:'1px solid rgba(255,255,255,0.08)'}}>
+                                    <th style={{textAlign:'left', padding:'3px 6px', color:'#6b7280', fontSize:10, fontWeight:700}}>Description</th>
+                                    <th style={{textAlign:'right', padding:'3px 6px', color:'#6b7280', fontSize:10, fontWeight:700}}>Qty</th>
+                                    <th style={{textAlign:'right', padding:'3px 6px', color:'#6b7280', fontSize:10, fontWeight:700}}>Rate</th>
+                                    <th style={{textAlign:'right', padding:'3px 6px', color:'#6b7280', fontSize:10, fontWeight:700}}>Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {estimate.techLabor?.map((item, i) => (
+                                    <tr key={`l${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+                                      <td style={{padding:'4px 6px', color:'#e5e7eb'}}>{item.description||'Labor'} <span style={{fontSize:9,color:'#60a5fa',marginLeft:4}}>LABOR</span></td>
+                                      <td style={{padding:'4px 6px',textAlign:'right',color:'#e5e7eb'}}>{item.hours??1}</td>
+                                      <td style={{padding:'4px 6px',textAlign:'right',color:'#e5e7eb'}}>${(item.rate??0).toFixed(2)}/hr</td>
+                                      <td style={{padding:'4px 6px',textAlign:'right',fontWeight:600,color:'#e5e7eb'}}>${((item.hours??1)*(item.rate??0)).toFixed(2)}</td>
+                                    </tr>
+                                  ))}
+                                  {estimate.partsUsed?.map((item, i) => (
+                                    <tr key={`p${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+                                      <td style={{padding:'4px 6px', color:'#e5e7eb'}}>{item.name||'Part'} <span style={{fontSize:9,color:'#a78bfa',marginLeft:4}}>PART</span></td>
+                                      <td style={{padding:'4px 6px',textAlign:'right',color:'#e5e7eb'}}>{item.quantity??1}</td>
+                                      <td style={{padding:'4px 6px',textAlign:'right',color:'#e5e7eb'}}>${(item.unitPrice??0).toFixed(2)}</td>
+                                      <td style={{padding:'4px 6px',textAlign:'right',fontWeight:600,color:'#e5e7eb'}}>${((item.quantity??1)*(item.unitPrice??0)).toFixed(2)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot>
+                                  <tr style={{borderTop:'2px solid rgba(255,255,255,0.1)'}}>
+                                    <td colSpan={3} style={{padding:'6px 6px',fontWeight:700,color:'#e5e7eb',textAlign:'right'}}>TOTAL</td>
+                                    <td style={{padding:'6px 6px',fontWeight:800,color:'#22c55e',textAlign:'right',fontSize:14}}>${estimate.price.toFixed(2)}</td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          )}
+
+                          {/* Photos & Messages */}
+                          {detailLoading === estimate.id ? (
+                            <div style={{padding:'10px 0', color:'#9aa3b2', fontSize:12, textAlign:'center'}}>Loading photos &amp; messages…</div>
+                          ) : expandedDetail[estimate.id] ? (
+                            <>
+                              {expandedDetail[estimate.id].photos.length > 0 && (
+                                <div style={{marginBottom:14, background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:14}}>
+                                  <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>Work Photos &amp; Videos</div>
+                                  <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
+                                    {expandedDetail[estimate.id].photos.map(photo => {
+                                      const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(photo.url);
+                                      return isVid
+                                        ? <video key={photo.id} src={photo.url} controls style={{width:120, height:90, objectFit:'cover', borderRadius:6, background:'#000'}} />
+                                        : <img key={photo.id} src={photo.url} alt={photo.caption||'Work photo'} onClick={() => window.open(photo.url,'_blank')} style={{width:120, height:90, objectFit:'cover', borderRadius:6, cursor:'pointer'}} />;
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div style={{background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:14}}>
+                                <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:10}}>
+                                  Messages{expandedDetail[estimate.id].messages.length > 0 ? ` (${expandedDetail[estimate.id].messages.length})` : ''}
+                                </div>
+                                <div style={{maxHeight:240, overflowY:'auto', display:'flex', flexDirection:'column', gap:7, marginBottom:10, paddingRight:4}}>
+                                  {expandedDetail[estimate.id].messages.length === 0
+                                    ? <div style={{fontSize:12, color:'#6b7280', padding:'8px 0', textAlign:'center'}}>No messages yet — send one below.</div>
+                                    : expandedDetail[estimate.id].messages.map(msg => {
+                                        const isShop = ['shop','tech','manager'].includes(msg.sender);
+                                        const parsed = parseMessageBody(msg.body);
+                                        return (
+                                          <div key={msg.id} style={{display:'flex', flexDirection:'column', alignItems: isShop ? 'flex-start' : 'flex-end'}}>
+                                            <div style={{
+                                              maxWidth:'85%', padding:'7px 10px',
+                                              borderRadius: isShop ? '10px 10px 10px 2px' : '10px 10px 2px 10px',
+                                              background: isShop ? 'rgba(96,165,250,0.1)' : 'rgba(229,51,42,0.12)',
+                                              border: `1px solid ${isShop ? 'rgba(96,165,250,0.2)' : 'rgba(229,51,42,0.2)'}`,
+                                            }}>
+                                              <div style={{fontSize:11,fontWeight:700,color:isShop?'#60a5fa':'#e5332a',marginBottom:3}}>{msg.senderName||msg.sender}</div>
+                                              {parsed.text && <p style={{margin:0,fontSize:12,color:'#e5e7eb',whiteSpace:'pre-wrap',lineHeight:1.5}}>{parsed.text}</p>}
+                                              {parsed.media.map((url, i) => {
+                                                const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
+                                                return isVid
+                                                  ? <video key={i} src={url} controls style={{maxWidth:'100%',borderRadius:4,marginTop:4,display:'block'}} />
+                                                  : <img key={i} src={url} alt="" onClick={()=>window.open(url,'_blank')} style={{maxWidth:'100%',borderRadius:4,marginTop:4,display:'block',cursor:'pointer'}} />;
+                                              })}
+                                            </div>
+                                            <div style={{fontSize:10,color:'#6b7280',marginTop:2,paddingInline:4}}>
+                                              {new Date(msg.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}{' '}
+                                              {new Date(msg.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+                                            </div>
+                                          </div>
+                                        );
+                                      })
+                                  }
+                                </div>
+                                {estimate.woStatus !== 'completed' && (
+                                  <div style={{display:'flex', gap:8}}>
+                                    <textarea
+                                      value={msgTexts[estimate.id] || ''}
+                                      onChange={e => setMsgTexts(prev => ({...prev, [estimate.id]: e.target.value}))}
+                                      onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSendWOMessage(estimate.id); }}
+                                      placeholder="Type a message… (Ctrl+Enter to send)"
+                                      rows={2}
+                                      style={{flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#e5e7eb', fontSize:12, padding:'7px 10px', resize:'vertical', fontFamily:'inherit'}}
+                                    />
+                                    <button
+                                      onClick={() => handleSendWOMessage(estimate.id)}
+                                      disabled={sendingMsg === estimate.id || !msgTexts[estimate.id]?.trim()}
+                                      style={{padding:'0 14px', background:'rgba(229,51,42,0.18)', border:'1px solid rgba(229,51,42,0.3)', color:'#e5332a', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer', opacity:(!msgTexts[estimate.id]?.trim() || sendingMsg === estimate.id) ? 0.5 : 1}}
+                                    >
+                                      {sendingMsg === estimate.id ? '…' : <FaPaperPlane />}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
-                    <div style={{fontSize:18, color:'#22c55e', fontWeight:700, marginBottom:8}}>${estimate.price.toFixed(2)}</div>
-                    <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{estimate.shop}</div>
-                    <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5, marginBottom:12}}>{estimate.description}</div>
-                    <div style={{fontSize:12, color:'#6b7280'}}>Approved on: {estimate.validUntil}</div>
-                  </div>
-                  <div style={{display:'flex', gap:12}}>
-                    <button style={{
-                      flex:1,
-                      padding:'12px',
-                      background:'#e5332a',
-                      color:'white',
-                      border:'none',
-                      borderRadius:8,
-                      fontSize:14,
-                      fontWeight:600,
-                      cursor:'pointer'
-                    }}>
-                      <FaCalendarAlt style={{marginRight:4}} /> Schedule Service
-                    </button>
-                    <button style={{
-                      flex:1,
-                      padding:'12px',
-                      background:'rgba(245,158,11,0.1)',
-                      color:'#f59e0b',
-                      border:'1px solid rgba(245,158,11,0.3)',
-                      borderRadius:8,
-                      fontSize:14,
-                      fontWeight:600,
-                      cursor:'pointer'
-                    }}>
-                      <FaComments style={{marginRight:4}} /> Contact Shop
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              }
             </div>
 
-            {estimates.filter(estimate => estimate.status === 'accepted').length === 0 && (
-              <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-                No approved estimates yet
-              </div>
+            {estimates.filter(e => ['in-progress','waiting-estimate','waiting-for-payment','completed'].includes(e.woStatus)).length === 0 && (
+              <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>No active work orders yet.</div>
             )}
           </div>
         )}

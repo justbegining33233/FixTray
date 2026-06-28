@@ -48,6 +48,14 @@ export async function POST(
     );
   }
 
+  // When reissuing a denied estimate, reset the declined WorkAuthorization so a fresh one is created
+  if (workOrder.status === 'denied-estimate') {
+    await prisma.workAuthorization.updateMany({
+      where: { workOrderId: id, status: 'declined' },
+      data: { status: 'superseded' },
+    });
+  }
+
   // Update work order status to estimate-submitted
   await prisma.workOrder.update({
     where: { id },

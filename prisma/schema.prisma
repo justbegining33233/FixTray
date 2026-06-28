@@ -1667,3 +1667,19 @@ model MdmDevicePolicy {
   @@unique([deviceId, policyId])
   @@map("mdm_device_policies")
 }
+
+model PlatformConfig {
+  id                       String   @id @default("global")
+  serviceFee               Int      @default(500)
+  platformName             String   @default("FixTray")
+  supportEmail             String   @default("support@fixtray.app")
+  timezone                 String   @default("America/New_York")
+  maintenanceMode          Boolean  @default(false)
+  enableShopRegistration   Boolean  @default(true)
+  enableCustomerPortal     Boolean  @default(true)
+  enableEmailNotifications Boolean  @default(true)
+  enableSmsNotifications   Boolean  @default(false)
+  updatedAt                DateTime @updatedAt
+
+  @@map("platform_config")
+}

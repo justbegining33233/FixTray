@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { getSettings } from '@/lib/platform-settings';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
@@ -20,7 +19,8 @@ export async function GET(request: NextRequest) {
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const threeMonthsAgo = new Date(now);
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const feePerWorkOrder = (getSettings().serviceFee || 500) / 100;
+    const platformConfig = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
+    const feePerWorkOrder = (platformConfig?.serviceFee || 500) / 100;
 
     const [paidWorkOrders, revenueThisMonth, revenueLastMonth, revenueLast3Months] = await Promise.all([
       prisma.workOrder.findMany({

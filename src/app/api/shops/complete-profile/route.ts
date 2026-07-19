@@ -207,12 +207,21 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const auth = requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId');
 
     if (!shopId) {
       return NextResponse.json({ error: 'Shop ID is required' }, { status: 400 });
+    }
+
+    // Verify the authenticated user owns this shop (or is an admin)
+    const isAdmin = auth.role === 'superadmin';
+    if (!isAdmin && auth.id !== shopId) {
+      return NextResponse.json({ error: 'Unauthorized: cannot view another shop\'s profile' }, { status: 403 });
     }
 
     const shop = await prisma.shop.findUnique({

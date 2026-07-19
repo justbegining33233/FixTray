@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
+import { checkAccountLockout, recordFailedLoginAttempt, clearLoginAttempts } from '@/lib/auth-lockout';
+import { logSecurityEvent } from '@/lib/audit-logger';
 import { customerLoginSchema } from '@/lib/validation';
 import { generateAccessToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
 import { logActivity } from '@/lib/activityLogger';
@@ -21,8 +23,9 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validationResult = customerLoginSchema.safeParse(sanitizedBody);
     if (!validationResult.success) {
+      // CRITICAL FIX: Never expose validation details to client
       return NextResponse.json(
-        { error: 'Validation failed', details: validationResult.error.issues },
+        { error: 'Invalid request format' },
         { status: 400 }
       );
     }
@@ -34,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting - prevent brute force attacks
     const clientIP = getClientIP(request);
+    const userAgent = request.headers.get('user-agent') || '';
     const rateLimitKey = `customer_login:${clientIP}:${identifierLower || phoneDigits}`;
     const rateLimit = await checkRateLimit(rateLimitKey);
     
@@ -65,9 +69,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    // HIGH FIX #6: Check account lockout status
+    const lockoutStatus = await checkAccountLockout(customer.id, request);
+    if (lockoutStatus.isLocked) {
+      return NextResponse.json(
+        { 
+          error: `Account is temporarily locked. Try again in ${lockoutStatus.remainingSeconds} seconds.`,
+          retryAfter: lockoutStatus.remainingSeconds 
+        },
+        { status: 429, headers: { 'Retry-After': String(lockoutStatus.remainingSeconds) } }
+      );
+    }
+
     // Verify hashed password
     const isValid = await bcrypt.compare(password, customer.password).catch(() => false);
     if (!isValid) {
+      // MEDIUM FIX #3: Log failed login attempt
+      await logSecurityEvent({
+        eventType: 'login_failed',
+        email: customer.email,
+        role: 'customer',
+        ip: clientIP,
+        userAgent,
+        severity: 'warn',
+      });
+      
+      // HIGH FIX #6: Record failed attempt for lockout
+      await recordFailedLoginAttempt(customer.id, request);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
@@ -75,6 +103,20 @@ export async function POST(request: NextRequest) {
     if (customer.emailVerified === false) {
       await prisma.customer.update({ where: { id: customer.id }, data: { emailVerified: true } }).catch(() => {});
     }
+
+    // HIGH FIX #6: Clear failed attempts on successful login
+    await clearLoginAttempts(customer.id);
+
+    // MEDIUM FIX #3: Log successful login
+    await logSecurityEvent({
+      eventType: 'login_success',
+      userId: customer.id,
+      email: customer.email,
+      role: 'customer',
+      ip: clientIP,
+      userAgent,
+      severity: 'info',
+    });
 
     // Successful login - reset rate limit
     resetRateLimit(rateLimitKey);
@@ -84,7 +126,6 @@ export async function POST(request: NextRequest) {
     const refreshHash = await bcrypt.hash(refreshRaw, 12);
     const expiresAt = refreshExpiryDate();
     const userIp = request.headers.get('x-forwarded-for') || request.headers.get('host') || '';
-    const userAgent = request.headers.get('user-agent') || '';
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
     await enforceSingleActiveSession(prisma, { customerId: customer.id });
     const refresh = await prisma.refreshToken.create({

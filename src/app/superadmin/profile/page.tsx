@@ -92,7 +92,7 @@ function SuperAdminProfilePageContent() {
   return (
     <div style={{ minHeight: '100vh', background: '#000000', color: '#e2e8f0' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        <Link href={'/admin/home' as Route} style={{ color: '#ffb4ad', textDecoration: 'none', fontSize: 14 }}>
+        <Link href={'/superadmin/analytics' as Route} style={{ color: '#93c5fd', textDecoration: 'none', fontSize: 14 }}>
           Back to Super Admin Dashboard
         </Link>
 
@@ -155,7 +155,7 @@ function SuperAdminProfilePageContent() {
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}
+                      style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#4f46e5', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}
                     >
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -220,5 +220,3 @@ export default function SuperAdminProfilePage() {
     </Suspense>
   );
 }
-
-

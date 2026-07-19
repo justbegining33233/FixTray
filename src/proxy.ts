@@ -4,9 +4,18 @@ function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (secret) return secret;
 
-  // Keep proxy verification behavior aligned with token signing in src/lib/auth.ts.
-  // This preserves local/dev behavior even when JWT_SECRET is unset.
-  return 'dev-only-insecure-secret-do-not-use-in-prod';
+  // CRITICAL SECURITY FIX: Match auth.ts behavior - throw in production, warn in dev
+  if (process.env.NODE_ENV === 'production') {
+    const error = new Error(
+      'FATAL SECURITY ERROR: JWT_SECRET environment variable is not set in production. ' +
+      'This is required for secure token verification. Set JWT_SECRET in your environment variables.'
+    );
+    console.error('[proxy]', error.message);
+    throw error;
+  }
+  
+  console.warn('[SECURITY WARNING] JWT_SECRET not set. Using development-only secret.');
+  return process.env.JWT_DEV_SECRET || 'dev-only-local-secret-change-in-production';
 }
 
 function resolveAllowedOrigin(request: NextRequest): string | null {
@@ -14,16 +23,32 @@ function resolveAllowedOrigin(request: NextRequest): string | null {
   if (!origin) return null;
 
   const configured = process.env.CORS_ORIGINS;
+  
+  // CRITICAL SECURITY FIX: Safe defaults in development
   if (!configured) {
-    return process.env.NODE_ENV === 'development' ? origin : null;
+    // Never accept wildcard with credentials - always use explicit whitelist
+    const allowedDevOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
+    ];
+    return allowedDevOrigins.includes(origin) ? origin : null;
   }
 
   const allowed = configured.split(',').map((item) => item.trim()).filter(Boolean);
-  if (allowed.includes('*') || allowed.includes(origin)) {
-    return origin;
+  
+  // CRITICAL SECURITY FIX: Never allow wildcard '*' with credentials
+  if (allowed.includes('*')) {
+    console.error(
+      '[SECURITY ERROR] CORS_ORIGINS contains wildcard "*" but credentials are enabled. ' +
+      'This is a critical security vulnerability. The request is being rejected.'
+    );
+    return null;
   }
-
-  return null;
+  
+  // Only allow configured origins
+  return allowed.includes(origin) ? origin : null;
 }
 
 //  Role definitions 

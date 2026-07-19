@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { rateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 import { validateRequest, inventoryUpdateSchema } from '@/lib/validation';
+import logger from '@/lib/logger';
 import { sanitizeObject } from '@/lib/sanitize';
 
 // GET - Get single inventory item
@@ -10,14 +11,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let id = '';
   try {
+    id = (await params).id;
     const rateLimitResponse = await rateLimit(rateLimitConfigs.api)(request);
     if (rateLimitResponse) return rateLimitResponse;
 
     const auth = requireRole(request, ['shop', 'manager', 'tech']);
     if (auth instanceof NextResponse) return auth;
 
-    const { id } = await params;
     const item = await prisma.inventoryItem.findUnique({
       where: { id },
     });
@@ -34,7 +36,7 @@ export async function GET(
 
     return NextResponse.json({ item });
   } catch (error) {
-    console.error('Error fetching inventory item:', error);
+    logger.error('Error fetching inventory item', error, { itemId: id });
     return NextResponse.json(
       { error: 'Failed to fetch inventory item' },
       { status: 500 }

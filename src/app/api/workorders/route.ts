@@ -354,7 +354,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Send email notification
-    sendWorkOrderCreatedEmail(workOrder.customer.email, workOrder.id).catch(console.error);
+sendWorkOrderCreatedEmail(workOrder.customer.email, workOrder.id).catch((err) => {
+        logger.warn('Failed to send work order created email', { workOrderId: workOrder.id, customerId: workOrder.customerId });
+      });
 
     // Create notification
     await prisma.notification.create({

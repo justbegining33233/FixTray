@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 
-// Reward tiers: points threshold → reward definition
 const REWARD_TIERS = [
   { id: 'tier-1', name: '$10 Off Next Service', value: '$10', description: 'Redeem for $10 off any service at a FixTray shop.', pointCost: 200 },
   { id: 'tier-2', name: 'Free Oil Change', value: 'Free', description: 'Redeem for a complimentary standard oil change (up to $45 value).', pointCost: 500 },
@@ -10,33 +9,48 @@ const REWARD_TIERS = [
   { id: 'tier-4', name: 'Free Annual Inspection', value: 'Free', description: 'Redeem for a complimentary annual vehicle inspection.', pointCost: 1000 },
 ];
 
+// Extract loyalty points calculation to shared function (Phase 2: Consolidate logic)
+async function calculateLoyaltyPoints(customerId: string): Promise<number> {
+  const completedWOs = await prisma.workOrder.findMany({
+    where: {
+      customerId,
+      status: { in: ['closed', 'completed', 'Completed'] },
+    },
+    select: { amountPaid: true, estimatedCost: true },
+  });
+  return completedWOs.reduce((sum, w) => {
+    const paid = w.amountPaid || w.estimatedCost || 0;
+    return sum + Math.floor(paid);
+  }, 0);
+}
+
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['customer']);
   if (auth instanceof NextResponse) return auth;
 
   try {
     const customerId = auth.id;
+    // Ensure customer can only view their own rewards
+    const requestedCustomerId = new URL(request.url).searchParams.get('customerId') || customerId;
+    if (requestedCustomerId !== customerId) {
+      return NextResponse.json({ error: 'Unauthorized: cannot view another customer\'s rewards' }, { status: 403 });
+    }
 
-    const [workOrders, existingClaims] = await Promise.all([
-      prisma.workOrder.findMany({
-        where: { customerId },
-        select: { status: true, completedAt: true, amountPaid: true, estimatedCost: true },
-      }),
+    const [loyaltyPoints, existingClaims, workOrders] = await Promise.all([
+      calculateLoyaltyPoints(customerId),
       prisma.rewardClaim.findMany({
         where: { customerId },
         select: { tierId: true, status: true, claimedAt: true, redeemedAt: true, expiresAt: true },
+      }),
+      prisma.workOrder.findMany({
+        where: { customerId },
+        select: { status: true, completedAt: true, amountPaid: true, estimatedCost: true },
       }),
     ]);
 
     const completed = workOrders.filter(w =>
       ['closed', 'completed', 'Completed'].includes(w.status)
     );
-
-    // Points = 1 per dollar spent (sum of amountPaid or estimatedCost)
-    const loyaltyPoints = completed.reduce((sum, w) => {
-      const paid = w.amountPaid || w.estimatedCost || 0;
-      return sum + Math.floor(paid);
-    }, 0);
 
     // Map of tierId → most recent active claim
     const claimMap = new Map<string, typeof existingClaims[0]>();
@@ -95,18 +109,8 @@ export async function POST(request: NextRequest) {
 
     const customerId = auth.id;
 
-    // Check loyalty points (1 per dollar spent)
-    const completedWOs = await prisma.workOrder.findMany({
-      where: {
-        customerId,
-        status: { in: ['closed', 'completed', 'Completed'] },
-      },
-      select: { amountPaid: true, estimatedCost: true },
-    });
-    const loyaltyPoints = completedWOs.reduce((sum, w) => {
-      const paid = w.amountPaid || w.estimatedCost || 0;
-      return sum + Math.floor(paid);
-    }, 0);
+    // Check loyalty points - reuse shared function (Phase 2: Consolidated logic)
+    const loyaltyPoints = await calculateLoyaltyPoints(customerId);
     if (loyaltyPoints < tier.pointCost) {
       return NextResponse.json({ error: 'Not enough points' }, { status: 400 });
     }

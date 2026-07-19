@@ -84,8 +84,10 @@ export async function POST(request: NextRequest) {
       try {
         employeeNumber = await generateUniqueEmployeeNumber(prisma, isFixTrayEmployee);
       } catch (generationError) {
+        // CRITICAL FIX: Never expose error details to client
+        console.error('Employee number generation failed:', generationError);
         return NextResponse.json(
-          { error: (generationError as Error)?.message || 'Failed to allocate employee number' },
+          { error: 'Failed to process registration' },
           { status: 409 }
         );
       }

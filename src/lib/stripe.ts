@@ -167,7 +167,7 @@ export async function createOrRetrieveCustomer(email: string, name?: string) {
 
     return customer;
   } catch (error) {
-    console.error('Error creating/retrieving Stripe customer:', error);
+    console.error('Error creating/retrieving Stripe customer', error, { email });
     throw error;
   }
 }

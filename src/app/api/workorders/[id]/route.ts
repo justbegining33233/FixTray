@@ -6,6 +6,7 @@ import { pushEstimateReady, pushJobCompleted } from '@/lib/serverPush';
 import { sendSms } from '@/lib/smsService';
 import { awardLoyaltyPoints } from '@/lib/loyaltyService';
 import { dispatchWebhook } from '@/lib/webhookService';
+import logger from '@/lib/logger';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
 
@@ -26,8 +27,9 @@ export async function GET(
       }
     : {};
   
+  let id = '';
   try {
-    const { id } = await params;
+    id = (await params).id;
     const workOrder = await prisma.workOrder.findUnique({
       where: { id },
       include: {
@@ -89,7 +91,7 @@ export async function GET(
     
     return NextResponse.json(workOrder, { headers: corsHeaders });
   } catch (error) {
-    console.error('Error fetching work order:', error);
+    logger.error('Error fetching work order', error, { workOrderId: id });
     return NextResponse.json({ error: 'Failed to fetch work order' }, { status: 500 });
   }
 }
@@ -101,8 +103,9 @@ export async function PUT(
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
   
+  let id = '';
   try {
-    const { id } = await params;
+    id = (await params).id;
     const requestData = await request.json();
     
     // Validate input data
@@ -150,7 +153,9 @@ export async function PUT(
       });
       
       // Send status update email (basic)
-      sendStatusUpdateEmail(current.customer.email, id, data.status).catch(console.error);
+      sendStatusUpdateEmail(current.customer.email, id, data.status).catch((err) => {
+        logger.error('Failed to send status update email', err, { workOrderId: id, status: data.status });
+      });
 
       // Send branded job-completed email when shop submits estimate and work is done
       if ((data.status as string) === 'waiting-for-payment') {
@@ -162,8 +167,12 @@ export async function PUT(
           totalDue,
           current.shop?.shopName || 'Your Shop',
           current.issueDescription || 'Vehicle Service'
-        ).catch(console.error);
-        pushJobCompleted(current.customerId, totalDue, id).catch(console.error);
+        ).catch((err) => {
+          logger.error('Failed to send job completed email', err, { workOrderId: id, totalDue });
+        });
+        pushJobCompleted(current.customerId, totalDue, id).catch((err) => {
+          logger.error('Failed to send job completed push notification', err, { workOrderId: id, customerId: current.customerId });
+        });
       }
       
       // Create notification
@@ -180,7 +189,9 @@ export async function PUT(
 
       // Dispatch webhook for status change
       const webhookEvent = data.status === 'closed' ? 'workorder.closed' : 'workorder.updated';
-      dispatchWebhook(current.shopId, webhookEvent, { workOrderId: id, fromStatus: current.status, toStatus: data.status }).catch(() => {});
+      dispatchWebhook(current.shopId, webhookEvent, { workOrderId: id, fromStatus: current.status, toStatus: data.status }).catch((err) => {
+        logger.error('Failed to dispatch status change webhook', err, { shopId: current.shopId, webhookEvent, workOrderId: id });
+      });
     }
     
     // Send estimate email if estimated cost added
@@ -195,19 +206,27 @@ export async function PUT(
         totalDue,
         current.shop?.shopName || 'Your Shop',
         current.issueDescription || 'Vehicle Service'
-      ).catch(console.error);
-      pushEstimateReady(current.customerId, totalDue, id).catch(console.error);
+      ).catch((err) => {
+        logger.error('Failed to send estimate ready email', err, { workOrderId: id, estimatedCost: data.estimatedCost });
+      });
+      pushEstimateReady(current.customerId, totalDue, id).catch((err) => {
+        logger.error('Failed to send estimate ready push notification', err, { workOrderId: id, customerId: current.customerId });
+      });
 
       // SMS notification for estimate ready
       if (current.customer.phone) {
         sendSms(
           current.customer.phone,
           `FixTray: Your estimate is ready — $${data.estimatedCost.toFixed(2)} for "${current.issueDescription?.slice(0, 40) || 'Vehicle Service'}". Review at fixtray.app/customer (WO: ...${id.slice(-6)})`
-        ).catch(() => {});
+        ).catch((err) => {
+          logger.warn('Failed to send estimate ready SMS', { workOrderId: id, phone: current.customer.phone });
+        });
       }
 
       // Dispatch webhook for estimate ready
-      dispatchWebhook(current.shopId, 'estimate.ready', { workOrderId: id, estimatedCost: data.estimatedCost }).catch(() => {});
+      dispatchWebhook(current.shopId, 'estimate.ready', { workOrderId: id, estimatedCost: data.estimatedCost }).catch((err) => {
+        logger.error('Failed to dispatch estimate ready webhook', err, { shopId: current.shopId, workOrderId: id });
+      });
       
       await prisma.notification.create({
         data: {
@@ -248,7 +267,9 @@ export async function PUT(
     // Award loyalty points when work order is closed
     if (data.status === 'closed' && current.status !== 'closed') {
       const paid = data.amountPaid || current.amountPaid || current.estimatedCost || 0;
-      awardLoyaltyPoints(current.customerId, id, paid).catch(console.error);
+      awardLoyaltyPoints(current.customerId, id, paid).catch((err) => {
+        logger.error('Failed to award loyalty points', err, { customerId: current.customerId, workOrderId: id, amount: paid });
+      });
 
       // Post-service follow-up: email + SMS asking for review
       const customerName = `${current.customer.firstName} ${current.customer.lastName}`;
@@ -270,47 +291,58 @@ export async function PUT(
             <p style="color: #888; font-size: 12px; margin-top: 30px;">Thank you for choosing ${shopName}!</p>
           </div>
         `,
-      }).catch(console.error);
+      }).catch((err) => {
+        logger.warn('Failed to send review request email', { workOrderId: id, customerId: current.customerId });
+      });
 
       if (current.customer.phone) {
         sendSms(
           current.customer.phone,
           `Thank you for your visit to ${shopName}! We'd love your feedback: ${reviewLink}`
-        ).catch(() => {});
+        ).catch((err) => {
+          logger.warn('Failed to send review request SMS', { workOrderId: id, customerId: current.customerId });
+        });
       }
     }
 
     // Auto-deduct inventory when a work order is closed with parts usage.
-    if (data.status === 'closed' && current.status !== 'closed' && Array.isArray(data.partsUsed) && data.partsUsed.length > 0) {
-      for (const part of data.partsUsed) {
-        const qty = Number(part?.quantity) || 0;
-        if (qty <= 0) continue;
-        if (!part?.sku && !part?.name) continue;
+    const partsUsed = (Array.isArray(data.partsUsed) ? data.partsUsed : []) as any[];
+    if (data.status === 'closed' && current.status !== 'closed' && partsUsed.length > 0) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          for (const part of partsUsed) {
+            const qty = Number(part?.quantity) || 0;
+            if (qty <= 0) continue;
+            if (!part?.sku && !part?.name) continue;
 
-        const inventoryItem = await prisma.inventoryItem.findFirst({
-          where: {
-            shopId: current.shopId,
-            OR: [
-              ...(part?.sku ? [{ sku: String(part.sku) }] : []),
-              ...(part?.name ? [{ name: String(part.name) }] : []),
-            ],
-          },
+            const inventoryItem = await tx.inventoryItem.findFirst({
+              where: {
+                shopId: current.shopId,
+                OR: [
+                  ...(part?.sku ? [{ sku: String(part.sku) }] : []),
+                  ...(part?.name ? [{ name: String(part.name) }] : []),
+                ],
+              },
+            });
+
+            if (!inventoryItem) continue;
+
+            await tx.inventoryItem.update({
+              where: { id: inventoryItem.id },
+              data: {
+                quantity: Math.max(0, inventoryItem.quantity - qty),
+              },
+            });
+          }
         });
-
-        if (!inventoryItem) continue;
-
-        await prisma.inventoryItem.update({
-          where: { id: inventoryItem.id },
-          data: {
-            quantity: Math.max(0, inventoryItem.quantity - qty),
-          },
-        });
+      } catch (err) {
+        logger.error('Failed to deduct inventory for closed work order', err, { workOrderId: id, shopId: current.shopId });
       }
     }
 
     return NextResponse.json(updatedWorkOrder);
   } catch (error) {
-    console.error('Error updating work order:', error);
+    logger.error('Error updating work order', error, { workOrderId: id });
     return NextResponse.json({ error: 'Failed to update work order' }, { status: 500 });
   }
 }
@@ -322,8 +354,9 @@ export async function DELETE(
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
   
+  let id = '';
   try {
-    const { id } = await params;
+    id = (await params).id;
     
     const workOrder = await prisma.workOrder.findUnique({
       where: { id },
@@ -342,7 +375,7 @@ export async function DELETE(
     
     return NextResponse.json({ message: 'Work order deleted' });
   } catch (error) {
-    console.error('Error deleting work order:', error);
+    logger.error('Error deleting work order', error, { workOrderId: id });
     return NextResponse.json({ error: 'Failed to delete work order' }, { status: 500 });
   }
 }

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import { verifyToken } from '@/lib/auth-client';
+import { decodeToken } from '@/lib/auth-client';
 
 interface LoginUserData {
   id: string;
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Validate token if it exists
       if (token) {
-        const decodedToken = verifyToken(token);
+        const decodedToken = decodeToken(token);
         if (!decodedToken) {
           // Token is invalid, clear auth data
           localStorage.removeItem('token');

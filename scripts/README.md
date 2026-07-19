@@ -1,7 +1,25 @@
 # FixTray — Utility Scripts
 
 Utility / one-off scripts for managing the FixTray platform.
-Run any script with `node scripts/<category>/<script>.js` from the project root.
+Run any script with `node scripts/<script>.js` from the project root.
+
+## 🎯 Phase 5 Consolidation (Latest)
+
+The following scripts have been consolidated to eliminate duplication:
+
+| Consolidated | Canonical | Purpose |
+|--------------|-----------|---------|
+| `generate-checklist.js` + `v2` | `generate-checklist-v3.js` | Generate QA checklist with role grouping and better HTML escaping |
+| `generate-fixtray-info-pdf.js` | `generate-fixtray-info-pdf-v2.js` | Convert checklist to PDF |
+| `audit-role-syntax.js` + `cleanup-role-checks.js` + `fix-paren-syntax.js` | `audit-codebase.js` | Unified audit utility (syntax & quality checking) |
+
+**Usage:**
+```bash
+node scripts/generate-checklist-v3.js > fixtray-qa-checklist.html
+node scripts/audit-codebase.js syntax    # Check for syntax errors
+node scripts/audit-codebase.js quality   # Score UI quality
+node scripts/audit-codebase.js all       # Run all audits
+```
 
 ## Categories
 

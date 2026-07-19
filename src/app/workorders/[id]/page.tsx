@@ -8,6 +8,7 @@ import {
   FaCheckCircle, FaClock, FaExclamationCircle, FaPlus, FaTrash,
   FaPaperPlane, FaSave, FaEnvelope, FaSearch, FaPaperclip, FaTimes, FaStopwatch,
 } from 'react-icons/fa';
+import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -561,42 +562,6 @@ export default function WorkOrderDetailPage() {
           )}
         </div>
 
-        {/* ── Clock In / Out (gated by customer authorization) ── */}
-        {(userRole === 'tech' || userRole === 'manager') && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {awaitingAuth && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                <FaClock style={{ fontSize: 11 }} /> Awaiting Customer Authorization
-              </span>
-            )}
-            {authDenied && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                <FaExclamationCircle style={{ fontSize: 11 }} /> Authorization Denied
-              </span>
-            )}
-            {canClockIn && (
-              <>
-                {clockTimer && (
-                  <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 700, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <FaStopwatch style={{ fontSize: 11 }} /> {clockTimer}
-                  </span>
-                )}
-                {clockMsg && (
-                  <span style={{ fontSize: 11, color: clockMsg.includes('!') ? '#22c55e' : '#f87171' }}>{clockMsg}</span>
-                )}
-                <button
-                  onClick={clockEntry ? handleClockOut : handleClockIn}
-                  disabled={clockLoading || !userId}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, background: clockEntry ? 'rgba(229,51,42,0.15)' : 'rgba(34,197,94,0.15)', border: `1px solid ${clockEntry ? 'rgba(229,51,42,0.3)' : 'rgba(34,197,94,0.3)'}`, color: clockEntry ? '#e5332a' : '#22c55e', fontSize: 12, fontWeight: 700, borderRadius: 8, padding: '7px 14px', cursor: clockLoading ? 'not-allowed' : 'pointer', opacity: clockLoading ? 0.6 : 1 }}
-                >
-                  <FaClock style={{ fontSize: 11 }} />
-                  {clockLoading ? '…' : clockEntry ? 'Clock Out' : 'Clock In'}
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
         <span style={{ fontSize: 12, color: '#6b7280' }}>
           Created {new Date(wo.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}{' '}
           {new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -844,6 +809,20 @@ export default function WorkOrderDetailPage() {
             </div>
           </Card>
         </div>
+
+        {/* Job Time Tracking - NEW SYSTEM */}
+        {userId && (userRole === 'tech' || userRole === 'manager' || userRole === 'shop') && (
+          <div style={{ marginTop: 16 }}>
+            <WorkOrderTimeClock
+              workOrderId={id}
+              techId={userId}
+              techName={`${userRole === 'tech' ? 'You' : 'Tech'}`}
+              onEntryCreated={() => {
+                // Optionally refresh work order data
+              }}
+            />
+          </div>
+        )}
 
       </div>
 

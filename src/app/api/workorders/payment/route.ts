@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import logger from '@/lib/logger';
 import { validateCsrf } from '@/lib/csrf';
 import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
 

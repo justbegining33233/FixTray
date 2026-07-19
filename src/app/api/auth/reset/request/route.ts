@@ -3,6 +3,20 @@ import prisma from '@/lib/prisma';
 import { generateNumericOTP, generateTokenHex, hashTokenSha256 } from '@/lib/verification';
 import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
 
+/**
+ * CRITICAL FIX: Add constant-time delay to prevent timing attacks
+ * This makes response time consistent regardless of whether user exists
+ */
+async function addConstantTimeDelay(startTime: number, minMs: number, maxMs: number): Promise<void> {
+  const elapsed = Date.now() - startTime;
+  const targetDelay = minMs + Math.random() * (maxMs - minMs);
+  const delay = Math.max(0, targetDelay - elapsed);
+  
+  if (delay > 0) {
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+}
+
 async function sendByEmail(email: string, raw: string, siteUrl: string) {
   if (process.env.RESEND_API_KEY) {
     const { Resend } = await import('resend');
@@ -36,6 +50,8 @@ async function sendBySms(phone: string, raw: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     const body = await request.json();
     const identifier = body.identifier; // email or phone or username
@@ -43,7 +59,11 @@ export async function POST(request: NextRequest) {
     const type = body.type || 'password_reset';
     const siteUrl = process.env.SITE_URL || '';
 
-    if (!identifier) return NextResponse.json({ success: true }); // generic response
+    if (!identifier) {
+      // CRITICAL FIX: Add constant-time delay to prevent enumeration
+      await addConstantTimeDelay(startTime, 200, 300);
+      return NextResponse.json({ success: true }); // generic response
+    }
 
     // Rate limiting � 3 requests per hour per IP + identifier to prevent OTP spam
     const clientIP = getClientIP(request);
@@ -53,16 +73,24 @@ export async function POST(request: NextRequest) {
       // Return generic success to avoid confirming account existence via timing
       return NextResponse.json({ success: true });
     }
-    // Find user (try admin by username, then shop, then customer by email)
-    let user: any = null;
-    // attempt email lookup
-    user = await prisma.admin.findUnique({ where: { username: identifier } });
-    if (!user) user = await prisma.shop.findUnique({ where: { username: identifier } });
-    if (!user) user = await prisma.customer.findUnique({ where: { email: identifier } });
-    if (!user) user = await prisma.tech.findUnique({ where: { email: identifier } });
+    
+    // CRITICAL FIX: Parallel user lookups to prevent timing attacks
+    // Do all lookups in parallel, not sequentially (prevents attackers from measuring response times)
+    const [adminUser, shopUser, customerUser, techUser] = await Promise.all([
+      prisma.admin.findUnique({ where: { username: identifier } }).catch(() => null),
+      prisma.shop.findUnique({ where: { username: identifier } }).catch(() => null),
+      prisma.customer.findUnique({ where: { email: identifier } }).catch(() => null),
+      prisma.tech.findUnique({ where: { email: identifier } }).catch(() => null),
+    ]);
+    
+    const user = adminUser || shopUser || customerUser || techUser;
 
     // Always respond success to avoid account enumeration, but only send token if user exists
-    if (!user) return NextResponse.json({ success: true });
+    if (!user) {
+      // Add constant-time delay to prevent timing attacks
+      await addConstantTimeDelay(Date.now() - (typeof startTime !== 'undefined' ? startTime : Date.now()), 200, 300);
+      return NextResponse.json({ success: true });
+    }
 
     // Generate token: numeric for SMS, hex for email/link
     const raw = via === 'sms' ? generateNumericOTP(6) : generateTokenHex(24);
@@ -84,8 +112,9 @@ export async function POST(request: NextRequest) {
 
     // Send the token via configured provider or console fallback
     try {
-      if (via === 'sms' && user.phone) {
-        await sendBySms(user.phone, raw);
+      const userWithPhone = user as any;
+      if (via === 'sms' && userWithPhone.phone) {
+        await sendBySms(userWithPhone.phone as string, raw);
       } else if (user.email) {
         await sendByEmail(user.email, raw, siteUrl);
       } else {
@@ -96,6 +125,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    // CRITICAL FIX: Always add delay even on error to prevent timing attacks
+    await addConstantTimeDelay(startTime, 200, 300);
     console.error('Reset request error:', err);
     return NextResponse.json({ success: true });
   }

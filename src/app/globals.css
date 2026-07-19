@@ -81,8 +81,8 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
   width: 100%;
   max-width: 100vw;
 }
@@ -320,6 +320,12 @@ tbody td {
   margin-right: auto;
 }
 
+/* Disable scrolling on desktop shell - only body should scroll */
+.role-route-shell.desktop-mode-shell {
+  overflow: visible !important;
+  overflow-y: visible !important;
+}
+
 /* Desktop mode on narrow screens: normalize density across roles/pages. */
 @media (max-width: 1200px) {
   .role-route-shell.desktop-mode-shell {
@@ -468,6 +474,12 @@ tbody td {
   .role-route-shell.desktop-mode-shell [data-page-shell] [style*='position: fixed'][style*='padding:32'],
   .role-route-shell.desktop-mode-shell [data-page-shell] [style*='position: fixed'][style*='padding: 32px'] {
     padding: 10px !important;
+  }
+
+  /* Disable scrolling on the shell itself - scrolling handled by body only */
+  .role-route-shell.desktop-mode-shell {
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
   }
 }
 

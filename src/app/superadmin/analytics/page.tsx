@@ -6,7 +6,7 @@ import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import {
   FaChartBar, FaArrowLeft, FaUsers, FaBuilding, FaClipboardList,
-  FaDollarSign, FaArrowUp,
+  FaDollarSign, FaArrowUp, FaShieldAlt, FaServer, FaCog, FaRocket,
 } from 'react-icons/fa';
 
 type Analytics = {
@@ -30,32 +30,43 @@ export default function SuperAdminAnalytics() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (isLoading || !user) return;
+  const fetchAnalytics = async () => {
     const token = localStorage.getItem('token');
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
-    Promise.all([
+    const [userData, analyticsData] = await Promise.all([
       fetch('/api/admin/users', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : { users: [] }),
-      fetch('/api/shops/accepted', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : { approvedShops: [] }),
-      fetch('/api/workorders', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : []),
       fetch('/api/admin/analytics', { headers, credentials: 'include' }).then(r => r.ok ? r.json() : null),
-    ]).then(([userData, shopsData, woData, analyticsData]) => {
-      const users = Array.isArray(userData) ? userData : userData?.users || [];
-      const shops = Array.isArray(shopsData) ? shopsData : shopsData?.approvedShops || [];
-      const wos = Array.isArray(woData) ? woData : woData?.workOrders || [];
-      const completed = wos.filter((w: any) => w.status === 'completed');
+    ]);
 
-      setAnalytics({
-        totalUsers: users.length,
-        totalShops: shops.length,
-        totalWorkOrders: wos.length,
-        completedWorkOrders: completed.length,
-        totalRevenue: analyticsData?.totalRevenue || 0,
-        avgCompletionRate: wos.length > 0 ? Math.round((completed.length / wos.length) * 100) : 0,
-      });
-    }).catch(() => {})
+    const users = Array.isArray(userData) ? userData : userData?.users || [];
+    const totalUsers = typeof userData?.liveMetrics?.totalUsers === 'number' ? userData.liveMetrics.totalUsers : users.length;
+    const totalShops = analyticsData?.totalShops || 0;
+    const totalWorkOrders = analyticsData?.totalWorkOrders || 0;
+    const completedWorkOrders = analyticsData?.completedWorkOrders || 0;
+    const avgCompletionRate = totalWorkOrders > 0 ? Math.round((completedWorkOrders / totalWorkOrders) * 100) : 0;
+
+    setAnalytics({
+      totalUsers,
+      totalShops,
+      totalWorkOrders,
+      completedWorkOrders,
+      totalRevenue: analyticsData?.totalRevenue || 0,
+      avgCompletionRate,
+    });
+  };
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+    fetchAnalytics()
+      .catch(() => {})
       .finally(() => setLoading(false));
+
+    const refresh = setInterval(() => {
+      fetchAnalytics().catch(() => {});
+    }, 60 * 1000);
+
+    return () => clearInterval(refresh);
   }, [user, isLoading]);
 
   if (isLoading || loading) {
@@ -69,8 +80,8 @@ export default function SuperAdminAnalytics() {
   if (!user) return null;
 
   const cards = [
-    { label: 'Total Users', value: analytics.totalUsers, icon: FaUsers, color: 'bg-[#e5332a]/100', trend: null },
-    { label: 'Total Shops', value: analytics.totalShops, icon: FaBuilding, color: 'bg-[#e5332a]/100', trend: null },
+    { label: 'Total Users', value: analytics.totalUsers, icon: FaUsers, color: 'bg-[#e5332a]', trend: null },
+    { label: 'Total Shops', value: analytics.totalShops, icon: FaBuilding, color: 'bg-indigo-500', trend: null },
     { label: 'Work Orders', value: analytics.totalWorkOrders, icon: FaClipboardList, color: 'bg-green-500', trend: null },
     { label: 'Revenue', value: `$${analytics.totalRevenue.toLocaleString()}`, icon: FaDollarSign, color: 'bg-amber-500', trend: null },
   ];
@@ -152,28 +163,57 @@ export default function SuperAdminAnalytics() {
 
         {/* Deep Links */}
         <div className="grid md:grid-cols-2 gap-4">
-          <Link href={"/admin/platform-analytics" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
-            <div className="w-12 h-12 bg-[#e5332a]/10 rounded-xl flex items-center justify-center">
-              <FaChartBar className="w-6 h-6 text-[#ff6b64]" />
+          <Link href={"/superadmin/users" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
+            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+              <FaChartBar className="w-6 h-6 text-indigo-400" />
             </div>
             <div>
-              <p className="font-semibold text-[#f1f5f9]">Detailed Analytics</p>
-              <p className="text-sm text-[#94a3b8]">Charts, graphs, and detailed reports</p>
+              <p className="font-semibold text-[#f1f5f9]">User Management</p>
+              <p className="text-sm text-[#94a3b8]">Inspect account activity and role distribution</p>
             </div>
           </Link>
-          <Link href={"/admin/financial-reports" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <Link href={"/superadmin/infrastructure" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{background:"rgba(245,158,11,0.15)"}}>
               <FaDollarSign className="w-6 h-6 text-amber-400" />
             </div>
             <div>
-              <p className="font-semibold text-[#f1f5f9]">Financial Reports</p>
-              <p className="text-sm text-[#94a3b8]">Revenue breakdown and financials</p>
+              <p className="font-semibold text-[#f1f5f9]">Infrastructure</p>
+              <p className="text-sm text-[#94a3b8]">Runtime health and environment readiness</p>
             </div>
           </Link>
+        </div>
+
+        {/* Super Admin Navigation */}
+        <div className="mt-8 rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <h2 className="text-lg font-semibold text-white mb-4">Super Admin Controls</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <Link href={"/superadmin/users" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+              <p className="font-medium text-white flex items-center gap-2"><FaUsers className="w-4 h-4 text-[#ff6b64]" /> Users</p>
+              <p className="text-sm text-[#94a3b8] mt-1">Platform-wide user visibility</p>
+            </Link>
+            <Link href={"/admin/accepted-shops" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+              <p className="font-medium text-white flex items-center gap-2"><FaBuilding className="w-4 h-4 text-indigo-400" /> Shops</p>
+              <p className="text-sm text-[#94a3b8] mt-1">Approved shops and profile readiness</p>
+            </Link>
+            <Link href={"/superadmin/security" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+              <p className="font-medium text-white flex items-center gap-2"><FaShieldAlt className="w-4 h-4 text-emerald-400" /> Security</p>
+              <p className="text-sm text-[#94a3b8] mt-1">Audit and protection posture</p>
+            </Link>
+            <Link href={"/superadmin/infrastructure" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+              <p className="font-medium text-white flex items-center gap-2"><FaServer className="w-4 h-4 text-amber-400" /> Infrastructure</p>
+              <p className="text-sm text-[#94a3b8] mt-1">Live runtime and environment checks</p>
+            </Link>
+            <Link href={"/superadmin/settings" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+              <p className="font-medium text-white flex items-center gap-2"><FaCog className="w-4 h-4 text-sky-400" /> Settings</p>
+              <p className="text-sm text-[#94a3b8] mt-1">Global platform configuration</p>
+            </Link>
+            <Link href={"/superadmin/deployments" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+              <p className="font-medium text-white flex items-center gap-2"><FaRocket className="w-4 h-4 text-violet-400" /> Deployments</p>
+              <p className="text-sm text-[#94a3b8] mt-1">Release timeline and history</p>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-

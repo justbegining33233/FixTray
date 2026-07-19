@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Lazy-load `prisma` and `bcrypt` in the handler
 import { generateAccessToken, generateTempToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
+import { checkAccountLockout, recordFailedLoginAttempt, clearLoginAttempts } from '@/lib/auth-lockout';
 import { logActivity } from '@/lib/activityLogger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
@@ -59,11 +60,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account not fully set up. Please contact support.' }, { status: 401 });
     }
 
+    // HIGH FIX #6: Check account lockout status
+    const lockoutStatus = await checkAccountLockout(shop.id, request);
+    if (lockoutStatus.isLocked) {
+      return NextResponse.json(
+        { 
+          error: `Account is temporarily locked. Try again in ${lockoutStatus.remainingSeconds} seconds.`,
+          retryAfter: lockoutStatus.remainingSeconds 
+        },
+        { status: 429, headers: { 'Retry-After': String(lockoutStatus.remainingSeconds) } }
+      );
+    }
+
     const isValid = await bcrypt.compare(password, shop.password);
 
     if (!isValid) {
+      // HIGH FIX #6: Record failed attempt for lockout
+      await recordFailedLoginAttempt(shop.id, request);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
+
+    // HIGH FIX #6: Clear failed attempts on successful login
+    await clearLoginAttempts(shop.id);
 
     // Reset rate limit counter on successful login
     resetRateLimit(rateLimitKey);
@@ -143,8 +161,8 @@ export async function POST(request: NextRequest) {
 
     return response;
     } catch (error: unknown) {
+      // CRITICAL FIX: Never expose error details to client
       console.error('Shop login error:', error);
-      const details = process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined;
-      return NextResponse.json({ error: 'Login failed', ...(details && { details }) }, { status: 500 });
+      return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

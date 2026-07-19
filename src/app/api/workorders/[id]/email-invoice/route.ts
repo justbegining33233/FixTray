@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { generateInvoicePDF } from '@/lib/pdf';
 import { sendEmail } from '@/lib/emailService';
+import logger from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -11,8 +12,9 @@ export async function POST(
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
+  let id = '';
   try {
-    const { id } = await params;
+    id = (await params).id;
 
     const workOrder = await prisma.workOrder.findUnique({
       where: { id },
@@ -97,7 +99,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, message: 'Invoice emailed to customer' });
   } catch (error) {
-    console.error('Error emailing invoice:', error);
+    logger.error('Error emailing invoice', error, { workOrderId: id });
     return NextResponse.json({ error: 'Failed to email invoice' }, { status: 500 });
   }
 }

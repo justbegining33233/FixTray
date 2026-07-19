@@ -194,7 +194,6 @@ const techGroups: MenuGroup[] = [
     defaultOpen: true,
     items: [
       { icon: <FaHome />, label: 'Home',      href: '/tech/home' },
-      { icon: <FaClipboardList />, label: 'My Jobs',   href: '/tech/home' },
       { icon: <FaComments />, label: 'Messages',  href: '/tech/messages' },
     ],
   },
@@ -204,7 +203,7 @@ const techGroups: MenuGroup[] = [
     defaultOpen: true,
     items: [
       { icon: <FaClock />, label: 'Time Clock',       href: '/tech/timeclock' },
-      { icon: <FaListAlt />,  label: 'All Work Orders',  href: '/tech/home' },
+      { icon: <FaListAlt />,  label: 'Command Center',  href: '/tech/command-center' },
       { icon: <FaIndustry />,  label: 'New In-Shop Job',  href: '/tech/new-inshop-job' },
       { icon: <FaRoad />,  label: 'New Roadside Job', href: '/tech/new-roadside-job' },
     ],

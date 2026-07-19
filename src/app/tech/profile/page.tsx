@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { FaUser, FaCircle, FaRegCircle, FaSyncAlt } from 'react-icons/fa';
 
 type TechProfileSection = 'profile' | 'contact' | 'links';
 
@@ -21,6 +22,8 @@ function TechProfilePageContent() {
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [techProfile, setTechProfile] = useState<any>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
     const raw = (searchParams?.get('section') || 'profile').toLowerCase();
@@ -81,6 +84,31 @@ function TechProfilePageContent() {
     }
   };
 
+  const fetchTechProfile = async (techId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/techs/${techId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const tech = await response.json();
+        setTechProfile(tech);
+      }
+    } catch (error) {
+      console.error('Error fetching tech profile:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchTechProfile(user.id);
+    const interval = setInterval(() => {
+      fetchTechProfile(user.id);
+      setRefreshCounter(c => c + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   if (isLoading) {
     return (
       <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -117,7 +145,7 @@ function TechProfilePageContent() {
                   <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>My Profile</h2>
                   <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Overview of your technician account.</p>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
                       <div style={{ color: '#94a3b8', fontSize: 12 }}>Name</div>
                       <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{name || 'Not set'}</div>
@@ -127,6 +155,43 @@ function TechProfilePageContent() {
                       <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>tech</div>
                     </div>
                   </div>
+
+                  {techProfile && (
+                    <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
+                      <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
+                        <div style={{fontSize:32}}><FaUser style={{marginRight:4}} /></div>
+                        <div>
+                          <div style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>{techProfile.firstName} {techProfile.lastName}</div>
+                          <div style={{fontSize:12, color:'#9aa3b2'}}>{techProfile.role === 'tech' ? 'Technician' : 'Manager'}</div>
+                        </div>
+                      </div>
+                      <div style={{borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12}}>
+                        <div style={{display:'grid', gap:8}}>
+                          <div style={{display:'flex', justifyContent:'space-between'}}>
+                            <span style={{fontSize:13, color:'#9aa3b2'}}>Email:</span>
+                            <span style={{fontSize:13, color:'#e5e7eb'}}>{techProfile.email}</span>
+                          </div>
+                          <div style={{display:'flex', justifyContent:'space-between'}}>
+                            <span style={{fontSize:13, color:'#9aa3b2'}}>Phone:</span>
+                            <span style={{fontSize:13, color:'#e5e7eb'}}>{techProfile.phone || 'N/A'}</span>
+                          </div>
+                          <div style={{display:'flex', justifyContent:'space-between', background:'rgba(229,51,42,0.2)', padding:'8px 12px', borderRadius:8, marginTop:4}}>
+                            <span style={{fontSize:13, fontWeight:600, color:'#ff6b64'}}>Hourly Rate:</span>
+                            <span style={{fontSize:16, fontWeight:700, color:'#ff6b64'}}>${(techProfile.hourlyRate ?? 0).toFixed(2)}/hr</span>
+                          </div>
+                          <div style={{display:'flex', justifyContent:'space-between'}}>
+                            <span style={{fontSize:13, color:'#9aa3b2'}}>Status:</span>
+                            <span style={{fontSize:13, fontWeight:600, color: techProfile.available ? '#22c55e' : '#ef4444'}}>
+                              {techProfile.available ? <><FaCircle style={{marginRight:4}} /> Active</> : <><FaRegCircle style={{marginRight:4}} /> Inactive</>}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{marginTop:12, fontSize:11, color:'#6b7280', textAlign:'center'}}>
+                        <FaSyncAlt style={{marginRight:4}} /> Auto-refreshes every 30 seconds
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import logger from '@/lib/logger';
 
 /**
  * Dispatch a webhook event to all matching webhook endpoints for a shop.
@@ -25,10 +26,12 @@ export async function dispatchWebhook(shopId: string, event: string, payload: Re
       const signature = crypto.createHmac('sha256', webhook.secret).update(body).digest('hex');
 
       // Fire-and-forget delivery with timeout
-      deliverWebhook(webhook.id, webhook.url, body, signature).catch(() => {});
+      deliverWebhook(webhook.id, webhook.url, body, signature).catch((err) => {
+        logger.error('Webhook delivery error', err, { webhookId: webhook.id, url: webhook.url, event });
+      });
     }
   } catch (err) {
-    console.error('[webhookService] Error dispatching webhook:', err);
+    logger.error('Error dispatching webhook', err, { shopId, event });
   }
 }
 
@@ -69,6 +72,8 @@ async function deliverWebhook(webhookId: string, url: string, body: string, sign
         lastStatus: 0,
         failureCount: { increment: 1 },
       },
-    }).catch(() => {});
+    }).catch((err) => {
+      logger.error('Failed to update webhook failure count', err, { webhookId });
+    });
   }
 }

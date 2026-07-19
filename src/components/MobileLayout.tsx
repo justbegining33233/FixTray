@@ -54,7 +54,7 @@ export default function MobileLayout({
         {showSidebar && sidebarContent}
 
         {/* Main Content */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1 }}>
           <div
             style={{
               maxWidth: isCompactDesktop ? 1200 : 1400,

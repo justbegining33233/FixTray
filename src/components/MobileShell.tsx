@@ -1095,6 +1095,23 @@ export default function MobileShell({
               ))}
             </div>
 
+            {/* Switch to Web View */}
+            <div style={{ padding: '6px 16px 0' }}>
+              <button
+                onClick={() => {
+                  localStorage.setItem('viewMode', 'desktop');
+                  window.location.reload();
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontSize: 12, color: '#93c5fd', cursor: 'pointer',
+                  background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                  padding: '8px 12px', borderRadius: 8, width: '100%', textAlign: 'left',
+                  touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                }}
+              >🖥️ Switch to Web View</button>
+            </div>
+
             {/* Sign out */}
             <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
               <button

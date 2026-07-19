@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // `prisma` and `bcrypt` are lazy-imported inside the handler to avoid build-time
 // evaluation issues (native binaries / environment differences).
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
+import { checkAccountLockout, recordFailedLoginAttempt, clearLoginAttempts } from '@/lib/auth-lockout';
 import { generateAccessToken, generateRandomToken, generateTempToken, refreshExpiryDate } from '@/lib/auth';
 import { logActivity } from '@/lib/activityLogger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Support username-style tech login with email local-part (e.g. "jdoe" for jdoe@shop.com).
     if (!tech && !identifierLower.includes('@')) {
+      // Optimize: Use WHERE clause to filter instead of loading all techs into memory
       const possibleTechs = await prisma.tech.findMany({
         where: {
           OR: [
@@ -74,6 +76,7 @@ export async function POST(request: NextRequest) {
             },
           },
         },
+        take: 100, // Reasonable limit instead of loading all
       });
 
       tech = possibleTechs.find((t) => {
@@ -92,12 +95,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    // HIGH FIX #6: Check account lockout status
+    const lockoutStatus = await checkAccountLockout(tech.id, request);
+    if (lockoutStatus.isLocked) {
+      return NextResponse.json(
+        { 
+          error: `Account is temporarily locked. Try again in ${lockoutStatus.remainingSeconds} seconds.`,
+          retryAfter: lockoutStatus.remainingSeconds 
+        },
+        { status: 429, headers: { 'Retry-After': String(lockoutStatus.remainingSeconds) } }
+      );
+    }
+
     // Verify password
     const isValidPassword = await bcrypt.compare(password, tech.password);
     
     if (!isValidPassword) {
+      // HIGH FIX #6: Record failed attempt for lockout
+      await recordFailedLoginAttempt(tech.id, request);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
+
+    // HIGH FIX #6: Clear failed attempts on successful login
+    await clearLoginAttempts(tech.id);
 
     // Successful login - reset rate limit
     resetRateLimit(rateLimitKey);
@@ -195,8 +215,8 @@ export async function POST(request: NextRequest) {
 
     return response;
     } catch (error: unknown) {
+      // CRITICAL FIX: Never expose error details to client
       console.error('Tech login error:', error, (error as Error)?.stack);
-      const details = process.env.NODE_ENV === 'development' ? ((error as Error)?.message || 'unknown') : undefined;
-      return NextResponse.json({ error: 'Login failed', ...(details && { details }) }, { status: 500 });
+      return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

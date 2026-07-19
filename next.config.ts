@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
           { key: 'X-XSS-Protection',          value: '1; mode=block' },
           { key: 'Permissions-Policy',        value: 'camera=(self), microphone=(), geolocation=(self)' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          { key: 'Content-Security-Policy',   value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com; font-src 'self' data:; connect-src 'self' https://res.cloudinary.com wss: ws:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" },
+          { key: 'Content-Security-Policy',   value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https: *.openstreetmap.org; font-src 'self' data:; connect-src 'self' https: wss: ws:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" },
           // Performance headers
           { key: 'X-DNS-Prefetch-Control',    value: 'on' },
           { key: 'X-Download-Options',        value: 'noopen' },

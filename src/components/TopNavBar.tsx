@@ -202,8 +202,11 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                 icon: '🔧',
               }));
           }
-        } catch (_error) {
-          // Ignore transient notification fetch failures.
+        } catch (error) {
+          // Log but don't break notification system - fetch next time
+          if (error instanceof Error) {
+            console.warn('Failed to fetch work order notifications:', error.message);
+          }
         }
       }
 
@@ -233,8 +236,16 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         setShowProfileMenu(false);
       }
     };
+    const handleScroll = () => {
+      setShowNotifications(false);
+      setShowProfileMenu(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, []);
 
   useEffect(() => {
@@ -487,7 +498,10 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   };
 
   const NotificationButton = () => (
-    <div style={{ position: 'relative' }} ref={dropdownRef}>
+    <div 
+      style={{ position: 'relative' }} 
+      ref={dropdownRef}
+    >
       <button
         onClick={toggleNotificationsMenu}
         style={{
@@ -532,9 +546,9 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
 
       {showNotifications && (
         <div style={{
-          position: 'absolute',
-          right: 0,
-          marginTop: 8,
+          position: 'fixed',
+          right: 20,
+          top: 70,
           width: 320,
           background: '#0f172a',
           border: '1px solid rgba(255,255,255,0.08)',
@@ -784,11 +798,14 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           {['shop', 'manager', 'tech'].includes(activeRole) && <GlobalSearch />}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, overflow: 'visible' }}>
           <NotificationButton />
 
           {/* Profile / Menu dropdown */}
-          <div style={{ position: 'relative' }} ref={profileMenuRef}>
+          <div 
+            style={{ position: 'relative' }} 
+            ref={profileMenuRef}
+          >
             <button
               onClick={toggleProfileMenu}
               aria-haspopup="menu"
@@ -830,101 +847,189 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
 
             {showProfileMenu && (
               <div style={{
-                position: 'absolute',
-                right: 0,
-                marginTop: 8,
-                width: 200,
-                background: '#0f172a',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
-                borderRadius: 12,
+                position: 'fixed',
+                right: 20,
+                top: 70,
+                width: 260,
+                background: 'linear-gradient(135deg, #0f172a 0%, #1a2539 100%)',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+                borderRadius: 16,
                 overflow: 'hidden',
                 zIndex: 2000,
               }}>
-                {/* Role badge */}
-                <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {displayUserName}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {getRoleBadge()}
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: liveIndicator ? '#22c55e' : '#475569', display: 'inline-block', flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, color: liveIndicator ? '#4ade80' : '#475569', fontWeight: 600 }}>{liveIndicator ? 'Live' : 'Offline'}</span>
+                {/* User Profile Header */}
+                <div style={{ padding: '16px 18px', background: 'rgba(99, 102, 241, 0.08)', borderBottom: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 16,
+                    }}>
+                      {displayUserName.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {displayUserName}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        {getRoleBadge()}
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: liveIndicator ? '#10b981' : '#64748b', display: 'inline-block' }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* My Profile */}
-                <Link
-                  href={getProfileLink()}
-                  onClick={() => setShowProfileMenu(false)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    color: '#e2e8f0',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    textDecoration: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <FaUser style={{marginRight:4}} /> My Profile
-                </Link>
-
-                {/* Clock In/Out for tech/manager */}
-                {(activeRole === 'tech' || activeRole === 'manager') && (
-                  <button
-                    onClick={() => { handleClockToggle(); setShowProfileMenu(false); }}
-                    disabled={loading}
+                {/* Menu Items */}
+                <div style={{ padding: '8px' }}>
+                  {/* My Profile */}
+                  <Link
+                    href={getProfileLink()}
+                    onClick={() => setShowProfileMenu(false)}
                     style={{
                       width: '100%',
-                      padding: '10px 14px',
+                      padding: '12px 14px',
                       background: 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
-                      color: isClockedIn ? '#f87171' : '#4ade80',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      fontSize: 13,
+                      color: '#e2e8f0',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      textDecoration: 'none',
+                      borderRadius: 10,
+                      transition: 'all 0.2s ease',
+                      boxSizing: 'border-box',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(99, 102, 241, 0.15)';
+                      (e.currentTarget as HTMLElement).style.color = '#c7d2fe';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = '#e2e8f0';
+                    }}
+                  >
+                    <FaUser style={{ fontSize: 16, color: '#6366f1' }} />
+                    <span>My Profile</span>
+                  </Link>
+
+                  {/* Clock In/Out for tech/manager */}
+                  {(activeRole === 'tech' || activeRole === 'manager') && (
+                    <button
+                      onClick={() => { handleClockToggle(); setShowProfileMenu(false); }}
+                      disabled={loading}
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: isClockedIn ? '#fca5a5' : '#86efac',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        borderRadius: 10,
+                        transition: 'all 0.2s ease',
+                        opacity: loading ? 0.6 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!loading) {
+                          (e.currentTarget as HTMLElement).style.background = isClockedIn ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      }}
+                    >
+                      <span style={{ fontSize: 16 }}>{isClockedIn ? <FaSquare /> : <FaCaretRight />}</span>
+                      <span>{isClockedIn ? 'Clock Out' : 'Clock In'}</span>
+                    </button>
+                  )}
+
+                  {/* Divider */}
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+
+                  {/* Switch to Mobile View */}
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('viewMode', 'mobile');
+                      window.location.reload();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#93c5fd',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      borderRadius: 10,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(59, 130, 246, 0.15)';
+                      (e.currentTarget as HTMLElement).style.color = '#bfdbfe';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = '#93c5fd';
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>📱</span>
+                    <span>Mobile View</span>
+                  </button>
+
+                  {/* Sign Out */}
+                  <button
+                    onClick={() => { handleSignOut(); setShowProfileMenu(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#fca5a5',
+                      cursor: 'pointer',
+                      fontSize: 14,
                       fontWeight: 600,
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 8,
-                      opacity: loading ? 0.55 : 1,
+                      gap: 12,
+                      borderRadius: 10,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(239, 68, 68, 0.15)';
+                      (e.currentTarget as HTMLElement).style.color = '#fecaca';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = '#fca5a5';
                     }}
                   >
-                    <span style={{ fontSize: 11 }}>{isClockedIn ? <FaSquare /> : <FaCaretRight />}</span>
-                    {isClockedIn ? 'Clock Out' : 'Clock In'}
+                    <FaSignOutAlt style={{ fontSize: 16 }} />
+                    <span>Sign Out</span>
                   </button>
-                )}
-
-                {/* Sign Out */}
-                <button
-                  onClick={() => { handleSignOut(); setShowProfileMenu(false); }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#e5332a',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <FaSignOutAlt style={{marginRight:4}} /> Sign Out
-                </button>
+                </div>
               </div>
             )}
           </div>

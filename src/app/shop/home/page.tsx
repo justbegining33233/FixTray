@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { FaCar, FaExternalLinkAlt, FaIndustry, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck } from 'react-icons/fa';
+
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -45,6 +47,7 @@ export default function ShopHome() {
   const { user, isLoading } = useRequireAuth(['shop']);
   const isMobile = useIsMobile();
   const isNative = useIsNative();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [shopStats, setShopStats] = useState({
     openJobs: 0,
@@ -256,34 +259,43 @@ export default function ShopHome() {
         draggable
         onDragStart={(event) => handleDragStart(event, order.id)}
         onDragEnd={handleDragEnd}
+        onClick={() => router.push(`/workorders/${order.sourceId || order.id}`)}
         style={{
           background: 'rgba(255,255,255,0.04)',
           border: `1px solid ${config.badgeBackground}`,
-          borderRadius: 6,
-          padding: '4px 10px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          cursor: 'grab',
+          borderRadius: 10,
+          padding: '12px 14px',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: '6px 12px',
+          cursor: 'pointer',
           opacity: draggedOrderId === order.id ? 0.5 : 1,
           userSelect: 'none',
+          transition: 'background 0.12s, border-color 0.12s',
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = config.badgeColor; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = config.badgeBackground; }}
       >
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#e5e7eb', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {order.service}
-        </span>
-        <span style={{ fontSize: 10, color: '#9aa3b2', whiteSpace: 'nowrap' }}>{order.customer}</span>
-        <span style={{ padding: '2px 6px', background: style.bg, color: style.color, borderRadius: 4, fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap' }}>
-          {order.priority}
-        </span>
-        <Link
-          href={`/workorders/${order.sourceId || order.id}` as Route}
-          onClick={(e) => e.stopPropagation()}
-          style={{ display: 'flex', alignItems: 'center', color: '#6b7280', fontSize: 10, padding: '2px 4px', borderRadius: 4, flexShrink: 0 }}
-          title="View work order"
-        >
-          <FaExternalLinkAlt />
-        </Link>
+        {/* Top row: type badge + priority badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ padding: '2px 8px', background: config.badgeBackground, color: config.badgeColor, borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
+            {config.badgeLabel}
+          </span>
+          <span style={{ padding: '2px 8px', background: style.bg, color: style.color, borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
+            {order.priority}
+          </span>
+        </div>
+        {order.time && (
+          <span style={{ fontSize: 10, color: '#64748b', textAlign: 'right' }}>{order.time}</span>
+        )}
+
+        {/* Bottom row: service + customer */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#e5e7eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {order.service}
+          </span>
+          <span style={{ fontSize: 11, color: '#94a3b8' }}>{order.customer}</span>
+        </div>
       </div>
     );
   };
@@ -488,6 +500,7 @@ export default function ShopHome() {
 
         {/* Shop Stats */}
         <div style={{display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? 10 : 16, marginBottom: isMobile ? 16 : 32}}>
+          {/* All shop roles */}
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Open Jobs</div>
             <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{dashboardReady ? shopStats.openJobs : '...'} </div>
@@ -496,22 +509,27 @@ export default function ShopHome() {
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Completed Today</div>
             <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.completedToday : '...'} </div>
           </div>
-          <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Today's Revenue</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.todayRevenue : 'Syncing...'} </div>
-          </div>
-          <div style={{background:'rgba(168,85,247,0.1)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>This Week</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#a855f7'}}>{dashboardReady ? shopStats.weekRevenue : 'Syncing...'} </div>
-          </div>
-          <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Active Techs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{dashboardReady ? shopStats.activeTechs : '...'} </div>
-          </div>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Pending Approvals</div>
             <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{dashboardReady ? shopStats.pendingApprovals : '...'} </div>
           </div>
+          {/* Admin / owner only */}
+          {user.isShopAdmin && (
+            <>
+              <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
+                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Today's Revenue</div>
+                <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.todayRevenue : 'Syncing...'} </div>
+              </div>
+              <div style={{background:'rgba(168,85,247,0.1)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:12, padding:20}}>
+                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>This Week</div>
+                <div style={{fontSize:32, fontWeight:700, color:'#a855f7'}}>{dashboardReady ? shopStats.weekRevenue : 'Syncing...'} </div>
+              </div>
+              <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
+                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Active Techs</div>
+                <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{dashboardReady ? shopStats.activeTechs : '...'} </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div style={{display:'flex', flexDirection:'column', gap: isMobile ? 16 : 24}}>
@@ -597,55 +615,25 @@ export default function ShopHome() {
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>Roadcalls and in-shop jobs are split below. All items are dispatchable.</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>{pendingWorkOrders.length} job{pendingWorkOrders.length !== 1 ? 's' : ''}</span>
                   </div>
                   {dragOverTarget === 'pending' && (
                     <div style={{marginBottom:10, padding:'10px 12px', border:'1px dashed rgba(245,158,11,0.7)', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#f59e0b', fontSize:12, fontWeight:700}}>
                       Release to return this work order to pending queue
                     </div>
                   )}
-                  <div style={{display:'flex', flexDirection:'column', gap:14}}>
+                  <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:520, overflowY:'auto', paddingRight:2}}>
                     {pendingWorkOrders.length === 0 && (
                       <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
                         No customers waiting  -  nice work.
                       </div>
                     )}
-                    {(pendingWorkOrders.length > 0) && (
-                      <>
-                        <div style={{padding:'6px 10px', borderRadius:8, background:'rgba(59,130,246,0.12)', color:'#93c5fd', fontSize:12, fontWeight:700}}>
-                          Roadcalls ({pendingRoadcalls.length})
-                        </div>
-                        {[...pendingRoadcalls, ...pendingOther].map((order) => renderPendingCard(order, {
-                          badgeLabel: 'Roadcall',
-                          badgeBackground: 'rgba(59,130,246,0.18)',
-                          badgeColor: '#93c5fd',
-                          defaultDestination: 'roadcall',
-                          dispatchFallback: 'Roadcall',
-                        }))}
-
-                        <div style={{padding:'6px 10px', borderRadius:8, background:'rgba(229,51,42,0.12)', color:'#ff6b64', fontSize:12, fontWeight:700}}>
-                          In-Shop Appointments ({pendingInShopAppointments.length})
-                        </div>
-                        {pendingInShopAppointments.map((order) => renderPendingCard(order, {
-                          badgeLabel: 'Appointment',
-                          badgeBackground: 'rgba(229,51,42,0.18)',
-                          badgeColor: '#ff6b64',
-                          defaultDestination: 'bay',
-                          dispatchFallback: 'Bay',
-                        }))}
-
-                        <div style={{padding:'6px 10px', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#fbbf24', fontSize:12, fontWeight:700}}>
-                          In-Shop Walk-ins ({pendingInShopWalkIns.length})
-                        </div>
-                        {pendingInShopWalkIns.map((order) => renderPendingCard(order, {
-                          badgeLabel: 'Walk-in',
-                          badgeBackground: 'rgba(245,158,11,0.18)',
-                          badgeColor: '#fbbf24',
-                          defaultDestination: 'bay',
-                          dispatchFallback: 'Bay',
-                        }))}
-                      </>
-                    )}
+                    {[
+                      ...pendingRoadcalls.map(o => ({ order: o, config: { badgeLabel: 'Roadcall', badgeBackground: 'rgba(59,130,246,0.18)', badgeColor: '#93c5fd', defaultDestination: 'roadcall' as const, dispatchFallback: 'Roadcall' } })),
+                      ...pendingInShopAppointments.map(o => ({ order: o, config: { badgeLabel: 'Appointment', badgeBackground: 'rgba(229,51,42,0.18)', badgeColor: '#ff6b64', defaultDestination: 'bay' as const, dispatchFallback: 'Bay' } })),
+                      ...pendingInShopWalkIns.map(o => ({ order: o, config: { badgeLabel: 'Walk-in', badgeBackground: 'rgba(245,158,11,0.18)', badgeColor: '#fbbf24', defaultDestination: 'bay' as const, dispatchFallback: 'Bay' } })),
+                      ...pendingOther.map(o => ({ order: o, config: { badgeLabel: 'Other', badgeBackground: 'rgba(100,116,139,0.18)', badgeColor: '#94a3b8', defaultDestination: 'bay' as const, dispatchFallback: 'Bay' } })),
+                    ].map(({ order, config }) => renderPendingCard(order, config))}
                   </div>
                 </div>
 
@@ -689,20 +677,24 @@ export default function ShopHome() {
                                 draggable
                                 onDragStart={(event) => handleDragStart(event, job.id, bay.id)}
                                 onDragEnd={handleDragEnd}
+                                onClick={() => router.push(`/workorders/${job.sourceId || job.id}`)}
                                 style={{
                                   background:'rgba(255,255,255,0.06)',
                                   border:'1px solid rgba(255,255,255,0.08)',
                                   borderRadius:8,
                                   padding:8,
-                                  cursor:'grab',
+                                  cursor:'pointer',
                                   opacity: draggedOrderId === job.id ? 0.6 : 1,
+                                  transition:'background 0.12s, border-color 0.12s',
                                 }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.borderColor = 'rgba(229,51,42,0.4)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                               >
                                 <div style={{fontSize:12, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{job.service}</div>
-                                <div style={{fontSize:11, color:'#9aa3b2'}}>{job.customer}</div>
+                                <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{job.customer}</div>
                                 <button
-                                  onClick={() => void handleReturnToPending(bay.id, job.id)}
-                                  style={{marginTop:8, width:'100%', padding:'6px 8px', background:'rgba(245,158,11,0.12)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.3)', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer'}}
+                                  onClick={(e) => { e.stopPropagation(); void handleReturnToPending(bay.id, job.id); }}
+                                  style={{width:'100%', padding:'6px 8px', background:'rgba(245,158,11,0.12)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.3)', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer'}}
                                 >
                                   Return To Queue
                                 </button>

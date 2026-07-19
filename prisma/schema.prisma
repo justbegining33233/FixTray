@@ -250,6 +250,7 @@ model Tech {
   statusHistory         StatusHistory[]
   shop                  Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
   timeEntries           TimeEntry[]
+  workOrderTimeEntries  WorkOrderTimeEntry[] @relation("workOrderTimeEntries")
   assignedWorkOrders    WorkOrder[]
 
   @@index([shopId])
@@ -312,6 +313,7 @@ model WorkOrder {
   statusHistory      StatusHistory[]
   tracking           TechTracking?
   timeEntries        TimeEntry[]
+  workOrderTimeEntries WorkOrderTimeEntry[]
   assignedTo         Tech?               @relation(fields: [assignedTechId], references: [id])
   customer           Customer            @relation(fields: [customerId], references: [id])
   shop               Shop                @relation(fields: [shopId], references: [id])
@@ -489,6 +491,28 @@ model TimeEntry {
   @@index([clockIn])
   @@index([workOrderId])
   @@map("time_entries")
+}
+
+model WorkOrderTimeEntry {
+  id              String    @id @default(cuid())
+  workOrderId     String
+  techId          String
+  shopId          String
+  clockIn         DateTime
+  clockOut        DateTime?
+  hoursSpent      Float?
+  notes           String?
+  status          String    @default("active") // active, paused, completed
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  workOrder       WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  tech            Tech      @relation("workOrderTimeEntries", fields: [techId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([techId])
+  @@index([shopId])
+  @@index([clockIn])
+  @@map("work_order_time_entries")
 }
 
 model ShopSettings {
@@ -1682,4 +1706,19 @@ model PlatformConfig {
   updatedAt                DateTime @updatedAt
 
   @@map("platform_config")
+}
+
+model LoginAttempt {
+  id            String    @id @default(cuid())
+  userId        String
+  ip            String
+  userAgent     String
+  failedAttempts Int     @default(0)
+  lockedUntil   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("login_attempts")
 }

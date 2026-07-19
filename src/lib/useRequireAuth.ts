@@ -4,16 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useAuth } from '@/contexts/AuthContext';
-
-/** Where each role belongs — must mirror src/middleware.ts */
-const ROLE_HOME: Record<string, string> = {
-  admin:      '/admin/home',
-  superadmin: '/admin/home',
-  shop:       '/shop/admin',
-  manager:    '/manager/home',
-  tech:       '/tech/home',
-  customer:   '/customer/dashboard',
-};
+import { ROLE_HOME } from '@/lib/roleConfig';
 
 export default function useRequireAuth(allowedRoles?: string[]) {
   const { user, isLoading, isAuthenticated } = useAuth();

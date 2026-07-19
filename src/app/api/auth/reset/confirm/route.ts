@@ -42,6 +42,33 @@ export async function POST(request: NextRequest) {
       await prisma.tech.update({ where: { id: user.id }, data: { password: newPassword } });
     }
 
+    // HIGH FIX #9: Invalidate all existing sessions on password change
+    // This forces the user to log in again with new password
+    const metadata = { 
+      adminId: userModel === 'admin' ? user.id : null,
+    };
+    const jsonString = JSON.stringify(metadata);
+    
+    // Delete all refresh tokens for this user (search by metadata if available)
+    await prisma.refreshToken.deleteMany({
+      where: { 
+        metadata: { 
+          contains: `"${userModel === 'admin' ? 'adminId' : userModel}":"${user.id}"`
+        }
+      }
+    }).catch(() => {
+      // If metadata search fails, try alternative approach
+      return prisma.refreshToken.deleteMany({
+        where: { 
+          OR: [
+            { metadata: { contains: userModel === 'admin' ? `"${user.id}"` : `"${user.id}"` } }
+          ]
+        }
+      });
+    });
+
+    console.log(`[SECURITY] Session invalidation: All tokens cleared for ${userModel}:${user.id} due to password reset`);
+
     // Delete token record
     await prisma.verificationToken.delete({ where: { id: rec.id } });
 

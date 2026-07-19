@@ -12,7 +12,12 @@ export async function GET(request: NextRequest) {
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const last48h = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
+    // Non-superadmins can only see their own sessions for security
+    const isSuperAdmin = auth.role === 'superadmin';
+    const adminIdFilter = isSuperAdmin ? {} : { adminId: auth.id };
+
     let sessions = await prisma.refreshToken.findMany({
+      where: adminIdFilter,
       orderBy: { createdAt: 'desc' },
     });
 

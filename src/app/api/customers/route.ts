@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 500,
     });
 
+    // Use Map for O(1) deduplication
     const unique = new Map<string, { id: string; name: string; email: string }>();
     for (const row of workOrders) {
       const customer = row.customer;

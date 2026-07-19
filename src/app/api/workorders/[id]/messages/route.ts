@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import logger from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -9,8 +10,9 @@ export async function POST(
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
+  let workOrderId = '';
   try {
-    const { id: workOrderId } = await params;
+    workOrderId = (await params).id;
     const body = await request.json();
     const messageBody: string = String(body?.body || '').trim();
 
@@ -55,54 +57,59 @@ export async function POST(
       if (tech) senderName = `${tech.firstName} ${tech.lastName}`.trim();
     }
 
-    // 1. Create work-order-specific message (shows in WO thread)
-    const message = await prisma.message.create({
-      data: { workOrderId, sender: auth.role, senderName, body: messageBody },
+    // Use transaction to ensure both messages are created together or both fail
+    const message = await prisma.$transaction(async (tx) => {
+      // 1. Create work-order-specific message (shows in WO thread)
+      const msg = await tx.message.create({
+        data: { workOrderId, sender: auth.role, senderName, body: messageBody },
+      });
+
+      // 2. Mirror to DirectMessage so it appears in the messages page
+      const woShortId = `WO-${workOrderId.slice(-8).toUpperCase()}`;
+      const shopId = wo.shopId;
+
+      type UserRole = 'admin' | 'superadmin' | 'shop' | 'tech' | 'manager' | 'customer';
+
+      if (['shop', 'tech', 'manager'].includes(auth.role) && wo.customer) {
+        const shopSenderId = auth.role === 'shop' ? auth.id : (auth.shopId || shopId);
+        await tx.directMessage.create({
+          data: {
+            senderId:     shopSenderId,
+            senderRole:   'shop' as UserRole,
+            senderName:   wo.shop?.shopName || senderName,
+            receiverId:   wo.customerId,
+            receiverRole: 'customer' as UserRole,
+            receiverName: `${wo.customer.firstName} ${wo.customer.lastName}`.trim(),
+            shopId,
+            subject:      woShortId,
+            body:         messageBody,
+          },
+        });
+      } else if (auth.role === 'customer') {
+        const customerName = wo.customer
+          ? `${wo.customer.firstName} ${wo.customer.lastName}`.trim()
+          : 'Customer';
+        await tx.directMessage.create({
+          data: {
+            senderId:     auth.id,
+            senderRole:   'customer' as UserRole,
+            senderName:   customerName,
+            receiverId:   shopId,
+            receiverRole: 'shop' as UserRole,
+            receiverName: wo.shop?.shopName || 'Shop',
+            shopId,
+            subject:      woShortId,
+            body:         messageBody,
+          },
+        });
+      }
+
+      return msg;
     });
-
-    // 2. Mirror to DirectMessage so it appears in the messages page
-    const woShortId = `WO-${workOrderId.slice(-8).toUpperCase()}`;
-    const shopId = wo.shopId;
-
-    type UserRole = 'admin' | 'superadmin' | 'shop' | 'tech' | 'manager' | 'customer';
-
-    if (['shop', 'tech', 'manager'].includes(auth.role) && wo.customer) {
-      const shopSenderId = auth.role === 'shop' ? auth.id : (auth.shopId || shopId);
-      await prisma.directMessage.create({
-        data: {
-          senderId:     shopSenderId,
-          senderRole:   'shop' as UserRole,
-          senderName:   wo.shop?.shopName || senderName,
-          receiverId:   wo.customerId,
-          receiverRole: 'customer' as UserRole,
-          receiverName: `${wo.customer.firstName} ${wo.customer.lastName}`.trim(),
-          shopId,
-          subject:      woShortId,
-          body:         messageBody,
-        },
-      });
-    } else if (auth.role === 'customer') {
-      const customerName = wo.customer
-        ? `${wo.customer.firstName} ${wo.customer.lastName}`.trim()
-        : 'Customer';
-      await prisma.directMessage.create({
-        data: {
-          senderId:     auth.id,
-          senderRole:   'customer' as UserRole,
-          senderName:   customerName,
-          receiverId:   shopId,
-          receiverRole: 'shop' as UserRole,
-          receiverName: wo.shop?.shopName || 'Shop',
-          shopId,
-          subject:      woShortId,
-          body:         messageBody,
-        },
-      });
-    }
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
-    console.error('Error sending WO message:', error);
+    logger.error('Error sending work order message', error, { workOrderId });
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
   }
 }

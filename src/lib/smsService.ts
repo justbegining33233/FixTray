@@ -9,6 +9,8 @@
  *   TWILIO_MESSAGING_SERVICE_SID – (optional) use a Messaging Service instead of a fixed from number
  */
 
+import logger from '@/lib/logger';
+
 let twilioClient: any | null = null;
 
 async function getClient() {
@@ -53,7 +55,7 @@ export async function sendSms(to: string, body: string): Promise<boolean> {
     return true;
   } catch (err) {
     // Log but don't throw — SMS failure should never break the main flow
-    console.error('[smsService] Failed to send SMS:', (err as Error)?.message);
+    logger.error('Failed to send SMS', err, { to: normalized });
     return false;
   }
 }

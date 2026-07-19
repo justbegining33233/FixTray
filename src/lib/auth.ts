@@ -9,13 +9,23 @@ import { NextRequest, NextResponse } from 'next/server';
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (secret) return secret;
-  if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV !== undefined) {
-    // At runtime on Vercel the var must exist; during build it may not.
-    // During the build phase VERCEL=1 and VERCEL_ENV are set but secrets are not injected.
-    // We only throw at actual request-time, not build-time.
-    console.error('[auth] WARNING: JWT_SECRET is not set in production runtime.');
+  
+  // CRITICAL SECURITY FIX: Never return hardcoded fallback secret
+  if (process.env.NODE_ENV === 'production') {
+    const error = new Error(
+      'FATAL SECURITY ERROR: JWT_SECRET environment variable is not set in production. ' +
+      'This is required for secure token signing. Set JWT_SECRET in your environment variables.'
+    );
+    console.error('[auth]', error.message);
+    throw error;
   }
-  return 'dev-only-insecure-secret-do-not-use-in-prod';
+  
+  // Development only: warn but allow with a non-hardcoded default
+  console.warn(
+    '[SECURITY WARNING] JWT_SECRET not set in development. ' +
+    'Using development-only secret. DO NOT USE IN PRODUCTION.'
+  );
+  return process.env.JWT_DEV_SECRET || 'dev-only-local-secret-change-in-production';
 }
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '24h';
 const DEFAULT_REFRESH_EXPIRES_DAYS = Number(process.env.REFRESH_EXPIRES_DAYS || '30');

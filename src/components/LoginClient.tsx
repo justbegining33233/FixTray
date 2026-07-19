@@ -32,11 +32,13 @@ export default function LoginClient() {
   const [showReset, setShowReset] = useState(false);
   const [regMsg, setRegMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
-  const getPostLoginRoute = (fallback: string): Route => {
+  const getPostLoginRoute = (fallback: string, allowedPrefixes?: string[]): Route => {
     const redirect = searchParams?.get('redirect') || '';
-    // Allow only same-origin internal paths.
+    // Allow only same-origin internal paths that match the role's allowed prefixes.
     if (redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/auth/login')) {
-      return redirect as Route;
+      if (!allowedPrefixes || allowedPrefixes.some(prefix => redirect.startsWith(prefix))) {
+        return redirect as Route;
+      }
     }
     return fallback as Route;
   };
@@ -115,8 +117,8 @@ export default function LoginClient() {
 
           login({ token: techData.accessToken, role: techData.role, name: techData.name, id: techData.id, shopId: techData.shopId });
           setLoading(false);
-          if (techData.role === 'tech') navigateAfterLogin(getPostLoginRoute('/tech/home'));
-          else if (techData.role === 'manager') navigateAfterLogin(getPostLoginRoute('/manager/home'));
+          if (techData.role === 'tech') navigateAfterLogin(getPostLoginRoute('/tech/home', ['/tech/', '/workorders/']));
+          else if (techData.role === 'manager') navigateAfterLogin(getPostLoginRoute('/manager/home', ['/manager/', '/workorders/']));
           return;
         }
         if (techResponse.status >= 500) serverError = true;
@@ -132,7 +134,7 @@ export default function LoginClient() {
           login({ token: shopAccount.accessToken, role: 'shop', name: shopAccount.shopName, id: shopAccount.id, shopId: shopAccount.id, isShopAdmin: true, shopProfileComplete: profileComplete });
           setLoading(false);
           const nextRoute = profileComplete ? '/shop/home' : '/shop/complete-profile';
-          navigateAfterLogin(getPostLoginRoute(nextRoute));
+          navigateAfterLogin(getPostLoginRoute(nextRoute, ['/shop/', '/workorders/']));
           return;
         }
         if (shopResponse.status >= 500) serverError = true;
@@ -148,7 +150,7 @@ export default function LoginClient() {
           const id = customerData.id || (customerData.user && customerData.user.id);
           login({ token, role: 'customer', name: name || 'Customer', id: id || '' });
           setLoading(false);
-          navigateAfterLogin(getPostLoginRoute('/customer/dashboard'));
+          navigateAfterLogin(getPostLoginRoute('/customer/dashboard', ['/customer/']));
           return;
         }
         if (customerResponse.status >= 500) serverError = true;

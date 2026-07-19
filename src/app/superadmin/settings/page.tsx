@@ -22,7 +22,7 @@ export default function SuperAdminSettings() {
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
     fetch('/api/admin/settings', { headers, credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(data => setSettings(data || {
+      .then(data => setSettings(data?.settings || {
         platformName: 'FixTray',
         maintenanceMode: false,
         allowSignups: true,
@@ -45,7 +45,7 @@ export default function SuperAdminSettings() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await fetch('/api/admin/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -54,6 +54,12 @@ export default function SuperAdminSettings() {
         credentials: 'include',
         body: JSON.stringify(settings),
       });
+
+      if (res.ok) {
+        const payload = await res.json().catch(() => null);
+        if (payload?.settings) setSettings(payload.settings);
+      }
+
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
@@ -65,8 +71,8 @@ export default function SuperAdminSettings() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500" />
+      <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e5332a]" />
       </div>
     );
   }
@@ -74,16 +80,16 @@ export default function SuperAdminSettings() {
   if (!user || !settings) return null;
 
   return (
-    <div className="min-h-screen p-4 md:p-8 pt-20 md:pt-8">
+    <div className="min-h-screen p-4 md:p-8 pt-20 md:pt-8 bg-black text-white">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Link href={"/admin/home" as Route} className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg">
-              <FaArrowLeft className="w-4 h-4 text-[#94a3b8]" />
+            <Link href={"/superadmin/analytics" as Route} className="p-2 hover:bg-white/5 rounded-lg">
+              <FaArrowLeft className="w-4 h-4 text-zinc-400" />
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-white">Global Settings</h1>
-              <p className="text-[#94a3b8] mt-1">Platform-wide configuration</p>
+              <p className="text-zinc-400 mt-1">Platform-wide configuration</p>
             </div>
           </div>
           <button
@@ -129,7 +135,7 @@ export default function SuperAdminSettings() {
         {/* Access */}
         <div className="rounded-2xl p-6 mb-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
           <div className="flex items-center gap-2 mb-4">
-            <FaGlobe className="w-5 h-5 text-[#ff6b64]" />
+            <FaGlobe className="w-5 h-5 text-indigo-400" />
             <h2 className="text-lg font-semibold text-white">Access Controls</h2>
           </div>
           <div className="space-y-4">
@@ -142,7 +148,7 @@ export default function SuperAdminSettings() {
                 type="checkbox"
                 checked={settings.allowSignups}
                 onChange={e => setSettings({ ...settings, allowSignups: e.target.checked })}
-                className="w-5 h-5 rounded text-[#ff6b64] focus:ring-[#e5332a]"
+                className="w-5 h-5 rounded text-[#e5332a] focus:ring-[#e5332a]"
               />
             </label>
             <label className="flex items-center justify-between p-3 rounded-xl cursor-pointer" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
@@ -154,9 +160,32 @@ export default function SuperAdminSettings() {
                 type="checkbox"
                 checked={settings.maintenanceMode}
                 onChange={e => setSettings({ ...settings, maintenanceMode: e.target.checked })}
-                className="w-5 h-5 rounded text-[#ff6b64] focus:ring-[#e5332a]"
+                className="w-5 h-5 rounded text-[#e5332a] focus:ring-[#e5332a]"
               />
             </label>
+          </div>
+        </div>
+
+        {/* Platform Fee */}
+        <div className="rounded-2xl p-6 mb-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <div className="flex items-center gap-2 mb-4">
+            <FaCog className="w-5 h-5 text-[#ff6b64]" />
+            <h2 className="text-lg font-semibold text-white">Platform Fee</h2>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#94a3b8] mb-1">Fee Per Work Order (USD)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-[#94a3b8] text-lg">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={typeof settings.serviceFee === 'number' ? (settings.serviceFee / 100).toFixed(2) : (settings.serviceFee ?? 5)}
+                onChange={e => setSettings({ ...settings, serviceFeeRaw: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                className="w-40 px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-[#e5332a] focus:border-transparent text-[#f1f5f9]" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.14)"}}
+              />
+            </div>
+            <p className="text-xs text-[#64748b] mt-1">Charged per completed work order across all shops. Changes are saved to the database immediately.</p>
           </div>
         </div>
 
@@ -175,7 +204,7 @@ export default function SuperAdminSettings() {
               type="checkbox"
               checked={settings.emailNotifications}
               onChange={e => setSettings({ ...settings, emailNotifications: e.target.checked })}
-              className="w-5 h-5 rounded text-[#ff6b64] focus:ring-[#e5332a]"
+              className="w-5 h-5 rounded text-[#e5332a] focus:ring-[#e5332a]"
             />
           </label>
         </div>
@@ -183,4 +212,3 @@ export default function SuperAdminSettings() {
     </div>
   );
 }
-

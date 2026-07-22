@@ -86,7 +86,7 @@ export default function AdminInventoryPage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
-      <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar role="manager" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 1400, margin: '0 auto', width: '100%' }}>

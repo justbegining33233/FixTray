@@ -3,7 +3,7 @@
 // Use react-icons for all icons
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaChartLine, FaClipboardList, FaClock, FaCodeBranch, FaCog, FaCogs, FaComments, FaCreditCard, FaDatabase, FaDesktop, FaEdit, FaEnvelope, FaGift, FaHeartbeat, FaHome, FaIndustry, FaKey, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPercent, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaServer, FaShieldAlt, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaClipboardList, FaClock, FaCodeBranch, FaCog, FaComments, FaCreditCard, FaDesktop, FaEdit, FaGift, FaHeartbeat, FaHome, FaIndustry, FaKey, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
@@ -23,7 +23,7 @@ interface MenuGroup {
 }
 
 interface SidebarProps {
-  role: 'shop' | 'manager' | 'tech' | 'admin' | 'superadmin';
+  role: 'shop' | 'manager' | 'tech';
   isOpen?: boolean;
   onClose?: () => void;
   onSelectTab?: (tab: string) => void;
@@ -224,123 +224,6 @@ const techGroups: MenuGroup[] = [
   },
 ];
 
-const adminGroups: MenuGroup[] = [
-  {
-    label: 'Overview',
-    icon: <FaHome />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaHome />, label: 'Dashboard', href: '/admin/home' },
-      { icon: <FaComments />, label: 'Messaging', href: '/admin/messaging' },
-    ],
-  },
-  {
-    label: 'Platform Management',
-    icon: <FaStore />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaStore />, label: 'Shops', href: '/admin/shops' },
-      { icon: <FaUsers />, label: 'Users', href: '/admin/user-management' },
-      { icon: <FaUser />, label: 'Customers', href: '/admin/manage-customers' },
-      { icon: <FaBuilding />, label: 'Tenants', href: '/admin/manage-tenants' },
-    ],
-  },
-  {
-    label: 'Work Orders & Operations',
-    icon: <FaClipboardList />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaClipboardList />, label: 'DVI Approvals', href: '/admin/dvi-approvals' },
-      { icon: <FaSearch />, label: 'Inspections', href: '/admin/compliance-dashboard' },
-      { icon: <FaBoxes />, label: 'Inventory', href: '/admin/inventory' },
-      { icon: <FaLeaf />, label: 'Environmental Fees', href: '/admin/environmental-fees' },
-    ],
-  },
-  {
-    label: 'Communications',
-    icon: <FaBullhorn />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaEnvelope />, label: 'Email Templates', href: '/admin/email-templates' },
-      { icon: <FaBullhorn />, label: 'Campaigns', href: '/admin/campaigns' },
-      { icon: <FaClock />, label: 'Reminders', href: '/admin/recurring-reminders' },
-    ],
-  },
-  {
-    label: 'Financial & Reporting',
-    icon: <FaChartBar />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaChartLine />, label: 'Analytics', href: '/admin/platform-analytics' },
-      { icon: <FaChartBar />, label: 'Revenue', href: '/admin/revenue' },
-      { icon: <FaReceipt />, label: 'Financial Reports', href: '/admin/financial-reports' },
-      { icon: <FaPercent />, label: 'Coupons', href: '/admin/coupons' },
-    ],
-  },
-  {
-    label: 'Security & Compliance',
-    icon: <FaLock />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaShieldAlt />, label: 'Security', href: '/admin/security' },
-      { icon: <FaCogs />, label: 'Settings', href: '/admin/security-settings' },
-      { icon: <FaScroll />, label: 'Activity Logs', href: '/admin/activity-logs' },
-      { icon: <FaDesktop />, label: 'Sessions', href: '/admin/sessions' },
-    ],
-  },
-  {
-    label: 'System Administration',
-    icon: <FaCog />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaCog />, label: 'Settings', href: '/admin/settings' },
-      { icon: <FaTools />, label: 'Admin Tools', href: '/admin/admin-tools' },
-      { icon: <FaDatabase />, label: 'Backup/Restore', href: '/admin/backup-restore' },
-      { icon: <FaChartLine />, label: 'Performance', href: '/admin/performance' },
-    ],
-  },
-];
-
-const superadminGroups: MenuGroup[] = [
-  {
-    label: 'Overview',
-    icon: <FaHome />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaHome />, label: 'Dashboard', href: '/superadmin' },
-      { icon: <FaUsers />, label: 'Users', href: '/superadmin/users' },
-    ],
-  },
-  {
-    label: 'Infrastructure',
-    icon: <FaIndustry />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaServer />, label: 'Deployments', href: '/superadmin/deployments' },
-      { icon: <FaDatabase />, label: 'Infrastructure', href: '/superadmin/infrastructure' },
-      { icon: <FaBuilding />, label: 'Tenants', href: '/superadmin/tenants' },
-    ],
-  },
-  {
-    label: 'Security & Monitoring',
-    icon: <FaShieldAlt />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaLock />, label: 'Security', href: '/superadmin/security' },
-      { icon: <FaChartLine />, label: 'Analytics', href: '/superadmin/analytics' },
-    ],
-  },
-  {
-    label: 'Configuration',
-    icon: <FaCog />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaCog />, label: 'Settings', href: '/superadmin/settings' },
-      { icon: <FaUser />, label: 'Profile', href: '/superadmin/profile' },
-    ],
-  },
-];
-
 // --- COMPONENT ---------------------------------------------------------------
 
 export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, activeHash }: SidebarProps) {
@@ -350,13 +233,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
   const [isCompactDesktop, setIsCompactDesktop] = useState(false);
   const [currentHash, setCurrentHash] = useState('');
 
-  const groups = 
-    role === 'shop' ? shopGroups :
-    role === 'manager' ? managerGroups :
-    role === 'tech' ? techGroups :
-    role === 'admin' ? adminGroups :
-    role === 'superadmin' ? superadminGroups :
-    techGroups; // fallback
+  const groups = role === 'shop' ? shopGroups : role === 'manager' ? managerGroups : techGroups;
   const filteredGroups = groups;
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>

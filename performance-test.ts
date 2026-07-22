@@ -124,7 +124,7 @@ function groupMetricsByEndpoint() {
       requests: data.count,
       successful: data.successful,
       failed: data.failed,
-      avgResponseTime: `${(durations.reduce((a, b) => a + b, 0) / durations.length).toFixed(0)}ms`,
+      avgResponseTime: `${(durations.reduce((a: number, b: number) => a + b, 0) / durations.length).toFixed(0)}ms`,
       minResponseTime: `${Math.min(...durations).toFixed(0)}ms`,
       maxResponseTime: `${Math.max(...durations).toFixed(0)}ms`,
     };

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
 import prisma from '@/lib/prisma';
-import stripe from '@/lib/stripe';
+import logger from '@/lib/logger';
 import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
 import Stripe from 'stripe';
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error('Checkout session error:', error);
+    logger.error('Checkout session error', error);
     return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { generateAccessToken } from '@/lib/auth';
 import { isOwnerAdmin } from '@/lib/owner-access';
+import logger from '@/lib/logger';
 
 const adminLoginSchema = z.object({
   username: z.string().min(1),
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Admin login error:', error);
+    logger.error('Admin login failed', error);
     return NextResponse.json(
       { error: 'Login failed' },
       { status: 500 }

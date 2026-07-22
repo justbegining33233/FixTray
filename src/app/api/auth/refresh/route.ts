@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 // Lazy-load prisma & bcrypt inside handler
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
+import logger from '@/lib/logger';
 
 
 export async function POST(request: NextRequest) {
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
     });
     return response;
   } catch (error) {
-    console.error('Refresh token error:', error);
+    logger.error('Refresh token error', error);
     return NextResponse.json({ error: 'Refresh failed' }, { status: 500 });
   }
 }

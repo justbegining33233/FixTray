@@ -1,0 +1,48 @@
+# Render deployment configuration for FixTray Socket.IO server
+#
+# This is the render.yaml for SOCKET SERVER ONLY (not main app)
+#
+# SETUP:
+#   1. Push socket-server folder to GitHub
+#   2. Create new Render service: https://dashboard.render.com/new
+#   3. Connect GitHub repo → select "socket-server" folder as root
+#   4. Use this render.yaml
+#   5. Set environment variables (see below)
+#
+# ENVIRONMENT VARIABLES:
+#   JWT_SECRET          - Copy from main FixTray project
+#   REDIS_URL           - From Render Redis service
+#   ALLOWED_ORIGINS     - Comma-separated frontend URLs
+#   NODE_ENV            - "production"
+#   LOG_LEVEL           - "info"
+#
+# FREE TIER:
+#   - $0/month for first month, then ~$7/month for web service
+#   - Auto-deploys on git push
+#   - Automatic SSL certificates
+
+services:
+  - type: web
+    name: fixtray-socket-server
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    healthCheckTimeout: 30
+    
+    # Auto-deploy on git push
+    autoDeployOnPush: true
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: LOG_LEVEL
+        value: info
+      # These MUST be set manually in Render dashboard:
+      # - JWT_SECRET (from Vercel)
+      # - REDIS_URL (from Render Redis service)
+      # - ALLOWED_ORIGINS

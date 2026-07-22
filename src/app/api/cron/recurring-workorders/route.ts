@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendRecurringApprovalEmail } from '@/lib/emailService';
+import logger from '@/lib/logger';
 import { pushRecurringServiceDue } from '@/lib/serverPush';
 
 function nextRunDate(frequency: string, from: Date = new Date()): Date {
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[Cron] POST error:', msg);
+    logger.error('[Cron] Recurring work orders job failed', err);
     return NextResponse.json({ error: 'Cron job failed', detail: msg }, { status: 500 });
   }
 }

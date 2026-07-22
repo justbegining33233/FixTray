@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logSecurityEvent } from '@/lib/audit-logger';
 import { getClientIP } from '@/lib/rateLimit';
+import logger from '@/lib/logger';
 
 export interface AuthorizationScope {
   resource: string;
@@ -94,7 +95,9 @@ export async function verifyResourceAuthorization(options: {
 
     return { authorized: true };
   } catch (error) {
-    console.error('[SECURITY] Authorization check error:', error);
+    logger.error('[SECURITY] Authorization check error', error, {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       authorized: false,
       error: 'Authorization check failed',

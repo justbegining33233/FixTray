@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashTokenSha256 } from '@/lib/verification';
+import logger from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(`${appUrl}/auth/login?verified=1`);
   } catch (err) {
-    console.error('[verify-email] Error:', err);
+    logger.error('[verify-email] error', err);
     return NextResponse.redirect(`${appUrl}/auth/login?verified=error`);
   }
 }

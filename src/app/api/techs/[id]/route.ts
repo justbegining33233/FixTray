@@ -78,14 +78,14 @@ export async function PUT(
     const params = await context.params;
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      console.error('PUT /api/techs/[id] - No auth header');
+      logger.error('PUT /api/techs/[id] - No auth header', new Error('Missing Authorization'));
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
     if (!decoded) {
-      console.error('PUT /api/techs/[id] - Invalid token');
+      logger.error('PUT /api/techs/[id] - Invalid token', new Error('Invalid JWT'));
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 

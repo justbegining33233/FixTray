@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import logger from '@/lib/logger';
 import prisma from '@/lib/prisma';
 
 // Keep-alive cron — prevents Neon from hibernating.
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[keepalive] DB ping failed:', error);
+    logger.error('[keepalive] DB ping failed', error);
     return NextResponse.json(
       { ok: false, error: String(error), latencyMs: Date.now() - start },
       { status: 500 }

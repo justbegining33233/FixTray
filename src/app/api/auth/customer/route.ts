@@ -5,6 +5,7 @@ import { logSecurityEvent } from '@/lib/audit-logger';
 import { customerLoginSchema } from '@/lib/validation';
 import { generateAccessToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
 import { logActivity } from '@/lib/activityLogger';
+import logger from '@/lib/logger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 // POST /api/auth/customer
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Customer login error:', error);
+    logger.error('Customer login failed', error);
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

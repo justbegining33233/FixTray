@@ -371,7 +371,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Command Center API error:', error);
+    logger.error('Command Center API error', error);
     const details = process.env.NODE_ENV === 'development' ? String(error) : undefined;
     return NextResponse.json({ error: 'Failed to fetch command center data', ...(details && { details }) }, { status: 500 });
   }

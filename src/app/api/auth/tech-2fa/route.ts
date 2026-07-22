@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
+import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
+import { logSecurityEvent } from '@/lib/audit-logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +41,30 @@ export async function POST(request: NextRequest) {
     if (action === 'verify') {
       if (!totpToken) return NextResponse.json({ error: 'TOTP code required' }, { status: 400 });
 
+      // Rate limit 2FA verification: 3 attempts per 15 minutes per user
+      const clientIP = getClientIP(request);
+      const userAgent = request.headers.get('user-agent') || '';
+      const rateLimitKey = `2fa_verify:${decoded.id}:${clientIP}`;
+      
+      try {
+        const rateLimit = await checkRateLimit(rateLimitKey);
+        if (!rateLimit.success) {
+          logSecurityEvent({
+            userId: decoded.id,
+            action: '2fa_rate_limit_exceeded',
+            ip: clientIP,
+            userAgent,
+          });
+          return NextResponse.json(
+            { error: rateLimit.message, retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000) },
+            { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetTime - Date.now()) / 1000)) } }
+          );
+        }
+      } catch (error) {
+        // If rate limit check fails, log but don't block
+        logger.warn('2FA rate limit check failed', error);
+      }
+
       const tech = await prisma.tech.findUnique({
         where: { id: decoded.id },
         select: { id: true, email: true, firstName: true, lastName: true, phone: true, role: true, shopId: true, twoFactorSecret: true, twoFactorEnabled: true },
@@ -50,7 +76,23 @@ export async function POST(request: NextRequest) {
       const { decryptSecret } = await import('@/lib/two-factor');
       const raw = decryptSecret(tech.twoFactorSecret);
       const valid = verifyTotpToken(raw, totpToken);
-      if (!valid) return NextResponse.json({ error: 'Invalid code' }, { status: 401 });
+      if (!valid) {
+        logSecurityEvent({
+          userId: tech.id,
+          action: '2fa_verification_failed',
+          ip: clientIP,
+          userAgent,
+        });
+        return NextResponse.json({ error: 'Invalid code' }, { status: 401 });
+      }
+
+      // Log successful 2FA verification
+      logSecurityEvent({
+        userId: tech.id,
+        action: '2fa_verified',
+        ip: clientIP,
+        userAgent,
+      });
 
       // Enable 2FA if this is the first successful verify
       if (!tech.twoFactorEnabled) {

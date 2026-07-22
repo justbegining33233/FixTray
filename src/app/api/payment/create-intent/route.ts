@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/middleware';
 import { createPaymentIntent } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   const auth = requireAuth(request);
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       serviceFee: FIXTRAY_SERVICE_FEE,
     });
   } catch (error) {
-    console.error('Payment intent error:', error);
+    logger.error('Payment intent error', error);
     return NextResponse.json({ error: 'Failed to create payment intent' }, { status: 500 });
   }
 }

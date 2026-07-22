@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
 import { checkAccountLockout, recordFailedLoginAttempt, clearLoginAttempts } from '@/lib/auth-lockout';
 import { generateAccessToken, generateRandomToken, generateTempToken, refreshExpiryDate } from '@/lib/auth';
 import { logActivity } from '@/lib/activityLogger';
+import logger from '@/lib/logger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 import { normalizeEmployeeNumber } from '@/lib/employeeNumber';
 
@@ -216,7 +217,10 @@ export async function POST(request: NextRequest) {
     return response;
     } catch (error: unknown) {
       // CRITICAL FIX: Never expose error details to client
-      console.error('Tech login error:', error, (error as Error)?.stack);
+      logger.error('Tech login failed', error, {
+        stack: (error as Error)?.stack,
+        ip: userIp,
+      });
       return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

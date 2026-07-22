@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Backup error:', error);
+    logger.error('Backup error', error);
     return NextResponse.json({ error: 'Backup failed' }, { status: 500 });
   }
 }

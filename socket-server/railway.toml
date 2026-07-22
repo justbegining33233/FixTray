@@ -1,0 +1,50 @@
+# Railway.toml - Socket.IO Server Deployment
+# 
+# This is a SEPARATE deployment from the main FixTray app
+# Deploy this as a new Railway project for the Socket.IO server
+#
+# SETUP:
+#   1. Create new Railway project: https://railway.app/new
+#   2. Connect this repository or upload socket-server folder
+#   3. Set environment variables (see below)
+#   4. Deploy
+#
+# ENVIRONMENT VARIABLES (set in Railway dashboard):
+#   JWT_SECRET          - Copy from main FixTray Vercel project
+#   REDIS_URL           - Set via Railway Redis plugin (see setup below)
+#   ALLOWED_ORIGINS     - Your frontend URLs (comma-separated)
+#   NODE_ENV            - "production"
+#   LOG_LEVEL           - "info" or "debug"
+#
+# REDIS SETUP:
+#   1. In Railway project, add Plugin → Redis
+#   2. Redis plugin will auto-populate REDIS_URL
+#
+# COST:
+#   Free tier: $5/month credit
+#   Socket server: ~$2-3/month on free tier
+#   Redis: ~$5-10/month depending on usage
+#   Total: Usually within free tier or very cheap
+
+[build]
+builder = "nixpacks"
+# Automatically detects Node.js from package.json
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+# Health check to detect crashes
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+[env]
+PORT = "3001"
+NODE_ENV = "production"
+LOG_LEVEL = "info"
+
+# MUST SET IN RAILWAY DASHBOARD:
+# JWT_SECRET = "..."
+# REDIS_URL = "..."
+# ALLOWED_ORIGINS = "https://fixtray.app,https://www.fixtray.app,https://app.fixtray.app"

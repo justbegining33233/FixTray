@@ -6,6 +6,7 @@ import { checkAccountLockout, recordFailedLoginAttempt, clearLoginAttempts } fro
 import { generateAccessToken, generateRandomToken, refreshExpiryDate } from '@/lib/auth';
 import { isOwnerAdmin } from '@/lib/owner-access';
 import { logActivity } from '@/lib/activityLogger';
+import logger from '@/lib/logger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 export async function POST(request: NextRequest) {
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
         maxAge: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
       });
     } catch (err) {
-      console.error('[admin/login] cookie set failed (refresh_id):', err);
+      logger.error('[admin/login] cookie set failed (refresh_id)', err);
     }
 
     try {
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
         maxAge: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
       });
     } catch (err) {
-      console.error('[admin/login] cookie set failed (refresh_sig):', err);
+      logger.error('[admin/login] cookie set failed (refresh_sig)', err);
     }
 
     // Expose CSRF token in a readable cookie for client-side fetches

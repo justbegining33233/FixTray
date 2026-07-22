@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!sent) {
-      console.error('[contact] Email delivery failed for:', email);
+      logger.error('[contact] Email delivery failed', email);
       return NextResponse.json({ error: 'Failed to deliver message. Please email us directly at team@fixtray.com' }, { status: 502 });
     }
 

@@ -4,6 +4,7 @@ import { generateAccessToken, generateTempToken, generateRandomToken, refreshExp
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
 import { checkAccountLockout, recordFailedLoginAttempt, clearLoginAttempts } from '@/lib/auth-lockout';
 import { logActivity } from '@/lib/activityLogger';
+import logger from '@/lib/logger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 
 export async function POST(request: NextRequest) {
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
     return response;
     } catch (error: unknown) {
       // CRITICAL FIX: Never expose error details to client
-      console.error('Shop login error:', error);
+      logger.error('Shop login error', error);
       return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

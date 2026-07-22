@@ -11,7 +11,13 @@ const fs = require('fs');
 const path = require('path');
 
 const prisma = new PrismaClient();
-const PASSWORD = 'QATest2026!';
+// Use environment variable QA_TEST_PASSWORD (must be set before running)
+const PASSWORD = process.env.QA_TEST_PASSWORD;
+if (!PASSWORD) {
+  console.error('ERROR: QA_TEST_PASSWORD environment variable not set');
+  console.error('Set QA_TEST_PASSWORD before running this script');
+  process.exit(1);
+}
 const SALT_ROUNDS = 12;
 
 const creds = [];

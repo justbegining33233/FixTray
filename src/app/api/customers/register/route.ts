@@ -3,6 +3,8 @@ import { validatePublicCsrf } from '@/lib/csrf';
 import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { sendWelcomeEmail } from '@/lib/emailService';
+import { asyncErrorHandler } from '@/lib/errorHandler';
+import logger from '@/lib/logger';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
@@ -71,8 +73,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Also send welcome email
-    sendWelcomeEmail(customer.email, customer.firstName).catch(console.error);
+    // Also send welcome email (queue for retry if fails)
+    await asyncErrorHandler(
+      () => sendWelcomeEmail(customer.email, customer.firstName),
+      {
+        context: 'sendWelcomeEmail',
+        shouldQueue: true,
+        metadata: { customerId: customer.id, email: customer.email },
+      }
+    );
     
     return NextResponse.json({
       id: customer.id,
@@ -96,7 +105,9 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({ error: 'Account already exists' }, { status: 400 });
     }
-    console.error('Registration error:', error);
+    logger.error('Customer registration failed', error, {
+      email: (error as any)?.meta?.target?.includes('email') ? 'email conflict' : 'unknown',
+    });
     return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
   }
 }

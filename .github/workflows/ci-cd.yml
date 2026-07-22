@@ -50,7 +50,7 @@ jobs:
         npm run db:push
         npm run db:migrate
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+        DATABASE_URL: ${{ secrets.CI_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test' }}
 
     - name: Run linting
       run: npm run lint
@@ -61,26 +61,26 @@ jobs:
     - name: Run unit tests
       run: npm run test:ci
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+        DATABASE_URL: ${{ secrets.CI_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test' }}
         REDIS_URL: redis://localhost:6379
-        JWT_SECRET: test-jwt-secret-for-ci
-        NEXTAUTH_SECRET: test-nextauth-secret-for-ci
+        JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-test-jwt-secret' }}
+        NEXTAUTH_SECRET: ${{ secrets.CI_NEXTAUTH_SECRET || 'ci-test-nextauth-secret' }}
 
     - name: Run integration tests
       run: npm run test:integration
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+        DATABASE_URL: ${{ secrets.CI_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test' }}
         REDIS_URL: redis://localhost:6379
-        JWT_SECRET: test-jwt-secret-for-ci
-        NEXTAUTH_SECRET: test-nextauth-secret-for-ci
+        JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-test-jwt-secret' }}
+        NEXTAUTH_SECRET: ${{ secrets.CI_NEXTAUTH_SECRET || 'ci-test-nextauth-secret' }}
 
     - name: Run E2E tests
       run: npm run test:e2e:ci
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+        DATABASE_URL: ${{ secrets.CI_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test' }}
         REDIS_URL: redis://localhost:6379
-        JWT_SECRET: test-jwt-secret-for-ci
-        NEXTAUTH_SECRET: test-nextauth-secret-for-ci
+        JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-test-jwt-secret' }}
+        NEXTAUTH_SECRET: ${{ secrets.CI_NEXTAUTH_SECRET || 'ci-test-nextauth-secret' }}
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3

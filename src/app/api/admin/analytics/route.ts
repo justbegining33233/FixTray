@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import logger from '@/lib/logger';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[Admin/Analytics] DB error:', msg);
+    logger.error('[Admin/Analytics] Database error', msg);
     return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
   }
 }

@@ -24,7 +24,6 @@ export async function GET(
         state: true,
         zipCode: true,
         ownerName: true,
-        description: true,
         status: true,
         workOrders: {
           select: {
@@ -93,7 +92,6 @@ export async function GET(
       state: shop.state,
       zipCode: shop.zipCode,
       ownerName: shop.ownerName,
-      description: shop.description,
     };
 
     return NextResponse.json({ shop: formattedShop }, { status: 200 });
@@ -134,7 +132,6 @@ export async function PUT(
     if (body.city !== undefined) updateData.city = body.city;
     if (body.state !== undefined) updateData.state = body.state;
     if (body.zipCode !== undefined) updateData.zipCode = body.zipCode;
-    if (body.description !== undefined) updateData.description = body.description;
 
     // Update shop
     const updatedShop = await prisma.shop.update({
@@ -150,7 +147,6 @@ export async function PUT(
         state: true,
         zipCode: true,
         ownerName: true,
-        description: true,
         status: true,
         workOrders: {
           select: {

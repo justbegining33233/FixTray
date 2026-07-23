@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/middleware';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import stripe from '@/lib/stripe';
 import Stripe from 'stripe';
 
 /**
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    logger.error('Checkout session error', error);
+    logger.error('Checkout session error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });
   }
 }

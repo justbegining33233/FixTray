@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
 import { validateCsrf } from '@/lib/csrf';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import logger from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       publicId: result.publicId,
     });
   } catch (error) {
-    logger.error('Upload failed', error);
+    logger.error('Upload failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
 }

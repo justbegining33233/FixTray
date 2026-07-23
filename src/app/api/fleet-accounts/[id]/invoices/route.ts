@@ -105,7 +105,7 @@ export async function POST(
       );
     }
 
-    const totalAmount = workOrders.reduce((sum, wo) => sum + (wo.totalAmount || 0), 0);
+    const totalAmount = workOrders.reduce((sum, wo) => sum + (wo.estimatedCost || wo.amountPaid || 0), 0);
 
     // Generate invoice number
     const invoiceCount = await prisma.fleetInvoice.count({

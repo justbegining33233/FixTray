@@ -14,7 +14,18 @@ export async function GET(
 
     const shop = await prisma.shop.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        shopName: true,
+        email: true,
+        phone: true,
+        address: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        ownerName: true,
+        description: true,
+        status: true,
         workOrders: {
           select: {
             id: true,
@@ -129,7 +140,18 @@ export async function PUT(
     const updatedShop = await prisma.shop.update({
       where: { id },
       data: updateData,
-      include: {
+      select: {
+        id: true,
+        shopName: true,
+        email: true,
+        phone: true,
+        address: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        ownerName: true,
+        description: true,
+        status: true,
         workOrders: {
           select: {
             id: true,

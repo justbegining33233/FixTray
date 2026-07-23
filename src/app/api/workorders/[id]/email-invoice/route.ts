@@ -99,7 +99,10 @@ export async function POST(
 
     return NextResponse.json({ success: true, message: 'Invoice emailed to customer' });
   } catch (error) {
-    logger.error('Error emailing invoice', error, { workOrderId: id });
+    logger.error('Error emailing invoice', {
+      error: error instanceof Error ? error.message : String(error),
+      workOrderId: id
+    });
     return NextResponse.json({ error: 'Failed to email invoice' }, { status: 500 });
   }
 }

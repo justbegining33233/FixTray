@@ -63,7 +63,10 @@ export async function asyncErrorHandler<T>(
       try {
         await queueForRetry(context, error, metadata);
       } catch (queueError) {
-        logger.error(`Failed to queue ${context} for retry`, queueError, { context });
+        logger.error(`Failed to queue ${context} for retry`, {
+          error: queueError instanceof Error ? queueError.message : String(queueError),
+          context
+        });
       }
     }
 

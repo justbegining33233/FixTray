@@ -65,7 +65,10 @@ export async function POST(
 
     return NextResponse.json(updated);
   } catch (error) {
-    logger.error('Error uploading photo', error, { workOrderId: id });
+    logger.error('Error uploading photo', {
+      error: error instanceof Error ? error.message : String(error),
+      workOrderId: id
+    });
     return NextResponse.json({ error: 'Failed to upload photo' }, { status: 500 });
   }
 }

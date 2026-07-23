@@ -324,7 +324,8 @@ class RegionManager {
 
     } catch (error) {
       failoverEvent.status = 'failed';
-      logger.error('Region failover failed', error, {
+      logger.error('Region failover failed', {
+        error: error instanceof Error ? error.message : String(error),
         fromRegion: this.activeRegion,
         toRegion: toRegionId
       });

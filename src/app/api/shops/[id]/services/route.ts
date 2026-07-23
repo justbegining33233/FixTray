@@ -47,7 +47,10 @@ export async function GET(
       })),
     });
   } catch (error) {
-    logger.error('Shop services GET error:', error, { endpoint: '/api/shops/[id]/services' });
+    logger.error('Shop services GET error:', {
+      error: error instanceof Error ? error.message : String(error),
+      endpoint: '/api/shops/[id]/services'
+    });
     return NextResponse.json({ error: 'Failed to fetch shop services' }, { status: 500 });
   }
 }

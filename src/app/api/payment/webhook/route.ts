@@ -75,7 +75,10 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
-        logger.warn('Failed to create payment notification', error, { workOrderId: workOrder.id });
+        logger.warn('Failed to create payment notification', {
+          error: error instanceof Error ? error.message : String(error),
+          workOrderId: workOrder.id
+        });
       }
 
       // Dispatch webhook for payment received

@@ -119,7 +119,10 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (emailError) {
-      logger.error('Failed to send email notification', emailError, { requestId: request.id });
+      logger.error('Failed to send email notification', {
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+        requestId: request.id
+      });
       // Don't fail the request if email fails
     }
 

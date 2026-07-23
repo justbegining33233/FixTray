@@ -77,7 +77,10 @@ export async function GET(request: NextRequest) {
       lookups: enriched,
     });
   } catch (error) {
-    logger.error('DTC lookup history GET error:', error, { endpoint: '/api/dtc-lookup/history' });
+    logger.error('DTC lookup history GET error:', {
+      error: error instanceof Error ? error.message : String(error),
+      endpoint: '/api/dtc-lookup/history'
+    });
     return NextResponse.json({ error: 'Failed to fetch DTC lookup history' }, { status: 500 });
   }
 }

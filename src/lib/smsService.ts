@@ -55,7 +55,10 @@ export async function sendSms(to: string, body: string): Promise<boolean> {
     return true;
   } catch (err) {
     // Log but don't throw — SMS failure should never break the main flow
-    logger.error('Failed to send SMS', err, { to: normalized });
+    logger.error('Failed to send SMS', {
+      error: err instanceof Error ? err.message : String(err),
+      to: normalized
+    });
     return false;
   }
 }

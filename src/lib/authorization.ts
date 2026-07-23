@@ -95,7 +95,7 @@ export async function verifyResourceAuthorization(options: {
 
     return { authorized: true };
   } catch (error) {
-    logger.error('[SECURITY] Authorization check error', error, {
+    logger.error('[SECURITY] Authorization check error', {
       error: error instanceof Error ? error.message : String(error),
     });
     return {

@@ -109,7 +109,10 @@ export async function POST(
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
-    logger.error('Error sending work order message', error, { workOrderId });
+    logger.error('Error sending work order message', {
+      error: error instanceof Error ? error.message : String(error),
+      workOrderId
+    });
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
   }
 }

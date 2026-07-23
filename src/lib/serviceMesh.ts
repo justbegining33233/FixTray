@@ -137,7 +137,8 @@ class ServiceRegistry {
             this.updateHealth(serviceName, instance.id, newHealth);
           }
         } catch (error) {
-          logger.error('Health check failed', error, {
+          logger.error('Health check failed', {
+            error: error instanceof Error ? error.message : String(error),
             serviceName,
             instanceId: instance.id
           });

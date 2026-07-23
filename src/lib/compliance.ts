@@ -188,7 +188,8 @@ class ComplianceManager {
           }
 
         } catch (error) {
-          logger.error(`Compliance check failed: ${check.name}`, error, {
+          logger.error(`Compliance check failed: ${check.name}`, {
+            error: error instanceof Error ? error.message : String(error),
             checkId: id,
             category: check.category
           });

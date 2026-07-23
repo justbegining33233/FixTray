@@ -44,7 +44,10 @@ export async function POST(request: Request) {
         },
       });
     } catch (err) {
-        logger.warn('[estimate-request] Failed to create notification', err, { workOrderId });
+        logger.warn('[estimate-request] Failed to create notification', { 
+          error: err instanceof Error ? err.message : String(err),
+          workOrderId 
+        });
     }
 
     // Emit socket event to shop room and manager role so managers get notified in real-time

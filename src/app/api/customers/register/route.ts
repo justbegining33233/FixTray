@@ -105,7 +105,8 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({ error: 'Account already exists' }, { status: 400 });
     }
-    logger.error('Customer registration failed', error, {
+    logger.error('Customer registration failed', {
+      error: error instanceof Error ? error.message : String(error),
       email: (error as any)?.meta?.target?.includes('email') ? 'email conflict' : 'unknown',
     });
     return NextResponse.json({ error: 'Registration failed' }, { status: 500 });

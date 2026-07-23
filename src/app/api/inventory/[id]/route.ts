@@ -36,7 +36,10 @@ export async function GET(
 
     return NextResponse.json({ item });
   } catch (error) {
-    logger.error('Error fetching inventory item', error, { itemId: id });
+    logger.error('Error fetching inventory item', {
+      error: error instanceof Error ? error.message : String(error),
+      itemId: id
+    });
     return NextResponse.json(
       { error: 'Failed to fetch inventory item' },
       { status: 500 }

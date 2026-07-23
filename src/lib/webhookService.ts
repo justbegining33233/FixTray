@@ -27,11 +27,20 @@ export async function dispatchWebhook(shopId: string, event: string, payload: Re
 
       // Fire-and-forget delivery with timeout
       deliverWebhook(webhook.id, webhook.url, body, signature).catch((err) => {
-        logger.error('Webhook delivery error', err, { webhookId: webhook.id, url: webhook.url, event });
+        logger.error('Webhook delivery error', {
+          error: err instanceof Error ? err.message : String(err),
+          webhookId: webhook.id,
+          url: webhook.url,
+          event
+        });
       });
     }
   } catch (err) {
-    logger.error('Error dispatching webhook', err, { shopId, event });
+    logger.error('Error dispatching webhook', {
+      error: err instanceof Error ? err.message : String(err),
+      shopId,
+      event
+    });
   }
 }
 
@@ -73,7 +82,10 @@ async function deliverWebhook(webhookId: string, url: string, body: string, sign
         failureCount: { increment: 1 },
       },
     }).catch((err) => {
-      logger.error('Failed to update webhook failure count', err, { webhookId });
+      logger.error('Failed to update webhook failure count', {
+        error: err instanceof Error ? err.message : String(err),
+        webhookId
+      });
     });
   }
 }

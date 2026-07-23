@@ -224,7 +224,8 @@ export async function GET(request: NextRequest) {
     // even if the structured logger itself throws (e.g. winston bundling issue).
     console.error('[workorders GET] error:', error);
     try {
-      logger.error('Error fetching work orders', error, {
+      logger.error('Error fetching work orders', {
+        error: error instanceof Error ? error.message : String(error),
         userId: request.headers.get('x-user-id'),
         duration: Date.now() - startTime
       });

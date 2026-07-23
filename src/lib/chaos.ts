@@ -144,7 +144,8 @@ class ChaosEngine {
       });
 
     } catch (error) {
-      logger.error('Chaos experiment failed', error, {
+      logger.error('Chaos experiment failed', {
+        error: error instanceof Error ? error.message : String(error),
         experimentId: experiment.id
       });
 

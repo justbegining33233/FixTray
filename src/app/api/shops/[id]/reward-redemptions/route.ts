@@ -74,7 +74,10 @@ export async function GET(
       redemptions,
     });
   } catch (error) {
-    logger.error('Reward redemptions GET error:', error, { endpoint: '/api/shops/[id]/reward-redemptions' });
+    logger.error('Reward redemptions GET error:', {
+      error: error instanceof Error ? error.message : String(error),
+      endpoint: '/api/shops/[id]/reward-redemptions'
+    });
     return NextResponse.json({ error: 'Failed to fetch pending redemptions' }, { status: 500 });
   }
 }

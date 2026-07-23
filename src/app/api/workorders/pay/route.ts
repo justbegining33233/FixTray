@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(updated);
   } catch (e) {
-    logger.error('Failed to mark work order as paid', e, { workOrderId: workOrderId });
+    logger.error('Failed to mark work order as paid', {
+      error: e instanceof Error ? e.message : String(e),
+      workOrderId: workOrderId
+    });
     return NextResponse.json({ error: 'Failed to mark as paid' }, { status: 500 });
   }
 }

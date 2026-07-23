@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
 import { logSecurityEvent } from '@/lib/audit-logger';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {

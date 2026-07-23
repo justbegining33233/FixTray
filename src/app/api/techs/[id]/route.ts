@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import logger from '@/lib/logger';
 
 // GET - Fetch a specific tech by ID
 export async function GET(

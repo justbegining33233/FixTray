@@ -68,7 +68,7 @@ export default function ShopCustomersPage() {
         {filtered.map(c => (
           <div
             key={c.id}
-            onClick={() => router.push(`/shop/customers/${c.id}/crm` as Route)}
+            onClick={() => router.push(`/shop/customers/${c.id}/crm` as any)}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '14px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.04)',

@@ -155,7 +155,7 @@ function ManagerEstimatesContent() {
       });
 
       if (response.ok) {
-        router.push(`/workorders/${workOrderId}` as Route);
+        router.push(`/workorders/${workOrderId}` as any);
       } else {
         setEstimateMsg({type:'error',text:'Failed to submit estimate'});
       }

@@ -46,7 +46,7 @@ function AdminProfilePageContent() {
   const openSection = (next: AdminProfileSection) => {
     const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('section', next);
-    router.replace(`/admin/profile?${params.toString()}` as Route, { scroll: false });
+    router.replace(`/admin/profile?${params.toString()}` as any, { scroll: false });
     setSection(next);
     setMessage('');
   };

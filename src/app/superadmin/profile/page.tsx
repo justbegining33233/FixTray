@@ -46,7 +46,7 @@ function SuperAdminProfilePageContent() {
   const openSection = (next: SuperAdminProfileSection) => {
     const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('section', next);
-    router.replace(`/superadmin/profile?${params.toString()}` as Route, { scroll: false });
+    router.replace(`/superadmin/profile?${params.toString()}` as any, { scroll: false });
     setSection(next);
     setMessage('');
   };

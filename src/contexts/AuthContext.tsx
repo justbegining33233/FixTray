@@ -290,7 +290,7 @@ export function useRequireAuth(requiredRoles?: string[]) {
       const target = typeof window !== 'undefined'
         ? `${window.location.pathname}${window.location.search}`
         : '/';
-      router.push(`/auth/login?redirect=${encodeURIComponent(target)}` as Route);
+      router.push(`/auth/login?redirect=${encodeURIComponent(target)}` as any);
       return;
     }
 

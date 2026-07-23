@@ -51,7 +51,7 @@ function TechProfilePageContent() {
   const openSection = (next: TechProfileSection) => {
     const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('section', next);
-    router.replace(`/tech/profile?${params.toString()}` as Route, { scroll: false });
+    router.replace(`/tech/profile?${params.toString()}` as any, { scroll: false });
     setSection(next);
     setMessage('');
   };

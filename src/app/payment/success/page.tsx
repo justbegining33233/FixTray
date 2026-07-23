@@ -17,7 +17,7 @@ function SuccessContent() {
       setCountdown(c => {
         if (c <= 1) {
           clearInterval(timer);
-          router.push(`/customer/workorders/${workOrderId}` as Route);
+          router.push(`/customer/workorders/${workOrderId}` as any);
         }
         return c - 1;
       });

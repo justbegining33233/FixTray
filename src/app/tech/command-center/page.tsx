@@ -212,7 +212,7 @@ export default function TechCommandCenter() {
         draggable
         onDragStart={(event) => handleDragStart(event, order.id)}
         onDragEnd={handleDragEnd}
-        onClick={() => router.push(`/workorders/${order.id}` as Route)}
+        onClick={() => router.push(`/workorders/${order.id}` as any)}
         style={{
           background: 'rgba(255,255,255,0.04)',
           border: `1px solid ${badgeBackground}`,
@@ -361,7 +361,7 @@ export default function TechCommandCenter() {
                         {bay.jobs.map((job) => (
                           <div
                             key={job.id}
-                            onClick={() => router.push(`/workorders/${job.id}` as Route)}
+                            onClick={() => router.push(`/workorders/${job.id}` as any)}
                             style={{
                               background:'rgba(255,255,255,0.06)',
                               border:'1px solid rgba(255,255,255,0.08)',

@@ -249,7 +249,7 @@ export default function CustomerCRMPage({ params }: { params: Promise<{ id: stri
                     </thead>
                     <tbody>
                       {data.workOrders.map(wo => (
-                        <tr key={wo.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }} onClick={() => router.push(`/workorders/${wo.id}` as Route)}>
+                        <tr key={wo.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }} onClick={() => router.push(`/workorders/${wo.id}` as any)}>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#3b82f6' }}>{wo.id.slice(0, 8)}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{new Date(wo.createdAt).toLocaleDateString()}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{wo.vehicleType}</td>

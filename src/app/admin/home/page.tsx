@@ -67,7 +67,7 @@ function AdminHomeContent() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       params.set('section', sectionId);
-      router.replace(`?${params.toString()}` as Route, { scroll: false });
+      router.replace(`?${params.toString()}` as any, { scroll: false });
     }
   };
 

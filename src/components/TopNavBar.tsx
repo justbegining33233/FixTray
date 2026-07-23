@@ -410,7 +410,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         break;
       case 'workorders':
         const workOrderId = n.id.replace('wo-', '');
-        router.push(`/workorders/${workOrderId}` as Route);
+        router.push(`/workorders/${workOrderId}` as any);
         break;
       default:
         router.push(getMessagesLink() as Route);

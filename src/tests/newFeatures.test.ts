@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import * as campaignService from '@/lib/campaignService';
-import * as reminderService from '@/lib/recurringReminderService';
-import * as dviService from '@/lib/dviApprovalService';
+// import * as reminderService from '@/lib/recurringReminderService'; // Service deleted - model not in schema
+// import * as dviService from '@/lib/dviApprovalService'; // Service deleted - model not in schema
 import prisma from '@/lib/prisma';
 
 describe('Campaigns Service', () => {
@@ -52,7 +52,8 @@ describe('Campaigns Service', () => {
   });
 });
 
-describe('Recurring Reminders Service', () => {
+// Test suite disabled - recurringReminderService deleted (model not in schema)
+/* describe('Recurring Reminders Service', () => {
   const testShopId = 'test-shop-1';
   let reminderId: string;
   let vehicleId: string;
@@ -114,8 +115,10 @@ describe('Recurring Reminders Service', () => {
     expect(reminders.every((r) => r.status === 'paused')).toBe(true);
   });
 });
+*/
 
-describe('DVI Approval Service', () => {
+// Test suite disabled - dviApprovalService deleted (model not in schema)
+/* describe('DVI Approval Service', () => {
   const testShopId = 'test-shop-1';
   let vehicleId: string;
 
@@ -159,3 +162,4 @@ describe('DVI Approval Service', () => {
     expect(stats).toHaveProperty('approvalRate');
   });
 });
+*/

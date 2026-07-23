@@ -263,7 +263,7 @@ const adminGroups: MenuGroup[] = [
     items: [
       { icon: <FaEnvelope />, label: 'Email Templates', href: '/admin/email-templates' },
       { icon: <FaBullhorn />, label: 'Campaigns', href: '/admin/campaigns' },
-      { icon: <FaClock />, label: 'Reminders', href: '/admin/recurring-reminders' },
+      // Reminders page deleted - model not in schema
     ],
   },
   {

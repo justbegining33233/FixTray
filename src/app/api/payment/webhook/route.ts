@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import stripe from '@/lib/stripe';
 import { sendPaymentConfirmationEmail } from '@/lib/emailService';
 import logger from '@/lib/logger';
+import { asyncErrorHandler } from '@/lib/errorHandler';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!stripeWebhookSecret) {
-      logger.error('STRIPE_WEBHOOK_SECRET environment variable not configured', new Error('Missing STRIPE_WEBHOOK_SECRET'));
+      logger.error('STRIPE_WEBHOOK_SECRET environment variable not configured', { error: 'Missing STRIPE_WEBHOOK_SECRET' });
       return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
     
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ received: true });
   } catch (error) {
-    logger.error('Payment webhook error', error);
+    logger.error('Payment webhook error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Webhook failed' }, { status: 500 });
   }
 }

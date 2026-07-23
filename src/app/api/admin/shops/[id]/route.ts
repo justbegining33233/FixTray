@@ -210,7 +210,6 @@ export async function PUT(
       state: updatedShop.state,
       zipCode: updatedShop.zipCode,
       ownerName: updatedShop.ownerName,
-      description: updatedShop.description,
     };
 
     return NextResponse.json({ shop: formattedShop }, { status: 200 });

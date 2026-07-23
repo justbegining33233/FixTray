@@ -100,24 +100,14 @@ const logger = {
     Sentry.addBreadcrumb({ category: 'app', message, level: 'warning', data: meta });
   },
 
-  error(message: string, error?: unknown, meta?: LogMeta) {
+  error(message: string, meta?: LogMeta) {
     const extra = { ...meta };
-    if (error instanceof Error) {
-      extra.errorMessage = error.message;
-      extra.stack = error.stack;
-    } else if (error !== undefined) {
-      extra.errorRaw = String(error);
-    }
 
     winstonLogger.error(message, extra);
     console.error(formatEntry('error', message, extra));
 
     // Send to Sentry so it shows up in the Issues dashboard
-    if (error instanceof Error) {
-      Sentry.captureException(error, { extra: { message, ...meta } });
-    } else {
-      Sentry.captureMessage(message, { level: 'error', extra });
-    }
+    Sentry.captureMessage(message, { level: 'error', extra });
   },
 
   debug(message: string, meta?: LogMeta) {

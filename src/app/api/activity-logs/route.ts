@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(mapped);
   } catch (error) {
-    logger.error('Failed to fetch activity logs', error);
+    console.error('Failed to fetch activity logs', error);
     return NextResponse.json(
       { error: 'Failed to fetch activity logs' },
       { status: 500 }

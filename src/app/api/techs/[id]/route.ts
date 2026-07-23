@@ -79,14 +79,14 @@ export async function PUT(
     const params = await context.params;
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      logger.error('PUT /api/techs/[id] - No auth header', new Error('Missing Authorization'));
+      logger.error('PUT /api/techs/[id] - No auth header', { error: 'Missing Authorization' });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
     if (!decoded) {
-      logger.error('PUT /api/techs/[id] - Invalid token', new Error('Invalid JWT'));
+      logger.error('PUT /api/techs/[id] - Invalid token', { error: 'Invalid JWT' });
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
@@ -205,3 +205,4 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete tech' }, { status: 500 });
   }
 }
+

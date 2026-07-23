@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashTokenSha256 } from '@/lib/verification';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    console.log(`[SECURITY] Session invalidation: All tokens cleared for ${userModel}:${user.id} due to password reset`);
+    logger.info('[SECURITY] Session invalidation: All tokens cleared due to password reset', { userModel, userId: user.id });
 
     // Delete token record
     await prisma.verificationToken.delete({ where: { id: rec.id } });

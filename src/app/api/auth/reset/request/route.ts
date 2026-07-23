@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { generateNumericOTP, generateTokenHex, hashTokenSha256 } from '@/lib/verification';
 import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
+import logger from '@/lib/logger';
 
 /**
  * CRITICAL FIX: Add constant-time delay to prevent timing attacks
@@ -25,11 +26,11 @@ async function sendByEmail(email: string, raw: string, siteUrl: string) {
     await resend.emails.send({ to: email, from, subject: 'Your verification code', text: `Your code: ${raw}`, html: `<p>Your code: <strong>${raw}</strong></p><p>Or click <a href="${siteUrl}/auth/reset?token=${raw}">here</a></p>` });
     return true;
   }
-  // Fallback: log to server console for dev only
+  // Fallback: log debug info (DO NOT log actual reset code)
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`[dev] reset code for ${email}: ${raw}`);
+    logger.debug('[dev] Password reset code generated', { email });
   } else {
-    console.error('RESEND_API_KEY not configured — cannot send reset email');
+    logger.error('RESEND_API_KEY not configured — cannot send reset email');
   }
   return false;
 }

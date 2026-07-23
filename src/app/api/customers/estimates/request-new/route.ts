@@ -44,7 +44,7 @@ export async function POST(request: Request) {
         },
       });
     } catch (err) {
-        logger.warn('[estimate-request] Failed to create notification', err, { estimateId: estimate.id });
+        logger.warn('[estimate-request] Failed to create notification', err, { workOrderId });
     }
 
     // Emit socket event to shop room and manager role so managers get notified in real-time
@@ -64,12 +64,12 @@ export async function POST(request: Request) {
         io.to(`shop_${shopId}`).emit('new-estimate-request', payload);
       }
     } catch (err) {
-      console.error('[estimate-request] Failed to emit socket event:', err);
+      logger.error('[estimate-request] Failed to emit socket event', err);
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error requesting new estimate:', error);
+    logger.error('Error requesting new estimate', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

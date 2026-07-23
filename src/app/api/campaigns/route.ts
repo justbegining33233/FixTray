@@ -6,12 +6,10 @@ import logger from '@/lib/logger';
 
 const campaignSchema = z.object({
   name: z.string().min(1),
-  description: z.string().optional(),
-  startDate: z.string(),
-  endDate: z.string(),
-  discountType: z.enum(['percentage', 'fixed']),
-  discountValue: z.number().positive(),
-  active: z.boolean().default(true),
+  type: z.string().min(1),
+  body: z.string().min(1),
+  subject: z.string().optional(),
+  status: z.string().default('draft'),
 });
 
 export async function GET(request: NextRequest) {
@@ -59,7 +57,14 @@ export async function POST(request: NextRequest) {
     const validated = campaignSchema.parse(body);
 
     const campaign = await prisma.campaign.create({
-      data: { ...validated, shopId },
+      data: {
+        shopId,
+        name: validated.name,
+        type: validated.type,
+        body: validated.body,
+        subject: validated.subject,
+        status: validated.status,
+      },
     });
 
     logger.info('Campaign created', { shopId, campaignId: campaign.id });

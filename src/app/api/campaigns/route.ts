@@ -24,6 +24,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId') || user.shopId;
 
+    if (!shopId) {
+      return NextResponse.json({ error: 'shopId is required' }, { status: 400 });
+    }
+
     const campaigns = await prisma.campaign.findMany({
       where: { shopId },
       orderBy: { createdAt: 'desc' },
@@ -46,6 +50,10 @@ export async function POST(request: NextRequest) {
     const user = auth;
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId') || user.shopId;
+
+    if (!shopId) {
+      return NextResponse.json({ error: 'shopId is required' }, { status: 400 });
+    }
 
     const body = await request.json();
     const validated = campaignSchema.parse(body);

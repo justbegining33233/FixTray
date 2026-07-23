@@ -13,12 +13,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  let workOrderId: string | undefined;
   try {
     if (!req.headers.get('authorization')) {
       const ok = await validateCsrf(req);
       if (!ok) return NextResponse.json({ error: 'CSRF validation failed' }, { status: 403 });
     }
-    const { workOrderId } = await req.json();
+    const { workOrderId: woid } = await req.json();
+    workOrderId = woid;
     const wo = await prisma.workOrder.findUnique({ where: { id: workOrderId } });
     
     if (!wo) {

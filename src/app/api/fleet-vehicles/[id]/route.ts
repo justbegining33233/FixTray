@@ -58,7 +58,7 @@ export async function PUT(
       );
     }
 
-    logger.error('Failed to update fleet vehicle', error);
+    logger.error('Failed to update fleet vehicle', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to update fleet vehicle' },
       { status: 500 }
@@ -95,7 +95,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Failed to delete fleet vehicle', error);
+    logger.error('Failed to delete fleet vehicle', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to delete fleet vehicle' },
       { status: 500 }

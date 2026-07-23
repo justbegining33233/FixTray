@@ -48,7 +48,7 @@ export async function getLeaveStats(shopId: string): Promise<LeaveStats> {
 
     return stats;
   } catch (error) {
-    logger.error('Failed to get leave stats', error);
+    logger.error('Failed to get leave stats', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -96,7 +96,7 @@ export async function getAvailablePTO(techId: string, year: number = new Date().
 
     return Math.max(0, annualPTO - usedDays);
   } catch (error) {
-    logger.error('Failed to get available PTO', error);
+    logger.error('Failed to get available PTO', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -154,7 +154,7 @@ export async function validateLeaveRequest(
 
     return { valid: true };
   } catch (error) {
-    logger.error('Failed to validate leave request', error);
+    logger.error('Failed to validate leave request', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -198,7 +198,7 @@ export async function getLeaveBalance(techId: string, year: number = new Date().
       byType: leaveByType,
     };
   } catch (error) {
-    logger.error('Failed to get leave balance', error);
+    logger.error('Failed to get leave balance', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -224,7 +224,7 @@ export async function getUpcomingLeave(
       orderBy: { startDate: 'asc' },
     });
   } catch (error) {
-    logger.error('Failed to get upcoming leave', error);
+    logger.error('Failed to get upcoming leave', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -247,7 +247,7 @@ export async function getPendingLeaveRequests(
       orderBy: { createdAt: 'desc' },
     });
   } catch (error) {
-    logger.error('Failed to get pending leave requests', error);
+    logger.error('Failed to get pending leave requests', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -288,7 +288,7 @@ export async function getLeavesForecast(
 
     return monthlyData;
   } catch (error) {
-    logger.error('Failed to get leave forecast', error);
+    logger.error('Failed to get leave forecast', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }

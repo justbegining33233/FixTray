@@ -41,7 +41,7 @@ export async function GET(
 
     return NextResponse.json(leaveRequest);
   } catch (error) {
-    logger.error('Failed to fetch leave request', error);
+    logger.error('Failed to fetch leave request', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch leave request' },
       { status: 500 }
@@ -105,7 +105,7 @@ export async function PUT(
       );
     }
 
-    logger.error('Failed to update leave request', error);
+    logger.error('Failed to update leave request', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to update leave request' },
       { status: 500 }
@@ -147,7 +147,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Failed to delete leave request', error);
+    logger.error('Failed to delete leave request', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to delete leave request' },
       { status: 500 }

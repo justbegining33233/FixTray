@@ -78,7 +78,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    logger.error('Error fetching work order time entries', error, { workOrderId: id });
+    logger.error('Error fetching work order time entries', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to fetch time entries' }, { status: 500 });
   }
 }
@@ -256,7 +256,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
-    logger.error('Error managing work order time entry', error, { workOrderId: id });
+    logger.error('Error managing work order time entry', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to update time entry' }, { status: 500 });
   }
 }
@@ -305,7 +305,7 @@ export async function PUT(
       entry: updated,
     });
   } catch (error) {
-    logger.error('Error updating work order time entry', error, { workOrderId: id });
+    logger.error('Error updating work order time entry', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to update entry' }, { status: 500 });
   }
 }

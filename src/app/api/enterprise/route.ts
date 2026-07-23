@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    logger.error('Enterprise API error', error);
+    logger.error('Enterprise API error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    logger.error('Enterprise API POST error', error);
+    logger.error('Enterprise API POST error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

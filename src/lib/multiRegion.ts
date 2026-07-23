@@ -389,7 +389,7 @@ class RegionManager {
         }
 
       } catch (error) {
-        logger.error('Region health check error', error, { regionId });
+        logger.error('Region health check error', { error: error instanceof Error ? error.message : String(error), regionId });
         region.status = 'offline';
         region.lastHealthCheck = new Date();
       }
@@ -505,7 +505,7 @@ class DataReplicationManager {
         await this.syncTable(table);
         logger.debug('Table synchronized', { table });
       } catch (error) {
-        logger.error('Table synchronization failed', error, { table });
+        logger.error('Table synchronization failed', { error: error instanceof Error ? error.message : String(error), table });
         // Mark affected regions as error
         for (const region of this.config.regions) {
           this.replicationStatus.set(region, 'error');
@@ -667,7 +667,7 @@ class DisasterRecoveryManager {
     } catch (error) {
       result.status = 'failed';
       result.error = (error as Error).message;
-      logger.error('Disaster recovery failed', error, { planId });
+      logger.error('Disaster recovery failed', { error: error instanceof Error ? error.message : String(error), planId });
     }
 
     return result;

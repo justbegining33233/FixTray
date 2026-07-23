@@ -40,7 +40,7 @@ export async function GET(
 
     return NextResponse.json(swapRequest);
   } catch (error) {
-    logger.error('Failed to fetch swap request', error);
+    logger.error('Failed to fetch swap request', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch swap request' },
       { status: 500 }
@@ -127,7 +127,7 @@ export async function PUT(
       );
     }
 
-    logger.error('Failed to approve swap request', error);
+    logger.error('Failed to approve swap request', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to approve swap request' },
       { status: 500 }
@@ -164,7 +164,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Failed to delete swap request', error);
+    logger.error('Failed to delete swap request', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to delete swap request' },
       { status: 500 }

@@ -75,7 +75,7 @@ class EnterpriseIntegration {
       logger.info('All enterprise features initialized successfully');
 
     } catch (error) {
-      logger.error('Failed to initialize enterprise features', error);
+      logger.error('Failed to initialize enterprise features', { error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
   }
@@ -274,7 +274,7 @@ export const enterprise = new EnterpriseIntegration();
 // Initialize enterprise features when module is loaded
 if (shouldAutoInitializeEnterprise()) {
   enterprise.initialize().catch(error => {
-    console.error('Failed to initialize enterprise features:', error);
+    console.error('Failed to initialize enterprise features:', { error: error instanceof Error ? error.message : String(error) });
   });
 }
 

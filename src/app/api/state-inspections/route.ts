@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(inspections);
   } catch (error) {
-    logger.error('Failed to fetch state inspections', error);
+    logger.error('Failed to fetch state inspections', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch state inspections' },
       { status: 500 }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.error('Failed to create state inspection', error);
+    logger.error('Failed to create state inspection', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create state inspection' },
       { status: 500 }

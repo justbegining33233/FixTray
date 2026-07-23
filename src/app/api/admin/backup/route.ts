@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    logger.error('Backup error', error);
+    logger.error('Backup error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Backup failed' }, { status: 500 });
   }
 }

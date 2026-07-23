@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    logger.error('[Cron] Recurring work orders job failed', err);
+    logger.error('[Cron] Recurring work orders job failed', { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: 'Cron job failed', detail: msg }, { status: 500 });
   }
 }

@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.error('Error sending push notification', error);
+    logger.error('Error sending push notification', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to send notification' },
       { status: 500 }

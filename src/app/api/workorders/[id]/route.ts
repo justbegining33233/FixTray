@@ -91,7 +91,7 @@ export async function GET(
     
     return NextResponse.json(workOrder, { headers: corsHeaders });
   } catch (error) {
-    logger.error('Error fetching work order', error, { workOrderId: id });
+    logger.error('Error fetching work order', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to fetch work order' }, { status: 500 });
   }
 }
@@ -154,7 +154,7 @@ export async function PUT(
       
       // Send status update email (basic)
       sendStatusUpdateEmail(current.customer.email, id, data.status).catch((err) => {
-        logger.error('Failed to send status update email', err, { workOrderId: id, status: data.status });
+        logger.error('Failed to send status update email', { error: err instanceof Error ? err.message : String(err), workOrderId: id, status: data.status });
       });
 
       // Send branded job-completed email when shop submits estimate and work is done
@@ -168,10 +168,10 @@ export async function PUT(
           current.shop?.shopName || 'Your Shop',
           current.issueDescription || 'Vehicle Service'
         ).catch((err) => {
-          logger.error('Failed to send job completed email', err, { workOrderId: id, totalDue });
+          logger.error('Failed to send job completed email', { error: err instanceof Error ? err.message : String(err), workOrderId: id, totalDue });
         });
         pushJobCompleted(current.customerId, totalDue, id).catch((err) => {
-          logger.error('Failed to send job completed push notification', err, { workOrderId: id, customerId: current.customerId });
+          logger.error('Failed to send job completed push notification', { error: err instanceof Error ? err.message : String(err), workOrderId: id, customerId: current.customerId });
         });
       }
       
@@ -190,7 +190,7 @@ export async function PUT(
       // Dispatch webhook for status change
       const webhookEvent = data.status === 'closed' ? 'workorder.closed' : 'workorder.updated';
       dispatchWebhook(current.shopId, webhookEvent, { workOrderId: id, fromStatus: current.status, toStatus: data.status }).catch((err) => {
-        logger.error('Failed to dispatch status change webhook', err, { shopId: current.shopId, webhookEvent, workOrderId: id });
+        logger.error('Failed to dispatch status change webhook', { error: err instanceof Error ? err.message : String(err), shopId: current.shopId, webhookEvent, workOrderId: id });
       });
     }
     
@@ -207,10 +207,10 @@ export async function PUT(
         current.shop?.shopName || 'Your Shop',
         current.issueDescription || 'Vehicle Service'
       ).catch((err) => {
-        logger.error('Failed to send estimate ready email', err, { workOrderId: id, estimatedCost: data.estimatedCost });
+        logger.error('Failed to send estimate ready email', { error: err instanceof Error ? err.message : String(err), workOrderId: id, estimatedCost: data.estimatedCost });
       });
       pushEstimateReady(current.customerId, totalDue, id).catch((err) => {
-        logger.error('Failed to send estimate ready push notification', err, { workOrderId: id, customerId: current.customerId });
+        logger.error('Failed to send estimate ready push notification', { error: err instanceof Error ? err.message : String(err), workOrderId: id, customerId: current.customerId });
       });
 
       // SMS notification for estimate ready
@@ -225,7 +225,7 @@ export async function PUT(
 
       // Dispatch webhook for estimate ready
       dispatchWebhook(current.shopId, 'estimate.ready', { workOrderId: id, estimatedCost: data.estimatedCost }).catch((err) => {
-        logger.error('Failed to dispatch estimate ready webhook', err, { shopId: current.shopId, workOrderId: id });
+        logger.error('Failed to dispatch estimate ready webhook', { error: err instanceof Error ? err.message : String(err), shopId: current.shopId, workOrderId: id });
       });
       
       await prisma.notification.create({
@@ -268,7 +268,7 @@ export async function PUT(
     if (data.status === 'closed' && current.status !== 'closed') {
       const paid = data.amountPaid || current.amountPaid || current.estimatedCost || 0;
       awardLoyaltyPoints(current.customerId, id, paid).catch((err) => {
-        logger.error('Failed to award loyalty points', err, { customerId: current.customerId, workOrderId: id, amount: paid });
+        logger.error('Failed to award loyalty points', { error: err instanceof Error ? err.message : String(err), customerId: current.customerId, workOrderId: id, amount: paid });
       });
 
       // Post-service follow-up: email + SMS asking for review
@@ -336,13 +336,13 @@ export async function PUT(
           }
         });
       } catch (err) {
-        logger.error('Failed to deduct inventory for closed work order', err, { workOrderId: id, shopId: current.shopId });
+        logger.error('Failed to deduct inventory for closed work order', { error: err instanceof Error ? err.message : String(err), workOrderId: id, shopId: current.shopId });
       }
     }
 
     return NextResponse.json(updatedWorkOrder);
   } catch (error) {
-    logger.error('Error updating work order', error, { workOrderId: id });
+    logger.error('Error updating work order', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to update work order' }, { status: 500 });
   }
 }
@@ -375,7 +375,7 @@ export async function DELETE(
     
     return NextResponse.json({ message: 'Work order deleted' });
   } catch (error) {
-    logger.error('Error deleting work order', error, { workOrderId: id });
+    logger.error('Error deleting work order', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to delete work order' }, { status: 500 });
   }
 }

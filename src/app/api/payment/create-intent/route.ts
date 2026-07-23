@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       serviceFee: FIXTRAY_SERVICE_FEE,
     });
   } catch (error) {
-    logger.error('Payment intent error', error);
+    logger.error('Payment intent error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Failed to create payment intent' }, { status: 500 });
   }
 }

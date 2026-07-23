@@ -325,7 +325,7 @@ class ChaosEngine {
         }
 
       } catch (error) {
-        logger.error('Failed to monitor experiment', error, { experimentId });
+        logger.error('Failed to monitor experiment', { error: error instanceof Error ? error.message : String(error), experimentId });
       }
     }
   }
@@ -365,7 +365,7 @@ class ChaosEngine {
     // Stop all active experiments
     for (const experimentId of this.activeExperiments.keys()) {
       this.stopExperiment(experimentId).catch(error => {
-        logger.error('Failed to stop experiment during cleanup', error, { experimentId });
+        logger.error('Failed to stop experiment during cleanup', { error: error instanceof Error ? error.message : String(error), experimentId });
       });
     }
   }
@@ -539,9 +539,7 @@ export class ChaosScheduler {
           await chaosEngine.runExperiment(experiment);
         }
       } catch (error) {
-        logger.error('Scheduled chaos experiment failed', error, {
-          experimentId: experiment.id
-        });
+        logger.error('Scheduled chaos experiment failed', { error: error instanceof Error ? error.message : String(error), experimentId: experiment.id });
       }
     }, interval);
 

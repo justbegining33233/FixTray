@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.error('Error processing refund', error);
+    logger.error('Error processing refund', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to process refund' },
       { status: 500 }
@@ -223,7 +223,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(refunds);
   } catch (error) {
-    logger.error('Error fetching refund history', error);
+    logger.error('Error fetching refund history', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch refund history' },
       { status: 500 }

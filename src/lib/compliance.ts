@@ -391,7 +391,7 @@ export class ComplianceScheduler {
 
     // Run immediately first
     task().catch(error => {
-      logger.error(`Scheduled compliance check failed: ${name}`, error);
+      logger.error(`Scheduled compliance check failed: ${name}`, { error: error instanceof Error ? error.message : String(error) });
     });
 
     // Then schedule recurring. For long intervals (> ~24.8 days), use
@@ -399,7 +399,7 @@ export class ComplianceScheduler {
     if (interval <= MAX_TIMER_INTERVAL) {
       const timer = setInterval(() => {
         task().catch(error => {
-          logger.error(`Scheduled compliance check failed: ${name}`, error);
+          logger.error(`Scheduled compliance check failed: ${name}`, { error: error instanceof Error ? error.message : String(error) });
         });
       }, interval);
       this.intervals.set(name, timer);
@@ -420,7 +420,7 @@ export class ComplianceScheduler {
           try {
             await task();
           } catch (error) {
-            logger.error(`Scheduled compliance check failed: ${name}`, error);
+            logger.error(`Scheduled compliance check failed: ${name}`, { error: error instanceof Error ? error.message : String(error) });
           }
           nextRunAt = Date.now() + interval;
         }

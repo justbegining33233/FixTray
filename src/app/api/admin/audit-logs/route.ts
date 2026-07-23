@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const logs = await getAuditLogs();
     return NextResponse.json(logs);
   } catch (error) {
-    logger.error('Failed to fetch audit logs', error);
+    logger.error('Failed to fetch audit logs', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
   }
 }

@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(`${appUrl}/auth/login?verified=1`);
   } catch (err) {
-    logger.error('[verify-email] error', err);
+    logger.error('[verify-email] error', { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.redirect(`${appUrl}/auth/login?verified=error`);
   }
 }

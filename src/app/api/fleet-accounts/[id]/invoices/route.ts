@@ -55,7 +55,7 @@ export async function GET(
       stats,
     });
   } catch (error) {
-    logger.error('Failed to fetch fleet invoices', error);
+    logger.error('Failed to fetch fleet invoices', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch fleet invoices' },
       { status: 500 }
@@ -142,7 +142,7 @@ export async function POST(
       );
     }
 
-    logger.error('Failed to create fleet invoice', error);
+    logger.error('Failed to create fleet invoice', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create fleet invoice' },
       { status: 500 }

@@ -49,7 +49,7 @@ export async function getFleetStats(shopId: string): Promise<FleetAccountStats> 
 
     return stats;
   } catch (error) {
-    logger.error('Failed to get fleet stats', error);
+    logger.error('Failed to get fleet stats', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -107,7 +107,7 @@ export async function generateFleetInvoice(
 
     return invoice.id;
   } catch (error) {
-    logger.error('Failed to generate fleet invoice', error);
+    logger.error('Failed to generate fleet invoice', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -148,7 +148,7 @@ export async function recordFleetPayment(
 
     return true;
   } catch (error) {
-    logger.error('Failed to record fleet payment', error);
+    logger.error('Failed to record fleet payment', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -163,7 +163,7 @@ export async function getFleetVehicles(fleetAccountId: string) {
       orderBy: { createdAt: 'desc' },
     });
   } catch (error) {
-    logger.error('Failed to get fleet vehicles', error);
+    logger.error('Failed to get fleet vehicles', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -186,7 +186,7 @@ export async function getFleetInvoicesWithAging(fleetAccountId: string) {
       amountDue: inv.totalAmount - inv.amountPaid,
     }));
   } catch (error) {
-    logger.error('Failed to get fleet invoices with aging', error);
+    logger.error('Failed to get fleet invoices with aging', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -216,7 +216,7 @@ export async function hasAvailableCredit(fleetAccountId: string, amount: number)
     const availableCredit = account.creditLimit - usedCredit;
     return availableCredit >= amount;
   } catch (error) {
-    logger.error('Failed to check available credit', error);
+    logger.error('Failed to check available credit', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }

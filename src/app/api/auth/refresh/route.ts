@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
     });
     return response;
   } catch (error) {
-    logger.error('Refresh token error', error);
+    logger.error('Refresh token error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Refresh failed' }, { status: 500 });
   }
 }

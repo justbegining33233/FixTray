@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
         maxAge: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
       });
     } catch (err) {
-      logger.error('[admin/login] cookie set failed (refresh_id)', err);
+      logger.error('[admin/login] cookie set failed (refresh_id)', { error: err instanceof Error ? err.message : String(err) });
     }
 
     try {
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         maxAge: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
       });
     } catch (err) {
-      logger.error('[admin/login] cookie set failed (refresh_sig)', err);
+      logger.error('[admin/login] cookie set failed (refresh_sig)', { error: err instanceof Error ? err.message : String(err) });
     }
 
     // Expose CSRF token in a readable cookie for client-side fetches

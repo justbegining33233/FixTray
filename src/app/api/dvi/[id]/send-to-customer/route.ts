@@ -140,7 +140,7 @@ export async function PUT(
       approvalLink,
     });
   } catch (error) {
-    logger.error('Error sending DVI to customer', error);
+    logger.error('Error sending DVI to customer', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to send DVI to customer' },
       { status: 500 }

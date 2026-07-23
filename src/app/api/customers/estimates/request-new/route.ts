@@ -67,12 +67,12 @@ export async function POST(request: Request) {
         io.to(`shop_${shopId}`).emit('new-estimate-request', payload);
       }
     } catch (err) {
-      logger.error('[estimate-request] Failed to emit socket event', err);
+      logger.error('[estimate-request] Failed to emit socket event', { error: err instanceof Error ? err.message : String(err) });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Error requesting new estimate', error);
+    logger.error('Error requesting new estimate', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

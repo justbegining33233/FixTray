@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('[keepalive] DB ping failed', error);
+    logger.error('[keepalive] DB ping failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { ok: false, error: String(error), latencyMs: Date.now() - start },
       { status: 500 }

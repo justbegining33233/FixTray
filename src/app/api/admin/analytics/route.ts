@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    logger.error('[Admin/Analytics] Database error', msg);
+    logger.error('[Admin/Analytics] Database error', { error: msg });
     return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
   }
 }

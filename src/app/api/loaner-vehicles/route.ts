@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(vehicles);
   } catch (error) {
-    logger.error('Failed to fetch loaner vehicles', error);
+    logger.error('Failed to fetch loaner vehicles', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch loaner vehicles' },
       { status: 500 }
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.error('Failed to create loaner vehicle', error);
+    logger.error('Failed to create loaner vehicle', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create loaner vehicle' },
       { status: 500 }

@@ -148,7 +148,7 @@ export async function POST(
       status: updated.status,
     });
   } catch (error) {
-    logger.error('Reward redemption POST error:', error, { endpoint: '/api/shops/[id]/reward-redemptions' });
+    logger.error('Reward redemption POST error:', { error: error instanceof Error ? error.message : String(error), endpoint: '/api/shops/[id]/reward-redemptions' });
     return NextResponse.json({ error: 'Failed to update reward redemption' }, { status: 500 });
   }
 }

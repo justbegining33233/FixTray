@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(requests);
   } catch (error) {
-    logger.error('Failed to fetch swap requests', error);
+    logger.error('Failed to fetch swap requests', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch swap requests' },
       { status: 500 }
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.error('Failed to create swap request', error);
+    logger.error('Failed to create swap request', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create swap request' },
       { status: 500 }

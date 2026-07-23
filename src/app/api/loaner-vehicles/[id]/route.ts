@@ -120,7 +120,7 @@ export async function PUT(
       );
     }
 
-    logger.error('Failed to update loaner vehicle', error);
+    logger.error('Failed to update loaner vehicle', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to update loaner vehicle' },
       { status: 500 }
@@ -167,7 +167,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Failed to delete loaner vehicle', error);
+    logger.error('Failed to delete loaner vehicle', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to delete loaner vehicle' },
       { status: 500 }

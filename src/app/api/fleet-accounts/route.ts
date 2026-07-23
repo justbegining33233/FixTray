@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(accounts);
   } catch (error) {
-    logger.error('Failed to fetch fleet accounts', error);
+    logger.error('Failed to fetch fleet accounts', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch fleet accounts' },
       { status: 500 }
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.error('Failed to create fleet account', error);
+    logger.error('Failed to create fleet account', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create fleet account' },
       { status: 500 }

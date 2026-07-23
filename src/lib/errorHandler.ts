@@ -127,7 +127,7 @@ export async function withErrorHandler(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    logger.error(`${context} handler error: ${errorMessage}`, error, { context });
+    logger.error(`${context} handler error: ${errorMessage}`, { error: error instanceof Error ? error.message : String(error), context });
 
     // Return generic error to client (don't leak internals)
     return NextResponse.json(
@@ -208,10 +208,8 @@ export async function safePrismaOperation<T>(
     return { success: true, data };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`${context} database operation failed: ${errorMessage}`, error, {
-      context,
-      ...metadata,
-    });
+    logger.error(`${context} database operation failed: ${errorMessage}`, { error: error instanceof Error ? error.message : String(error), context,
+      ...metadata, });
 
     return {
       success: false,

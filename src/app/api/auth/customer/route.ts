@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    logger.error('Customer login failed', error);
+    logger.error('Customer login failed', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

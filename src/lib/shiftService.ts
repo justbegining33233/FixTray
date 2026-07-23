@@ -47,7 +47,7 @@ export async function getShiftStats(shopId: string): Promise<ShiftStats> {
 
     return stats;
   } catch (error) {
-    logger.error('Failed to get shift stats', error);
+    logger.error('Failed to get shift stats', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -75,7 +75,7 @@ export async function getShiftsForTech(
       orderBy: { date: 'asc' },
     });
   } catch (error) {
-    logger.error('Failed to get shifts for tech', error);
+    logger.error('Failed to get shifts for tech', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -107,7 +107,7 @@ export async function hasShiftConflict(
 
     return !!conflict;
   } catch (error) {
-    logger.error('Failed to check shift conflict', error);
+    logger.error('Failed to check shift conflict', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -128,7 +128,7 @@ export async function getPendingSwapRequests(shiftId: string): Promise<any[]> {
       },
     });
   } catch (error) {
-    logger.error('Failed to get pending swap requests', error);
+    logger.error('Failed to get pending swap requests', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -153,7 +153,7 @@ export async function getSwapRequestsForTech(
       orderBy: { createdAt: 'desc' },
     });
   } catch (error) {
-    logger.error('Failed to get swap requests for tech', error);
+    logger.error('Failed to get swap requests for tech', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -199,7 +199,7 @@ export async function calculateHoursWorked(
 
     return Math.round(totalHours * 100) / 100; // Round to 2 decimals
   } catch (error) {
-    logger.error('Failed to calculate hours worked', error);
+    logger.error('Failed to calculate hours worked', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -240,7 +240,7 @@ export async function getShiftSchedule(
 
     return schedule;
   } catch (error) {
-    logger.error('Failed to get shift schedule', error);
+    logger.error('Failed to get shift schedule', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -277,7 +277,7 @@ export async function cancelShiftsForDate(
 
     return result.count;
   } catch (error) {
-    logger.error('Failed to cancel shifts', error);
+    logger.error('Failed to cancel shifts', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }

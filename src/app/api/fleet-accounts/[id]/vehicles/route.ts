@@ -50,7 +50,7 @@ export async function GET(
 
     return NextResponse.json(vehicles);
   } catch (error) {
-    logger.error('Failed to fetch fleet vehicles', error);
+    logger.error('Failed to fetch fleet vehicles', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch fleet vehicles' },
       { status: 500 }
@@ -108,7 +108,7 @@ export async function POST(
       );
     }
 
-    logger.error('Failed to add fleet vehicle', error);
+    logger.error('Failed to add fleet vehicle', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to add fleet vehicle' },
       { status: 500 }

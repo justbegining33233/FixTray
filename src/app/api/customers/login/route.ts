@@ -4,6 +4,7 @@ import { verifyPassword, generateToken, generateRandomToken, refreshExpiryDate }
 import { checkRateLimit, getClientIP, resetRateLimit } from '@/lib/rateLimit';
 import { z } from 'zod';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
+import logger from '@/lib/logger';
 
 const loginSchema = z.object({
   email: z.string().optional(),

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/middleware';
 import { getSocketServer } from '@/lib/socket-server';
+import logger from '@/lib/logger';
 
 // POST /api/customers/estimates/request-new
 export async function POST(request: Request) {

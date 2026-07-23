@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import Stripe from 'stripe';
 import { sendPaymentReceiptEmail } from '@/lib/emailService';
 import { pushPaymentConfirmed } from '@/lib/serverPush';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import logger from '@/lib/logger';
 
 // GET /api/admin/backup ΓÇö export a full platform data snapshot as JSON
 export async function GET(request: NextRequest) {

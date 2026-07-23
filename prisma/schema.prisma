@@ -131,6 +131,7 @@ model Shop {
   workOrders          WorkOrder[]
   workOrderTemplates  WorkOrderTemplate[]
   branding            ShopBranding?
+  inventoryStocks     InventoryStock[]
 
   @@map("shops")
 }
@@ -568,6 +569,7 @@ model InventoryRequest {
 model InventoryStock {
   id                 String              @id @default(cuid())
   shopId             String
+  shop               Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
   itemName           String
   sku                String?
   category           String?

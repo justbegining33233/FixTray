@@ -311,6 +311,7 @@ model WorkOrder {
   purchaseOrderItems PurchaseOrderItem[]
   reviews            Review[]
   statusHistory      StatusHistory[]
+  refunds            Refund[]
   tracking           TechTracking?
   timeEntries        TimeEntry[]
   workOrderTimeEntries WorkOrderTimeEntry[]
@@ -809,6 +810,26 @@ model PaymentHistory {
   @@index([subscriptionId])
   @@index([stripeInvoiceId])
   @@map("payment_history")
+}
+
+model Refund {
+  id              String    @id @default(cuid())
+  workOrderId     String
+  stripeRefundId  String?   @unique
+  amount          Float
+  reason          String
+  status          String    @default("pending")
+  processedBy     String?
+  processedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  notes           String?
+  workOrder       WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("refunds")
 }
 
 model PageView {

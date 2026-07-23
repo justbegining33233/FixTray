@@ -16,7 +16,11 @@ const campaignSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await requireRole(['shop_owner', 'manager', 'admin']);
+    const auth = await requireRole(request, ['shop_owner', 'manager', 'admin']);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const user = auth;
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId') || user.shopId;
 
@@ -35,7 +39,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await requireRole(['shop_owner', 'admin']);
+    const auth = await requireRole(request, ['shop_owner', 'admin']);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const user = auth;
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId') || user.shopId;
 

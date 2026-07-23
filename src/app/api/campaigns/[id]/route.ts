@@ -16,7 +16,11 @@ const campaignUpdateSchema = z.object({
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await requireRole(['shop_owner', 'manager', 'admin']);
+    const auth = await requireRole(request, ['shop_owner', 'manager', 'admin']);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const user = auth;
 
     const { id } = await params;
     const campaign = await prisma.campaign.findFirst({
@@ -36,7 +40,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await requireRole(['shop_owner', 'admin']);
+    const auth = await requireRole(request, ['shop_owner', 'admin']);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const user = auth;
 
     const { id } = await params;
     const body = await request.json();
@@ -64,7 +72,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await requireRole(['shop_owner', 'admin']);
+    const auth = await requireRole(request, ['shop_owner', 'admin']);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const user = auth;
 
     const { id } = await params;
     const campaign = await prisma.campaign.deleteMany({

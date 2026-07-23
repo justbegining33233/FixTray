@@ -217,10 +217,7 @@ export async function POST(request: NextRequest) {
     return response;
     } catch (error: unknown) {
       // CRITICAL FIX: Never expose error details to client
-      logger.error('Tech login failed', error, {
-        stack: (error as Error)?.stack,
-        ip: userIp,
-      });
+      logger.error('Tech login failed', error instanceof Error ? { error: error.message } : { error: String(error) });
       return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

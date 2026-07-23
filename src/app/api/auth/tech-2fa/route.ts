@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         // If rate limit check fails, log but don't block
-        logger.warn('2FA rate limit check failed', error);
+        logger.warn('2FA rate limit check failed', error instanceof Error ? { error: error.message } : { error: String(error) });
       }
 
       const tech = await prisma.tech.findUnique({

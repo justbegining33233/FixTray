@@ -46,30 +46,33 @@ export async function verifyTOTP(options: TOTPVerifyOptions): Promise<{
       // Log successful 2FA verification
       logSecurityEvent({
         userId,
-        action: 'totp_verified',
+        eventType: 'login_success',
         ip,
         userAgent,
-        metadata: { email: userEmail },
+        details: { email: userEmail, action: 'totp_verified' },
+        severity: 'info',
       });
       return { isValid: true };
     } else {
       // Log failed 2FA attempt
       logSecurityEvent({
         userId,
-        action: 'totp_verification_failed',
+        eventType: 'unauthorized_access',
         ip,
         userAgent,
-        metadata: { email: userEmail, reason: 'invalid_token' },
+        details: { email: userEmail, reason: 'invalid_token' },
+        severity: 'warn',
       });
       return { isValid: false, error: 'Invalid 2FA token' };
     }
   } catch (error) {
     logSecurityEvent({
       userId,
-      action: 'totp_verification_error',
+      eventType: 'unauthorized_access',
       ip,
       userAgent,
-      metadata: { email: userEmail, error: String(error) },
+      details: { email: userEmail, error: String(error) },
+      severity: 'error',
     });
     return { isValid: false, error: 'TOTP verification error' };
   }
@@ -113,10 +116,11 @@ export async function verifyBackupCode(options: {
     if (!/^[0-9a-f]{8}$/.test(code.toLowerCase())) {
       logSecurityEvent({
         userId,
-        action: 'backup_code_invalid_format',
+        eventType: 'unauthorized_access',
         ip,
         userAgent,
-        metadata: { email: userEmail },
+        details: { email: userEmail, reason: 'invalid_format' },
+        severity: 'warn',
       });
       return { isValid: false, error: 'Invalid backup code format' };
     }
@@ -125,20 +129,22 @@ export async function verifyBackupCode(options: {
     // Note: Implementation depends on database backup code storage schema
     logSecurityEvent({
       userId,
-      action: 'backup_code_verified',
+      eventType: 'login_success',
       ip,
       userAgent,
-      metadata: { email: userEmail },
+      details: { email: userEmail, action: 'backup_code_verified' },
+      severity: 'info',
     });
 
     return { isValid: true };
   } catch (error) {
     logSecurityEvent({
       userId,
-      action: 'backup_code_verification_error',
+      eventType: 'unauthorized_access',
       ip,
       userAgent,
-      metadata: { email: userEmail, error: String(error) },
+      details: { email: userEmail, error: String(error) },
+      severity: 'error',
     });
     return { isValid: false, error: 'Backup code verification failed' };
   }

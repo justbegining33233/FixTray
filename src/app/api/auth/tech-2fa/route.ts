@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
         if (!rateLimit.success) {
           logSecurityEvent({
             userId: decoded.id,
-            action: '2fa_rate_limit_exceeded',
+            eventType: 'login_lockout',
+            details: { reason: '2fa_rate_limit_exceeded' },
+            severity: 'warn',
             ip: clientIP,
             userAgent,
           });
@@ -80,7 +82,10 @@ export async function POST(request: NextRequest) {
       if (!valid) {
         logSecurityEvent({
           userId: tech.id,
-          action: '2fa_verification_failed',
+          eventType: 'unauthorized_access',
+          email: tech.email,
+          details: { reason: '2fa_verification_failed' },
+          severity: 'warn',
           ip: clientIP,
           userAgent,
         });
@@ -90,7 +95,10 @@ export async function POST(request: NextRequest) {
       // Log successful 2FA verification
       logSecurityEvent({
         userId: tech.id,
-        action: '2fa_verified',
+        eventType: 'login_success',
+        email: tech.email,
+        details: { action: '2fa_verified' },
+        severity: 'info',
         ip: clientIP,
         userAgent,
       });

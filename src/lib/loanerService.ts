@@ -147,7 +147,7 @@ export async function getOverdueVehicles(shopId: string) {
       where: {
         shopId,
         status: 'checked-out',
-        expectedBackDate: {
+        expectedBack: {
           lt: today,
         },
       },

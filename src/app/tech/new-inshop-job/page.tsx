@@ -48,7 +48,7 @@ export default function TechNewInShopJob() {
         </div>
 
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
-          <Link href="/shop/workorders" style={{background:'rgba(34,197,94,0.15)', border:'1px solid rgba(34,197,94,0.3)', padding:20, borderRadius:8, textDecoration:'none', color:'#e5e7eb'}}>
+          <Link href="/shop/workorders" as any style={{background:'rgba(34,197,94,0.15)', border:'1px solid rgba(34,197,94,0.3)', padding:20, borderRadius:8, textDecoration:'none', color:'#e5e7eb'}}>
             <h3 style={{marginBottom:8, fontWeight:600}}>View All Work Orders</h3>
             <p style={{fontSize:13, color:'#9aa3b2'}}>See jobs assigned to you</p>
           </Link>

@@ -55,7 +55,7 @@ export default function ShopPerformancePage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
-      <Sidebar role={user?.role || 'shop'} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar role={(user?.role as 'tech' | 'manager' | 'shop' | 'admin' | 'superadmin') || 'shop'} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
         <main style={{ flex: 1, padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>

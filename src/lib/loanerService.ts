@@ -89,12 +89,6 @@ export async function getVehicleHistory(vehicleId: string) {
   try {
     const vehicle = await prisma.loanerVehicle.findUnique({
       where: { id: vehicleId },
-      include: {
-        checkouts: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-      },
     });
 
     if (!vehicle) {
@@ -102,7 +96,7 @@ export async function getVehicleHistory(vehicleId: string) {
     }
 
     logger.info(`Retrieved history for vehicle ${vehicleId}`, {
-      checkouts: vehicle.checkouts?.length || 0,
+      status: vehicle.status,
     });
 
     return vehicle;

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TechLiveMap from '@/components/TechLiveMap';
 import CustomerMessaging from '@/components/CustomerMessaging';
+import WorkAuthorizationForm from '@/components/WorkAuthorizationForm';
 import { FaArrowLeft, FaCheckCircle, FaClock, FaLock, FaMapMarkerAlt, FaStore } from 'react-icons/fa';
 
 interface WorkOrderDetails {
@@ -332,6 +333,21 @@ export default function WorkOrderDetailsPage() {
                 </button>
                 <div style={{textAlign:'center', marginTop:10, fontSize:12, color:'#6b7280'}}>
                   <FaLock style={{marginRight:4}} /> Powered by Stripe  Apple Pay &amp; Google Pay accepted
+                </div>
+              </div>
+            )}
+
+            {/* Work Authorization Section */}
+            {(workOrder.status === 'waiting-estimate' || workOrder.status === 'in-progress') && (
+              <div style={{marginTop:32}}>
+                <div style={{maxWidth:600}}>
+                  <WorkAuthorizationForm
+                    workOrderId={workOrder.id}
+                    customerName={userName}
+                    vehicleInfo={workOrder.vehicle ? `${workOrder.vehicle.year} ${workOrder.vehicle.make} ${workOrder.vehicle.model}` : 'Vehicle'}
+                    workDescription={workOrder.issueDescription}
+                    estimatedCost={workOrder.estimate ? `$${workOrder.estimate.amount.toFixed(2)}` : 'TBD'}
+                  />
                 </div>
               </div>
             )}

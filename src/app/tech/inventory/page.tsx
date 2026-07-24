@@ -1,12 +1,22 @@
 'use client';
 
-
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowLeft, FaBox, FaCog, FaExternalLinkAlt, FaRulerCombined } from 'react-icons/fa';
+import { FaArrowLeft, FaBox, FaCog, FaExternalLinkAlt, FaRulerCombined, FaBarcode } from 'react-icons/fa';
+import BarcodeScanner from '@/components/BarcodeScanner';
 
 export default function TechInventory() {
   const { user, isLoading } = useRequireAuth(['tech']);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannedCode, setScannedCode] = useState('');
+
+  const handleBarcodeScan = (barcode: string) => {
+    setScannedCode(barcode);
+    setShowScanner(false);
+    // Auto-search for part or navigate
+    window.open(`https://rockauto.com/catalog/carparts/search.html?q=${encodeURIComponent(barcode)}`, '_blank');
+  };
 
   if (isLoading) {
     return (
@@ -33,6 +43,43 @@ export default function TechInventory() {
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
+        {/* Scanner Button */}
+        <div style={{marginBottom:24}}>
+          <button
+            onClick={() => setShowScanner(true)}
+            style={{
+              display:'flex',
+              alignItems:'center',
+              gap:8,
+              padding:'12px 20px',
+              background:'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+              color:'white',
+              border:'none',
+              borderRadius:8,
+              fontSize:16,
+              fontWeight:600,
+              cursor:'pointer',
+              boxShadow:'0 4px 15px rgba(6,182,212,0.3)',
+            }}
+          >
+            <FaBarcode /> Scan Barcode
+          </button>
+          {scannedCode && (
+            <div style={{marginTop:8, fontSize:13, color:'#22c55e'}}>
+              ✓ Last scanned: {scannedCode}
+            </div>
+          )}
+        </div>
+
+        {/* Scanner Modal */}
+        {showScanner && (
+          <BarcodeScanner
+            onScan={handleBarcodeScan}
+            onClose={() => setShowScanner(false)}
+            label="Scan Part Barcode"
+          />
+        )}
+
         {/* Quick links */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:16, marginBottom:32}}>
           {[

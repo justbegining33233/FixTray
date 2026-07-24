@@ -5,7 +5,8 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { FaCalendarAlt, FaUser, FaClock } from 'react-icons/fa';
+import ShiftSwapModal from '@/components/ShiftSwapModal';
+import { FaCalendarAlt, FaUser, FaClock, FaSync } from 'react-icons/fa';
 
 interface ScheduleEntry {
   id: string;
@@ -22,6 +23,7 @@ export default function ManagerSchedulePage() {
   const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [showSwapModal, setShowSwapModal] = useState(false);
 
   const getWeekDates = useCallback(() => {
     const today = new Date();
@@ -82,6 +84,7 @@ export default function ManagerSchedulePage() {
               <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>&larr; Prev</button>
               <button onClick={() => setWeekOffset(0)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>Today</button>
               <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>Next &rarr;</button>
+              <button onClick={() => setShowSwapModal(true)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(6,182,212,0.2)', color: '#06b6d4', border: '1px solid rgba(6,182,212,0.5)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}><FaSync /> Swap Requests</button>
             </div>
           </div>
 
@@ -129,6 +132,15 @@ export default function ManagerSchedulePage() {
           )}
         </main>
       </div>
+
+      {/* Shift Swap Modal */}
+      {showSwapModal && (
+        <ShiftSwapModal
+          onClose={() => setShowSwapModal(false)}
+          currentShift={{ id: 'shift-1', date: '2024-01-15', startTime: '08:00', endTime: '16:00', location: 'Main Shop' }}
+          technician={{ id: 'tech-1', name: 'John Doe', phone: '(555) 123-4567' }}
+        />
+      )}
     </div>
   );
 }

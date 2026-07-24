@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import QuickActionCard from '@/components/QuickActionCard';
+import TechTrackingMap from '@/components/TechTrackingMap';
 import { FaArrowLeft, FaArrowRight, FaBolt, FaChartBar, FaExclamationTriangle, FaTimesCircle, FaPlus, FaUsers, FaClipboardList, FaWrench, FaBox } from 'react-icons/fa';
 
 interface ManagerDashboardData {
@@ -172,6 +173,11 @@ export default function ManagerDashboard() {
               color="#06b6d4"
             />
           </div>
+        </div>
+
+        {/* Tech Tracking Map */}
+        <div style={{ marginBottom: 32 }}>
+          <TechTrackingMap />
         </div>
 
         {/* Main Content Grid */}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import ReferralLinkShare from '@/components/ReferralLinkShare';
 
 interface Reward {
   id: string;
@@ -108,6 +109,11 @@ export default function Rewards() {
               })()}
             </div>
           </div>
+        </div>
+
+        {/* Referral Section */}
+        <div style={{marginBottom:32}}>
+          <ReferralLinkShare customerId={localStorage.getItem('userId') || 'unknown'} />
         </div>
 
         {/* Available Rewards */}

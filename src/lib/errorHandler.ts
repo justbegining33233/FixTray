@@ -51,10 +51,10 @@ export async function asyncErrorHandler<T>(
         logger.warn(`${context}: ${errorMessage}`, logData);
         break;
       case 'error':
-        logger.error(`${context}: ${errorMessage}`, error, logData);
+        logger.error(`${context}: ${errorMessage}`, logData);
         break;
       case 'critical':
-        logger.error(`CRITICAL - ${context}: ${errorMessage}`, error, logData);
+        logger.error(`CRITICAL - ${context}: ${errorMessage}`, logData);
         break;
     }
 

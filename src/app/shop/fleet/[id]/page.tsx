@@ -66,7 +66,7 @@ export default function FleetAccountDetailPage() {
           <p className="text-gray-600">Fleet Account • {account.status}</p>
         </div>
         <Link
-          href={`/shop/fleet/${id}/edit`}
+          href={`/shop/fleet/${id}/edit` as any}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Edit Account

@@ -118,7 +118,7 @@ export async function generateReturnReminders(shopId: string, daysUntilDue: numb
       where: {
         shopId,
         status: 'checked-out',
-        expectedBackDate: {
+        expectedBack: {
           gte: today,
           lte: reminderDate,
         },

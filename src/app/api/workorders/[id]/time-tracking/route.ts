@@ -106,7 +106,7 @@ export async function POST(
     // Verify work order exists
     const workOrder = await prisma.workOrder.findUnique({
       where: { id },
-      select: { id: true, shopId: true, assignedTechId: true },
+      select: { id: true, shopId: true, assignedTechId: true, status: true },
     });
 
     if (!workOrder) {
@@ -121,6 +121,10 @@ export async function POST(
     const shopId = auth.role === 'shop' ? auth.id : (auth.shopId || undefined);
     if (!shopId || (auth.role !== 'superadmin' && shopId !== workOrder.shopId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    if (auth.role === 'tech' && techId !== auth.id) {
+      return NextResponse.json({ error: 'Technicians can only clock themselves in' }, { status: 403 });
     }
 
     if (action === 'clock-in') {
@@ -157,10 +161,38 @@ export async function POST(
         },
       });
 
+      const assignmentUpdate: { assignedTechId?: string; status?: string } = {};
+      if (!workOrder.assignedTechId) {
+        const clockingTech = await prisma.tech.findFirst({
+          where: { id: techId, shopId: workOrder.shopId },
+          select: { id: true },
+        });
+        if (clockingTech) {
+          assignmentUpdate.assignedTechId = techId;
+        }
+      }
+      if (['pending', 'assigned'].includes(workOrder.status)) {
+        assignmentUpdate.status = 'in-progress';
+      }
+
+      let assignedWorkOrder = null;
+      if (Object.keys(assignmentUpdate).length > 0) {
+        assignedWorkOrder = await prisma.workOrder.update({
+          where: { id },
+          data: assignmentUpdate,
+          include: {
+            assignedTo: { select: { id: true, firstName: true, lastName: true } },
+          },
+        });
+      }
+
       return NextResponse.json({
         success: true,
-        message: 'Clocked in to work order',
+        message: assignmentUpdate.assignedTechId
+          ? 'Clocked in to work order and assigned as technician'
+          : 'Clocked in to work order',
         entry,
+        workOrder: assignedWorkOrder,
       });
     } else if (action === 'clock-out') {
       // Find active time entry

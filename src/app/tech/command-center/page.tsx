@@ -236,6 +236,13 @@ export default function TechCommandCenter() {
           {order.service}
         </div>
         <div style={{ fontSize: 11, color: '#94a3b8' }}>{order.customer}</div>
+        <Link
+          href={`/workorders/${order.sourceId || order.id}` as Route}
+          onClick={(event) => event.stopPropagation()}
+          style={{ display: 'inline-block', marginTop: 6, fontSize: 11, color: '#22c55e', fontWeight: 700, textDecoration: 'none' }}
+        >
+          Open details
+        </Link>
       </div>
     );
   };
@@ -374,8 +381,15 @@ export default function TechCommandCenter() {
                           >
                             <div style={{fontSize:12, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{job.service}</div>
                             <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{job.customer}</div>
+                            <Link
+                              href={`/workorders/${job.sourceId || job.id}` as Route}
+                              onClick={(event) => event.stopPropagation()}
+                              style={{display:'inline-block', fontSize:11, color:'#22c55e', fontWeight:700, textDecoration:'none', marginBottom:8}}
+                            >
+                              Open details
+                            </Link>
                             <button
-                              onClick={() => handleReturnToPending(bay.id, job.id)}
+                              onClick={(event) => { event.stopPropagation(); handleReturnToPending(bay.id, job.id); }}
                               style={{width:'100%', padding:'6px 8px', background:'rgba(245,158,11,0.12)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.3)', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer'}}
                             >
                               Return To Queue

@@ -294,13 +294,22 @@ export default function ManagerHome() {
                     <div style={{background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:12, padding:24}}>
                       <h2 style={{fontSize:20, fontWeight:700, color:'#ef4444', marginBottom:16}}><FaExclamationCircle style={{marginRight:4}} /> Urgent Alerts</h2>
                       <div style={{display:'grid', gap:12}}>
-                        {urgentAlerts.map((alert, index) => (
-                          <div key={index} style={{background:'rgba(239,68,68,0.1)', borderRadius:8, padding:16, border:'1px solid rgba(239,68,68,0.2)'}}>
+                        {urgentAlerts.map((alert, index) => {
+                          const href = alert.id === 'unassigned-jobs'
+                            ? '/manager/assignments'
+                            : alert.id === 'overdue-jobs'
+                              ? '/manager/dashboard'
+                              : alert.id === 'pending-requests'
+                                ? '/manager/inventory'
+                                : '/manager/dashboard';
+                          return (
+                          <Link key={index} href={href} style={{background:'rgba(239,68,68,0.1)', borderRadius:8, padding:16, border:'1px solid rgba(239,68,68,0.2)', textDecoration:'none', display:'block', cursor:'pointer'}}>
                             <div style={{color:'#ef4444', fontWeight:600, marginBottom:4}}>{alert.title}</div>
                             <div style={{color:'#e5e7eb', fontSize:14}}>{alert.message}</div>
                             <div style={{color:'#9aa3b2', fontSize:12, marginTop:8}}>{new Date(alert.createdAt).toLocaleString()}</div>
-                          </div>
-                        ))}
+                          </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -309,29 +318,29 @@ export default function ManagerHome() {
                   <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
                     <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}><FaClipboardList style={{marginRight:4}} /> Work Orders Overview</h2>
                     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:16}}>
-                      <div style={{textAlign:'center'}}>
+                      <Link href="/manager/dashboard" style={{textAlign:'center', textDecoration:'none'}}>
                         <div style={{fontSize:28, fontWeight:700, color:'#e5332a'}}>{workOrderStats.activeJobs}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>Active Jobs</div>
-                      </div>
-                      <div style={{textAlign:'center'}}>
+                      </Link>
+                      <Link href="/manager/assignments" style={{textAlign:'center', textDecoration:'none'}}>
                         <div style={{fontSize:28, fontWeight:700, color:'#f59e0b'}}>{workOrderStats.pendingAssignments}</div>
-                        <div style={{color:'#9aa3b2', fontSize:12}}>Pending</div>
-                      </div>
-                      <div style={{textAlign:'center'}}>
+                        <div style={{color:'#9aa3b2', fontSize:12}}>Awaiting Clock-In</div>
+                      </Link>
+                      <Link href="/manager/dashboard" style={{textAlign:'center', textDecoration:'none'}}>
                         <div style={{fontSize:28, fontWeight:700, color:'#ef4444'}}>{workOrderStats.overdueJobs}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>Overdue</div>
-                      </div>
-                      <div style={{textAlign:'center'}}>
+                      </Link>
+                      <Link href="/manager/dashboard" style={{textAlign:'center', textDecoration:'none'}}>
                         <div style={{fontSize:28, fontWeight:700, color:'#22c55e'}}>{workOrderStats.completedToday}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>Completed Today</div>
-                      </div>
+                      </Link>
                     </div>
                     <div style={{display:'flex', gap:12, marginTop:20}}>
-                      <Link href="/manager/home" style={{flex:1, padding:12, background:'#e5332a', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
+                      <Link href="/manager/dashboard" style={{flex:1, padding:12, background:'#e5332a', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
                         View All Jobs
                       </Link>
                       <Link href="/manager/assignments" style={{flex:1, padding:12, background:'#6b7280', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
-                        Assign Work
+                        Open Job Queue
                       </Link>
                     </div>
                   </div>

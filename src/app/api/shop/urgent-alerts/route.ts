@@ -90,8 +90,8 @@ export async function GET(request: NextRequest) {
     if (unassignedJobs > 0) {
       alerts.push({
         id: 'unassigned-jobs',
-        title: 'Unassigned Work Orders',
-        message: `${unassignedJobs} work order${unassignedJobs > 1 ? 's' : ''} need${unassignedJobs > 1 ? '' : 's'} to be assigned.`,
+        title: 'Work Orders Awaiting Clock-In',
+        message: `${unassignedJobs} work order${unassignedJobs > 1 ? 's' : ''} ${unassignedJobs > 1 ? 'are' : 'is'} waiting for a technician to clock in.`,
         type: 'warning',
         createdAt: new Date(),
       });

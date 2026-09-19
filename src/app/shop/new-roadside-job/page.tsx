@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { mapShopServiceOptions } from '@/lib/shopServiceOptions';
 import { FaArrowLeft, FaCar } from 'react-icons/fa';
 
 export default function ShopNewRoadsideJob() {
@@ -12,6 +13,8 @@ export default function ShopNewRoadsideJob() {
   const { user, isLoading } = useRequireAuth(['shop', 'manager', 'tech']);
   const [serviceOptions, setServiceOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
+  const [submitMsg, setSubmitMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -27,31 +30,27 @@ export default function ShopNewRoadsideJob() {
 
   useEffect(() => {
     let isMounted = true;
+    if (!user) return;
 
     const loadServices = async () => {
       try {
         setServicesLoading(true);
-        const response = await fetch('/api/services', { cache: 'no-store' });
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const shopId = user.shopId || user.id;
+        const response = await fetch(`/api/services?shopId=${encodeURIComponent(shopId)}`, {
+          cache: 'no-store',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         const data = await response.json().catch(() => ({}));
-
-        if (!response.ok || !Array.isArray(data?.services)) {
-          if (isMounted) {
-            setServiceOptions([]);
-            setFormData((prev) => ({ ...prev, serviceType: '' }));
-          }
-          return;
-        }
-
-        const options = data.services
-          .map((service: { name?: string }) => (service?.name || '').trim())
-          .filter((name: string) => name.length > 0)
-          .map((name: string) => ({ value: name, label: name }));
+        const options = mapShopServiceOptions(data?.services);
 
         if (isMounted) {
           setServiceOptions(options);
           setFormData((prev) => ({
             ...prev,
-            serviceType: options.length > 0 ? options[0].value : '',
+            serviceType: options.some((option) => option.value === prev.serviceType)
+              ? prev.serviceType
+              : (options[0]?.value || ''),
           }));
         }
       } catch {
@@ -71,7 +70,7 @@ export default function ShopNewRoadsideJob() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -92,9 +91,55 @@ export default function ShopNewRoadsideJob() {
   };
   const homeHref = (homeByRole[user.role] || '/shop/home') as Route;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(homeHref);
+    if (servicesLoading || serviceOptions.length === 0 || submitting) return;
+    setSubmitMsg(null);
+    setSubmitting(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const phoneDigits = formData.customerPhone.replace(/\D/g, '') || 'unknown';
+      const response = await fetch('/api/workorders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          shopId: user.shopId || user.id,
+          vehicleType: 'personal-vehicle',
+          serviceLocationType: 'road-call',
+          customerName: formData.customerName,
+          customerPhone: formData.customerPhone,
+          customerEmail: `roadside-${phoneDigits}@customers.fixtray.app`,
+          serviceType: formData.serviceType,
+          services: {
+            repairs: [],
+            maintenance: formData.serviceType ? [formData.serviceType] : [],
+          },
+          issueDescription: formData.issue || `Roadside: ${formData.serviceType}`,
+          vehicleLocation: { address: formData.location, source: 'roadside' },
+          notes: formData.notes,
+          urgency: formData.urgency,
+          status: 'pending',
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        setSubmitMsg({ type: 'error', text: err.error || 'Failed to create roadside job.' });
+        return;
+      }
+      const created = await response.json().catch(() => ({}));
+      if (created?.id) {
+        router.push(`/workorders/${created.id}` as Route);
+        return;
+      }
+      router.push(homeHref);
+    } catch {
+      setSubmitMsg({ type: 'error', text: 'Failed to create roadside job.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -187,9 +232,14 @@ export default function ShopNewRoadsideJob() {
             <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} placeholder="Optional notes..." style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, color: '#e5e7eb', fontSize: 14, resize: 'vertical' }} />
           </div>
 
+          {submitMsg && (
+            <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: submitMsg.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: submitMsg.type === 'success' ? '#86efac' : '#fca5a5', fontSize: 14, fontWeight: 600 }}>
+              {submitMsg.text}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 12 }}>
-            <button type="submit" disabled={servicesLoading || serviceOptions.length === 0} style={{ flex: 1, padding: '14px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: servicesLoading || serviceOptions.length === 0 ? 0.6 : 1 }}>
-              Create Roadside Job
+            <button type="submit" disabled={servicesLoading || serviceOptions.length === 0 || submitting} style={{ flex: 1, padding: '14px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: servicesLoading || serviceOptions.length === 0 || submitting ? 0.6 : 1 }}>
+              {submitting ? 'Creating…' : 'Create Roadside Job'}
             </button>
             <Link href={homeHref} style={{ flex: 1, textDecoration: 'none' }}>
               <button type="button" style={{ width: '100%', padding: '14px', background: 'rgba(255,255,255,0.1)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>

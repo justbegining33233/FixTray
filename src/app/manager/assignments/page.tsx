@@ -3,17 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaArrowLeft, FaCheck, FaHandPointLeft, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck, FaClock, FaUsers } from 'react-icons/fa';
+import { OPEN_WORK_ORDER_STATUSES, isAwaitingClockIn, unwrapTechs, unwrapWorkOrders } from '@/lib/workOrderList';
 
 interface WorkOrder {
   id: string;
   status: string;
-  priority: string;
-  vehicleType: string;
-  serviceLocation: string;
-  customer: { firstName: string; lastName: string };
+  priority?: string;
+  vehicleType?: string;
+  serviceLocation?: string;
+  assignedTechId?: string | null;
+  customer?: { firstName: string; lastName: string };
   assignedTo?: { id: string; firstName: string; lastName: string };
-  createdAt: string;
+  createdAt?: string;
 }
 
 interface Tech {
@@ -21,24 +23,21 @@ interface Tech {
   firstName: string;
   lastName: string;
   role: string;
-  assignedWorkOrders: any[];
+  assignedCount: number;
 }
 
 export default function AssignmentsPage() {
   const { user, isLoading } = useRequireAuth(['manager']);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [techs, setTechs] = useState<Tech[]>([]);
-  const [selectedWorkOrder, setSelectedWorkOrder] = useState<string | null>(null);
-  const [selectedTech, setSelectedTech] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [assignMsg, setAssignMsg] = useState<{type:'success'|'error';text:string}|null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     fetchData();
   }, [user]);
 
-  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div style={{
@@ -55,73 +54,48 @@ export default function AssignmentsPage() {
     );
   }
 
-  // If no user, the useRequireAuth hook will handle redirect
   if (!user) {
     return null;
   }
 
   const fetchData = async () => {
+    setLoadError(null);
     try {
       const token = localStorage.getItem('token');
-      
-      // Fetch work orders
-      const woResponse = await fetch('/api/workorders', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      const statusQuery = OPEN_WORK_ORDER_STATUSES.join(',');
+
+      const [woResponse, techResponse] = await Promise.all([
+        fetch(`/api/workorders?limit=100&status=${encodeURIComponent(statusQuery)}`, { headers }),
+        fetch('/api/techs', { headers }),
+      ]);
+
       if (woResponse.ok) {
         const woData = await woResponse.json();
-        setWorkOrders(woData.filter((wo: WorkOrder) => 
-          wo.status === 'pending' || wo.status === 'assigned' || wo.status === 'in-progress'
-        ));
+        setWorkOrders(unwrapWorkOrders(woData));
+      } else {
+        setWorkOrders([]);
+        setLoadError('Could not load work orders.');
       }
 
-      // Fetch techs
-      const techResponse = await fetch('/api/techs', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
       if (techResponse.ok) {
         const techData = await techResponse.json();
-        setTechs(techData);
+        setTechs(unwrapTechs(techData).map((tech: any) => ({
+          id: tech.id,
+          firstName: tech.firstName,
+          lastName: tech.lastName,
+          role: tech.role,
+          assignedCount: Number(tech._count?.assignedWorkOrders ?? tech.assignedWorkOrders?.length ?? 0),
+        })));
+      } else {
+        setTechs([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      setLoadError('Could not load assignments.');
+      setWorkOrders([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAssign = async () => {
-    if (!selectedWorkOrder || !selectedTech) {
-      setAssignMsg({type:'error',text:'Please select both a work order and a technician'});
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/manager/assignments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          workOrderId: selectedWorkOrder,
-          techId: selectedTech,
-        }),
-      });
-
-      if (response.ok) {
-        setAssignMsg({type:'success',text:'Work order assigned successfully!'});
-        setSelectedWorkOrder(null);
-        setSelectedTech('');
-        fetchData(); // Refresh data
-      } else {
-        const error = await response.json();
-        setAssignMsg({type:'error',text:error.error || 'Failed to assign work order'});
-      }
-    } catch (error) {
-      console.error('Error assigning work order:', error);
-      setAssignMsg({type:'error',text:'Failed to assign work order'});
     }
   };
 
@@ -133,36 +107,50 @@ export default function AssignmentsPage() {
     );
   }
 
+  const awaitingClockIn = workOrders.filter((wo) => isAwaitingClockIn(wo));
+  const clockedIn = workOrders.filter((wo) => !isAwaitingClockIn(wo));
+
   return (
     <div style={{ minHeight: "100vh", background: 'transparent' }}>
-      {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <Link href="/manager/dashboard" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaUsers style={{marginRight:4}} /> Assign Work Orders</h1>
-          <p style={{ fontSize: 14, color: '#9aa3b2' }}>Distribute work to available technicians</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaUsers style={{marginRight:4}} /> Job Queue</h1>
+          <p style={{ fontSize: 14, color: '#9aa3b2' }}>
+            Clock-in is assignment. Open a work order so a technician can clock in — no separate assign step is required.
+          </p>
         </div>
       </div>
 
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: 32 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 400px', gap: 24 }}>
-          {/* Unassigned Work Orders */}
+        {loadError && (
+          <div style={{ marginBottom: 16, padding: 12, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#fca5a5', fontSize: 14 }}>
+            {loadError}
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>Work Orders</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>
+              Awaiting Clock-In ({awaitingClockIn.length})
+            </h2>
+            <p style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 16 }}>
+              Open jobs with no technician clocked in yet.
+            </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '70vh', overflowY: 'auto' }}>
-              {workOrders.map((wo) => (
-                <div
+              {awaitingClockIn.map((wo) => (
+                <Link
                   key={wo.id}
-                  onClick={() => setSelectedWorkOrder(wo.id)}
+                  href={`/workorders/${wo.id}`}
                   style={{
-                    background: selectedWorkOrder === wo.id ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: selectedWorkOrder === wo.id ? '2px solid rgba(229,51,42,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 8,
                     padding: 16,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    textDecoration: 'none',
+                    display: 'block',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -174,8 +162,8 @@ export default function AssignmentsPage() {
                       borderRadius: 4,
                       fontSize: 12,
                       fontWeight: 600,
-                      background: wo.status === 'pending' ? 'rgba(245,158,11,0.2)' : 'rgba(229,51,42,0.2)',
-                      color: wo.status === 'pending' ? '#f59e0b' : '#ff6b64'
+                      background: 'rgba(245,158,11,0.2)',
+                      color: '#f59e0b'
                     }}>
                       {wo.status}
                     </div>
@@ -183,142 +171,103 @@ export default function AssignmentsPage() {
                   <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 4 }}>
                     Customer: {wo.customer?.firstName} {wo.customer?.lastName}
                   </div>
-                  <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 4 }}>
+                  <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 8 }}>
                     Type: {wo.vehicleType} - {wo.serviceLocation}
                   </div>
-                  {wo.assignedTo && (
-                    <div style={{ fontSize: 13, color: '#10b981', fontWeight: 600 }}>
-                      <FaCheck style={{marginRight:4}} /> Assigned to: {wo.assignedTo.firstName} {wo.assignedTo.lastName}
-                    </div>
-                  )}
-                </div>
+                  <div style={{ fontSize: 12, color: '#e5332a', fontWeight: 700 }}>
+                    Open details
+                  </div>
+                </Link>
               ))}
-              {workOrders.length === 0 && (
+              {awaitingClockIn.length === 0 && (
                 <div style={{ textAlign: 'center', padding: 40, color: '#9aa3b2' }}>
                   <div style={{ fontSize: 48, marginBottom: 16 }}><FaCheck style={{marginRight:4}} /></div>
-                  <p>All work orders are assigned!</p>
+                  <p>
+                    {workOrders.length === 0
+                      ? 'No open work orders in the shop queue.'
+                      : 'Every open work order already has a technician clocked in.'}
+                  </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Available Technicians */}
-          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>Technicians</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '70vh', overflowY: 'auto' }}>
-              {techs.map((tech) => (
-                <div
-                  key={tech.id}
-                  onClick={() => setSelectedTech(tech.id)}
-                  style={{
-                    background: selectedTech === tech.id ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: selectedTech === tech.id ? '2px solid rgba(229,51,42,0.5)' : '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 8,
-                    padding: 16,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e7eb' }}>
-                        {tech.firstName} {tech.lastName}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>Technicians</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '40vh', overflowY: 'auto' }}>
+                {techs.map((tech) => (
+                  <div
+                    key={tech.id}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e7eb' }}>
+                          {tech.firstName} {tech.lastName}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#9aa3b2' }}>{tech.role}</div>
                       </div>
-                      <div style={{ fontSize: 12, color: '#9aa3b2' }}>{tech.role}</div>
-                    </div>
-                    <div style={{
-                      padding: '4px 8px',
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      background: (tech.assignedWorkOrders?.length || 0) > 3 ? 'rgba(229,51,42,0.2)' : 'rgba(16,185,129,0.2)',
-                      color: (tech.assignedWorkOrders?.length || 0) > 3 ? '#e5332a' : '#10b981'
-                    }}>
-                      {tech.assignedWorkOrders?.length || 0} active
+                      <div style={{
+                        padding: '4px 8px',
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: tech.assignedCount > 3 ? 'rgba(229,51,42,0.2)' : 'rgba(16,185,129,0.2)',
+                        color: tech.assignedCount > 3 ? '#e5332a' : '#10b981'
+                      }}>
+                        {tech.assignedCount} active
+                      </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, color: '#9aa3b2' }}>
-                    Workload: {tech.assignedWorkOrders?.length || 0} jobs
+                ))}
+                {techs.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 24, color: '#9aa3b2' }}>
+                    No technicians found for this shop.
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Assignment Panel */}
-          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>Assign Work</h2>
-            
-            {selectedWorkOrder && selectedTech ? (
-              <div>
-                <div style={{ background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>Selected Work Order:</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb' }}>
-                    WO-{selectedWorkOrder.slice(0, 8)}
-                  </div>
-                </div>
-
-                <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 8, padding: 16, marginBottom: 20 }}>
-                  <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>Assigned To:</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb' }}>
-                    {techs.find(t => t.id === selectedTech)?.firstName} {techs.find(t => t.id === selectedTech)?.lastName}
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleAssign}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: 'linear-gradient(135deg, #e5332a 0%, #c62822 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 8,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    marginBottom: 12
-                  }}
-                >
-                  Confirm Assignment
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedWorkOrder(null);
-                    setSelectedTech('');
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: 'rgba(255,255,255,0.05)',
-                    color: '#9aa3b2',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Clear Selection
-                </button>
+            <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>
+                <FaClock style={{marginRight:4}} /> Clocked In ({clockedIn.length})
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {clockedIn.map((wo) => (
+                  <Link
+                    key={wo.id}
+                    href={`/workorders/${wo.id}`}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 8,
+                      padding: 16,
+                      textDecoration: 'none',
+                      display: 'block',
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e7eb', marginBottom: 4 }}>
+                      WO-{wo.id.slice(0, 8)}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#10b981', fontWeight: 600 }}>
+                      {wo.assignedTo?.firstName} {wo.assignedTo?.lastName}
+                    </div>
+                  </Link>
+                ))}
+                {clockedIn.length === 0 && (
+                  <div style={{ color: '#9aa3b2', fontSize: 13 }}>No technicians are clocked into a job yet.</div>
+                )}
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: 40, color: '#9aa3b2' }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}><FaHandPointLeft style={{marginRight:4}} /></div>
-                <p style={{ fontSize: 14 }}>Select a work order and a technician to assign</p>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
-      {assignMsg && (
-        <div style={{position:'fixed',bottom:24,right:24,background:assignMsg.type==='success'?'#dcfce7':'#fde8e8',color:assignMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {assignMsg.text}
-          <button onClick={()=>setAssignMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
-        </div>
-      )}
     </div>
   );
 }
-

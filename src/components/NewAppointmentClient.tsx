@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { canSubmitAppointment } from '@/lib/appointmentValidation';
 import {
   FaArrowLeft,
   FaCalendarAlt,
@@ -99,7 +100,24 @@ export default function NewAppointmentClient() {
     }, {} as Record<string, ShopService[]>);
   }, [services]);
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const today = useMemo(() => {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
+  }, []);
+
+  const appointmentGate = useMemo(
+    () => canSubmitAppointment({
+      visitType,
+      appointmentDate,
+      appointmentTime,
+      selectedVehicleId,
+      vehicleMake,
+      vehicleModel,
+    }),
+    [visitType, appointmentDate, appointmentTime, selectedVehicleId, vehicleMake, vehicleModel],
+  );
 
   const fetchShopById = async (shopId: string) => {
     try {
@@ -251,6 +269,19 @@ export default function NewAppointmentClient() {
 
     if (visitType === 'in-shop' && (!appointmentDate || !appointmentTime)) {
       setBookingMsg({ type: 'error', text: 'Please choose appointment date and time for in-shop service.' });
+      return;
+    }
+
+    const gate = canSubmitAppointment({
+      visitType,
+      appointmentDate,
+      appointmentTime,
+      selectedVehicleId,
+      vehicleMake,
+      vehicleModel,
+    });
+    if (!gate.ok) {
+      setBookingMsg({ type: 'error', text: gate.reason || 'Please complete required appointment fields.' });
       return;
     }
 
@@ -546,6 +577,7 @@ export default function NewAppointmentClient() {
                   <input
                     type="date"
                     min={today}
+                    required
                     value={appointmentDate}
                     onChange={(e) => setAppointmentDate(e.target.value)}
                     style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }}
@@ -561,7 +593,7 @@ export default function NewAppointmentClient() {
             )}
 
             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}><FaCar style={{ marginRight: 4 }} /> Vehicle Information</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}><FaCar style={{ marginRight: 4 }} /> Vehicle Information *</div>
 
               {vehicles.length > 0 && (
                 <select
@@ -579,7 +611,7 @@ export default function NewAppointmentClient() {
                   }}
                   style={{ width: '100%', maxWidth: 520, marginBottom: 10, padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }}
                 >
-                  <option value="">Select saved vehicle (optional)</option>
+                  <option value="">Select saved vehicle</option>
                   {vehicles.map((v) => (
                     <option key={v.id} value={v.id}>
                       {[v.year, v.make, v.model].filter(Boolean).join(' ')} {v.licensePlate ? `• ${v.licensePlate}` : ''}
@@ -589,8 +621,8 @@ export default function NewAppointmentClient() {
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, maxWidth: 740 }}>
-                <input value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} placeholder="Make" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
-                <input value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} placeholder="Model" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
+                <input required value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} placeholder="Make *" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
+                <input required value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} placeholder="Model *" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
                 <input value={vehicleYear} onChange={(e) => setVehicleYear(e.target.value)} placeholder="Year" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
                 <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} placeholder="License plate" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
               </div>
@@ -651,7 +683,8 @@ export default function NewAppointmentClient() {
               </button>
               <button
                 onClick={submitAppointment}
-                disabled={submitting}
+                disabled={submitting || !appointmentGate.ok}
+                title={appointmentGate.reason}
                 style={{
                   background: '#e5332a',
                   border: 'none',
@@ -659,8 +692,8 @@ export default function NewAppointmentClient() {
                   borderRadius: 8,
                   padding: '10px 18px',
                   fontWeight: 700,
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  opacity: submitting ? 0.7 : 1,
+                  cursor: submitting || !appointmentGate.ok ? 'not-allowed' : 'pointer',
+                  opacity: submitting || !appointmentGate.ok ? 0.5 : 1,
                 }}
               >
                 {submitting ? 'Creating...' : 'Create Appointment'}

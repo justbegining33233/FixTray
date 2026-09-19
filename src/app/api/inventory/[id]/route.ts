@@ -92,7 +92,7 @@ export async function PUT(
     const updated = await prisma.inventoryItem.update({
       where: { id },
       data: {
-        type: data.type,
+        type: typeof data.type === 'string' ? data.type.trim().toLowerCase() : data.type,
         name: data.name,
         sku: data.sku,
         quantity: data.quantity,

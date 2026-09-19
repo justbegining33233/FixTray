@@ -113,14 +113,14 @@ export default function CustomerNavigation({ unreadMessages = 0, activeOrders = 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
               {/* Notifications */}
-              <button className="relative p-2 text-[#94a3b8] hover:text-white hover:bg-[rgba(255,255,255,0.06)] rounded-lg transition-colors">
+              <Link href={"/customer/notifications" as Route} className="relative p-2 text-[#94a3b8] hover:text-white hover:bg-[rgba(255,255,255,0.06)] rounded-lg transition-colors" aria-label="Notifications">
                 <FaBell className="w-5 h-5" />
                 {notifications > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {notifications > 9 ? '9+' : notifications}
                   </span>
                 )}
-              </button>
+              </Link>
 
               {/* Quick Actions */}
               <Link

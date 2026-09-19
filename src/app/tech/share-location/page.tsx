@@ -27,23 +27,30 @@ export default function ShareLocation() {
   }
 
   const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setLocation(coords);
-          setAddress(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
-        },
-        () => {
-          setLocationMsg({type:'error',text:'Unable to get location. Please check location permissions.'});
-        }
-      );
-    } else {
-      setLocationMsg({type:'error',text:'Geolocation is not supported by your browser'});
+    if (!window.isSecureContext) {
+      setLocationMsg({ type: 'error', text: 'Location requires HTTPS. Open the secure site and try again.' });
+      return;
     }
+    if (!navigator.geolocation) {
+      setLocationMsg({ type: 'error', text: 'Geolocation is not supported by your browser' });
+      return;
+    }
+    setLocationMsg({ type: 'success', text: 'Requesting location permission…' });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setLocation(coords);
+        setAddress(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+        setLocationMsg({ type: 'success', text: 'Location captured.' });
+      },
+      (error) => {
+        setLocationMsg({ type: 'error', text: error.message || 'Unable to get location. Please allow location access.' });
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
   };
 
   const startSharing = () => {

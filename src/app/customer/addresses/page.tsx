@@ -126,7 +126,7 @@ export default function CustomerAddressesPage() {
               Set as default address
             </label>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={save} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
+              <button onClick={save} disabled={!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zipCode.trim()} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: !form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zipCode.trim() ? 'not-allowed' : 'pointer', fontWeight: 700, opacity: !form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zipCode.trim() ? 0.5 : 1 }}>
                 {editing ? 'Update Address' : 'Save Address'}
               </button>
               {editing && (

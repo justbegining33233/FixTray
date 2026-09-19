@@ -103,7 +103,8 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const { tierId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const tierId = body.tierId || body.rewardId;
     const tier = REWARD_TIERS.find(t => t.id === tierId);
     if (!tier) return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
 

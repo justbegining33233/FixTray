@@ -270,11 +270,29 @@ export async function POST(request: NextRequest) {
             { status: 403 }
           );
         }
-      } else if (!isReceiverStaff && !isReceiverCustomer) {
+      } else if (!isReceiverStaff && !isReceiverCustomer && !['shop', 'manager', 'tech'].includes(receiverRole)) {
         return NextResponse.json(
-          { error: 'Shop staff can only message FixTray staff or their customers' },
+          { error: 'Shop staff can only message FixTray staff, shop teammates, or their customers' },
           { status: 403 }
         );
+      }
+
+      if (isShopScopedSender && ['shop', 'manager', 'tech'].includes(receiverRole) && receiverRole !== 'customer') {
+        if (!shopId) {
+          return NextResponse.json({ error: 'Shop context required for staff messaging' }, { status: 403 });
+        }
+        if (receiverRole === 'shop' && receiverId !== shopId) {
+          return NextResponse.json({ error: 'You can only message your own shop' }, { status: 403 });
+        }
+        if (receiverRole === 'manager' || receiverRole === 'tech') {
+          const peer = await prisma.tech.findFirst({
+            where: { id: receiverId, shopId, terminatedAt: null },
+            select: { id: true },
+          });
+          if (!peer) {
+            return NextResponse.json({ error: 'You can only message staff in your shop' }, { status: 403 });
+          }
+        }
       }
 
       if (isShopScopedSender && isReceiverCustomer) {

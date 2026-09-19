@@ -19,6 +19,7 @@ interface Estimate {
   id: string; // work order id
   woStatus: string; // actual WO status
   status: 'pending' | 'accepted' | 'denied';
+  kind?: 'request' | 'quote';
   service: string;
   price: number;
   shop: string;
@@ -51,6 +52,7 @@ export default function Estimates() {
     serviceType: '',
     description: '',
   });
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [estimateMsg, setEstimateMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
   // Expanded work order detail (messages + photos)
@@ -93,11 +95,15 @@ export default function Estimates() {
           const partsUsed = Array.isArray(wo.partsUsed) ? wo.partsUsed : [];
           const miscItems = Array.isArray(est.lineItems) ? est.lineItems : [];
 
+          const isCustomerRequest = est.status === 'requested' || (wo.status === 'pending' && !(est.total || wo.estimatedCost));
+          if (isCustomerRequest) status = 'pending';
+
           return {
             id: wo.id,
             woStatus: wo.status,
             status,
-            service: symptoms.slice(0, 80) || 'Service',
+            kind: isCustomerRequest ? 'request' : 'quote',
+            service: symptoms.slice(0, 80) || est.serviceType || 'Service',
             price: est.total || wo.estimatedCost || 0,
             shop: wo.shop?.shopName || 'Shop',
             description: symptoms,
@@ -157,20 +163,105 @@ export default function Estimates() {
       return;
     }
 
-    const names = [
-      ...((selectedShop.dieselServices || []) as Array<{ serviceName?: string }>),
-      ...((selectedShop.gasServices || []) as Array<{ serviceName?: string }>),
-    ]
-      .map((service) => (service?.serviceName || '').trim())
-      .filter((serviceName) => serviceName.length > 0);
+    let cancelled = false;
+    const loadShopServices = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/services?shopId=${encodeURIComponent(selectedShop.id)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const names = (Array.isArray(data?.services) ? data.services : [])
+            .map((service: { serviceName?: string; name?: string }) => String(service?.serviceName || service?.name || '').trim())
+            .filter((serviceName: string) => serviceName.length > 0);
+          const uniqueNames = Array.from(new Set<string>(names));
+          if (!cancelled) {
+            setRequestServices(uniqueNames);
+            setRequestForm((prev) => ({
+              ...prev,
+              serviceType: uniqueNames.includes(prev.serviceType) ? prev.serviceType : (uniqueNames[0] || ''),
+            }));
+          }
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching shop services:', error);
+      }
 
-    const uniqueNames = Array.from(new Set(names));
-    setRequestServices(uniqueNames);
-    setRequestForm((prev) => ({
-      ...prev,
-      serviceType: uniqueNames.includes(prev.serviceType) ? prev.serviceType : (uniqueNames[0] || ''),
-    }));
+      const names = [
+        ...((selectedShop.dieselServices || []) as Array<{ serviceName?: string }>),
+        ...((selectedShop.gasServices || []) as Array<{ serviceName?: string }>),
+      ]
+        .map((service) => (service?.serviceName || '').trim())
+        .filter((serviceName) => serviceName.length > 0);
+      const uniqueNames = Array.from(new Set(names));
+      if (!cancelled) {
+        setRequestServices(uniqueNames);
+        setRequestForm((prev) => ({
+          ...prev,
+          serviceType: uniqueNames.includes(prev.serviceType) ? prev.serviceType : (uniqueNames[0] || ''),
+        }));
+      }
+    };
+
+    loadShopServices();
+    return () => {
+      cancelled = true;
+    };
   }, [requestForm.shopId, shops]);
+
+  const handleSubmitNewRequest = async () => {
+    if (!requestForm.shopId) {
+      setEstimateMsg({ type: 'error', text: 'Please select a shop for this estimate request.' });
+      return;
+    }
+    if (!requestForm.serviceType) {
+      setEstimateMsg({ type: 'error', text: 'Please select a service.' });
+      return;
+    }
+    if (!requestForm.description.trim()) {
+      setEstimateMsg({ type: 'error', text: 'Please describe the work you need.' });
+      return;
+    }
+
+    setRequestSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setEstimateMsg({ type: 'error', text: 'Authentication required' });
+        return;
+      }
+
+      const response = await fetch('/api/customers/estimates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          shopId: requestForm.shopId,
+          serviceType: requestForm.serviceType,
+          description: requestForm.description.trim(),
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        setEstimateMsg({ type: 'success', text: data.message || 'Estimate request submitted. The shop will respond with a quote.' });
+        setRequestForm({ shopId: requestForm.shopId, serviceType: requestForm.serviceType, description: '' });
+        setActiveTab('my-estimates');
+        await fetchEstimates();
+      } else {
+        setEstimateMsg({ type: 'error', text: data.error || 'Failed to submit estimate request.' });
+      }
+    } catch (error) {
+      console.error('Error submitting estimate request:', error);
+      setEstimateMsg({ type: 'error', text: 'Failed to submit estimate request. Please try again.' });
+    } finally {
+      setRequestSubmitting(false);
+    }
+  };
 
   const handleAccept = async (estimateId: string) => {
     setLoading(estimateId);
@@ -463,7 +554,7 @@ export default function Estimates() {
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
                       <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>{estimate.shop}</h3>
                       <span style={{padding:'4px 12px', background:'rgba(245,158,11,0.2)', color:'#f59e0b', borderRadius:12, fontSize:12, fontWeight:600}}>
-                        PENDING REVIEW
+                        {estimate.kind === 'request' ? 'REQUEST SENT' : 'PENDING REVIEW'}
                       </span>
                     </div>
                     <div style={{fontSize:24, color:'#e5332a', fontWeight:800, marginBottom:4}}>${estimate.price.toFixed(2)}</div>
@@ -637,6 +728,11 @@ export default function Estimates() {
                     </div>
                   )}
 
+                  {estimate.kind === 'request' ? (
+                    <div style={{padding:'12px', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:8, color:'#f59e0b', fontSize:13, fontWeight:600, textAlign:'center'}}>
+                      Request sent — waiting for the shop to send a quote.
+                    </div>
+                  ) : (
                   <div style={{display:'flex', gap:12}}>
                     <button
                       onClick={() => handleAccept(estimate.id)}
@@ -653,6 +749,7 @@ export default function Estimates() {
                       {loading === estimate.id ? 'Processing...' : <><FaTimesCircle style={{marginRight:4}} /> Deny Estimate</>}
                     </button>
                   </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -669,7 +766,10 @@ export default function Estimates() {
           <div>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:32}}>
               <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb'}}>Request Estimate</h1>
-              <button style={{
+              <button
+                onClick={handleSubmitNewRequest}
+                disabled={requestSubmitting}
+                style={{
                 padding:'12px 24px',
                 background:'#e5332a',
                 color:'white',
@@ -677,9 +777,10 @@ export default function Estimates() {
                 borderRadius:8,
                 fontSize:16,
                 fontWeight:600,
-                cursor:'pointer'
+                cursor: requestSubmitting ? 'not-allowed' : 'pointer',
+                opacity: requestSubmitting ? 0.7 : 1
               }}>
-                Submit Request
+                {requestSubmitting ? 'Submitting...' : 'Submit Request'}
               </button>
             </div>
             <div style={{maxWidth:600, margin:'0 auto'}}>
@@ -728,7 +829,7 @@ export default function Estimates() {
                     />
                   </div>
                   <div>
-                    <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>Preferred Shop (Optional)</label>
+                    <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>Shop</label>
                     <select
                       value={requestForm.shopId}
                       onChange={(e) => setRequestForm({ ...requestForm, shopId: e.target.value })}
@@ -741,7 +842,7 @@ export default function Estimates() {
                       color:'#e5e7eb',
                       fontSize:16
                     }}>
-                      <option value="">Any available shop</option>
+                      <option value="">Select a shop</option>
                       {shops.map((shop) => (
                         <option key={shop.id} value={shop.id}>{shop.shopName || shop.name}</option>
                       ))}

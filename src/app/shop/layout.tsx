@@ -24,7 +24,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   const isNative = useIsNative();
   const { user } = useAuth();
   const isDesktopMode = !(isNative || isMobile);
-  const showBackToDashboard = pathname.startsWith('/shop/') && pathname !== '/shop/home';
+  const showBackToDashboard = false;
 
   useEffect(() => {
     if (!pathname.startsWith('/shop/')) return;

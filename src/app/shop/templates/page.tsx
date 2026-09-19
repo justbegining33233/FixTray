@@ -242,7 +242,7 @@ export default function WorkOrderTemplatesPage() {
               ))}
               {error && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>{error}</p>}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={handleSave} disabled={saving || !form.name || !form.serviceType} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: saving || !form.name || !form.serviceType ? 'not-allowed' : 'pointer', opacity: saving || !form.name || !form.serviceType ? 0.5 : 1 }}>
                   {saving ? 'Saving...' : editId ? 'Update Template' : 'Create Template'}
                 </button>
                 <button onClick={() => { setShowForm(false); setError(null); }} style={{ padding: '11px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>

@@ -295,9 +295,8 @@ export function useRequireAuth(requiredRoles?: string[]) {
     }
 
     if (!isLoading && user && requiredRoles && !requiredRoles.includes(user.role)) {
-      // Redirect to the user's own section, not to login
-      const home = ROLE_HOME_MAP[user.role] ?? '/auth/login';
-      router.push(home as Route);
+      const from = typeof window !== 'undefined' ? window.location.pathname : '/';
+      router.replace(`/forbidden?from=${encodeURIComponent(from)}` as Route);
     }
   }, [user, isLoading, requiredRoles]); // Remove router from dependencies
 

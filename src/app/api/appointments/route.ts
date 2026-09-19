@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import { AuthUser } from '@/lib/auth';
 import { sendSms } from '@/lib/smsService';
 import { findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
+import { hasAppointmentVehicle, isScheduledDateInPast } from '@/lib/appointmentValidation';
 
 // GET - Get appointments
 export async function GET(request: NextRequest) {
@@ -103,6 +104,25 @@ export async function POST(request: NextRequest) {
     if (!shopId || !scheduledDate || !serviceType) {
       return NextResponse.json(
         { error: 'Shop ID, scheduled date, and service type are required' },
+        { status: 400 }
+      );
+    }
+
+    if (isScheduledDateInPast(String(scheduledDate))) {
+      return NextResponse.json(
+        { error: 'Appointment date cannot be in the past' },
+        { status: 400 }
+      );
+    }
+
+    const hasVehicle = Boolean(vehicleId) || hasAppointmentVehicle({
+      selectedVehicleId: vehicleId,
+      vehicleMake: vehicleInfo?.make,
+      vehicleModel: vehicleInfo?.model,
+    });
+    if (!hasVehicle) {
+      return NextResponse.json(
+        { error: 'A vehicle is required to create an appointment' },
         { status: 400 }
       );
     }

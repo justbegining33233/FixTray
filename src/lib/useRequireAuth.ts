@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useAuth } from '@/contexts/AuthContext';
-import { ROLE_HOME } from '@/lib/roleConfig';
 
 export default function useRequireAuth(allowedRoles?: string[]) {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -21,9 +20,8 @@ export default function useRequireAuth(allowedRoles?: string[]) {
       }
 
       if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-        // Redirect to the user's own section, not to login
-        const home = ROLE_HOME[user.role] ?? '/auth/login';
-        router.push(home as Route);
+        const from = typeof window !== 'undefined' ? window.location.pathname : '/';
+        router.replace(`/forbidden?from=${encodeURIComponent(from)}` as Route);
         return;
       }
     }

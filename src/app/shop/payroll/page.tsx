@@ -131,7 +131,12 @@ export default function PayrollPage() {
         fetch('/api/payroll/pay-periods', { headers }),
         fetch('/api/payroll/overtime-rules', { headers }),
       ]);
-      if (empR.ok) setEmployees(await empR.json());
+      if (empR.ok) {
+        const empData = await empR.json();
+        setEmployees(Array.isArray(empData) ? empData : empData.employees || empData.techs || []);
+      } else {
+        setPayrollError('Could not load employees');
+      }
       if (attendR.ok) { const d = await attendR.json(); setAttendance(d.records); setAttSummary(d.summary); }
       if (leaveR.ok) setLeaveRequests(await leaveR.json());
       if (periodsR.ok) setPayPeriods(await periodsR.json());

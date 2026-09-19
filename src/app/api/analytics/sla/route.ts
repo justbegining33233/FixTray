@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { slaComplianceRate as computeSlaComplianceRate } from '@/lib/slaMetrics';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     // SLA compliance: % of WOs completed before due date
     const withDueDate = workOrders.filter(wo => wo.dueDate && wo.completedAt);
     const onTime = withDueDate.filter(wo => new Date(wo.completedAt!) <= new Date(wo.dueDate!));
-    const slaComplianceRate = withDueDate.length > 0 ? Math.round((onTime.length / withDueDate.length) * 100) : 100;
+    const slaRate = computeSlaComplianceRate(onTime.length, withDueDate.length);
 
     // Average completion time (hours from creation to completion)
     const completionTimes = workOrders
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
       techId,
       name: data.name,
       completedJobs: data.completed,
-      slaComplianceRate: data.completed > 0 ? Math.round((data.onTime / data.completed) * 100) : 100,
+      slaComplianceRate: computeSlaComplianceRate(data.onTime, data.completed),
       avgCompletionHours: data.completed > 0 ? Math.round((data.totalHours / data.completed) * 10) / 10 : 0,
       revenue: Math.round(data.revenue * 100) / 100,
     })).sort((a, b) => b.completedJobs - a.completedJobs);
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
       overview: {
         totalWorkOrders: allWOs.length,
         completedWorkOrders: workOrders.length,
-        slaComplianceRate,
+        slaComplianceRate: slaRate,
         avgCompletionHours,
         onTimeCount: onTime.length,
         lateCount: withDueDate.length - onTime.length,

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import {
+  mapCustomerContacts,
+  mapFixTrayAdminContacts,
+  mapShopEntityContact,
+  mapShopStaffContacts,
+} from '@/lib/messageContacts';
 
 /**
  * GET /api/messages/contacts
@@ -119,15 +125,7 @@ async function getFixTrayContacts(currentUserId?: string) {
     orderBy: [{ isSuperAdmin: 'desc' }, { username: 'asc' }],
   });
 
-  return admins
-    .filter((a) => a.id !== currentUserId)
-    .map((a) => ({
-      id: a.id,
-      name: a.username || a.email,
-      role: a.isSuperAdmin ? 'superadmin' : 'admin',
-      shopId: '',
-      contextLabel: a.isSuperAdmin ? 'FixTray Super Admin' : 'FixTray Employee',
-    }));
+  return mapFixTrayAdminContacts(admins, currentUserId);
 }
 
 async function getShopScopedContacts(currentUserId: string, role: string) {
@@ -141,14 +139,18 @@ async function getShopScopedContacts(currentUserId: string, role: string) {
       select: { shopId: true, terminatedAt: true },
     });
 
-    if (!staff || staff.terminatedAt) {
+    if (!staff || staff.terminatedAt || !staff.shopId) {
       return await getFixTrayContacts(currentUserId);
     }
 
     shopId = staff.shopId;
   }
 
-  const [customers, fixTrayContacts] = await Promise.all([
+  if (!shopId) {
+    return await getFixTrayContacts(currentUserId);
+  }
+
+  const [customers, staff, shop, fixTrayContacts] = await Promise.all([
     prisma.customer.findMany({
       where: {
         workOrders: {
@@ -160,18 +162,24 @@ async function getShopScopedContacts(currentUserId: string, role: string) {
       select: { id: true, firstName: true, lastName: true },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     }),
+    prisma.tech.findMany({
+      where: { shopId, terminatedAt: null, id: { not: currentUserId } },
+      select: { id: true, firstName: true, lastName: true, role: true, shopId: true },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    }),
+    prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true, shopName: true },
+    }),
     getFixTrayContacts(currentUserId),
   ]);
 
-  const customerContacts = customers.map((c) => ({
-    id: c.id,
-    name: `${c.firstName} ${c.lastName}`,
-    role: 'customer',
-    shopId: shopId || '',
-    contextLabel: 'Shop Customer',
-  }));
-
-  return [...fixTrayContacts, ...customerContacts];
+  return [
+    ...fixTrayContacts,
+    ...mapShopEntityContact(shop, currentUserId),
+    ...mapShopStaffContacts(staff, currentUserId),
+    ...mapCustomerContacts(customers, shopId),
+  ];
 }
 
 async function getCustomerScopedContacts(currentUserId: string) {

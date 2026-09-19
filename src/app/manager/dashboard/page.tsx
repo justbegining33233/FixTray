@@ -192,7 +192,11 @@ export default function ManagerDashboard() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {data.recentWorkOrders.slice(0, 10).map((wo) => (
-                <div key={wo.id} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 16 }}>
+                <Link
+                  key={wo.id}
+                  href={`/workorders/${wo.id}`}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 16, textDecoration: 'none', display: 'block', cursor: 'pointer' }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e7eb' }}>
                       WO-{wo.id.slice(0, 8)}
@@ -211,12 +215,16 @@ export default function ManagerDashboard() {
                   <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 4 }}>
                     Customer: {wo.customer?.firstName} {wo.customer?.lastName}
                   </div>
-                  {wo.assignedTo && (
+                  {wo.assignedTo ? (
                     <div style={{ fontSize: 13, color: '#9aa3b2' }}>
-                      Assigned to: {wo.assignedTo.firstName} {wo.assignedTo.lastName}
+                      Clocked in: {wo.assignedTo.firstName} {wo.assignedTo.lastName}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 13, color: '#f59e0b' }}>
+                      Awaiting clock-in
                     </div>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           </div>

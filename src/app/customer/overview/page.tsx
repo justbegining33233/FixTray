@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { FaExclamationTriangle } from 'react-icons/fa';
 
 interface OverviewStats {
@@ -33,7 +34,7 @@ export default function CustomerOverview() {
       let activeOrders = 0, completedThisMonth = 0;
       if (woRes.status === 'fulfilled' && woRes.value.ok) {
         const raw = await woRes.value.json();
-        const orders: any[] = Array.isArray(raw) ? raw : [];
+        const orders: any[] = unwrapWorkOrders(raw);
         const now = new Date();
         activeOrders = orders.filter((o: any) => !['completed', 'closed'].includes(o.status?.toLowerCase())).length;
         completedThisMonth = orders.filter((o: any) => {

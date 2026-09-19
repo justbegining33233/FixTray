@@ -177,8 +177,8 @@ export default function VendorManagementPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 28, background: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
           {([
-            { id: 'vendors' as TabId, label: `<FaIndustry style={{marginRight:4}} /> Vendors (${vendors.length})` },
-            { id: 'orders' as TabId,  label: ` Parts Orders (${orders.filter(o => o.status !== 'cancelled').length})` },
+            { id: 'vendors' as TabId, label: <> <FaIndustry style={{marginRight:4}} /> Vendors ({vendors.length})</> },
+            { id: 'orders' as TabId,  label: <>Parts Orders ({orders.filter(o => o.status !== 'cancelled').length})</> },
           ]).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               style={{ padding: '9px 20px', borderRadius: 7, border: 'none', background: activeTab === tab.id ? '#e5332a' : 'transparent', color: activeTab === tab.id ? '#fff' : '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>

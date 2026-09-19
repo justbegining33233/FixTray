@@ -198,7 +198,7 @@ export default function ShopDetailsPage({ params }: Props) {
                 )}
                 {shop.capacity && (
                   <span style={{fontSize:14, color:'#9aa3b2'}}>
-                    <FaUsers style={{marginRight:4}} /> Capacity: {shop.capacity} vehicles
+                    <FaUsers style={{marginRight:4}} /> Capacity: {shop.capacity} {shop.capacity === 1 ? 'vehicle' : 'vehicles'}
                   </span>
                 )}
               </div>
@@ -342,7 +342,7 @@ export default function ShopDetailsPage({ params }: Props) {
               {shop.capacity && (
                 <div>
                   <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>Daily Capacity</div>
-                  <div style={{fontSize:16, color:'#e5e7eb'}}>{shop.capacity} vehicles</div>
+                  <div style={{fontSize:16, color:'#e5e7eb'}}>{shop.capacity} {shop.capacity === 1 ? 'vehicle' : 'vehicles'}</div>
                 </div>
               )}
             </div>

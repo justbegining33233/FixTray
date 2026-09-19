@@ -244,7 +244,7 @@ export default function AutomationsPage() {
 
             {formError && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13 }}>{formError}</div>}
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={save} disabled={saving} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : editing ? 'Save Changes' : 'Create Rule'}</button>
+              <button onClick={save} disabled={saving || !form.name.trim() || !form.messageTemplate.trim()} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !form.name.trim() || !form.messageTemplate.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.name.trim() || !form.messageTemplate.trim() ? 0.5 : 1 }}>{saving ? 'Saving...' : editing ? 'Save Changes' : 'Create Rule'}</button>
               <button onClick={() => { setShowForm(false); setEditing(null); setFormError(''); }} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>

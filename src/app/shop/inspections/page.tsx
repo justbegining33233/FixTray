@@ -220,7 +220,7 @@ export default function StateInspectionsPage() {
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={create} disabled={saving} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Record Inspection'}</button>
+              <button onClick={create} disabled={saving || !form.inspectionType || !form.result} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !form.inspectionType || !form.result ? 'not-allowed' : 'pointer', opacity: saving || !form.inspectionType || !form.result ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Record Inspection'}</button>
               <button onClick={() => setShowNew(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>

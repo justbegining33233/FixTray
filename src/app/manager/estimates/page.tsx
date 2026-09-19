@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '../../../contexts/AuthContext';
+import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 
 interface EstimateLineItem {
@@ -42,32 +43,69 @@ function ManagerEstimatesContent() {
   });
 
   const [workOrder, setWorkOrder] = useState<any>(null);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(workOrderId);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [estimateMsg, setEstimateMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
   useEffect(() => {
-    if (workOrderId) {
-      fetchWorkOrder();
-    } else {
-      setLoading(false);
-    }
-  }, [router, workOrderId]);
+    fetchTargetingData();
+  }, [workOrderId]);
 
-  const fetchWorkOrder = async () => {
+  const fetchTargetingData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/workorders/${workOrderId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      const listRes = await fetch('/api/workorders?limit=100', { headers });
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const open = unwrapWorkOrders(listData).filter((wo: any) =>
+          !['closed', 'cancelled', 'completed'].includes(String(wo.status || ''))
+        );
+        setWorkOrders(open);
 
-      if (response.ok) {
-        const data = await response.json();
-        setWorkOrder(data.workOrder);
+        const preferredId = workOrderId || selectedWorkOrderId || open[0]?.id || '';
+        if (preferredId) {
+          setSelectedWorkOrderId(preferredId);
+          setEstimate((prev) => ({ ...prev, workOrderId: preferredId }));
+          const match = open.find((wo: any) => wo.id === preferredId);
+          if (match) setWorkOrder(match);
+        }
+      }
+
+      if (workOrderId) {
+        const response = await fetch(`/api/workorders/${workOrderId}`, { headers });
+        if (response.ok) {
+          const data = await response.json();
+          setWorkOrder(data.workOrder ?? data);
+          setSelectedWorkOrderId(workOrderId);
+          setEstimate((prev) => ({ ...prev, workOrderId }));
+        }
       }
     } catch (error) {
       console.error('Error fetching work order:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectWorkOrder = async (id: string) => {
+    setSelectedWorkOrderId(id);
+    setEstimate((prev) => ({ ...prev, workOrderId: id }));
+    const existing = workOrders.find((wo) => wo.id === id);
+    if (existing) setWorkOrder(existing);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/workorders/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setWorkOrder(data.workOrder ?? data);
+      }
+    } catch (error) {
+      console.error('Error fetching selected work order:', error);
     }
   };
 
@@ -130,38 +168,67 @@ function ManagerEstimatesContent() {
   };
 
   const submitEstimate = async () => {
-    if (!workOrderId || estimate.lineItems.length === 0) return;
+    const targetId = selectedWorkOrderId || workOrderId;
+    if (!targetId) {
+      setEstimateMsg({ type: 'error', text: 'Select a work order or customer job before submitting.' });
+      return;
+    }
+    if (estimate.lineItems.length === 0) {
+      setEstimateMsg({ type: 'error', text: 'Add at least one line item before submitting.' });
+      return;
+    }
 
+    setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/workorders/${workOrderId}`, {
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      };
+      const response = await fetch(`/api/workorders/${targetId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
+          estimatedCost: estimate.total,
           estimate: {
-            amount: estimate.total,
-            details: estimate.notes,
-            status: 'proposed',
-            lineItems: estimate.lineItems,
+            lineItems: estimate.lineItems.map(({ description, quantity, unitPrice, total }) => ({
+              description,
+              quantity,
+              unitPrice,
+              total,
+            })),
             subtotal: estimate.subtotal,
             taxRate: estimate.taxRate,
-            taxAmount: estimate.taxAmount,
-            submittedAt: new Date().toISOString()
+            tax: estimate.taxAmount,
+            total: estimate.total,
+            notes: estimate.notes,
           }
         }),
       });
 
-      if (response.ok) {
-        router.push(`/workorders/${workOrderId}` as any);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        setEstimateMsg({ type: 'error', text: error.error || 'Failed to save estimate' });
+        return;
+      }
+
+      const submitRes = await fetch(`/api/workorders/${targetId}/submit-estimate`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (submitRes.ok) {
+        setEstimateMsg({ type: 'success', text: 'Estimate submitted to the customer.' });
+        router.push(`/workorders/${targetId}` as Route);
       } else {
-        setEstimateMsg({type:'error',text:'Failed to submit estimate'});
+        const error = await submitRes.json().catch(() => ({}));
+        setEstimateMsg({ type: 'error', text: error.error || 'Estimate saved but could not notify the customer.' });
       }
     } catch (error) {
       console.error('Error submitting estimate:', error);
       setEstimateMsg({type:'error',text:'Error submitting estimate'});
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -183,12 +250,42 @@ function ManagerEstimatesContent() {
           </Link>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaClipboardList style={{marginRight:4}} /> Estimate Builder</h1>
           <p style={{ fontSize: 14, color: '#9aa3b2' }}>
-            {workOrder ? `Creating estimate for Work Order #${workOrder.id}` : 'Create detailed work estimates'}
+            {workOrder ? `Creating estimate for Work Order #${workOrder.id}` : 'Select a work order, then submit a quote'}
           </p>
         </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+          <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Target Job</h3>
+          <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>Work order / customer</label>
+          <select
+            value={selectedWorkOrderId}
+            onChange={(e) => handleSelectWorkOrder(e.target.value)}
+            style={{
+              width: '100%',
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(156,163,175,0.3)',
+              borderRadius: 6,
+              padding: '10px 12px',
+              color: '#e5e7eb',
+              fontSize: 14,
+            }}
+          >
+            <option value="">Select a work order</option>
+            {workOrders.map((wo) => (
+              <option key={wo.id} value={wo.id}>
+                WO-{String(wo.id).slice(0, 8)} — {wo.customer?.firstName || ''} {wo.customer?.lastName || ''} — {wo.status}
+              </option>
+            ))}
+          </select>
+          {workOrders.length === 0 && (
+            <p style={{ color: '#f59e0b', fontSize: 13, marginTop: 8 }}>
+              No open work orders found for this shop. Create or open a job first.
+            </p>
+          )}
+        </div>
+
         {/* Work Order Info */}
         {workOrder && (
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
@@ -400,19 +497,19 @@ function ManagerEstimatesContent() {
             </button>
             <button
               onClick={submitEstimate}
-              disabled={estimate.lineItems.length === 0}
+              disabled={estimate.lineItems.length === 0 || submitting || !selectedWorkOrderId}
               style={{
-                background: estimate.lineItems.length === 0 ? 'rgba(34,197,94,0.5)' : '#22c55e',
+                background: estimate.lineItems.length === 0 || !selectedWorkOrderId ? 'rgba(34,197,94,0.5)' : '#22c55e',
                 color: 'white',
                 border: 'none',
                 borderRadius: 6,
                 padding: '10px 20px',
                 fontSize: 14,
-                cursor: estimate.lineItems.length === 0 ? 'not-allowed' : 'pointer',
+                cursor: estimate.lineItems.length === 0 || submitting || !selectedWorkOrderId ? 'not-allowed' : 'pointer',
                 fontWeight: 600
               }}
             >
-              Submit Estimate
+              {submitting ? 'Submitting…' : 'Submit Estimate'}
             </button>
           </div>
         </div>

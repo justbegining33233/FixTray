@@ -6,6 +6,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { portalDashboardHref } from '@/lib/portalHome';
 import { FaArrowLeft, FaBuilding, FaSearch, FaCar } from 'react-icons/fa';
 
 type CustomerVehicle = {
@@ -201,7 +202,7 @@ export default function ShopNewInShopJob() {
         console.error('Failed to create work order', err);
         return;
       }
-      router.push('/shop/home' as Route);
+      router.push(portalDashboardHref(user.role) as Route);
     } catch (err) {
       console.error('Error creating work order', err);
     }
@@ -250,7 +251,7 @@ export default function ShopNewInShopJob() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto'}}>
-          <Link href="/shop/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
+          <Link href={portalDashboardHref(user.role) as Route} style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaBuilding style={{marginRight:4}} /> New In-Shop Job</h1>
@@ -539,7 +540,7 @@ export default function ShopNewInShopJob() {
 
           {/* Submit Button */}
           <div style={{display:'flex', gap:12}}>
-            <Link href="/shop/home" style={{flex:1}}>
+            <Link href={portalDashboardHref(user.role) as Route} style={{flex:1}}>
               <button type="button" style={{width:'100%', padding:'16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:16, fontWeight:600, cursor:'pointer'}}>
                 Cancel
               </button>

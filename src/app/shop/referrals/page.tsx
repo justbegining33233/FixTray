@@ -167,7 +167,7 @@ export default function ReferralsPage() {
               <div style={{ marginBottom: 14, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 14px', color: '#fca5a5', fontSize: 13, fontWeight: 600 }}>{formError}</div>
             )}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={create} disabled={saving} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Create Referral'}</button>
+              <button onClick={create} disabled={saving || !form.referredName.trim()} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !form.referredName.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.referredName.trim() ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Create Referral'}</button>
               <button onClick={() => setShowNew(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>

@@ -129,10 +129,10 @@ export default function SLAAnalyticsPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
                 <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' }}>
                   <div style={{ color: '#9ca3af', fontSize: 13, marginBottom: 4 }}>SLA Compliance</div>
-                  <div style={{ color: data.complianceRate >= 80 ? '#22c55e' : data.complianceRate >= 60 ? '#eab308' : '#ef4444', fontSize: 32, fontWeight: 700 }}>
-                    {data.complianceRate.toFixed(1)}%
+                  <div style={{ color: data.totalCompleted === 0 ? '#9ca3af' : data.complianceRate >= 80 ? '#22c55e' : data.complianceRate >= 60 ? '#eab308' : '#ef4444', fontSize: 32, fontWeight: 700 }}>
+                    {data.totalCompleted === 0 ? 'N/A' : `${data.complianceRate.toFixed(1)}%`}
                   </div>
-                  <div style={{ color: '#6b7280', fontSize: 12 }}>{data.onTime} on-time / {data.totalCompleted} completed</div>
+                  <div style={{ color: '#6b7280', fontSize: 12 }}>{data.totalCompleted === 0 ? 'No completed jobs in this period' : `${data.onTime} on-time / ${data.totalCompleted} completed`}</div>
                 </div>
                 <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' }}>
                   <div style={{ color: '#9ca3af', fontSize: 13, marginBottom: 4 }}>Avg. Completion Time</div>

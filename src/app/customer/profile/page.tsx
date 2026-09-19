@@ -139,9 +139,12 @@ function CustomerProfilePageContent() {
                     <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
                     <input value={email} disabled placeholder="Email" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #1f2937', background: '#0b1220', color: '#94a3b8' }} />
                     <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <button onClick={handleSave} disabled={saving} style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}>
+                    <button onClick={handleSave} disabled={saving || !name.trim()} style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontWeight: 700, cursor: saving || !name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !name.trim() ? 0.75 : 1 }}>
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>
+                    <Link href={'/customer/addresses' as Route} style={{ textDecoration: 'none', color: '#fecaca', fontWeight: 700 }}>
+                      Manage saved addresses
+                    </Link>
                   </div>
                 </div>
               )}

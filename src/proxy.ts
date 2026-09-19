@@ -216,9 +216,11 @@ export async function proxy(request: NextRequest) {
     return passThrough();
   }
 
-  // Wrong role  bounce to their own dashboard (not to login)
-  const home = ROLE_HOME[role] ?? '/auth/login';
-  return NextResponse.redirect(new URL(home, request.url));
+  // Wrong role — show an in-app 403 instead of silently bouncing home
+  const forbidden = request.nextUrl.clone();
+  forbidden.pathname = '/forbidden';
+  forbidden.search = `?from=${encodeURIComponent(pathname)}`;
+  return NextResponse.rewrite(forbidden);
 }
 
 // Only run on page routes, not on API calls, static files, etc.

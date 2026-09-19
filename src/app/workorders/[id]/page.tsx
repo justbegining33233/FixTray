@@ -818,7 +818,14 @@ export default function WorkOrderDetailPage() {
               techId={userId}
               techName={`${userRole === 'tech' ? 'You' : 'Tech'}`}
               onEntryCreated={() => {
-                // Optionally refresh work order data
+                const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                fetch(`/api/workorders/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then((data) => {
+                    if (!data) return;
+                    setWo(data.workOrder ?? data);
+                  })
+                  .catch(() => undefined);
               }}
             />
           </div>

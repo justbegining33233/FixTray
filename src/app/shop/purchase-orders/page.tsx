@@ -101,7 +101,7 @@ const openPurchaseOrderPdf = (order: PurchaseOrder) => {
         </div>
 
         <div><strong>Vendor:</strong> ${order.vendor}</div>
-        <div><strong>Expected Date:</strong> ${order.expectedDate ? new Date(order.expectedDate).toLocaleDateString() : 'N/A'}</div>
+        <div><strong>Expected Date:</strong> ${order.expectedDate ? String(order.expectedDate).slice(0, 10) : 'N/A'}</div>
 
         <table>
           <thead>
@@ -170,7 +170,8 @@ export default function PurchaseOrdersPage() {
   useEffect(() => { if (!user) return; load(); }, [user, load]);
 
   const createPO = async () => {
-    if (!form.vendor.trim()) return;
+    const hasLine = form.items.some((item) => String(item.description || '').trim() && Number(item.qty) >= 1 && Number(item.unitCost) > 0);
+    if (!form.vendor.trim() || !hasLine) return;
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
@@ -427,7 +428,7 @@ export default function PurchaseOrdersPage() {
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button onClick={() => setShowNew(false)} style={{ background: 'rgba(255,255,255,0.08)', color: '#9ca3af', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontSize: 14 }}>Cancel</button>
-              <button onClick={createPO} disabled={saving || !form.vendor.trim()} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: !form.vendor.trim() ? 0.5 : 1 }}>
+              <button onClick={createPO} disabled={saving || !form.vendor.trim() || !form.items.some((item) => String(item.description || '').trim() && Number(item.qty) >= 1 && Number(item.unitCost) > 0)} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: !form.vendor.trim() || !form.items.some((item) => String(item.description || '').trim() && Number(item.qty) >= 1 && Number(item.unitCost) > 0) ? 0.5 : 1 }}>
                 {saving ? 'Creating...' : 'Create Purchase Order'}
               </button>
             </div>

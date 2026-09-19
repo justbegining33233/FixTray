@@ -49,7 +49,10 @@ export default function ManagerRecurringWorkOrdersPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>Recurring Work Orders</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 24px' }}>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: 0 }}>Recurring Work Orders</h1>
+            <a href="/shop/recurring-workorders" style={{ padding: '10px 16px', background: '#e5332a', color: 'white', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Create Schedule</a>
+          </div>
           {loading ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
           ) : items.length === 0 ? (

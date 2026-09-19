@@ -200,7 +200,7 @@ export default function CampaignsPage() {
               <button
                 onClick={() => handleSend(true)}
                 disabled={sending || !name || !messageBody}
-                style={{ padding: '10px 20px', background: '#22c55e', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: sending ? 0.6 : 1 }}
+                style={{ padding: '10px 20px', background: '#22c55e', color: 'white', border: 'none', borderRadius: 8, cursor: sending || !name || !messageBody ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: sending || !name || !messageBody ? 0.5 : 1 }}
               >
                 {sending ? 'Sending...' : <><FaRocket style={{marginRight:6}} />Send Now</>}
               </button>

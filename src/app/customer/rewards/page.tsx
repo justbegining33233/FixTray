@@ -33,11 +33,17 @@ export default function Rewards() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [customerId, setCustomerId] = useState('');
 
   useEffect(() => {
     const name = localStorage.getItem('userName') || '';
     setUserName(name);
-    fetch('/api/customers/rewards', { credentials: 'include' })
+    setCustomerId(localStorage.getItem('userId') || '');
+    const token = localStorage.getItem('token');
+    fetch('/api/customers/rewards', {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data) {
@@ -113,7 +119,7 @@ export default function Rewards() {
 
         {/* Referral Section */}
         <div style={{marginBottom:32}}>
-          <ReferralLinkShare customerId={localStorage.getItem('userId') || 'unknown'} />
+          <ReferralLinkShare customerId={customerId || 'unknown'} />
         </div>
 
         {/* Available Rewards */}
@@ -159,7 +165,7 @@ export default function Rewards() {
                       const r = await fetch('/api/customers/rewards', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                        body: JSON.stringify({ rewardId: reward.id }),
+                        body: JSON.stringify({ tierId: reward.id, rewardId: reward.id }),
                       });
                       if (r.ok) {
                         setRewards(prev => prev.map(rw => rw.id === reward.id ? { ...rw, claimed: true } : rw));

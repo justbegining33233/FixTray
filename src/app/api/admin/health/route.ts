@@ -12,9 +12,9 @@ export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
-  // Only shop owners and admins
-  if (!['shop', 'admin', 'superadmin'].includes(auth.role)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  // Env catalog is admin-only — do not expose secret names to shop role
+  if (!['admin', 'superadmin'].includes(auth.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const checks: EnvCheck[] = [

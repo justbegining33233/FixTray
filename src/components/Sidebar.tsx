@@ -128,13 +128,9 @@ const shopGroups: MenuGroup[] = [
     items: [
       { icon: <FaCog />, label: 'Shop Settings',   href: '/shop/settings' },
       { icon: <FaTools />, label: 'Admin Panel',     href: '/shop/admin/settings' },
-      { icon: <FaScroll />, label: 'Audit Logs',      href: '/shop/admin/logs' },
       { icon: <FaReceipt />, label: 'Tax Settings',    href: '/shop/tax-settings' },
       { icon: <FaLock />, label: 'Two-Factor Auth', href: '/shop/settings/two-factor' },
-      { icon: <FaKey />, label: 'API Keys',        href: '/shop/settings/api-keys' },
-      { icon: <FaCodeBranch />, label: 'Webhooks',        href: '/shop/settings/webhooks' },
       { icon: <FaDesktop />, label: 'Sessions',        href: '/shop/settings/sessions' },
-      { icon: <FaHeartbeat />, label: 'Health Check',    href: '/shop/admin/health' },
     ],
   },
 ];

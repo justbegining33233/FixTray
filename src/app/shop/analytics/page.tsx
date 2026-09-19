@@ -42,8 +42,11 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
+      const range = dateRange.start > dateRange.end
+        ? { start: dateRange.end, end: dateRange.start }
+        : dateRange;
       const response = await fetch(
-        `/api/analytics?shopId=${id}&startDate=${dateRange.start}&endDate=${dateRange.end}`,
+        `/api/analytics?shopId=${id}&startDate=${range.start}&endDate=${range.end}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

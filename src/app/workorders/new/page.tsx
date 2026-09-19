@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 /** Where each role goes to create a new work order */
 const NEW_WORKORDER_BY_ROLE: Record<string, string> = {
   shop:       '/shop/new-inshop-job',
-  tech:       '/shop/new-inshop-job',
+  tech:       '/tech/new-inshop-job',
   manager:    '/shop/new-inshop-job',
   customer:   '/customer/workorders',
   admin:      '/admin/home',

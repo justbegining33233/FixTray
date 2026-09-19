@@ -83,7 +83,7 @@ export default function TechInventory() {
         {/* Quick links */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:16, marginBottom:32}}>
           {[
-            { label: 'Parts Request', desc: 'Submit a request to your shop manager', icon: '', href: '/tech/work-orders', ext: false },
+            { label: 'Parts Request', desc: 'Submit a request to your shop manager', icon: '', href: '/tech/parts-request', ext: false },
             { label: 'RockAuto', desc: 'Low-cost OEM & aftermarket parts', icon: '', href: 'https://rockauto.com', ext: true },
             { label: 'NAPA Online', desc: 'Parts lookup & ordering', icon: '', href: 'https://napaonline.com', ext: true },
             { label: 'AutoZone Pro', desc: 'Commercial account parts lookup', icon: '', href: 'https://autozonepro.com', ext: true },

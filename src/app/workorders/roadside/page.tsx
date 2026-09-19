@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const ROADSIDE_BY_ROLE: Record<string, string> = {
   shop: '/shop/new-roadside-job',
   manager: '/shop/new-roadside-job',
-  tech: '/shop/new-roadside-job',
+  tech: '/tech/new-roadside-job',
   customer: '/customer/workorders',
   admin: '/admin/home',
   superadmin: '/admin/home',

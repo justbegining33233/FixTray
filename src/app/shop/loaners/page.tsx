@@ -58,6 +58,7 @@ export default function LoanersPage() {
   };
 
   const save = async (data: Partial<Loaner>) => {
+    if (!String(data.make || '').trim() || !String(data.model || '').trim()) return;
     setSaving(true);
     const token = localStorage.getItem('token');
     if (showAdd) {
@@ -230,8 +231,8 @@ export default function LoanersPage() {
             <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Add Loaner Vehicle</h3>
             {(['make', 'model', 'year', 'color', 'licensePlate', 'vin'] as (keyof Loaner)[]).map(k => F(k))}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => save({ ...form, status: 'available' })} disabled={saving}
-                style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => save({ ...form, status: 'available' })} disabled={saving || !String(form.make || '').trim() || !String(form.model || '').trim()}
+                style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !String(form.make || '').trim() || !String(form.model || '').trim() ? 'not-allowed' : 'pointer', opacity: saving || !String(form.make || '').trim() || !String(form.model || '').trim() ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : 'Add Vehicle'}
               </button>
               <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>

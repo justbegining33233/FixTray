@@ -1,20 +1,37 @@
-"use client";
+'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Route } from 'next';
+import Link from 'next/link';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
-export default function TechSettingsRootPage() {
-  const router = useRouter();
+const LINKS = [
+  { href: '/tech/settings/two-factor', label: 'Two-Factor Authentication', desc: 'Add a second step when you sign in' },
+  { href: '/tech/share-location', label: 'Location sharing', desc: 'Share GPS with dispatch' },
+  { href: '/tech/timesheet', label: 'Timesheet', desc: 'Review clocked hours' },
+];
 
-  useEffect(() => {
-    router.replace('/tech/settings/two-factor' as Route);
-  }, [router]);
+export default function TechSettingsHub() {
+  const { user, isLoading } = useRequireAuth(['tech']);
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (!user) return null;
 
   return (
-    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#000000', color: '#e5e7eb' }}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Technician Settings Redirect</h1>
-      Redirecting to security settings...
-    </main>
+    <div style={{ minHeight: '100vh', background: 'transparent', padding: 24 }}>
+      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <h1 style={{ color: '#e5e7eb', fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Technician Settings</h1>
+        <p style={{ color: '#9aa3b2', marginBottom: 24 }}>Choose a settings area. Two-factor is optional, not the only page.</p>
+        <div style={{ display: 'grid', gap: 12 }}>
+          {LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href as any}
+              style={{ display: 'block', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16, textDecoration: 'none' }}
+            >
+              <div style={{ color: '#e5e7eb', fontWeight: 700 }}>{link.label}</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>{link.desc}</div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

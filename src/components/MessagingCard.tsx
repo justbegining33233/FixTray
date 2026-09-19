@@ -193,6 +193,10 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
       if (res.ok) {
         const { contacts } = await res.json();
         setAvailableContacts(contacts ?? []);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setMsgMsg({ type: 'error', text: err.error || `Could not load contacts (${res.status})` });
+        setAvailableContacts([]);
       }
     } catch { /* silent */ }
     finally { setContactsLoading(false); }
@@ -295,7 +299,10 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
             onChange={(e) => {
               const next = e.target.value as TabKey;
               setActiveTab(next);
-              setSelectedConversation(null);
+              setSelectedConversation((current) => {
+                if (!current || next === 'all' || current.contactRole === next) return current;
+                return null;
+              });
             }}
             style={{ flex: 1, padding: '7px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#e5e7eb', fontSize: 12, fontWeight: 600 }}>
             {ROLE_FILTERS.map((filter) => {
@@ -331,8 +338,8 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               const color = ROLE_COLOR[conv.contactRole] ?? '#9ca3af';
               const isActive = selectedConversation?.contactId === conv.contactId && selectedConversation?.contactRole === conv.contactRole;
               return (
-                <div key={`${conv.contactRole}_${conv.contactId}`} onClick={() => handleSelectConversation(conv)}
-                  style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <button type="button" key={`${conv.contactRole}_${conv.contactId}`} onClick={() => handleSelectConversation(conv)}
+                  style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
@@ -355,7 +362,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                       {new Date(conv.lastMessageAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })
           )}
@@ -402,7 +409,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                     <option value=''> -  Select recipient  - </option>
                     {filteredAvailableContacts.map((c) => (
                       <option key={`${c.role}_${c.id}`} value={`${c.role}_${c.id}`}>
-                        {ROLE_ICON[c.role]} {c.name} ({ROLE_LABEL[c.role] ?? c.role})  -  {c.contextLabel}
+                        {c.name} ({ROLE_LABEL[c.role] ?? c.role}) — {c.contextLabel}
                       </option>
                     ))}
                   </select>

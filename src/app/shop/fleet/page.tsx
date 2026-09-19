@@ -210,7 +210,7 @@ export default function FleetPage() {
             {F('netTerms', 'Net Terms (days)', 'number')}
             {F('creditLimit', 'Credit Limit ($)', 'number')}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={save} disabled={saving} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Create Account'}</button>
+              <button onClick={save} disabled={saving || !String((form as any).companyName || '').trim() || !String((form as any).contactName || '').trim()} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !String((form as any).companyName || '').trim() || !String((form as any).contactName || '').trim() ? 'not-allowed' : 'pointer', opacity: saving || !String((form as any).companyName || '').trim() || !String((form as any).contactName || '').trim() ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Create Account'}</button>
               <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>

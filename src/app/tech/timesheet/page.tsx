@@ -158,7 +158,7 @@ export default function TechTimesheet() {
           {/* Compact Hour Tracker (read-only) */}
           <div style={{marginBottom:8, padding:12, borderRadius:10, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.04)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <div>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>Clocked-in (pay)</div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>Hours this period</div>
               <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{totals.totalHours.toFixed(2)} hrs</div>
             </div>
             <div style={{textAlign:'right'}}>

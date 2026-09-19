@@ -84,6 +84,12 @@ const nextConfig: NextConfig = {
       // Manager flat-path aliases
       { source: '/manager/admin-logs',        destination: '/manager/admin/logs',    permanent: false },
       { source: '/manager/admin-settings',    destination: '/manager/admin/settings', permanent: false },
+      { source: '/shop/board',                destination: '/shop/home',             permanent: false },
+      { source: '/shop/appointments',         destination: '/shop/calendar',         permanent: false },
+      { source: '/shop/review-requests',      destination: '/shop/reviews',          permanent: false },
+      { source: '/shop/photos',               destination: '/tech/photos',           permanent: false },
+      { source: '/shop/messages',             destination: '/shop/customer-messages', permanent: false },
+      { source: '/shop/settings/billing',     destination: '/shop/subscribe',        permanent: false },
     ];
   },
   images: {

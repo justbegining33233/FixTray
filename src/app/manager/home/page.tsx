@@ -210,6 +210,10 @@ export default function ManagerHome() {
   }, [user?.id, user?.name, user?.shopId]);
 
   const handleSubmitRequest = async () => {
+    if (!newRequest.itemName.trim() || !newRequest.reason.trim() || Number(newRequest.quantity) < 1) {
+      setManagerMsg({ type: 'error', text: 'Item, quantity, and reason are required.' });
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/shop/inventory-requests', {
@@ -433,7 +437,8 @@ export default function ManagerHome() {
                           <div style={{display:'flex', gap:8}}>
                             <button
                               onClick={handleSubmitRequest}
-                              style={{flex:1, padding:10, background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontWeight:600}}
+                              disabled={!newRequest.itemName.trim() || !newRequest.reason.trim() || Number(newRequest.quantity) < 1}
+                              style={{flex:1, padding:10, background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:!newRequest.itemName.trim() || !newRequest.reason.trim() || Number(newRequest.quantity) < 1 ? 'not-allowed' : 'pointer', fontWeight:600, opacity:!newRequest.itemName.trim() || !newRequest.reason.trim() || Number(newRequest.quantity) < 1 ? 0.5 : 1}}
                             >
                               Submit Request
                             </button>

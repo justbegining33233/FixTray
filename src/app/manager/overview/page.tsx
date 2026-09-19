@@ -33,12 +33,13 @@ export default function ManagerOverviewPage() {
         ]);
         const woData = woRes.ok ? await woRes.json() : {};
         const teamData = teamRes.ok ? await teamRes.json() : {};
+        const statsPayload = woData.stats || woData;
         setStats({
-          totalOrders: woData.total || 0,
-          activeOrders: woData.inProgress || woData.active || 0,
-          completedToday: woData.completedToday || 0,
+          totalOrders: statsPayload.totalWorkOrders || statsPayload.total || statsPayload.activeJobs || 0,
+          activeOrders: statsPayload.activeJobs || statsPayload.inProgress || statsPayload.active || 0,
+          completedToday: statsPayload.completedToday || 0,
           teamMembers: (teamData.techs || teamData.team || []).length,
-          revenue: woData.revenue || 0,
+          revenue: statsPayload.revenue || 0,
         });
       } catch { /* ignore */ }
       setLoading(false);

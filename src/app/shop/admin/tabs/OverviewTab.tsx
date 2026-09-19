@@ -317,7 +317,7 @@ export default function OverviewTab({
           <div style={{ display: 'grid', gap: 12 }}>
             {[
               { href: '/shop/manage-team', bg: 'rgba(229,51,42,0.2)', border: 'rgba(229,51,42,0.3)', color: '#e5332a', icon: <FaUsers />, label: 'Manage Team', sub: 'Add or edit team members' },
-              { href: '/shop/analytics', bg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.3)', color: '#22c55e', icon: <FaClipboardList />, label: 'Payroll & Reports', sub: 'Download employee hours report' },
+              { href: '/shop/payroll', bg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.3)', color: '#22c55e', icon: <FaClipboardList />, label: 'Payroll & Reports', sub: 'Download employee hours report' },
               { href: '/shop/admin/settings', bg: 'rgba(168,85,247,0.2)', border: 'rgba(168,85,247,0.3)', color: '#a855f7', icon: <FaCog />, label: 'Shop Settings', sub: 'Configure rates and margins' },
               { href: '/shop/vendors', bg: 'rgba(139,92,246,0.2)', border: 'rgba(139,92,246,0.3)', color: '#a78bfa', icon: <FaStore />, label: 'Vendor Management', sub: 'Manage parts suppliers' },
               { href: '/shop/locations', bg: 'rgba(20,184,166,0.2)', border: 'rgba(20,184,166,0.3)', color: '#2dd4bf', icon: <FaMapMarkerAlt />, label: 'Shop Locations', sub: 'Manage multiple branches' },

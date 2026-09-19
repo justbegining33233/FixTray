@@ -333,7 +333,7 @@ export default function RecurringWorkOrders() {
               <div className="md:col-span-2 flex gap-3">
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || !form.customerId || !form.title?.trim()}
                   className="bg-[#e5332a] hover:bg-[#c62822] disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium text-sm transition-colors"
                 >
                   {saving ? 'Creating...' : 'Create Schedule'}

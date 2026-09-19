@@ -132,8 +132,8 @@ export default function PaymentLinksPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={createLink} disabled={saving}
-                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.5 : 1 }}>
+                <button onClick={createLink} disabled={saving || !description.trim() || !amount || parseFloat(amount) < 0.01}
+                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: saving || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: saving || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 0.5 : 1 }}>
                   {saving ? 'Creating...' : 'Create Link'}
                 </button>
                 <button onClick={() => setShowCreate(false)}

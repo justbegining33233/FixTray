@@ -45,7 +45,10 @@ export default function ManagerTemplatesPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>Work Order Templates</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 24px' }}>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: 0 }}>Work Order Templates</h1>
+            <a href="/shop/templates" style={{ padding: '10px 16px', background: '#e5332a', color: 'white', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Create Template</a>
+          </div>
           {loading ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
           ) : templates.length === 0 ? (

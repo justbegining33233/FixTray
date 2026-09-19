@@ -194,8 +194,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
               .slice(0, 3)
               .map((wo: any) => ({
                 id: `wo-${wo.id}`,
-                title: `New work order: ${wo.serviceType || 'Service'}`,
-                body: `${wo.customerName || 'Customer'} - ${wo.vehicleType || 'Vehicle'}`,
+                title: `New work order ${wo.id ? `WO-${String(wo.id).slice(-8).toUpperCase()}` : ''}: ${wo.serviceType || wo.issueDescription || 'Service'}`,
+                body: `${wo.customerName || 'Customer'} — ${wo.vehicleType || wo.vehicleMake || 'Vehicle'}`,
                 time: formatTimeAgo(wo.createdAt),
                 read: false,
                 type: 'workorders',
@@ -391,8 +391,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   const getMessagesLink = () => {
     switch (activeRole) {
       case 'tech': return '/tech/messages';
-      case 'manager': return '/manager/home';
-      case 'shop': return '/shop/admin';
+      case 'manager': return '/manager/messages';
+      case 'shop': return '/shop/customer-messages';
       case 'admin': return '/admin/messages';
       case 'customer': return '/customer/messages';
       default: return '/';
@@ -516,6 +516,9 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           alignItems: 'center',
           gap: 8,
         }}
+        type="button"
+        aria-expanded={showNotifications}
+        aria-haspopup="true"
         title={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'No new notifications'}
       >
         <span role="img" aria-label="Notifications">

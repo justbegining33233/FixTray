@@ -27,7 +27,7 @@ export default function CustomerVehiclesPage() {
   const [vehicleMsg, setVehicleMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string|null>(null);
   const [formData, setFormData] = useState({
-    vehicleType: 'semi-truck',
+    vehicleType: 'personal-vehicle',
     make: '',
     model: '',
     year: new Date().getFullYear(),
@@ -103,7 +103,7 @@ export default function CustomerVehiclesPage() {
       if (response.ok) {
         setVehicleMsg({type:'success',text:'Vehicle added successfully!'});
         setShowAddForm(false);
-        setFormData({ vehicleType: 'semi-truck', make: '', model: '', year: new Date().getFullYear(), vin: '', licensePlate: '' });
+        setFormData({ vehicleType: 'personal-vehicle', make: '', model: '', year: new Date().getFullYear(), vin: '', licensePlate: '' });
         fetchVehicles();
       } else {
         const error = await response.json();
@@ -135,7 +135,7 @@ export default function CustomerVehiclesPage() {
       if (response.ok) {
         setVehicleMsg({type:'success',text:'Vehicle updated successfully!'});
         setEditingVehicle(null);
-        setFormData({ vehicleType: 'semi-truck', make: '', model: '', year: new Date().getFullYear(), vin: '', licensePlate: '' });
+        setFormData({ vehicleType: 'personal-vehicle', make: '', model: '', year: new Date().getFullYear(), vin: '', licensePlate: '' });
         fetchVehicles();
       } else {
         const error = await response.json();
@@ -296,6 +296,8 @@ export default function CustomerVehiclesPage() {
                   onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
+                  <option value="personal-vehicle">Personal Vehicle</option>
+                  <option value="car">Car</option>
                   <option value="semi-truck">Semi Truck</option>
                   <option value="trailer">Trailer</option>
                   <option value="equipment">Equipment</option>
@@ -307,6 +309,7 @@ export default function CustomerVehiclesPage() {
                 <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Make *</label>
                 <input
                   type="text"
+                  required
                   value={formData.make}
                   onChange={(e) => setFormData({ ...formData, make: e.target.value })}
                   placeholder="e.g., Peterbilt, Kenworth, Volvo"
@@ -318,6 +321,7 @@ export default function CustomerVehiclesPage() {
                 <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Model *</label>
                 <input
                   type="text"
+                  required
                   value={formData.model}
                   onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                   placeholder="e.g., 579, T680, VNL"
@@ -363,7 +367,8 @@ export default function CustomerVehiclesPage() {
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button
                   onClick={editingVehicle ? handleUpdateVehicle : handleAddVehicle}
-                  style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  disabled={!formData.make || !formData.model}
+                  style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: !formData.make || !formData.model ? 'not-allowed' : 'pointer', opacity: !formData.make || !formData.model ? 0.5 : 1 }}
                 >
                   {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
                 </button>
@@ -371,7 +376,7 @@ export default function CustomerVehiclesPage() {
                   onClick={() => {
                     setShowAddForm(false);
                     setEditingVehicle(null);
-                    setFormData({ vehicleType: 'semi-truck', make: '', model: '', year: new Date().getFullYear(), vin: '', licensePlate: '' });
+                    setFormData({ vehicleType: 'personal-vehicle', make: '', model: '', year: new Date().getFullYear(), vin: '', licensePlate: '' });
                   }}
                   style={{ flex: 1, padding: 12, background: 'rgba(255,255,255,0.1)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                 >

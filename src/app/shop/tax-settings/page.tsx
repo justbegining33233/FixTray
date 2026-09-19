@@ -138,7 +138,7 @@ export default function TaxSettingsPage() {
               </div>
               <div>
                 <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Rate (%) *</label>
-                <input value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} type="number" step="0.001" placeholder="8.875"
+                <input value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} type="number" step="0.001" placeholder="7.25"
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
             </div>
@@ -146,12 +146,12 @@ export default function TaxSettingsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
                 <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>State</label>
-                <input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} placeholder="NY"
+                <input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} placeholder="CA"
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>County (optional)</label>
-                <input value={form.county} onChange={e => setForm(p => ({ ...p, county: e.target.value }))} placeholder="Nassau"
+                <input value={form.county} onChange={e => setForm(p => ({ ...p, county: e.target.value }))} placeholder="County"
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
             </div>

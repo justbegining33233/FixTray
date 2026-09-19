@@ -67,6 +67,7 @@ export default function DVIPage() {
   useEffect(() => { if (!user) return; load(); }, [user]);
 
   const createInspection = async () => {
+    if (!newForm.vehicleDesc.trim() && !newForm.workOrderId) return;
     setSaving(true);
     const token = localStorage.getItem('token');
     const DEFAULT_ITEMS = [
@@ -297,7 +298,7 @@ export default function DVIPage() {
               </div>
             ))}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={createInspection} disabled={saving} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Creating...' : 'Create DVI'}</button>
+              <button onClick={createInspection} disabled={saving || (!newForm.vehicleDesc.trim() && !newForm.workOrderId)} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || (!newForm.vehicleDesc.trim() && !newForm.workOrderId) ? 'not-allowed' : 'pointer', opacity: saving || (!newForm.vehicleDesc.trim() && !newForm.workOrderId) ? 0.5 : 1 }}>{saving ? 'Creating...' : 'Create DVI'}</button>
               <button onClick={() => setShowNew(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>

@@ -209,7 +209,7 @@ export default function ShopLocationsPage() {
               </div>
               {error && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>{error}</p>}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={handleSave} disabled={saving || !form.name || !form.address || !form.city || !form.state} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: saving || !form.name || !form.address || !form.city || !form.state ? 'not-allowed' : 'pointer', opacity: saving || !form.name || !form.address || !form.city || !form.state ? 0.5 : 1 }}>
                   {saving ? 'Saving...' : editId ? 'Update Location' : 'Add Location'}
                 </button>
                 <button onClick={() => { setShowForm(false); setError(null); }} style={{ padding: '11px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Cancel</button>

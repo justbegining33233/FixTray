@@ -164,19 +164,19 @@ export default function ShopLocationsPage() {
         {/* Form Modal */}
         {showForm && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-            <div style={{ background: '#1e293b', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflow: 'auto', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} style={{ background: '#1e293b', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflow: 'auto', border: '1px solid rgba(255,255,255,0.1)' }}>
               <h2 style={{ color: '#f1f5f9', fontSize: 20, fontWeight: 700, marginBottom: 20 }}>{editId ? 'Edit Location' : 'Add New Location'}</h2>
               {[
-                { label: 'Location Name *', key: 'name', placeholder: 'e.g. Downtown Branch' },
-                { label: 'Street Address *', key: 'address', placeholder: '123 Main St' },
-                { label: 'City *', key: 'city', placeholder: 'Houston' },
-                { label: 'ZIP Code', key: 'zip', placeholder: '77001' },
-                { label: 'Phone', key: 'phone', placeholder: '(555) 000-0000' },
-                { label: 'Email', key: 'email', placeholder: 'branch@shop.com' },
-              ].map(({ label, key, placeholder }) => (
+                { label: 'Location Name *', key: 'name', placeholder: 'e.g. Downtown Branch', required: true },
+                { label: 'Street Address *', key: 'address', placeholder: '123 Main St', required: true },
+                { label: 'City *', key: 'city', placeholder: 'Houston', required: true },
+                { label: 'ZIP Code', key: 'zip', placeholder: '77001', required: false },
+                { label: 'Phone', key: 'phone', placeholder: '(555) 000-0000', required: false },
+                { label: 'Email', key: 'email', placeholder: 'branch@shop.com', required: false },
+              ].map(({ label, key, placeholder, required }) => (
                 <div key={key} style={{ marginBottom: 12 }}>
                   <label style={{ color: '#94a3b8', fontSize: 13, display: 'block', marginBottom: 4 }}>{label}</label>
-                  <input value={(form as any)[key]} placeholder={placeholder}
+                  <input required={required} value={(form as any)[key]} placeholder={placeholder}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                     style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', fontSize: 14, boxSizing: 'border-box' }} />
                 </div>
@@ -184,7 +184,7 @@ export default function ShopLocationsPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                 <div>
                   <label style={{ color: '#94a3b8', fontSize: 13, display: 'block', marginBottom: 4 }}>State *</label>
-                  <select value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}
+                  <select required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}
                     style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: '#1e293b', color: '#f1f5f9', fontSize: 14 }}>
                     {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -209,12 +209,12 @@ export default function ShopLocationsPage() {
               </div>
               {error && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>{error}</p>}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={handleSave} disabled={saving || !form.name || !form.address || !form.city || !form.state} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: saving || !form.name || !form.address || !form.city || !form.state ? 'not-allowed' : 'pointer', opacity: saving || !form.name || !form.address || !form.city || !form.state ? 0.5 : 1 }}>
+                <button type="submit" disabled={saving} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.5 : 1 }}>
                   {saving ? 'Saving...' : editId ? 'Update Location' : 'Add Location'}
                 </button>
-                <button onClick={() => { setShowForm(false); setError(null); }} style={{ padding: '11px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Cancel</button>
+                <button type="button" onClick={() => { setShowForm(false); setError(null); }} style={{ padding: '11px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>Cancel</button>
               </div>
-            </div>
+            </form>
           </div>
         )}
       </div>

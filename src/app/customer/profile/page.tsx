@@ -54,6 +54,10 @@ function CustomerProfilePageContent() {
   };
 
   const handleSave = async () => {
+    if (!name.trim() || !phone.trim()) {
+      setMessage('Name and phone are required.');
+      return;
+    }
     setSaving(true);
     setMessage('');
     try {
@@ -136,15 +140,17 @@ function CustomerProfilePageContent() {
                   <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Update your customer contact details.</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 620 }}>
-                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <input value={email} disabled placeholder="Email" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #1f2937', background: '#0b1220', color: '#94a3b8' }} />
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <button onClick={handleSave} disabled={saving || !name.trim()} style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontWeight: 700, cursor: saving || !name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !name.trim() ? 0.75 : 1 }}>
+                    <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} style={{ display: 'grid', gap: 10 }}>
+                    <input required aria-label="Full name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input aria-label="Email" value={email} disabled placeholder="Email" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #1f2937', background: '#0b1220', color: '#94a3b8' }} />
+                    <input required aria-label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <button type="submit" disabled={saving} style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.75 : 1 }}>
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>
                     <Link href={'/customer/addresses' as Route} style={{ textDecoration: 'none', color: '#fecaca', fontWeight: 700 }}>
                       Manage saved addresses
                     </Link>
+                    </form>
                   </div>
                 </div>
               )}

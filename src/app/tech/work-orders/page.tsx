@@ -8,7 +8,7 @@ export default function TechWorkOrdersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/workorders/list' as Route);
+    router.replace('/tech/jobs?view=active' as Route);
   }, [router]);
 
   return (

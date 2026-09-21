@@ -50,7 +50,7 @@ export function middleware(request: NextRequest) {
   const permissionsPolicies = [
     'accelerometer=()',
     'camera=()',
-    'geolocation=()',
+    'geolocation=(self)',
     'gyroscope=()',
     'magnetometer=()',
     'microphone=()',

@@ -111,33 +111,33 @@ export default function CustomerAddressesPage() {
         <h1 style={{ color: '#e5e7eb', fontSize: 30, marginTop: 12, marginBottom: 6 }}>Saved Addresses</h1>
         <p style={{ color: '#9aa3b2', marginBottom: 24 }}>Manage pickup/service locations and set a default address for faster work order requests.</p>
 
-        <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <form onSubmit={(e) => { e.preventDefault(); save(); }} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 18, marginBottom: 20 }}>
           <h2 style={{ color: '#f1f5f9', marginTop: 0, fontSize: 18 }}>{editing ? 'Edit Address' : 'Add Address'}</h2>
           <div style={{ display: 'grid', gap: 10 }}>
-            <input value={form.label} onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))} placeholder="Label (Home, Office, Yard)" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
-            <input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Street address" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+            <input required aria-label="Label" value={form.label} onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))} placeholder="Label (Home, Office, Yard)" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+            <input required aria-label="Street address" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Street address" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10 }}>
-              <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="City" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
-              <input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} placeholder="State" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
-              <input value={form.zipCode} onChange={(e) => setForm((f) => ({ ...f, zipCode: e.target.value }))} placeholder="ZIP" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+              <input required aria-label="City" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="City" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+              <input required aria-label="State" value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} placeholder="State" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+              <input required aria-label="ZIP" value={form.zipCode} onChange={(e) => setForm((f) => ({ ...f, zipCode: e.target.value }))} placeholder="ZIP" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
             </div>
             <label style={{ color: '#cbd5e1', fontSize: 13 }}>
               <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))} style={{ marginRight: 8 }} />
               Set as default address
             </label>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={save} disabled={!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zipCode.trim()} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: !form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zipCode.trim() ? 'not-allowed' : 'pointer', fontWeight: 700, opacity: !form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zipCode.trim() ? 0.5 : 1 }}>
+              <button type="submit" style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
                 {editing ? 'Update Address' : 'Save Address'}
               </button>
               {editing && (
-                <button onClick={reset} style={{ background: 'rgba(255,255,255,0.1)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
+                <button type="button" onClick={reset} style={{ background: 'rgba(255,255,255,0.1)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
                   Cancel
                 </button>
               )}
             </div>
           </div>
           {message && <div style={{ marginTop: 10, color: '#fda4af', fontSize: 13 }}>{message}</div>}
-        </div>
+        </form>
 
         {loading ? (
           <div style={{ color: '#9aa3b2' }}>Loading addresses...</div>

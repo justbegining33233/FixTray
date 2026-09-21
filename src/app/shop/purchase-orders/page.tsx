@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaArrowLeft, FaClipboardList, FaExclamationTriangle, FaIndustry, FaShoppingCart, FaTimes } from 'react-icons/fa';
 import { formatCalendarDate } from '@/lib/calendarDate';
+import { purchaseOrderAmount } from '@/lib/purchaseOrderTotals';
 
 interface PurchaseOrder {
   id: string;
@@ -41,7 +42,7 @@ const toUiOrder = (order: any): PurchaseOrder => ({
   status: order.status || 'pending',
   createdAt: order.createdAt,
   expectedDate: formatCalendarDate(order.expectedDate),
-  total: Number(order.totalCost || 0),
+  total: purchaseOrderAmount(order),
   notes: order.notes || '',
   items: Array.isArray(order.items)
     ? order.items.map((item: any) => ({

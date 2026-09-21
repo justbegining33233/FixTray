@@ -289,10 +289,11 @@ export default function CustomerVehiclesPage() {
               {editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}
             </h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={(e) => { e.preventDefault(); editingVehicle ? handleUpdateVehicle() : handleAddVehicle(); }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Vehicle Type *</label>
                 <select
+                  required
                   value={formData.vehicleType}
                   onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
@@ -364,13 +365,13 @@ export default function CustomerVehiclesPage() {
 
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button
-                  onClick={editingVehicle ? handleUpdateVehicle : handleAddVehicle}
-                  disabled={!formData.make || !formData.model}
-                  style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: !formData.make || !formData.model ? 'not-allowed' : 'pointer', opacity: !formData.make || !formData.model ? 0.5 : 1 }}
+                  type="submit"
+                  style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
                   {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setShowAddForm(false);
                     setEditingVehicle(null);
@@ -381,7 +382,7 @@ export default function CustomerVehiclesPage() {
                   Cancel
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

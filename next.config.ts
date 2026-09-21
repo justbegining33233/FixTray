@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from 'next-intl/plugin';
+import { LEGACY_SHOP_REDIRECTS } from './src/lib/legacyShopRoutes';
 
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
@@ -84,8 +85,7 @@ const nextConfig: NextConfig = {
       // Manager flat-path aliases
       { source: '/manager/admin-logs',        destination: '/manager/admin/logs',    permanent: false },
       { source: '/manager/admin-settings',    destination: '/manager/admin/settings', permanent: false },
-      { source: '/shop/board',                destination: '/shop/home',             permanent: false },
-      { source: '/shop/appointments',         destination: '/shop/calendar',         permanent: false },
+      ...LEGACY_SHOP_REDIRECTS,
       { source: '/shop/review-requests',      destination: '/shop/reviews',          permanent: false },
       { source: '/shop/messages',             destination: '/shop/customer-messages', permanent: false },
       { source: '/shop/settings/billing',     destination: '/shop/subscribe',        permanent: false },

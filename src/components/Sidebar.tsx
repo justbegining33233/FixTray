@@ -203,6 +203,8 @@ const techGroups: MenuGroup[] = [
     items: [
       { icon: <FaClock />, label: 'Time Clock',       href: '/tech/timeclock' },
       { icon: <FaListAlt />,  label: 'Command Center',  href: '/tech/command-center' },
+      { icon: <FaClipboardList />, label: 'Active Jobs', href: '/tech/jobs?view=active' },
+      { icon: <FaClipboardList />, label: 'Job History', href: '/tech/jobs?view=history' },
       { icon: <FaClipboardList />, label: 'Estimates', href: '/tech/estimates' },
       { icon: <FaIndustry />,  label: 'New In-Shop Job',  href: '/tech/new-inshop-job' },
       { icon: <FaRoad />,  label: 'New Roadside Job', href: '/tech/new-roadside-job' },

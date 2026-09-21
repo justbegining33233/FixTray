@@ -9,30 +9,54 @@ export async function GET(req: NextRequest) {
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
   if (!shopId) return NextResponse.json({ error: 'No shop context' }, { status: 400 });
 
-  const techs = await prisma.tech.findMany({
-    where: { shopId },
-    select: {
-      id: true,
-      employeeNumber: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-      role: true,
-      jobTitle: true,
-      department: true,
-      employmentType: true,
-      payType: true,
-      hourlyRate: true,
-      salary: true,
-      overtimeRate: true,
-      hireDate: true,
-      terminatedAt: true,
-      available: true,
-      createdAt: true,
-    },
-    orderBy: [{ department: 'asc' }, { firstName: 'asc' }],
-  });
+  try {
+    const techs = await prisma.tech.findMany({
+      where: { shopId },
+      select: {
+        id: true,
+        employeeNumber: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        role: true,
+        jobTitle: true,
+        department: true,
+        employmentType: true,
+        payType: true,
+        hourlyRate: true,
+        salary: true,
+        overtimeRate: true,
+        hireDate: true,
+        terminatedAt: true,
+        available: true,
+        createdAt: true,
+      },
+      orderBy: [{ department: 'asc' }, { firstName: 'asc' }],
+    });
 
-  return NextResponse.json(techs);
+    return NextResponse.json(techs);
+  } catch (error) {
+    console.error('Payroll employee lookup failed, retrying with core fields:', error);
+    try {
+      const techs = await prisma.tech.findMany({
+        where: { shopId },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          role: true,
+          hourlyRate: true,
+          available: true,
+        },
+        orderBy: { firstName: 'asc' },
+      });
+      return NextResponse.json(techs);
+    } catch (fallbackError) {
+      console.error('Payroll employee fallback failed:', fallbackError);
+      return NextResponse.json({ error: 'Failed to load employees' }, { status: 500 });
+    }
+  }
 }

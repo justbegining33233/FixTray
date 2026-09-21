@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsNative } from '@/context/NativeContext';
+import { managerAlertHref } from '@/lib/managerAlerts';
 
 export default function ManagerHome() {
   const { user, isLoading } = useRequireAuth(['manager']);
@@ -299,13 +300,7 @@ export default function ManagerHome() {
                       <h2 style={{fontSize:20, fontWeight:700, color:'#ef4444', marginBottom:16}}><FaExclamationCircle style={{marginRight:4}} /> Urgent Alerts</h2>
                       <div style={{display:'grid', gap:12}}>
                         {urgentAlerts.map((alert, index) => {
-                          const href = alert.id === 'unassigned-jobs'
-                            ? '/manager/assignments'
-                            : alert.id === 'overdue-jobs'
-                              ? '/manager/dashboard'
-                              : alert.id === 'pending-requests'
-                                ? '/manager/inventory'
-                                : '/manager/dashboard';
+                          const href = managerAlertHref(String(alert.id || ''));
                           return (
                           <Link key={index} href={href} style={{background:'rgba(239,68,68,0.1)', borderRadius:8, padding:16, border:'1px solid rgba(239,68,68,0.2)', textDecoration:'none', display:'block', cursor:'pointer'}}>
                             <div style={{color:'#ef4444', fontWeight:600, marginBottom:4}}>{alert.title}</div>

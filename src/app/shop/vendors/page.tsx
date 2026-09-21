@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaBookmark, FaBox, FaClipboardList, FaCreditCard, FaEnvelope, FaIndustry, FaPhone, FaRegStar, FaStar, FaTimes, FaTrash, FaUser } from 'react-icons/fa';
+import { totalSpentFromOrders } from '@/lib/purchaseOrderTotals';
 
 type TabId = 'vendors' | 'orders';
 
@@ -292,7 +293,7 @@ export default function VendorManagementPage() {
                 { label: 'Open Orders', value: orders.filter(o => o.status === 'ordered').length, color: '#ff6b64' },
                 { label: 'In Transit', value: orders.filter(o => o.status === 'shipped').length, color: '#fbbf24' },
                 { label: 'Received', value: orders.filter(o => o.status === 'received').length, color: '#4ade80' },
-                { label: 'Total Spent', value: `$${orders.filter(o => o.status === 'received').reduce((s, o) => s + (o.totalCost || 0), 0).toFixed(0)}`, color: '#a78bfa' },
+                { label: 'Total Spent', value: `$${Math.round(totalSpentFromOrders(orders))}`, color: '#a78bfa' },
               ].map(s => (
                 <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '14px 16px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ color: s.color, fontSize: 22, fontWeight: 700 }}>{s.value}</div>

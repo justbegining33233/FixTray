@@ -15,6 +15,8 @@ import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
+import { ACTIVE_WORK_ORDER_STATUSES } from '@/lib/workOrderMetrics';
+import { unwrapWorkOrders } from '@/lib/workOrderList';
 
 interface Job {
   id: string;
@@ -59,6 +61,7 @@ export default function ShopHome() {
   });
   const [selectedDestinations, setSelectedDestinations] = useState<Record<string, string>>({});
   const [pendingWorkOrders, setPendingWorkOrders] = useState<Job[]>([]);
+  const [pendingQueueCount, setPendingQueueCount] = useState(0);
   const [bays, setBays] = useState<Array<{ id: string; name: string; tech: string; jobs: Job[] }>>([]);
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
   const [dragSourceBayId, setDragSourceBayId] = useState<string | null>(null);
@@ -103,27 +106,36 @@ export default function ShopHome() {
       bay: typeof wo.bay === 'number' ? wo.bay : null,
     });
 
+    let generation = 0;
+    let alive = true;
+    const inServiceStatuses = ACTIVE_WORK_ORDER_STATUSES.filter((status) => status !== 'pending').join(',');
+
     const fetchDashboard = async () => {
+      const gen = ++generation;
       try {
-        const [statsRes, finRes, woRes, activeWoRes, teamRes, scheduleRes] = await Promise.all([
+        const [statsRes, finRes, activeWoRes, teamRes, scheduleRes] = await Promise.all([
           fetch(`/api/shop/workorder-stats?shopId=${id}`, { headers }),
           fetch(`/api/shop/financial-summary?shopId=${id}`, { headers }),
-          fetch(`/api/workorders?shopId=${id}&status=pending`, { headers }),
-          fetch(`/api/workorders?shopId=${id}&status=assigned,in-progress,waiting-estimate,waiting-for-payment`, { headers }),
+          fetch(`/api/workorders?limit=100&status=${encodeURIComponent(inServiceStatuses)}`, { headers }),
           fetch(`/api/shop/team?shopId=${id}`, { headers }),
           fetch('/api/shop/schedule', { headers }),
         ]);
+        if (!alive || gen !== generation) return;
 
-        // Work order stats (open jobs, completed today, pending approvals)
+        // Open jobs and the pending queue come from one stats payload.
         if (statsRes.ok) {
           const data = await statsRes.json();
           const s = data.stats || {};
+          const pendingJobs = Array.isArray(data.pendingJobs) ? data.pendingJobs : [];
+          const pendingCount = typeof s.pendingQueue === 'number' ? s.pendingQueue : pendingJobs.length;
           setShopStats(prev => ({
             ...prev,
-            openJobs: (s.activeJobs || 0) + (s.pendingAssignments || 0),
+            openJobs: typeof s.openJobs === 'number' ? s.openJobs : (s.activeJobs || 0),
             completedToday: s.completedToday || 0,
-            pendingApprovals: s.pendingAssignments || 0,
+            pendingApprovals: pendingCount,
           }));
+          setPendingWorkOrders(pendingJobs.map((wo: any) => toJob(wo, 'Pending')));
+          setPendingQueueCount(pendingCount);
         }
 
         // Financial summary (today + week revenue)
@@ -137,17 +149,10 @@ export default function ShopHome() {
           }));
         }
 
-        // Pending queue from work orders (supports both in-shop and road-call)
-        const pendingOrders: Job[] = woRes.ok
-          ? ((await woRes.json()).workOrders || []).map((wo: any) => toJob(wo, 'Pending'))
-          : [];
-
-        setPendingWorkOrders(pendingOrders);
-
         // Team members + active tech count
         if (teamRes.ok) {
           const data = await teamRes.json();
-          const members: any[] = data.teamMembers || [];
+          const members: any[] = data.team || data.teamMembers || [];
           setShopStats(prev => ({ ...prev, activeTechs: members.filter((m) => m.available).length }));
         }
 
@@ -164,7 +169,7 @@ export default function ShopHome() {
 
           if (activeWoRes.ok) {
             const activeData = await activeWoRes.json();
-            const activeOrders: any[] = activeData.workOrders || [];
+            const activeOrders: any[] = unwrapWorkOrders(activeData);
             activeOrders.forEach((wo) => {
               const bayNumber = Number(wo.bay);
               if (!Number.isInteger(bayNumber) || bayNumber < 1 || bayNumber > cap) return;
@@ -177,18 +182,24 @@ export default function ShopHome() {
           setBays(nextBays);
         }
       } catch {
-        // Dashboard will show zeros/empty  not a crash
+        // Keep the last good counts. A failed refresh must not paint zeros.
       }
     };
 
     setDashboardReady(false);
-    fetchDashboard().finally(() => setDashboardReady(true));
+    fetchDashboard().finally(() => {
+      if (alive) setDashboardReady(true);
+    });
 
     const refresh = setInterval(() => {
       fetchDashboard();
     }, 30 * 1000);
 
-    return () => clearInterval(refresh);
+    return () => {
+      alive = false;
+      generation += 1;
+      clearInterval(refresh);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]); // use stable primitive — avoids re-fetch when checkAuth creates a new user object reference
 
@@ -624,7 +635,7 @@ export default function ShopHome() {
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>{pendingWorkOrders.length} job{pendingWorkOrders.length !== 1 ? 's' : ''}</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardReady ? `${pendingQueueCount} job${pendingQueueCount !== 1 ? 's' : ''}` : '…'}</span>
                   </div>
                   {dragOverTarget === 'pending' && (
                     <div style={{marginBottom:10, padding:'10px 12px', border:'1px dashed rgba(245,158,11,0.7)', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#f59e0b', fontSize:12, fontWeight:700}}>
@@ -632,7 +643,7 @@ export default function ShopHome() {
                     </div>
                   )}
                   <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:520, overflowY:'auto', paddingRight:2}}>
-                    {pendingWorkOrders.length === 0 && (
+                    {dashboardReady && pendingQueueCount === 0 && pendingWorkOrders.length === 0 && (
                       <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
                         No customers waiting  -  nice work.
                       </div>

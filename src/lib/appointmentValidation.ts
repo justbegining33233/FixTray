@@ -83,3 +83,25 @@ export function isUpcomingAppointment(
   if (!(APPOINTMENT_OPEN_STATUSES as readonly string[]).includes(normalized)) return false;
   return !isAppointmentOverdue(status, scheduledDate, now);
 }
+
+export type AppointmentLike = {
+  status?: unknown;
+  scheduledDate?: Date | string | null;
+};
+
+/**
+ * Upcoming and total share this function on the customer dashboard and
+ * the appointments page. Upcoming does not depend on whether a vehicle
+ * is attached. Vehicle totals are saved vehicles, counted separately.
+ */
+export function summarizeAppointments(rows: AppointmentLike[] | null | undefined, now = new Date()) {
+  const list = Array.isArray(rows) ? rows : [];
+  const upcomingAppointments = list.filter((row) =>
+    isUpcomingAppointment(row.status, row.scheduledDate || '', now)
+  );
+  return {
+    total: list.length,
+    upcoming: upcomingAppointments.length,
+    upcomingAppointments,
+  };
+}

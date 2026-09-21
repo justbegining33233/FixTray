@@ -13,6 +13,17 @@ import { featureFlags } from '@/lib/featureFlags';
 import logger from '@/lib/logger';
 import { extractServiceNames, findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
 import { ROADSIDE_LOCATION_VALUES } from '@/lib/waitingRoomBoard';
+import {
+  activeWorkOrderWhere,
+  completedThisMonthWhere,
+  completedTodayWhere,
+  completedWorkOrderWhere,
+  overdueWorkOrderWhere,
+  pendingApprovalWhere,
+  pendingQueueWhere,
+  unassignedWorkOrderWhere,
+  workOrderScope,
+} from '@/lib/workOrderMetrics';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -61,13 +72,14 @@ export async function GET(request: NextRequest) {
     const sortByRaw = searchParams.get('sortBy') || 'createdAt';
     const sortBy: string = (ALLOWED_SORT_FIELDS as readonly string[]).includes(sortByRaw) ? sortByRaw : 'createdAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
+    const includeMetrics = searchParams.get('includeMetrics') === '1';
 
     // Build cache key
-    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${serviceLocation}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}`;
+    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${serviceLocation}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}:${includeMetrics ? 'metrics' : 'list'}`;
 
     // Skip cache for live ops queries (pending / active status filters) so the
     // shop ops board reflects new customer-created work orders immediately.
-    const isOpsQuery = !!status || serviceLocation === 'roadside' || serviceLocation === 'in-shop';
+    const isOpsQuery = !!status || serviceLocation === 'roadside' || serviceLocation === 'in-shop' || includeMetrics;
     if (!isOpsQuery) {
       const cachedResult = await queryCache.get(cacheKey);
       if (cachedResult) {
@@ -78,17 +90,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build where clause
-    const where: any = {};
-
-    // Role-based filtering
-    if (auth.role === 'customer') {
-      where.customerId = auth.id;
-    } else if (auth.role === 'tech' || auth.role === 'manager') {
-      where.shopId = auth.shopId;
-    } else if (auth.role === 'shop') {
-      where.shopId = auth.id;
+    // Role scope is shared with metric counts (includeMetrics=1).
+    const scoped = workOrderScope(auth, shopId);
+    if ('error' in scoped) {
+      return NextResponse.json({ error: scoped.error }, { status: scoped.status });
     }
+
+    // Build where clause
+    const where: any = { ...scoped.scope };
 
     // Additional filters — support single value or comma-separated list
     if (status) {
@@ -100,7 +109,7 @@ export async function GET(request: NextRequest) {
     } else if (serviceLocation === 'in-shop') {
       where.serviceLocation = { in: ['in-shop', 'inshop', 'shop', 'in_shop'], mode: 'insensitive' };
     }
-    if (shopId && (auth.role === 'superadmin' || auth.role === 'customer')) {
+    if (shopId && (auth.role === 'superadmin' || auth.role === 'admin') && !scoped.scope.shopId) {
       where.shopId = shopId;
     }
     if (customerId && (auth.role === 'superadmin' || auth.role === 'shop' || auth.role === 'manager')) {
@@ -197,6 +206,47 @@ export async function GET(request: NextRequest) {
       vehicle: wo.vehicle ?? undefined,
     }));
 
+    let metrics: Record<string, unknown> | undefined;
+    if (includeMetrics) {
+      const scope = scoped.scope;
+      const now = new Date();
+      const [active, pendingQueue, pendingApprovals, unassigned, completed, completedToday, completedThisMonth, overdue, activePreview] = await Promise.all([
+        prisma.workOrder.count({ where: activeWorkOrderWhere(scope) }),
+        prisma.workOrder.count({ where: pendingQueueWhere(scope) }),
+        prisma.workOrder.count({ where: pendingApprovalWhere(scope) }),
+        prisma.workOrder.count({ where: unassignedWorkOrderWhere(scope) }),
+        prisma.workOrder.count({ where: completedWorkOrderWhere(scope) }),
+        prisma.workOrder.count({ where: completedTodayWhere(scope, now) }),
+        prisma.workOrder.count({ where: completedThisMonthWhere(scope, now) }),
+        prisma.workOrder.count({ where: overdueWorkOrderWhere(scope, now) }),
+        prisma.workOrder.findMany({
+          where: activeWorkOrderWhere(scope),
+          orderBy: { updatedAt: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            status: true,
+            issueDescription: true,
+            updatedAt: true,
+            createdAt: true,
+            shop: { select: { shopName: true } },
+          },
+        }),
+      ]);
+      metrics = {
+        active,
+        openJobs: active,
+        pendingQueue,
+        pendingApprovals,
+        unassigned,
+        completed,
+        completedToday,
+        completedThisMonth,
+        overdue,
+        activePreview,
+      };
+    }
+
     const result = {
       workOrders,
       pagination: {
@@ -205,6 +255,7 @@ export async function GET(request: NextRequest) {
         limit,
         pages: Math.ceil(total / limit),
       },
+      ...(metrics ? { metrics } : {}),
     };
 
     // Cache the result — skip for live ops queries

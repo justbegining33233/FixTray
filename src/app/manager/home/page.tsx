@@ -94,11 +94,11 @@ export default function ManagerHome() {
       
       if (response.ok) {
         const { stats } = await response.json();
-        setWorkOrderStats(stats || {
-          activeJobs: 0,
-          pendingAssignments: 0,
-          overdueJobs: 0,
-          completedToday: 0,
+        setWorkOrderStats({
+          activeJobs: stats?.openJobs ?? stats?.activeJobs ?? 0,
+          pendingAssignments: stats?.unassigned ?? stats?.pendingAssignments ?? 0,
+          overdueJobs: stats?.overdueJobs ?? 0,
+          completedToday: stats?.completedToday ?? 0,
         });
       }
     } catch (error) {

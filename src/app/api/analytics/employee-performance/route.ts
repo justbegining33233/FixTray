@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { slaComplianceRate as computeSlaComplianceRate } from '@/lib/slaMetrics';
 
 // GET /api/analytics/employee-performance ΓÇö cross-shop tech performance stats
 export async function GET(request: NextRequest) {
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
     // Aggregate per-tech
     const techMap = new Map<string, {
       name: string; shopName: string; shopId: string;
-      completed: number; total: number; onTime: number; revenue: number;
+      completed: number; total: number; onTime: number; withDueDate: number; revenue: number;
     }>();
 
     for (const tech of techs) {
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
         name: `${tech.firstName} ${tech.lastName}`,
         shopName: tech.shop.shopName,
         shopId: tech.shopId,
-        completed: 0, total: 0, onTime: 0, revenue: 0,
+        completed: 0, total: 0, onTime: 0, withDueDate: 0, revenue: 0,
       });
     }
 
@@ -100,8 +101,9 @@ export async function GET(request: NextRequest) {
       if (['closed', 'completed', 'Completed', 'waiting-for-payment'].includes(wo.status)) {
         entry.completed++;
         entry.revenue += wo.amountPaid || wo.estimatedCost || 0;
-        if (wo.dueDate && wo.completedAt && new Date(wo.completedAt) <= new Date(wo.dueDate)) {
-          entry.onTime++;
+        if (wo.dueDate && wo.completedAt) {
+          entry.withDueDate++;
+          if (new Date(wo.completedAt) <= new Date(wo.dueDate)) entry.onTime++;
         }
       }
     }
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
       totalJobs: data.total,
       completedJobs: data.completed,
       completionRate: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
-      slaComplianceRate: data.completed > 0 ? Math.round((data.onTime / data.completed) * 100) : 100,
+      slaComplianceRate: computeSlaComplianceRate(data.onTime, data.withDueDate),
       revenue: Math.round(data.revenue * 100) / 100,
       hoursWorked: Math.round((hoursMap.get(techId) || 0) * 10) / 10,
       revenuePerHour: (hoursMap.get(techId) || 0) > 0

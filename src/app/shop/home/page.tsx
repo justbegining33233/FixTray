@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import { FaCar, FaExternalLinkAlt, FaIndustry, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck } from 'react-icons/fa';
+import { FaCar, FaClipboardList, FaExternalLinkAlt, FaIndustry, FaMapMarkerAlt, FaRoad, FaStore, FaSyncAlt, FaTools, FaTruck } from 'react-icons/fa';
 
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -195,6 +195,7 @@ export default function ShopHome() {
   const quickActions: QuickAction[] = [
     { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/workorders/inshop', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
     { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/workorders/roadside', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
+    { label: <><FaClipboardList style={{marginRight:6}}/>Estimates</>, href: '/shop/estimates', tint: 'rgba(168,85,247,0.18)', color: '#c084fc', border: 'rgba(168,85,247,0.28)' },
     { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
     { label: <><FaIndustry style={{marginRight:6}}/>Vendors & Parts</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
     { label: <><FaMapMarkerAlt style={{marginRight:6}}/>Locations</>, href: '/shop/locations', tint: 'rgba(20,184,166,0.18)', color: '#14b8a6', border: 'rgba(20,184,166,0.28)' },

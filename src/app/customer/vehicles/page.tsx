@@ -291,9 +291,12 @@ export default function CustomerVehiclesPage() {
 
             <form onSubmit={(e) => { e.preventDefault(); editingVehicle ? handleUpdateVehicle() : handleAddVehicle(); }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Vehicle Type *</label>
+                <label htmlFor="vehicle-type" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Vehicle Type *</label>
                 <select
+                  id="vehicle-type"
+                  name="vehicleType"
                   required
+                  aria-required="true"
                   value={formData.vehicleType}
                   onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
@@ -305,10 +308,13 @@ export default function CustomerVehiclesPage() {
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Make *</label>
+                <label htmlFor="vehicle-make" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Make *</label>
                 <input
+                  id="vehicle-make"
+                  name="make"
                   type="text"
                   required
+                  aria-required="true"
                   value={formData.make}
                   onChange={(e) => setFormData({ ...formData, make: e.target.value })}
                   placeholder="e.g., Peterbilt, Kenworth, Volvo"
@@ -317,10 +323,13 @@ export default function CustomerVehiclesPage() {
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Model *</label>
+                <label htmlFor="vehicle-model" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Model *</label>
                 <input
+                  id="vehicle-model"
+                  name="model"
                   type="text"
                   required
+                  aria-required="true"
                   value={formData.model}
                   onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                   placeholder="e.g., 579, T680, VNL"
@@ -329,8 +338,10 @@ export default function CustomerVehiclesPage() {
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Year</label>
+                <label htmlFor="vehicle-year" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Year (optional)</label>
                 <input
+                  id="vehicle-year"
+                  name="year"
                   type="number"
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}

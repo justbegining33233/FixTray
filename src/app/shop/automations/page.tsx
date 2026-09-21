@@ -182,13 +182,13 @@ export default function AutomationsPage() {
 
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, overflowY: 'auto', padding: 20 }}>
-          <div style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 520, maxWidth: '100%' }}>
+          <form onSubmit={(e) => { e.preventDefault(); save(); }} style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 520, maxWidth: '100%' }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{editing ? 'Edit Automation' : 'New Automation Rule'}</h3>
 
             {[{ k: 'name', label: 'Rule Name *', ph: 'Appointment Reminder 1 Day Before' }].map(({ k, label, ph }) => (
               <div key={k} style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>{label}</label>
-                <input value={(form as any)[k]} onChange={e => setForm(p => ({ ...p, [k]: e.target.value }))} placeholder={ph}
+                <label htmlFor="automation-rule-name" style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>{label}</label>
+                <input id="automation-rule-name" name="name" required aria-required="true" value={(form as any)[k]} onChange={e => setForm(p => ({ ...p, [k]: e.target.value }))} placeholder={ph}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
             ))}
@@ -229,25 +229,25 @@ export default function AutomationsPage() {
 
             <div style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={{ fontSize: 13, color: '#9ca3af' }}>Message Template *</label>
+                <label htmlFor="automation-message-template" style={{ fontSize: 13, color: '#9ca3af' }}>Message Template *</label>
                 <span style={{ fontSize: 11, color: '#6b7280' }}>Click to insert variable</span>
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
                 {VARIABLE_HINTS.map(v => (
-                  <button key={v} onClick={() => insertVar(v)} style={{ background: 'rgba(229,51,42,0.15)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 5, padding: '3px 8px', fontSize: 11, cursor: 'pointer' }}>{v}</button>
+                  <button type="button" key={v} onClick={() => insertVar(v)} style={{ background: 'rgba(229,51,42,0.15)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 5, padding: '3px 8px', fontSize: 11, cursor: 'pointer' }}>{v}</button>
                 ))}
               </div>
-              <textarea value={form.messageTemplate} onChange={e => setForm(p => ({ ...p, messageTemplate: e.target.value }))} rows={4}
+              <textarea id="automation-message-template" name="messageTemplate" required aria-required="true" value={form.messageTemplate} onChange={e => setForm(p => ({ ...p, messageTemplate: e.target.value }))} rows={4}
                 placeholder="Hi {customer_name}, your appointment for your {vehicle} is tomorrow at {appointment_time}. Reply CONFIRM or call us at (555) 123-4567."
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
             </div>
 
             {formError && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13 }}>{formError}</div>}
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={save} disabled={saving || !form.name.trim() || !form.messageTemplate.trim()} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !form.name.trim() || !form.messageTemplate.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.name.trim() || !form.messageTemplate.trim() ? 0.5 : 1 }}>{saving ? 'Saving...' : editing ? 'Save Changes' : 'Create Rule'}</button>
-              <button onClick={() => { setShowForm(false); setEditing(null); setFormError(''); }} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={saving || !form.name.trim() || !form.messageTemplate.trim()} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !form.name.trim() || !form.messageTemplate.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.name.trim() || !form.messageTemplate.trim() ? 0.5 : 1 }}>{saving ? 'Saving...' : editing ? 'Save Changes' : 'Create Rule'}</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); setFormError(''); }} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

@@ -23,8 +23,10 @@ export default function FloatingSignOut() {
     setVisible(!isAuthPage && hasToken);
   }, [pathname]);
 
-  // Hidden on mobile  -  MobileNav already has Sign Out
-  if (!visible || isMobile) return null;
+  // Hidden on mobile — MobileNav already has Sign Out.
+  // These customer pages already render a labeled Sign Out (VIS-041).
+  const pageHasSignOut = pathname === '/customer/favorites' || pathname === '/customer/recurring-approvals';
+  if (!visible || isMobile || pageHasSignOut) return null;
 
   const handleSignOut = async () => {
     try {

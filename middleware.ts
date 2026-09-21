@@ -6,10 +6,11 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { gateCrossRole } from './src/proxy';
 
-export function middleware(request: NextRequest) {
-  // Create response
-  const response = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  const gated = await gateCrossRole(request);
+  const response = gated ?? NextResponse.next();
   
   // Add security headers
   const headers = new Headers(response.headers);
@@ -63,11 +64,10 @@ export function middleware(request: NextRequest) {
   headers.delete('Server');
   headers.delete('X-Powered-By');
 
-  return new NextResponse(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
+  headers.forEach((value, key) => {
+    response.headers.set(key, value);
   });
+  return response;
 }
 
 // Configure which routes to apply middleware to

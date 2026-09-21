@@ -366,13 +366,20 @@ sendWorkOrderCreatedEmail(workOrder.customer.email, workOrder.id).catch((err) =>
         logger.warn('Failed to send work order created email', { workOrderId: workOrder.id, customerId: workOrder.customerId });
       });
 
-    // Create notification
+    // Create notification with the work-order id and service when we have them
+    const { workOrderNotificationCopy } = await import('@/lib/notificationCopy');
+    const createdCopy = workOrderNotificationCopy({
+      id: workOrder.id,
+      serviceType: sanitizedData.serviceType,
+      issueDescription: sanitizedData.issueDescription,
+      kind: 'created',
+    });
     await prisma.notification.create({
       data: {
         customerId,
         type: 'workorder',
-        title: 'Work Order Created',
-        message: `Your work order ${workOrder.id} has been created successfully`,
+        title: createdCopy.title,
+        message: createdCopy.body,
         workOrderId: workOrder.id,
         deliveryMethod: 'in-app',
       },

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import type { Route } from 'next';
 import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin';
 
@@ -177,7 +178,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     roleLabel: 'Technician',
     ico: '⚙️',
     tiles: [
-      { ico: '🗂️', name: 'My Jobs', sub: 'Assigned jobs', href: '/tech/dvi', color: '#0f1e3a', span2: true },
+      { ico: '🗂️', name: 'My Jobs', sub: 'Assigned jobs', href: '/tech/jobs', color: '#0f1e3a', span2: true },
       { ico: '🔍', name: 'DVI', sub: 'Inspections', href: '/tech/dvi', color: '#0f2214' },
       { ico: '📸', name: 'Photos', sub: 'Upload pics', href: '/tech/photos', color: '#1a0f2e' },
       { ico: '💬', name: 'Messages', sub: 'Shop & customer', href: '/tech/messages', color: '#0f0f2e' },
@@ -188,15 +189,15 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     footer: [
       { ico: '🏠', label: 'Home', href: '/tech/home' },
-      { ico: '🗂️', label: 'My Jobs', href: '/tech/dvi' },
+      { ico: '🗂️', label: 'My Jobs', href: '/tech/jobs' },
       { ico: '💬', label: 'Chat', href: '/tech/messages' },
       { ico: '👤', label: 'Profile', href: '/tech/profile' },
     ],
     tabGroups: [
       {
-        match: ['/tech/home', '/tech/dvi', '/tech/photos', '/tech/new-inshop-job', '/tech/new-roadside-job', '/tech/estimates'],
+        match: ['/tech/home', '/tech/jobs', '/tech/dvi', '/tech/photos', '/tech/new-inshop-job', '/tech/new-roadside-job', '/tech/estimates'],
         tabs: [
-          { ico: '🗂️', label: 'My Jobs', href: '/tech/dvi' },
+          { ico: '🗂️', label: 'My Jobs', href: '/tech/jobs' },
           { ico: '🔍', label: 'DVI', href: '/tech/dvi' },
           { ico: '📸', label: 'Photos', href: '/tech/photos' },
           { ico: '🚐', label: 'Roadside', href: '/tech/new-roadside-job' },
@@ -235,7 +236,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       {
         title: 'My Work',
         items: [
-          { ico: '🗂️', label: 'My Jobs', href: '/tech/dvi' },
+          { ico: '🗂️', label: 'My Jobs', href: '/tech/jobs' },
           { ico: '💰', label: 'Estimates', href: '/tech/estimates' },
           { ico: '🔍', label: 'DVI / Inspections', href: '/tech/dvi' },
           { ico: '📸', label: 'Job Photos', href: '/tech/photos' },
@@ -801,10 +802,8 @@ export default function MobileShell({
           g.match.some(m => (pathname ?? '').startsWith(m))
         );
         if (!activeGroup) return null;
-        const activeTab = activeGroup.tabs.find(t =>
-          (pathname ?? '') === t.href ||
-          ((pathname ?? '').startsWith(t.href + '/') && t.href !== '/')
-        ) ?? activeGroup.tabs[0];
+        const activeIndex = exclusiveActiveIndex(activeGroup.tabs, pathname ?? '');
+        const activeTab = activeGroup.tabs[activeIndex] ?? activeGroup.tabs[0];
         return (
           <div style={{
             background: 'rgba(6,7,9,0.95)',
@@ -844,9 +843,8 @@ export default function MobileShell({
                 gap: 6, padding: '6px 10px 8px',
                 scrollbarWidth: 'none',
               }}>
-                {activeGroup.tabs.map(tab => {
-                  const active = (pathname ?? '') === tab.href ||
-                    ((pathname ?? '').startsWith(tab.href + '/') && tab.href !== '/');
+                {activeGroup.tabs.map((tab, index) => {
+                  const active = index === activeIndex;
                   return (
                     <button
                       key={tab.href}

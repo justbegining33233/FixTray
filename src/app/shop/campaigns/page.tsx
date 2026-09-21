@@ -5,6 +5,7 @@ import { FaEnvelope, FaMobileAlt, FaRocket, FaBullhorn } from 'react-icons/fa';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
+import { sendNowAppearance } from '@/lib/campaignAction';
 
 interface Campaign {
   id: string;
@@ -198,9 +199,11 @@ export default function CampaignsPage() {
 
             <div style={{ display: 'flex', gap: 12 }}>
               <button
+                type="button"
                 onClick={() => handleSend(true)}
-                disabled={sending || !name || !messageBody}
-                style={{ padding: '10px 20px', background: '#22c55e', color: 'white', border: 'none', borderRadius: 8, cursor: sending || !name || !messageBody ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: sending || !name || !messageBody ? 0.5 : 1 }}
+                disabled={sending || !name.trim() || !messageBody.trim()}
+                aria-disabled={sending || !name.trim() || !messageBody.trim()}
+                style={{ padding: '10px 20px', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, ...sendNowAppearance(!(sending || !name.trim() || !messageBody.trim())) }}
               >
                 {sending ? 'Sending...' : <><FaRocket style={{marginRight:6}} />Send Now</>}
               </button>

@@ -10,6 +10,7 @@ import OilSlickNavCanvas from '@/components/OilSlickNavCanvas';
 import ShopSwitcher from '@/components/ShopSwitcher';
 import GlobalSearch from '@/components/GlobalSearch';
 import { FaArrowRight, FaBell, FaCaretDown, FaCaretRight, FaCog, FaSignOutAlt, FaSquare, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
+import { workOrderNotificationCopy } from '@/lib/notificationCopy';
 
 interface TopNavBarProps {
   onMenuToggle?: () => void;
@@ -192,15 +193,27 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                 return hoursAgo < 24; // Only show work orders from last 24 hours
               })
               .slice(0, 3)
-              .map((wo: any) => ({
-                id: `wo-${wo.id}`,
-                title: `New work order ${wo.id ? `WO-${String(wo.id).slice(-8).toUpperCase()}` : ''}: ${wo.serviceType || wo.issueDescription || 'Service'}`,
-                body: `${wo.customerName || 'Customer'} — ${wo.vehicleType || wo.vehicleMake || 'Vehicle'}`,
-                time: formatTimeAgo(wo.createdAt),
-                read: false,
-                type: 'workorders',
-                icon: '🔧',
-              }));
+              .map((wo: any) => {
+                const customerName = wo.customerName
+                  || [wo.customer?.firstName, wo.customer?.lastName].filter(Boolean).join(' ');
+                const copy = workOrderNotificationCopy({
+                  id: wo.id,
+                  serviceType: wo.serviceType,
+                  issueDescription: wo.issueDescription,
+                  customerName,
+                  vehicle: wo.vehicleType || wo.vehicleMake || [wo.vehicleYear, wo.vehicleMake, wo.vehicleModel].filter(Boolean).join(' '),
+                  kind: 'created',
+                });
+                return {
+                  id: `wo-${wo.id}`,
+                  title: copy.title,
+                  body: copy.body,
+                  time: formatTimeAgo(wo.createdAt),
+                  read: false,
+                  type: 'workorders',
+                  icon: '🔧',
+                };
+              });
           }
         } catch (error) {
           // Log but don't break notification system - fetch next time
@@ -517,6 +530,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           gap: 8,
         }}
         type="button"
+        aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
         aria-expanded={showNotifications}
         aria-haspopup="true"
         title={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'No new notifications'}
@@ -802,7 +816,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, overflow: 'visible' }}>
-          <NotificationButton />
+          {NotificationButton()}
 
           {/* Profile / Menu dropdown */}
           <div 

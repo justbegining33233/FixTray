@@ -2,15 +2,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaArrowLeft, FaArrowRight, FaCaretRight, FaCheck, FaCheckCircle, FaClipboardList, FaClock, FaCog, FaDollarSign, FaExclamationTriangle, FaHourglassHalf, FaRegSquare, FaTimes, FaTimesCircle, FaTrash, FaUsers } from 'react-icons/fa';
-import { activePayrollEmployees, normalizePayrollEmployees } from '@/lib/payrollTeam';
+import { activePayrollEmployees, normalizePayrollEmployees, type PayrollEmployee } from '@/lib/payrollTeam';
 
 // --- Types -------------------------------------------------------------------
-interface Employee {
-  id: string; firstName: string; lastName: string; email: string; phone?: string;
-  role: string; jobTitle?: string; department?: string; employmentType: string;
-  payType: string; hourlyRate: number; salary?: number; overtimeRate?: number;
-  hireDate?: string; terminatedAt?: string; available: boolean;
-}
+type Employee = PayrollEmployee;
 interface Shift {
   id: string; techId: string; date: string; startTime: string; endTime: string;
   shiftType: string; position?: string; status: string; lateMinutes: number;

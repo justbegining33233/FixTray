@@ -37,12 +37,12 @@ export default function ShopNewRoadsideJob() {
         setServicesLoading(true);
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         const shopId = user.shopId || user.id;
-        const response = await fetch(`/api/services?shopId=${encodeURIComponent(shopId)}`, {
+        const response = await fetch(`/api/services?shopId=${encodeURIComponent(shopId)}&channel=roadside`, {
           cache: 'no-store',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const data = await response.json().catch(() => ({}));
-        const options = mapShopServiceOptions(data?.services);
+        const options = mapShopServiceOptions(data?.services, 'roadside');
 
         if (isMounted) {
           setServiceOptions(options);

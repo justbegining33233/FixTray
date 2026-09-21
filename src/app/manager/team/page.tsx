@@ -23,7 +23,7 @@ export default function ManagerTeamPage() {
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [loadingTeam, setLoadingTeam] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function ManagerTeamPage() {
               <p style={{ color: '#94a3b8', marginTop: '4px' }}>View your team's status and assigned work</p>
             </div>
             <span style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '6px 14px', color: '#94a3b8', fontSize: '0.85rem' }}>
-              {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}
+              {loadingTeam ? 'Loading members…' : `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}`}
             </span>
           </div>
 

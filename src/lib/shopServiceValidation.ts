@@ -37,7 +37,7 @@ export async function findUnconfiguredShopServices(shopId: string, requestedServ
   }
 
   const configuredServices = await prisma.shopService.findMany({
-    where: { shopId },
+    where: { shopId, isActive: true },
     select: { serviceName: true },
   });
 

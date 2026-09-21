@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { FaArrowLeft, FaArrowRight, FaBell, FaBox, FaBuilding, FaCalendarAlt, FaCar, FaCheck, FaClipboardList, FaClock, FaCog, FaComments, FaCreditCard, FaExclamationCircle, FaSignOutAlt, FaStar, FaTimes, FaTrash, FaTruck, FaWrench } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaBell, FaBox, FaBuilding, FaCalendarAlt, FaCar, FaCheck, FaClipboardList, FaClock, FaCog, FaComments, FaCreditCard, FaExclamationCircle, FaLock, FaSignOutAlt, FaStar, FaTimes, FaTrash, FaTruck, FaWrench } from 'react-icons/fa';
+import ShopSecurityPanel from '@/components/ShopSecurityPanel';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -392,7 +393,7 @@ function ShopSettingsPageContent() {
     }
 
     const requestedTab = searchParams?.get('tab');
-    if (requestedTab && ['general', 'hours', 'notifications'].includes(requestedTab)) {
+    if (requestedTab && ['general', 'hours', 'notifications', 'security'].includes(requestedTab)) {
       setActiveTab(requestedTab);
     }
 
@@ -675,6 +676,7 @@ function ShopSettingsPageContent() {
     { id: 'general', icon: <FaBuilding />, name: 'General Info' },
     { id: 'hours', icon: <FaClock />, name: 'Operating Hours' },
     { id: 'notifications', icon: <FaBell />, name: 'Notifications' },
+    { id: 'security', icon: <FaLock />, name: 'Security' },
   ];
 
   return (
@@ -1281,12 +1283,16 @@ function ShopSettingsPageContent() {
               </div>
             )}
 
+            {activeTab === 'security' && <ShopSecurityPanel />}
+
             {/* Save Button */}
+            {activeTab !== 'security' && (
             <div style={{marginTop:32, paddingTop:24, borderTop:'1px solid rgba(255,255,255,0.1)'}}>
               <button onClick={handleSave} style={{padding:'12px 32px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
                 Save Changes
               </button>
             </div>
+            )}
           </div>
         </div>
       </div>

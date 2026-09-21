@@ -284,8 +284,8 @@ export default function CustomerAppointmentsPage() {
                     borderRadius: 6,
                     fontSize: 12,
                     fontWeight: 700,
-                    background: apt.status === 'completed' ? 'rgba(16,185,129,0.2)' : apt.status === 'confirmed' ? 'rgba(229,51,42,0.2)' : apt.status === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
-                    color: apt.status === 'completed' ? '#10b981' : apt.status === 'confirmed' ? '#ff6b64' : apt.status === 'cancelled' ? '#e5332a' : '#f59e0b',
+                    background: apt.status === 'completed' ? 'rgba(16,185,129,0.2)' : apt.status === 'overdue' ? 'rgba(239,68,68,0.2)' : apt.status === 'confirmed' ? 'rgba(229,51,42,0.2)' : apt.status === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
+                    color: apt.status === 'completed' ? '#10b981' : apt.status === 'overdue' ? '#fca5a5' : apt.status === 'confirmed' ? '#ff6b64' : apt.status === 'cancelled' ? '#e5332a' : '#f59e0b',
                     height: 'fit-content'
                   }}>
                     {apt.status.toUpperCase()}

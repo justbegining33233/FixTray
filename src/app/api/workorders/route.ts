@@ -12,6 +12,7 @@ import { compression } from '@/lib/compression';
 import { featureFlags } from '@/lib/featureFlags';
 import logger from '@/lib/logger';
 import { extractServiceNames, findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
+import { ROADSIDE_LOCATION_VALUES } from '@/lib/waitingRoomBoard';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -55,17 +56,18 @@ export async function GET(request: NextRequest) {
     const shopId = searchParams.get('shopId');
     const customerId = searchParams.get('customerId');
     const search = searchParams.get('search');
+    const serviceLocation = searchParams.get('serviceLocation');
     const ALLOWED_SORT_FIELDS = ['createdAt', 'updatedAt', 'status', 'priority', 'dueDate'] as const;
     const sortByRaw = searchParams.get('sortBy') || 'createdAt';
     const sortBy: string = (ALLOWED_SORT_FIELDS as readonly string[]).includes(sortByRaw) ? sortByRaw : 'createdAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
 
     // Build cache key
-    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}`;
+    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${serviceLocation}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}`;
 
     // Skip cache for live ops queries (pending / active status filters) so the
     // shop ops board reflects new customer-created work orders immediately.
-    const isOpsQuery = !!status;
+    const isOpsQuery = !!status || serviceLocation === 'roadside' || serviceLocation === 'in-shop';
     if (!isOpsQuery) {
       const cachedResult = await queryCache.get(cacheKey);
       if (cachedResult) {
@@ -92,6 +94,11 @@ export async function GET(request: NextRequest) {
     if (status) {
       const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
       where.status = statuses.length > 1 ? { in: statuses } : statuses[0];
+    }
+    if (serviceLocation === 'roadside') {
+      where.serviceLocation = { in: [...ROADSIDE_LOCATION_VALUES], mode: 'insensitive' };
+    } else if (serviceLocation === 'in-shop') {
+      where.serviceLocation = { in: ['in-shop', 'inshop', 'shop', 'in_shop'], mode: 'insensitive' };
     }
     if (shopId && (auth.role === 'superadmin' || auth.role === 'customer')) {
       where.shopId = shopId;

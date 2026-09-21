@@ -83,14 +83,30 @@ export const serviceCreateSchema = z.object({
   price: z.number().min(0).optional(),
   duration: z.number().min(0).optional(),
   description: z.string().optional(),
+  isActive: z.boolean().optional(),
+  availableInShop: z.boolean().optional(),
+  availableRoadside: z.boolean().optional(),
 });
+
+const serviceCategorySchema = z.enum([
+  'diesel',
+  'gas',
+  'small-engine',
+  'heavy-equipment',
+  'resurfacing',
+  'welding',
+  'tire',
+]);
 
 export const serviceUpdateSchema = z.object({
   serviceName: z.string().min(1).optional(),
-  category: z.enum(['diesel', 'gas']).optional(),
-  price: z.number().min(0).optional(),
-  duration: z.number().min(0).optional(),
-  description: z.string().optional(),
+  category: serviceCategorySchema.optional(),
+  price: z.number().min(0).nullable().optional(),
+  duration: z.number().min(0).nullable().optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  availableInShop: z.boolean().optional(),
+  availableRoadside: z.boolean().optional(),
 });
 
 // Inventory validation

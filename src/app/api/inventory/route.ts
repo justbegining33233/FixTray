@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { normalizeInventoryType, optionalInventoryText } from '@/lib/inventoryItem';
 
 export async function GET(req: NextRequest) {
   const auth = requireRole(req, ['shop', 'manager', 'tech', 'admin']);
@@ -50,25 +51,28 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { shopId, type, name, sku, quantity, price, reorderPoint, rate } = body;
+    const { shopId, type, name, sku, quantity, price, reorderPoint, rate, supplier, notes } = body;
+    const normalizedType = normalizeInventoryType(type);
 
     if (!shopId || !type || !name) {
       return NextResponse.json({ error: 'shopId, type, and name are required' }, { status: 400 });
     }
-    if (!['part', 'labor'].includes(type)) {
-      return NextResponse.json({ error: 'Invalid type. Must be part or labor' }, { status: 400 });
+    if (!normalizedType) {
+      return NextResponse.json({ error: 'Invalid type. Must be Part or Labor' }, { status: 400 });
     }
 
     const item = await prisma.inventoryItem.create({
       data: {
         shopId,
-        type,
+        type: normalizedType,
         name: name.trim(),
         sku: sku?.trim() || null,
         quantity: Number(quantity) || 0,
         price: Number(price) || 0,
         reorderPoint: reorderPoint != null ? Number(reorderPoint) : null,
-        rate: type === 'labor' ? (Number(rate) || 0) : null,
+        rate: normalizedType === 'labor' ? (Number(rate) || 0) : null,
+        supplier: optionalInventoryText(supplier) ?? null,
+        notes: optionalInventoryText(notes) ?? null,
       },
     });
 

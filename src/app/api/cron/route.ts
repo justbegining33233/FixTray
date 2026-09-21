@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendSms } from '@/lib/smsService';
 import { sendEmail } from '@/lib/emailService';
+import { APPOINTMENT_OPEN_STATUSES, APPOINTMENT_OVERDUE_GRACE_MS } from '@/lib/appointmentValidation';
 
 // Cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -34,6 +35,22 @@ export async function GET(request: NextRequest) {
 
   const results: Record<string, any> = {};
   const now = new Date();
+
+  // VIS-019: open appointments become overdue 15 minutes after their start time.
+  try {
+    const overdueCutoff = new Date(now.getTime() - APPOINTMENT_OVERDUE_GRACE_MS);
+    const marked = await prisma.appointment.updateMany({
+      where: {
+        status: { in: [...APPOINTMENT_OPEN_STATUSES, 'Scheduled', 'Confirmed'] },
+        scheduledDate: { lt: overdueCutoff },
+      },
+      data: { status: 'overdue' },
+    });
+    results.appointmentsMarkedOverdue = marked.count;
+  } catch (error) {
+    console.error('Appointment overdue update error:', error);
+    results.appointmentsMarkedOverdue = { error: 'Failed' };
+  }
 
   // ─── 1. Appointment Reminders (24h before) ───
   try {

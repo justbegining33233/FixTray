@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { portalDashboardHref } from '@/lib/portalHome';
+import { mapShopServiceOptions } from '@/lib/shopServiceOptions';
 import { FaArrowLeft, FaBuilding, FaSearch, FaCar } from 'react-icons/fa';
 
 type CustomerVehicle = {
@@ -75,20 +76,12 @@ export default function ShopNewInShopJob() {
       if (!token) return;
       const shopId = user.shopId || user.id;
       try {
-        const res = await fetch(`/api/services?shopId=${encodeURIComponent(shopId)}`, {
+        const res = await fetch(`/api/services?shopId=${encodeURIComponent(shopId)}&channel=in-shop`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           const data = await res.json();
-          const services = Array.isArray(data?.services) ? data.services : [];
-          const uniqueNames: string[] = Array.from(
-            new Set<string>(
-              services
-                .map((svc: any) => String(svc?.serviceName || '').trim())
-                .filter((name: string) => name.length > 0)
-            )
-          );
-          setServiceOptions(uniqueNames.map((name) => ({ value: name, label: name })));
+          setServiceOptions(mapShopServiceOptions(data?.services, 'in-shop'));
         }
       } finally {
         setServicesLoaded(true);

@@ -3,10 +3,11 @@
 // Use react-icons for all icons
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaChartLine, FaClipboardList, FaClock, FaCodeBranch, FaCog, FaCogs, FaComments, FaCreditCard, FaDatabase, FaDesktop, FaEdit, FaEnvelope, FaGift, FaHeartbeat, FaHome, FaIndustry, FaKey, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPercent, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaServer, FaShieldAlt, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaChartLine, FaClipboardList, FaClock, FaCog, FaCogs, FaComments, FaCreditCard, FaDatabase, FaDesktop, FaEdit, FaEnvelope, FaGift, FaHome, FaIndustry, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPercent, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaServer, FaShieldAlt, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
+import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
 
 interface MenuItem {
   icon: ReactNode;
@@ -130,8 +131,7 @@ const shopGroups: MenuGroup[] = [
       { icon: <FaCog />, label: 'Shop Settings',   href: '/shop/settings' },
       { icon: <FaTools />, label: 'Admin Panel',     href: '/shop/admin/settings' },
       { icon: <FaReceipt />, label: 'Tax Settings',    href: '/shop/tax-settings' },
-      { icon: <FaLock />, label: 'Two-Factor Auth', href: '/shop/settings/two-factor' },
-      { icon: <FaDesktop />, label: 'Sessions',        href: '/shop/settings/sessions' },
+      { icon: <FaLock />, label: 'Security', href: '/shop/settings?tab=security' },
     ],
   },
 ];
@@ -356,7 +356,12 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
     role === 'admin' ? adminGroups :
     role === 'superadmin' ? superadminGroups :
     techGroups; // fallback
-  const filteredGroups = groups;
+  const filteredGroups = role === 'shop'
+    ? groups.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => !isShopEdgeSensitivePath(item.href)),
+      }))
+    : groups;
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(groups.map(g => [g.label, g.defaultOpen ?? false]))

@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryShopId = searchParams.get('shopId');
     const category = searchParams.get('category');
+    const channel = searchParams.get('channel');
 
     const authShopId = auth.role === 'shop'
       ? auth.id
@@ -42,6 +43,11 @@ export async function GET(request: NextRequest) {
     const where: any = { shopId };
     if (category && VALID_CATEGORIES.includes(category)) {
       where.category = category;
+    }
+    if (channel === 'roadside' || channel === 'in-shop') {
+      where.isActive = true;
+      if (channel === 'roadside') where.availableRoadside = true;
+      if (channel === 'in-shop') where.availableInShop = true;
     }
 
     const services = await prisma.shopService.findMany({
@@ -132,6 +138,9 @@ export async function POST(request: NextRequest) {
         price: data.price || null,
         duration: data.duration || null,
         description: data.description || null,
+        isActive: data.isActive ?? true,
+        availableInShop: data.availableInShop ?? true,
+        availableRoadside: data.availableRoadside ?? true,
       },
     });
 

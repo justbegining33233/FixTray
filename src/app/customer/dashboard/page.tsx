@@ -10,7 +10,9 @@ import { FaBolt, FaChartBar, FaHeart, FaSearch, FaSyncAlt, FaUser } from 'react-
 import MobileShell from '../../../components/MobileShell';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useIsNative } from '../../../context/NativeContext';
-import { isUpcomingAppointment } from '@/lib/appointmentValidation';
+import { summarizeAppointments } from '@/lib/appointmentValidation';
+import { unwrapVehicles, unwrapWorkOrders } from '@/lib/workOrderList';
+import { isCompletedWorkOrder, summarizeWorkOrders, type WorkOrderSummary } from '@/lib/workOrderMetrics';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
@@ -85,16 +87,14 @@ export default function CustomerDashboard() {
       }
     };
 
-      // Fetch appointments
+      // Fetch appointments — upcoming and total share summarizeAppointments
       const apptData = await safeFetchJson('/api/appointments');
       const appointments = Array.isArray(apptData?.appointments) ? apptData.appointments : [];
-      const upcoming = appointments.filter((a: any) =>
-        isUpcomingAppointment(a.status, a.scheduledDate)
-      ).length;
+      const appointmentSummary = summarizeAppointments(appointments);
       
-      // Fetch vehicles — API returns { vehicles: [...] }
+      // Fetch vehicles — saved vehicles, not appointment rows
       const vehiclesData = await safeFetchJson('/api/customers/vehicles');
-      const vehicles = Array.isArray(vehiclesData?.vehicles) ? vehiclesData.vehicles : [];
+      const vehicles = unwrapVehicles(vehiclesData);
       
       // Fetch reviews — must pass customerId or it returns all reviews in the system
       const currentUserId = localStorage.getItem('userId') || '';
@@ -105,11 +105,14 @@ export default function CustomerDashboard() {
       const favoritesResponse = await safeFetchJson('/api/customers/favorites');
       const favorites = Array.isArray(favoritesResponse?.favorites) ? favoritesResponse.favorites : [];
       
-      // Fetch work orders — API returns { workOrders: [...] }
-      const workordersData = await safeFetchJson('/api/workorders');
-      const allWorkOrders = Array.isArray(workordersData?.workOrders) ? workordersData.workOrders : [];
-      const completed = allWorkOrders.filter((w: any) => w.status === 'completed' || w.status === 'Completed');
-      const openOrders = allWorkOrders.filter((w: any) => !['closed', 'completed', 'Completed'].includes(w.status)).length;
+      // Fetch work orders — headline counts come from the shared metrics payload
+      const workordersData = await safeFetchJson('/api/workorders?limit=20&includeMetrics=1');
+      const allWorkOrders = unwrapWorkOrders(workordersData);
+      const metrics = workordersData?.metrics as Partial<WorkOrderSummary> | undefined;
+      const orderSummary = summarizeWorkOrders(allWorkOrders);
+      const completed = allWorkOrders.filter((w: any) => isCompletedWorkOrder(w));
+      const openOrders = typeof metrics?.active === 'number' ? metrics.active : orderSummary.active;
+      const completedCount = typeof metrics?.completed === 'number' ? metrics.completed : orderSummary.completed;
       
       // Fetch documents — API returns { documents: [...] }
       const documentsData = await safeFetchJson('/api/customers/documents');
@@ -125,12 +128,12 @@ export default function CustomerDashboard() {
       if (!isMountedRef.current) return;
 
       setStats({
-        appointmentCount: appointments.length,
-        upcomingAppointments: upcoming,
+        appointmentCount: appointmentSummary.total,
+        upcomingAppointments: appointmentSummary.upcoming,
         vehicleCount: vehicles.length,
         reviewCount: reviews.length,
         favoriteCount: favorites.length,
-        historyCount: completed.length,
+        historyCount: completedCount,
         documentCount: documents.length,
         unreadMessages: unread,
         paymentMethods: Array.isArray(paymentMethods) ? paymentMethods.length : 0,
@@ -152,21 +155,17 @@ export default function CustomerDashboard() {
         setLoyaltyPoints(pts);
         setTier(pts >= 1000 ? 'Gold' : pts >= 200 ? 'Silver' : 'Bronze');
       }
-      const todayStr = new Date().toISOString().split('T')[0];
-      const completedToday = completed.filter((w: any) => {
-        const d = new Date(w.updatedAt || w.completedAt || w.createdAt || '');
-        return d.toISOString().split('T')[0] === todayStr;
-      }).length;
+      const completedToday = typeof metrics?.completedToday === 'number' ? metrics.completedToday : orderSummary.completedToday;
       setCustomerStats({
         openOrders,
         completedToday,
         messages: unread,
-        appointments: upcoming,
+        appointments: appointmentSummary.upcoming,
       });
       
-      // Store recent data (last 3 items)
+      // Recent appointments are the upcoming set, same count as the card.
       setRecentData(prev => ({
-        appointments: appointments.slice(0, 3),
+        appointments: appointmentSummary.upcomingAppointments.slice(0, 3),
         vehicles: vehicles.slice(0, 3),
         messages: Array.isArray(messagesData?.conversations) ? messagesData.conversations.slice(0, 3) : [],
         reviews: reviews.slice(0, 3),
@@ -244,7 +243,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Appointments', 
       desc: 'Book and manage service appointments', 
-      detail: `${stats.upcomingAppointments} upcoming - ${stats.appointmentCount} total`, 
+      detail: `${stats.upcomingAppointments} upcoming · ${stats.appointmentCount} total`, 
       badge: stats.upcomingAppointments > 0 ? 'Active' : '', 
       badgeColor: '#10b981', 
       link: '/customer/appointments',

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { formatSlaCompliance, slaComplianceRate } from '@/lib/slaMetrics';
 
 interface TechStat {
   techId: string;
@@ -15,10 +16,11 @@ interface TechStat {
   late: number;
   revenue: number;
   avgHours: number;
+  slaComplianceRate: number | null;
 }
 
 interface SLAData {
-  complianceRate: number;
+  complianceRate: number | null;
   avgCompletionHours: number;
   totalCompleted: number;
   onTime: number;
@@ -47,27 +49,35 @@ export default function SLAAnalyticsPage() {
     const techRows = Array.isArray(raw?.techPerformance) ? raw.techPerformance : [];
     const techPerformance: TechStat[] = techRows.map((t: any) => {
       const totalJobs = Number(t.totalJobs ?? t.completedJobs ?? 0);
-      const onTime = Number(
-        t.onTime ??
-        (typeof t.slaComplianceRate === 'number' ? Math.round((t.slaComplianceRate / 100) * totalJobs) : 0)
-      );
+      const withDueDate = Number(t.withDueDate ?? 0);
+      const onTime = Number(t.onTime ?? 0);
+      const rate = t.slaComplianceRate === null || t.slaComplianceRate === undefined
+        ? slaComplianceRate(onTime, withDueDate)
+        : (typeof t.slaComplianceRate === 'number' ? t.slaComplianceRate : null);
       return {
         techId: String(t.techId ?? ''),
         name: String(t.name ?? 'Unknown'),
         totalJobs,
         onTime,
-        late: Math.max(0, totalJobs - onTime),
+        late: Math.max(0, withDueDate - onTime),
         revenue: Number(t.revenue ?? 0),
         avgHours: Number(t.avgHours ?? t.avgCompletionHours ?? 0),
+        slaComplianceRate: withDueDate <= 0 ? null : rate,
       };
     });
 
+    const onTime = Number(overview.onTime ?? overview.onTimeCount ?? 0);
+    const late = Number(overview.late ?? overview.lateCount ?? 0);
+    const explicitRate = overview.slaComplianceRate ?? overview.complianceRate;
+    const complianceRate = (onTime + late) <= 0
+      ? null
+      : (typeof explicitRate === 'number' ? explicitRate : slaComplianceRate(onTime, onTime + late));
     return {
-      complianceRate: Number(overview.complianceRate ?? overview.slaComplianceRate ?? 0),
+      complianceRate,
       avgCompletionHours: Number(overview.avgCompletionHours ?? 0),
       totalCompleted: Number(overview.totalCompleted ?? overview.completedWorkOrders ?? 0),
-      onTime: Number(overview.onTime ?? overview.onTimeCount ?? 0),
-      late: Number(overview.late ?? overview.lateCount ?? 0),
+      onTime,
+      late,
       statusBreakdown: raw?.statusBreakdown ?? {},
       techPerformance,
     };
@@ -129,10 +139,10 @@ export default function SLAAnalyticsPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
                 <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' }}>
                   <div style={{ color: '#9ca3af', fontSize: 13, marginBottom: 4 }}>SLA Compliance</div>
-                  <div style={{ color: data.totalCompleted === 0 ? '#9ca3af' : data.complianceRate >= 80 ? '#22c55e' : data.complianceRate >= 60 ? '#eab308' : '#ef4444', fontSize: 32, fontWeight: 700 }}>
-                    {data.totalCompleted === 0 ? 'N/A' : `${data.complianceRate.toFixed(1)}%`}
+                  <div style={{ color: data.complianceRate == null ? '#9ca3af' : data.complianceRate >= 80 ? '#22c55e' : data.complianceRate >= 60 ? '#eab308' : '#ef4444', fontSize: 32, fontWeight: 700 }}>
+                    {formatSlaCompliance(data.complianceRate)}
                   </div>
-                  <div style={{ color: '#6b7280', fontSize: 12 }}>{data.totalCompleted === 0 ? 'No completed jobs in this period' : `${data.onTime} on-time / ${data.totalCompleted} completed`}</div>
+                  <div style={{ color: '#6b7280', fontSize: 12 }}>{data.complianceRate == null ? 'No completed jobs with a due date' : `${data.onTime} on-time / ${data.totalCompleted} completed`}</div>
                 </div>
                 <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155' }}>
                   <div style={{ color: '#9ca3af', fontSize: 13, marginBottom: 4 }}>Avg. Completion Time</div>
@@ -185,7 +195,7 @@ export default function SLAAnalyticsPage() {
                       </thead>
                       <tbody>
                         {data.techPerformance.map(tech => {
-                          const compliance = tech.totalJobs > 0 ? ((tech.onTime / tech.totalJobs) * 100) : 0;
+                          const compliance = tech.slaComplianceRate;
                           return (
                             <tr key={tech.techId} style={{ borderBottom: '1px solid #1e293b' }}>
                               <td style={{ padding: '10px 12px', color: '#e5e7eb', fontSize: 14 }}>{tech.name}</td>
@@ -195,9 +205,9 @@ export default function SLAAnalyticsPage() {
                               <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                                 <span style={{
                                   padding: '2px 8px', borderRadius: 12, fontSize: 13, fontWeight: 600,
-                                  background: compliance >= 80 ? '#052e16' : compliance >= 60 ? '#422006' : '#450a0a',
-                                  color: compliance >= 80 ? '#22c55e' : compliance >= 60 ? '#eab308' : '#ef4444',
-                                }}>{compliance.toFixed(0)}%</span>
+                                  background: compliance == null ? '#1f2937' : compliance >= 80 ? '#052e16' : compliance >= 60 ? '#422006' : '#450a0a',
+                                  color: compliance == null ? '#9ca3af' : compliance >= 80 ? '#22c55e' : compliance >= 60 ? '#eab308' : '#ef4444',
+                                }}>{formatSlaCompliance(compliance)}</span>
                               </td>
                               <td style={{ padding: '10px 12px', color: '#e5e7eb', fontSize: 14, textAlign: 'right' }}>${tech.revenue.toFixed(2)}</td>
                               <td style={{ padding: '10px 12px', color: '#e5e7eb', fontSize: 14, textAlign: 'right' }}>{tech.avgHours.toFixed(1)}h</td>

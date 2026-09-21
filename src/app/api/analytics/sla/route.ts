@@ -60,19 +60,21 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Per-tech performance
-    const techMap = new Map<string, { name: string; completed: number; onTime: number; totalHours: number; revenue: number }>();
+    const techMap = new Map<string, { name: string; completed: number; onTime: number; withDueDate: number; totalHours: number; revenue: number }>();
     for (const wo of workOrders) {
       if (!wo.assignedTechId) continue;
       const entry = techMap.get(wo.assignedTechId) || {
         name: wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : 'Unassigned',
         completed: 0,
         onTime: 0,
+        withDueDate: 0,
         totalHours: 0,
         revenue: 0,
       };
       entry.completed++;
-      if (wo.dueDate && wo.completedAt && new Date(wo.completedAt) <= new Date(wo.dueDate)) {
-        entry.onTime++;
+      if (wo.dueDate && wo.completedAt) {
+        entry.withDueDate++;
+        if (new Date(wo.completedAt) <= new Date(wo.dueDate)) entry.onTime++;
       }
       if (wo.completedAt) {
         entry.totalHours += (new Date(wo.completedAt).getTime() - new Date(wo.createdAt).getTime()) / (1000 * 60 * 60);
@@ -85,7 +87,9 @@ export async function GET(request: NextRequest) {
       techId,
       name: data.name,
       completedJobs: data.completed,
-      slaComplianceRate: computeSlaComplianceRate(data.onTime, data.completed),
+      onTime: data.onTime,
+      withDueDate: data.withDueDate,
+      slaComplianceRate: computeSlaComplianceRate(data.onTime, data.withDueDate),
       avgCompletionHours: data.completed > 0 ? Math.round((data.totalHours / data.completed) * 10) / 10 : 0,
       revenue: Math.round(data.revenue * 100) / 100,
     })).sort((a, b) => b.completedJobs - a.completedJobs);

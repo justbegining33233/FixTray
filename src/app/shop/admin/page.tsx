@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaExclamationTriangle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import TopNavBar from '@/components/TopNavBar';
@@ -160,11 +159,12 @@ export default function ShopAdminPage() {
       return;
     }
 
-    setShopId(id || '');
+    const resolvedShopId = user?.shopId || user?.id || id || '';
+    setShopId(resolvedShopId);
     setUserName(name || '');
-    setUserId(id || ''); // Shop owner's userId is same as shopId
-    fetchSettings(id || '');
-    fetchShopStats(id || '');
+    setUserId(resolvedShopId); // Shop owner's userId is same as shopId
+    fetchSettings(resolvedShopId);
+    fetchShopStats(resolvedShopId);
     fetchBudgetData(id || '');
     fetchInventoryStock(id || '');
     fetchInventoryRequests(id || '');
@@ -201,20 +201,40 @@ export default function ShopAdminPage() {
   const fetchShopStats = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      
-      const response = await fetch(`/api/shop/stats?shopId=${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      
+      const headers = { Authorization: `Bearer ${token}` };
+      const shopKey = user?.shopId || user?.id || id;
+
+      const [response, woResponse] = await Promise.all([
+        fetch(`/api/shop/stats?shopId=${encodeURIComponent(shopKey)}`, { headers }),
+        fetch(`/api/shop/workorder-stats?shopId=${encodeURIComponent(shopKey)}`, { headers }),
+      ]);
+
+      const canonical = woResponse.ok ? await woResponse.json() : null;
+      const openJobs = canonical?.stats?.openJobs;
+
       if (response.ok) {
         const data = await response.json();
+        if (typeof openJobs === 'number') {
+          data.workOrders = { ...(data.workOrders || {}), open: openJobs };
+        }
         setShopStats(data);
+      } else if (typeof openJobs === 'number') {
+        setShopStats((prev: any) => ({
+          ...(prev || {
+            workOrders: { open: 0, completedToday: 0, completedThisWeek: 0, pendingApprovals: 0 },
+            revenue: { today: 0, week: 0 },
+            team: { total: 0, active: 0, clockedIn: 0, currentlyWorking: [] },
+            inventory: { pendingRequests: 0 },
+          }),
+          workOrders: {
+            ...(prev?.workOrders || { completedToday: 0, completedThisWeek: 0, pendingApprovals: 0 }),
+            open: openJobs,
+          },
+        }));
       } else {
-        // Set empty data structure if fetch fails
         const errorText = await response.text();
-        console.error('? Failed to fetch shop stats:', response.status, errorText);
-        setShopStats({
+        console.error('Failed to fetch shop stats:', response.status, errorText);
+        setShopStats((prev: any) => prev || {
           workOrders: { open: 0, completedToday: 0, completedThisWeek: 0, pendingApprovals: 0 },
           revenue: { today: 0, week: 0 },
           team: { total: 0, active: 0, clockedIn: 0, currentlyWorking: [] },
@@ -222,9 +242,8 @@ export default function ShopAdminPage() {
         });
       }
     } catch (error) {
-      console.error('[ShopAdminPage]', <FaExclamationTriangle />, 'Error fetching shop stats:', error);
-      // Set empty data structure on error
-      setShopStats({
+      console.error('[ShopAdminPage]', error);
+      setShopStats((prev: any) => prev || {
         workOrders: { open: 0, completedToday: 0, completedThisWeek: 0, pendingApprovals: 0 },
         revenue: { today: 0, week: 0 },
         team: { total: 0, active: 0, clockedIn: 0, currentlyWorking: [] },

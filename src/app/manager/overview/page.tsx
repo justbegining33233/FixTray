@@ -8,11 +8,12 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaChartBar, FaClipboardList, FaUsers } from 'react-icons/fa';
 
 interface OverviewStats {
-  totalOrders: number;
-  activeOrders: number;
+  activeJobs: number;
+  unassigned: number;
+  overdueJobs: number;
   completedToday: number;
+  pendingQueue: number;
   teamMembers: number;
-  revenue: number;
 }
 
 export default function ManagerOverviewPage() {
@@ -27,19 +28,23 @@ export default function ManagerOverviewPage() {
       setLoading(true);
       const token = localStorage.getItem('token');
       try {
+        const shopKey = (user as { shopId?: string }).shopId || '';
+        const shopQuery = shopKey ? `?shopId=${encodeURIComponent(shopKey)}` : '';
         const [woRes, teamRes] = await Promise.all([
-          fetch('/api/shop/workorder-stats', { headers: { Authorization: `Bearer ${token}` } }),
-          fetch('/api/shop/team', { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`/api/shop/workorder-stats${shopQuery}`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`/api/shop/team${shopQuery}`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         const woData = woRes.ok ? await woRes.json() : {};
         const teamData = teamRes.ok ? await teamRes.json() : {};
-        const statsPayload = woData.stats || woData;
+        const statsPayload = woData.stats || {};
+        const team = teamData.team || teamData.teamMembers || teamData.techs || [];
         setStats({
-          totalOrders: statsPayload.totalWorkOrders || statsPayload.total || statsPayload.activeJobs || 0,
-          activeOrders: statsPayload.activeJobs || statsPayload.inProgress || statsPayload.active || 0,
-          completedToday: statsPayload.completedToday || 0,
-          teamMembers: (teamData.techs || teamData.team || []).length,
-          revenue: statsPayload.revenue || 0,
+          activeJobs: statsPayload.openJobs ?? statsPayload.activeJobs ?? 0,
+          unassigned: statsPayload.unassigned ?? statsPayload.pendingAssignments ?? 0,
+          overdueJobs: statsPayload.overdueJobs ?? 0,
+          completedToday: statsPayload.completedToday ?? 0,
+          pendingQueue: statsPayload.pendingQueue ?? 0,
+          teamMembers: Array.isArray(team) ? team.length : 0,
         });
       } catch { /* ignore */ }
       setLoading(false);
@@ -51,8 +56,10 @@ export default function ManagerOverviewPage() {
   if (!user) return null;
 
   const cards = stats ? [
-    { label: 'Total Orders', value: stats.totalOrders, icon: <FaClipboardList />, color: '#e5332a' },
-    { label: 'Active Orders', value: stats.activeOrders, icon: <FaClipboardList />, color: '#f59e0b' },
+    { label: 'Active Jobs', value: stats.activeJobs, icon: <FaClipboardList />, color: '#e5332a' },
+    { label: 'Awaiting Clock-In', value: stats.unassigned, icon: <FaClipboardList />, color: '#f59e0b' },
+    { label: 'Pending Queue', value: stats.pendingQueue, icon: <FaClipboardList />, color: '#f59e0b' },
+    { label: 'Overdue', value: stats.overdueJobs, icon: <FaClipboardList />, color: '#ef4444' },
     { label: 'Completed Today', value: stats.completedToday, icon: <FaClipboardList />, color: '#22c55e' },
     { label: 'Team Members', value: stats.teamMembers, icon: <FaUsers />, color: '#8b5cf6' },
   ] : [];

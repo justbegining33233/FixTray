@@ -6,6 +6,7 @@ import Link from 'next/link';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { formatSlaCompliance } from '@/lib/slaMetrics';
 
 interface TechPerf {
   techId: string;
@@ -14,7 +15,7 @@ interface TechPerf {
   totalJobs: number;
   completedJobs: number;
   completionRate: number;
-  slaComplianceRate: number;
+  slaComplianceRate: number | null;
   revenue: number;
   hoursWorked: number;
   revenuePerHour: number;
@@ -45,7 +46,7 @@ export default function EmployeePerformancePage() {
       });
       if (res.ok) {
         const json = await res.json();
-        setTechs(json.techs || []);
+        setTechs(json.techPerformance || json.techs || []);
       }
     } catch (e) {
       console.error('Failed to fetch performance data:', e);
@@ -54,7 +55,11 @@ export default function EmployeePerformancePage() {
     }
   };
 
-  const sorted = [...techs].sort((a, b) => b[sortBy] - a[sortBy]);
+  const sorted = [...techs].sort((a, b) => {
+    const av = a[sortBy] ?? -1;
+    const bv = b[sortBy] ?? -1;
+    return bv - av;
+  });
 
   if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
   if (!user) return null;
@@ -122,7 +127,7 @@ export default function EmployeePerformancePage() {
                     </div>
                     <div style={{ background: '#000000', borderRadius: 8, padding: 12, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 11 }}>SLA</div>
-                      <div style={{ color: tech.slaComplianceRate >= 80 ? '#22c55e' : '#eab308', fontSize: 20, fontWeight: 700 }}>{tech.slaComplianceRate.toFixed(0)}%</div>
+                      <div style={{ color: tech.slaComplianceRate == null ? '#9ca3af' : tech.slaComplianceRate >= 80 ? '#22c55e' : '#eab308', fontSize: 20, fontWeight: 700 }}>{formatSlaCompliance(tech.slaComplianceRate)}</div>
                     </div>
                     <div style={{ background: '#000000', borderRadius: 8, padding: 12, textAlign: 'center' }}>
                       <div style={{ color: '#9ca3af', fontSize: 11 }}>Hours</div>

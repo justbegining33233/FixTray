@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import {
+  activeWorkOrderWhere,
+  completedTodayWhere,
+  pendingQueueWhere,
+  resolveShopId,
+  unassignedWorkOrderWhere,
+} from '@/lib/workOrderMetrics';
 
 // GET - Get manager dashboard data
 export async function GET(request: NextRequest) {
@@ -15,10 +22,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const shopId = decoded.shopId;
-    if (!shopId) {
+    const resolvedShop = resolveShopId(
+      { id: decoded.id, role: decoded.role, shopId: decoded.shopId },
+      null,
+    );
+    if (!resolvedShop.ok) {
       return NextResponse.json({ error: 'Shop ID not found' }, { status: 400 });
     }
+    const shopId = resolvedShop.shopId;
 
     // Get work orders summary
     const workOrders = await prisma.workOrder.findMany({
@@ -35,14 +46,14 @@ export async function GET(request: NextRequest) {
       take: 20,
     });
 
-    const openJobs = workOrders.filter((wo) => wo.status === 'in-progress' || wo.status === 'assigned').length;
-    const pendingJobs = workOrders.filter((wo) => wo.status === 'pending').length;
-    const completedToday = workOrders.filter(
-      (wo) =>
-        wo.status === 'closed' &&
-        wo.completedAt &&
-        new Date(wo.completedAt).toDateString() === new Date().toDateString()
-    ).length;
+    const scope = { shopId };
+    const now = new Date();
+    const [openJobs, pendingJobs, unassigned, completedToday] = await Promise.all([
+      prisma.workOrder.count({ where: activeWorkOrderWhere(scope) }),
+      prisma.workOrder.count({ where: pendingQueueWhere(scope) }),
+      prisma.workOrder.count({ where: unassignedWorkOrderWhere(scope) }),
+      prisma.workOrder.count({ where: completedTodayWhere(scope, now) }),
+    ]);
 
     // Get team members
     const techs = await prisma.tech.findMany({
@@ -77,6 +88,7 @@ export async function GET(request: NextRequest) {
       stats: {
         openJobs,
         pendingJobs,
+        unassigned,
         completedToday,
         totalTechs: techs.length,
         activeTechs: techs.filter((t) => t.assignedWorkOrders.length > 0).length,

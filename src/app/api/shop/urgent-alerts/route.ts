@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole, AuthUser } from '@/lib/auth';
+import { overdueWorkOrderWhere, resolveShopId, unassignedWorkOrderWhere } from '@/lib/workOrderMetrics';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
@@ -8,26 +9,22 @@ export async function GET(request: NextRequest) {
 
   const user = auth as AuthUser;
   const { searchParams } = new URL(request.url);
-  const shopId = user.role === 'admin'
-    ? searchParams.get('shopId')
-    : (user.shopId ?? user.id);
-
-  if (!shopId) {
-    return NextResponse.json({ error: 'Shop ID is required' }, { status: 400 });
+  const resolved = resolveShopId(user, searchParams.get('shopId'));
+  if (!resolved.ok) {
+    const status = resolved.error === 'forbidden' ? 403 : 400;
+    return NextResponse.json(
+      { error: resolved.error === 'forbidden' ? 'Forbidden' : 'Shop ID is required' },
+      { status },
+    );
   }
+  const shopId = resolved.shopId;
 
   try {
     const alerts = [];
 
     // Check for overdue work orders
     const overdueJobs = await prisma.workOrder.count({
-      where: {
-        shopId,
-        status: { not: 'closed' },
-        dueDate: {
-          lt: new Date(),
-        },
-      },
+      where: overdueWorkOrderWhere({ shopId }),
     });
 
     if (overdueJobs > 0) {
@@ -80,11 +77,7 @@ export async function GET(request: NextRequest) {
 
     // Check for unassigned work orders
     const unassignedJobs = await prisma.workOrder.count({
-      where: {
-        shopId,
-        status: 'pending',
-        assignedTechId: null,
-      },
+      where: unassignedWorkOrderWhere({ shopId }),
     });
 
     if (unassignedJobs > 0) {

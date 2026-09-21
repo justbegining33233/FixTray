@@ -249,8 +249,8 @@ export default function TechHome() {
   ];
 
   const jobManagementTools = [
-    { title: 'Active Jobs', description: 'View all your currently assigned work orders', icon: <FaClipboardList style={{marginRight:4}} />, link: '/tech/command-center' },
-    { title: 'Job History', description: 'Browse completed work orders and feedback', icon: <FaChartBar style={{marginRight:4}} />, link: '/tech/timesheet' },
+    { title: 'Active Jobs', description: 'View all your currently assigned work orders', icon: <FaClipboardList style={{marginRight:4}} />, link: '/tech/jobs?view=active' },
+    { title: 'Job History', description: 'Browse completed work orders and feedback', icon: <FaChartBar style={{marginRight:4}} />, link: '/tech/jobs?view=history' },
   ];
 
   const fieldTools = [

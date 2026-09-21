@@ -59,7 +59,7 @@ const navConfig: Record<string, { primary: NavItem[]; more: NavItem[] }> = {
   tech: {
     primary: [
       { icon: <IconHome size={22} />,       label: 'Home',     path: '/tech/home' },
-      { icon: <IconClipboard size={22} />,  label: 'My Jobs',  path: '/tech/home' },
+      { icon: <IconClipboard size={22} />,  label: 'My Jobs',  path: '/tech/jobs?view=active' },
       { icon: <IconClock size={22} />,      label: 'Clock',    path: '/tech/timeclock' },
       { icon: <IconMessages size={22} />,   label: 'Messages', path: '/tech/messages' },
     ],

@@ -24,6 +24,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         appliesToParts: body.appliesToParts !== undefined ? Boolean(body.appliesToParts) : existing.appliesToParts,
         appliesToFees: body.appliesToFees !== undefined ? Boolean(body.appliesToFees) : existing.appliesToFees,
         exemptServices: body.exemptServices ?? existing.exemptServices,
+        state: body.state !== undefined ? (body.state ? String(body.state).trim() : null) : existing.state,
+        county: body.county !== undefined ? (body.county ? String(body.county).trim() : null) : existing.county,
         active: body.active !== undefined ? Boolean(body.active) : existing.active,
       },
     });

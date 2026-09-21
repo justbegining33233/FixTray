@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { validateRecurringSchedule } from '@/lib/shopFormValidation';
 import { FaCalendarAlt, FaSyncAlt } from 'react-icons/fa';
 
 interface RecurringSchedule {
@@ -26,18 +27,68 @@ export default function ManagerRecurringWorkOrdersPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [items, setItems] = useState<RecurringSchedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [customerHits, setCustomerHits] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
+  const [form, setForm] = useState({ customerId: '', customerName: '', title: '', issueDescription: '', frequency: 'monthly' });
+
+  const load = async () => {
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    const r = await fetch('/api/recurring-workorders', { headers: { Authorization: `Bearer ${token}` } });
+    if (r.ok) {
+      const d = await r.json();
+      setItems(Array.isArray(d.schedules) ? d.schedules : Array.isArray(d) ? d : []);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const r = await fetch('/api/recurring-workorders', { headers: { Authorization: `Bearer ${token}` } });
-      if (r.ok) { const d = await r.json(); setItems(d.schedules || d || []); }
-      setLoading(false);
-    };
     load();
   }, [user]);
+
+  useEffect(() => {
+    if (customerQuery.trim().length < 2) { setCustomerHits([]); return; }
+    const timer = setTimeout(async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/customers/search?q=${encodeURIComponent(customerQuery.trim())}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setCustomerHits(data.customers || []);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [customerQuery]);
+
+  const createSchedule = async (event: FormEvent) => {
+    event.preventDefault();
+    const check = validateRecurringSchedule(form);
+    if (!check.ok) { setFormError(check.error); return; }
+    setSaving(true);
+    setFormError('');
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/recurring-workorders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        customerId: form.customerId,
+        title: form.title,
+        issueDescription: form.issueDescription,
+        frequency: form.frequency,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setSaving(false);
+    if (!res.ok || data.success === false) { setFormError(data.error || 'Could not create schedule'); return; }
+    setShowForm(false);
+    setForm({ customerId: '', customerName: '', title: '', issueDescription: '', frequency: 'monthly' });
+    setCustomerQuery('');
+    load();
+  };
 
   if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
   if (!user) return null;
@@ -51,14 +102,37 @@ export default function ManagerRecurringWorkOrdersPage() {
           <Breadcrumbs />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 24px' }}>
             <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: 0 }}>Recurring Work Orders</h1>
-            <a href="/shop/recurring-workorders" style={{ padding: '10px 16px', background: '#e5332a', color: 'white', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>Create Schedule</a>
+            <button type="button" onClick={() => { setShowForm((open) => !open); setFormError(''); }} style={{ padding: '10px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{showForm ? 'Close' : 'Create Schedule'}</button>
           </div>
+          {showForm && (
+            <form onSubmit={createSchedule} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 20, display: 'grid', gap: 12 }}>
+              <p style={{ margin: 0, color: '#9aa3b2', fontSize: 13 }}>Create a recurring schedule for this shop. Customer, title, and description are required.</p>
+              <input required aria-label="Find customer" value={customerQuery} onChange={(e) => setCustomerQuery(e.target.value)} placeholder="Search customer name" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
+              {form.customerName && <div style={{ color: '#86efac', fontSize: 13 }}>Selected: {form.customerName}</div>}
+              {customerHits.length > 0 && (
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {customerHits.map((customer) => (
+                    <button type="button" key={customer.id} onClick={() => { setForm((f) => ({ ...f, customerId: customer.id, customerName: `${customer.firstName} ${customer.lastName}` })); setCustomerHits([]); }} style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#e5e7eb', cursor: 'pointer' }}>
+                      {customer.firstName} {customer.lastName}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <input required aria-label="Title" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Title" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
+              <textarea required aria-label="Description" value={form.issueDescription} onChange={(e) => setForm((f) => ({ ...f, issueDescription: e.target.value }))} placeholder="What should be done each visit?" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
+              <select aria-label="Frequency" value={form.frequency} onChange={(e) => setForm((f) => ({ ...f, frequency: e.target.value }))} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: '#111', color: '#e5e7eb' }}>
+                {Object.entries(FREQ_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+              {formError && <div style={{ color: '#fca5a5', fontSize: 13 }}>{formError}</div>}
+              <button type="submit" disabled={saving} style={{ padding: '10px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Schedule'}</button>
+            </form>
+          )}
           {loading ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
           ) : items.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
               <FaSyncAlt style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p>No recurring work orders set up.</p>
+              <p>No recurring work orders set up. Use Create Schedule to add one.</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

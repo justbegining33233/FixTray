@@ -342,7 +342,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         items: [
           { ico: '🚗', label: 'My Vehicles', href: '/customer/vehicles' },
           { ico: '🗂️', label: 'Service History', href: '/customer/history' },
-          { ico: '📋', label: 'Active Work Orders', href: '/customer/history' },
+          { ico: '📋', label: 'Active Work Orders', href: '/customer/workorders' },
         ],
       },
       {

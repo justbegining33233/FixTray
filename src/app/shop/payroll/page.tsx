@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaArrowLeft, FaArrowRight, FaCaretRight, FaCheck, FaCheckCircle, FaClipboardList, FaClock, FaCog, FaDollarSign, FaExclamationTriangle, FaHourglassHalf, FaRegSquare, FaTimes, FaTimesCircle, FaTrash, FaUsers } from 'react-icons/fa';
+import { activePayrollEmployees, normalizePayrollEmployees } from '@/lib/payrollTeam';
 
 // --- Types -------------------------------------------------------------------
 interface Employee {
@@ -117,41 +118,74 @@ export default function PayrollPage() {
   const [leaveForm, setLeaveForm] = useState<any>({ leaveType: 'pto' });
   const [periodForm, setPeriodForm] = useState<any>({ periodType: 'biweekly' });
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const authHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  };
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    setPayrollError('');
+    const headers = authHeaders();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
     try {
+      const signal = controller.signal;
       const [empR, attendR, leaveR, periodsR, otR] = await Promise.all([
-        fetch('/api/payroll/employees', { headers }),
-        fetch(`/api/payroll/attendance?startDate=${new Date(weekOf).toISOString()}&endDate=${new Date(weekOf.getTime() + 6 * 86400000).toISOString()}`, { headers }),
-        fetch('/api/payroll/leave', { headers }),
-        fetch('/api/payroll/pay-periods', { headers }),
-        fetch('/api/payroll/overtime-rules', { headers }),
+        fetch('/api/payroll/employees', { headers, signal }),
+        fetch(`/api/payroll/attendance?startDate=${new Date(weekOf).toISOString()}&endDate=${new Date(weekOf.getTime() + 6 * 86400000).toISOString()}`, { headers, signal }),
+        fetch('/api/payroll/leave', { headers, signal }),
+        fetch('/api/payroll/pay-periods', { headers, signal }),
+        fetch('/api/payroll/overtime-rules', { headers, signal }),
       ]);
-      if (empR.ok) {
-        const empData = await empR.json();
-        setEmployees(Array.isArray(empData) ? empData : empData.employees || empData.techs || []);
-      } else {
-        setPayrollError('Could not load employees');
+      let team = empR.ok ? normalizePayrollEmployees(await empR.json()) : [];
+      if (!empR.ok || team.length === 0) {
+        const teamR = await fetch('/api/techs', { headers, signal });
+        if (teamR.ok) {
+          const fromTeam = normalizePayrollEmployees(await teamR.json());
+          if (fromTeam.length > 0) team = fromTeam;
+        }
       }
-      if (attendR.ok) { const d = await attendR.json(); setAttendance(d.records); setAttSummary(d.summary); }
-      if (leaveR.ok) setLeaveRequests(await leaveR.json());
-      if (periodsR.ok) setPayPeriods(await periodsR.json());
+      setEmployees(team);
+      if (!empR.ok && team.length === 0) setPayrollError('Could not load employees');
+      if (attendR.ok) {
+        const d = await attendR.json();
+        setAttendance(Array.isArray(d.records) ? d.records : []);
+        setAttSummary(d.summary ?? null);
+      }
+      if (leaveR.ok) {
+        const leaveData = await leaveR.json();
+        setLeaveRequests(Array.isArray(leaveData) ? leaveData : []);
+      }
+      if (periodsR.ok) {
+        const periodData = await periodsR.json();
+        setPayPeriods(Array.isArray(periodData) ? periodData : []);
+      }
       if (otR.ok) setOtRule(await otR.json());
 
-      // Load shifts for current week
       const shiftEnd = new Date(weekOf.getTime() + 6 * 86400000 + 86399999);
-      const shiftR = await fetch(`/api/payroll/schedule?startDate=${weekOf.toISOString()}&endDate=${shiftEnd.toISOString()}`, { headers });
-      if (shiftR.ok) setShifts(await shiftR.json());
-    } catch {
-      setPayrollError('Failed to load payroll data');
+      const shiftR = await fetch(`/api/payroll/schedule?startDate=${weekOf.toISOString()}&endDate=${shiftEnd.toISOString()}`, { headers, signal });
+      if (shiftR.ok) {
+        const shiftData = await shiftR.json();
+        setShifts(Array.isArray(shiftData) ? shiftData : []);
+      }
+    } catch (error) {
+      setPayrollError(error instanceof DOMException && error.name === 'AbortError'
+        ? 'Payroll data took too long to load. Refresh to try again.'
+        : 'Failed to load payroll data');
     } finally {
+      clearTimeout(timer);
       setLoading(false);
     }
   }, [user, weekOf]);
+
+  const headers = authHeaders();
 
   useEffect(() => { load(); }, [load]);
 
@@ -164,7 +198,7 @@ export default function PayrollPage() {
   if (isLoading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: THEME.pageBg }}><div style={{ fontSize: 18, color: THEME.textMuted }}>Loading...</div></div>;
 
   // --- Computed values ------------------------------------------------------
-  const activeEmps = employees.filter((e) => !e.terminatedAt);
+  const activeEmps = activePayrollEmployees(employees);
   const pendingLeave = leaveRequests.filter((l) => l.status === 'pending');
   const openPeriods = payPeriods.filter((p) => p.status === 'open' || p.status === 'processing');
   const weekDates = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekOf); d.setDate(weekOf.getDate() + i); return d; });
@@ -311,7 +345,7 @@ export default function PayrollPage() {
   const OverviewTab = () => (
     <div>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-        <Card label="Active Employees" value={String(activeEmps.length)} sub={`${employees.filter(e => e.terminatedAt).length} terminated`} />
+        <Card label="Active Employees" value={loading ? '…' : String(activeEmps.length)} sub={loading ? 'Loading team' : `${employees.filter(e => e.terminatedAt).length} terminated`} />
         <Card label="Total Payroll (All Time)" value={fmt(totalPayrollThisMonth)} sub="approved/paid periods" color="#e5332a" />
         <Card label="Late Today" value={String(lateToday)} sub="based on today's schedule" color={lateToday > 0 ? '#d97706' : THEME.text} />
         <Card label="Absent Today" value={String(absentToday)} sub="no clock-in recorded" color={absentToday > 0 ? '#dc2626' : THEME.text} />
@@ -325,13 +359,13 @@ export default function PayrollPage() {
           <div style={{ fontWeight: 700, marginBottom: 12, color: '#f59e0b' }}><FaExclamationTriangle style={{marginRight:4}} /> Alerts</div>
           {attendance.filter(a => a.status === 'late').map(a => (
             <div key={a.timeEntryId} style={{ padding: '6px 0', borderBottom: '1px solid rgba(245,158,11,0.25)', fontSize: 14, color: THEME.text }}>
-              <FaClock style={{marginRight:4}} /> <strong>{a.tech.firstName} {a.tech.lastName}</strong> arrived <strong>{a.lateMinutes} min late</strong>
+              <FaClock style={{marginRight:4}} /> <strong>{a.tech?.firstName} {a.tech?.lastName}</strong> arrived <strong>{a.lateMinutes} min late</strong>
               {a.scheduledStart && ` (scheduled ${a.scheduledStart}`})
             </div>
           ))}
           {attendance.filter(a => a.status === 'absent').map(a => (
             <div key={a.shiftId} style={{ padding: '6px 0', borderBottom: '1px solid rgba(245,158,11,0.25)', fontSize: 14, color: '#f87171' }}>
-              <FaTimesCircle style={{marginRight:4}} /> <strong>{a.tech.firstName} {a.tech.lastName}</strong>  -  no clock-in (scheduled {a.scheduledStart})
+              <FaTimesCircle style={{marginRight:4}} /> <strong>{a.tech?.firstName} {a.tech?.lastName}</strong>  -  no clock-in (scheduled {a.scheduledStart})
             </div>
           ))}
           {pendingLeave.slice(0, 3).map(l => (
@@ -339,6 +373,12 @@ export default function PayrollPage() {
               <FaClipboardList style={{marginRight:4}} /> <strong>{l.tech.firstName} {l.tech.lastName}</strong> requested {l.leaveType.toUpperCase()}  -  {fmtDate(l.startDate)} to {fmtDate(l.endDate)}
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && activeEmps.length === 0 && (
+        <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 20, marginBottom: 24, color: THEME.textMuted }}>
+          No active employees yet. Payroll lists managers and technicians from Manage Team. Add them there, then refresh this page.
         </div>
       )}
 
@@ -402,7 +442,7 @@ export default function PayrollPage() {
                 <td style={{ padding: '10px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: DEPT_COLORS[emp.department ?? 'default'] ?? '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13 }}>
-                      {emp.firstName[0]}{emp.lastName[0]}
+                      {(emp.firstName || '?')[0]}{(emp.lastName || '?')[0]}
                     </div>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 13, color: THEME.text }}>{emp.firstName} {emp.lastName}</div>
@@ -523,7 +563,7 @@ export default function PayrollPage() {
             )}
             {attendance.map((a, i) => (
               <tr key={i} style={{ borderBottom: `1px solid ${THEME.borderSoft}`, background: a.status === 'absent' ? 'rgba(229,51,42,0.14)' : a.status === 'late' ? 'rgba(245,158,11,0.12)' : undefined }}>
-                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{a.tech.firstName} {a.tech.lastName}</td>
+                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{a.tech?.firstName} {a.tech?.lastName}</td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.textMuted }}>{fmtDate(a.date)}</td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>{a.scheduledStart ?? ' - '} - {a.scheduledEnd ?? ' - '}</td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>

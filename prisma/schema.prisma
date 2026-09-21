@@ -1193,6 +1193,8 @@ model TaxRule {
   appliesToParts Boolean  @default(true)
   appliesToFees  Boolean  @default(false)
   exemptServices String?
+  state          String?
+  county         String?
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

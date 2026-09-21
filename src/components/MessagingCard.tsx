@@ -177,10 +177,12 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
       const res = await fetch(`/api/messages?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
-        const convData = (data.conversations || []).find(
+        const rows = data.conversations || [];
+        const convData = rows.find(
           (c: Conversation) => c.contactId === conv.contactId && c.contactRole === conv.contactRole,
-        );
-        setThreadMessages(convData?.messages ?? []);
+        ) || rows.find((c: Conversation) => c.contactId === conv.contactId);
+        setThreadMessages(convData?.messages ?? (Array.isArray(conv.messages) ? conv.messages : []));
+        setSelectedConversation((current) => current || conv);
       }
     } catch { /* silent */ }
   };
@@ -218,11 +220,12 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   // --- Actions ----------------------------------------------------------------
 
   const handleSelectConversation = (conv: Conversation) => {
+    selectedConversationRef.current = conv;
     setSelectedConversation(conv);
-    setThreadMessages(conv.messages ?? []);  // Show existing messages immediately
+    setThreadMessages(Array.isArray(conv.messages) ? conv.messages : []);
     setShowCompose(false);
     markAsRead(conv);
-    fetchThread(conv);  // Then load full history (replaces once response arrives)
+    fetchThread(conv);
   };
 
   const handleSendMessage = async () => {
@@ -324,7 +327,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
       <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', height: 420 }}>
 
         {/* Conversation list */}
-        <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)', overflowY: 'auto' }}>
+        <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)', overflowY: 'auto', position: 'relative', zIndex: 2 }}>
           {filteredConversations.length === 0 ? (
             <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 13 }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}><FaComments style={{marginRight:4}} /></div>
@@ -337,6 +340,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               const icon = ROLE_ICON[conv.contactRole] ?? <FaUser />;
               const color = ROLE_COLOR[conv.contactRole] ?? '#9ca3af';
               const isActive = selectedConversation?.contactId === conv.contactId && selectedConversation?.contactRole === conv.contactRole;
+              const preview = typeof conv.lastMessage === 'string' ? conv.lastMessage : '';
               return (
                 <button type="button" key={`${conv.contactRole}_${conv.contactId}`} onClick={() => handleSelectConversation(conv)}
                   style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -356,7 +360,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                       {ROLE_LABEL[conv.contactRole] ?? conv.contactRole}
                     </span>
                     <div style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {conv.lastMessage.length > 40 ? conv.lastMessage.slice(0, 40) + '...' : conv.lastMessage}
+                      {preview.length > 40 ? preview.slice(0, 40) + '...' : preview || 'Open thread'}
                     </div>
                     <div style={{ fontSize: 9, color: '#4b5563', marginTop: 2 }}>
                       {new Date(conv.lastMessageAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

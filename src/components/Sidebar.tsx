@@ -49,6 +49,7 @@ const shopGroups: MenuGroup[] = [
       { icon: <FaListAlt />,  label: 'All Orders',       href: '/shop/home' },
       { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
       { icon: <FaRoad />,  label: 'Roadside Jobs',    href: '/workorders/roadside' },
+      { icon: <FaClipboardList />, label: 'Estimates', href: '/shop/estimates' },
       { icon: <FaEdit />,  label: 'Authorizations',    href: '/shop/work-authorizations' },
       { icon: <FaTools />,  label: 'Templates',          href: '/shop/services' },
       { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/shop/recurring-workorders' },

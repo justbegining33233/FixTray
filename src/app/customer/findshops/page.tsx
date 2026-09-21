@@ -322,14 +322,22 @@ export default function FindShops() {
                   <div style={{marginBottom:16}}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
                       <div style={{display:'flex', alignItems:'center', gap:8}}>
-                        <span
-                          onClick={() => !togglingFavorites.has(shop.id) && toggleFavorite(shop.id)}
+                        <button
+                          type="button"
+                          aria-label={isFavorite ? `Remove ${shop.name} from favorites` : `Save ${shop.name} as a favorite`}
+                          aria-pressed={isFavorite}
+                          disabled={togglingFavorites.has(shop.id)}
+                          onClick={() => toggleFavorite(shop.id)}
                           style={{
                             cursor: togglingFavorites.has(shop.id) ? 'not-allowed' : 'pointer',
                             fontSize:20,
                             color: isFavorite ? '#f59e0b' : '#6b7280',
                             transition:'color 0.2s',
-                            opacity: togglingFavorites.has(shop.id) ? 0.5 : 1
+                            opacity: togglingFavorites.has(shop.id) ? 0.5 : 1,
+                            background: 'transparent',
+                            border: 'none',
+                            padding: 0,
+                            lineHeight: 1,
                           }}
                           onMouseEnter={(e) => {
                             if (!togglingFavorites.has(shop.id)) {
@@ -344,7 +352,7 @@ export default function FindShops() {
                           }}
                         >
                           {togglingFavorites.has(shop.id) ? <FaHourglassHalf style={{marginRight:4}} /> : (isFavorite ? <FaStar style={{marginRight:4}} /> : <FaRegStar style={{marginRight:4}} />)}
-                        </span>
+                        </button>
                         <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>
                           {shop.name}
                         </h3>

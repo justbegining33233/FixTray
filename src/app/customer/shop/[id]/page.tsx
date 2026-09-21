@@ -3,6 +3,7 @@ import { FaArrowLeft, FaBuilding, FaCalendarAlt, FaCheck, FaComments, FaDollarSi
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { serviceCategoryLabel } from '@/lib/serviceCategoryLabel';
 
 interface ShopDetails {
   id: string;
@@ -304,13 +305,15 @@ export default function ShopDetailsPage({ params }: Props) {
                     borderRadius:8,
                     border:'1px solid rgba(255,255,255,0.1)'
                   }}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8, gap:12}}>
                       <h3 style={{fontSize:16, fontWeight:600, color:'#e5e7eb'}}>{service.serviceName}</h3>
-                      <span style={{fontSize:12, color:'#9aa3b2', background:'rgba(229,51,42,0.2)', padding:'2px 8px', borderRadius:4}}>
-                        {service.category}
-                      </span>
+                      {serviceCategoryLabel(service.category, service.serviceName) && (
+                        <span style={{fontSize:12, color:'#9aa3b2', background:'rgba(229,51,42,0.2)', padding:'2px 8px', borderRadius:4, whiteSpace:'nowrap'}}>
+                          {serviceCategoryLabel(service.category, service.serviceName)}
+                        </span>
+                      )}
                     </div>
-                    {service.description && (
+                    {service.description && service.description.trim().toLowerCase() !== service.serviceName.trim().toLowerCase() && (
                       <p style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{service.description}</p>
                     )}
                     <div style={{display:'flex', gap:16, fontSize:14, color:'#e5e7eb'}}>
@@ -339,12 +342,6 @@ export default function ShopDetailsPage({ params }: Props) {
                 <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>Appointment Duration</div>
                 <div style={{fontSize:16, color:'#e5e7eb'}}>{shop.slotDuration} minutes</div>
               </div>
-              {shop.capacity && (
-                <div>
-                  <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>Daily Capacity</div>
-                  <div style={{fontSize:16, color:'#e5e7eb'}}>{shop.capacity} {shop.capacity === 1 ? 'vehicle' : 'vehicles'}</div>
-                </div>
-              )}
             </div>
           </div>
         )}

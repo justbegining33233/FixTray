@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { payableHours, timesheetBounds } from '@/lib/timesheetPeriod';
 
 function formatTime(dt?: string | Date | null) {
   if (!dt) return '-';
@@ -25,35 +26,44 @@ export default function TechTimesheet() {
   const [editValues, setEditValues] = useState<any>({ notes: '', workOrderId: '' });
   const [timesheetMsg, setTimesheetMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const [approveConfirmId, setApproveConfirmId] = useState<string|null>(null);
+  const [clockedIn, setClockedIn] = useState(false);
 
 
 
   useEffect(() => {
-    if (user) fetchEntries();
+    if (user) {
+      fetchEntries();
+      fetchClockStatus();
+    }
     // refresh every 20s so active timers update
-    refreshRef.current = window.setInterval(() => { if (user) fetchEntries(false); }, 20000);
+    refreshRef.current = window.setInterval(() => {
+      if (user) {
+        fetchEntries(false);
+        fetchClockStatus();
+      }
+    }, 20000);
     return () => { if (refreshRef.current) window.clearInterval(refreshRef.current); };
      
   }, [user, range]);
 
-  const getRangeDates = () => {
-    const now = new Date();
-    if (range === 'week') {
-      const start = new Date(now);
-      start.setDate(now.getDate() - now.getDay()); // Sunday
-      start.setHours(0,0,0,0);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      end.setHours(23,59,59,999);
-      return { start, end };
-    }
+  const getRangeDates = () => timesheetBounds(range);
 
-    // month
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    start.setHours(0,0,0,0);
-    const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
-    end.setHours(23,59,59,999);
-    return { start, end };
+  const fetchClockStatus = async () => {
+    if (!user) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/timeclock/status?userId=${encodeURIComponent(user.id)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        setClockedIn(false);
+        return;
+      }
+      const data = await res.json();
+      setClockedIn(Boolean(data?.isClockedIn));
+    } catch {
+      setClockedIn(false);
+    }
   };
 
   const fetchEntries = async (showLoading = true) => {
@@ -79,34 +89,14 @@ export default function TechTimesheet() {
   };
 
   const totals = useMemo(() => {
-    let totalMs = 0;
     const now = new Date();
-
-    entries.forEach((e) => {
-      if (e.clockOut) {
-        const ms = (new Date(e.clockOut).getTime() - new Date(e.clockIn).getTime());
-        totalMs += ms;
-      } else {
-        // active entry - count up to now
-        totalMs += (now.getTime() - new Date(e.clockIn).getTime());
-      }
-    });
-
-    // Total clocked-in hours (pay)
-    let totalHours = 0;
-    if (entries.length && entries.every(e => e.hoursWorked !== null && e.hoursWorked !== undefined)) {
-      totalHours = entries.reduce((acc, e) => acc + (e.hoursWorked || ((e.clockOut ? (new Date(e.clockOut).getTime() - new Date(e.clockIn).getTime())/(1000*60*60) : (now.getTime() - new Date(e.clockIn).getTime())/(1000*60*60)))), 0);
-    } else {
-      totalHours = totalMs / (1000*60*60);
-    }
+    const totalHours = payableHours(entries, { clockedIn, now });
 
     // Billable hours = sum of hours linked to a workOrderId
-    const billableHours = entries.reduce((acc, e) => {
-      if (!e.workOrderId) return acc;
-      const ci = new Date(e.clockIn).getTime();
-      const co = e.clockOut ? new Date(e.clockOut).getTime() : now.getTime();
-      return acc + ((co - ci) / (1000*60*60));
-    }, 0);
+    const billableHours = payableHours(
+      entries.filter((entry) => entry.workOrderId),
+      { clockedIn, now },
+    );
 
     const nonBillableHours = Math.max(0, totalHours - billableHours);
 
@@ -114,7 +104,7 @@ export default function TechTimesheet() {
     const billableEst = billableHours * hourly;
 
     return { totalHours, billableHours, nonBillableHours, billableEst };
-  }, [entries, user]);
+  }, [entries, user, clockedIn]);
 
   if (isLoading) {
     return (
@@ -126,7 +116,7 @@ export default function TechTimesheet() {
 
   if (!user) return null;
 
-  const { start, end } = getRangeDates();
+  const { label: periodLabel } = getRangeDates();
   // Only show entries in the detailed table that are meaningful there.
   // Non-billable / empty rows remain visible in the compact Pay Period table above.
   const detailedEntries = entries.filter(e => e.workOrderId || e.isPto || (e.notes && e.notes.toString().trim() !== ''));
@@ -148,7 +138,7 @@ export default function TechTimesheet() {
               <button onClick={() => setRange('week')} style={{padding:'8px 12px', borderRadius:8, background: range==='week'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Week</button>
               <button onClick={() => setRange('month')} style={{padding:'8px 12px', borderRadius:8, background: range==='month'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Month</button>
             </div>
-            <div style={{fontSize:12, color:'#9aa3b2', marginTop:6}}>{start.toLocaleDateString()} <FaArrowRight style={{marginRight:4}} /> {end.toLocaleDateString()}</div>
+            <div style={{fontSize:12, color:'#9aa3b2', marginTop:6}}>{periodLabel}</div>
           </div>
         </div>
       </div>
@@ -158,8 +148,9 @@ export default function TechTimesheet() {
           {/* Compact Hour Tracker (read-only) */}
           <div style={{marginBottom:8, padding:12, borderRadius:10, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.04)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <div>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>Hours this period</div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>{clockedIn ? 'Hours this period (including current clock-in)' : 'Hours this period'}</div>
               <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{totals.totalHours.toFixed(2)} hrs</div>
+              <div style={{fontSize:12, color: clockedIn ? '#86efac' : '#9aa3b2', marginTop: 4}}>{clockedIn ? 'Clocked in' : 'Not clocked in'}</div>
             </div>
             <div style={{textAlign:'right'}}>
               <div style={{fontSize:12, color:'#9aa3b2'}}>Billable</div>
@@ -171,7 +162,7 @@ export default function TechTimesheet() {
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
             <div>
               <h3 style={{margin:0, color:'#e5e7eb'}}>Timesheet</h3>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>Pay period: <strong style={{color:'#e5e7eb'}}>{start.toLocaleDateString()} <FaArrowRight style={{marginRight:4}} /> {end.toLocaleDateString()}</strong></div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>Pay period: <strong style={{color:'#e5e7eb'}}>{periodLabel}</strong></div>
             </div>
 
             <div style={{textAlign:'right'}}>
@@ -183,7 +174,7 @@ export default function TechTimesheet() {
           <div style={{background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:12, overflow:'hidden'}}>
             {/* Pay period summary */}
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', borderBottom:'1px solid rgba(255,255,255,0.02)'}}>
-              <div style={{fontSize:13, color:'#9aa3b2'}}>PAY PERIOD  -  <strong style={{color:'#e5e7eb'}}>{start.toLocaleDateString()} <FaArrowRight style={{marginRight:4}} /> {end.toLocaleDateString()}</strong></div>
+              <div style={{fontSize:13, color:'#9aa3b2'}}>PAY PERIOD  -  <strong style={{color:'#e5e7eb'}}>{periodLabel}</strong></div>
               <div style={{fontSize:13, color:'#e5e7eb', fontWeight:700}}>TOTAL HOURS  -  {totals.totalHours.toFixed(2)} hrs</div>
             </div>
 
@@ -203,15 +194,13 @@ export default function TechTimesheet() {
               {entries.map((pe) => {
                 const ci = new Date(pe.clockIn);
                 const co = pe.clockOut ? new Date(pe.clockOut) : null;
-                const now = new Date();
-                const durationMs = co ? (co.getTime() - ci.getTime()) : (now.getTime() - ci.getTime());
-                const hours = pe.hoursWorked ?? (durationMs / (1000*60*60));
+                const hours = payableHours([pe], { clockedIn });
 
                 return (
                   <div key={pe.id} style={{display:'grid', gridTemplateColumns:'120px 100px 100px 80px', padding:'8px 12px', borderBottom:'1px solid rgba(255,255,255,0.03)', alignItems:'center', color:'#e5e7eb'}}>
                     <div style={{fontSize:13, color:'#9aa3b2'}}>{ci.toLocaleDateString()}</div>
                     <div style={{fontWeight:600, fontFamily:'monospace'}}>{formatTime(ci)}</div>
-                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : ' - '}</div>
+                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : (clockedIn ? 'In progress' : 'Not clocked in')}</div>
                     <div style={{textAlign:'right', fontWeight:700}}>{hours.toFixed(2)}</div>
                   </div>
                 );
@@ -228,11 +217,7 @@ export default function TechTimesheet() {
 
 
               {detailedEntries.length > 0 && detailedEntries.map((e) => {
-                const clockIn = new Date(e.clockIn);
-                const clockOut = e.clockOut ? new Date(e.clockOut) : null;
-                const now = new Date();
-                const durationMs = clockOut ? (clockOut.getTime() - clockIn.getTime()) : (now.getTime() - clockIn.getTime());
-                const hours = e.hoursWorked ?? (durationMs / (1000*60*60));
+                const hours = payableHours([e], { clockedIn });
 
                 const isEditing = editingId === e.id;
 
@@ -324,7 +309,7 @@ export default function TechTimesheet() {
           {/* Billable hours  -  separate table for WO-linked time */}
           <div style={{marginTop:16, background:'rgba(0,0,0,0.28)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:12, overflow:'hidden'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', borderBottom:'1px solid rgba(255,255,255,0.02)'}}>
-              <div style={{fontSize:13, color:'#9aa3b2'}}>BILLABLE HOURS  -  <strong style={{color:'#e5e7eb'}}>{start.toLocaleDateString()} <FaArrowRight style={{marginRight:4}} /> {end.toLocaleDateString()}</strong></div>
+              <div style={{fontSize:13, color:'#9aa3b2'}}>BILLABLE HOURS  -  <strong style={{color:'#e5e7eb'}}>{periodLabel}</strong></div>
               <div style={{fontSize:13, color:'#e5e7eb', fontWeight:700}}>{totals.billableHours.toFixed(2)} hrs</div>
             </div>
 
@@ -347,7 +332,7 @@ export default function TechTimesheet() {
                   <div key={be.id} style={{display:'grid', gridTemplateColumns:'120px 100px 100px 1fr', padding:'8px 12px', borderBottom:'1px solid rgba(255,255,255,0.03)', alignItems:'center', color:'#e5e7eb'}}>
                     <div style={{fontSize:13, color:'#9aa3b2'}}>{ci.toLocaleDateString()}</div>
                     <div style={{fontWeight:600, fontFamily:'monospace'}}>{formatTime(ci)}</div>
-                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : <span style={{color:'#f59e0b'}}>In progress</span>}</div>
+                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : (clockedIn ? <span style={{color:'#f59e0b'}}>In progress</span> : 'Not clocked in')}</div>
                     <div><Link href={`/workorders/${be.workOrderId}`} style={{color:'#e5332a', fontWeight:700, textDecoration:'none'}}>{be.workOrderId}</Link></div>
                   </div>
                 );

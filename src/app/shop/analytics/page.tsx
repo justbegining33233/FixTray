@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { normalizeDateRange } from '@/lib/appointmentValidation';
 import { FaCheckCircle, FaDollarSign, FaExclamationTriangle, FaStopwatch, FaUsers } from 'react-icons/fa';
 import {
   LineChart,
@@ -28,6 +29,7 @@ export default function AnalyticsPage() {
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
   });
+  const [rangeNotice, setRangeNotice] = useState('');
 
   useEffect(() => {
     const id = localStorage.getItem('shopId');
@@ -42,9 +44,7 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      const range = dateRange.start > dateRange.end
-        ? { start: dateRange.end, end: dateRange.start }
-        : dateRange;
+      const range = normalizeDateRange(dateRange.start, dateRange.end);
       const response = await fetch(
         `/api/analytics?shopId=${id}&startDate=${range.start}&endDate=${range.end}`,
         {
@@ -103,11 +103,16 @@ export default function AnalyticsPage() {
         <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, marginBottom: 32 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
             <div>
-              <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>Start Date</label>
+              <label htmlFor="analytics-start" style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>Start Date</label>
               <input
+                id="analytics-start"
                 type="date"
                 value={dateRange.start}
-                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                onChange={(e) => {
+                  const next = normalizeDateRange(e.target.value, dateRange.end);
+                  setDateRange({ start: next.start, end: next.end });
+                  setRangeNotice(next.reversed ? `Those dates were backwards, so the range was swapped to ${next.start} through ${next.end}.` : '');
+                }}
                 style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -119,11 +124,16 @@ export default function AnalyticsPage() {
               />
             </div>
             <div>
-              <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>End Date</label>
+              <label htmlFor="analytics-end" style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>End Date</label>
               <input
+                id="analytics-end"
                 type="date"
                 value={dateRange.end}
-                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                onChange={(e) => {
+                  const next = normalizeDateRange(dateRange.start, e.target.value);
+                  setDateRange({ start: next.start, end: next.end });
+                  setRangeNotice(next.reversed ? `Those dates were backwards, so the range was swapped to ${next.start} through ${next.end}.` : '');
+                }}
                 style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -150,6 +160,9 @@ export default function AnalyticsPage() {
               Update
             </button>
           </div>
+          {rangeNotice && (
+            <div role="status" style={{ marginTop: 12, color: '#fcd34d', fontSize: 13, fontWeight: 600 }}>{rangeNotice}</div>
+          )}
         </div>
 
         {/* Summary Cards */}

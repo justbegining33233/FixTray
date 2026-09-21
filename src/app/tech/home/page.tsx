@@ -307,8 +307,11 @@ export default function TechHome() {
           <div>
             {/* Tab Navigation for Tools */}
             <div style={{marginTop:0, marginBottom:24}}>
-              <div style={{display:'flex', gap:8, borderBottom:'2px solid rgba(255,255,255,0.1)', paddingBottom:2, overflowX:'auto', marginBottom:24}}>
+              <div role="tablist" aria-label="Technician tools" style={{display:'flex', gap:8, borderBottom:'2px solid rgba(255,255,255,0.1)', paddingBottom:2, overflowX:'auto', marginBottom:24}}>
                 <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'job-creation'}
                   onClick={() => setActiveTab('job-creation')}
                   style={{
                     padding:'12px 20px',
@@ -327,6 +330,9 @@ export default function TechHome() {
                   <FaCar style={{marginRight:4}} /> Job Creation
                 </button>
                 <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'job-management'}
                   onClick={() => setActiveTab('job-management')}
                   style={{
                     padding:'12px 20px',
@@ -345,6 +351,9 @@ export default function TechHome() {
                   <FaClipboardList style={{marginRight:4}} /> Job Management
                 </button>
                 <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'field-tools'}
                   onClick={() => setActiveTab('field-tools')}
                   style={{
                     padding:'12px 20px',
@@ -379,6 +388,9 @@ export default function TechHome() {
                   )}
                 </button>
                 <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'resources'}
                   onClick={() => setActiveTab('resources')}
                   style={{
                     padding:'12px 20px',
@@ -397,6 +409,9 @@ export default function TechHome() {
                   <FaBox style={{marginRight:4}} /> Resources
                 </button>
                 <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'technical'}
                   onClick={() => setActiveTab('technical')}
                   style={{
                     padding:'12px 20px',

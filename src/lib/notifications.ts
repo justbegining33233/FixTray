@@ -2,6 +2,7 @@
 // Functions are async; falls back gracefully if Prisma is unavailable.
 import { Notification } from '@/types/customer';
 import { sendStatusUpdateSms } from '@/lib/smsService';
+import { workOrderNotificationCopy } from './notificationCopy';
 
 function toDomainNotification(rec: any): Notification {
   return {
@@ -94,6 +95,7 @@ export async function notifyStatusChange(
   workOrderId: string,
   oldStatus: string,
   newStatus: string,
+  details?: { serviceType?: unknown; issueDescription?: unknown },
 ) {
   const messages: Record<string, string> = {
     'pending': 'Your work order has been received and is pending assignment.',
@@ -102,10 +104,17 @@ export async function notifyStatusChange(
     'closed': 'Your work order has been completed. Thank you!',
     'denied-estimate': 'Your estimate was not approved.',
   };
+  const copy = workOrderNotificationCopy({
+    id: workOrderId,
+    serviceType: details?.serviceType,
+    issueDescription: details?.issueDescription,
+    status: newStatus,
+    kind: 'status',
+  });
   await addNotification(customerId, {
     type: 'status_change',
-    title: 'Work Order Status Updated',
-    message: messages[newStatus] || `Status changed from ${oldStatus} to ${newStatus}`,
+    title: copy.title,
+    message: messages[newStatus] || copy.body || `Status changed from ${oldStatus} to ${newStatus}`,
     workOrderId,
     read: false,
     deliveryMethod: ['email', 'sms', 'push'],

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { forbiddenFromPath, isRoleAllowed, rolesForPath } from './lib/roleAccess';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -52,18 +53,6 @@ function resolveAllowedOrigin(request: NextRequest): string | null {
 }
 
 //  Role definitions 
-
-/** Which roles may access each top-level route prefix */
-const ROUTE_ROLES: Record<string, string[]> = {
-  '/admin':      ['admin', 'superadmin'],
-  '/superadmin': ['superadmin'],
-  '/shop':       ['shop', 'tech', 'manager', 'superadmin'],
-  '/tech':       ['tech',    'superadmin'],
-  '/customer':   ['customer','superadmin'],
-  '/manager':    ['manager', 'superadmin'],
-  '/workorders': ['shop', 'manager', 'tech', 'superadmin'],
-  '/reports':    ['admin', 'shop', 'manager', 'superadmin'],
-};
 
 /** Where to send a logged-in user based on their role */
 const ROLE_HOME: Record<string, string> = {
@@ -173,25 +162,25 @@ export async function proxy(request: NextRequest) {
   const passThrough = () => NextResponse.next({ request: { headers: requestHeaders } });
   // 
 
-  // Allow unauthenticated access to role-specific login pages
-  if (pathname === '/admin/login') return passThrough();
+  const gated = await gateCrossRole(request);
+  if (gated) return gated;
 
-  // Find the route group this path belongs to
-  const entry = Object.entries(ROUTE_ROLES).find(([prefix]) =>
-    pathname.startsWith(prefix)
-  );
+  return passThrough();
+}
 
-  // Not a protected route  pass through
-  if (!entry) return passThrough();
+/**
+ * Wrong-role page visits render the in-app Forbidden page.
+ * Returns null when the request should continue (public, API, or allowed role).
+ */
+export async function gateCrossRole(request: NextRequest): Promise<NextResponse | null> {
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith('/api/') || pathname === '/admin/login') return null;
+  if (!rolesForPath(pathname)) return null;
 
-  const [, allowedRoles] = entry;
-
-  // Read token from cookie (set by every login route) or Authorization header
   const token =
     request.cookies.get('sos_auth')?.value ??
     request.headers.get('authorization')?.replace('Bearer ', '');
 
-  // No token  send to login, preserving the intended destination
   if (!token) {
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
@@ -200,26 +189,22 @@ export async function proxy(request: NextRequest) {
 
   const payload = await verifyJwt(token);
   const role = payload?.role as string | undefined;
-
-  // Unreadable token  send to login
   if (!role) {
-    const loginUrl = new URL('/auth/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // Role is permitted for this route  let through
-  if (allowedRoles.includes(role)) {
+  if (isRoleAllowed(pathname, role)) {
     if (pathname.startsWith('/admin/owner') && payload?.isOwner !== true) {
       return NextResponse.redirect(new URL('/admin/home', request.url));
     }
-
-    return passThrough();
+    return null;
   }
 
-  // Wrong role — show an in-app 403 instead of silently bouncing home
   const forbidden = request.nextUrl.clone();
-  forbidden.pathname = '/forbidden';
-  forbidden.search = `?from=${encodeURIComponent(pathname)}`;
+  const target = forbiddenFromPath(pathname);
+  const [path, search = ''] = target.split('?');
+  forbidden.pathname = path;
+  forbidden.search = search ? `?${search}` : '';
   return NextResponse.rewrite(forbidden);
 }
 

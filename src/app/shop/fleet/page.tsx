@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
+import { validateFleetAccount } from '@/lib/shopFormValidation';
 import { FaBuilding, FaCar, FaFileAlt, FaTimes } from 'react-icons/fa';
 
 interface FleetAccount {
@@ -46,8 +47,8 @@ export default function FleetPage() {
 
   const save = async () => {
     setFormError('');
-    if (!(form as any).companyName?.trim()) { setFormError('Company name is required.'); return; }
-    if (!(form as any).contactName?.trim()) { setFormError('Contact name is required.'); return; }
+    const check = validateFleetAccount(form);
+    if (!check.ok) { setFormError(check.error); return; }
     setSaving(true);
     const token = localStorage.getItem('token');
     const r = await window.fetch('/api/fleet', {
@@ -56,6 +57,10 @@ export default function FleetPage() {
       body: JSON.stringify(form),
     });
     if (r.ok) { setShowAdd(false); setForm({}); fetch2(); }
+    else {
+      const err = await r.json().catch(() => ({}));
+      setFormError(err.error || 'Could not create the fleet account.');
+    }
     setSaving(false);
   };
 
@@ -210,7 +215,7 @@ export default function FleetPage() {
             {F('netTerms', 'Net Terms (days)', 'number')}
             {F('creditLimit', 'Credit Limit ($)', 'number')}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={save} disabled={saving || !String((form as any).companyName || '').trim() || !String((form as any).contactName || '').trim()} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !String((form as any).companyName || '').trim() || !String((form as any).contactName || '').trim() ? 'not-allowed' : 'pointer', opacity: saving || !String((form as any).companyName || '').trim() || !String((form as any).contactName || '').trim() ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Create Account'}</button>
+              <button onClick={save} disabled={saving || !validateFleetAccount(form).ok} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !validateFleetAccount(form).ok ? 'not-allowed' : 'pointer', opacity: saving || !validateFleetAccount(form).ok ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Create Account'}</button>
               <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>

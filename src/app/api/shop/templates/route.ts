@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { getTemplatesByShop, createTemplate } from '@/lib/workorder-templates';
 import { findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
+import { validateWorkOrderTemplate } from '@/lib/shopFormValidation';
 
 // GET /api/shop/templates — List all templates for the shop
 export async function GET(request: NextRequest) {
@@ -27,10 +28,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { name, serviceType, description, repairs, maintenance, estimatedCost, laborHours, notes } = body;
-
-  if (!name || !serviceType) {
-    return NextResponse.json({ error: 'name and serviceType are required' }, { status: 400 });
+  const { description, repairs, maintenance, estimatedCost, laborHours, notes } = body;
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const serviceType = typeof body.serviceType === 'string' ? body.serviceType.trim() : '';
+  const templateCheck = validateWorkOrderTemplate({ name, serviceType });
+  if (!templateCheck.ok) {
+    return NextResponse.json({ error: templateCheck.error }, { status: 400 });
   }
 
   const serviceValidation = await findUnconfiguredShopServices(shopId, [String(serviceType)]);

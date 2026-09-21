@@ -27,6 +27,7 @@ export default function PaymentLinksPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [workOrderId, setWorkOrderId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -50,8 +51,9 @@ export default function PaymentLinksPage() {
   };
 
   const createLink = async () => {
-    if (!amount || parseFloat(amount) <= 0) { setError('Valid amount required'); return; }
+    if (!customerName.trim()) { setError('Customer is required'); return; }
     if (!description.trim()) { setError('Description required'); return; }
+    if (!amount || parseFloat(amount) < 0.01) { setError('Amount must be at least $0.01'); return; }
     setSaving(true);
     setError('');
     try {
@@ -59,7 +61,7 @@ export default function PaymentLinksPage() {
       const res = await fetch('/api/payment-links', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseFloat(amount), description, workOrderId: workOrderId.trim() || undefined }),
+        body: JSON.stringify({ amount: parseFloat(amount), description, customerName: customerName.trim(), workOrderId: workOrderId.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create link');
@@ -67,6 +69,7 @@ export default function PaymentLinksPage() {
       setShowCreate(false);
       setAmount('');
       setDescription('');
+      setCustomerName('');
       setWorkOrderId('');
       fetchLinks();
     } catch (e: any) {
@@ -122,6 +125,11 @@ export default function PaymentLinksPage() {
               <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Create Payment Link</h2>
               {error && <div style={{ color: '#ef4444', marginBottom: 12, fontSize: 14 }}>{error}</div>}
               <div style={{ marginBottom: 16 }}>
+                <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Customer *</label>
+                <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Customer name"
+                  style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
                 <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Work order ID</label>
                 <input value={workOrderId} onChange={e => setWorkOrderId(e.target.value)} placeholder="Paste the work order id so this link belongs to that job"
                   style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
@@ -133,14 +141,14 @@ export default function PaymentLinksPage() {
                     style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
                 </div>
                 <div>
-                  <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Description</label>
+                  <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Description *</label>
                   <input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Brake repair invoice"
                     style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={createLink} disabled={saving || !description.trim() || !amount || parseFloat(amount) < 0.01}
-                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: saving || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: saving || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 0.5 : 1 }}>
+                <button onClick={createLink} disabled={saving || !customerName.trim() || !description.trim() || !amount || parseFloat(amount) < 0.01}
+                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: saving || !customerName.trim() || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: saving || !customerName.trim() || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 0.5 : 1 }}>
                   {saving ? 'Creating...' : 'Create Link'}
                 </button>
                 <button onClick={() => setShowCreate(false)}

@@ -40,7 +40,7 @@ export default function EnvironmentalFeesPage() {
   const save = async () => {
     setFormError('');
     if (!form.name.trim()) { setFormError('Name is required.'); return; }
-    if (!form.amount || isNaN(Number(form.amount))) { setFormError('Valid amount is required.'); return; }
+    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0) { setFormError('Amount must be greater than $0.'); return; }
     setSaving(true);
     const token = localStorage.getItem('token');
     const r = await fetch('/api/environmental-fees', {
@@ -49,6 +49,10 @@ export default function EnvironmentalFeesPage() {
       body: JSON.stringify({ ...form, amount: Number(form.amount) }),
     });
     if (r.ok) { setShowNew(false); setForm({ name: '', amount: '', feeType: 'oil', description: '', unit: 'per service', isActive: true }); load(); }
+    else {
+      const err = await r.json().catch(() => ({}));
+      setFormError(err.error || 'Could not add the fee.');
+    }
     setSaving(false);
   };
 

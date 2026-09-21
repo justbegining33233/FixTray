@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { validateRecurringSchedule } from '@/lib/shopFormValidation';
 
 function nextRunDate(frequency: string, from: Date = new Date()): Date {
   const d = new Date(from);
@@ -74,8 +75,9 @@ export async function POST(request: NextRequest) {
       startDate,
     } = body;
 
-    if (!customerId || !title || !issueDescription || !frequency) {
-      return NextResponse.json({ error: 'customerId, title, issueDescription, and frequency are required' }, { status: 400 });
+    const recurringCheck = validateRecurringSchedule({ customerId, title, issueDescription, frequency });
+    if (!recurringCheck.ok) {
+      return NextResponse.json({ error: recurringCheck.error }, { status: 400 });
     }
 
     const shopId = auth.role === 'shop' ? auth.id : auth.shopId!;

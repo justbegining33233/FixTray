@@ -2,6 +2,7 @@
 import { useState, useEffect, ReactNode } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaCar, FaCheckCircle, FaExclamationTriangle, FaHourglassHalf, FaTag, FaTimesCircle } from 'react-icons/fa';
+import { validateInspectionRecord } from '@/lib/shopFormValidation';
 
 interface StateInspection {
   id: string;
@@ -71,20 +72,30 @@ export default function StateInspectionsPage() {
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [form, setForm] = useState({ inspectionType: 'safety', result: 'pass', stickerId: '', expiryDate: '', odometer: '', fee: '', notes: '', workOrderId: '' });
+  const [form, setForm] = useState({ vehicleDesc: '', vin: '', inspectionType: 'safety', result: 'pass', stickerId: '', expiryDate: '', odometer: '', fee: '', notes: '', workOrderId: '' });
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const inspectionReady = validateInspectionRecord(form).ok;
 
   const load = async () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     const r = await fetch('/api/state-inspections', { headers: { Authorization: `Bearer ${token}` } });
-    if (r.ok) setInspections(await r.json());
+    if (r.ok) {
+      const data = await r.json();
+      setInspections(Array.isArray(data) ? data : []);
+    }
     setLoading(false);
   };
 
   useEffect(() => { if (!user) return; load(); }, [user]);
 
+  const blankInspection = { vehicleDesc: '', vin: '', inspectionType: 'safety', result: 'pass', stickerId: '', expiryDate: '', odometer: '', fee: '', notes: '', workOrderId: '' };
+
   const create = async () => {
+    const check = validateInspectionRecord(form);
+    if (!check.ok) { setFormError(check.error); return; }
+    setFormError('');
     setSaving(true);
     const token = localStorage.getItem('token');
     const r = await fetch('/api/state-inspections', {
@@ -92,7 +103,14 @@ export default function StateInspectionsPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...form, odometer: form.odometer ? Number(form.odometer) : null, fee: form.fee ? Number(form.fee) : null }),
     });
-    if (r.ok) { setShowNew(false); load(); setForm({ inspectionType: 'safety', result: 'pass', stickerId: '', expiryDate: '', odometer: '', fee: '', notes: '', workOrderId: '' }); }
+    if (r.ok) {
+      setShowNew(false);
+      load();
+      setForm(blankInspection);
+    } else {
+      const err = await r.json().catch(() => ({}));
+      setFormError(err.error || 'Could not record the inspection.');
+    }
     setSaving(false);
   };
 
@@ -152,7 +170,7 @@ export default function StateInspectionsPage() {
                   <div key={insp.id} style={{ background: rs.bg, border: `1px solid ${rs.color}30`, borderRadius: 12, padding: 18 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>{insp.vehicle ? `${insp.vehicle.year} ${insp.vehicle.make} ${insp.vehicle.model}` : 'Vehicle'}</div>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{insp.vehicle ? `${insp.vehicle.year} ${insp.vehicle.make} ${insp.vehicle.model}` : (insp as { vehicleDesc?: string }).vehicleDesc || 'Vehicle'}</div>
                         <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{new Date(insp.createdAt).toLocaleDateString()}  {insp.inspectionType.replace('_', ' ')}</div>
                       </div>
                       <span style={{ fontSize: 20 }}>{rs.icon}</span>
@@ -170,8 +188,19 @@ export default function StateInspectionsPage() {
 
       {showNew && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
-          <div style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 460, maxWidth: '100%' }}>
+          <div style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 460, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Record State Inspection</h3>
+            {formError && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', borderRadius: 8, padding: '10px 12px', marginBottom: 12, fontSize: 13 }}>{formError}</div>}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>Vehicle (year / make / model) *</label>
+              <input value={form.vehicleDesc} onChange={e => setForm(p => ({ ...p, vehicleDesc: e.target.value }))} placeholder="2020 Ford F-150"
+                style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>VIN</label>
+              <input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder="Optional if vehicle or work order is set"
+                style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Inspection Template</label>
               <select
@@ -220,7 +249,7 @@ export default function StateInspectionsPage() {
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={create} disabled={saving || !form.inspectionType || !form.result} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !form.inspectionType || !form.result ? 'not-allowed' : 'pointer', opacity: saving || !form.inspectionType || !form.result ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Record Inspection'}</button>
+              <button onClick={create} disabled={saving || !inspectionReady} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !inspectionReady ? 'not-allowed' : 'pointer', opacity: saving || !inspectionReady ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Record Inspection'}</button>
               <button onClick={() => setShowNew(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>

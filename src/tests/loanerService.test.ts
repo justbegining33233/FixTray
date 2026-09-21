@@ -41,12 +41,14 @@ describe('Loaner Vehicle Service', () => {
   it('should calculate late charges ($50/day default)', async () => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() - 3); // 3 days overdue
-    const charges = await loanerService.calculateLateCharges(vehicleId, dueDate);
-    expect(charges).toBe(150); // 3 days * $50
+    const actualBack = new Date();
+    const charges = await loanerService.calculateLateCharges(vehicleId, dueDate, actualBack);
+    expect(charges.charge).toBe(150); // 3 days * $50
+    expect(charges.isLate).toBe(true);
   });
 
   it('should calculate mileage driven', async () => {
-    const mileage = await loanerService.calculateMileageDriven(vehicleId, 50000, 50500);
+    const mileage = loanerService.calculateMileageDriven(50000, 50500);
     expect(mileage).toBe(500);
   });
 
@@ -57,6 +59,6 @@ describe('Loaner Vehicle Service', () => {
 
   it('should get vehicle history', async () => {
     const history = await loanerService.getVehicleHistory(vehicleId);
-    expect(Array.isArray(history)).toBe(true);
+    expect(history.id).toBe(vehicleId);
   });
 });

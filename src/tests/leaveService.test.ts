@@ -11,23 +11,25 @@ describe('Leave/PTO Service', () => {
     const hireDate = new Date();
     hireDate.setFullYear(hireDate.getFullYear() - 6);
 
-    await prisma.user.upsert({
+    await prisma.tech.upsert({
       where: { id: testTechId },
-      update: { hireDate },
+      update: { hireDate, createdAt: hireDate },
       create: {
         id: testTechId,
         email: 'tech@test.com',
+        password: 'test-password',
         firstName: 'Test',
         lastName: 'Tech',
         role: 'tech',
         shopId: testShopId,
         hireDate,
+        createdAt: hireDate,
       },
     });
   });
 
   afterAll(async () => {
-    await prisma.user.deleteMany({ where: { id: testTechId } });
+    await prisma.tech.deleteMany({ where: { id: testTechId } });
   });
 
   it('should calculate base PTO (20 days/year)', async () => {
@@ -44,9 +46,9 @@ describe('Leave/PTO Service', () => {
 
   it('should get leave balance by type', async () => {
     const balance = await leaveService.getLeaveBalance(testTechId);
-    expect(balance).toHaveProperty('vacation');
-    expect(balance).toHaveProperty('sick');
-    expect(balance).toHaveProperty('personal');
+    expect(balance.byType).toHaveProperty('vacation');
+    expect(balance.byType).toHaveProperty('sick');
+    expect(balance.byType).toHaveProperty('personal');
   });
 
   it('should get upcoming leave requests', async () => {
@@ -59,8 +61,8 @@ describe('Leave/PTO Service', () => {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 3); // 3 days vacation
 
-    const isValid = await leaveService.validateLeaveRequest(testTechId, startDate, endDate, 'vacation');
-    expect(typeof isValid).toBe('boolean');
+    const result = await leaveService.validateLeaveRequest(testTechId, startDate, endDate, 'vacation');
+    expect(typeof result.valid).toBe('boolean');
   });
 
   it('should enforce max 10 consecutive vacation days', async () => {
@@ -68,8 +70,8 @@ describe('Leave/PTO Service', () => {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 15); // 15 days (exceeds 10 max)
 
-    const isValid = await leaveService.validateLeaveRequest(testTechId, startDate, endDate, 'vacation');
-    expect(isValid).toBe(false);
+    const result = await leaveService.validateLeaveRequest(testTechId, startDate, endDate, 'vacation');
+    expect(result.valid).toBe(false);
   });
 
   it('should get leave forecast', async () => {

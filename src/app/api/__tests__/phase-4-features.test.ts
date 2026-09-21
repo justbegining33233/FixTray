@@ -435,13 +435,15 @@ describe('Phase 4: Complete Partially-Done Features', () => {
     });
 
     it('should show visual indicator when on break', async () => {
+      const onBreak = true;
       const ui = {
         buttonColor: onBreak ? '#f59e0b' : '#22c55e', // Orange vs Green
         label: onBreak ? 'End Break' : 'Start Break',
       };
 
-      const onBreak = true;
       expect(onBreak).toBeTruthy();
+      expect(ui.buttonColor).toBe('#f59e0b');
+      expect(ui.label).toBe('End Break');
     });
   });
 

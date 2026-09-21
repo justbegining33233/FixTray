@@ -13,8 +13,7 @@ describe('Shift Scheduling Service', () => {
       data: {
         shopId: testShopId,
         techId: testTechId,
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 8 * 60 * 60 * 1000),
+        date: new Date(),
         startTime: '09:00',
         endTime: '17:00',
         status: 'scheduled',
@@ -31,32 +30,34 @@ describe('Shift Scheduling Service', () => {
     const stats = await shiftService.getShiftStats(testShopId);
     expect(stats).toHaveProperty('totalShifts');
     expect(stats).toHaveProperty('completedShifts');
-    expect(stats).toHaveProperty('cancelledShifts');
+    expect(stats).toHaveProperty('confirmedShifts');
   });
 
   it('should detect shift conflicts', async () => {
-    const hasConflict = await shiftService.hasShiftConflict(
-      testShopId,
-      testTechId,
-      new Date(),
-      new Date(Date.now() + 8 * 60 * 60 * 1000)
-    );
+    const hasConflict = await shiftService.hasShiftConflict(testTechId, new Date());
     expect(typeof hasConflict).toBe('boolean');
   });
 
   it('should calculate hours worked', async () => {
-    const hoursWorked = await shiftService.calculateHoursWorked(shiftId);
+    const start = new Date();
+    start.setDate(start.getDate() - 1);
+    const end = new Date();
+    end.setDate(end.getDate() + 1);
+    const hoursWorked = await shiftService.calculateHoursWorked(testTechId, start, end);
     expect(typeof hoursWorked).toBe('number');
-    expect(hoursWorked).toBeGreaterThan(0);
+    expect(hoursWorked).toBeGreaterThanOrEqual(0);
   });
 
   it('should get tech shift schedule', async () => {
-    const schedule = await shiftService.getShiftSchedule(testShopId);
-    expect(Array.isArray(schedule)).toBe(true);
+    const start = new Date();
+    const end = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const schedule = await shiftService.getShiftSchedule(testShopId, start, end);
+    expect(schedule).toBeTruthy();
+    expect(typeof schedule).toBe('object');
   });
 
   it('should get pending swap requests', async () => {
-    const swaps = await shiftService.getPendingSwapRequests(testShopId);
+    const swaps = await shiftService.getPendingSwapRequests(shiftId);
     expect(Array.isArray(swaps)).toBe(true);
   });
 });

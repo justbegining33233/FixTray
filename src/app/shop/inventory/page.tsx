@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaBox, FaExclamationTriangle } from 'react-icons/fa';
+import { formatInventoryType, normalizeInventoryType } from '@/lib/inventoryItem';
 
 export default function ShopInventoryPage() {
   useRequireAuth(['shop']);
@@ -101,16 +102,16 @@ export default function ShopInventoryPage() {
       
       const payload: any = {
         shopId,
-        type: formData.type,
+        type: normalizeInventoryType(formData.type) || formData.type,
         name: formData.name,
         quantity: parseInt(formData.quantity),
         price: parseFloat(formData.price),
+        supplier: formData.supplier,
+        notes: formData.notes,
       };
 
       if (formData.sku) payload.sku = formData.sku;
       if (formData.reorderPoint) payload.reorderPoint = parseInt(formData.reorderPoint);
-      if (formData.supplier) payload.supplier = formData.supplier;
-      if (formData.notes) payload.notes = formData.notes;
 
       const response = await fetch(url, {
         method,
@@ -158,7 +159,7 @@ export default function ShopInventoryPage() {
   const openEditModal = (item: any) => {
     setEditingItem(item);
     setFormData({
-      type: item.type,
+      type: normalizeInventoryType(item.type) || item.type,
       name: item.name,
       sku: item.sku || '',
       quantity: item.quantity.toString(),
@@ -383,7 +384,7 @@ export default function ShopInventoryPage() {
                           {item.sku && <div style={{ color: '#9aa3b2', fontSize: 12 }}>SKU: {item.sku}</div>}
                         </div>
                       </td>
-                      <td style={{ padding: 16, color: '#e5e7eb' }}>{item.type}</td>
+                      <td style={{ padding: 16, color: '#e5e7eb' }}>{formatInventoryType(item.type)}</td>
                       <td style={{ padding: 16, textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                           {isLowStock && <span style={{ color: '#ef4444' }}><FaExclamationTriangle style={{marginRight:4}} /></span>}
@@ -501,12 +502,10 @@ export default function ShopInventoryPage() {
 
                   <div>
                     <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Type *</label>
-                    <input
-                      type="text"
-                      value={formData.type}
+                    <select
+                      value={normalizeInventoryType(formData.type) || formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                       required
-                      placeholder="e.g., Oil, Filter, Part"
                       style={{
                         width: '100%',
                         background: 'rgba(255,255,255,0.05)',
@@ -516,7 +515,14 @@ export default function ShopInventoryPage() {
                         color: '#fff',
                         fontSize: 15,
                       }}
-                    />
+                    >
+                      <option value="" disabled>Select type</option>
+                      <option value="part">Part</option>
+                      <option value="labor">Labor</option>
+                      {formData.type && !normalizeInventoryType(formData.type) && (
+                        <option value={formData.type}>{formData.type}</option>
+                      )}
+                    </select>
                   </div>
                 </div>
 

@@ -10,6 +10,7 @@ import { FaBolt, FaChartBar, FaHeart, FaSearch, FaSyncAlt, FaUser } from 'react-
 import MobileShell from '../../../components/MobileShell';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { useIsNative } from '../../../context/NativeContext';
+import { isUpcomingAppointment } from '@/lib/appointmentValidation';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
@@ -87,8 +88,8 @@ export default function CustomerDashboard() {
       // Fetch appointments
       const apptData = await safeFetchJson('/api/appointments');
       const appointments = Array.isArray(apptData?.appointments) ? apptData.appointments : [];
-      const upcoming = appointments.filter((a: any) => 
-        a.status === 'Scheduled' || a.status === 'Confirmed'
+      const upcoming = appointments.filter((a: any) =>
+        isUpcomingAppointment(a.status, a.scheduledDate)
       ).length;
       
       // Fetch vehicles — API returns { vehicles: [...] }

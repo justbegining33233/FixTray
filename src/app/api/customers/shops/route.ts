@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         services: {
+          where: { isActive: true },
           select: {
             serviceName: true,
             category: true

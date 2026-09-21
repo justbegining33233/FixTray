@@ -187,11 +187,14 @@ model ShopService {
   shopId      String
   serviceName String
   category    String
-  price       Float?
-  duration    Int?
-  description String?
-  createdAt   DateTime @default(now())
-  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  price              Float?
+  duration           Int?
+  description        String?
+  isActive           Boolean  @default(true)
+  availableInShop    Boolean  @default(true)
+  availableRoadside  Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  shop               Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, serviceName, category])
   @@index([shopId])
@@ -390,6 +393,8 @@ model InventoryItem {
   price        Float    @default(0)
   reorderPoint Int?
   rate         Float?
+  supplier     String?
+  notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)

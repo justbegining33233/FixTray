@@ -47,6 +47,7 @@ export default function TechCommandCenter() {
   const [bays, setBays] = useState<Array<{ id: string; name: string; tech: string; jobs: Job[] }>>([]);
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [dashboardSettled, setDashboardSettled] = useState(false);
 
   const toJob = (wo: any, statusLabel: string): Job => ({
     id: wo.id,
@@ -129,6 +130,8 @@ export default function TechCommandCenter() {
       }
     } catch (error) {
       console.error('Error fetching dashboard:', error);
+    } finally {
+      setDashboardSettled(true);
     }
   };
 
@@ -291,16 +294,16 @@ export default function TechCommandCenter() {
               <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Ops Overview</h2>
               <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
                 <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.16)', color:'#93c5fd', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  Roadcalls: {stats.roadcalls}
+                  Roadcalls: {dashboardSettled ? stats.roadcalls : '…'}
                 </span>
                 <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  In-Shop Appointments: {stats.appointments}
+                  In-Shop Appointments: {dashboardSettled ? stats.appointments : '…'}
                 </span>
                 <span style={{padding:'4px 10px', background:'rgba(245,158,11,0.16)', color:'#fbbf24', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  In-Shop Walk-ins: {stats.walkins}
+                  In-Shop Walk-ins: {dashboardSettled ? stats.walkins : '…'}
                 </span>
                 <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  Bays: {stats.baysConfigured} configured ({stats.baysActive} active)
+                  Bays: {dashboardSettled ? `${stats.baysConfigured} configured (${stats.baysActive} active)` : '…'}
                 </span>
               </div>
             </div>
@@ -319,10 +322,15 @@ export default function TechCommandCenter() {
             >
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                 <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
-                <span style={{fontSize:12, color:'#9aa3b2'}}>{pendingWorkOrders.length} job{pendingWorkOrders.length !== 1 ? 's' : ''}</span>
+                <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardSettled ? `${pendingWorkOrders.length} job${pendingWorkOrders.length !== 1 ? 's' : ''}` : 'Loading…'}</span>
               </div>
               <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:520, overflowY:'auto', paddingRight:2}}>
-                {pendingWorkOrders.length === 0 && (
+                {!dashboardSettled && (
+                  <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
+                    Loading jobs…
+                  </div>
+                )}
+                {dashboardSettled && pendingWorkOrders.length === 0 && (
                   <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
                     No jobs waiting  -  nice work.
                   </div>
@@ -335,10 +343,16 @@ export default function TechCommandCenter() {
             <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                 <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Service Bays</div>
-                <span style={{fontSize:12, color:'#9aa3b2'}}>Drag to assign</span>
+                <span style={{fontSize:12, color:'#9aa3b2'}}>Drag to place on a bay</span>
               </div>
 
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: '#9aa3b2' }}>
+                Placing a job on a bay organizes the board. A technician is assigned when they clock in.
+              </p>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10}}>
+                {!dashboardSettled && bays.length === 0 && (
+                  <div style={{color:'#9aa3b2', fontSize:13, padding:12}}>Loading bays…</div>
+                )}
                 {bays.map((bay) => (
                   <div
                     key={bay.id}

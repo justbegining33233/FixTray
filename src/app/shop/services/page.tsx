@@ -113,7 +113,16 @@ export default function ShopServicesPage() {
   // Edit modal
   const [editingService, setEditingService] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ serviceName: '', category: 'diesel', price: '', duration: '', description: '' });
+  const [editForm, setEditForm] = useState({
+    serviceName: '',
+    category: 'diesel',
+    price: '',
+    duration: '',
+    description: '',
+    isActive: true,
+    availableInShop: true,
+    availableRoadside: true,
+  });
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -163,7 +172,16 @@ export default function ShopServicesPage() {
 
   const openEdit = (svc: any) => {
     setEditingService(svc);
-    setEditForm({ serviceName: svc.serviceName, category: svc.category, price: svc.price?.toString() || '', duration: svc.duration?.toString() || '', description: svc.description || '' });
+    setEditForm({
+      serviceName: svc.serviceName,
+      category: svc.category,
+      price: svc.price?.toString() || '',
+      duration: svc.duration?.toString() || '',
+      description: svc.description || '',
+      isActive: svc.isActive !== false,
+      availableInShop: svc.availableInShop !== false,
+      availableRoadside: svc.availableRoadside !== false,
+    });
     setShowEditModal(true);
   };
 
@@ -174,7 +192,17 @@ export default function ShopServicesPage() {
     const res = await fetch(`/api/services/${editingService.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ shopId, serviceName: editForm.serviceName, category: editForm.category, price: editForm.price ? parseFloat(editForm.price) : null, duration: editForm.duration ? parseInt(editForm.duration) : null, description: editForm.description || null }),
+      body: JSON.stringify({
+        shopId,
+        serviceName: editForm.serviceName,
+        category: editForm.category,
+        price: editForm.price ? parseFloat(editForm.price) : null,
+        duration: editForm.duration ? parseInt(editForm.duration) : null,
+        description: editForm.description || null,
+        isActive: editForm.isActive,
+        availableInShop: editForm.availableInShop,
+        availableRoadside: editForm.availableRoadside,
+      }),
     });
     setEditSaving(false);
     if (res.ok) { setShowEditModal(false); setEditingService(null); reload(); }
@@ -304,6 +332,13 @@ export default function ShopServicesPage() {
                           <span style={{ display: 'inline-block', background: col.bg, border: `1px solid ${col.border}`, color: col.text, padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, textTransform: 'uppercase' }}>
                             {CATEGORY_LABELS[svc.category] || svc.category}
                           </span>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: svc.isActive === false ? '#fca5a5' : '#86efac' }}>
+                              {svc.isActive === false ? 'Inactive' : 'Active'}
+                            </span>
+                            {svc.availableInShop !== false && <span style={{ fontSize: 11, color: '#93c5fd' }}>In-shop</span>}
+                            {svc.availableRoadside !== false && <span style={{ fontSize: 11, color: '#fbbf24' }}>Roadside</span>}
+                          </div>
                         </div>
                         <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
                           <button onClick={() => openEdit(svc)} style={{ background: 'rgba(229,51,42,0.2)', border: 'none', color: '#ff6b64', padding: '5px 11px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Edit</button>
@@ -504,9 +539,23 @@ export default function ShopServicesPage() {
                   <input type="number" min="0" value={editForm.duration} onChange={e => setEditForm(p => ({ ...p, duration: e.target.value }))} style={inputStyle} />
                 </div>
               </div>
-              <div style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Description</label>
                 <textarea value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
+              </div>
+              <div style={{ display: 'grid', gap: 10, marginBottom: 22 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#e5e7eb', fontSize: 14 }}>
+                  <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm(p => ({ ...p, isActive: e.target.checked }))} />
+                  Active — hidden from job forms and the customer shop page when off
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#e5e7eb', fontSize: 14 }}>
+                  <input type="checkbox" checked={editForm.availableInShop} onChange={e => setEditForm(p => ({ ...p, availableInShop: e.target.checked }))} />
+                  Offered in-shop
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#e5e7eb', fontSize: 14 }}>
+                  <input type="checkbox" checked={editForm.availableRoadside} onChange={e => setEditForm(p => ({ ...p, availableRoadside: e.target.checked }))} />
+                  Offered roadside
+                </label>
               </div>
               {editError && (
                 <div style={{ marginBottom: 12, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 14px', color: '#f87171', fontSize: 13, fontWeight: 600 }}>{editError}</div>

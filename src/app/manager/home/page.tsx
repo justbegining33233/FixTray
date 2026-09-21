@@ -580,7 +580,7 @@ export default function ManagerHome() {
                       <Link href="/workorders/inshop" style={{padding:12, background:'rgba(229,51,42,0.2)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:700, border:'1px solid rgba(229,51,42,0.3)'}}>
                         <FaClipboardList style={{marginRight:4}} /> Create In-Shop Work Order
                       </Link>
-                      <Link href="/workorders/roadside" style={{padding:12, background:'rgba(59,130,246,0.2)', borderRadius:8, textDecoration:'none', color:'#60a5fa', fontSize:14, fontWeight:700, border:'1px solid rgba(59,130,246,0.35)'}}>
+                      <Link href="/shop/new-roadside-job" style={{padding:12, background:'rgba(59,130,246,0.2)', borderRadius:8, textDecoration:'none', color:'#60a5fa', fontSize:14, fontWeight:700, border:'1px solid rgba(59,130,246,0.35)'}}>
                         <FaClipboardList style={{marginRight:4}} /> Create Roadside Work Order
                       </Link>
                       <Link href="/shop/home" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600, cursor:'pointer'}}>

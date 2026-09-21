@@ -194,7 +194,7 @@ export default function ShopHome() {
 
   const quickActions: QuickAction[] = [
     { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/workorders/inshop', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
-    { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/workorders/roadside', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
+    { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/shop/new-roadside-job', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
     { label: <><FaClipboardList style={{marginRight:6}}/>Estimates</>, href: '/shop/estimates', tint: 'rgba(168,85,247,0.18)', color: '#c084fc', border: 'rgba(168,85,247,0.28)' },
     { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
     { label: <><FaIndustry style={{marginRight:6}}/>Vendors & Parts</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
@@ -338,12 +338,13 @@ export default function ShopHome() {
       setPendingWorkOrders(prev => prev.filter(o => o.id !== orderId));
     }
 
-    // Persist assignment to server
+    // Persist board placement. This records the bay, not a technician.
+    // Clock-in is what assigns the technician.
     try {
       const bayNumber = destinationId.startsWith('bay-') ? Number(destinationId.replace('bay-', '')) : null;
       await persistPlacement(orderId, destinationId === 'roadcall' ? null : bayNumber, 'assigned');
     } catch {
-      console.error('Failed to persist bay assignment');
+      console.error('Failed to persist bay placement');
     }
   };
 
@@ -649,8 +650,11 @@ export default function ShopHome() {
                 <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Service Bays</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drop to assign</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drag to place on a bay</span>
                   </div>
+                  <p style={{ margin: '0 0 10px', fontSize: 12, color: '#9aa3b2' }}>
+                    Placing a job on a bay organizes the board. A technician is assigned when they clock in.
+                  </p>
 
                   <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10}}>
                     {bays.map((bay) => (
@@ -676,7 +680,7 @@ export default function ShopHome() {
                         </div>
 
                         {bay.jobs.length === 0 ? (
-                          <div style={{fontSize:12, color:'#9aa3b2'}}>Drop work order here</div>
+                          <div style={{fontSize:12, color:'#9aa3b2'}}>Drop a job here to place it</div>
                         ) : (
                           <div style={{display:'flex', flexDirection:'column', gap:8}}>
                             {bay.jobs.map((job) => (
@@ -720,7 +724,7 @@ export default function ShopHome() {
 
                         {dragOverTarget === bay.id && (
                           <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(34,197,94,0.75)', borderRadius:8, background:'rgba(34,197,94,0.12)', color:'#22c55e', fontSize:11, fontWeight:700}}>
-                            Release to assign here
+                            Release to place on this bay
                           </div>
                         )}
                       </div>
@@ -742,10 +746,10 @@ export default function ShopHome() {
                       }}
                     >
                       <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13, marginBottom:8}}><FaTruck style={{marginRight:4}} /> Roadcall Queue</div>
-                      <div style={{fontSize:12, color:'#9aa3b2'}}>Drop work order here for mobile service dispatch</div>
+                      <div style={{fontSize:12, color:'#9aa3b2'}}>Drop a job here to place it in the roadcall queue</div>
                       {dragOverTarget === 'roadcall' && (
                         <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(59,130,246,0.75)', borderRadius:8, background:'rgba(59,130,246,0.12)', color:'#60a5fa', fontSize:11, fontWeight:700}}>
-                          Release to dispatch as roadcall
+                          Release to place in the roadcall queue
                         </div>
                       )}
                     </div>

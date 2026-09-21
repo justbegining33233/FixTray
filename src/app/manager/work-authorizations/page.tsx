@@ -5,7 +5,7 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { FaCheckCircle, FaHourglassHalf, FaLink, FaPencilAlt } from 'react-icons/fa';
+import { FaCheckCircle, FaHourglassHalf, FaPencilAlt } from 'react-icons/fa';
 
 interface WorkAuthorization {
   id: string;
@@ -33,7 +33,6 @@ export default function ManagerWorkAuthorizationsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [auths, setAuths] = useState<WorkAuthorization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -52,13 +51,6 @@ export default function ManagerWorkAuthorizationsPage() {
     return 'pending';
   };
 
-  const copyLink = (authToken: string) => {
-    const url = `${window.location.origin}/customer/authorization/${authToken}`;
-    navigator.clipboard.writeText(url);
-    setCopied(authToken);
-    setTimeout(() => setCopied(''), 2000);
-  };
-
   if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
   if (!user) return null;
 
@@ -75,7 +67,7 @@ export default function ManagerWorkAuthorizationsPage() {
           ) : auths.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
               <FaPencilAlt style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p>No work authorizations yet.</p>
+              <p>No signed authorizations yet. They appear after a customer accepts an estimate and signs. Submitting a quote does not create one.</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -92,11 +84,14 @@ export default function ManagerWorkAuthorizationsPage() {
                         </span>
                         <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{a.workSummary}</span>
                       </div>
-                      <button onClick={() => copyLink(a.token)} style={{ background: 'rgba(229,51,42,0.15)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>
-                        <FaLink style={{ marginRight: 4 }} />{copied === a.token ? 'Copied!' : 'Copy Link'}
-                      </button>
+                      {a.workOrderId ? (
+                        <a href={`/workorders/${a.workOrderId}`} style={{ background: 'rgba(229,51,42,0.15)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13, textDecoration: 'none' }}>
+                          Open work order
+                        </a>
+                      ) : null}
                     </div>
                     {a.estimateTotal && <p style={{ color: '#9aa3b2', fontSize: 14, marginTop: 8 }}>Estimate: ${a.estimateTotal.toFixed(2)}</p>}
+                    {a.signerName && <p style={{ color: '#22c55e', fontSize: 13, marginTop: 4 }}>Signed by {a.signerName}{a.signedAt ? ` on ${new Date(a.signedAt).toLocaleDateString()}` : ''}</p>}
                     <p style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>Created {new Date(a.createdAt).toLocaleDateString()}</p>
                   </div>
                 );

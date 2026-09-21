@@ -9,6 +9,7 @@ import {
   FaPaperPlane, FaSave, FaEnvelope, FaSearch, FaPaperclip, FaTimes, FaStopwatch,
 } from 'react-icons/fa';
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
+import { buildEstimateSave } from '@/lib/estimateAuthorization';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +19,7 @@ type Vehicle   = { id: string; vehicleType: string; make?: string; model?: strin
 type LineItem = { _key: string; type: 'labor' | 'part' | 'misc'; description: string; partNumber: string; price: number; qty: number; status: 'new' | 'saved'; poId?: string; poCost?: number; };
 
 type WorkOrder = {
-  id: string; status: string; paymentStatus: string;
+  id: string; status: string; paymentStatus: string; amountPaid?: number | null;
   vehicleType: string; serviceLocation: string;
   issueDescription: string | Record<string, unknown>;
   bay?: number | null; estimatedCost?: number | null;
@@ -47,6 +48,28 @@ function toArr(raw: unknown): Record<string, unknown>[] {
 }
 
 function parseLineItems(wo: WorkOrder): LineItem[] {
+  try {
+    const est = wo.estimate ? (typeof wo.estimate === 'string' ? JSON.parse(wo.estimate) : wo.estimate) as Record<string, unknown> : null;
+    if (Array.isArray(est?.lineItems) && est.lineItems.length > 0) {
+      const raw = est.lineItems as Record<string, unknown>[];
+      const kinds = raw.map((item) => {
+        const kind = String(item.kind || '').toLowerCase();
+        return kind === 'part' || kind === 'labor' || kind === 'misc' ? kind : '';
+      });
+      if (kinds.every(Boolean)) {
+        return raw.map((item, index) => ({
+          _key: uid(),
+          type: kinds[index] as LineItem['type'],
+          description: String(item.description || ''),
+          partNumber: String(item.partNumber || item.sku || ''),
+          price: Number(item.unitPrice || item.price || 0),
+          qty: Number(item.quantity || item.hours || 1),
+          status: 'saved' as const,
+        }));
+      }
+    }
+  } catch { /* fall through to legacy fields */ }
+
   const items: LineItem[] = [];
   // Labor from techLabor
   toArr(wo.techLabor).forEach(item => {
@@ -144,6 +167,9 @@ export default function WorkOrderDetailPage() {
   const [submittingEst, setSubmittingEst] = useState(false);
   const [submitEstMsg,  setSubmitEstMsg]  = useState('');
   const [userRole,      setUserRole]      = useState<string | null>(null);
+  const [closeoutBusy,  setCloseoutBusy]  = useState<string | null>(null);
+  const [closeoutMsg,   setCloseoutMsg]   = useState('');
+  const [paymentUrl,    setPaymentUrl]    = useState<string | null>(null);
 
   // Messaging state
   const [messages,   setMessages]     = useState<WOMessage[]>([]);
@@ -213,6 +239,18 @@ export default function WorkOrderDetailPage() {
       ))
       .finally(() => setLoading(false));
 
+    if (token && (role === 'shop' || role === 'manager' || role === 'admin' || role === 'superadmin')) {
+      fetch(`/api/payment-links?workOrderId=${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((response) => response.ok ? response.json() : [])
+        .then((links) => {
+          const latest = Array.isArray(links) ? links[0] : null;
+          if (latest?.token && typeof window !== 'undefined') {
+            setPaymentUrl(`${window.location.origin}/customer/pay/${latest.token}`);
+          }
+        })
+        .catch(() => undefined);
+    }
+
     // Check if tech/manager already has an open clock-in for today
     if ((role === 'tech' || role === 'manager') && uid2 && token) {
       const today = new Date().toISOString().split('T')[0];
@@ -269,21 +307,30 @@ export default function WorkOrderDetailPage() {
     setSaving(true); setSaveMsg('');
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const laborItems = lineItems.filter(li => li.type === 'labor');
-      const partItems  = lineItems.filter(li => li.type === 'part');
-      const miscItems  = lineItems.filter(li => li.type === 'misc');
+      const payload = buildEstimateSave(
+        lineItems.map((li) => ({
+          description: li.description,
+          quantity: li.qty,
+          unitPrice: li.price,
+          kind: li.type,
+          partNumber: li.partNumber,
+        })),
+        0,
+        '',
+      );
+      const existingEstimate = wo?.estimate && typeof wo.estimate === 'object'
+        ? wo.estimate as Record<string, unknown>
+        : {};
       const res = await fetch(`/api/workorders/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
-          techLabor: laborItems.map(({ description, qty, price }) => ({ description, hours: qty, rate: price })),
-          partsUsed: partItems.map(({ description, partNumber, qty, price }) => ({ name: description, sku: partNumber || undefined, quantity: qty, unitPrice: price })),
+          ...payload,
           estimate: {
-            lineItems: miscItems.map(({ description, qty, price }) => ({ description, quantity: qty, unitPrice: price, total: qty * price })),
-            subtotal: grandTotal,
-            total: grandTotal,
+            ...payload.estimate,
+            ...(existingEstimate.customerDecision ? { customerDecision: existingEstimate.customerDecision } : {}),
+            ...(typeof existingEstimate.notes === 'string' && existingEstimate.notes ? { notes: existingEstimate.notes } : {}),
           },
-          estimatedCost: grandTotal,
         }),
       });
       if (res.ok) {
@@ -319,6 +366,39 @@ export default function WorkOrderDetailPage() {
       }
     } catch { setSubmitEstMsg('Failed.'); setTimeout(() => setSubmitEstMsg(''), 3000); }
     finally { setSubmittingEst(false); }
+  };
+
+  const handleCloseout = async (action: 'invoice' | 'paid' | 'complete') => {
+    if (!id) return;
+    setCloseoutBusy(action);
+    setCloseoutMsg('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/workorders/${id}/closeout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCloseoutMsg(data.error || 'Closeout failed.');
+        return;
+      }
+      if (data.workOrder) setWo(data.workOrder);
+      if (data.paymentLink?.url && typeof window !== 'undefined') {
+        const url = `${window.location.origin}${data.paymentLink.url}`;
+        setPaymentUrl(url);
+        setCloseoutMsg('Payment link created for this work order.');
+      } else if (action === 'paid') {
+        setCloseoutMsg('Marked paid. Complete the job when the work is finished.');
+      } else if (action === 'complete') {
+        setCloseoutMsg('Job completed.');
+      }
+    } catch {
+      setCloseoutMsg('Closeout failed.');
+    } finally {
+      setCloseoutBusy(null);
+    }
   };
 
   // ── Send message (with optional media) ───────────────────────────────────
@@ -601,6 +681,66 @@ export default function WorkOrderDetailPage() {
           </Card>
         </div>
 
+        {userRole && ['shop', 'manager', 'admin', 'superadmin'].includes(userRole) && (
+          <div style={{ marginTop: 16 }}>
+            <Card title="Closeout" icon={<FaDollarSign />}>
+              <p style={{ margin: '0 0 12px', fontSize: 13, color: '#9aa3b2', lineHeight: 1.5 }}>
+                {wo.status === 'estimate-submitted'
+                  ? 'Waiting for the customer to accept and sign. Invoice unlocks after that signature.'
+                  : wo.status === 'denied-estimate'
+                    ? 'The customer denied this quote. No work authorization was created. Reissue the estimate to continue.'
+                    : wo.status === 'completed' || wo.status === 'closed'
+                      ? 'This job is complete.'
+                      : wo.paymentStatus === 'paid'
+                        ? 'Payment is recorded. Complete the job when the work is finished.'
+                        : wo.status === 'waiting-for-payment'
+                          ? 'Payment was requested for this work order. Mark it paid, then complete the job.'
+                          : (wo.status === 'in-progress' || wo.status === 'assigned')
+                            ? 'Invoice this work order, mark it paid, then complete the job.'
+                            : 'Invoice unlocks after the customer accepts and signs and the job is in progress.'}
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => handleCloseout('invoice')}
+                  disabled={!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)}
+                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)) ? 0.45 : 1 }}
+                >
+                  {closeoutBusy === 'invoice' ? 'Requesting…' : 'Invoice / Request payment'}
+                </button>
+                <button
+                  onClick={() => handleCloseout('paid')}
+                  disabled={!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid'}
+                  style={{ background: 'rgba(245,158,11,0.18)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid') ? 0.45 : 1 }}
+                >
+                  {closeoutBusy === 'paid' ? 'Saving…' : 'Mark paid'}
+                </button>
+                <button
+                  onClick={() => handleCloseout('complete')}
+                  disabled={!!closeoutBusy || wo.paymentStatus !== 'paid' || wo.status === 'completed' || wo.status === 'closed'}
+                  style={{ background: 'rgba(34,197,94,0.18)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || wo.paymentStatus !== 'paid' || wo.status === 'completed' || wo.status === 'closed') ? 0.45 : 1 }}
+                >
+                  {closeoutBusy === 'complete' ? 'Completing…' : 'Complete job'}
+                </button>
+              </div>
+              {paymentUrl && (
+                <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 10 }}>
+                  <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Payment link for this work order</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <code style={{ fontSize: 12, color: '#e5e7eb', wordBreak: 'break-all' }}>{paymentUrl}</code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(paymentUrl)}
+                      style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+                    >
+                      Copy link
+                    </button>
+                  </div>
+                </div>
+              )}
+              {closeoutMsg && <div style={{ marginTop: 10, fontSize: 13, color: '#e5e7eb' }}>{closeoutMsg}</div>}
+            </Card>
+          </div>
+        )}
+
         {/* Issue */}
         <div style={{ marginTop: 16 }}>
           <Card title="Issue Description" icon={<FaExclamationCircle />}>
@@ -609,7 +749,7 @@ export default function WorkOrderDetailPage() {
         </div>
 
         {/* ── Repairs & Parts ── */}
-        <div style={{ marginTop: 16 }}>
+        <div id="line-items" style={{ marginTop: 16 }}>
           <Card
             title="Line Items"
             icon={<FaBox />}

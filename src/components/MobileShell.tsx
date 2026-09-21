@@ -77,11 +77,12 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     tabGroups: [
       {
-        match: ['/shop/home', '/shop/calendar', '/shop/dvi', '/shop/work-authorizations', '/shop/recurring-workorders', '/shop/new-inshop-job', '/shop/waiting-room'],
+        match: ['/shop/home', '/shop/calendar', '/shop/dvi', '/shop/work-authorizations', '/shop/recurring-workorders', '/shop/new-inshop-job', '/shop/waiting-room', '/shop/estimates'],
         tabs: [
           { ico: '🗂️', label: 'Jobs', href: '/shop/home' },
           { ico: '📅', label: 'Calendar', href: '/shop/calendar' },
           { ico: '🏪', label: 'Ops', href: '/shop/home' },
+          { ico: '💰', label: 'Estimates', href: '/shop/estimates' },
           { ico: '🔍', label: 'DVI', href: '/shop/dvi' },
           { ico: '📝', label: 'Auth', href: '/shop/work-authorizations' },
         ],
@@ -132,6 +133,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
           { ico: '📅', label: 'Calendar', href: '/shop/calendar' },
           { ico: '🏪', label: 'Ops Overview / Waiting Room', href: '/shop/home' },
           { ico: '🔍', label: 'DVI Inspections', href: '/shop/dvi' },
+          { ico: '💰', label: 'Estimates', href: '/shop/estimates' },
           { ico: '📝', label: 'Work Authorizations', href: '/shop/work-authorizations' },
           { ico: '🔄', label: 'Recurring Jobs', href: '/shop/recurring-workorders' },
         ],
@@ -192,7 +194,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     tabGroups: [
       {
-        match: ['/tech/home', '/tech/dvi', '/tech/photos', '/tech/new-inshop-job', '/tech/new-roadside-job'],
+        match: ['/tech/home', '/tech/dvi', '/tech/photos', '/tech/new-inshop-job', '/tech/new-roadside-job', '/tech/estimates'],
         tabs: [
           { ico: '🗂️', label: 'My Jobs', href: '/tech/dvi' },
           { ico: '🔍', label: 'DVI', href: '/tech/dvi' },
@@ -234,6 +236,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         title: 'My Work',
         items: [
           { ico: '🗂️', label: 'My Jobs', href: '/tech/dvi' },
+          { ico: '💰', label: 'Estimates', href: '/tech/estimates' },
           { ico: '🔍', label: 'DVI / Inspections', href: '/tech/dvi' },
           { ico: '📸', label: 'Job Photos', href: '/tech/photos' },
           { ico: '🚐', label: 'Roadside Jobs', href: '/tech/new-roadside-job' },

@@ -49,6 +49,7 @@ const shopGroups: MenuGroup[] = [
       { icon: <FaListAlt />,  label: 'All Orders',       href: '/shop/home' },
       { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
       { icon: <FaRoad />,  label: 'Roadside Jobs',    href: '/workorders/roadside' },
+      { icon: <FaClipboardList />, label: 'Estimates', href: '/shop/estimates' },
       { icon: <FaEdit />,  label: 'Authorizations',    href: '/shop/work-authorizations' },
       { icon: <FaTools />,  label: 'Templates',          href: '/shop/services' },
       { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/shop/recurring-workorders' },
@@ -153,6 +154,7 @@ const managerGroups: MenuGroup[] = [
       { icon: <FaListAlt />,  label: 'All Orders',       href: '/manager/home' },
       { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
       { icon: <FaRoad />,  label: 'Roadside Jobs',    href: '/workorders/roadside' },
+      { icon: <FaClipboardList />, label: 'Estimates', href: '/manager/estimates' },
       { icon: <FaEdit />,  label: 'Authorizations',    href: '/manager/work-authorizations' },
       { icon: <FaTools />,  label: 'Templates',          href: '/manager/templates' },
       { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/manager/recurring-workorders' },
@@ -200,6 +202,7 @@ const techGroups: MenuGroup[] = [
     items: [
       { icon: <FaClock />, label: 'Time Clock',       href: '/tech/timeclock' },
       { icon: <FaListAlt />,  label: 'Command Center',  href: '/tech/command-center' },
+      { icon: <FaClipboardList />, label: 'Estimates', href: '/tech/estimates' },
       { icon: <FaIndustry />,  label: 'New In-Shop Job',  href: '/tech/new-inshop-job' },
       { icon: <FaRoad />,  label: 'New Roadside Job', href: '/tech/new-roadside-job' },
     ],

@@ -4,6 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { FaBatteryFull, FaCheckCircle, FaExclamationTriangle, FaFlagCheckered, FaHourglassHalf, FaMobileAlt, FaOilCan, FaStar, FaWrench } from 'react-icons/fa';
+import { useAuth } from '@/contexts/AuthContext';
+import { toWaitingBoardStatus } from '@/lib/waitingRoomBoard';
 
 interface WaitingRoomEntry {
   id: string;
@@ -38,18 +40,43 @@ const PROMOS = [
 
 function WaitingRoomContent() {
   const searchParams = useSearchParams();
-  const shopId = searchParams?.get('shopId') || '';
+  const { user } = useAuth();
+  const queryShopId = searchParams?.get('shopId') || '';
+  const sessionShopId = user?.shopId || (user?.role === 'shop' ? user.id : '') || '';
+  const [shopId, setShopId] = useState(queryShopId || sessionShopId);
+  const [shopResolved, setShopResolved] = useState(false);
   const [data, setData] = useState<WaitingRoomData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [time, setTime] = useState(new Date());
   const [promoIdx, setPromoIdx] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    const storedShop = window.localStorage.getItem('shopId') || '';
+    const role = window.localStorage.getItem('userRole') || '';
+    const userId = window.localStorage.getItem('userId') || '';
+    setShopId(queryShopId || sessionShopId || storedShop || (role === 'shop' ? userId : ''));
+    setShopResolved(true);
+  }, [queryShopId, sessionShopId]);
+
   const load = async () => {
-    const r = await fetch(`/api/waiting-room${shopId ? `?shopId=${shopId}` : ''}`);
-    if (r.ok) setData(await r.json());
+    const qs = shopId ? `?shopId=${encodeURIComponent(shopId)}` : '';
+    const r = await fetch(`/api/waiting-room${qs}`);
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      setData(null);
+      setLoadError(typeof body.error === 'string' ? body.error : 'Unable to load the waiting room');
+      setLoaded(true);
+      return;
+    }
+    setLoadError(null);
+    setData(await r.json());
+    setLoaded(true);
   };
 
   useEffect(() => {
+    if (!shopResolved) return;
     load();
     intervalRef.current = setInterval(load, 60000);
     const timeTick = setInterval(() => setTime(new Date()), 1000);
@@ -59,11 +86,12 @@ function WaitingRoomContent() {
       clearInterval(timeTick);
       clearInterval(promoTick);
     };
-  }, [shopId]);
+  }, [shopId, shopResolved]);
 
-  const completed = data?.orders.filter(o => o.status === 'completed') || [];
-  const inProgress = data?.orders.filter(o => o.status === 'in_progress') || [];
-  const waiting = data?.orders.filter(o => o.status === 'pending') || [];
+  const orders = data?.orders || [];
+  const completed = orders.filter(o => toWaitingBoardStatus(o.status) === 'completed');
+  const inProgress = orders.filter(o => toWaitingBoardStatus(o.status) === 'in_progress');
+  const waiting = orders.filter(o => toWaitingBoardStatus(o.status) === 'pending');
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: '"Inter",system-ui,sans-serif', overflow: 'hidden' }}>
@@ -104,10 +132,35 @@ function WaitingRoomContent() {
       <div style={{ padding: '32px 48px', display: 'grid', gridTemplateColumns: completed.length > 0 ? '2fr 1fr' : '1fr', gap: 32 }}>
         {/* Vehicle Status */}
         <div>
-          {data?.orders.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '80px 0', opacity: 0.5 }}>
+          {loaded && loadError && (
+            <div style={{ textAlign: 'center', padding: '80px 20px', maxWidth: 640, margin: '0 auto' }}>
+              <div style={{ fontSize: 48 }}><FaExclamationTriangle style={{ color: '#f59e0b' }} /></div>
+              <div style={{ fontSize: 22, fontWeight: 800, marginTop: 16 }}>
+                {loadError === 'shopId required' ? 'Waiting room needs a shop' : 'Waiting room could not refresh'}
+              </div>
+              <div style={{ fontSize: 15, color: '#9ca3af', marginTop: 10, lineHeight: 1.5 }}>
+                {loadError === 'shopId required'
+                  ? 'Open this board while signed in as the shop, or add ?shopId= for the lobby display. Pending in-shop appointments from Shop Home show here with no extra check-in.'
+                  : loadError}
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
+                <Link href="/shop/home" style={{ background: '#e5332a', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Shop Home</Link>
+                <Link href="/auth/login" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Sign In</Link>
+              </div>
+            </div>
+          )}
+
+          {loaded && !loadError && orders.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '80px 20px', maxWidth: 680, margin: '0 auto' }}>
               <div style={{ fontSize: 60 }}><FaFlagCheckered style={{marginRight:4}} /></div>
-              <div style={{ fontSize: 20, marginTop: 16 }}>All vehicles up to date</div>
+              <div style={{ fontSize: 20, marginTop: 16 }}>No vehicles in the waiting room</div>
+              <div style={{ fontSize: 15, color: '#9ca3af', marginTop: 10, lineHeight: 1.5 }}>
+                Pending in-shop appointments from Shop Home and the calendar appear here automatically. A separate check-in is not required.
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
+                <Link href="/shop/home" style={{ background: '#e5332a', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Shop Home</Link>
+                <Link href="/shop/calendar" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Calendar</Link>
+              </div>
             </div>
           )}
 
@@ -154,7 +207,7 @@ function WaitingRoomContent() {
 }
 
 function StatusCard({ order }: { order: WaitingRoomEntry }) {
-  const s = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+  const s = STATUS_CONFIG[toWaitingBoardStatus(order.status)] || STATUS_CONFIG.pending;
   return (
     <div style={{ background: s.bg, border: `1px solid ${s.color}30`, borderRadius: 14, padding: '14px 20px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>

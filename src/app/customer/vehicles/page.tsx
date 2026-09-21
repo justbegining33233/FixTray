@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaBuilding, FaCar, FaTruck } from 'react-icons/fa';
+import { DEFAULT_VEHICLE_TYPE, normalizeVehicleType, VEHICLE_TYPE_OPTIONS, vehicleTypeLabel } from '@/lib/vehicleTypes';
 
 interface Vehicle {
   id: string;
@@ -27,7 +28,7 @@ export default function CustomerVehiclesPage() {
   const [vehicleMsg, setVehicleMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string|null>(null);
   const [formData, setFormData] = useState({
-    vehicleType: 'personal-vehicle',
+    vehicleType: DEFAULT_VEHICLE_TYPE,
     make: '',
     model: '',
     year: new Date().getFullYear(),
@@ -169,7 +170,7 @@ export default function CustomerVehiclesPage() {
   const startEdit = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
-      vehicleType: vehicle.vehicleType,
+      vehicleType: normalizeVehicleType(vehicle.vehicleType),
       make: vehicle.make || '',
       model: vehicle.model || '',
       year: vehicle.year || new Date().getFullYear(),
@@ -235,8 +236,8 @@ export default function CustomerVehiclesPage() {
                   {vehicle.year} {vehicle.make} {vehicle.model}
                 </h3>
                 
-                <div style={{ textAlign: 'center', color: '#9aa3b2', fontSize: 14, marginBottom: 20, textTransform: 'capitalize' }}>
-                  {vehicle.vehicleType.replace('-', ' ')}
+                <div style={{ textAlign: 'center', color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>
+                  {vehicleTypeLabel(vehicle.vehicleType)}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
@@ -296,12 +297,9 @@ export default function CustomerVehiclesPage() {
                   onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
-                  <option value="personal-vehicle">Personal Vehicle</option>
-                  <option value="car">Car</option>
-                  <option value="semi-truck">Semi Truck</option>
-                  <option value="trailer">Trailer</option>
-                  <option value="equipment">Equipment</option>
-                  <option value="personal-vehicle">Personal Vehicle</option>
+                  {VEHICLE_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaArrowDown, FaArrowUp, FaCar, FaExclamationTriangle, FaTrash } from 'react-icons/fa';
+import { validateLoanerVehicle } from '@/lib/shopFormValidation';
 
 interface Loaner {
   id: string;
@@ -39,6 +40,7 @@ export default function LoanersPage() {
   const [modalMode, setModalMode] = useState<'checkout' | 'checkin' | 'edit'>('checkout');
   const [form, setForm] = useState<Partial<Loaner>>({});
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [deleteLoanerId, setDeleteLoanerId] = useState<string|null>(null);
 
   useEffect(() => {
@@ -57,16 +59,28 @@ export default function LoanersPage() {
     }
   };
 
+  const loanerReady = validateLoanerVehicle(form).ok;
+
   const save = async (data: Partial<Loaner>) => {
-    if (!String(data.make || '').trim() || !String(data.model || '').trim()) return;
+    setFormError('');
+    if (showAdd) {
+      const check = validateLoanerVehicle(data);
+      if (!check.ok) { setFormError(check.error); return; }
+    }
     setSaving(true);
     const token = localStorage.getItem('token');
     if (showAdd) {
-      await fetch('/api/loaners', {
+      const r = await fetch('/api/loaners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        setFormError(err.error || 'Could not add the loaner.');
+        setSaving(false);
+        return;
+      }
       setShowAdd(false);
     } else if (modalLoaner) {
       await fetch(`/api/loaners/${modalLoaner.id}`, {
@@ -229,10 +243,11 @@ export default function LoanersPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
           <div style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 440, maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Add Loaner Vehicle</h3>
+            {formError && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', borderRadius: 8, padding: '10px 12px', marginBottom: 12, fontSize: 13 }}>{formError}</div>}
             {(['make', 'model', 'year', 'color', 'licensePlate', 'vin'] as (keyof Loaner)[]).map(k => F(k))}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => save({ ...form, status: 'available' })} disabled={saving || !String(form.make || '').trim() || !String(form.model || '').trim()}
-                style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !String(form.make || '').trim() || !String(form.model || '').trim() ? 'not-allowed' : 'pointer', opacity: saving || !String(form.make || '').trim() || !String(form.model || '').trim() ? 0.5 : 1 }}>
+              <button onClick={() => save({ ...form, status: 'available' })} disabled={saving || !loanerReady}
+                style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !loanerReady ? 'not-allowed' : 'pointer', opacity: saving || !loanerReady ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : 'Add Vehicle'}
               </button>
               <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>

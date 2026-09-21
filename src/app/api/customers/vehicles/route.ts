@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/middleware';
+import { normalizeVehicleType } from '@/lib/vehicleTypes';
 
 // GET - Get customer vehicles
 export async function GET(request: NextRequest) {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { make, model, year, vin, licensePlate, _color, _mileage } = body;
+    const { make, model, year, vin, licensePlate, vehicleType } = body;
 
     if (!make || !model || !year) {
       return NextResponse.json(
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     const vehicle = await prisma.vehicle.create({
       data: {
         customerId: user.id,
-        vehicleType: 'car',
+        vehicleType: normalizeVehicleType(vehicleType),
         make,
         model,
         year: parseInt(year),

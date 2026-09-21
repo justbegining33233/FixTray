@@ -91,6 +91,7 @@ const shopGroups: MenuGroup[] = [
       { icon: <FaBuilding />, label: 'Fleet Accounts',       href: '/shop/fleet' },
       { icon: <FaSearch />, label: 'DVI Inspections',      href: '/shop/dvi' },
       { icon: <FaCamera />, label: 'Condition Reports',    href: '/shop/condition-reports' },
+      { icon: <FaCamera />, label: 'Photos',               href: '/shop/photos' },
       { icon: <FaCar />, label: 'State Inspections',    href: '/shop/inspections' },
       { icon: <FaLeaf />, label: 'Environmental Fees',   href: '/shop/environmental-fees' },
     ],

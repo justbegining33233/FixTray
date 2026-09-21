@@ -1122,6 +1122,7 @@ model Referral {
   id                 String    @id @default(cuid())
   shopId             String
   referrerCustomerId String
+  referredName       String?
   referredEmail      String?
   referredCustomerId String?
   referralCode       String    @unique
@@ -1168,9 +1169,11 @@ model StateInspection {
 model EnvironmentalFee {
   id        String   @id @default(cuid())
   shopId    String
-  name      String
-  feeAmount Float    @default(0)
-  unit      String   @default("per_job")
+  name        String
+  feeAmount   Float    @default(0)
+  feeType     String?
+  description String?
+  unit        String   @default("per_job")
   taxable   Boolean  @default(false)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -1265,6 +1268,7 @@ model PaymentLink {
   shopId                  String
   workOrderId             String?
   customerId              String?
+  customerName            String?
   token                   String    @unique
   amount                  Float
   description             String?

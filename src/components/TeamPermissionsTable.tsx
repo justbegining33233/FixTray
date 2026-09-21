@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
+import { formatPermissionLabel } from '@/lib/permissionLabels';
 
 interface TechPermissions {
   techId: string;
@@ -67,11 +68,7 @@ export default function TeamPermissionsTable({ readOnly = false }: { readOnly?: 
     }
   };
 
-  const formatPerm = (perm: string) =>
-    perm
-      .split('.')
-      .map((part) => part.replace(/(^|\s)\S/g, (letter) => letter.toUpperCase()))
-      .join(', ');
+  const formatPerm = formatPermissionLabel;
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading permissions...</div>;

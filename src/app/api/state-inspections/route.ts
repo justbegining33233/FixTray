@@ -2,113 +2,78 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import logger from '@/lib/logger';
-import { z } from 'zod';
+import { calendarDateToUtcNoon } from '@/lib/calendarDate';
+import { validateInspectionRecord } from '@/lib/shopFormValidation';
 
-const stateInspectionSchema = z.object({
-  workOrderId: z.string().optional(),
-  customerId: z.string().optional(),
-  vehicleDesc: z.string().optional(),
-  vin: z.string(),
-  licensePlate: z.string(),
-  inspectionType: z.enum(['state', 'emissions', 'safety']).default('state'),
-  result: z.enum(['pass', 'fail', 'conditional']),
-  stickerNumber: z.string().optional(),
-  inspectorId: z.string().optional(),
-  failReason: z.string().optional(),
-  notes: z.string().optional(),
-  reportUrl: z.string().url().optional(),
-});
+function shopIdFromAuth(auth: { id: string; role: string; shopId?: string }) {
+  return auth.role === 'shop' ? auth.id : auth.shopId;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireRole(request, ['shop_owner', 'manager', 'admin']);
+    const auth = requireRole(request, ['shop', 'manager', 'admin']);
     if (auth instanceof NextResponse) return auth;
 
-    const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
-    const status = searchParams.get('status');
-    const vin = searchParams.get('vin');
-
-    if (!shopId) {
-      return NextResponse.json(
-        { error: 'shopId required' },
-        { status: 400 }
-      );
-    }
-
-    const where: any = { shopId };
-    if (vin) where.vin = vin;
-    if (status) where.result = status;
+    const shopId = shopIdFromAuth(auth);
+    if (!shopId) return NextResponse.json([]);
 
     const inspections = await prisma.stateInspection.findMany({
-      where,
+      where: { shopId },
       orderBy: { inspectedAt: 'desc' },
     });
 
-    logger.debug('State inspections retrieved', { shopId, count: inspections.length });
-
-    return NextResponse.json(inspections);
+    return NextResponse.json(inspections.map((row) => ({
+      ...row,
+      stickerId: row.stickerNumber,
+      expiryDate: row.expiresAt,
+      result: row.result,
+    })));
   } catch (error) {
     logger.error('Failed to fetch state inspections', { error: error instanceof Error ? error.message : String(error) });
-    return NextResponse.json(
-      { error: 'Failed to fetch state inspections' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch state inspections' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireRole(request, ['shop_owner', 'manager', 'admin']);
+    const auth = requireRole(request, ['shop', 'manager', 'admin']);
     if (auth instanceof NextResponse) return auth;
 
-    const body = await request.json();
-    const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
+    const shopId = shopIdFromAuth(auth);
+    if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
 
-    if (!shopId) {
-      return NextResponse.json(
-        { error: 'shopId required' },
-        { status: 400 }
-      );
-    }
+    const body = await request.json().catch(() => ({}));
+    const check = validateInspectionRecord(body);
+    if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
 
-    // Validate input
-    const validated = stateInspectionSchema.parse(body);
+    const expiry = body.expiryDate ? calendarDateToUtcNoon(body.expiryDate) : null;
+    const feeNote = body.fee ? `Fee charged: $${Number(body.fee)}` : '';
+    const odometerNote = body.odometer ? `Odometer: ${body.odometer}` : '';
+    const notes = [body.notes, feeNote, odometerNote].filter(Boolean).join('\n') || null;
 
-    // Calculate expiration (1 year from inspection)
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    const defaultExpiry = new Date();
+    defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
 
-    // Create inspection
     const inspection = await prisma.stateInspection.create({
       data: {
-        ...validated,
         shopId,
-        expiresAt: validated.result === 'pass' ? expiresAt : null,
+        workOrderId: body.workOrderId ? String(body.workOrderId).trim() : null,
+        customerId: body.customerId ? String(body.customerId) : null,
+        vehicleDesc: body.vehicleDesc ? String(body.vehicleDesc).trim() : null,
+        vin: body.vin ? String(body.vin).trim() : null,
+        licensePlate: body.licensePlate ? String(body.licensePlate).trim() : null,
+        inspectionType: String(body.inspectionType).trim(),
+        result: String(body.result).trim(),
+        stickerNumber: body.stickerId || body.stickerNumber ? String(body.stickerId || body.stickerNumber).trim() : null,
+        inspectorId: auth.role === 'manager' ? auth.id : (body.inspectorId ? String(body.inspectorId) : null),
+        notes,
+        expiresAt: expiry || (String(body.result) === 'pass' ? defaultExpiry : null),
       },
     });
 
-    logger.info('State inspection created', {
-      shopId,
-      inspectionId: inspection.id,
-      vin: validated.vin,
-      result: validated.result,
-    });
-
-    return NextResponse.json(inspection, { status: 201 });
+    return NextResponse.json({ ...inspection, stickerId: inspection.stickerNumber, expiryDate: inspection.expiresAt }, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      );
-    }
-
     logger.error('Failed to create state inspection', { error: error instanceof Error ? error.message : String(error) });
-    return NextResponse.json(
-      { error: 'Failed to create state inspection' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create state inspection' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCamera, FaTimes } from 'react-icons/fa';
+import { photoUploadMessage } from '@/lib/photoUpload';
 
 export default function TechPhotos() {
   const { user, isLoading } = useRequireAuth(['tech']);
@@ -39,6 +40,14 @@ export default function TechPhotos() {
     })();
   }, [user]);
 
+  const closeUpload = () => {
+    setShowUploadModal(false);
+    setModalFile(null);
+    setModalPreview('');
+    const message = photoUploadMessage('cancel');
+    if (message) setPhotoMsg(message);
+  };
+
   const onFile = async (file: File | null) => {
     if (!file) return;
     setUploading(true);
@@ -58,12 +67,16 @@ export default function TechPhotos() {
         if (j.photo && j.photo.url) setPhotos(p => p.map(x => x.id === temp.id ? j.photo : x));
         setCaption('');
         setWorkOrderInput('');
+        const saved = photoUploadMessage('save-success');
+        if (saved) setPhotoMsg(saved);
       } else {
         throw new Error('Upload failed');
       }
     } catch (err) {
       console.error(err);
       setPhotos(p => p.filter(x => x.id !== temp.id));
+      const failed = photoUploadMessage('save-failed');
+      if (failed) setPhotoMsg(failed);
     } finally {
       setUploading(false);
     }
@@ -110,14 +123,14 @@ export default function TechPhotos() {
 
             {/* Upload modal (popup window) */}
             {showUploadModal && (
-              <div role="dialog" aria-modal="true" style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60}} onClick={() => { setShowUploadModal(false); setModalFile(null); setModalPreview(''); }}>
+              <div role="dialog" aria-modal="true" style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60}} onClick={closeUpload}>
                 <div onClick={(e) => e.stopPropagation()} style={{width:720, maxWidth:'95%', background:'#0b1220', borderRadius:12, padding:20, boxShadow:'0 10px 30px rgba(0,0,0,0.6)'}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div>
                       <div style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>Upload Photo</div>
                       <div style={{fontSize:13, color:'#9aa3b2'}}>Select an image, add a caption and optionally assign to a Work Order.</div>
                     </div>
-                    <button onClick={() => { setShowUploadModal(false); setModalFile(null); setModalPreview(''); }} style={{background:'transparent', border:'none', color:'#9aa3b2', cursor:'pointer'}}><FaTimes style={{marginRight:4}} /></button>
+                    <button onClick={closeUpload} style={{background:'transparent', border:'none', color:'#9aa3b2', cursor:'pointer'}}><FaTimes style={{marginRight:4}} /></button>
                   </div>
 
                   <div style={{display:'flex', gap:12}}>
@@ -151,7 +164,7 @@ export default function TechPhotos() {
                           setModalPreview('');
                         }} style={{background:'#e5332a', color:'#fff', padding:'8px 12px', borderRadius:8, border:'none'}}>Upload</button>
 
-                        <button onClick={() => { setShowUploadModal(false); setModalFile(null); setModalPreview(''); }} style={{background:'transparent', color:'#9aa3b2', padding:'8px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.04)'}}>Cancel</button>
+                        <button type="button" onClick={closeUpload} style={{background:'transparent', color:'#9aa3b2', padding:'8px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.04)'}}>Cancel</button>
                       </div>
                     </div>
                   </div>

@@ -1,8 +1,13 @@
 'use client';
 
 import ShopNewRoadsideJob from '@/app/shop/new-roadside-job/page';
+import TechPortalFrame from '@/components/TechPortalFrame';
 
-/** Tech portal keeps its own URL/chrome and reuses the shared intake form. */
+/** Techs create roadside jobs for their shop, with technician navigation. */
 export default function TechNewRoadsideJob() {
-  return <ShopNewRoadsideJob />;
+  return (
+    <TechPortalFrame>
+      <ShopNewRoadsideJob />
+    </TechPortalFrame>
+  );
 }

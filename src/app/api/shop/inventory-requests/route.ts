@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { sendInventoryRequestNotification, sendInventoryApprovalNotification, sendLowStockAlert } from '@/lib/emailService';
 import logger from '@/lib/logger';
+import { validateInventoryRequest } from '@/lib/shopFormValidation';
 
 // GET - Get inventory requests
 export async function GET(request: NextRequest) {
@@ -85,18 +86,19 @@ export async function POST(request: NextRequest) {
     }
 
     const { shopId, requestedById, itemName, quantity, reason, urgency } = await request.json();
+    const requestCheck = validateInventoryRequest({ itemName, quantity, reason });
 
-    if (!shopId || !requestedById || !itemName || !quantity) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!shopId || !requestedById || !requestCheck.ok) {
+      return NextResponse.json({ error: requestCheck.ok ? 'Missing required fields' : requestCheck.error }, { status: 400 });
     }
 
     const inventoryRequest = await prisma.inventoryRequest.create({
       data: {
         shopId,
         requestedById,
-        itemName,
-        quantity,
-        reason,
+        itemName: String(itemName).trim(),
+        quantity: Number(quantity),
+        reason: String(reason).trim(),
         urgency: urgency || 'normal',
         status: 'pending',
       },

@@ -87,7 +87,6 @@ const nextConfig: NextConfig = {
       { source: '/shop/board',                destination: '/shop/home',             permanent: false },
       { source: '/shop/appointments',         destination: '/shop/calendar',         permanent: false },
       { source: '/shop/review-requests',      destination: '/shop/reviews',          permanent: false },
-      { source: '/shop/photos',               destination: '/tech/photos',           permanent: false },
       { source: '/shop/messages',             destination: '/shop/customer-messages', permanent: false },
       { source: '/shop/settings/billing',     destination: '/shop/subscribe',        permanent: false },
     ];

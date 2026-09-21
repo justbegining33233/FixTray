@@ -13,6 +13,11 @@ export const SHOP_EDGE_SENSITIVE_PATHS = [
   '/shop/settings/two-factor',
 ] as const;
 
+/** Platform env catalog is for FixTray admins only (VIS-024). */
+export function canViewPlatformHealthCatalog(role: string | undefined | null): boolean {
+  return role === 'admin' || role === 'superadmin';
+}
+
 export function isShopEdgeSensitivePath(pathname: string): boolean {
   const path = (pathname.split('?')[0] || '/').replace(/\/+$/, '') || '/';
   return SHOP_EDGE_SENSITIVE_PATHS.some(

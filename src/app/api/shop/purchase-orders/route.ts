@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole, AuthUser } from '@/lib/auth';
+import { calendarDateToUtcNoon } from '@/lib/calendarDate';
+import { validatePurchaseOrder } from '@/lib/shopFormValidation';
 
 const _VALID_STATUSES = ['ordered', 'shipped', 'received', 'cancelled'];
 
@@ -39,20 +41,13 @@ export async function POST(request: NextRequest) {
   }
 
   const { vendor, items, expectedDate, notes } = body;
+  const poCheck = validatePurchaseOrder({ vendor, items });
+  if (!poCheck.ok) return NextResponse.json({ error: poCheck.error }, { status: 400 });
 
-  if (!vendor || typeof vendor !== 'string' || !vendor.trim()) {
-    return NextResponse.json({ error: 'vendor is required' }, { status: 400 });
-  }
-  if (!Array.isArray(items) || items.length === 0) {
-    return NextResponse.json({ error: 'at least one item is required' }, { status: 400 });
-  }
-  for (const item of items) {
-    if (!item.itemName || !String(item.itemName).trim()) {
-      return NextResponse.json({ error: 'each item must have an itemName' }, { status: 400 });
-    }
-    if ((parseInt(item.quantity) || 0) < 1) {
-      return NextResponse.json({ error: `item "${item.itemName}" must have quantity >= 1` }, { status: 400 });
-    }
+  let expected: Date | null = null;
+  if (expectedDate) {
+    expected = calendarDateToUtcNoon(expectedDate);
+    if (!expected) return NextResponse.json({ error: 'Expected date is invalid.' }, { status: 400 });
   }
 
   const totalCost = items.reduce(
@@ -64,9 +59,9 @@ export async function POST(request: NextRequest) {
     const order = await prisma.purchaseOrder.create({
       data: {
         shopId,
-        vendor: vendor.trim(),
+        vendor: String(vendor).trim(),
         status: 'ordered',
-        expectedDate: expectedDate ? new Date(expectedDate) : null,
+        expectedDate: expected,
         notes: notes?.trim() ?? null,
         totalCost,
         items: {

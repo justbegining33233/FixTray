@@ -27,6 +27,7 @@ export default function PaymentLinksPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [workOrderId, setWorkOrderId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [createdLink, setCreatedLink] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export default function PaymentLinksPage() {
       const res = await fetch('/api/payment-links', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseFloat(amount), description }),
+        body: JSON.stringify({ amount: parseFloat(amount), description, workOrderId: workOrderId.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create link');
@@ -66,6 +67,7 @@ export default function PaymentLinksPage() {
       setShowCreate(false);
       setAmount('');
       setDescription('');
+      setWorkOrderId('');
       fetchLinks();
     } catch (e: any) {
       setError(e.message);
@@ -89,7 +91,7 @@ export default function PaymentLinksPage() {
             <div>
               <Link href="/shop/admin" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Admin</Link>
               <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Payment Links</h1>
-              <p style={{ color: '#9ca3af', fontSize: 14 }}>Create and send payment links to customers</p>
+              <p style={{ color: '#9ca3af', fontSize: 14 }}>Job invoices are created from the work order. A link made here can still be tied to that work order.</p>
             </div>
             <button onClick={() => { setShowCreate(true); setCreatedLink(null); }}
               style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
@@ -119,6 +121,11 @@ export default function PaymentLinksPage() {
             <div style={{ background: '#1e293b', borderRadius: 12, padding: 24, border: '1px solid #334155', marginBottom: 24 }}>
               <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Create Payment Link</h2>
               {error && <div style={{ color: '#ef4444', marginBottom: 12, fontSize: 14 }}>{error}</div>}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Work order ID</label>
+                <input value={workOrderId} onChange={e => setWorkOrderId(e.target.value)} placeholder="Paste the work order id so this link belongs to that job"
+                  style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>
                   <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Amount ($)</label>
@@ -157,6 +164,7 @@ export default function PaymentLinksPage() {
                 <div key={link.id} style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                   <div>
                     <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{link.description}</div>
+                    {link.workOrderId && <div style={{ color: '#93c5fd', fontSize: 12, marginTop: 4 }}>Work order {link.workOrderId}</div>}
                     <div style={{ color: '#22c55e', fontSize: 20, fontWeight: 700 }}>${link.amount.toFixed(2)}</div>
                     <div style={{ color: '#4b5563', fontSize: 12, marginTop: 4 }}>
                       <span style={{

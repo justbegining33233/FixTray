@@ -6,6 +6,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 
 interface EstimateLineItem {
@@ -14,6 +15,7 @@ interface EstimateLineItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  kind: 'part' | 'labor';
 }
 
 interface EstimateData {
@@ -34,7 +36,7 @@ function ManagerEstimatesContent() {
 
   const [estimate, setEstimate] = useState<EstimateData>({
     workOrderId: workOrderId || '',
-    lineItems: [],
+    lineItems: [] as EstimateLineItem[],
     subtotal: 0,
     taxRate: 8.25, // Default tax rate
     taxAmount: 0,
@@ -70,7 +72,10 @@ function ManagerEstimatesContent() {
           setSelectedWorkOrderId(preferredId);
           setEstimate((prev) => ({ ...prev, workOrderId: preferredId }));
           const match = open.find((wo: any) => wo.id === preferredId);
-          if (match) setWorkOrder(match);
+          if (match) {
+            setWorkOrder(match);
+            hydrateEstimate(match);
+          }
         }
       }
 
@@ -78,9 +83,10 @@ function ManagerEstimatesContent() {
         const response = await fetch(`/api/workorders/${workOrderId}`, { headers });
         if (response.ok) {
           const data = await response.json();
-          setWorkOrder(data.workOrder ?? data);
+          const loaded = data.workOrder ?? data;
+          setWorkOrder(loaded);
           setSelectedWorkOrderId(workOrderId);
-          setEstimate((prev) => ({ ...prev, workOrderId }));
+          hydrateEstimate(loaded);
         }
       }
     } catch (error) {
@@ -102,11 +108,42 @@ function ManagerEstimatesContent() {
       });
       if (response.ok) {
         const data = await response.json();
-        setWorkOrder(data.workOrder ?? data);
+        const loaded = data.workOrder ?? data;
+        setWorkOrder(loaded);
+        hydrateEstimate(loaded);
       }
     } catch (error) {
       console.error('Error fetching selected work order:', error);
     }
+  };
+
+  const hydrateEstimate = (wo: any) => {
+    const raw = Array.isArray(wo?.estimate?.lineItems) ? wo.estimate.lineItems : [];
+    const lineItems: EstimateLineItem[] = raw.map((item: any, index: number) => {
+      const quantity = Number(item.quantity) || 0;
+      const unitPrice = Number(item.unitPrice) || 0;
+      return {
+        id: `${wo?.id || 'line'}-${index}`,
+        description: item.description || '',
+        quantity,
+        unitPrice,
+        total: Number(item.total) || quantity * unitPrice,
+        kind: item.kind === 'part' ? 'part' : 'labor',
+      };
+    });
+    const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+    const taxRate = typeof wo?.estimate?.taxRate === 'number' ? wo.estimate.taxRate : 8.25;
+    const taxAmount = subtotal * (taxRate / 100);
+    setEstimate((prev) => ({
+      ...prev,
+      workOrderId: wo?.id || prev.workOrderId,
+      lineItems,
+      notes: wo?.estimate?.notes || '',
+      taxRate,
+      subtotal,
+      taxAmount,
+      total: subtotal + taxAmount,
+    }));
   };
 
   const addLineItem = () => {
@@ -115,7 +152,8 @@ function ManagerEstimatesContent() {
       description: '',
       quantity: 1,
       unitPrice: 0,
-      total: 0
+      total: 0,
+      kind: 'labor',
     };
     setEstimate(prev => ({
       ...prev,
@@ -188,22 +226,16 @@ function ManagerEstimatesContent() {
       const response = await fetch(`/api/workorders/${targetId}`, {
         method: 'PUT',
         headers,
-        body: JSON.stringify({
-          estimatedCost: estimate.total,
-          estimate: {
-            lineItems: estimate.lineItems.map(({ description, quantity, unitPrice, total }) => ({
-              description,
-              quantity,
-              unitPrice,
-              total,
-            })),
-            subtotal: estimate.subtotal,
-            taxRate: estimate.taxRate,
-            tax: estimate.taxAmount,
-            total: estimate.total,
-            notes: estimate.notes,
-          }
-        }),
+        body: JSON.stringify(buildEstimateSave(
+          estimate.lineItems.map(({ description, quantity, unitPrice, kind }) => ({
+            description,
+            quantity,
+            unitPrice,
+            kind,
+          })),
+          estimate.taxRate,
+          estimate.notes,
+        )),
       });
 
       if (!response.ok) {
@@ -249,6 +281,7 @@ function ManagerEstimatesContent() {
             <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
           </Link>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaClipboardList style={{marginRight:4}} /> Estimate Builder</h1>
+          <p style={{ color: '#9aa3b2', fontSize: 14, margin: '4px 0 0' }}>Add parts and labor, then submit. The customer must accept and sign. Submitting does not create a work authorization.</p>
           <p style={{ fontSize: 14, color: '#9aa3b2' }}>
             {workOrder ? `Creating estimate for Work Order #${workOrder.id}` : 'Select a work order, then submit a quote'}
           </p>
@@ -342,7 +375,23 @@ function ManagerEstimatesContent() {
             ) : (
               <div style={{ display: 'grid', gap: 12 }}>
                 {estimate.lineItems.map((item, _index) => (
-                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 120px 100px 40px', gap: 12, alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8 }}>
+                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 90px 110px 90px 40px', gap: 12, alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8 }}>
+                    <select
+                      aria-label="Line type"
+                      value={item.kind}
+                      onChange={(e) => updateLineItem(item.id, 'kind', e.target.value === 'part' ? 'part' : 'labor')}
+                      style={{
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(156,163,175,0.3)',
+                        borderRadius: 4,
+                        padding: '8px 12px',
+                        color: '#e5e7eb',
+                        fontSize: 14,
+                      }}
+                    >
+                      <option value="labor">Labor</option>
+                      <option value="part">Part</option>
+                    </select>
                     <input
                       type="text"
                       placeholder="Description"

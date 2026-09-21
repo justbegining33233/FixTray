@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle, FaPaperPlane } from 'react-icons/fa';
+import SignatureCapture from '@/components/SignatureCapture';
 
 interface WOMessage { id: string; sender: string; senderName: string; body: string; createdAt: string }
 interface WOPhoto   { id: string; url: string; type: string; caption?: string; uploadedAt: string }
@@ -13,6 +14,7 @@ interface EstimateItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  kind?: 'part' | 'labor' | 'misc';
 }
 
 interface Estimate {
@@ -54,6 +56,9 @@ export default function Estimates() {
   });
   const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [estimateMsg, setEstimateMsg] = useState<{type:'success'|'error';text:string}|null>(null);
+  const [decision, setDecision] = useState<{ id: string; response: 'accepted' | 'denied' } | null>(null);
+  const [signerName, setSignerName] = useState('');
+  const [signatureData, setSignatureData] = useState<string | null>(null);
 
   // Expanded work order detail (messages + photos)
   const [expandedDetail, setExpandedDetail] = useState<Record<string, WODetail>>({});
@@ -263,47 +268,29 @@ export default function Estimates() {
     }
   };
 
-  const handleAccept = async (estimateId: string) => {
-    setLoading(estimateId);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setEstimateMsg({type:'error',text:'Authentication required'});
-        return;
-      }
-
-      const response = await fetch(`/api/workorders/${estimateId}/respond-estimate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ response: 'accepted' }),
-      });
-
-      if (response.ok) {
-        setEstimates(prev => prev.map(est =>
-          est.id === estimateId ? { ...est, status: 'accepted' as const } : est
-        ));
-        setEstimateMsg({type:'success',text:'Estimate accepted! The shop has been notified and will begin work.'});
-      } else {
-        const error = await response.json();
-        setEstimateMsg({type:'error',text:`Error: ${error.error}`});
-      }
-    } catch (error) {
-      console.error('Error accepting estimate:', error);
-      setEstimateMsg({type:'error',text:'Failed to accept estimate. Please try again.'});
-    } finally {
-      setLoading(null);
-    }
+  const openDecision = (estimateId: string, response: 'accepted' | 'denied') => {
+    setDecision({ id: estimateId, response });
+    setSignerName('');
+    setSignatureData(null);
+    setEstimateMsg(null);
   };
 
-  const handleDeny = async (estimateId: string) => {
+  const submitDecision = async (estimateId: string) => {
+    if (!decision || decision.id !== estimateId) return;
+    if (signerName.trim().length < 2) {
+      setEstimateMsg({ type: 'error', text: 'Enter your full name to sign.' });
+      return;
+    }
+    if (!signatureData) {
+      setEstimateMsg({ type: 'error', text: 'Sign in the box. Verbal approval is not accepted.' });
+      return;
+    }
+
     setLoading(estimateId);
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setEstimateMsg({type:'error',text:'Authentication required'});
+        setEstimateMsg({ type: 'error', text: 'Authentication required' });
         return;
       }
 
@@ -311,23 +298,35 @@ export default function Estimates() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ response: 'denied' }),
+        body: JSON.stringify({
+          response: decision.response,
+          signerName: signerName.trim(),
+          signatureData,
+        }),
       });
 
       if (response.ok) {
+        const nextStatus = decision.response === 'accepted' ? 'accepted' as const : 'denied' as const;
         setEstimates(prev => prev.map(est =>
-          est.id === estimateId ? { ...est, status: 'denied' as const } : est
+          est.id === estimateId ? { ...est, status: nextStatus } : est
         ));
-        setEstimateMsg({type:'success',text:'Estimate denied. The shop has been notified.'});
+        setEstimateMsg({
+          type: 'success',
+          text: decision.response === 'accepted'
+            ? 'Estimate accepted and signed. The shop has a work authorization and can begin.'
+            : 'Estimate denied and signed. The quote is closed and no work authorization was created.',
+        });
+        setDecision(null);
+        setSignatureData(null);
       } else {
         const error = await response.json();
-        setEstimateMsg({type:'error',text:`Error: ${error.error}`});
+        setEstimateMsg({ type: 'error', text: error.error || 'Could not record this decision.' });
       }
     } catch (error) {
-      console.error('Error denying estimate:', error);
-      setEstimateMsg({type:'error',text:'Failed to deny estimate. Please try again.'});
+      console.error('Error responding to estimate:', error);
+      setEstimateMsg({ type: 'error', text: 'Failed to record this decision. Please try again.' });
     } finally {
       setLoading(null);
     }
@@ -608,7 +607,20 @@ export default function Estimates() {
                               </tr>
                             </thead>
                             <tbody>
-                              {estimate.techLabor?.map((item, i) => (
+                              {(estimate.lineItems || []).some((item) => item.kind === 'part' || item.kind === 'labor' || item.kind === 'misc')
+                                ? estimate.lineItems?.map((item, i) => (
+                                  <tr key={`line-${i}`} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                    <td style={{ padding: '5px 6px', color: '#e5e7eb' }}>
+                                      {item.description || (item.kind === 'part' ? 'Part' : 'Labor')}
+                                      <span style={{ fontSize: 10, color: item.kind === 'part' ? '#a78bfa' : '#60a5fa', marginLeft: 4 }}>{(item.kind || 'labor').toUpperCase()}</span>
+                                    </td>
+                                    <td style={{ padding: '5px 6px', color: '#e5e7eb', textAlign: 'right' }}>{item.quantity}</td>
+                                    <td style={{ padding: '5px 6px', color: '#e5e7eb', textAlign: 'right' }}>${item.unitPrice.toFixed(2)}</td>
+                                    <td style={{ padding: '5px 6px', color: '#e5e7eb', textAlign: 'right', fontWeight: 600 }}>${item.total.toFixed(2)}</td>
+                                  </tr>
+                                ))
+                                : null}
+                              {!(estimate.lineItems || []).some((item) => item.kind === 'part' || item.kind === 'labor' || item.kind === 'misc') && estimate.techLabor?.map((item, i) => (
                                 <tr key={`labor-${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
                                   <td style={{padding:'5px 6px', color:'#e5e7eb'}}>{item.description || 'Labor'} <span style={{fontSize:10, color:'#60a5fa', marginLeft:4}}>LABOR</span></td>
                                   <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>{item.hours ?? 1}</td>
@@ -616,7 +628,7 @@ export default function Estimates() {
                                   <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right', fontWeight:600}}>${((item.hours ?? 1) * (item.rate ?? 0)).toFixed(2)}</td>
                                 </tr>
                               ))}
-                              {estimate.partsUsed?.map((item, i) => (
+                              {!(estimate.lineItems || []).some((item) => item.kind === 'part' || item.kind === 'labor' || item.kind === 'misc') && estimate.partsUsed?.map((item, i) => (
                                 <tr key={`part-${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
                                   <td style={{padding:'5px 6px', color:'#e5e7eb'}}>{item.name || 'Part'} <span style={{fontSize:10, color:'#a78bfa', marginLeft:4}}>PART</span></td>
                                   <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>{item.quantity ?? 1}</td>
@@ -624,7 +636,7 @@ export default function Estimates() {
                                   <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right', fontWeight:600}}>${((item.quantity ?? 1) * (item.unitPrice ?? 0)).toFixed(2)}</td>
                                 </tr>
                               ))}
-                              {estimate.lineItems?.map((item, i) => (
+                              {!(estimate.lineItems || []).some((item) => item.kind === 'part' || item.kind === 'labor' || item.kind === 'misc') && estimate.lineItems?.map((item, i) => (
                                 <tr key={`misc-${i}`} style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
                                   <td style={{padding:'5px 6px', color:'#e5e7eb'}}>{item.description || 'Misc'}</td>
                                   <td style={{padding:'5px 6px', color:'#e5e7eb', textAlign:'right'}}>{item.quantity}</td>
@@ -733,21 +745,61 @@ export default function Estimates() {
                       Request sent — waiting for the shop to send a quote.
                     </div>
                   ) : (
-                  <div style={{display:'flex', gap:12}}>
-                    <button
-                      onClick={() => handleAccept(estimate.id)}
-                      disabled={loading === estimate.id}
-                      style={{flex:1, padding:'12px', background: loading === estimate.id ? '#16a34a' : '#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor: loading === estimate.id ? 'not-allowed' : 'pointer', opacity: loading === estimate.id ? 0.7 : 1}}
-                    >
-                      {loading === estimate.id ? 'Processing...' : <><FaCheckCircle style={{marginRight:4}} /> Accept Estimate</>}
-                    </button>
-                    <button
-                      onClick={() => handleDeny(estimate.id)}
-                      disabled={loading === estimate.id}
-                      style={{flex:1, padding:'12px', background: loading === estimate.id ? '#dc2626' : '#ef4444', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor: loading === estimate.id ? 'not-allowed' : 'pointer', opacity: loading === estimate.id ? 0.7 : 1}}
-                    >
-                      {loading === estimate.id ? 'Processing...' : <><FaTimesCircle style={{marginRight:4}} /> Deny Estimate</>}
-                    </button>
+                  <div>
+                    <p style={{margin:'0 0 10px', color:'#9aa3b2', fontSize:13}}>Accept or deny requires your signature. A verbal go-ahead is not a work authorization.</p>
+                    {decision?.id === estimate.id && (
+                      <div style={{marginBottom:12, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:14}}>
+                        <div style={{fontWeight:700, marginBottom:6, color:'#e5e7eb'}}>
+                          {decision.response === 'accepted' ? 'Sign to accept this estimate' : 'Sign to deny this estimate'}
+                        </div>
+                        <div style={{fontSize:13, color:'#9aa3b2', marginBottom:10}}>
+                          {decision.response === 'accepted'
+                            ? 'Your signature authorizes this work.'
+                            : 'Denying closes the quote. No work authorization is created.'}
+                        </div>
+                        <label style={{display:'block', fontSize:13, color:'#e5e7eb', marginBottom:10}}>
+                          Full legal name
+                          <input
+                            aria-label="Full legal name"
+                            value={signerName}
+                            onChange={(e) => setSignerName(e.target.value)}
+                            style={{display:'block', width:'100%', marginTop:4, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#e5e7eb', padding:'8px 10px'}}
+                          />
+                        </label>
+                        <SignatureCapture onChange={setSignatureData} />
+                        <div style={{display:'flex', gap:8, marginTop:10}}>
+                          <button
+                            onClick={() => submitDecision(estimate.id)}
+                            disabled={loading === estimate.id}
+                            style={{flex:1, padding:'12px', background: decision.response === 'accepted' ? '#22c55e' : '#ef4444', color:'white', border:'none', borderRadius:8, fontWeight:700, cursor:'pointer'}}
+                          >
+                            {loading === estimate.id ? 'Saving signature...' : decision.response === 'accepted' ? 'Sign and accept' : 'Sign and deny'}
+                          </button>
+                          <button
+                            onClick={() => { setDecision(null); setSignatureData(null); }}
+                            style={{padding:'12px 16px', background:'transparent', color:'#9aa3b2', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, cursor:'pointer'}}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <div style={{display:'flex', gap:12}}>
+                      <button
+                        onClick={() => openDecision(estimate.id, 'accepted')}
+                        disabled={loading === estimate.id}
+                        style={{flex:1, padding:'12px', background: loading === estimate.id ? '#16a34a' : '#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor: loading === estimate.id ? 'not-allowed' : 'pointer', opacity: loading === estimate.id ? 0.7 : 1}}
+                      >
+                        {loading === estimate.id ? 'Processing...' : <><FaCheckCircle style={{marginRight:4}} /> Accept Estimate</>}
+                      </button>
+                      <button
+                        onClick={() => openDecision(estimate.id, 'denied')}
+                        disabled={loading === estimate.id}
+                        style={{flex:1, padding:'12px', background: loading === estimate.id ? '#dc2626' : '#ef4444', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor: loading === estimate.id ? 'not-allowed' : 'pointer', opacity: loading === estimate.id ? 0.7 : 1}}
+                      >
+                        {loading === estimate.id ? 'Processing...' : <><FaTimesCircle style={{marginRight:4}} /> Deny Estimate</>}
+                      </button>
+                    </div>
                   </div>
                   )}
                 </div>

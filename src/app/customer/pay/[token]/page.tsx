@@ -46,10 +46,25 @@ export default function CustomerPayPage() {
   const handlePay = async () => {
     if (!cardNumber || !expiry || !cvv || !name) { setFormError('Please fill in all card fields.'); return; }
     setPaying(true);
-    // Simulate Stripe-like payment processing
-    await new Promise(r => setTimeout(r, 1800));
-    setPaid(true);
-    setPaying(false);
+    setFormError('');
+    try {
+      const response = await fetch('/api/payment-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pay', token }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setFormError(data.error || 'Payment could not be recorded.');
+        return;
+      }
+      setLink(data);
+      setPaid(true);
+    } catch {
+      setFormError('Payment could not be recorded.');
+    } finally {
+      setPaying(false);
+    }
   };
 
   const formatCard = (v: string) => v.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
@@ -81,7 +96,7 @@ export default function CustomerPayPage() {
         <div style={{ fontSize: 80 }}><FaSmile style={{marginRight:4}} /></div>
         <h2 style={{ color: '#22c55e', margin: '16px 0 8px', fontSize: 26 }}>Payment Successful!</h2>
         <p style={{ color: '#94a3b8', marginBottom: 8 }}>Thank you for your payment of <strong>${Number(link?.amount).toFixed(2)}</strong>.</p>
-        <p style={{ color: '#94a3b8' }}>A receipt has been sent to your email. Thank you for choosing us!</p>
+        <p style={{ color: '#94a3b8' }}>This work order is marked paid. The shop can now complete the job.</p>
       </div>
     </div>
   );

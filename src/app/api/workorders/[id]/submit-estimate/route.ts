@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
-import crypto from 'crypto';
 
 export async function POST(
   request: NextRequest,
@@ -26,7 +25,6 @@ export async function POST(
       status: true,
       estimatedCost: true,
       estimate: true,
-      issueDescription: true,
     },
   });
 
@@ -48,41 +46,16 @@ export async function POST(
     );
   }
 
-  // When reissuing a denied estimate, reset the declined WorkAuthorization so a fresh one is created
-  if (workOrder.status === 'denied-estimate') {
-    await prisma.workAuthorization.updateMany({
-      where: { workOrderId: id, status: 'declined' },
-      data: { status: 'superseded' },
-    });
-  }
-
-  // Update work order status to estimate-submitted
+  // Update work order status to estimate-submitted.
+  // A pending authorization is not created here. Customer accept + signature does that.
   await prisma.workOrder.update({
     where: { id },
     data: { status: 'estimate-submitted' },
   });
 
-  // Create WorkAuthorization record (one per work order; skip if pending one exists)
-  const existingWA = await prisma.workAuthorization.findFirst({
+  await prisma.workAuthorization.deleteMany({
     where: { workOrderId: id, status: 'pending' },
   });
-
-  if (!existingWA) {
-    const token = crypto.randomBytes(24).toString('hex');
-    const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-    await prisma.workAuthorization.create({
-      data: {
-        shopId: workOrder.shopId,
-        workOrderId: id,
-        customerId: workOrder.customerId ?? null,
-        authToken: token,
-        estimateTotal: workOrder.estimatedCost ?? null,
-        workSummary: String(workOrder.issueDescription ?? '').slice(0, 1000),
-        expiresAt: expiry,
-        status: 'pending',
-      },
-    });
-  }
 
   // Notify customer
   if (workOrder.customerId) {
@@ -91,7 +64,7 @@ export async function POST(
         customerId: workOrder.customerId,
         type: 'estimate',
         title: 'Estimate Ready for Review',
-        message: `An estimate is ready for your review. Visit My Estimates to accept or deny.`,
+        message: `An estimate is ready for your review. Visit My Estimates to accept or deny and sign.`,
         workOrderId: id,
         deliveryMethod: 'in-app',
       },

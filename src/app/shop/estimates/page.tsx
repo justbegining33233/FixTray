@@ -8,6 +8,7 @@ import { FaClipboardList } from 'react-icons/fa';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { issueSummary } from '@/lib/waitingRoomBoard';
+import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import Sidebar from '@/components/Sidebar';
 import TopNavBar from '@/components/TopNavBar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -19,6 +20,7 @@ interface EstimateLineItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  kind: 'part' | 'labor';
 }
 
 interface ShopJob {
@@ -26,7 +28,7 @@ interface ShopJob {
   status?: string;
   estimatedCost?: number | null;
   estimate?: {
-    lineItems?: Array<{ description?: string; quantity?: number; unitPrice?: number; total?: number }>;
+    lineItems?: Array<{ description?: string; quantity?: number; unitPrice?: number; total?: number; kind?: string }>;
     taxRate?: number;
     notes?: string;
     total?: number;
@@ -88,6 +90,7 @@ function ShopEstimatesContent() {
           quantity,
           unitPrice,
           total: Number(item.total) || quantity * unitPrice,
+          kind: item.kind === 'part' ? 'part' : 'labor',
         };
       }));
     } else {
@@ -130,14 +133,18 @@ function ShopEstimatesContent() {
   const addLineItem = () => {
     setLineItems((prev) => [
       ...prev,
-      { id: `${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0 },
+      { id: `${Date.now()}`, description: '', quantity: 1, unitPrice: 0, total: 0, kind: 'labor' },
     ]);
   };
 
   const updateLineItem = (id: string, field: keyof EstimateLineItem, value: string) => {
     setLineItems((prev) => prev.map((item) => {
       if (item.id !== id) return item;
-      const next = { ...item, [field]: field === 'description' ? value : Number(value) || 0 };
+      const next: EstimateLineItem = { ...item };
+      if (field === 'description') next.description = value;
+      else if (field === 'kind') next.kind = value === 'part' ? 'part' : 'labor';
+      else if (field === 'quantity') next.quantity = Number(value) || 0;
+      else if (field === 'unitPrice') next.unitPrice = Number(value) || 0;
       next.total = Number(next.quantity) * Number(next.unitPrice);
       return next;
     }));
@@ -164,22 +171,16 @@ function ShopEstimatesContent() {
       const saveRes = await fetch(`/api/workorders/${selectedId}`, {
         method: 'PUT',
         headers,
-        body: JSON.stringify({
-          estimatedCost: total,
-          estimate: {
-            lineItems: lineItems.map(({ description, quantity, unitPrice, total: lineTotal }) => ({
-              description,
-              quantity,
-              unitPrice,
-              total: lineTotal,
-            })),
-            subtotal,
-            taxRate,
-            tax: taxAmount,
-            total,
-            notes,
-          },
-        }),
+        body: JSON.stringify(buildEstimateSave(
+          lineItems.map(({ description, quantity, unitPrice, kind }) => ({
+            description,
+            quantity,
+            unitPrice,
+            kind,
+          })),
+          taxRate,
+          notes,
+        )),
       });
       if (!saveRes.ok) {
         const error = await saveRes.json().catch(() => ({}));
@@ -226,7 +227,7 @@ function ShopEstimatesContent() {
           <FaClipboardList style={{ marginRight: 8 }} /> Shop Estimates
         </h1>
         <p style={{ fontSize: 14, color: '#9aa3b2', margin: 0 }}>
-          Quote open work orders for this shop. Submitted estimates use the same customer approval flow as manager estimates.
+          Add parts and labor, then submit. The customer accepts and signs on My Estimates. Submitting a quote does not create a work authorization.
         </p>
       </div>
 
@@ -303,8 +304,12 @@ function ShopEstimatesContent() {
             ) : (
               <div style={{ display: 'grid', gap: 12 }}>
                 {lineItems.map((item) => (
-                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 120px 90px auto', gap: 8, alignItems: 'center' }}>
-                    <input aria-label="Description" value={item.description} onChange={(e) => updateLineItem(item.id, 'description', e.target.value)} placeholder="Labor, parts, service..." style={fieldStyle} />
+                  <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '130px 1fr 90px 120px 90px auto', gap: 8, alignItems: 'center' }}>
+                    <select aria-label="Line type" value={item.kind} onChange={(e) => updateLineItem(item.id, 'kind', e.target.value)} style={fieldStyle}>
+                      <option value="labor">Labor</option>
+                      <option value="part">Part</option>
+                    </select>
+                    <input aria-label="Description" value={item.description} onChange={(e) => updateLineItem(item.id, 'description', e.target.value)} placeholder="Labor or part description" style={fieldStyle} />
                     <input aria-label="Quantity" type="number" min="0" step="0.01" value={item.quantity} onChange={(e) => updateLineItem(item.id, 'quantity', e.target.value)} style={fieldStyle} />
                     <input aria-label="Unit price" type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateLineItem(item.id, 'unitPrice', e.target.value)} style={fieldStyle} />
                     <div style={{ color: '#22c55e', fontWeight: 700, textAlign: 'right' }}>${item.total.toFixed(2)}</div>

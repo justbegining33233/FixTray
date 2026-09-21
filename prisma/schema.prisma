@@ -187,11 +187,14 @@ model ShopService {
   shopId      String
   serviceName String
   category    String
-  price       Float?
-  duration    Int?
-  description String?
-  createdAt   DateTime @default(now())
-  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  price              Float?
+  duration           Int?
+  description        String?
+  isActive           Boolean  @default(true)
+  availableInShop    Boolean  @default(true)
+  availableRoadside  Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  shop               Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, serviceName, category])
   @@index([shopId])
@@ -390,6 +393,8 @@ model InventoryItem {
   price        Float    @default(0)
   reorderPoint Int?
   rate         Float?
+  supplier     String?
+  notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -1117,6 +1122,7 @@ model Referral {
   id                 String    @id @default(cuid())
   shopId             String
   referrerCustomerId String
+  referredName       String?
   referredEmail      String?
   referredCustomerId String?
   referralCode       String    @unique
@@ -1163,9 +1169,11 @@ model StateInspection {
 model EnvironmentalFee {
   id        String   @id @default(cuid())
   shopId    String
-  name      String
-  feeAmount Float    @default(0)
-  unit      String   @default("per_job")
+  name        String
+  feeAmount   Float    @default(0)
+  feeType     String?
+  description String?
+  unit        String   @default("per_job")
   taxable   Boolean  @default(false)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -1185,6 +1193,8 @@ model TaxRule {
   appliesToParts Boolean  @default(true)
   appliesToFees  Boolean  @default(false)
   exemptServices String?
+  state          String?
+  county         String?
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -1260,6 +1270,7 @@ model PaymentLink {
   shopId                  String
   workOrderId             String?
   customerId              String?
+  customerName            String?
   token                   String    @unique
   amount                  Float
   description             String?

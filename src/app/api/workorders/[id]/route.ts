@@ -175,13 +175,21 @@ export async function PUT(
         });
       }
       
-      // Create notification
+      // Create notification with the short id and service when that data exists
+      const { workOrderNotificationCopy } = await import('@/lib/notificationCopy');
+      const statusCopy = workOrderNotificationCopy({
+        id,
+        serviceType: (current as { serviceType?: unknown }).serviceType,
+        issueDescription: current.issueDescription,
+        status: String(data.status || ''),
+        kind: 'status',
+      });
       await prisma.notification.create({
         data: {
           customerId: current.customerId,
           type: 'status_update',
-          title: 'Work Order Status Updated',
-          message: `Your work order ${id} status changed to ${data.status}`,
+          title: statusCopy.title,
+          message: statusCopy.body,
           workOrderId: id,
           deliveryMethod: 'in-app',
         },

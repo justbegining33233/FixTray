@@ -15,6 +15,8 @@ import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
+import { ACTIVE_WORK_ORDER_STATUSES } from '@/lib/workOrderMetrics';
+import { unwrapWorkOrders } from '@/lib/workOrderList';
 
 interface Job {
   id: string;
@@ -59,6 +61,7 @@ export default function ShopHome() {
   });
   const [selectedDestinations, setSelectedDestinations] = useState<Record<string, string>>({});
   const [pendingWorkOrders, setPendingWorkOrders] = useState<Job[]>([]);
+  const [pendingQueueCount, setPendingQueueCount] = useState(0);
   const [bays, setBays] = useState<Array<{ id: string; name: string; tech: string; jobs: Job[] }>>([]);
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
   const [dragSourceBayId, setDragSourceBayId] = useState<string | null>(null);
@@ -103,27 +106,36 @@ export default function ShopHome() {
       bay: typeof wo.bay === 'number' ? wo.bay : null,
     });
 
+    let generation = 0;
+    let alive = true;
+    const inServiceStatuses = ACTIVE_WORK_ORDER_STATUSES.filter((status) => status !== 'pending').join(',');
+
     const fetchDashboard = async () => {
+      const gen = ++generation;
       try {
-        const [statsRes, finRes, woRes, activeWoRes, teamRes, scheduleRes] = await Promise.all([
+        const [statsRes, finRes, activeWoRes, teamRes, scheduleRes] = await Promise.all([
           fetch(`/api/shop/workorder-stats?shopId=${id}`, { headers }),
           fetch(`/api/shop/financial-summary?shopId=${id}`, { headers }),
-          fetch(`/api/workorders?shopId=${id}&status=pending`, { headers }),
-          fetch(`/api/workorders?shopId=${id}&status=assigned,in-progress,waiting-estimate,waiting-for-payment`, { headers }),
+          fetch(`/api/workorders?limit=100&status=${encodeURIComponent(inServiceStatuses)}`, { headers }),
           fetch(`/api/shop/team?shopId=${id}`, { headers }),
           fetch('/api/shop/schedule', { headers }),
         ]);
+        if (!alive || gen !== generation) return;
 
-        // Work order stats (open jobs, completed today, pending approvals)
+        // Open jobs and the pending queue come from one stats payload.
         if (statsRes.ok) {
           const data = await statsRes.json();
           const s = data.stats || {};
+          const pendingJobs = Array.isArray(data.pendingJobs) ? data.pendingJobs : [];
+          const pendingCount = typeof s.pendingQueue === 'number' ? s.pendingQueue : pendingJobs.length;
           setShopStats(prev => ({
             ...prev,
-            openJobs: (s.activeJobs || 0) + (s.pendingAssignments || 0),
+            openJobs: typeof s.openJobs === 'number' ? s.openJobs : (s.activeJobs || 0),
             completedToday: s.completedToday || 0,
-            pendingApprovals: s.pendingAssignments || 0,
+            pendingApprovals: pendingCount,
           }));
+          setPendingWorkOrders(pendingJobs.map((wo: any) => toJob(wo, 'Pending')));
+          setPendingQueueCount(pendingCount);
         }
 
         // Financial summary (today + week revenue)
@@ -137,17 +149,10 @@ export default function ShopHome() {
           }));
         }
 
-        // Pending queue from work orders (supports both in-shop and road-call)
-        const pendingOrders: Job[] = woRes.ok
-          ? ((await woRes.json()).workOrders || []).map((wo: any) => toJob(wo, 'Pending'))
-          : [];
-
-        setPendingWorkOrders(pendingOrders);
-
         // Team members + active tech count
         if (teamRes.ok) {
           const data = await teamRes.json();
-          const members: any[] = data.teamMembers || [];
+          const members: any[] = data.team || data.teamMembers || [];
           setShopStats(prev => ({ ...prev, activeTechs: members.filter((m) => m.available).length }));
         }
 
@@ -164,7 +169,7 @@ export default function ShopHome() {
 
           if (activeWoRes.ok) {
             const activeData = await activeWoRes.json();
-            const activeOrders: any[] = activeData.workOrders || [];
+            const activeOrders: any[] = unwrapWorkOrders(activeData);
             activeOrders.forEach((wo) => {
               const bayNumber = Number(wo.bay);
               if (!Number.isInteger(bayNumber) || bayNumber < 1 || bayNumber > cap) return;
@@ -177,24 +182,30 @@ export default function ShopHome() {
           setBays(nextBays);
         }
       } catch {
-        // Dashboard will show zeros/empty  not a crash
+        // Keep the last good counts. A failed refresh must not paint zeros.
       }
     };
 
     setDashboardReady(false);
-    fetchDashboard().finally(() => setDashboardReady(true));
+    fetchDashboard().finally(() => {
+      if (alive) setDashboardReady(true);
+    });
 
     const refresh = setInterval(() => {
       fetchDashboard();
     }, 30 * 1000);
 
-    return () => clearInterval(refresh);
+    return () => {
+      alive = false;
+      generation += 1;
+      clearInterval(refresh);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]); // use stable primitive — avoids re-fetch when checkAuth creates a new user object reference
 
   const quickActions: QuickAction[] = [
     { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/workorders/inshop', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
-    { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/workorders/roadside', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
+    { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/shop/new-roadside-job', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
     { label: <><FaClipboardList style={{marginRight:6}}/>Estimates</>, href: '/shop/estimates', tint: 'rgba(168,85,247,0.18)', color: '#c084fc', border: 'rgba(168,85,247,0.28)' },
     { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
     { label: <><FaIndustry style={{marginRight:6}}/>Vendors & Parts</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
@@ -338,12 +349,13 @@ export default function ShopHome() {
       setPendingWorkOrders(prev => prev.filter(o => o.id !== orderId));
     }
 
-    // Persist assignment to server
+    // Persist board placement. This records the bay, not a technician.
+    // Clock-in is what assigns the technician.
     try {
       const bayNumber = destinationId.startsWith('bay-') ? Number(destinationId.replace('bay-', '')) : null;
       await persistPlacement(orderId, destinationId === 'roadcall' ? null : bayNumber, 'assigned');
     } catch {
-      console.error('Failed to persist bay assignment');
+      console.error('Failed to persist bay placement');
     }
   };
 
@@ -623,7 +635,7 @@ export default function ShopHome() {
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>{pendingWorkOrders.length} job{pendingWorkOrders.length !== 1 ? 's' : ''}</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardReady ? `${pendingQueueCount} job${pendingQueueCount !== 1 ? 's' : ''}` : '…'}</span>
                   </div>
                   {dragOverTarget === 'pending' && (
                     <div style={{marginBottom:10, padding:'10px 12px', border:'1px dashed rgba(245,158,11,0.7)', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#f59e0b', fontSize:12, fontWeight:700}}>
@@ -631,7 +643,7 @@ export default function ShopHome() {
                     </div>
                   )}
                   <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:520, overflowY:'auto', paddingRight:2}}>
-                    {pendingWorkOrders.length === 0 && (
+                    {dashboardReady && pendingQueueCount === 0 && pendingWorkOrders.length === 0 && (
                       <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
                         No customers waiting  -  nice work.
                       </div>
@@ -649,8 +661,11 @@ export default function ShopHome() {
                 <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Service Bays</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drop to assign</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drag to place on a bay</span>
                   </div>
+                  <p style={{ margin: '0 0 10px', fontSize: 12, color: '#9aa3b2' }}>
+                    Placing a job on a bay organizes the board. A technician is assigned when they clock in.
+                  </p>
 
                   <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10}}>
                     {bays.map((bay) => (
@@ -676,7 +691,7 @@ export default function ShopHome() {
                         </div>
 
                         {bay.jobs.length === 0 ? (
-                          <div style={{fontSize:12, color:'#9aa3b2'}}>Drop work order here</div>
+                          <div style={{fontSize:12, color:'#9aa3b2'}}>Drop a job here to place it</div>
                         ) : (
                           <div style={{display:'flex', flexDirection:'column', gap:8}}>
                             {bay.jobs.map((job) => (
@@ -720,7 +735,7 @@ export default function ShopHome() {
 
                         {dragOverTarget === bay.id && (
                           <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(34,197,94,0.75)', borderRadius:8, background:'rgba(34,197,94,0.12)', color:'#22c55e', fontSize:11, fontWeight:700}}>
-                            Release to assign here
+                            Release to place on this bay
                           </div>
                         )}
                       </div>
@@ -742,10 +757,10 @@ export default function ShopHome() {
                       }}
                     >
                       <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13, marginBottom:8}}><FaTruck style={{marginRight:4}} /> Roadcall Queue</div>
-                      <div style={{fontSize:12, color:'#9aa3b2'}}>Drop work order here for mobile service dispatch</div>
+                      <div style={{fontSize:12, color:'#9aa3b2'}}>Drop a job here to place it in the roadcall queue</div>
                       {dragOverTarget === 'roadcall' && (
                         <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(59,130,246,0.75)', borderRadius:8, background:'rgba(59,130,246,0.12)', color:'#60a5fa', fontSize:11, fontWeight:700}}>
-                          Release to dispatch as roadcall
+                          Release to place in the roadcall queue
                         </div>
                       )}
                     </div>

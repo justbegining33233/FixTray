@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
-
-const OPEN = new Set(['pending', 'assigned', 'in-progress', 'waiting-estimate', 'waiting-for-payment']);
+import { isActiveWorkOrder } from '@/lib/workOrderMetrics';
 
 export default function CustomerWorkOrdersPage() {
   const { user, isLoading } = useRequireAuth(['customer']);
@@ -15,7 +14,7 @@ export default function CustomerWorkOrdersPage() {
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('token');
-    fetch('/api/workorders?role=customer', { headers: { Authorization: `Bearer ${token}` } })
+    fetch('/api/workorders?limit=100&includeMetrics=1', { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => (res.ok ? res.json() : {}))
       .then((data) => setOrders(unwrapWorkOrders(data)))
       .catch(() => setOrders([]))
@@ -25,8 +24,8 @@ export default function CustomerWorkOrdersPage() {
   if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
   if (!user) return null;
 
-  const open = orders.filter((order) => OPEN.has(String(order.status || '').toLowerCase()));
-  const rest = orders.filter((order) => !OPEN.has(String(order.status || '').toLowerCase()));
+  const open = orders.filter((order) => isActiveWorkOrder(order));
+  const rest = orders.filter((order) => !isActiveWorkOrder(order));
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', padding: 24 }}>

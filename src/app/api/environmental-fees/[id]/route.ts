@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
+import { environmentalFeeAmount, validateEnvironmentalFee } from '@/lib/shopFormValidation';
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = authenticateRequest(req);
@@ -9,14 +10,28 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const { id } = await params;
-  const body = await req.json();
-  // Allowlist mutable fields — prevent shopId/id overwrite
-  const { name, feeAmount, unit, taxable, active } = body;
+  const body = await req.json().catch(() => ({}));
+  const check = validateEnvironmentalFee(body);
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
   const fee = await prisma.environmentalFee.update({
     where: { id },
-    data: { name, feeAmount, unit, taxable, active },
+    data: {
+      name: String(body.name).trim(),
+      feeAmount: environmentalFeeAmount(body),
+      feeType: body.feeType ? String(body.feeType) : null,
+      description: body.description ? String(body.description) : null,
+      unit: body.unit || 'per_job',
+      taxable: Boolean(body.taxable),
+      active: body.active !== false && body.isActive !== false,
+    },
   });
-  return NextResponse.json(fee);
+  return NextResponse.json({
+    ...fee,
+    amount: fee.feeAmount,
+    isActive: fee.active,
+    feeType: fee.feeType || 'other',
+    description: fee.description || '',
+  });
 }
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = authenticateRequest(req);

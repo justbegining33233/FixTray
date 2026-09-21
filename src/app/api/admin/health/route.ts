@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
+import { canViewPlatformHealthCatalog } from '@/lib/shopRestrictedRoutes';
 
 interface EnvCheck {
   name: string;
@@ -12,8 +13,8 @@ export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
-  // Env catalog is admin-only — do not expose secret names to shop role
-  if (!['admin', 'superadmin'].includes(auth.role)) {
+  // Env names stay off the shop role. The shop health page does not call this route.
+  if (!canViewPlatformHealthCatalog(auth.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

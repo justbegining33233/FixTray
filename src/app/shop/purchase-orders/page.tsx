@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaArrowLeft, FaClipboardList, FaExclamationTriangle, FaIndustry, FaShoppingCart, FaTimes } from 'react-icons/fa';
+import { formatCalendarDate } from '@/lib/calendarDate';
+import { purchaseOrderAmount } from '@/lib/purchaseOrderTotals';
 
 interface PurchaseOrder {
   id: string;
@@ -39,8 +41,8 @@ const toUiOrder = (order: any): PurchaseOrder => ({
   vendor: order.vendor || 'Vendor',
   status: order.status || 'pending',
   createdAt: order.createdAt,
-  expectedDate: order.expectedDate,
-  total: Number(order.totalCost || 0),
+  expectedDate: formatCalendarDate(order.expectedDate),
+  total: purchaseOrderAmount(order),
   notes: order.notes || '',
   items: Array.isArray(order.items)
     ? order.items.map((item: any) => ({
@@ -101,7 +103,7 @@ const openPurchaseOrderPdf = (order: PurchaseOrder) => {
         </div>
 
         <div><strong>Vendor:</strong> ${order.vendor}</div>
-        <div><strong>Expected Date:</strong> ${order.expectedDate ? String(order.expectedDate).slice(0, 10) : 'N/A'}</div>
+        <div><strong>Expected Date:</strong> ${order.expectedDate ? formatCalendarDate(order.expectedDate) : 'N/A'}</div>
 
         <table>
           <thead>
@@ -316,7 +318,9 @@ export default function PurchaseOrdersPage() {
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>${(order.total ?? 0).toFixed(2)}</div>
                   <div style={{ padding: '4px 10px', borderRadius: 16, background: s?.bg, color: s?.color, fontSize: 12, fontWeight: 700 }}>{s?.label}</div>
-                  <div style={{ color: '#6b7280', fontSize: 12 }}>{new Date(order.createdAt).toLocaleDateString()}</div>
+                  <div style={{ color: '#6b7280', fontSize: 12 }}>
+                    {order.expectedDate ? `Expected ${order.expectedDate}` : new Date(order.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
               );
             })}
@@ -369,6 +373,7 @@ export default function PurchaseOrdersPage() {
                 Total: ${(selected.total ?? 0).toFixed(2)}
               </div>
             </div>
+            {selected.expectedDate && <div style={{ color: '#e5e7eb', fontSize: 14, marginBottom: 12 }}>Expected delivery: {selected.expectedDate}</div>}
             {selected.notes && <div style={{ color: '#9ca3af', fontSize: 13 }}><FaClipboardList style={{marginRight:4}} /> {selected.notes}</div>}
           </div>
         </div>

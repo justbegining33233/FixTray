@@ -47,3 +47,61 @@ export function isScheduledDateInPast(iso: string, now = new Date()): boolean {
   if (Number.isNaN(parsed.getTime())) return true;
   return parsed.getTime() < now.getTime() - 60_000;
 }
+
+/**
+ * VIS-019: open appointments stay `scheduled` / `confirmed` until their start
+ * time is 15 minutes in the past, then they become `overdue`.
+ * Completed, cancelled, and no-show rows are left alone. Overdue is not a
+ * guess that the visit happened — the shop or customer still closes it out.
+ */
+export const APPOINTMENT_OPEN_STATUSES = ['scheduled', 'confirmed'] as const;
+export const APPOINTMENT_OVERDUE_GRACE_MS = 15 * 60 * 1000;
+
+export function normalizeAppointmentStatus(status: unknown): string {
+  return String(status || '').trim().toLowerCase();
+}
+
+export function isAppointmentOverdue(
+  status: unknown,
+  scheduledDate: Date | string,
+  now = new Date()
+): boolean {
+  const normalized = normalizeAppointmentStatus(status);
+  if (!(APPOINTMENT_OPEN_STATUSES as readonly string[]).includes(normalized)) return false;
+  const when = scheduledDate instanceof Date ? scheduledDate : new Date(scheduledDate);
+  if (Number.isNaN(when.getTime())) return false;
+  return when.getTime() < now.getTime() - APPOINTMENT_OVERDUE_GRACE_MS;
+}
+
+/** Upcoming means still open and not yet past the overdue grace window. */
+export function isUpcomingAppointment(
+  status: unknown,
+  scheduledDate: Date | string,
+  now = new Date()
+): boolean {
+  const normalized = normalizeAppointmentStatus(status);
+  if (!(APPOINTMENT_OPEN_STATUSES as readonly string[]).includes(normalized)) return false;
+  return !isAppointmentOverdue(status, scheduledDate, now);
+}
+
+export type AppointmentLike = {
+  status?: unknown;
+  scheduledDate?: Date | string | null;
+};
+
+/**
+ * Upcoming and total share this function on the customer dashboard and
+ * the appointments page. Upcoming does not depend on whether a vehicle
+ * is attached. Vehicle totals are saved vehicles, counted separately.
+ */
+export function summarizeAppointments(rows: AppointmentLike[] | null | undefined, now = new Date()) {
+  const list = Array.isArray(rows) ? rows : [];
+  const upcomingAppointments = list.filter((row) =>
+    isUpcomingAppointment(row.status, row.scheduledDate || '', now)
+  );
+  return {
+    total: list.length,
+    upcoming: upcomingAppointments.length,
+    upcomingAppointments,
+  };
+}

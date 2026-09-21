@@ -52,9 +52,11 @@ export function isInShopLocation(serviceLocation?: string | null): boolean {
   return raw === 'in-shop' || raw === 'inshop' || raw === 'shop';
 }
 
+export const ROADSIDE_LOCATION_VALUES = ['road-call', 'roadside', 'roadcall', 'road_call'] as const;
+
 export function isRoadsideLocation(serviceLocation?: string | null): boolean {
-  const raw = String(serviceLocation || '').trim().toLowerCase().replace(/_/g, '-');
-  return raw === 'road-call' || raw === 'roadside' || raw === 'roadcall';
+  const raw = String(serviceLocation || '').trim().toLowerCase().replace(/-/g, '_');
+  return raw === 'road_call' || raw === 'roadside' || raw === 'roadcall';
 }
 
 /** Jobs that belong on the lobby board. Pending roadside work stays off it. */

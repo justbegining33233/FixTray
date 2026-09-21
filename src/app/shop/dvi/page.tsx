@@ -30,6 +30,7 @@ export default function DVIPage() {
   const [showNew, setShowNew] = useState(false);
   const [newForm, setNewForm] = useState({ vehicleDesc: '', mileage: '', workOrderId: '', notes: '' });
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [copied, setCopied] = useState('');
   const [_sentId, setSentId] = useState('');
   const [_sendError, setSendError] = useState('');
@@ -67,7 +68,11 @@ export default function DVIPage() {
   useEffect(() => { if (!user) return; load(); }, [user]);
 
   const createInspection = async () => {
-    if (!newForm.vehicleDesc.trim() && !newForm.workOrderId) return;
+    if (!newForm.vehicleDesc.trim() && !newForm.workOrderId) {
+      setFormError('Enter a vehicle or choose a work order.');
+      return;
+    }
+    setFormError('');
     setSaving(true);
     const token = localStorage.getItem('token');
     const DEFAULT_ITEMS = [
@@ -101,6 +106,9 @@ export default function DVIPage() {
       setShowNew(false);
       setSelected(inspection);
       load();
+    } else {
+      const err = await r.json().catch(() => ({}));
+      setFormError(err.error || 'Could not create the inspection.');
     }
     setSaving(false);
   };
@@ -290,6 +298,7 @@ export default function DVIPage() {
                 ))}
               </select>
             </div>
+            {formError && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', borderRadius: 8, padding: '10px 12px', marginBottom: 12, fontSize: 13 }}>{formError}</div>}
             {[['vehicleDesc', 'Vehicle (Year/Make/Model)'], ['mileage', 'Current Mileage'], ['notes', 'Notes (optional)']].map(([k, label]) => (
               <div key={k} style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>{label}</label>

@@ -54,7 +54,7 @@ export default function TechnicianNavigation({
     },
     {
       name: 'My Jobs',
-      href: '/tech/home',
+      href: '/tech/jobs?view=active',
       icon: FaClipboardList,
       badge: activeJobs > 0 ? activeJobs : undefined,
       description: 'Active service calls'

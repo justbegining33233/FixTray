@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { isActiveWorkOrder, summarizeWorkOrders, workOrderTitle, type WorkOrderSummary } from '@/lib/workOrderMetrics';
 import { FaExclamationTriangle } from 'react-icons/fa';
 
 interface OverviewStats {
@@ -12,9 +13,17 @@ interface OverviewStats {
   loyaltyPoints: number;
 }
 
+interface ActivityItem {
+  id: string;
+  title: string;
+  status: string;
+  when: string;
+}
+
 export default function CustomerOverview() {
   const { user } = useRequireAuth(['customer']);
   const [stats, setStats] = useState<OverviewStats>({ activeOrders: 0, completedThisMonth: 0, unreadMessages: 0, loyaltyPoints: 0 });
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -26,23 +35,32 @@ export default function CustomerOverview() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [woRes, msgRes, rewardsRes] = await Promise.allSettled([
-        fetch('/api/workorders?role=customer', { headers }),
-        fetch('/api/messages/unread-count', { headers }),
-        fetch('/api/customers/rewards', { headers }),
+        fetch('/api/workorders?limit=20&includeMetrics=1', { headers, credentials: 'include' }),
+        fetch('/api/messages/unread-count', { headers, credentials: 'include' }),
+        fetch('/api/customers/rewards', { headers, credentials: 'include' }),
       ]);
 
       let activeOrders = 0, completedThisMonth = 0;
+      let nextActivity: ActivityItem[] = [];
       if (woRes.status === 'fulfilled' && woRes.value.ok) {
         const raw = await woRes.value.json();
+        const metrics = raw.metrics as Partial<WorkOrderSummary> | undefined;
         const orders: any[] = unwrapWorkOrders(raw);
-        const now = new Date();
-        activeOrders = orders.filter((o: any) => !['completed', 'closed'].includes(o.status?.toLowerCase())).length;
-        completedThisMonth = orders.filter((o: any) => {
-          if (!['completed', 'closed'].includes(o.status?.toLowerCase())) return false;
-          const d = new Date(o.updatedAt || o.createdAt);
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        }).length;
+        const summary = summarizeWorkOrders(orders);
+        activeOrders = typeof metrics?.active === 'number' ? metrics.active : summary.active;
+        completedThisMonth = typeof metrics?.completedThisMonth === 'number' ? metrics.completedThisMonth : summary.completedThisMonth;
+        const previewSource = raw.metrics?.activePreview;
+        const preview = Array.isArray(previewSource)
+          ? previewSource
+          : orders.filter((order) => isActiveWorkOrder(order));
+        nextActivity = preview.slice(0, 5).map((order: any) => ({
+          id: String(order.id),
+          title: workOrderTitle(order),
+          status: String(order.status || 'pending'),
+          when: new Date(order.updatedAt || order.createdAt || Date.now()).toLocaleString(),
+        }));
       }
+      setActivity(nextActivity);
 
       let unreadMessages = 0;
       if (msgRes.status === 'fulfilled' && msgRes.value.ok) {
@@ -109,28 +127,42 @@ export default function CustomerOverview() {
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:24, marginBottom:40}}>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>Active Orders</div>
-            <div style={{fontSize:36, fontWeight:700, color:'#e5332a'}}>{loading ? '-' : stats.activeOrders}</div>
+            <div style={{fontSize:36, fontWeight:700, color:'#e5332a'}}>{loading ? '…' : stats.activeOrders}</div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>Completed This Month</div>
-            <div style={{fontSize:36, fontWeight:700, color:'#22c55e'}}>{loading ? '-' : stats.completedThisMonth}</div>
+            <div style={{fontSize:36, fontWeight:700, color:'#22c55e'}}>{loading ? '…' : stats.completedThisMonth}</div>
           </div>
           <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>Unread Messages</div>
-            <div style={{fontSize:36, fontWeight:700, color:'#f59e0b'}}>{loading ? '-' : stats.unreadMessages}</div>
+            <div style={{fontSize:36, fontWeight:700, color:'#f59e0b'}}>{loading ? '…' : stats.unreadMessages}</div>
           </div>
           <div style={{background:'rgba(168,85,247,0.1)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>Loyalty Points</div>
-            <div style={{fontSize:36, fontWeight:700, color:'#a855f7'}}>{loading ? '-' : stats.loyaltyPoints.toLocaleString()}</div>
+            <div style={{fontSize:36, fontWeight:700, color:'#a855f7'}}>{loading ? '…' : stats.loyaltyPoints.toLocaleString()}</div>
           </div>
         </div>
 
         {/* Recent Activity */}
         <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
           <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Recent Activity</h2>
-          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-            {loading ? 'Loading activity...' : 'No recent activity'}
-          </div>
+          {loading ? (
+            <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>Loading activity...</div>
+          ) : activity.length === 0 ? (
+            <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>No recent activity</div>
+          ) : (
+            <div style={{display:'grid', gap:12}}>
+              {activity.map((item) => (
+                <Link key={item.id} href={`/customer/workorders/${item.id}` as any} style={{display:'flex', justifyContent:'space-between', gap:12, textDecoration:'none', background:'rgba(255,255,255,0.04)', borderRadius:8, padding:'12px 14px'}}>
+                  <div>
+                    <div style={{color:'#e5e7eb', fontWeight:700}}>{item.title}</div>
+                    <div style={{color:'#9aa3b2', fontSize:12, marginTop:4}}>{item.when}</div>
+                  </div>
+                  <div style={{color:'#f59e0b', fontSize:12, fontWeight:700, textTransform:'capitalize'}}>{item.status.replace(/-/g, ' ')}</div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Back to Dashboard */}

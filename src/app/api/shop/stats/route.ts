@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { activeWorkOrderWhere, pendingApprovalWhere, resolveShopId } from '@/lib/workOrderMetrics';
 
 // GET - Get shop dashboard stats
 export async function GET(request: NextRequest) {
@@ -16,38 +17,24 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
-    // Data isolation: the requested shopId must belong to the authenticated user
-    // (admins/superadmins can query any shop)
-    if (decoded.role !== 'superadmin' && shopId && shopId !== decoded.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const resolved = resolveShopId(decoded, searchParams.get('shopId'));
+    if (!resolved.ok) {
+      const status = resolved.error === 'forbidden' ? 403 : 400;
+      return NextResponse.json(
+        { error: resolved.error === 'forbidden' ? 'Forbidden' : 'Shop ID required' },
+        { status },
+      );
     }
+    const shopId = resolved.shopId;
 
-
-    if (!shopId) {
-      return NextResponse.json({ error: 'Shop ID required' }, { status: 400 });
-    }
-
-    // Verify user has access to this shop
-    if (decoded.role === 'shop') {
-      // For shop owners, verify they own this shop
-      if (decoded.id !== shopId) {
-        return NextResponse.json({ error: 'Access denied to this shop' }, { status: 403 });
-      }
-    } else if (decoded.role === 'manager' || decoded.role === 'tech') {
-      // For managers and techs, verify they belong to this shop
+    if (decoded.role === 'manager' || decoded.role === 'tech') {
       const tech = await prisma.tech.findFirst({
-        where: {
-          id: decoded.id,
-          shopId: shopId,
-        },
+        where: { id: decoded.id, shopId },
       });
-      
       if (!tech) {
         return NextResponse.json({ error: 'Access denied to this shop' }, { status: 403 });
       }
-    } else {
-      // Reject any other roles
+    } else if (decoded.role !== 'shop' && decoded.role !== 'superadmin' && decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized - Shop access only' }, { status: 403 });
     }
 
@@ -63,10 +50,7 @@ export async function GET(request: NextRequest) {
     // Work order stats
     const [openJobs, completedToday, weekJobs, allJobs] = await Promise.all([
       prisma.workOrder.count({
-        where: {
-          shopId,
-          status: { in: ['pending', 'assigned', 'in-progress'] },
-        },
+        where: activeWorkOrderWhere({ shopId }),
       }),
       prisma.workOrder.count({
         where: {
@@ -124,10 +108,7 @@ export async function GET(request: NextRequest) {
 
     // Get pending approvals (work orders waiting for estimates, etc.)
     const pendingApprovals = await prisma.workOrder.count({
-      where: {
-        shopId,
-        status: { in: ['waiting-estimate', 'waiting-for-payment'] },
-      },
+      where: pendingApprovalWhere({ shopId }),
     });
 
     // Get inventory requests pending approval

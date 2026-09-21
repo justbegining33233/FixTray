@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { summarizeAppointments } from '@/lib/appointmentValidation';
+import { unwrapVehicles } from '@/lib/workOrderList';
 import { FaArrowLeft, FaCalendarAlt, FaComments, FaMapMarkerAlt } from 'react-icons/fa';
 
 interface Appointment {
@@ -116,7 +118,7 @@ export default function CustomerAppointmentsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setVehicles(data);
+        setVehicles(unwrapVehicles(data));
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
@@ -225,6 +227,8 @@ export default function CustomerAppointmentsPage() {
     }
   };
 
+  const appointmentSummary = summarizeAppointments(appointments);
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -244,7 +248,9 @@ export default function CustomerAppointmentsPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaCalendarAlt style={{marginRight:4}} /> My Appointments</h1>
-              <p style={{ fontSize: 14, color: '#9aa3b2' }}>Book and manage your service appointments</p>
+              <p style={{ fontSize: 14, color: '#9aa3b2' }}>
+                {appointmentSummary.upcoming} upcoming · {appointmentSummary.total} total
+              </p>
             </div>
             <button
               onClick={() => router.push('/customer/appointments/new' as Route)}
@@ -284,8 +290,8 @@ export default function CustomerAppointmentsPage() {
                     borderRadius: 6,
                     fontSize: 12,
                     fontWeight: 700,
-                    background: apt.status === 'completed' ? 'rgba(16,185,129,0.2)' : apt.status === 'confirmed' ? 'rgba(229,51,42,0.2)' : apt.status === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
-                    color: apt.status === 'completed' ? '#10b981' : apt.status === 'confirmed' ? '#ff6b64' : apt.status === 'cancelled' ? '#e5332a' : '#f59e0b',
+                    background: apt.status === 'completed' ? 'rgba(16,185,129,0.2)' : apt.status === 'overdue' ? 'rgba(239,68,68,0.2)' : apt.status === 'confirmed' ? 'rgba(229,51,42,0.2)' : apt.status === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
+                    color: apt.status === 'completed' ? '#10b981' : apt.status === 'overdue' ? '#fca5a5' : apt.status === 'confirmed' ? '#ff6b64' : apt.status === 'cancelled' ? '#e5332a' : '#f59e0b',
                     height: 'fit-content'
                   }}>
                     {apt.status.toUpperCase()}

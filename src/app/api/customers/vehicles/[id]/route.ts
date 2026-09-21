@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { normalizeVehicleType } from '@/lib/vehicleTypes';
 
 // GET - Get vehicle by ID
 export async function GET(
@@ -86,9 +87,10 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { make, model, year, vin, licensePlate, color, mileage } = body;
+    const { make, model, year, vin, licensePlate, color, mileage, vehicleType } = body;
 
     const updateData: any = {};
+    if (vehicleType) updateData.vehicleType = normalizeVehicleType(vehicleType);
     if (make) updateData.make = make;
     if (model) updateData.model = model;
     if (year) updateData.year = parseInt(year);

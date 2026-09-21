@@ -32,18 +32,29 @@ describe('Fleet Management Service', () => {
   });
 
   it('should generate fleet invoice with auto-numbering', async () => {
-    const invoice = await fleetService.generateFleetInvoice(fleetAccountId, 5000, []);
-    expect(invoice).toHaveProperty('invoiceNumber');
-    expect(invoice.invoiceNumber).toMatch(/FLEET-/);
+    const invoiceId = await fleetService.generateFleetInvoice(fleetAccountId, []);
+    const invoice = await prisma.fleetInvoice.findUnique({ where: { id: invoiceId } });
+    expect(invoice?.invoiceNumber).toMatch(/FLEET-/);
   });
 
   it('should record fleet payment', async () => {
     const invoice = await prisma.fleetInvoice.create({
-      data: { fleetAccountId, totalAmount: 1000, amountPaid: 0, status: 'unpaid' },
+      data: {
+        fleetAccountId,
+        shopId: testShopId,
+        invoiceNumber: `FLEET-TEST-${Date.now()}`,
+        workOrderIds: '',
+        totalAmount: 1000,
+        amountPaid: 0,
+        status: 'unpaid',
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
     });
 
-    const payment = await fleetService.recordFleetPayment(invoice.id, 500);
-    expect(payment.amountPaid).toBe(500);
+    const recorded = await fleetService.recordFleetPayment(invoice.id, 500);
+    expect(recorded).toBe(true);
+    const updated = await prisma.fleetInvoice.findUnique({ where: { id: invoice.id } });
+    expect(updated?.amountPaid).toBe(500);
   });
 
   it('should calculate fleet invoice aging', async () => {

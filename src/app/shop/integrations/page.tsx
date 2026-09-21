@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
+import { canConnectIntegration, integrationFieldsComplete } from '@/lib/integrationConnect';
 import { FaBriefcase, FaCalendarAlt, FaCar, FaChartBar, FaCircle, FaCog, FaCreditCard, FaEnvelope, FaMobileAlt, FaPlug, FaRegCircle, FaWrench } from 'react-icons/fa';
 
 interface IntegrationConfig {
@@ -114,19 +115,28 @@ export default function IntegrationsPage() {
                     <div>
                       {prov.fields.map(f => (
                         <div key={f.k} style={{ marginBottom: 10 }}>
-                          <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>{f.label}</label>
-                          <input id={`${prov.key}-${f.k}`} name={f.k} autoComplete="off" required aria-label={f.label} type={f.type || 'text'} value={formFields[f.k] || ''} onChange={e => setFormFields(p => ({ ...p, [f.k]: e.target.value }))} placeholder={f.type === 'password' ? '--------' : ''}
+                          <label htmlFor={`${prov.key}-${f.k}`} style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>{f.label}</label>
+                          <input id={`${prov.key}-${f.k}`} name={f.k} autoComplete="off" required aria-required="true" aria-label={f.label} type={f.type || 'text'} value={formFields[f.k] || ''} onChange={e => setFormFields(p => ({ ...p, [f.k]: e.target.value }))} placeholder={f.type === 'password' ? '--------' : ''}
                             style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, padding: '8px 12px', color: '#e5e7eb', fontSize: 13, boxSizing: 'border-box' }} />
                         </div>
                       ))}
                       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                        <button onClick={() => save(prov.key, true)} disabled={saving} style={{ flex: 1, background: prov.color, color: '#fff', border: 'none', borderRadius: 7, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{saving ? '...' : 'Save & Connect'}</button>
+                        <button type="button" onClick={() => { if (canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields)) save(prov.key, true); }} disabled={saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields)} aria-disabled={saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields)} style={{ flex: 1, background: canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields) ? prov.color : '#374151', color: canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields) ? '#fff' : '#9ca3af', border: 'none', borderRadius: 7, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields) ? 'not-allowed' : 'pointer' }}>{saving ? '...' : 'Save & Connect'}</button>
                         <button onClick={() => setEditing(null)} style={{ background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
                       </div>
                     </div>
                   ) : (
-                    <button onClick={() => openEdit(prov.key)} style={{ width: '100%', background: 'rgba(255,255,255,0.06)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                      {config ? <><FaCog style={{marginRight:4}} /> Configure</> : '+ Connect'}
+                    <button
+                      type="button"
+                      onClick={() => { if (canConnectIntegration(isEnabled)) openEdit(prov.key); }}
+                      disabled={!canConnectIntegration(isEnabled)}
+                      aria-disabled={!canConnectIntegration(isEnabled)}
+                      aria-label={canConnectIntegration(isEnabled) ? `${config ? 'Configure' : 'Connect'} ${prov.name}` : `${prov.name} is disabled. Enable it before connecting.`}
+                      style={{ width: '100%', background: canConnectIntegration(isEnabled) ? 'rgba(255,255,255,0.06)' : '#1f2937', color: canConnectIntegration(isEnabled) ? '#e5e7eb' : '#6b7280', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 600, cursor: canConnectIntegration(isEnabled) ? 'pointer' : 'not-allowed' }}
+                    >
+                      {canConnectIntegration(isEnabled)
+                        ? (config ? <><FaCog style={{marginRight:4}} /> Configure</> : '+ Connect')
+                        : 'Connect unavailable while disabled'}
                     </button>
                   )}
                 </div>

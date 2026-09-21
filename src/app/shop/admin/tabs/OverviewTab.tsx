@@ -317,11 +317,11 @@ export default function OverviewTab({
           <div style={{ display: 'grid', gap: 12 }}>
             {[
               { href: '/shop/manage-team', bg: 'rgba(229,51,42,0.2)', border: 'rgba(229,51,42,0.3)', color: '#e5332a', icon: <FaUsers />, label: 'Manage Team', sub: 'Add or edit team members' },
-              { href: '/shop/payroll', bg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.3)', color: '#22c55e', icon: <FaClipboardList />, label: 'Payroll & Reports', sub: 'Download employee hours report' },
+              { href: '/shop/payroll', bg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.3)', color: '#22c55e', icon: <FaClipboardList />, label: 'Payroll', sub: 'Hours, schedules, and pay stub export' },
               { href: '/shop/admin/settings', bg: 'rgba(168,85,247,0.2)', border: 'rgba(168,85,247,0.3)', color: '#a855f7', icon: <FaCog />, label: 'Shop Settings', sub: 'Configure rates and margins' },
               { href: '/shop/vendors', bg: 'rgba(139,92,246,0.2)', border: 'rgba(139,92,246,0.3)', color: '#a78bfa', icon: <FaStore />, label: 'Vendor Management', sub: 'Manage parts suppliers' },
               { href: '/shop/locations', bg: 'rgba(20,184,166,0.2)', border: 'rgba(20,184,166,0.3)', color: '#2dd4bf', icon: <FaMapMarkerAlt />, label: 'Shop Locations', sub: 'Manage multiple branches' },
-              { href: '/shop/settings/two-factor', bg: 'rgba(229,51,42,0.2)', border: 'rgba(229,51,42,0.3)', color: '#ff6b64', icon: <FaKey />, label: 'Two-Factor Auth (2FA)', sub: 'Secure your account' },
+              { href: '/shop/settings?tab=security', bg: 'rgba(229,51,42,0.2)', border: 'rgba(229,51,42,0.3)', color: '#ff6b64', icon: <FaKey />, label: 'Security', sub: 'Two-factor auth and sessions' },
               { href: '/shop/analytics', bg: 'rgba(236,72,153,0.2)', border: 'rgba(236,72,153,0.3)', color: '#ec4899', icon: <FaChartBar />, label: 'Shop Analytics', sub: 'Performance & revenue trends' },
               { href: '/shop/customer-messages', bg: 'rgba(229,51,42,0.2)', border: 'rgba(229,51,42,0.3)', color: '#e5332a', icon: <FaEnvelope />, label: 'Customer Messages', sub: 'All customer conversations' },
               { href: '/shop/recurring-workorders', bg: 'rgba(34,197,94,0.2)', border: 'rgba(34,197,94,0.3)', color: '#22c55e', icon: <FaRedo />, label: 'Recurring Jobs', sub: 'Manage scheduled services' },

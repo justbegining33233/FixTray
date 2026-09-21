@@ -20,6 +20,7 @@ export async function GET(
       where: { id: shopId },
       include: {
         services: {
+          where: { isActive: true },
           select: {
             id: true,
             serviceName: true,

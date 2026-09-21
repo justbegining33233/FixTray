@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { calendarDateToUtcNoon } from '@/lib/calendarDate';
+import { validatePurchaseOrder } from '@/lib/shopFormValidation';
 
 // GET /api/purchase-orders?shopId=...
 export async function GET(request: NextRequest) {
@@ -65,28 +67,35 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { shopId, vendor, expectedDate, notes, createdById, items } = body;
-
-    if (!shopId || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Shop ID and at least one item are required' }, { status: 400 });
+    const poCheck = validatePurchaseOrder({ vendor, items });
+    if (!shopId || !poCheck.ok) {
+      return NextResponse.json({ error: poCheck.ok ? 'Shop ID is required' : poCheck.error }, { status: 400 });
     }
 
-    const totalCost = items.reduce((sum: number, item: any) => sum + (item.unitCost || 0) * (item.quantity || 0), 0);
+    let expected: Date | undefined;
+    if (expectedDate) {
+      const parsed = calendarDateToUtcNoon(expectedDate);
+      if (!parsed) return NextResponse.json({ error: 'Expected date is invalid.' }, { status: 400 });
+      expected = parsed;
+    }
+
+    const totalCost = items.reduce((sum: number, item: any) => sum + (Number(item.unitCost) || 0) * (Number(item.quantity) || 0), 0);
 
     const order = await prisma.purchaseOrder.create({
       data: {
         shopId,
-        vendor,
-        expectedDate: expectedDate ? new Date(expectedDate) : undefined,
+        vendor: String(vendor).trim(),
+        expectedDate: expected,
         notes,
         status: 'ordered',
         createdById: createdById || decoded.id,
         totalCost,
         items: {
           create: items.map((item: any) => ({
-            itemName: item.itemName,
+            itemName: String(item.itemName || item.description).trim(),
             sku: item.sku,
-            quantity: item.quantity || 0,
-            unitCost: item.unitCost || 0,
+            quantity: Number(item.quantity ?? item.qty),
+            unitCost: Number(item.unitCost),
             workOrderId: item.workOrderId || null,
             inventoryStockId: item.inventoryStockId || null,
           })),

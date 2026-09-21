@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
 import crypto from 'crypto';
+import { validateDviCreate } from '@/lib/shopFormValidation';
 
 export async function GET(req: NextRequest) {
   const auth = authenticateRequest(req);
@@ -23,7 +24,9 @@ export async function POST(req: NextRequest) {
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
   if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const check = validateDviCreate(body);
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
   const token = crypto.randomBytes(20).toString('hex');
 
   const inspection = await prisma.dVIInspection.create({

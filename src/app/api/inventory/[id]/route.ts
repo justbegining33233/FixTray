@@ -5,6 +5,7 @@ import { rateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 import { validateRequest, inventoryUpdateSchema } from '@/lib/validation';
 import logger from '@/lib/logger';
 import { sanitizeObject } from '@/lib/sanitize';
+import { normalizeInventoryType, optionalInventoryText } from '@/lib/inventoryItem';
 
 // GET - Get single inventory item
 export async function GET(
@@ -72,6 +73,17 @@ export async function PUT(
     }
 
     const data = validation.data;
+    let typeUpdate: 'part' | 'labor' | undefined;
+    if (data.type !== undefined) {
+      const normalizedType = normalizeInventoryType(data.type);
+      if (!normalizedType) {
+        return NextResponse.json(
+          { error: 'Invalid type. Must be Part or Labor' },
+          { status: 400 }
+        );
+      }
+      typeUpdate = normalizedType;
+    }
 
     // Check if item exists
     const item = await prisma.inventoryItem.findUnique({
@@ -92,13 +104,14 @@ export async function PUT(
     const updated = await prisma.inventoryItem.update({
       where: { id },
       data: {
-        type: typeof data.type === 'string' ? data.type.trim().toLowerCase() : data.type,
+        type: typeUpdate,
         name: data.name,
         sku: data.sku,
         quantity: data.quantity,
         price: data.price,
         reorderPoint: data.reorderPoint,
-        // notes: data.notes,
+        supplier: optionalInventoryText(data.supplier),
+        notes: optionalInventoryText(data.notes),
       },
     });
 

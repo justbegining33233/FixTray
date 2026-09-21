@@ -91,7 +91,7 @@ export default function NativeMobileLayout({
         {
           icon: <FaClipboardList size={20} />,
           label: 'Orders',
-          path: '/customer/history',
+          path: '/customer/workorders',
         },
         {
           icon: <FaPlus size={20} />,

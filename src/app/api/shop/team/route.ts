@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { resolveShopId } from '@/lib/workOrderMetrics';
 
 // GET - Get detailed team information including clock status and recent timesheets
 export async function GET(request: NextRequest) {
@@ -16,31 +17,24 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
-    // Data isolation: the requested shopId must belong to the authenticated user
-    // (admins/superadmins can query any shop)
-    if (decoded.role !== 'superadmin' && shopId && shopId !== decoded.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const resolved = resolveShopId(decoded, searchParams.get('shopId'));
+    if (!resolved.ok) {
+      const status = resolved.error === 'forbidden' ? 403 : 400;
+      return NextResponse.json(
+        { error: resolved.error === 'forbidden' ? 'Forbidden' : 'Shop ID required' },
+        { status },
+      );
     }
+    const shopId = resolved.shopId;
 
-
-    if (!shopId) {
-      return NextResponse.json({ error: 'Shop ID required' }, { status: 400 });
-    }
-
-    // Verify user has access to this shop
-    if (decoded.role === 'shop') {
-      if (decoded.id !== shopId) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-      }
-    } else if (decoded.role === 'manager' || decoded.role === 'tech') {
+    if (decoded.role === 'manager' || decoded.role === 'tech') {
       const tech = await prisma.tech.findFirst({
         where: { id: decoded.id, shopId },
       });
       if (!tech) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
-    } else {
+    } else if (decoded.role !== 'shop' && decoded.role !== 'superadmin' && decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

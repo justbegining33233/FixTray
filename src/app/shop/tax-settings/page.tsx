@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
+import { defaultTaxRuleDraft } from '@/lib/taxDefaults';
 import { FaBox, FaDollarSign, FaReceipt, FaWrench } from 'react-icons/fa';
 
 interface TaxRule {
@@ -21,7 +22,8 @@ export default function TaxSettingsPage() {
   const [rules, setRules] = useState<TaxRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', rate: '', appliesToParts: true, appliesToLabor: true, appliesToFees: false, state: '', county: '', isDefault: false, isActive: true });
+  const [form, setForm] = useState(defaultTaxRuleDraft(null));
+  const [shopDraft, setShopDraft] = useState(defaultTaxRuleDraft(null));
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [editRule, setEditRule] = useState<TaxRule | null>(null);
@@ -36,7 +38,22 @@ export default function TaxSettingsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { if (!user) return; load(); }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    load();
+    const shopId = (user as { shopId?: string; id: string }).shopId || user.id;
+    const token = localStorage.getItem('token');
+    fetch(`/api/shops/${shopId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const shop = data?.shop ?? data;
+        if (!shop?.state) return;
+        const draft = defaultTaxRuleDraft(shop);
+        setShopDraft(draft);
+        setForm((current) => (current.state ? current : draft));
+      })
+      .catch(() => {});
+  }, [user]);
 
   const save = async () => {
     if (!form.name || !form.rate) { setFormError('Name and rate are required.'); return; }
@@ -47,7 +64,7 @@ export default function TaxSettingsPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...form, rate: Number(form.rate) }),
     });
-    if (r.ok) { setShowForm(false); setForm({ name: '', rate: '', appliesToParts: true, appliesToLabor: true, appliesToFees: false, state: '', county: '', isDefault: false, isActive: true }); load(); }
+    if (r.ok) { setShowForm(false); setForm(shopDraft); load(); }
     else { setFormError('Failed to save tax rule.'); }
     setSaving(false);
   };

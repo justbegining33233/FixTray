@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { Route } from 'next';
 
 interface Customer {
@@ -11,7 +11,6 @@ interface Customer {
 }
 
 export default function ShopCustomersPage() {
-  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -66,14 +65,14 @@ export default function ShopCustomersPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.map(c => (
-          <div
+          <Link
             key={c.id}
-            onClick={() => router.push(`/shop/customers/${c.id}/crm` as any)}
+            href={`/shop/customers/${c.id}/crm` as Route}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '14px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
-              transition: 'background 0.15s',
+              transition: 'background 0.15s', textDecoration: 'none',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
@@ -91,8 +90,8 @@ export default function ShopCustomersPage() {
                 <div style={{ fontSize: 13, color: '#94a3b8' }}>{c.email}</div>
               </div>
             </div>
-            <div style={{ fontSize: 13, color: '#64748b' }}>View Profile →</div>
-          </div>
+            <span style={{ fontSize: 13, color: '#93c5fd', fontWeight: 600 }}>View Profile →</span>
+          </Link>
         ))}
       </div>
     </div>

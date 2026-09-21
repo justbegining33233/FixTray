@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
       shopId, name: body.name, rate: Number(body.rate) || 0,
       appliesToLabor: Boolean(body.appliesToLabor), appliesToParts: body.appliesToParts !== false,
       appliesToFees: Boolean(body.appliesToFees), exemptServices: body.exemptServices || null, active: body.active !== false,
+      state: body.state ? String(body.state).trim() : null,
+      county: body.county ? String(body.county).trim() : null,
     },
   });
   return NextResponse.json(rule, { status: 201 });

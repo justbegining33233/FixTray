@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import { AuthUser } from '@/lib/auth';
 import { sendSms } from '@/lib/smsService';
 import { findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
-import { hasAppointmentVehicle, isScheduledDateInPast } from '@/lib/appointmentValidation';
+import { hasAppointmentVehicle, isScheduledDateInPast, APPOINTMENT_OVERDUE_GRACE_MS, APPOINTMENT_OPEN_STATUSES } from '@/lib/appointmentValidation';
 
 // GET - Get appointments
 export async function GET(request: NextRequest) {
@@ -34,6 +34,20 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       where.status = status;
+    }
+
+    const overdueCutoff = new Date(Date.now() - APPOINTMENT_OVERDUE_GRACE_MS);
+    const overdueShopId = where.shopId || (user.role === 'shop' ? user.id : undefined);
+    if (where.customerId || overdueShopId) {
+      await prisma.appointment.updateMany({
+        where: {
+          ...(where.customerId ? { customerId: where.customerId } : {}),
+          ...(overdueShopId ? { shopId: overdueShopId } : {}),
+          status: { in: [...APPOINTMENT_OPEN_STATUSES, 'Scheduled', 'Confirmed'] },
+          scheduledDate: { lt: overdueCutoff },
+        },
+        data: { status: 'overdue' },
+      });
     }
 
     const appointments = await prisma.appointment.findMany({

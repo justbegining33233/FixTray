@@ -87,6 +87,9 @@ export async function PUT(
         price: data.price,
         duration: data.duration,
         description: data.description,
+        isActive: data.isActive,
+        availableInShop: data.availableInShop,
+        availableRoadside: data.availableRoadside,
       },
     });
 

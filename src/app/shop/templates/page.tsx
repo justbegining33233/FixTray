@@ -93,11 +93,11 @@ export default function WorkOrderTemplatesPage() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.serviceType) { setError('Name and service type are required'); return; }
+    if (!form.name.trim() || !form.serviceType.trim()) { setError('Name and service type are required'); return; }
     setSaving(true); setError(null);
     try {
       const body = {
-        name: form.name, serviceType: form.serviceType, description: form.description,
+        name: form.name.trim(), serviceType: form.serviceType.trim(), description: form.description,
         repairs: form.repairs.split('\n').map(s => s.trim()).filter(Boolean),
         maintenance: form.maintenance.split('\n').map(s => s.trim()).filter(Boolean),
         estimatedCost: parseFloat(form.estimatedCost) || 0,
@@ -242,7 +242,7 @@ export default function WorkOrderTemplatesPage() {
               ))}
               {error && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>{error}</p>}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={handleSave} disabled={saving || !form.name || !form.serviceType} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: saving || !form.name || !form.serviceType ? 'not-allowed' : 'pointer', opacity: saving || !form.name || !form.serviceType ? 0.5 : 1 }}>
+                <button onClick={handleSave} disabled={saving || !form.name.trim() || !form.serviceType.trim()} style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: '#3b82f6', color: 'white', fontWeight: 600, cursor: saving || !form.name.trim() || !form.serviceType.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.name.trim() || !form.serviceType.trim() ? 0.5 : 1 }}>
                   {saving ? 'Saving...' : editId ? 'Update Template' : 'Create Template'}
                 </button>
                 <button onClick={() => { setShowForm(false); setError(null); }} style={{ padding: '11px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}>

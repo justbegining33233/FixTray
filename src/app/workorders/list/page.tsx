@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 /** Where each role's work order list lives */
 const WORKORDER_LIST_BY_ROLE: Record<string, string> = {
   shop:       '/shop/admin',
-  tech:       '/tech/home',
+  tech:       '/tech/jobs?view=active',
   manager:    '/manager/overview',
   customer:   '/customer/workorders',
   admin:      '/admin/home',

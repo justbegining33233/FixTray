@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsNative } from '@/context/NativeContext';
+import { managerAlertHref } from '@/lib/managerAlerts';
 
 export default function ManagerHome() {
   const { user, isLoading } = useRequireAuth(['manager']);
@@ -93,11 +94,11 @@ export default function ManagerHome() {
       
       if (response.ok) {
         const { stats } = await response.json();
-        setWorkOrderStats(stats || {
-          activeJobs: 0,
-          pendingAssignments: 0,
-          overdueJobs: 0,
-          completedToday: 0,
+        setWorkOrderStats({
+          activeJobs: stats?.openJobs ?? stats?.activeJobs ?? 0,
+          pendingAssignments: stats?.unassigned ?? stats?.pendingAssignments ?? 0,
+          overdueJobs: stats?.overdueJobs ?? 0,
+          completedToday: stats?.completedToday ?? 0,
         });
       }
     } catch (error) {
@@ -299,13 +300,7 @@ export default function ManagerHome() {
                       <h2 style={{fontSize:20, fontWeight:700, color:'#ef4444', marginBottom:16}}><FaExclamationCircle style={{marginRight:4}} /> Urgent Alerts</h2>
                       <div style={{display:'grid', gap:12}}>
                         {urgentAlerts.map((alert, index) => {
-                          const href = alert.id === 'unassigned-jobs'
-                            ? '/manager/assignments'
-                            : alert.id === 'overdue-jobs'
-                              ? '/manager/dashboard'
-                              : alert.id === 'pending-requests'
-                                ? '/manager/inventory'
-                                : '/manager/dashboard';
+                          const href = managerAlertHref(String(alert.id || ''));
                           return (
                           <Link key={index} href={href} style={{background:'rgba(239,68,68,0.1)', borderRadius:8, padding:16, border:'1px solid rgba(239,68,68,0.2)', textDecoration:'none', display:'block', cursor:'pointer'}}>
                             <div style={{color:'#ef4444', fontWeight:600, marginBottom:4}}>{alert.title}</div>
@@ -580,7 +575,7 @@ export default function ManagerHome() {
                       <Link href="/workorders/inshop" style={{padding:12, background:'rgba(229,51,42,0.2)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:700, border:'1px solid rgba(229,51,42,0.3)'}}>
                         <FaClipboardList style={{marginRight:4}} /> Create In-Shop Work Order
                       </Link>
-                      <Link href="/workorders/roadside" style={{padding:12, background:'rgba(59,130,246,0.2)', borderRadius:8, textDecoration:'none', color:'#60a5fa', fontSize:14, fontWeight:700, border:'1px solid rgba(59,130,246,0.35)'}}>
+                      <Link href="/shop/new-roadside-job" style={{padding:12, background:'rgba(59,130,246,0.2)', borderRadius:8, textDecoration:'none', color:'#60a5fa', fontSize:14, fontWeight:700, border:'1px solid rgba(59,130,246,0.35)'}}>
                         <FaClipboardList style={{marginRight:4}} /> Create Roadside Work Order
                       </Link>
                       <Link href="/shop/home" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600, cursor:'pointer'}}>

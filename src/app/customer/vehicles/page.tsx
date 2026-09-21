@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaBuilding, FaCar, FaTruck } from 'react-icons/fa';
+import { DEFAULT_VEHICLE_TYPE, normalizeVehicleType, VEHICLE_TYPE_OPTIONS, vehicleTypeLabel } from '@/lib/vehicleTypes';
 
 interface Vehicle {
   id: string;
@@ -27,7 +28,7 @@ export default function CustomerVehiclesPage() {
   const [vehicleMsg, setVehicleMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string|null>(null);
   const [formData, setFormData] = useState({
-    vehicleType: 'personal-vehicle',
+    vehicleType: DEFAULT_VEHICLE_TYPE,
     make: '',
     model: '',
     year: new Date().getFullYear(),
@@ -169,7 +170,7 @@ export default function CustomerVehiclesPage() {
   const startEdit = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
-      vehicleType: vehicle.vehicleType,
+      vehicleType: normalizeVehicleType(vehicle.vehicleType),
       make: vehicle.make || '',
       model: vehicle.model || '',
       year: vehicle.year || new Date().getFullYear(),
@@ -235,8 +236,8 @@ export default function CustomerVehiclesPage() {
                   {vehicle.year} {vehicle.make} {vehicle.model}
                 </h3>
                 
-                <div style={{ textAlign: 'center', color: '#9aa3b2', fontSize: 14, marginBottom: 20, textTransform: 'capitalize' }}>
-                  {vehicle.vehicleType.replace('-', ' ')}
+                <div style={{ textAlign: 'center', color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>
+                  {vehicleTypeLabel(vehicle.vehicleType)}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
@@ -288,28 +289,32 @@ export default function CustomerVehiclesPage() {
               {editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}
             </h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={(e) => { e.preventDefault(); editingVehicle ? handleUpdateVehicle() : handleAddVehicle(); }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Vehicle Type *</label>
+                <label htmlFor="vehicle-type" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Vehicle Type *</label>
                 <select
+                  id="vehicle-type"
+                  name="vehicleType"
+                  required
+                  aria-required="true"
                   value={formData.vehicleType}
                   onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
-                  <option value="personal-vehicle">Personal Vehicle</option>
-                  <option value="car">Car</option>
-                  <option value="semi-truck">Semi Truck</option>
-                  <option value="trailer">Trailer</option>
-                  <option value="equipment">Equipment</option>
-                  <option value="personal-vehicle">Personal Vehicle</option>
+                  {VEHICLE_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Make *</label>
+                <label htmlFor="vehicle-make" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Make *</label>
                 <input
+                  id="vehicle-make"
+                  name="make"
                   type="text"
                   required
+                  aria-required="true"
                   value={formData.make}
                   onChange={(e) => setFormData({ ...formData, make: e.target.value })}
                   placeholder="e.g., Peterbilt, Kenworth, Volvo"
@@ -318,10 +323,13 @@ export default function CustomerVehiclesPage() {
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Model *</label>
+                <label htmlFor="vehicle-model" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Model *</label>
                 <input
+                  id="vehicle-model"
+                  name="model"
                   type="text"
                   required
+                  aria-required="true"
                   value={formData.model}
                   onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                   placeholder="e.g., 579, T680, VNL"
@@ -330,8 +338,10 @@ export default function CustomerVehiclesPage() {
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Year</label>
+                <label htmlFor="vehicle-year" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Year (optional)</label>
                 <input
+                  id="vehicle-year"
+                  name="year"
                   type="number"
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
@@ -366,13 +376,13 @@ export default function CustomerVehiclesPage() {
 
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button
-                  onClick={editingVehicle ? handleUpdateVehicle : handleAddVehicle}
-                  disabled={!formData.make || !formData.model}
-                  style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: !formData.make || !formData.model ? 'not-allowed' : 'pointer', opacity: !formData.make || !formData.model ? 0.5 : 1 }}
+                  type="submit"
+                  style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
                   {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setShowAddForm(false);
                     setEditingVehicle(null);
@@ -383,7 +393,7 @@ export default function CustomerVehiclesPage() {
                   Cancel
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

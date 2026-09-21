@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
 import crypto from 'crypto';
+import { validatePaymentLink } from '@/lib/shopFormValidation';
 
 function publicPaymentLink(link: {
   id: string;
@@ -87,6 +88,8 @@ export async function POST(req: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
   if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
+  const linkCheck = validatePaymentLink(body);
+  if (!linkCheck.ok) return NextResponse.json({ error: linkCheck.error }, { status: 400 });
   const token = crypto.randomBytes(24).toString('hex');
   const workOrderId = typeof body.workOrderId === 'string' && body.workOrderId.trim()
     ? body.workOrderId.trim()
@@ -96,9 +99,10 @@ export async function POST(req: NextRequest) {
       shopId,
       token,
       amount: Number(body.amount),
-      description: body.description,
+      description: String(body.description).trim(),
       workOrderId,
       customerId: body.customerId || null,
+      customerName: body.customerName ? String(body.customerName).trim() : null,
       expiresAt: body.expiresAt ? new Date(body.expiresAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       status: 'pending',
     },

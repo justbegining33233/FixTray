@@ -1,8 +1,13 @@
 ﻿'use client';
 
 import ShopNewInShopJob from '@/app/shop/new-inshop-job/page';
+import TechPortalFrame from '@/components/TechPortalFrame';
 
-/** Tech portal keeps its own URL/chrome and reuses the shared intake form. */
+/** Techs create in-shop jobs for their shop, with technician navigation. */
 export default function TechNewInShopJob() {
-  return <ShopNewInShopJob />;
+  return (
+    <TechPortalFrame>
+      <ShopNewInShopJob />
+    </TechPortalFrame>
+  );
 }

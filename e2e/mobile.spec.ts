@@ -260,9 +260,9 @@ test.describe('Mobile: GPS & Location', () => {
       '[data-testid="location"], [data-testid="gps"], button:has-text("location")'
     ).first();
     
-    const hasLocationFeature = await locationFeature.count() > 0;
+    const locationCount = await locationFeature.count();
     // May not be visible in dashboard
-    expect(hasLocationFeature >= 0).toBeTruthy();
+    expect(locationCount).toBeGreaterThanOrEqual(0);
     
     await context.close();
   });
@@ -343,10 +343,10 @@ test.describe('Mobile: Camera Integration', () => {
     
     // Look for camera feature
     const cameraBtn = page.getByRole('button', { name: /camera|photo|picture/i });
-    const hasCamera = await cameraBtn.count() > 0;
+    const cameraCount = await cameraBtn.count();
     
     // May or may not have camera on this page
-    expect(hasCamera >= 0).toBeTruthy();
+    expect(cameraCount).toBeGreaterThanOrEqual(0);
     
     await context.close();
   });
@@ -390,9 +390,9 @@ test.describe('Mobile: Push Notifications', () => {
       '[data-testid="notification-status"], [data-testid="push-enabled"]'
     ).first();
     
-    const hasNotificationFeature = await notificationStatus.count() > 0;
+    const notificationCount = await notificationStatus.count();
     // May or may not be visible
-    expect(hasNotificationFeature >= 0).toBeTruthy();
+    expect(notificationCount).toBeGreaterThanOrEqual(0);
     
     await context.close();
   });
@@ -522,11 +522,13 @@ test.describe('Mobile: Touch Gestures', () => {
       if (box) {
         // Perform swipe gesture
         await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-        await page.touchscreen.swipe(
-          { x: box.x + box.width - 10, y: box.y + box.height / 2 },
-          { x: box.x + 10, y: box.y + box.height / 2 },
-          { steps: 10 }
-        );
+        const startX = box.x + box.width - 10;
+        const endX = box.x + 10;
+        const y = box.y + box.height / 2;
+        await page.mouse.move(startX, y);
+        await page.mouse.down();
+        await page.mouse.move(endX, y, { steps: 10 });
+        await page.mouse.up();
       }
     }
     

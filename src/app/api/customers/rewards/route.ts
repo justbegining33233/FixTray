@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-
-const REWARD_TIERS = [
-  { id: 'tier-1', name: '$10 Off Next Service', value: '$10', description: 'Redeem for $10 off any service at a FixTray shop.', pointCost: 200 },
-  { id: 'tier-2', name: 'Free Oil Change', value: 'Free', description: 'Redeem for a complimentary standard oil change (up to $45 value).', pointCost: 500 },
-  { id: 'tier-3', name: '$25 Off Any Repair', value: '$25', description: 'Redeem for $25 off any repair service over $75.', pointCost: 750 },
-  { id: 'tier-4', name: 'Free Annual Inspection', value: 'Free', description: 'Redeem for a complimentary annual vehicle inspection.', pointCost: 1000 },
-];
+import { REWARD_TIERS, buildCustomerRewards, emptyRewardsPayload } from '@/lib/rewardPayload';
 
 // Extract loyalty points calculation to shared function (Phase 2: Consolidate logic)
 async function calculateLoyaltyPoints(customerId: string): Promise<number> {
@@ -37,14 +31,23 @@ export async function GET(request: NextRequest) {
     }
 
     const [loyaltyPoints, existingClaims, workOrders] = await Promise.all([
-      calculateLoyaltyPoints(customerId),
+      calculateLoyaltyPoints(customerId).catch((error) => {
+        console.error('Loyalty points lookup failed:', error);
+        return 0;
+      }),
       prisma.rewardClaim.findMany({
         where: { customerId },
         select: { tierId: true, status: true, claimedAt: true, redeemedAt: true, expiresAt: true },
+      }).catch((error) => {
+        console.error('Reward claims lookup failed:', error);
+        return [];
       }),
       prisma.workOrder.findMany({
         where: { customerId },
         select: { status: true, completedAt: true, amountPaid: true, estimatedCost: true },
+      }).catch((error) => {
+        console.error('Reward work order lookup failed:', error);
+        return [];
       }),
     ]);
 
@@ -52,48 +55,14 @@ export async function GET(request: NextRequest) {
       ['closed', 'completed', 'Completed'].includes(w.status)
     );
 
-    // Map of tierId → most recent active claim
-    const claimMap = new Map<string, typeof existingClaims[0]>();
-    for (const claim of existingClaims) {
-      const existing = claimMap.get(claim.tierId);
-      if (!existing || claim.claimedAt > existing.claimedAt) {
-        claimMap.set(claim.tierId, claim);
-      }
-    }
-
-    const now = new Date();
-    const rewards = REWARD_TIERS.map(tier => {
-      const claim = claimMap.get(tier.id);
-      const activeClaim = claim && claim.status !== 'expired' && claim.expiresAt > now ? claim : null;
-
-      return {
-        ...tier,
-        expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        earned: loyaltyPoints >= tier.pointCost,
-        claimed: !!activeClaim,
-        claimStatus: activeClaim?.status ?? null,
-        claimedAt: activeClaim ? activeClaim.claimedAt.toLocaleDateString() : null,
-        redeemedAt: activeClaim?.redeemedAt ? activeClaim.redeemedAt.toLocaleDateString() : null,
-        progress: Math.min(loyaltyPoints, tier.pointCost),
-        total: tier.pointCost,
-      };
-    });
-
-    // History: one entry per completed work order with dollar-based points
-    const history = completed.slice(0, 10).map((w, i) => {
-      const paid = w.amountPaid || w.estimatedCost || 0;
-      return {
-        id: `entry-${i}`,
-        description: `Completed service — $${paid.toFixed(2)} spent`,
-        points: Math.floor(paid),
-        date: w.completedAt ? new Date(w.completedAt).toLocaleDateString() : 'N/A',
-      };
-    });
-
-    return NextResponse.json({ loyaltyPoints, rewards, history });
+    return NextResponse.json(buildCustomerRewards({
+      loyaltyPoints,
+      claims: existingClaims,
+      completed,
+    }));
   } catch (error) {
     console.error('Error fetching customer rewards:', error);
-    return NextResponse.json({ error: 'Failed to fetch rewards' }, { status: 500 });
+    return NextResponse.json(emptyRewardsPayload());
   }
 }
 

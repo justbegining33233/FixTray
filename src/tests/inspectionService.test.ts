@@ -5,11 +5,23 @@ import prisma from '@/lib/prisma';
 describe('State Inspection Service', () => {
   const testShopId = 'test-shop-1';
   let vehicleId: string;
+  let customerId: string;
 
   beforeAll(async () => {
+    const customer = await prisma.customer.create({
+      data: {
+        email: 'insp-vehicle@test.com',
+        password: 'test-password',
+        firstName: 'Insp',
+        lastName: 'Customer',
+      },
+    });
+    customerId = customer.id;
+
     const vehicle = await prisma.vehicle.create({
       data: {
-        shopId: testShopId,
+        customerId,
+        vehicleType: 'truck',
         vin: 'TEST123456789',
         licensePlate: 'INSP001',
         make: 'Ford',
@@ -22,6 +34,7 @@ describe('State Inspection Service', () => {
 
   afterAll(async () => {
     await prisma.vehicle.deleteMany({ where: { id: vehicleId } });
+    await prisma.customer.deleteMany({ where: { id: customerId } });
   });
 
   it('should get inspection statistics', async () => {
@@ -32,7 +45,9 @@ describe('State Inspection Service', () => {
   });
 
   it('should calculate expiration date (1 year for pass)', async () => {
-    const expiryDate = await inspectionService.calculateExpirationDate('pass');
+    const expiryDate = inspectionService.calculateExpirationDate('pass');
+    expect(expiryDate).toBeInstanceOf(Date);
+    if (!expiryDate) return;
     const daysUntil = Math.floor((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     expect(daysUntil).toBeCloseTo(365, -1); // Within ~1 day of 365
   });
@@ -57,13 +72,17 @@ describe('State Inspection Service', () => {
     const expiryDate = new Date(inspectionDate);
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
-    const days = await inspectionService.daysUntilExpiration(expiryDate);
-    expect(days).toBeCloseTo(365, -1);
+    const days = inspectionService.daysUntilExpiration(expiryDate);
+    expect(typeof days).toBe('number');
+    if (typeof days === 'number') expect(days).toBeCloseTo(365, -1);
   });
 
   it('should generate compliance report', async () => {
-    const report = await inspectionService.generateComplianceReport(testShopId);
+    const endDate = new Date();
+    const startDate = new Date(endDate);
+    startDate.setFullYear(startDate.getFullYear() - 1);
+    const report = await inspectionService.generateComplianceReport(testShopId, startDate, endDate);
     expect(report).toHaveProperty('totalInspections');
-    expect(report).toHaveProperty('passRate');
+    expect(report.byResult).toHaveProperty('passed');
   });
 });

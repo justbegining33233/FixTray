@@ -56,14 +56,14 @@ export default function AllTechTools() {
       title: 'Active Jobs',
       description: 'View all your currently assigned work orders and update their status',
       icon: '',
-      link: '/tech/home',
+      link: '/tech/jobs?view=active',
       category: 'Job Management'
     },
     {
       title: 'Job History',
       description: 'Browse completed work orders, customer feedback, and service history',
       icon: '',
-      link: '/tech/home',
+      link: '/tech/jobs?view=history',
       category: 'Job Management'
     },
     {

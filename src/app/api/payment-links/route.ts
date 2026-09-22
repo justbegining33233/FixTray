@@ -4,6 +4,16 @@ import { authenticateRequest } from '@/lib/auth';
 import crypto from 'crypto';
 import { validatePaymentLink } from '@/lib/shopFormValidation';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
+import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+
+function invoiceBreakdown(totalAmount: number) {
+  const amount = Number(totalAmount) || 0;
+  // Final-bill amounts from closeout include the FixTray fee. Derive the
+  // services subtotal for display; never show a negative service line.
+  const serviceFee = amount > 0 ? Math.min(FIXTRAY_SERVICE_FEE, amount) : 0;
+  const serviceCost = Math.round((amount - serviceFee) * 100) / 100;
+  return { serviceCost, serviceFee, amount };
+}
 
 function publicPaymentLink(link: {
   id: string;
@@ -15,10 +25,13 @@ function publicPaymentLink(link: {
   expiresAt: Date | null;
   workOrderId: string | null;
 }) {
+  const breakdown = invoiceBreakdown(link.amount);
   return {
     id: link.id,
     token: link.token,
-    amount: link.amount,
+    amount: breakdown.amount,
+    serviceCost: breakdown.serviceCost,
+    serviceFee: breakdown.serviceFee,
     description: link.description,
     status: link.status,
     paidAt: link.paidAt,

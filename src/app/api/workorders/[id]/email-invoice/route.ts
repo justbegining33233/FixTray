@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import { generateInvoicePDF } from '@/lib/pdf';
 import { sendEmail } from '@/lib/emailService';
 import logger from '@/lib/logger';
+import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
 
 export async function POST(
   request: NextRequest,
@@ -60,7 +61,7 @@ export async function POST(
     const laborTotal = labor.reduce((sum: number, l: any) => sum + (l.hours || 0) * (l.ratePerHour || 0), 0);
     const chargesTotal = charges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
     const subtotal = partsTotal + laborTotal + chargesTotal;
-    const totalDue = subtotal + 5; // FixTray service fee
+    const totalDue = Math.round((subtotal + FIXTRAY_SERVICE_FEE) * 100) / 100;
 
     // Send email with invoice details
     const sent = await sendEmail({
@@ -79,7 +80,7 @@ export async function POST(
             <p><strong>Parts & Materials:</strong> $${partsTotal.toFixed(2)}</p>
             <p><strong>Labor:</strong> $${laborTotal.toFixed(2)}</p>
             ${chargesTotal > 0 ? `<p><strong>Additional Charges:</strong> $${chargesTotal.toFixed(2)}</p>` : ''}
-            <p><strong>Service Fee:</strong> $5.00</p>
+            <p><strong>Service Fee:</strong> $${FIXTRAY_SERVICE_FEE.toFixed(2)}</p>
             <hr style="border: none; border-top: 1px solid #ddd; margin: 12px 0;"/>
             <p style="font-size: 18px; font-weight: bold; color: #22c55e;">Total Due: $${totalDue.toFixed(2)}</p>
           </div>

@@ -8,7 +8,8 @@ import {
   manualAuthorizationCreateAllowed,
   MANUAL_AUTHORIZATION_BLOCKED_MESSAGE,
 } from '../src/lib/estimateAuthorization';
-import { closeoutTransition } from '../src/lib/workOrderCloseout';
+import { closeoutTransition, invoiceTotal, quoteAmount } from '../src/lib/workOrderCloseout';
+import { FIXTRAY_SERVICE_FEE } from '../src/lib/constants';
 
 const signature = {
   signerName: 'Ada Customer',
@@ -80,6 +81,25 @@ describe('parts and labor estimate lines', () => {
   });
 });
 
+describe('invoice FixTray fee', () => {
+  it('keeps quoteAmount as services-only and adds the platform fee on the final bill', () => {
+    expect(quoteAmount({ estimatedCost: 100 })).toBe(100);
+    expect(invoiceTotal({ estimatedCost: 100 })).toEqual({
+      quoteAmount: 100,
+      serviceFee: FIXTRAY_SERVICE_FEE,
+      amount: 105,
+    });
+  });
+
+  it('does not charge a fee when there is no quote', () => {
+    expect(invoiceTotal({ estimatedCost: 0 })).toEqual({
+      quoteAmount: 0,
+      serviceFee: 0,
+      amount: 0,
+    });
+  });
+});
+
 describe('work order closeout', () => {
   const quoted = { estimatedCost: 1.08, paymentStatus: 'unpaid' };
 
@@ -95,10 +115,18 @@ describe('work order closeout', () => {
 
   it('requests payment on the authorized job without marking it complete', () => {
     const invoiced = closeoutTransition({ ...quoted, status: 'in-progress' }, 'invoice');
-    expect(invoiced).toMatchObject({ ok: true, status: 'waiting-for-payment', paymentStatus: 'unpaid', amount: 1.08 });
+    // Final bill = quote ($1.08) + FixTray service fee ($5.00)
+    expect(invoiced).toMatchObject({
+      ok: true,
+      status: 'waiting-for-payment',
+      paymentStatus: 'unpaid',
+      quoteAmount: 1.08,
+      serviceFee: 5,
+      amount: 6.08,
+    });
 
     const paid = closeoutTransition({ ...quoted, status: 'waiting-for-payment' }, 'paid');
-    expect(paid).toMatchObject({ ok: true, status: 'waiting-for-payment', paymentStatus: 'paid' });
+    expect(paid).toMatchObject({ ok: true, status: 'waiting-for-payment', paymentStatus: 'paid', amount: 6.08 });
   });
 
   it('completes the job only after it is paid', () => {

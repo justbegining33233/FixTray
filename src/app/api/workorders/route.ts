@@ -25,6 +25,9 @@ import {
   unassignedWorkOrderWhere,
   workOrderScope,
 } from '@/lib/workOrderMetrics';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { quoteAmount } from '@/lib/workOrderCloseout';
+import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -76,7 +79,7 @@ export async function GET(request: NextRequest) {
     const includeMetrics = searchParams.get('includeMetrics') === '1';
 
     // Build cache key
-    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${serviceLocation}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}:${includeMetrics ? 'metrics' : 'list'}`;
+    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${serviceLocation}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}:${includeMetrics ? 'metrics' : 'list'}:fee`;
 
     // Skip cache for live ops queries (pending / active status filters) so the
     // shop ops board reflects new customer-created work orders immediately.
@@ -184,10 +187,15 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
+    // Live platform fee so estimate lists cannot render a quote-only total.
+    const fixtrayServiceFee = await getPlatformServiceFeeUsd();
+
     // Fields (repairs, maintenance, partsMaterials, pictures, location, estimate,
     // techLabor, partsUsed, workPhotos, completion) are now Prisma Json? — returned
     // as native JS objects/arrays, no JSON.parse needed.
-    const workOrders = rawWorkOrders.map(wo => ({
+    const workOrders = rawWorkOrders.map(wo => {
+      const estimateBill = billWithServiceFee(quoteAmount(wo), fixtrayServiceFee);
+      return {
       ...wo,
       services: wo.repairs || wo.maintenance ? {
         repairs: wo.repairs ?? undefined,
@@ -200,12 +208,15 @@ export async function GET(request: NextRequest) {
       },
       location: wo.location ?? undefined,
       estimate: wo.estimate ?? undefined,
+      estimateBill,
+      fixtrayServiceFee,
       techLabor: wo.techLabor ?? undefined,
       partsUsed: wo.partsUsed ?? undefined,
       workPhotos: (wo.workPhotos as unknown[] | null) ?? [],
       completion: wo.completion ?? undefined,
       vehicle: wo.vehicle ?? undefined,
-    }));
+    };
+    });
 
     let metrics: Record<string, unknown> | undefined;
     if (includeMetrics) {
@@ -250,6 +261,7 @@ export async function GET(request: NextRequest) {
 
     const result = {
       workOrders,
+      fixtrayServiceFee,
       pagination: {
         total,
         page,

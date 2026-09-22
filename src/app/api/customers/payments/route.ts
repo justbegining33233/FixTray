@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { customerPaymentBill } from '@/lib/serviceFeeBill';
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,24 +44,20 @@ export async function GET(request: NextRequest) {
     const fixtrayFee = await getPlatformServiceFeeUsd();
 
     const payments = workOrders.map((wo) => {
-      // Prefer quote subtotal; amountPaid already includes the FixTray fee after closeout.
-      let serviceCost = 0;
-      if (typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0) {
-        serviceCost = wo.estimatedCost;
-      } else if (typeof wo.amountPaid === 'number' && wo.amountPaid > 0) {
-        serviceCost = Math.max(0, Math.round((wo.amountPaid - fixtrayFee) * 100) / 100);
-      }
-      const totalDue = serviceCost > 0
-        ? Math.round((serviceCost + fixtrayFee) * 100) / 100
-        : 0;
+      // Quote stays services-only. The bill total always adds the live platform fee.
+      const bill = customerPaymentBill({
+        estimatedCost: wo.estimatedCost,
+        amountPaid: wo.amountPaid,
+        serviceFeeUsd: fixtrayFee,
+      });
 
       return {
         id: wo.id,
         status: wo.paymentStatus === 'paid' ? 'Paid' : 'Pending',
         workOrderStatus: wo.status,
-        amount: totalDue,
-        serviceCost,
-        fixtrayFee,
+        amount: bill.total,
+        serviceCost: bill.subtotal,
+        fixtrayFee: bill.serviceFee,
         amountPaid: wo.amountPaid || 0,
         service: wo.issueDescription || 'Vehicle Service',
         shop: wo.shop?.shopName || 'Unknown Shop',
@@ -76,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     const totalPaid = payments
       .filter((p) => p.status === 'Paid')
-      .reduce((sum, p) => sum + p.amountPaid, 0);
+      .reduce((sum, p) => sum + p.amount, 0);
 
     const totalPending = payments
       .filter((p) => p.status === 'Pending')

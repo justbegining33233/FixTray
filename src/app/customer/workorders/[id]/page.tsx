@@ -288,8 +288,8 @@ export default function WorkOrderDetailsPage() {
 
             </div>
 
-            {/* Payment Due */}
-            {workOrder.status === 'waiting-for-payment' && workOrder.estimate && (
+            {/* Estimate and final bill — fee line comes from the live platform fee on the API */}
+            {workOrder.estimate && workOrder.estimate.amount > 0 && (
               <div style={{
                 marginTop:32,
                 padding:24,
@@ -297,43 +297,55 @@ export default function WorkOrderDetailsPage() {
                 border:'1px solid rgba(34,197,94,0.25)',
                 borderRadius:12,
               }}>
-                <h3 style={{fontSize:18, fontWeight:700, color:'#22c55e', marginBottom:16}}>Payment Due</h3>
-                <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:20}}>
+                <h3 style={{fontSize:18, fontWeight:700, color:'#22c55e', marginBottom:16}}>
+                  {workOrder.status === 'waiting-for-payment' && workOrder.paymentStatus !== 'paid'
+                    ? 'Payment Due'
+                    : (workOrder.paymentStatus === 'paid' || workOrder.status === 'completed' || workOrder.status === 'closed')
+                      ? 'Final Bill'
+                      : 'Estimate'}
+                </h3>
+                <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom: workOrder.status === 'waiting-for-payment' && workOrder.paymentStatus !== 'paid' ? 20 : 0}}>
                   <div style={{display:'flex', justifyContent:'space-between', fontSize:14, color:'#e5e7eb'}}>
                     <span>Services &amp; Parts</span>
                     <span>${workOrder.estimate.amount.toFixed(2)}</span>
                   </div>
-                  <div style={{display:'flex', justifyContent:'space-between', fontSize:14, color:'#9aa3b2'}}>
-                    <span>FixTray Service Fee</span>
-                    <span>${workOrder.estimate.serviceFee.toFixed(2)}</span>
-                  </div>
+                  {workOrder.estimate.serviceFee > 0 && (
+                    <div style={{display:'flex', justifyContent:'space-between', fontSize:14, color:'#9aa3b2'}}>
+                      <span>FixTray Service Fee</span>
+                      <span>${workOrder.estimate.serviceFee.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div style={{display:'flex', justifyContent:'space-between', fontSize:18, fontWeight:700, color:'#22c55e', paddingTop:8, borderTop:'1px solid rgba(255,255,255,0.15)'}}>
-                    <span>Total Due</span>
+                    <span>{workOrder.paymentStatus === 'paid' || workOrder.status === 'completed' || workOrder.status === 'closed' ? 'Total' : 'Total Due'}</span>
                     <span>${workOrder.estimate.totalDue.toFixed(2)}</span>
                   </div>
                 </div>
-                {payError && <div style={{color:'#ef4444',fontSize:13,marginBottom:12,padding:'8px 12px',background:'rgba(239,68,68,0.1)',borderRadius:6}}>{payError}</div>}
-                <button
-                  onClick={handlePay}
-                  disabled={paying}
-                  style={{
-                    width:'100%',
-                    padding:'16px',
-                    background: paying ? 'rgba(34,197,94,0.4)' : '#22c55e',
-                    color:'white',
-                    border:'none',
-                    borderRadius:10,
-                    fontSize:18,
-                    fontWeight:700,
-                    cursor: paying ? 'not-allowed' : 'pointer',
-                    letterSpacing:'0.3px',
-                  }}
-                >
-                  {paying ? 'Redirecting to Stripe...' : `Pay $${workOrder.estimate.totalDue.toFixed(2)} Securely`}
-                </button>
-                <div style={{textAlign:'center', marginTop:10, fontSize:12, color:'#6b7280'}}>
-                  <FaLock style={{marginRight:4}} /> Powered by Stripe  Apple Pay &amp; Google Pay accepted
-                </div>
+                {workOrder.status === 'waiting-for-payment' && workOrder.paymentStatus !== 'paid' && (
+                  <>
+                    {payError && <div style={{color:'#ef4444',fontSize:13,marginBottom:12,padding:'8px 12px',background:'rgba(239,68,68,0.1)',borderRadius:6}}>{payError}</div>}
+                    <button
+                      onClick={handlePay}
+                      disabled={paying}
+                      style={{
+                        width:'100%',
+                        padding:'16px',
+                        background: paying ? 'rgba(34,197,94,0.4)' : '#22c55e',
+                        color:'white',
+                        border:'none',
+                        borderRadius:10,
+                        fontSize:18,
+                        fontWeight:700,
+                        cursor: paying ? 'not-allowed' : 'pointer',
+                        letterSpacing:'0.3px',
+                      }}
+                    >
+                      {paying ? 'Redirecting to Stripe...' : `Pay $${workOrder.estimate.totalDue.toFixed(2)} Securely`}
+                    </button>
+                    <div style={{textAlign:'center', marginTop:10, fontSize:12, color:'#6b7280'}}>
+                      <FaLock style={{marginRight:4}} /> Powered by Stripe  Apple Pay &amp; Google Pay accepted
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -346,7 +358,7 @@ export default function WorkOrderDetailsPage() {
                     customerName={userName}
                     vehicleInfo={workOrder.vehicle ? `${workOrder.vehicle.year} ${workOrder.vehicle.make} ${workOrder.vehicle.model}` : 'Vehicle'}
                     workDescription={workOrder.issueDescription}
-                    estimatedCost={workOrder.estimate ? `$${workOrder.estimate.amount.toFixed(2)}` : 'TBD'}
+                    estimatedCost={workOrder.estimate && workOrder.estimate.totalDue > 0 ? `$${workOrder.estimate.totalDue.toFixed(2)}` : 'TBD'}
                   />
                 </div>
               </div>

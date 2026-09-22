@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/middleware';
 import { createPaymentIntent } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { invoiceTotal } from '@/lib/workOrderCloseout';
 import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -31,13 +32,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
-    const estimate = workOrder.estimate as any;
-    if (!estimate?.amount) {
+    const bill = invoiceTotal(workOrder, await getPlatformServiceFeeUsd());
+    if (bill.quoteAmount <= 0) {
       return NextResponse.json({ error: 'No estimate available' }, { status: 400 });
     }
-    
-    const serviceFee = await getPlatformServiceFeeUsd();
-    const totalAmount = estimate.amount + serviceFee;
+    const serviceFee = bill.serviceFee;
+    const totalAmount = bill.amount;
 
     // Fetch shop's Stripe connected account for automatic split
     const shop = await prisma.shop.findUnique({ where: { id: workOrder.shopId } });

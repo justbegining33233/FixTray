@@ -134,10 +134,12 @@ export default function CustomerPayPage() {
               <span>Services &amp; Parts</span>
               <span>${Number(link?.serviceCost ?? Math.max(0, Number(link?.amount) - Number(link?.serviceFee || 0))).toFixed(2)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#9aa3b2' }}>
-              <span>FixTray Service Fee</span>
-              <span>${Number(link?.serviceFee ?? 0).toFixed(2)}</span>
-            </div>
+            {Number(link?.serviceFee) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#9aa3b2' }}>
+                <span>FixTray Service Fee</span>
+                <span>${Number(link?.serviceFee).toFixed(2)}</span>
+              </div>
+            )}
           </div>
           <div style={{ background: 'linear-gradient(135deg,#e5332a,#c41f16)', borderRadius: 10, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>Total Due</span>

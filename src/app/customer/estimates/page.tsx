@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle, FaPaperPlane } from 'react-icons/fa';
 import SignatureCapture from '@/components/SignatureCapture';
+import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 
 interface WOMessage { id: string; sender: string; senderName: string; body: string; createdAt: string }
 interface WOPhoto   { id: string; url: string; type: string; caption?: string; uploadedAt: string }
@@ -24,6 +25,8 @@ interface Estimate {
   kind?: 'request' | 'quote';
   service: string;
   price: number;
+  subtotal: number;
+  serviceFee: number;
   shop: string;
   description: string;
   validUntil: string;
@@ -37,6 +40,21 @@ interface Estimate {
   };
   techLabor?: Array<{ description?: string; hours?: number; rate?: number }>;
   partsUsed?: Array<{ name?: string; quantity?: number; unitPrice?: number }>;
+}
+
+function EstimatePrice({ estimate, color }: { estimate: Estimate; color: string }) {
+  return (
+    <div style={{ marginBottom: 4 }}>
+      <div style={{ fontSize: 24, color, fontWeight: 800, textDecoration: estimate.status === 'denied' ? 'line-through' : 'none' }}>
+        ${estimate.price.toFixed(2)}
+      </div>
+      {estimate.serviceFee > 0 && (
+        <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>
+          Services ${estimate.subtotal.toFixed(2)} + {FIXTRAY_SERVICE_FEE_LABEL} ${estimate.serviceFee.toFixed(2)}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Estimates() {
@@ -78,6 +96,7 @@ export default function Estimates() {
       if (!response.ok) return;
       const data = await response.json();
       const workOrders = data.workOrders || [];
+      const liveFee = Number(data.fixtrayServiceFee) || 0;
 
       // Map work orders to our Estimate format — show all that have entered the estimate/work flow
       const mapped: Estimate[] = workOrders
@@ -103,13 +122,25 @@ export default function Estimates() {
           const isCustomerRequest = est.status === 'requested' || (wo.status === 'pending' && !(est.total || wo.estimatedCost));
           if (isCustomerRequest) status = 'pending';
 
+          const apiBill = wo.estimateBill && typeof wo.estimateBill === 'object' ? wo.estimateBill : null;
+          const quote = Number(est.total ?? wo.estimatedCost ?? 0) || 0;
+          const bill = apiBill && Number.isFinite(Number(apiBill.total))
+            ? {
+                subtotal: Number(apiBill.subtotal) || 0,
+                serviceFee: Number(apiBill.serviceFee) || 0,
+                total: Number(apiBill.total) || 0,
+              }
+            : billWithServiceFee(quote, liveFee);
+
           return {
             id: wo.id,
             woStatus: wo.status,
             status,
             kind: isCustomerRequest ? 'request' : 'quote',
             service: symptoms.slice(0, 80) || est.serviceType || 'Service',
-            price: est.total || wo.estimatedCost || 0,
+            price: bill.total,
+            subtotal: bill.subtotal,
+            serviceFee: bill.serviceFee,
             shop: wo.shop?.shopName || 'Shop',
             description: symptoms,
             validUntil: wo.updatedAt || wo.createdAt,
@@ -556,7 +587,7 @@ export default function Estimates() {
                         {estimate.kind === 'request' ? 'REQUEST SENT' : 'PENDING REVIEW'}
                       </span>
                     </div>
-                    <div style={{fontSize:24, color:'#e5332a', fontWeight:800, marginBottom:4}}>${estimate.price.toFixed(2)}</div>
+                    <EstimatePrice estimate={estimate} color="#e5332a" />
                     <div style={{fontSize:13, color:'#9aa3b2'}}>
                       Submitted {new Date(estimate.validUntil).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'})}
                     </div>
@@ -646,6 +677,18 @@ export default function Estimates() {
                               ))}
                             </tbody>
                             <tfoot>
+                              {estimate.serviceFee > 0 && (
+                                <>
+                                  <tr style={{borderTop:'1px solid rgba(255,255,255,0.08)'}}>
+                                    <td colSpan={3} style={{padding:'8px 6px', color:'#9aa3b2', textAlign:'right'}}>Services</td>
+                                    <td style={{padding:'8px 6px', color:'#e5e7eb', textAlign:'right'}}>${estimate.subtotal.toFixed(2)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td colSpan={3} style={{padding:'4px 6px', color:'#9aa3b2', textAlign:'right'}}>{FIXTRAY_SERVICE_FEE_LABEL}</td>
+                                    <td style={{padding:'4px 6px', color:'#e5e7eb', textAlign:'right'}}>${estimate.serviceFee.toFixed(2)}</td>
+                                  </tr>
+                                </>
+                              )}
                               <tr style={{borderTop:'2px solid rgba(255,255,255,0.12)'}}>
                                 <td colSpan={3} style={{padding:'8px 6px', fontWeight:700, color:'#e5e7eb', textAlign:'right'}}>TOTAL</td>
                                 <td style={{padding:'8px 6px', fontWeight:800, color:'#22c55e', textAlign:'right', fontSize:15}}>${estimate.price.toFixed(2)}</td>
@@ -934,7 +977,7 @@ export default function Estimates() {
                         {estimate.status}
                       </span>
                     </div>
-                    <div style={{fontSize:18, color:'#6b7280', fontWeight:700, marginBottom:8, textDecoration:'line-through'}}>${estimate.price.toFixed(2)}</div>
+                    <EstimatePrice estimate={estimate} color="#6b7280" />
                     <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{estimate.shop}</div>
                     <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5, marginBottom:12}}>{estimate.description}</div>
                     <div style={{fontSize:12, color:'#6b7280'}}>Denied on: {estimate.validUntil}</div>
@@ -993,7 +1036,9 @@ export default function Estimates() {
                         </div>
                         <span style={{padding:'4px 10px', background:badge.bg, color:badge.color, borderRadius:8, fontSize:11, fontWeight:700, whiteSpace:'nowrap', marginLeft:8}}>{badge.label}</span>
                       </div>
-                      <div style={{fontSize:22, fontWeight:800, color:'#22c55e', marginBottom:14}}>${estimate.price.toFixed(2)}</div>
+                      <div style={{ marginBottom: 14 }}>
+                        <EstimatePrice estimate={estimate} color="#22c55e" />
+                      </div>
 
                       {/* Expand toggle */}
                       <button
@@ -1041,6 +1086,18 @@ export default function Estimates() {
                                   ))}
                                 </tbody>
                                 <tfoot>
+                                  {estimate.serviceFee > 0 && (
+                                    <>
+                                      <tr style={{borderTop:'1px solid rgba(255,255,255,0.08)'}}>
+                                        <td colSpan={3} style={{padding:'6px 6px',color:'#9aa3b2',textAlign:'right'}}>Services</td>
+                                        <td style={{padding:'6px 6px',color:'#e5e7eb',textAlign:'right'}}>${estimate.subtotal.toFixed(2)}</td>
+                                      </tr>
+                                      <tr>
+                                        <td colSpan={3} style={{padding:'4px 6px',color:'#9aa3b2',textAlign:'right'}}>{FIXTRAY_SERVICE_FEE_LABEL}</td>
+                                        <td style={{padding:'4px 6px',color:'#e5e7eb',textAlign:'right'}}>${estimate.serviceFee.toFixed(2)}</td>
+                                      </tr>
+                                    </>
+                                  )}
                                   <tr style={{borderTop:'2px solid rgba(255,255,255,0.1)'}}>
                                     <td colSpan={3} style={{padding:'6px 6px',fontWeight:700,color:'#e5e7eb',textAlign:'right'}}>TOTAL</td>
                                     <td style={{padding:'6px 6px',fontWeight:800,color:'#22c55e',textAlign:'right',fontSize:14}}>${estimate.price.toFixed(2)}</td>

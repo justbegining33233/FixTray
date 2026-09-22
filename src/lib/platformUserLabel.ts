@@ -8,6 +8,34 @@ export type PlatformUserFields = {
   shop?: { shopName?: string | null } | null;
 };
 
+function cleanNamePart(value?: string | null): string {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed || /^(undefined|null)$/i.test(trimmed)) return '';
+  return trimmed;
+}
+
+/** Joined name, or a readable fallback when the clocked-in row has no name. */
+export function displayPersonName(
+  firstName?: string | null,
+  lastName?: string | null,
+  fallback = 'Team member',
+): string {
+  const name = personName(cleanNamePart(firstName), cleanNamePart(lastName), '');
+  return name || cleanNamePart(fallback) || 'Team member';
+}
+
+/** Hide blank and "undefined undefined" labels already stored on a payload. */
+export function displayEmployeeLabel(name?: string | null, fallback = 'Team member'): string {
+  if (typeof name !== 'string') return fallback;
+  const cleaned = name
+    .split(/\s+/)
+    .map((part) => cleanNamePart(part))
+    .filter(Boolean)
+    .join(' ');
+  return cleaned || fallback;
+}
+
 export function personName(
   firstName?: string | null,
   lastName?: string | null,

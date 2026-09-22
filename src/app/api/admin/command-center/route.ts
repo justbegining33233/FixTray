@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { isOwnerAdmin } from '@/lib/owner-access';
 import logger from '@/lib/logger';
+import { displayPersonName } from '@/lib/platformUserLabel';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
             select: {
               firstName: true,
               lastName: true,
+              email: true,
               shop: { select: { shopName: true } },
             },
           },
@@ -274,7 +276,7 @@ export async function GET(request: NextRequest) {
       realTimeOps: {
         clockedInNow: clockedInEmployees.length,
         clockedInDetails: clockedInEmployees.map((e) => ({
-          name: `${e.tech?.firstName} ${e.tech?.lastName}`,
+          name: displayPersonName(e.tech?.firstName, e.tech?.lastName, e.tech?.email || 'Team member'),
           shop: e.tech?.shop?.shopName || 'Unknown Shop',
           since: e.clockIn,
           onBreak: e.breakStart && !e.breakEnd,

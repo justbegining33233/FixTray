@@ -7,4 +7,5 @@ export const PUBLIC_AND_ADMIN_REDIRECTS: Array<{ source: string; destination: st
   { source: '/docs', destination: '/features', permanent: false },
   { source: '/blog', destination: '/features', permanent: false },
   { source: '/demo', destination: '/contact', permanent: false },
+  { source: '/register/shop', destination: '/auth/register/shop', permanent: false },
 ];

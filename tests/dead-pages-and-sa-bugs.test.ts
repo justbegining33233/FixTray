@@ -3,7 +3,7 @@ import { PUBLIC_AND_ADMIN_REDIRECTS } from '../src/lib/publicRedirects';
 import { actorMayAccessShop, resolveShopId } from '../src/lib/shopAccess';
 import { ownerShopHeadline } from '../src/lib/shopCensus';
 import { loyaltyPointsFromRewards } from '../src/lib/rewardPayload';
-import { latestShopName, platformUserLabel } from '../src/lib/platformUserLabel';
+import { displayEmployeeLabel, displayPersonName, latestShopName, platformUserLabel } from '../src/lib/platformUserLabel';
 import { describeUserUpdate, presentAuditDetails } from '../src/lib/auditDetails';
 import { customerTrackingWhere, TRACKABLE_WORK_ORDER_STATUSES } from '../src/lib/customerTracking';
 import { formatEstimateMoney } from '../src/lib/estimateMoney';
@@ -23,6 +23,7 @@ describe('dead marketing and admin aliases', () => {
     expect(bySource['/docs']).toBe('/features');
     expect(bySource['/blog']).toBe('/features');
     expect(bySource['/demo']).toBe('/contact');
+    expect(bySource['/register/shop']).toBe('/auth/register/shop');
   });
 });
 
@@ -56,6 +57,15 @@ describe('loyalty points', () => {
   it('prefers loyaltyPoints over a 50-per-job fallback', () => {
     expect(loyaltyPointsFromRewards({ loyaltyPoints: 1 }, 50)).toBe(1);
     expect(loyaltyPointsFromRewards(null, 50)).toBe(50);
+  });
+});
+
+describe('clocked-in employee names', () => {
+  it('uses a placeholder when the name is blank or undefined', () => {
+    expect(displayPersonName(undefined, undefined, 'ada@shop.test')).toBe('ada@shop.test');
+    expect(displayPersonName('', '', '')).toBe('Team member');
+    expect(displayEmployeeLabel('undefined undefined')).toBe('Team member');
+    expect(displayEmployeeLabel('Ada Lovelace')).toBe('Ada Lovelace');
   });
 });
 

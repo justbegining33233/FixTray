@@ -213,10 +213,10 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="relative mt-10 overflow-hidden rounded-2xl border" style={{ borderColor: "rgba(255,255,255,0.10)", background: "rgba(8,13,26,0.6)" }}>
-          <div className="carousel-track flex w-max gap-4 p-4">
-            {[...carouselSlides, ...carouselSlides].map((slide, idx) => (
-              <article key={`${slide.src}-${idx}`} className="w-[340px] sm:w-[420px] lg:w-[520px] shrink-0 overflow-hidden rounded-xl border" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(2,6,23,0.85)" }}>
+        <div className="relative mt-10 overflow-x-auto rounded-2xl border" style={{ borderColor: "rgba(255,255,255,0.10)", background: "rgba(8,13,26,0.6)" }}>
+          <div className="flex w-max gap-4 p-4">
+            {carouselSlides.map((slide) => (
+              <article key={slide.src} className="w-[340px] sm:w-[420px] lg:w-[520px] shrink-0 overflow-hidden rounded-xl border" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(2,6,23,0.85)" }}>
                 <div className="relative h-[210px] sm:h-[260px] lg:h-[300px]">
                   <Image
                     className="carousel-shot"
@@ -226,7 +226,7 @@ export default function Home() {
                     sizes="(max-width: 640px) 340px, (max-width: 1024px) 420px, 520px"
                     style={{ objectFit: "cover", objectPosition: "left top" }}
                     quality={75}
-                    priority={idx < carouselSlides.length}
+                    priority
                   />
                 </div>
                 <div className="px-4 py-3">
@@ -342,25 +342,8 @@ export default function Home() {
       </section>
 
       <style jsx global>{`
-        .carousel-track {
-          animation: carouselScroll 52s linear infinite;
-        }
-
-        .carousel-track:hover {
-          animation-play-state: paused;
-        }
-
         .carousel-shot {
           clip-path: inset(0 14px 0 0);
-        }
-
-        @keyframes carouselScroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
         }
       `}</style>
     </MarketingShell>

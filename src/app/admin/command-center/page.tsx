@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { displayEmployeeLabel } from '@/lib/platformUserLabel';
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaBolt, FaChartBar, FaChartLine, FaCheck, FaCheckSquare, FaCircle, FaDollarSign, FaDotCircle, FaExclamationTriangle, FaExternalLinkAlt, FaRegCircle, FaRegStar, FaStar, FaSyncAlt } from 'react-icons/fa';
 
 interface CommandCenterData {
@@ -813,14 +814,16 @@ export default function CommandCenterPage() {
               <GlassCard title="Currently Working" icon="*" badge={data?.realTimeOps.clockedInNow || 0}>
                 {data?.realTimeOps.clockedInDetails && data.realTimeOps.clockedInDetails.length > 0 ? (
                   <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-                    {data.realTimeOps.clockedInDetails.map((emp, i) => (
+                    {data.realTimeOps.clockedInDetails.map((emp, i) => {
+                      const name = displayEmployeeLabel(emp.name);
+                      return (
                       <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                            <span className="text-emerald-400 font-semibold">{emp.name.charAt(0)}</span>
+                            <span className="text-emerald-400 font-semibold">{name.charAt(0)}</span>
                           </div>
                           <div>
-                            <div className="font-medium">{emp.name}</div>
+                            <div className="font-medium">{name}</div>
                             <div className="text-xs text-stone-500">{emp.shop}</div>
                           </div>
                         </div>
@@ -831,7 +834,8 @@ export default function CommandCenterPage() {
                           )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-stone-500">

@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
 import { validateCsrf } from '@/lib/csrf';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { invoiceTotal } from '@/lib/workOrderCloseout';
 
 export async function POST(request: NextRequest) {
   const auth = requireAuth(request);
@@ -33,11 +34,8 @@ export async function POST(request: NextRequest) {
 
     const totalPaid = (workOrder.amountPaid || 0) + payment;
 
-    // Auto-close if fully paid (estimate + current FixTray service fee)
-    const est = workOrder.estimate as Record<string, unknown> | null;
-    const estimateAmount = Number(est?.amount) || workOrder.estimatedCost || 0;
-    const serviceFee = await getPlatformServiceFeeUsd();
-    const amountDue = estimateAmount + serviceFee;
+    // Auto-close if fully paid (quote + live FixTray service fee)
+    const amountDue = invoiceTotal(workOrder, await getPlatformServiceFeeUsd()).amount;
     let status = workOrder.status;
     if (totalPaid >= amountDue && status === 'waiting-for-payment') {
       status = 'closed';

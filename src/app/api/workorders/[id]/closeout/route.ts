@@ -117,7 +117,14 @@ export async function POST(
           amountPaid: transition.amount > 0 ? transition.amount : workOrder.amountPaid,
         },
       });
-      return NextResponse.json({ workOrder: updated });
+      return NextResponse.json({
+        workOrder: updated,
+        invoice: {
+          quoteAmount: transition.quoteAmount,
+          serviceFee: transition.serviceFee,
+          totalDue: transition.amount,
+        },
+      });
     }
 
     const updated = await prisma.workOrder.update({
@@ -128,7 +135,14 @@ export async function POST(
         completedAt: new Date(),
       },
     });
-    return NextResponse.json({ workOrder: updated });
+    return NextResponse.json({
+      workOrder: updated,
+      invoice: {
+        quoteAmount: transition.quoteAmount,
+        serviceFee: transition.serviceFee,
+        totalDue: transition.amount,
+      },
+    });
   } catch (error) {
     console.error('[workorders closeout]', error);
     return NextResponse.json({ error: 'Closeout failed.' }, { status: 500 });

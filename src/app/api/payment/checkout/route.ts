@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/middleware';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { invoiceTotal } from '@/lib/workOrderCloseout';
 import stripe from '@/lib/stripe';
 import Stripe from 'stripe';
 
@@ -31,50 +32,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const estimate = workOrder.estimate as any;
-    if (!estimate?.amount) {
-      return NextResponse.json({ error: 'No estimate on this work order yet' }, { status: 400 });
-    }
-
     if (workOrder.status !== 'waiting-for-payment') {
       return NextResponse.json({ error: 'Work order is not ready for payment' }, { status: 400 });
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
-    const serviceFee = await getPlatformServiceFeeUsd();
-    const serviceFeeCents = Math.round(serviceFee * 100);
+    const bill = invoiceTotal(workOrder, await getPlatformServiceFeeUsd());
+    if (bill.quoteAmount <= 0) {
+      return NextResponse.json({ error: 'No estimate on this work order yet' }, { status: 400 });
+    }
+    const serviceFeeCents = Math.round(bill.serviceFee * 100);
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `Work Order #${workOrder.id.slice(-8)}`,
+            description: `${workOrder.shop?.shopName ?? 'Auto Shop'} — ${
+              typeof workOrder.issueDescription === 'string'
+                ? workOrder.issueDescription.slice(0, 100)
+                : 'Vehicle Service'
+            }`,
+          },
+          unit_amount: Math.round(bill.quoteAmount * 100),
+        },
+        quantity: 1,
+      },
+    ];
+    if (serviceFeeCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'FixTray Service Fee',
+            description: 'Platform service fee',
+          },
+          unit_amount: serviceFeeCents,
+        },
+        quantity: 1,
+      });
+    }
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Work Order #${workOrder.id.slice(-8)}`,
-              description: `${workOrder.shop?.shopName ?? 'Auto Shop'} — ${
-                typeof workOrder.issueDescription === 'string'
-                  ? workOrder.issueDescription.slice(0, 100)
-                  : 'Vehicle Service'
-              }`,
-            },
-            unit_amount: Math.round(estimate.amount * 100),
-          },
-          quantity: 1,
-        },
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'FixTray Service Fee',
-              description: 'Platform service fee',
-            },
-            unit_amount: serviceFeeCents,
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       metadata: {
         workOrderId: workOrder.id,
         customerId: workOrder.customerId,
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
     // If shop has a connected Stripe account, auto-split: platform fee stays with FixTray
     if (workOrder.shop?.stripeAccountId) {
       sessionParams.payment_intent_data = {
-        application_fee_amount: serviceFeeCents,
+        ...(serviceFeeCents > 0 ? { application_fee_amount: serviceFeeCents } : {}),
         transfer_data: { destination: workOrder.shop.stripeAccountId },
       };
     }

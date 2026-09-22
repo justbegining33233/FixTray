@@ -5,6 +5,8 @@ import { generateInvoicePDF } from '@/lib/pdf';
 import { sendEmail } from '@/lib/emailService';
 import logger from '@/lib/logger';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { quoteAmount } from '@/lib/workOrderCloseout';
 
 export async function POST(
   request: NextRequest,
@@ -61,8 +63,9 @@ export async function POST(
     const partsTotal = parts.reduce((sum: number, p: any) => sum + (p.quantity || 1) * (p.unitPrice || 0), 0);
     const laborTotal = labor.reduce((sum: number, l: any) => sum + (l.hours || 0) * (l.ratePerHour || 0), 0);
     const chargesTotal = charges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
-    const subtotal = partsTotal + laborTotal + chargesTotal;
-    const totalDue = Math.round((subtotal + serviceFee) * 100) / 100;
+    const parsedSubtotal = partsTotal + laborTotal + chargesTotal;
+    const bill = billWithServiceFee(parsedSubtotal > 0 ? parsedSubtotal : quoteAmount(workOrder), serviceFee);
+    const totalDue = bill.total;
 
     // Send email with invoice details
     const sent = await sendEmail({
@@ -81,7 +84,7 @@ export async function POST(
             <p><strong>Parts & Materials:</strong> $${partsTotal.toFixed(2)}</p>
             <p><strong>Labor:</strong> $${laborTotal.toFixed(2)}</p>
             ${chargesTotal > 0 ? `<p><strong>Additional Charges:</strong> $${chargesTotal.toFixed(2)}</p>` : ''}
-            <p><strong>Service Fee:</strong> $${serviceFee.toFixed(2)}</p>
+            ${bill.serviceFee > 0 ? `<p><strong>FixTray Service Fee:</strong> $${bill.serviceFee.toFixed(2)}</p>` : ''}
             <hr style="border: none; border-top: 1px solid #ddd; margin: 12px 0;"/>
             <p style="font-size: 18px; font-weight: bold; color: #22c55e;">Total Due: $${totalDue.toFixed(2)}</p>
           </div>

@@ -105,7 +105,7 @@ export const emailTemplates = {
     `,
   }),
 
-  estimateReady: (customerName: string, workOrderId: string, serviceAmount: number, totalDue: number, shopName: string, description: string) => ({
+  estimateReady: (customerName: string, workOrderId: string, serviceAmount: number, serviceFee: number, totalDue: number, shopName: string, description: string) => ({
     subject: `Your Estimate Is Ready â€” ${shopName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; padding: 0; border-radius: 10px; overflow: hidden;">
@@ -119,7 +119,7 @@ export const emailTemplates = {
           <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
             <p style="margin: 0 0 8px; color: #374151;"><strong>Service:</strong> ${description}</p>
             <p style="margin: 0 0 8px; color: #374151;"><strong>Service Cost:</strong> $${serviceAmount.toFixed(2)}</p>
-            <p style="margin: 0 0 8px; color: #374151;"><strong>FixTray Fee:</strong> $5.00</p>
+            ${serviceFee > 0 ? `<p style="margin: 0 0 8px; color: #374151;"><strong>FixTray Service Fee:</strong> $${serviceFee.toFixed(2)}</p>` : ''}
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 12px 0;" />
             <p style="margin: 0; color: #111827; font-size: 18px; font-weight: 700;"><strong>Total Due: $${totalDue.toFixed(2)}</strong></p>
           </div>
@@ -130,7 +130,7 @@ export const emailTemplates = {
     `,
   }),
 
-  jobCompleted: (customerName: string, workOrderId: string, totalDue: number, shopName: string, description: string) => ({
+  jobCompleted: (customerName: string, workOrderId: string, totalDue: number, shopName: string, description: string, serviceFee = 0) => ({
     subject: `Your Vehicle Is Ready for Pickup â€” ${shopName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; padding: 0; border-radius: 10px; overflow: hidden;">
@@ -143,6 +143,7 @@ export const emailTemplates = {
           <p style="color: #6b7280; margin: 0 0 24px;">Hi ${customerName}, great news! ${shopName} has finished work on your vehicle.</p>
           <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
             <p style="margin: 0 0 8px; color: #374151;"><strong>Work Completed:</strong> ${description}</p>
+            ${serviceFee > 0 ? `<p style="margin: 0 0 8px; color: #374151;"><strong>Services &amp; Parts:</strong> $${Math.max(0, totalDue - serviceFee).toFixed(2)}</p><p style="margin: 0 0 8px; color: #374151;"><strong>FixTray Service Fee:</strong> $${serviceFee.toFixed(2)}</p>` : ''}
             <p style="margin: 0; color: #111827; font-size: 18px; font-weight: 700;"><strong>Amount Due: $${totalDue.toFixed(2)}</strong></p>
           </div>
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/customer/workorders/${workOrderId}" style="display: block; background: #22c55e; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px; text-align: center;">Pay Now &amp; Schedule Pickup</a>
@@ -296,11 +297,12 @@ export async function sendEstimateReadyEmail(
   customerName: string,
   workOrderId: string,
   serviceAmount: number,
+  serviceFee: number,
   totalDue: number,
   shopName: string,
   description: string
 ) {
-  const template = emailTemplates.estimateReady(customerName, workOrderId, serviceAmount, totalDue, shopName, description);
+  const template = emailTemplates.estimateReady(customerName, workOrderId, serviceAmount, serviceFee, totalDue, shopName, description);
   return sendEmail({ to: customerEmail, ...template });
 }
 
@@ -310,9 +312,10 @@ export async function sendJobCompletedEmail(
   workOrderId: string,
   totalDue: number,
   shopName: string,
-  description: string
+  description: string,
+  serviceFee = 0
 ) {
-  const template = emailTemplates.jobCompleted(customerName, workOrderId, totalDue, shopName, description);
+  const template = emailTemplates.jobCompleted(customerName, workOrderId, totalDue, shopName, description, serviceFee);
   return sendEmail({ to: customerEmail, ...template });
 }
 

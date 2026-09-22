@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fa';
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
+import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -173,7 +174,7 @@ export default function WorkOrderDetailPage() {
   const [closeoutMsg,   setCloseoutMsg]   = useState('');
   const [paymentUrl,    setPaymentUrl]    = useState<string | null>(null);
   const [invoiceBill,   setInvoiceBill]   = useState<{ quoteAmount: number; serviceFee: number; totalDue: number } | null>(null);
-  const [platformFee,   setPlatformFee]   = useState<number>(5);
+  const [platformFee,   setPlatformFee]   = useState<number>(0);
 
   // Messaging state
   const [messages,   setMessages]     = useState<WOMessage[]>([]);
@@ -694,6 +695,12 @@ export default function WorkOrderDetailPage() {
               <Field label="Assigned Tech"    value={techName ?? 'Unassigned'} />
               <Field label="Due Date"         value={wo.dueDate ? new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null} />
               <Field label="Est. Cost"        value={wo.estimatedCost != null ? `$${wo.estimatedCost.toFixed(2)}` : null} />
+              {platformFee > 0 && typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 && (
+                <>
+                  <Field label={FIXTRAY_SERVICE_FEE_LABEL} value={fmt(platformFee)} />
+                  <Field label="Estimate Total" value={fmt(billWithServiceFee(wo.estimatedCost, platformFee).total)} />
+                </>
+              )}
               <Field label="Payment Status"   value={wo.paymentStatus?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
             </div>
           </Card>
@@ -730,10 +737,12 @@ export default function WorkOrderDetailPage() {
                       <span>Services &amp; Parts</span>
                       <span>{fmt(quote)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2', marginBottom: 6 }}>
-                      <span>FixTray Service Fee</span>
-                      <span>{fmt(fee)}</span>
-                    </div>
+                    {fee > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2', marginBottom: 6 }}>
+                        <span>{FIXTRAY_SERVICE_FEE_LABEL}</span>
+                        <span>{fmt(fee)}</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: '#22c55e', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
                       <span>Total Due</span>
                       <span>{fmt(totalDue)}</span>
@@ -876,10 +885,13 @@ export default function WorkOrderDetailPage() {
                 <FaPlus style={{ fontSize: 10 }} /> Add Line Item
               </button>
               {grandTotal > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                   {lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>Labor {fmt(lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
                   {lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>Parts {fmt(lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
-                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>Total {fmt(grandTotal)}</span>
+                  {billWithServiceFee(grandTotal, platformFee).serviceFee > 0 && (
+                    <span style={{ fontSize: 12, color: '#9aa3b2' }}>{FIXTRAY_SERVICE_FEE_LABEL} {fmt(billWithServiceFee(grandTotal, platformFee).serviceFee)}</span>
+                  )}
+                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>Total {fmt(billWithServiceFee(grandTotal, platformFee).total)}</span>
                 </div>
               )}
             </div>

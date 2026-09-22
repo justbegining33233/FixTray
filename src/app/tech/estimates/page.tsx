@@ -7,6 +7,7 @@ import { FaClipboardList } from 'react-icons/fa';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { issueSummary } from '@/lib/waitingRoomBoard';
+import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 import Sidebar from '@/components/Sidebar';
 import TopNavBar from '@/components/TopNavBar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -18,6 +19,7 @@ interface TechJob {
   estimatedCost?: number | null;
   issueDescription?: unknown;
   customer?: { firstName?: string; lastName?: string } | null;
+  estimateBill?: { subtotal: number; serviceFee: number; total: number };
 }
 
 const CLOSED = new Set(['closed', 'cancelled', 'completed']);
@@ -26,6 +28,7 @@ export default function TechEstimatesPage() {
   const { user, isLoading } = useRequireAuth(['tech']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [jobs, setJobs] = useState<TechJob[]>([]);
+  const [serviceFeeUsd, setServiceFeeUsd] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -35,6 +38,9 @@ export default function TechEstimatesPage() {
     fetch('/api/workorders?limit=100', { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => response.ok ? response.json() : Promise.reject())
       .then((data) => {
+        if (typeof data?.fixtrayServiceFee === 'number' && Number.isFinite(data.fixtrayServiceFee)) {
+          setServiceFeeUsd(data.fixtrayServiceFee);
+        }
         const open = unwrapWorkOrders(data).filter((wo) => !CLOSED.has(String(wo.status || ''))) as TechJob[];
         setJobs(open);
       })
@@ -97,7 +103,24 @@ export default function TechEstimatesPage() {
               </div>
               <div style={{ marginTop: 6 }}>{name}</div>
               <div style={{ marginTop: 4, color: '#9aa3b2', fontSize: 13 }}>{issueSummary(job.issueDescription) || 'Service'}</div>
-              <div style={{ marginTop: 8, color: '#60a5fa', fontSize: 13, fontWeight: 700 }}>Add parts and labor</div>
+              {(() => {
+                const bill = job.estimateBill && Number.isFinite(job.estimateBill.total)
+                  ? job.estimateBill
+                  : (typeof job.estimatedCost === 'number' && job.estimatedCost > 0
+                    ? billWithServiceFee(job.estimatedCost, serviceFeeUsd)
+                    : null);
+                if (!bill || bill.subtotal <= 0) {
+                  return <div style={{ marginTop: 8, color: '#60a5fa', fontSize: 13, fontWeight: 700 }}>Add parts and labor</div>;
+                }
+                return (
+                  <div style={{ marginTop: 8, fontSize: 13 }}>
+                    <div style={{ color: '#22c55e', fontWeight: 700 }}>Estimate ${bill.total.toFixed(2)}</div>
+                    {bill.serviceFee > 0 && (
+                      <div style={{ color: '#9aa3b2', marginTop: 2 }}>{FIXTRAY_SERVICE_FEE_LABEL} ${bill.serviceFee.toFixed(2)}</div>
+                    )}
+                  </div>
+                );
+              })()}
             </Link>
           );
         })}

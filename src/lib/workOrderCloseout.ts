@@ -7,6 +7,8 @@
  * invoiceTotal — do not hardcode it here.
  */
 
+import { billWithServiceFee } from '@/lib/serviceFeeBill';
+
 export type CloseoutAction = 'invoice' | 'paid' | 'complete';
 
 export interface CloseoutWorkOrder {
@@ -67,12 +69,11 @@ export function invoiceTotal(
   serviceFee: number;
   amount: number;
 } {
-  const quote = quoteAmount(workOrder);
-  const fee = quote > 0 ? round2(Math.max(0, Number(serviceFeeUsd) || 0)) : 0;
+  const bill = billWithServiceFee(quoteAmount(workOrder), serviceFeeUsd);
   return {
-    quoteAmount: quote,
-    serviceFee: fee,
-    amount: round2(quote + fee),
+    quoteAmount: bill.subtotal,
+    serviceFee: bill.serviceFee,
+    amount: bill.total,
   };
 }
 

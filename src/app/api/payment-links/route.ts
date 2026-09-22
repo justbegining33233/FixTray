@@ -6,42 +6,24 @@ import { validatePaymentLink } from '@/lib/shopFormValidation';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
+import { paymentLinkFeeBreakdown } from '@/lib/serviceFeeBill';
 
 async function invoiceBreakdown(link: {
   amount: number;
   workOrderId: string | null;
 }) {
   const amount = Number(link.amount) || 0;
-  if (amount <= 0) {
-    return { serviceCost: 0, serviceFee: 0, amount: 0 };
-  }
-
-  // Prefer fee baked into the link at invoice time: total − quote.
-  // That keeps already-issued bills stable if superadmin changes the fee later.
-  if (link.workOrderId) {
+  let quote = 0;
+  if (amount > 0 && link.workOrderId) {
     const workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
-    if (workOrder) {
-      const serviceCost = quoteAmount(workOrder);
-      if (serviceCost > 0 && amount >= serviceCost) {
-        return {
-          serviceCost,
-          serviceFee: round2(amount - serviceCost),
-          amount,
-        };
-      }
-    }
+    if (workOrder) quote = quoteAmount(workOrder);
   }
-
-  const platformFee = await getPlatformServiceFeeUsd();
-  const serviceFee = Math.min(platformFee, amount);
+  const platformFee = amount > 0 ? await getPlatformServiceFeeUsd() : 0;
+  const bill = paymentLinkFeeBreakdown(amount, quote, platformFee);
   return {
-    serviceCost: round2(amount - serviceFee),
-    serviceFee,
-    amount,
+    serviceCost: bill.serviceCost,
+    serviceFee: bill.serviceFee,
+    amount: bill.amount,
   };
 }
 
@@ -79,9 +61,10 @@ async function settlePaymentLink(token: string) {
   }
 
   if (link.status !== 'paid') {
+    const breakdown = await invoiceBreakdown(link);
     await prisma.paymentLink.update({
       where: { id: link.id },
-      data: { status: 'paid', paidAt: new Date() },
+      data: { status: 'paid', paidAt: new Date(), amount: breakdown.amount },
     });
     if (link.workOrderId) {
       const workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
@@ -90,7 +73,7 @@ async function settlePaymentLink(token: string) {
           where: { id: workOrder.id },
           data: {
             paymentStatus: 'paid',
-            amountPaid: link.amount,
+            amountPaid: breakdown.amount,
             status: workOrder.status === 'waiting-for-payment' ? 'waiting-for-payment' : workOrder.status,
           },
         });

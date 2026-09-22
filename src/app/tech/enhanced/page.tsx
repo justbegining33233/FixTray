@@ -10,6 +10,7 @@ import NotificationBell from '../../../components/NotificationBell';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import '../../../styles/sos-theme.css';
 import { FaArrowLeft, FaCamera, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
+import { BrandWordmark } from '@/components/BrandLogo';
 
 function TechPortalEnhancedContent() {
   const { user } = useRequireAuth(['tech']);
@@ -81,7 +82,7 @@ function TechPortalEnhancedContent() {
       <div className="sos-card" style={{maxWidth:1400}}>
         <div className="sos-header">
           <div className="sos-brand">
-            <span className="mark">FixTray</span>
+            <BrandWordmark variant="nav" />
             <span className="sub">Tech Portal - {techName}</span>
           </div>
           <div style={{display:'flex', gap:12, alignItems:'center'}}>

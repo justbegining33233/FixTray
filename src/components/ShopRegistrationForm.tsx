@@ -17,6 +17,7 @@ import {
 } from '../types/shop';
 import '../styles/sos-theme.css';
 import { FaArrowLeft, FaArrowRight, FaSmile } from 'react-icons/fa';
+import { BrandWordmark } from '@/components/BrandLogo';
 
 const MAX_SERVICES = 5;
 
@@ -400,7 +401,7 @@ export default function ShopRegistrationForm() {
       <div className="sos-card" style={{maxWidth:800}}>
         <div className="sos-header">
           <div className="sos-brand">
-            <span className="mark">FixTray</span>
+            <BrandWordmark variant="nav" />
             <span className="sub">Shop Registration</span>
           </div>
           <div style={{fontSize:13, color:'#9aa3b2'}}>Step {step} of 5</div>

@@ -85,8 +85,8 @@ export default function PendingShops() {
             if (notificationPermission === 'granted') {
               const notification = new Notification('New Shop Registration', {
                 body: `${newCount} new shop${newCount > 1 ? 's' : ''} awaiting approval`,
-                icon: '/favicon.ico',
-                badge: '/favicon.ico'
+                icon: '/icons/fixtray-ft-192.png',
+                badge: '/icons/fixtray-ft-192.png'
               });
 
               notification.onclick = () => {

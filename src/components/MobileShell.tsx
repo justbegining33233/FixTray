@@ -6,6 +6,7 @@ import type { Route } from 'next';
 import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
+import { BrandWordmark } from '@/components/BrandLogo';
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin';
 
@@ -773,12 +774,16 @@ export default function MobileShell({
           >
             {isHome ? '🔧' : '←'}
           </button>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
-              {isHome ? 'FixTray' : (sectionTitle || 'FixTray')}
-            </div>
+          <div style={{ minWidth: 0 }}>
+            {isHome ? (
+              <BrandWordmark variant="shell" />
+            ) : (
+              <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
+                {sectionTitle || 'FixTray'}
+              </div>
+            )}
             {isHome && (
-              <div style={{ fontSize: 9, color: '#718096', marginTop: 1 }}>{cfg.roleLabel}</div>
+              <div style={{ fontSize: 9, color: '#718096', marginTop: 4 }}>{cfg.roleLabel}</div>
             )}
           </div>
         </div>

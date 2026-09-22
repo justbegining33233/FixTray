@@ -8,6 +8,7 @@ import NotificationBell from '../../../components/NotificationBell';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import '../../../styles/sos-theme.css';
 import { FaArrowLeft, FaBuilding, FaChartBar, FaCheck, FaCog, FaDollarSign, FaFileAlt, FaSatelliteDish, FaStar, FaStore } from 'react-icons/fa';
+import { BrandWordmark } from '@/components/BrandLogo';
 
 function AdminPortalEnhancedContent() {
   const { user, isLoading: authLoading } = useRequireAuth(['admin', 'superadmin']);
@@ -82,7 +83,7 @@ function AdminPortalEnhancedContent() {
       <div className="sos-card" style={{maxWidth:1400}}>
         <div className="sos-header">
           <div className="sos-brand">
-            <span className="mark">FixTray</span>
+            <BrandWordmark variant="nav" />
             <span className="sub">Admin Portal - Super Admin</span>
           </div>
           <div style={{display:'flex', gap:12, alignItems:'center'}}>

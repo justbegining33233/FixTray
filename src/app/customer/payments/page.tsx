@@ -71,7 +71,7 @@ export default function Payments() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setPayError('Could not initiate payment. Please try again.');
+        setPayError(typeof data.error === 'string' && data.error ? data.error : 'Could not initiate payment. Please try again.');
         setPaying(null);
       }
     } catch {

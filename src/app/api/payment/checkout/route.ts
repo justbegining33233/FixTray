@@ -4,7 +4,8 @@ import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { invoiceTotal } from '@/lib/workOrderCloseout';
-import stripe from '@/lib/stripe';
+import stripe, { shopConnectPayoutReady } from '@/lib/stripe';
+import { buildConnectDestinationSplit } from '@/lib/stripeConnectSplit';
 import Stripe from 'stripe';
 
 /**
@@ -38,10 +39,25 @@ export async function POST(request: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
     const bill = invoiceTotal(workOrder, await getPlatformServiceFeeUsd());
-    if (bill.quoteAmount <= 0) {
-      return NextResponse.json({ error: 'No estimate on this work order yet' }, { status: 400 });
+    const split = buildConnectDestinationSplit({
+      quoteUsd: bill.quoteAmount,
+      serviceFeeUsd: bill.serviceFee,
+      connectedAccountId: workOrder.shop?.stripeAccountId,
+    });
+    if (!split.ok) {
+      return NextResponse.json({ error: split.error }, { status: split.status });
     }
-    const serviceFeeCents = Math.round(bill.serviceFee * 100);
+
+    const payoutReady = await shopConnectPayoutReady(split.destination);
+    if (!payoutReady) {
+      return NextResponse.json(
+        {
+          error:
+            "This shop's Stripe account cannot receive payouts yet. Finish Connect onboarding, then try again.",
+        },
+        { status: 409 }
+      );
+    }
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       {
@@ -55,12 +71,12 @@ export async function POST(request: NextRequest) {
                 : 'Vehicle Service'
             }`,
           },
-          unit_amount: Math.round(bill.quoteAmount * 100),
+          unit_amount: split.quoteCents,
         },
         quantity: 1,
       },
     ];
-    if (serviceFeeCents > 0) {
+    if (split.applicationFeeCents > 0) {
       lineItems.push({
         price_data: {
           currency: 'usd',
@@ -68,33 +84,35 @@ export async function POST(request: NextRequest) {
             name: 'FixTray Service Fee',
             description: 'Platform service fee',
           },
-          unit_amount: serviceFeeCents,
+          unit_amount: split.applicationFeeCents,
         },
         quantity: 1,
       });
     }
 
+    const metadata = {
+      workOrderId: workOrder.id,
+      customerId: workOrder.customerId,
+      shopId: workOrder.shopId,
+      fixtrayServiceFeeCents: String(split.applicationFeeCents),
+      shopPayoutCents: String(split.shopPayoutCents),
+    };
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
-      metadata: {
-        workOrderId: workOrder.id,
-        customerId: workOrder.customerId,
-        shopId: workOrder.shopId,
-      },
+      metadata,
       customer_email: workOrder.customer?.email ?? undefined,
       success_url: `${appUrl}/payment/success?workOrderId=${workOrder.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/payment/cancel?workOrderId=${workOrder.id}`,
+      // Destination charge: application_fee_amount is the live FixTray fee only.
+      // Stripe transfers the rest (labor, parts, shop fees) to the connected account.
+      payment_intent_data: {
+        ...split.paymentIntentData,
+        metadata,
+      },
     };
-
-    // If shop has a connected Stripe account, auto-split: platform fee stays with FixTray
-    if (workOrder.shop?.stripeAccountId) {
-      sessionParams.payment_intent_data = {
-        ...(serviceFeeCents > 0 ? { application_fee_amount: serviceFeeCents } : {}),
-        transfer_data: { destination: workOrder.shop.stripeAccountId },
-      };
-    }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 

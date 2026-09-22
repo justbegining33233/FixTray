@@ -5,40 +5,22 @@ import { useParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import {
+  formatShopCount,
+  formatShopDateTime,
+  formatShopMoney,
+  formatShopRating,
+  normalizeShopDetails,
+  shopDetailsMetrics,
+  type ShopDetailsView,
+} from '@/lib/shopDetailsView';
 import { FaArrowLeft, FaBuilding, FaCalendarAlt, FaCheck, FaExclamationTriangle, FaHourglassHalf, FaPhone, FaStar, FaTimesCircle } from 'react-icons/fa';
-
-type ShopDetails = {
-  id: string;
-  shopName: string;
-  ownerName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  shopType: string;
-  status: string;
-  businessLicense: string;
-  insurancePolicy: string;
-  profileComplete: boolean;
-  createdAt: string;
-  approvedAt: string | null;
-  stats: {
-    totalWorkOrders: number;
-    completedWorkOrders: number;
-    totalRevenue: number;
-    technicians: number;
-    customers: number;
-    avgRating: number;
-  };
-};
 
 export default function ShopDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['admin']);
-  const [shop, setShop] = useState<ShopDetails | null>(null);
+  const [shop, setShop] = useState<ShopDetailsView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -84,7 +66,13 @@ export default function ShopDetailsPage() {
         }
         
         const data = await res.json();
-        setShop(data);
+        const view = normalizeShopDetails(data);
+        if (!view) {
+          setError('Failed to load shop details');
+          setLoading(false);
+          return;
+        }
+        setShop(view);
       } catch (err) {
         console.error('Error fetching shop:', err);
         setError('Failed to load shop details');
@@ -164,6 +152,8 @@ export default function ShopDetailsPage() {
     }
   };
 
+  const metrics = shopDetailsMetrics(shop);
+
   return (
     <div style={{ minHeight: "100vh", background: 'transparent' }}>
       {/* Header */}
@@ -221,27 +211,27 @@ export default function ShopDetailsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Total Work Orders</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6' }}>{shop.stats.totalWorkOrders}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6' }}>{formatShopCount(metrics.totalWorkOrders)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Completed Jobs</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{shop.stats.completedWorkOrders}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{formatShopCount(metrics.completedWorkOrders)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Total Revenue</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>${shop.stats.totalRevenue.toLocaleString()}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{formatShopMoney(metrics.totalRevenue)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Technicians</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#f97316' }}>{shop.stats.technicians}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#f97316' }}>{formatShopCount(metrics.technicians)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Customers</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#a855f7' }}>{shop.stats.customers}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#a855f7' }}>{formatShopCount(metrics.customers)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Avg Rating</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24' }}><FaStar style={{marginRight:4}} /> {shop.stats.avgRating.toFixed(1)}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24' }}><FaStar style={{marginRight:4}} /> {formatShopRating(metrics.avgRating)}</div>
           </div>
         </div>
 
@@ -306,12 +296,12 @@ export default function ShopDetailsPage() {
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
                 <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Created</div>
-                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{new Date(shop.createdAt).toLocaleDateString()} at {new Date(shop.createdAt).toLocaleTimeString()}</div>
+                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{formatShopDateTime(shop.createdAt)}</div>
               </div>
               {shop.approvedAt && (
                 <div>
                   <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Approved</div>
-                  <div style={{ fontSize: 14, color: '#22c55e' }}>{new Date(shop.approvedAt).toLocaleDateString()} at {new Date(shop.approvedAt).toLocaleTimeString()}</div>
+                  <div style={{ fontSize: 14, color: '#22c55e' }}>{formatShopDateTime(shop.approvedAt)}</div>
                 </div>
               )}
             </div>

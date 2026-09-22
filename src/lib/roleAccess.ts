@@ -23,6 +23,44 @@ export function isRoleAllowed(pathname: string, role: string | undefined | null)
   return allowed.includes(role);
 }
 
+export type RouteActor = {
+  role?: string | null;
+  isOwner?: boolean;
+  isSuperAdmin?: boolean;
+};
+
+/**
+ * Page gates that list `superadmin` also admit the platform owner and the
+ * superadmin flag. Admin login stores role `admin` even when the token is the
+ * owner (isOwner) or a superadmin, which otherwise 403s `/superadmin/tenants`.
+ * The flag does not elevate shop, tech, or customer roles.
+ */
+export function actorSatisfiesRoles(
+  actor: RouteActor | null | undefined,
+  requiredRoles?: string[] | null,
+): boolean {
+  if (!requiredRoles || requiredRoles.length === 0) return true;
+  if (!actor) return false;
+  if (actor.role && requiredRoles.includes(actor.role)) return true;
+  if (!requiredRoles.includes('superadmin')) return false;
+  const platformOperator = actor.role === 'admin' || actor.role === 'superadmin';
+  if (!platformOperator) return false;
+  return actor.isOwner === true || actor.isSuperAdmin === true;
+}
+
+export function isRouteAllowed(
+  pathname: string,
+  actor: RouteActor | string | null | undefined,
+): boolean {
+  if (typeof actor !== 'object' || actor === null) {
+    return isRoleAllowed(pathname, actor);
+  }
+  if (isRoleAllowed(pathname, actor.role)) return true;
+  const allowed = rolesForPath(pathname);
+  if (!allowed) return true;
+  return actorSatisfiesRoles(actor, allowed);
+}
+
 export function forbiddenFromPath(pathname: string): string {
   return `/forbidden?from=${encodeURIComponent(pathname)}`;
 }

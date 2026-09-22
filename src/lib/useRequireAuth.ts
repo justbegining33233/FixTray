@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useAuth } from '@/contexts/AuthContext';
+import { actorSatisfiesRoles } from '@/lib/roleAccess';
 
 export default function useRequireAuth(allowedRoles?: string[]) {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -19,7 +20,11 @@ export default function useRequireAuth(allowedRoles?: string[]) {
         return;
       }
 
-      if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+      if (allowedRoles && user && !actorSatisfiesRoles({
+        role: user.role,
+        isOwner: user.isOwner,
+        isSuperAdmin: user.isSuperAdmin,
+      }, allowedRoles)) {
         const from = typeof window !== 'undefined' ? window.location.pathname : '/';
         router.replace(`/forbidden?from=${encodeURIComponent(from)}` as Route);
         return;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { forbiddenFromPath, isRoleAllowed, rolesForPath } from './lib/roleAccess';
+import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -188,12 +188,16 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
   }
 
   const payload = await verifyJwt(token);
-  const role = payload?.role as string | undefined;
+  const role = typeof payload?.role === 'string' ? payload.role : undefined;
   if (!role) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  if (isRoleAllowed(pathname, role)) {
+  if (isRouteAllowed(pathname, {
+    role,
+    isOwner: payload?.isOwner === true,
+    isSuperAdmin: payload?.isSuperAdmin === true,
+  })) {
     if (pathname.startsWith('/admin/owner') && payload?.isOwner !== true) {
       return NextResponse.redirect(new URL('/admin/home', request.url));
     }

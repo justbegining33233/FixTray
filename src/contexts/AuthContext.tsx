@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { decodeToken } from '@/lib/auth-client';
+import { actorSatisfiesRoles } from '@/lib/roleAccess';
 
 interface LoginUserData {
   id: string;
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const shopId = localStorage.getItem('shopId');
       const isShopAdmin = localStorage.getItem('isShopAdmin') === 'true';
       const shopProfileComplete = localStorage.getItem('shopProfileComplete') === 'true';
-      const isSuperAdmin = localStorage.getItem('isSuperAdmin') === 'true';
+      let isSuperAdmin = localStorage.getItem('isSuperAdmin') === 'true';
       const storedIsOwner = localStorage.getItem('isOwner') === 'true';
       const onboardingCompleted = localStorage.getItem('onboardingCompleted') === 'true';
       let isOwner = storedIsOwner;
@@ -125,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         isOwner = Boolean(decodedToken.isOwner ?? storedIsOwner);
         if (typeof decodedToken.isSuperAdmin === 'boolean') {
+          isSuperAdmin = decodedToken.isSuperAdmin;
           if (decodedToken.isSuperAdmin) localStorage.setItem('isSuperAdmin', 'true');
           else localStorage.removeItem('isSuperAdmin');
         }
@@ -294,7 +296,11 @@ export function useRequireAuth(requiredRoles?: string[]) {
       return;
     }
 
-    if (!isLoading && user && requiredRoles && !requiredRoles.includes(user.role)) {
+    if (!isLoading && user && requiredRoles && !actorSatisfiesRoles({
+      role: user.role,
+      isOwner: user.isOwner,
+      isSuperAdmin: user.isSuperAdmin,
+    }, requiredRoles)) {
       const from = typeof window !== 'undefined' ? window.location.pathname : '/';
       router.replace(`/forbidden?from=${encodeURIComponent(from)}` as Route);
     }

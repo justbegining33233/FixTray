@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Only shop owners, managers, and admins can view purchase orders
-    if (!['shop', 'manager', 'admin', 'superadmin'].includes(decoded.role)) {
+    // Shop owners, managers, techs (own shop), and admins can view purchase orders
+    if (!['shop', 'manager', 'tech', 'admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     if (decoded.role === 'shop' && decoded.id !== shopId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    if (decoded.role === 'manager' && decoded.shopId !== shopId) {
+    if ((decoded.role === 'manager' || decoded.role === 'tech') && decoded.shopId !== shopId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -1,16 +1,17 @@
 /**
  * POST /api/auth/2fa/verify
  * Verifies a TOTP token against the pending secret and enables 2FA.
- * 
+ *
  * GET /api/auth/2fa/verify
  * Returns current 2FA status from the DB.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { verifyTotpToken, decryptSecret } from '@/lib/two-factor';
+import { ACCOUNT_TWO_FACTOR_ROLES, readTwoFactorAccount, writeTwoFactorAccount } from '@/lib/twoFactorAccount';
 
 export async function POST(request: NextRequest) {
-  const auth = requireRole(request, ['shop']);
+  const auth = requireRole(request, [...ACCOUNT_TWO_FACTOR_ROLES]);
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json().catch(() => null);
@@ -20,19 +21,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const prisma = (await import('@/lib/prisma')).default;
-    const shop = await prisma.shop.findUnique({ where: { id: auth.id } });
-    if (!shop) return NextResponse.json({ error: 'Shop not found' }, { status: 404 });
+    const account = await readTwoFactorAccount(prisma, auth);
+    if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
 
-    if (!shop.twoFactorSecret) {
+    if (!account.twoFactorSecret) {
       return NextResponse.json({ error: 'Run /api/auth/2fa/setup first' }, { status: 400 });
     }
 
-    const valid = verifyTotpToken(decryptSecret(shop.twoFactorSecret), String(body.token));
+    const valid = verifyTotpToken(decryptSecret(account.twoFactorSecret), String(body.token));
     if (!valid) {
       return NextResponse.json({ error: 'Invalid TOTP token' }, { status: 400 });
     }
 
-    await prisma.shop.update({ where: { id: auth.id }, data: { twoFactorEnabled: true } });
+    await writeTwoFactorAccount(prisma, auth, { twoFactorEnabled: true });
 
     return NextResponse.json({ message: '2FA enabled successfully', enabled: true });
   } catch (error) {
@@ -42,14 +43,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['shop']);
+  const auth = requireRole(request, [...ACCOUNT_TWO_FACTOR_ROLES]);
   if (auth instanceof NextResponse) return auth;
 
   const prisma = (await import('@/lib/prisma')).default;
-  const shop = await prisma.shop.findUnique({
-    where: { id: auth.id },
-    select: { twoFactorEnabled: true },
-  });
+  const account = await readTwoFactorAccount(prisma, auth);
 
-  return NextResponse.json({ enabled: shop?.twoFactorEnabled ?? false });
+  return NextResponse.json({ enabled: account?.twoFactorEnabled ?? false });
 }

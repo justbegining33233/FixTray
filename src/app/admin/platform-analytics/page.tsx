@@ -35,6 +35,7 @@ interface AnalyticsData {
   inProgressWorkOrders: number;
   totalRevenue: number;
   totalShops: number;
+  approvedShops: number;
   totalTechs: number;
   totalCustomers: number;
   revenue: { month: string; amount: number }[];
@@ -46,7 +47,7 @@ interface AnalyticsData {
 
 const EMPTY_ANALYTICS_DATA: AnalyticsData = {
   totalWorkOrders: 0, completedWorkOrders: 0, pendingWorkOrders: 0,
-  inProgressWorkOrders: 0, totalRevenue: 0, totalShops: 0, totalTechs: 0, totalCustomers: 0,
+  inProgressWorkOrders: 0, totalRevenue: 0, totalShops: 0, approvedShops: 0, totalTechs: 0, totalCustomers: 0,
   revenue: [],
   monthlyTrends: [],
   statusDistribution: [],
@@ -111,11 +112,11 @@ export default function PlatformAnalytics() {
             <div style={{fontSize:12, color:'#9aa3b2'}}>All-time platform revenue</div>
           </div>
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:24}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Approved Shops</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Total Shops</div>
             <div style={{fontSize:32, fontWeight:700, color:'#e5332a', marginBottom:8}}>
               {dataLoading ? '...' : data.totalShops}
             </div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>{data.totalTechs} technicians registered</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{data.approvedShops} approved · {data.totalTechs} technicians registered</div>
           </div>
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Work Orders</div>

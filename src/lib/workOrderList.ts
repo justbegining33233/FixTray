@@ -1,3 +1,6 @@
+/** Shop calendar asks for 200 rows. Anything above this is still rejected. */
+export const MAX_WORK_ORDER_LIST_LIMIT = 200;
+
 export function unwrapWorkOrders(payload: unknown): any[] {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === 'object' && Array.isArray((payload as { workOrders?: unknown }).workOrders)) {

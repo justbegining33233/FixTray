@@ -89,13 +89,13 @@ export default function SystemSettings() {
     <div style={{ minHeight: "100vh", background: 'transparent' }}>
       {toast && (
         <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 9999, padding: '12px 20px', borderRadius: 8, fontWeight: 600, fontSize: 14, background: toast.type === 'success' ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.9)', color: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
-          {toast.type === 'success' ? '? ' : '? '}{toast.text}
+          {toast.text}
         </div>
       )}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(107,114,128,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <Link href="/admin/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 12, display: 'inline-block' }}>? Back to Dashboard</Link>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>?? System Settings</h1>
+          <Link href="/admin/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 12, display: 'inline-block' }}>Back to Dashboard</Link>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>System Settings</h1>
           <p style={{ fontSize: 13, color: '#9aa3b2' }}>Configure platform-wide settings and feature flags</p>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function SystemSettings() {
 
         {settings.maintenanceMode && (
           <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 10, padding: '14px 18px', marginBottom: 24, color: '#fca5a5', fontSize: 14 }}>
-            ?? <strong>Maintenance mode is ON.</strong> Non-admin users will be blocked from logging in.
+            Warning: <strong>Maintenance mode is ON.</strong> Non-admin users will be blocked from logging in.
           </div>
         )}
 
@@ -152,7 +152,7 @@ export default function SystemSettings() {
             {resetting ? 'Resetting...' : 'Reset to Defaults'}
           </button>
           <button onClick={handleSave} disabled={saving} style={{ padding: '11px 28px', background: saving ? '#16a34a80' : '#22c55e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}>
-            {saving ? 'Saving...' : '?? Save Changes'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

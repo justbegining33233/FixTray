@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { presentAuditDetails } from '@/lib/auditDetails';
 import {
   FaShieldAlt, FaArrowLeft, FaLock, FaUserShield, FaKey,
   FaExclamationTriangle, FaCheckCircle, FaHistory,
@@ -155,7 +156,7 @@ export default function SuperAdminSecurity() {
                     <p className="text-gray-500 text-xs mt-0.5">
                       {e.userName || e.user || 'System'}{e.ip ? ` - ${e.ip}` : ''} - {new Date(e.timestamp || e.createdAt || '').toLocaleString()}
                     </p>
-                    {e.details && <p className="text-gray-400 text-xs mt-1">{e.details}</p>}
+                    {presentAuditDetails(e.details) && <p className="text-gray-400 text-xs mt-1">{presentAuditDetails(e.details)}</p>}
                   </div>
                 </div>
               ))}

@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       totalWorkOrders,
       statusCounts,
       totalShops,
+      approvedShops,
       totalTechs,
       totalCustomers,
       recentWorkOrders,
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       prisma.workOrder.count(),
       prisma.workOrder.groupBy({ by: ['status'], _count: { status: true } }),
+      prisma.shop.count(),
       prisma.shop.count({ where: { status: 'approved' } }),
       prisma.tech.count(),
       prisma.customer.count(),
@@ -93,6 +95,7 @@ export async function GET(request: NextRequest) {
       inProgressWorkOrders,
       totalRevenue: grandTotalRevenue,
       totalShops,
+      approvedShops,
       totalTechs,
       totalCustomers,
       // Chart data

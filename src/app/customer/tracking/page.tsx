@@ -86,10 +86,11 @@ export default function LiveTracking() {
       
       if (response.ok) {
         const data = await response.json();
-        setTrackingOrders(data);
+        setTrackingOrders(Array.isArray(data) ? data : []);
+        setError('');
       } else if (response.status === 404) {
-        setError('No active work orders to track');
         setTrackingOrders([]);
+        setError('');
       } else {
         const _errorText = await response.text();
         setError('Failed to load tracking data');
@@ -201,7 +202,7 @@ export default function LiveTracking() {
           </div>
         )}
 
-        {!loading && !error && (
+        {!loading && !error && trackingOrders.length > 0 && (
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(400px, 1fr))', gap:24}}>
             {trackingOrders.map(order => (
               <div key={order.workOrderId} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>

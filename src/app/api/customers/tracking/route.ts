@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { getSocketServer } from '@/lib/socket-server';
+import { customerTrackingWhere } from '@/lib/customerTracking';
 
 // GET /api/customers/tracking - Get real-time tech location for active work order
 export async function GET(request: Request) {
@@ -23,18 +24,8 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const workOrderId = searchParams.get('workOrderId');
-    const _customerId = searchParams.get('customerId');
-
-    // Find active work orders for customer
-    const where: any = {
-      status: { in: ['in-progress', 'en-route'] },
-      customerId: payload.id, // Only allow access to own work orders
-    };
-
-    if (workOrderId) {
-      where.id = workOrderId;
-    }
-    // customerId parameter is ignored since we filter by authenticated user's ID
+    // customerId query param is ignored; tracking is always the signed-in customer.
+    const where = customerTrackingWhere(payload.id, workOrderId);
 
     const workOrders = await prisma.workOrder.findMany({
       where,
@@ -60,12 +51,13 @@ export async function GET(request: Request) {
     });
 
     if (workOrders.length === 0) {
-      return NextResponse.json({ message: 'No active work orders' }, { status: 404 });
+      return NextResponse.json([]);
     }
 
     const trackingData = workOrders.map(wo => {
       // If this is an in-shop job, expose shop address and appointment time instead of tech GPS
       const isInShop = wo.serviceLocation && wo.serviceLocation.toLowerCase() !== 'roadside';
+      const shopAddress = wo.shop?.address || '';
 
       return {
         workOrderId: wo.id,
@@ -78,14 +70,14 @@ export async function GET(request: Request) {
           phone: wo.assignedTo.phone,
         } : null,
         shop: {
-          shopId: wo.shop.id,
-          shopName: wo.shop.shopName,
-          address: wo.shop.address,
-          phone: wo.shop.phone,
+          shopId: wo.shop?.id || '',
+          shopName: wo.shop?.shopName || 'Shop',
+          address: shopAddress,
+          phone: wo.shop?.phone || '',
         },
         serviceTime: wo.dueDate?.toISOString() || wo.createdAt.toISOString(),
         // For in-shop work orders, return shop address (no coordinates); otherwise return tech tracking if available
-        location: isInShop ? { shopAddress: wo.shop.address } : (wo.tracking || null),
+        location: isInShop ? { shopAddress } : (wo.tracking || null),
         estimatedArrival: isInShop ? wo.dueDate?.toISOString() || null : wo.tracking?.estimatedArrival || null,
         isInShop,
       };

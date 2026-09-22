@@ -48,7 +48,7 @@ function WaitingRoomContent() {
   const [data, setData] = useState<WaitingRoomData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState<Date | null>(null);
   const [promoIdx, setPromoIdx] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -79,14 +79,18 @@ function WaitingRoomContent() {
     if (!shopResolved) return;
     load();
     intervalRef.current = setInterval(load, 60000);
-    const timeTick = setInterval(() => setTime(new Date()), 1000);
     const promoTick = setInterval(() => setPromoIdx(p => (p + 1) % PROMOS.length), 8000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      clearInterval(timeTick);
       clearInterval(promoTick);
     };
   }, [shopId, shopResolved]);
+
+  useEffect(() => {
+    setTime(new Date());
+    const timeTick = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timeTick);
+  }, []);
 
   const orders = data?.orders || [];
   const completed = orders.filter(o => toWaitingBoardStatus(o.status) === 'completed');
@@ -110,9 +114,9 @@ function WaitingRoomContent() {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 42, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
           </div>
-          <div style={{ fontSize: 14, opacity: 0.8 }}>{time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+          <div style={{ fontSize: 14, opacity: 0.8 }}>{time ? time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) : ''}</div>
         </div>
       </div>
 

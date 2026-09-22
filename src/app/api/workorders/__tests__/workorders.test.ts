@@ -294,6 +294,15 @@ describe('GET /api/workorders', () => {
     expect(res.status).toBe(400);
   });
 
+  it('accepts the shop calendar limit of 200', async () => {
+    (prisma.workOrder.count as jest.Mock).mockResolvedValue(0);
+    (prisma.workOrder.findMany as jest.Mock).mockResolvedValue([]);
+    const token = makeToken({ id: 'shop-001', role: 'shop' });
+    const req = makeGetRequest('http://localhost/api/workorders?limit=200', token);
+    const res = await listWorkOrders(req);
+    expect(res.status).toBe(200);
+  });
+
   it('returns 400 for limit exceeding maximum', async () => {
     const token = makeToken({ id: 'shop-001', role: 'shop' });
     const req = makeGetRequest('http://localhost/api/workorders?limit=999', token);

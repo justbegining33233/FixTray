@@ -78,3 +78,16 @@ export function buildCustomerRewards(input: {
 
   return { loyaltyPoints: points, rewards, history };
 }
+
+/** Rewards API field is `loyaltyPoints`. Older callers looked for `points` and then invented 50 per job. */
+export function loyaltyPointsFromRewards(payload: unknown, fallback = 0): number {
+  if (!payload || typeof payload !== 'object') return fallback;
+  const record = payload as { loyaltyPoints?: unknown; points?: unknown };
+  if (typeof record.loyaltyPoints === 'number' && Number.isFinite(record.loyaltyPoints)) {
+    return Math.max(0, Math.floor(record.loyaltyPoints));
+  }
+  if (typeof record.points === 'number' && Number.isFinite(record.points)) {
+    return Math.max(0, Math.floor(record.points));
+  }
+  return fallback;
+}

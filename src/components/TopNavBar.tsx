@@ -11,6 +11,8 @@ import ShopSwitcher from '@/components/ShopSwitcher';
 import GlobalSearch from '@/components/GlobalSearch';
 import { FaArrowRight, FaBell, FaCaretDown, FaCaretRight, FaCog, FaSignOutAlt, FaSquare, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
 import { workOrderNotificationCopy } from '@/lib/notificationCopy';
+import { decodeToken } from '@/lib/auth-client';
+import { resolveShopId } from '@/lib/shopAccess';
 
 interface TopNavBarProps {
   onMenuToggle?: () => void;
@@ -72,6 +74,10 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     } catch {
       // Ignore malformed legacy payloads.
     }
+
+    const token = localStorage.getItem('token');
+    const decoded = token ? decodeToken(token) : null;
+    resolvedShop = resolveShopId(resolvedShop, decoded?.shopId);
 
     if (resolvedRole) localStorage.setItem('userRole', resolvedRole);
     if (resolvedName) localStorage.setItem('userName', resolvedName);

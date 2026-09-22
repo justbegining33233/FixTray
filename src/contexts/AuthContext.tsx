@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { decodeToken } from '@/lib/auth-client';
+import { resolveShopId } from '@/lib/shopAccess';
 import { actorSatisfiesRoles } from '@/lib/roleAccess';
 
 interface LoginUserData {
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let name = localStorage.getItem('userName');
       let id = localStorage.getItem('userId');
       const shopId = localStorage.getItem('shopId');
+      let resolvedShopId = shopId || '';
       const isShopAdmin = localStorage.getItem('isShopAdmin') === 'true';
       const shopProfileComplete = localStorage.getItem('shopProfileComplete') === 'true';
       let isSuperAdmin = localStorage.getItem('isSuperAdmin') === 'true';
@@ -133,6 +135,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (isOwner) localStorage.setItem('isOwner', 'true');
         else localStorage.removeItem('isOwner');
 
+        resolvedShopId = resolveShopId(shopId, decodedToken.shopId);
+        if (resolvedShopId) localStorage.setItem('shopId', resolvedShopId);
+
         // If valid token found, ensure socket is connected for real-time updates
         try {
           // dynamically import to avoid SSR issues
@@ -149,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id,
           name,
           role,
-          shopId: shopId || undefined,
+          shopId: resolvedShopId || undefined,
           isShopAdmin,
           shopProfileComplete,
           isSuperAdmin,

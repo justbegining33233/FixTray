@@ -9,57 +9,45 @@ import {
   type AppLocale,
 } from '@/lib/locale';
 
-type LanguageSwitcherProps = {
-  /** Short EN/ES buttons for tight headers. The profile menu uses full names. */
-  compact?: boolean;
-};
-
-export default function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
+export default function LanguageSwitcher() {
   const locale = useLocale();
   const router = useRouter();
   const t = useTranslations('chrome');
 
-  const choose = (next: AppLocale) => {
+  const choose = (next: string) => {
     if (next === locale) return;
-    writeLocaleCookie(next);
+    if (!(SUPPORTED_LOCALES as readonly string[]).includes(next)) return;
+    writeLocaleCookie(next as AppLocale);
     router.refresh();
   };
 
   return (
-    <div
-      role="group"
-      aria-label={t('language')}
-      style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}
-    >
-      {!compact && (
-        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{t('language')}</span>
-      )}
-      {SUPPORTED_LOCALES.map((code) => {
-        const selected = locale === code;
-        return (
-          <button
-            key={code}
-            type="button"
-            aria-pressed={selected}
-            aria-label={LOCALE_LABELS[code]}
-            title={LOCALE_LABELS[code]}
-            onClick={() => choose(code)}
-            style={{
-              padding: compact ? '4px 8px' : '6px 10px',
-              borderRadius: 8,
-              border: selected ? '1px solid #e5332a' : '1px solid rgba(255,255,255,0.16)',
-              background: selected ? 'rgba(229,51,42,0.22)' : 'rgba(0,0,0,0.35)',
-              color: '#f8fafc',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              lineHeight: 1.2,
-            }}
-          >
-            {compact ? code.toUpperCase() : LOCALE_LABELS[code]}
-          </button>
-        );
-      })}
-    </div>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, width: 'auto' }}>
+      <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, letterSpacing: '0.04em' }}>
+        {t('language')}
+      </span>
+      <select
+        aria-label={t('language')}
+        value={locale}
+        onChange={(event) => choose(event.target.value)}
+        style={{
+          minWidth: 168,
+          maxWidth: 220,
+          padding: '6px 8px',
+          borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.16)',
+          background: 'rgba(0,0,0,0.55)',
+          color: '#f8fafc',
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+      >
+        {SUPPORTED_LOCALES.map((code) => (
+          <option key={code} value={code}>
+            {LOCALE_LABELS[code]}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

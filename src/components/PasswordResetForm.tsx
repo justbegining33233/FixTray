@@ -1,10 +1,12 @@
 "use client";
 import { FaTimes } from 'react-icons/fa';
 import { useState } from 'react';
+import { usePhrase } from '@/lib/usePhrase';
 
 type Props = { onClose?: () => void };
 
 export default function PasswordResetForm({ onClose }: Props) {
+  const say = usePhrase();
   const [identifier, setIdentifier] = useState('');
   const [via, setVia] = useState<'email'|'sms'>('email');
   const [step, setStep] = useState<'request'|'confirm'>('request');
@@ -72,45 +74,45 @@ export default function PasswordResetForm({ onClose }: Props) {
       >
         <div className="sos-card h-full w-full p-4 overflow-auto">
           <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">Reset Password</h3>
-          <button aria-label="Close" onClick={() => onClose && onClose()} className="text-gray-600 hover:text-gray-900"><FaTimes style={{marginRight:4}} /></button>
+          <h3 className="text-lg font-semibold">{say('Reset Password')}</h3>
+          <button aria-label={say('Close')} onClick={() => onClose && onClose()} className="text-gray-600 hover:text-gray-900"><FaTimes style={{marginRight:4}} /></button>
         </div>
       {step === 'request' && (
         <form onSubmit={requestToken}>
           <div className="mb-2">
-            <label className="block text-sm">Delivery</label>
+            <label className="block text-sm">{say('Delivery')}</label>
             <select value={via} onChange={e=>setVia(e.target.value as any)} className="sos-input w-full">
-              <option value="email">Email</option>
-              <option value="sms">SMS (if phone on file)</option>
+              <option value="email">{say('Email')}</option>
+              <option value="sms">{say('SMS (if phone on file)')}</option>
             </select>
           </div>
           <div className="mb-2">
-            <label className="block text-sm">Username / Email / Phone</label>
+            <label className="block text-sm">{say('Username / Email / Phone')}</label>
             <input value={identifier} onChange={e=>setIdentifier(e.target.value)} className="sos-input w-full" />
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1 text-white rounded" style={{background:'#e5332a'}} disabled={loading}>Send Code</button>
-            <span className="text-sm text-gray-700">{status}</span>
+            <button className="px-3 py-1 text-white rounded" style={{background:'#e5332a'}} disabled={loading}>{say('Send Code')}</button>
+            <span className="text-sm text-gray-700">{status ? say(status) : ''}</span>
           </div>
         </form>
       )}
       {step === 'confirm' && (
         <form onSubmit={confirmReset}>
           <div className="mb-2">
-            <label className="block text-sm">Verification Code</label>
+            <label className="block text-sm">{say('Verification Code')}</label>
             <input value={token} onChange={e=>setToken(e.target.value)} className="sos-input w-full" />
           </div>
           <div className="mb-2">
-            <label className="block text-sm">New Password</label>
+            <label className="block text-sm">{say('New Password')}</label>
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="sos-input w-full" />
           </div>
           <div className="mb-2">
-            <label className="block text-sm">Confirm Password</label>
+            <label className="block text-sm">{say('Confirm Password')}</label>
             <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} className="sos-input w-full" />
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1 text-white rounded" style={{background:'#e5332a'}} disabled={loading}>{loading ? 'Processing...' : 'Confirm & Set Password'}</button>
-            <span className="text-sm text-[#94a3b8]">{status}</span>
+            <button className="px-3 py-1 text-white rounded" style={{background:'#e5332a'}} disabled={loading}>{loading ? say('Processing...') : say('Confirm & Set Password')}</button>
+            <span className="text-sm text-[#94a3b8]">{status ? say(status) : ''}</span>
           </div>
         </form>
       )}

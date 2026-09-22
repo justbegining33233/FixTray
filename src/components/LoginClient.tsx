@@ -10,12 +10,14 @@ import { IconUser, IconWrench } from '@/components/icons';
 import '@/styles/sos-theme.css';
 import OilSlickCanvas from '@/components/OilSlickCanvas';
 import { useTranslations } from 'next-intl';
+import { usePhrase } from '@/lib/usePhrase';
 
 const MIN_USERNAME_LENGTH = 3;
 const MIN_PASSWORD_LENGTH = 8;
 
 export default function LoginClient() {
   const t = useTranslations('login');
+  const say = usePhrase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -271,13 +273,13 @@ export default function LoginClient() {
               <form onSubmit={handleLoginSubmit} className="sos-form" autoComplete="off">
                 <div className="sos-field">
                   <label>{t('username')}</label>
-                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="sos-input" placeholder="Employee #, username, email, or phone" autoComplete="off" />
-                  {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.username}</p>)}
+                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="sos-input" placeholder={say('Employee #, username, email, or phone')} autoComplete="off" />
+                  {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.username)}</p>)}
                 </div>
                 <div className="sos-field">
                   <label>{t('password')}</label>
                   <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} className="sos-input" placeholder="--------" autoComplete="new-password" />
-                  {errors.password && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.password}</p>)}
+                  {errors.password && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.password)}</p>)}
                 </div>
                 <div className="sos-actions">
                   <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? t('signingIn') : t('signIn')}</button>
@@ -291,58 +293,58 @@ export default function LoginClient() {
             {activeTab === 'signup' && (
               <form onSubmit={handleSignupSubmit} className="sos-form">
                 <div className="sos-field">
-                  <label>I am signing up as: *</label>
+                  <label>{say('I am signing up as:')}</label>
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
                     <button type="button" onClick={() => { setAccountType('customer'); setErrors({}); }} className={`btn-outline ${accountType === 'customer' ? 'active' : ''}`} style={{padding:'16px', borderWidth:2, background: accountType === 'customer' ? 'rgba(229,51,42,0.14)' : 'transparent', boxShadow: accountType === 'customer' ? '0 0 0 2px #e5332a' : 'none'}}>
                       <div style={{marginBottom:'6px', display:'flex', justifyContent:'center'}}><IconUser size={24} color={accountType === 'customer' ? '#e5332a' : '#9aa3b2'} /></div>
-                      <div>Customer</div>
-                      <div style={{fontSize:'11px', color:'#9aa3b2', marginTop:'4px'}}>Need service</div>
+                      <div>{say('Customer')}</div>
+                      <div style={{fontSize:'11px', color:'#9aa3b2', marginTop:'4px'}}>{say('Need service')}</div>
                     </button>
                     <button type="button" onClick={() => { setAccountType('shop'); setErrors({}); }} className={`btn-outline ${accountType === 'shop' ? 'active' : ''}`} style={{padding:'16px', borderWidth:2, background: accountType === 'shop' ? 'rgba(229,51,42,0.14)' : 'transparent', boxShadow: accountType === 'shop' ? '0 0 0 2px #e5332a' : 'none'}}>
                       <div style={{marginBottom:'6px', display:'flex', justifyContent:'center'}}><IconWrench size={24} color={accountType === 'shop' ? '#e5332a' : '#9aa3b2'} /></div>
-                      <div>Shop</div>
-                      <div style={{fontSize:'11px', color:'#9aa3b2', marginTop:'4px'}}>Provide service</div>
+                      <div>{say('Shop')}</div>
+                      <div style={{fontSize:'11px', color:'#9aa3b2', marginTop:'4px'}}>{say('Provide service')}</div>
                     </button>
                   </div>
-                  {errors.accountType && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.accountType}</p>)}
+                  {errors.accountType && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.accountType)}</p>)}
                 </div>
 
                 {accountType === 'customer' && (
                   <>
                     <div className="sos-field">
-                      <label>Full Name *</label>
-                      <input type="text" value={signupForm.fullName} onChange={(e) => setSignupForm({ ...signupForm, fullName: e.target.value })} className="sos-input" placeholder="John Doe" />
-                      {errors.fullName && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.fullName}</p>)}
+                      <label>{say('Full Name *')}</label>
+                      <input type="text" value={signupForm.fullName} onChange={(e) => setSignupForm({ ...signupForm, fullName: e.target.value })} className="sos-input" placeholder={say('John Doe')} />
+                      {errors.fullName && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.fullName)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Username *</label>
-                      <input type="text" value={signupForm.username} onChange={(e) => setSignupForm({ ...signupForm, username: e.target.value })} className="sos-input" placeholder="johndoe" />
-                      {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.username}</p>)}
+                      <label>{say('Username *')}</label>
+                      <input type="text" value={signupForm.username} onChange={(e) => setSignupForm({ ...signupForm, username: e.target.value })} className="sos-input" placeholder={say('johndoe')} />
+                      {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.username)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Email Address *</label>
-                      <input type="email" value={signupForm.email} onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })} className="sos-input" placeholder="you@example.com" />
-                      {errors.email && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.email}</p>)}
+                      <label>{say('Email Address *')}</label>
+                      <input type="email" value={signupForm.email} onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })} className="sos-input" placeholder={say('you@example.com')} />
+                      {errors.email && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.email)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Password *</label>
+                      <label>{say('Password *')}</label>
                       <input type="password" value={signupForm.password} onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })} className="sos-input" placeholder="--------" />
-                      {errors.password && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.password}</p>)}
+                      {errors.password && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.password)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Confirm Password *</label>
+                      <label>{say('Confirm Password *')}</label>
                       <input type="password" value={signupForm.confirmPassword} onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })} className="sos-input" placeholder="--------" />
-                      {errors.confirmPassword && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.confirmPassword}</p>)}
+                      {errors.confirmPassword && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.confirmPassword)}</p>)}
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={signupForm.agreeToTerms} onChange={(e) => setSignupForm({ ...signupForm, agreeToTerms: e.target.checked })} />
                       <span style={{fontSize:12, color:'#b8beca'}}>
-                        I agree to the <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms-of-service', '_blank')}>Terms of Service</button> and <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy-policy', '_blank')}>Privacy Policy</button>
+                        {say('I agree to the')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms-of-service', '_blank')}>{say('Terms of Service')}</button> {say('and')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy-policy', '_blank')}>{say('Privacy Policy')}</button>
                       </span>
                     </label>
-                    {errors.agreeToTerms && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.agreeToTerms}</p>)}
+                    {errors.agreeToTerms && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.agreeToTerms)}</p>)}
                     <div className="sos-actions">
-                      <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? 'Creating account...' : 'Create Account'}</button>
+                      <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? say('Creating account...') : say('Create Account')}</button>
                     </div>
                   </>
                 )}
@@ -350,66 +352,66 @@ export default function LoginClient() {
                 {accountType === 'shop' && (
                   <>
                     <div className="sos-field">
-                      <label>Shop Name *</label>
-                      <input type="text" value={shopSignupForm.shopName} onChange={(e) => setShopSignupForm({ ...shopSignupForm, shopName: e.target.value })} className="sos-input" placeholder="Mike's Auto Repair" />
-                      {errors.shopName && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.shopName}</p>)}
+                      <label>{say('Shop Name *')}</label>
+                      <input type="text" value={shopSignupForm.shopName} onChange={(e) => setShopSignupForm({ ...shopSignupForm, shopName: e.target.value })} className="sos-input" placeholder={say("Mike's Auto Repair")} />
+                      {errors.shopName && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.shopName)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Street Address *</label>
-                      <input type="text" value={shopSignupForm.address} onChange={(e) => setShopSignupForm({ ...shopSignupForm, address: e.target.value })} className="sos-input" placeholder="123 Main Street" />
-                      {errors.address && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.address}</p>)}
+                      <label>{say('Street Address *')}</label>
+                      <input type="text" value={shopSignupForm.address} onChange={(e) => setShopSignupForm({ ...shopSignupForm, address: e.target.value })} className="sos-input" placeholder={say('123 Main Street')} />
+                      {errors.address && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.address)}</p>)}
                     </div>
                     <div style={{display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:10}}>
                       <div className="sos-field">
-                        <label>City *</label>
-                        <input type="text" value={shopSignupForm.city} onChange={(e) => setShopSignupForm({ ...shopSignupForm, city: e.target.value })} className="sos-input" placeholder="Los Angeles" />
-                        {errors.city && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.city}</p>)}
+                        <label>{say('City *')}</label>
+                        <input type="text" value={shopSignupForm.city} onChange={(e) => setShopSignupForm({ ...shopSignupForm, city: e.target.value })} className="sos-input" placeholder={say('Los Angeles')} />
+                        {errors.city && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.city)}</p>)}
                       </div>
                       <div className="sos-field">
-                        <label>State *</label>
-                        <input type="text" value={shopSignupForm.state} onChange={(e) => setShopSignupForm({ ...shopSignupForm, state: e.target.value.toUpperCase() })} className="sos-input" placeholder="CA" maxLength={2} />
-                        {errors.state && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.state}</p>)}
+                        <label>{say('State *')}</label>
+                        <input type="text" value={shopSignupForm.state} onChange={(e) => setShopSignupForm({ ...shopSignupForm, state: e.target.value.toUpperCase() })} className="sos-input" placeholder={say('CA')} maxLength={2} />
+                        {errors.state && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.state)}</p>)}
                       </div>
                       <div className="sos-field">
-                        <label>ZIP *</label>
-                        <input type="text" value={shopSignupForm.zip} onChange={(e) => setShopSignupForm({ ...shopSignupForm, zip: e.target.value })} className="sos-input" placeholder="90001" />
-                        {errors.zip && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.zip}</p>)}
+                        <label>{say('ZIP *')}</label>
+                        <input type="text" value={shopSignupForm.zip} onChange={(e) => setShopSignupForm({ ...shopSignupForm, zip: e.target.value })} className="sos-input" placeholder={say('90001')} />
+                        {errors.zip && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.zip)}</p>)}
                       </div>
                     </div>
                     <div className="sos-field">
-                      <label>Phone Number *</label>
-                      <input type="tel" value={shopSignupForm.phone} onChange={(e) => setShopSignupForm({ ...shopSignupForm, phone: e.target.value })} className="sos-input" placeholder="(555) 123-4567" />
-                      {errors.phone && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.phone}</p>)}
+                      <label>{say('Phone Number *')}</label>
+                      <input type="tel" value={shopSignupForm.phone} onChange={(e) => setShopSignupForm({ ...shopSignupForm, phone: e.target.value })} className="sos-input" placeholder={say('(555) 123-4567')} />
+                      {errors.phone && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.phone)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Email Address *</label>
-                      <input type="email" value={shopSignupForm.email} onChange={(e) => setShopSignupForm({ ...shopSignupForm, email: e.target.value })} className="sos-input" placeholder="contact@shop.com" />
-                      {errors.email && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.email}</p>)}
+                      <label>{say('Email Address *')}</label>
+                      <input type="email" value={shopSignupForm.email} onChange={(e) => setShopSignupForm({ ...shopSignupForm, email: e.target.value })} className="sos-input" placeholder={say('contact@shop.com')} />
+                      {errors.email && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.email)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Username *</label>
-                      <input type="text" value={shopSignupForm.username} onChange={(e) => setShopSignupForm({ ...shopSignupForm, username: e.target.value })} className="sos-input" placeholder="mikesauto" />
-                      {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.username}</p>)}
+                      <label>{say('Username *')}</label>
+                      <input type="text" value={shopSignupForm.username} onChange={(e) => setShopSignupForm({ ...shopSignupForm, username: e.target.value })} className="sos-input" placeholder={say('mikesauto')} />
+                      {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.username)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Password *</label>
+                      <label>{say('Password *')}</label>
                       <input type="password" value={shopSignupForm.password} onChange={(e) => setShopSignupForm({ ...shopSignupForm, password: e.target.value })} className="sos-input" placeholder="--------" />
-                      {errors.password && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.password}</p>)}
+                      {errors.password && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.password)}</p>)}
                     </div>
                     <div className="sos-field">
-                      <label>Confirm Password *</label>
+                      <label>{say('Confirm Password *')}</label>
                       <input type="password" value={shopSignupForm.confirmPassword} onChange={(e) => setShopSignupForm({ ...shopSignupForm, confirmPassword: e.target.value })} className="sos-input" placeholder="--------" />
-                      {errors.confirmPassword && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.confirmPassword}</p>)}
+                      {errors.confirmPassword && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.confirmPassword)}</p>)}
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={shopSignupForm.agreeToTerms} onChange={(e) => setShopSignupForm({ ...shopSignupForm, agreeToTerms: e.target.checked })} />
                       <span style={{fontSize:12, color:'#b8beca'}}>
-                        I agree to the <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms-of-service', '_blank')}>Terms of Service</button> and <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy-policy', '_blank')}>Privacy Policy</button>
+                        {say('I agree to the')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms-of-service', '_blank')}>{say('Terms of Service')}</button> {say('and')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy-policy', '_blank')}>{say('Privacy Policy')}</button>
                       </span>
                     </label>
-                    {errors.agreeToTerms && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.agreeToTerms}</p>)}
+                    {errors.agreeToTerms && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.agreeToTerms)}</p>)}
                     <div className="sos-actions">
-                      <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? 'Creating shop account...' : 'Create Shop Account'}</button>
+                      <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? say('Creating shop account...') : say('Create Shop Account')}</button>
                     </div>
                   </>
                 )}
@@ -418,11 +420,11 @@ export default function LoginClient() {
           </div>
 
           <div className="sos-pane">
-            <div className="sos-title">On this platform</div>
+            <div className="sos-title">{say('On this platform')}</div>
             <div className="sos-list">
-              <div className="sos-item"><span>Manage work orders</span><span style={{fontSize:12, color:'#9aa3b2'}}>Create, assign, track</span></div>
-              <div className="sos-item"><span>Customer directory</span><span style={{fontSize:12, color:'#9aa3b2'}}>Profiles & service history</span></div>
-              <div className="sos-item"><span>Teams & roles</span><span style={{fontSize:12, color:'#9aa3b2'}}>Access control</span></div>
+              <div className="sos-item"><span>{say('Manage work orders')}</span><span style={{fontSize:12, color:'#9aa3b2'}}>{say('Create, assign, track')}</span></div>
+              <div className="sos-item"><span>{say('Customer directory')}</span><span style={{fontSize:12, color:'#9aa3b2'}}>{say('Profiles & service history')}</span></div>
+              <div className="sos-item"><span>{say('Teams & roles')}</span><span style={{fontSize:12, color:'#9aa3b2'}}>{say('Access control')}</span></div>
             </div>
           </div>
         </div>
@@ -433,8 +435,8 @@ export default function LoginClient() {
       </div>
       {regMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:regMsg.type==='success'?'#dcfce7':'#fde8e8',color:regMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {regMsg.text}
-          <button aria-label="Dismiss" onClick={()=>setRegMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
+          {say(regMsg.text)}
+          <button aria-label={say('Dismiss')} onClick={()=>setRegMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
     </div>

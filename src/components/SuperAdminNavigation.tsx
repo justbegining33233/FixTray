@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
+import { usePhrase } from '@/lib/usePhrase';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   FaHome,
@@ -37,6 +38,7 @@ export default function SuperAdminNavigation({
 }: SuperAdminNavProps) {
   const { logout, user } = useAuth();
   const pathname = usePathname();
+  const say = usePhrase();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -153,7 +155,7 @@ export default function SuperAdminNavigation({
                 >
                   <div className="flex items-center space-x-2">
                     <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
+                    <span>{say(item.name)}</span>
                     {item.badge && (
                       <span className="absolute -top-1 -right-1 bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {item.badge > 9 ? '9+' : item.badge}
@@ -293,7 +295,7 @@ export default function SuperAdminNavigation({
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium">{item.name.split(' ')[0]}</span>
+              <span className="text-xs font-medium">{say(item.name)}</span>
             </Link>
           ))}
 
@@ -303,7 +305,7 @@ export default function SuperAdminNavigation({
             className="flex flex-col items-center justify-center space-y-1 text-[#64748b]"
           >
             <FaBars className="w-5 h-5" />
-            <span className="text-xs font-medium">More</span>
+            <span className="text-xs font-medium">{say('More')}</span>
           </button>
         </div>
       </nav>
@@ -313,7 +315,7 @@ export default function SuperAdminNavigation({
         <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="absolute bottom-0 left-0 right-0 bg-[#0d1425] rounded-t-2xl p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-[#f1f5f9]">Menu</h3>
+              <h3 className="text-lg font-semibold text-[#f1f5f9]">{say('Menu')}</h3>
               <button onClick={() => setIsMobileMenuOpen(false)}>
                 <FaTimes className="w-5 h-5 text-[#94a3b8]" />
               </button>
@@ -331,8 +333,8 @@ export default function SuperAdminNavigation({
                 >
                   <item.icon className="w-5 h-5" />
                   <div>
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-gray-500">{item.description}</div>
+                    <div className="font-medium">{say(item.name)}</div>
+                    <div className="text-sm text-gray-500">{say(item.description)}</div>
                   </div>
                   {item.badge && (
                     <span className="bg-indigo-500 text-white text-xs rounded-full px-2 py-1">
@@ -349,7 +351,7 @@ export default function SuperAdminNavigation({
                 className="flex items-center space-x-3 p-3 rounded-lg text-[#94a3b8] hover:bg-[rgba(255,255,255,0.06)] w-full text-left"
               >
                 <FaSignOutAlt className="w-5 h-5" />
-                <span className="font-medium">Sign Out</span>
+                <span className="font-medium">{say('Sign Out')}</span>
               </button>
             </div>
           </div>

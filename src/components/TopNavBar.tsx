@@ -12,6 +12,7 @@ import GlobalSearch from '@/components/GlobalSearch';
 import { FaArrowRight, FaBell, FaCaretDown, FaCaretRight, FaCog, FaSignOutAlt, FaSquare, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { usePhrase } from '@/lib/usePhrase';
 import { workOrderNotificationCopy } from '@/lib/notificationCopy';
 import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
@@ -23,6 +24,7 @@ interface TopNavBarProps {
 
 export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopNavBarProps) {
   const t = useTranslations('chrome');
+  const say = usePhrase();
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { isConnected, emit, on, off } = useSocket();
@@ -344,7 +346,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         letterSpacing: '0.02em',
       }}>
         <span style={{ fontSize: 11 }}>{role.icon}</span>
-        <span>{role.label}</span>
+        <span>{say(role.label)}</span>
       </span>
     );
   };
@@ -586,7 +588,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ color: '#e5e7eb', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
               <FaBell style={{ fontSize: 14 }} />
-              Recent Notifications
+              {say('Recent Notifications')}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
@@ -603,7 +605,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(147, 197, 253, 0.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                Mark all read
+                {say('Mark all read')}
               </button>
             </div>
           </div>
@@ -612,7 +614,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
             {filteredNotifications.length === 0 ? (
               <div style={{ padding: 16, color: '#9ca3af', fontSize: 13, textAlign: 'center' }}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>🔔</div>
-                No new notifications
+                {say('No new notifications')}
               </div>
             ) : filteredNotifications.map(n => (
               <div
@@ -684,9 +686,9 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                       alignItems: 'center',
                       gap: 4,
                     }}>
-                      {n.type === 'messages' && 'View messages'}
-                      {n.type === 'workorders' && 'View work order'}
-                      {!n.type && 'View details'}
+                      {n.type === 'messages' && say('View messages')}
+                      {n.type === 'workorders' && say('View work order')}
+                      {!n.type && say('View details')}
                       <FaArrowRight style={{ fontSize: 10 }} />
                     </div>
                   </div>
@@ -697,7 +699,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
 
           {/* Notification Preferences */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px' }}>
-            <div style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Preferences</div>
+            <div style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>{say('Preferences')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: '#d1d5db' }}>
                 <input
@@ -706,7 +708,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                   onChange={(e) => updateNotificationPrefs('messages', e.target.checked)}
                   style={{ accentColor: '#3b82f6' }}
                 />
-                Messages
+                {say('Messages')}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: '#d1d5db' }}>
                 <input
@@ -715,7 +717,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                   onChange={(e) => updateNotificationPrefs('workOrders', e.target.checked)}
                   style={{ accentColor: '#3b82f6' }}
                 />
-                Work Orders
+                {say('Work Orders')}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: '#d1d5db' }}>
                 <input
@@ -724,7 +726,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                   onChange={(e) => updateNotificationPrefs('system', e.target.checked)}
                   style={{ accentColor: '#3b82f6' }}
                 />
-                System Updates
+                {say('System Updates')}
               </label>
             </div>
           </div>

@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { LOCALE_LABELS, SUPPORTED_LOCALES } from '@/lib/locale';
+import { usePhrase } from '@/lib/usePhrase';
 
 export default function SystemSettings() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [settings, setSettings] = useState<any>(null);
   const [saving, setSaving] = useState(false);
@@ -112,12 +115,13 @@ export default function SystemSettings() {
               <input style={fieldStyle} type="email" value={settings.supportEmail || ''} onChange={e => set('supportEmail', e.target.value)} />
             </div>
             <div>
-              <label style={labelStyle}>Default Language</label>
+              <label style={labelStyle}>{say('Default Language')}</label>
               <select style={fieldStyle} value={settings.defaultLanguage || 'en'} onChange={e => set('defaultLanguage', e.target.value)}>
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
+                {SUPPORTED_LOCALES.map((code) => (
+                  <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
+                ))}
               </select>
-              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Used until a person picks a language on the sign-in page or profile menu.</div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>{say('Used until a person picks a language on the sign-in page or profile menu.')}</div>
             </div>
             <div>
               <label style={labelStyle}>Timezone</label>

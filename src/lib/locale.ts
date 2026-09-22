@@ -1,15 +1,77 @@
-export const SUPPORTED_LOCALES = ['en', 'es'] as const;
+/**
+ * Languages FixTray offers in the UI.
+ *
+ * Git history only ever listed English, Spanish, and French
+ * (superadmin settings, commit 75ad5bb). French was dropped in 60e5cbb.
+ * The rest of this list is the next most common languages spoken at home
+ * in the United States (US Census American Community Survey), so shops can
+ * serve the customers they actually see. It is not a list recovered from
+ * an older FixTray enum.
+ */
+export const SUPPORTED_LOCALES = [
+  'en',
+  'es',
+  'zh',
+  'tl',
+  'vi',
+  'ar',
+  'fr',
+  'ko',
+  'ru',
+  'de',
+  'ht',
+  'hi',
+  'pt',
+  'it',
+  'pl',
+  'ur',
+] as const;
 
 export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export const DEFAULT_LOCALE: AppLocale = 'en';
 
-/** Browser cookie set by the language switcher. Not httpOnly so the client can update it. */
+/** Browser cookie set by the language dropdown. Not httpOnly so the client can update it. */
 export const LOCALE_COOKIE = 'fixtray_locale';
 
+/** Native names so the menu is readable before the UI language changes. */
 export const LOCALE_LABELS: Record<AppLocale, string> = {
   en: 'English',
   es: 'Español',
+  zh: '中文',
+  tl: 'Tagalog',
+  vi: 'Tiếng Việt',
+  ar: 'العربية',
+  fr: 'Français',
+  ko: '한국어',
+  ru: 'Русский',
+  de: 'Deutsch',
+  ht: 'Kreyòl Ayisyen',
+  hi: 'हिन्दी',
+  pt: 'Português',
+  it: 'Italiano',
+  pl: 'Polski',
+  ur: 'اردو',
+};
+
+const LOCALE_BY_BASE: Record<string, AppLocale> = {
+  en: 'en',
+  es: 'es',
+  zh: 'zh',
+  tl: 'tl',
+  fil: 'tl',
+  vi: 'vi',
+  ar: 'ar',
+  fr: 'fr',
+  ko: 'ko',
+  ru: 'ru',
+  de: 'de',
+  ht: 'ht',
+  hi: 'hi',
+  pt: 'pt',
+  it: 'it',
+  pl: 'pl',
+  ur: 'ur',
 };
 
 function localeBase(value: string): string {
@@ -17,20 +79,18 @@ function localeBase(value: string): string {
 }
 
 export function isSupportedLocale(value: string | null | undefined): value is AppLocale {
-  return value === 'en' || value === 'es';
+  return !!value && (SUPPORTED_LOCALES as readonly string[]).includes(value);
 }
 
-/** Accepts "es", "es-MX", and "es_MX". Anything else is not a supported choice. */
+/** Accepts "es", "es-MX", "zh-CN", and "fil" (Filipino → Tagalog). */
 export function isSupportedLocaleInput(value: unknown): value is string {
   if (typeof value !== 'string') return false;
-  const base = localeBase(value);
-  return base === 'en' || base === 'es';
+  return localeBase(value) in LOCALE_BY_BASE;
 }
 
 export function normalizeLocale(value: string | null | undefined): AppLocale {
   if (!value) return DEFAULT_LOCALE;
-  const base = localeBase(value);
-  return base === 'es' ? 'es' : DEFAULT_LOCALE;
+  return LOCALE_BY_BASE[localeBase(value)] ?? DEFAULT_LOCALE;
 }
 
 /**

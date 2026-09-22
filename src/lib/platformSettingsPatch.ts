@@ -21,7 +21,7 @@ export function platformSettingsUpdate(body: Record<string, unknown>): {
 
   if (body.defaultLanguage !== undefined) {
     if (!isSupportedLocaleInput(body.defaultLanguage)) {
-      return { data: {}, error: 'Unsupported language. Choose English or Spanish.' };
+      return { data: {}, error: 'Unsupported language.' };
     }
     data.defaultLanguage = normalizeLocale(body.defaultLanguage);
   }

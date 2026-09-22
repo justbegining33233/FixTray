@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           width: 'auto',
         }}
       >
-        <LanguageSwitcher compact />
+        <LanguageSwitcher />
       </div>
       <div data-page-shell>{children}</div>
     </div>

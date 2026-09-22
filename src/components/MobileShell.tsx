@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { usePhrase } from '@/lib/usePhrase';
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin';
 
@@ -603,6 +604,7 @@ export default function MobileShell({
   unreadMessages = 0,
 }: MobileShellProps) {
   const t = useTranslations('chrome');
+  const say = usePhrase();
   const isNative = useIsNative();
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -778,10 +780,10 @@ export default function MobileShell({
           </button>
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
-              {isHome ? 'FixTray' : (sectionTitle || 'FixTray')}
+              {isHome ? 'FixTray' : (sectionTitle ? say(sectionTitle) : 'FixTray')}
             </div>
             {isHome && (
-              <div style={{ fontSize: 9, color: '#718096', marginTop: 1 }}>{cfg.roleLabel}</div>
+              <div style={{ fontSize: 9, color: '#718096', marginTop: 1 }}>{say(cfg.roleLabel)}</div>
             )}
           </div>
         </div>
@@ -828,9 +830,9 @@ export default function MobileShell({
             >
               <span style={{ fontSize: 14 }}>{activeTab.ico}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', flex: 1 }}>
-                {activeTab.label}
+                {say(activeTab.label)}
               </span>
-              <span style={{ fontSize: 10, color: '#718096', marginRight: 4 }}>Switch View</span>
+              <span style={{ fontSize: 10, color: '#718096', marginRight: 4 }}>{say('Switch View')}</span>
               <span style={{
                 fontSize: 11, color: accent,
                 transform: tabsCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
@@ -872,7 +874,7 @@ export default function MobileShell({
                         fontSize: 12, fontWeight: active ? 700 : 500,
                         color: active ? accent : '#9ca3af',
                         whiteSpace: 'nowrap',
-                      }}>{tab.label}</span>
+                      }}>{say(tab.label)}</span>
                     </button>
                   );
                 })}
@@ -930,7 +932,7 @@ export default function MobileShell({
               WebkitTapHighlightColor: 'transparent',
             }}
           >＋</button>
-          <span style={{ fontSize: 9, fontWeight: 600, color: '#4a5568', marginTop: 3 }}>New</span>
+          <span style={{ fontSize: 9, fontWeight: 600, color: '#4a5568', marginTop: 3 }}>{say('New')}</span>
 
           {/* New submenu */}
           {newMenuMounted && (
@@ -959,7 +961,7 @@ export default function MobileShell({
               newMenuTouchStartYRef.current = null;
             }}>
               <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a5568', textAlign: 'center', marginBottom: 10 }}>
-                Create New
+                {say('Create New')}
               </div>
               {cfg.newOptions.map((opt) => (
                 <button
@@ -978,8 +980,8 @@ export default function MobileShell({
                 >
                   <span style={{ fontSize: 22 }}>{opt.ico}</span>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>{opt.title}</div>
-                    <div style={{ fontSize: 10, color: '#718096', marginTop: 1 }}>{opt.sub}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{say(opt.title)}</div>
+                    <div style={{ fontSize: 10, color: '#718096', marginTop: 1 }}>{say(opt.sub)}</div>
                   </div>
                 </button>
               ))}
@@ -1056,8 +1058,8 @@ export default function MobileShell({
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 20, marginBottom: 8,
               }}>{cfg.ico}</div>
-              <div style={{ fontSize: 14, fontWeight: 800 }}>{userName || cfg.roleLabel}</div>
-              <div style={{ fontSize: 10, color: '#718096', marginTop: 2 }}>{cfg.roleLabel}</div>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>{userName || say(cfg.roleLabel)}</div>
+              <div style={{ fontSize: 10, color: '#718096', marginTop: 2 }}>{say(cfg.roleLabel)}</div>
             </div>
 
             {/* Drawer sections */}
@@ -1068,7 +1070,7 @@ export default function MobileShell({
                     fontSize: 9, fontWeight: 800, textTransform: 'uppercase',
                     letterSpacing: '0.09em', color: '#4a5568',
                     padding: '10px 16px 4px',
-                  }}>{sec.title}</div>
+                  }}>{say(sec.title)}</div>
                   {sec.items.map((item) => (
                     <button
                       key={item.href + item.label}
@@ -1086,7 +1088,7 @@ export default function MobileShell({
                       }}
                     >
                       <span style={{ fontSize: 14, width: 20, textAlign: 'center', flexShrink: 0 }}>{item.ico}</span>
-                      <span style={{ flex: 1 }}>{item.label}</span>
+                      <span style={{ flex: 1 }}>{say(item.label)}</span>
                       {item.badge != null && (
                         <span style={{
                           background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 800,
@@ -1145,12 +1147,13 @@ export default function MobileShell({
 // TileGrid
 // ---------------------------------------------------------------------------
 function TileGrid({ cfg, onTile }: { cfg: RoleConfig; accent?: string; onTile: (href: string) => void }) {
+  const say = usePhrase();
   return (
     <div style={{ padding: '10px 12px 0' }}>
       <div style={{
         fontSize: 9, fontWeight: 800, textTransform: 'uppercase',
         letterSpacing: '0.1em', color: '#4a5568', marginBottom: 8,
-      }}>Quick Access</div>
+      }}>{say('Quick Access')}</div>
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
@@ -1192,8 +1195,8 @@ function TileGrid({ cfg, onTile }: { cfg: RoleConfig; accent?: string; onTile: (
             )}
             <div style={{ fontSize: tile.span2 ? 22 : 24, marginBottom: tile.span2 ? 0 : 8 }}>{tile.ico}</div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{tile.name}</div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{tile.sub}</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{say(tile.name)}</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{say(tile.sub)}</div>
             </div>
           </button>
         ))}
@@ -1212,6 +1215,7 @@ function FooterBtn({
   isActive: boolean;
   onClick: () => void;
 }) {
+  const say = usePhrase();
   return (
     <button
       onClick={onClick}
@@ -1234,7 +1238,7 @@ function FooterBtn({
         }} />
       )}
       <span style={{ fontSize: 21, transform: isActive ? 'scale(1.1)' : 'none' }}>{item.ico}</span>
-      <span>{item.label}</span>
+      <span>{say(item.label)}</span>
       {item.badge != null && Number(item.badge) > 0 && (
         <div style={{
           position: 'absolute', top: 1, right: 'calc(50% - 18px)',

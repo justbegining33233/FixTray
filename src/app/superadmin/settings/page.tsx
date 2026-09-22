@@ -8,8 +8,11 @@ import {
   FaGlobe, FaArrowLeft, FaCog,
   FaBell, FaSave, FaCheck,
 } from 'react-icons/fa';
+import { LOCALE_LABELS, SUPPORTED_LOCALES } from '@/lib/locale';
+import { usePhrase } from '@/lib/usePhrase';
 
 export default function SuperAdminSettings() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [settings, setSettings] = useState<any>(null);
   const [saving, setSaving] = useState(false);
@@ -119,16 +122,17 @@ export default function SuperAdminSettings() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#94a3b8] mb-1">Default Language</label>
+              <label className="block text-sm font-medium text-[#94a3b8] mb-1">{say('Default Language')}</label>
               <select
                 value={settings.defaultLanguage || 'en'}
                 onChange={e => setSettings({ ...settings, defaultLanguage: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-[#e5332a] text-[#f1f5f9]" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.14)"}}
               >
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
+                {SUPPORTED_LOCALES.map((code) => (
+                  <option key={code} value={code}>{LOCALE_LABELS[code]}</option>
+                ))}
               </select>
-              <p className="text-xs text-[#64748b] mt-1">Platform default for people who have not chosen a language. Each person can switch from the sign-in page or profile menu.</p>
+              <p className="text-xs text-[#64748b] mt-1">{say('Platform default for people who have not chosen a language. Each person can switch from the sign-in page or profile menu.')}</p>
             </div>
           </div>
         </div>

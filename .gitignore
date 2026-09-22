@@ -53,3 +53,6 @@ tmp/
 # SQLite dev database (never commit)
 prisma/*.db
 prisma/*.db-journal
+
+# Regenerable machine-translation cache (catalogs themselves are committed)
+messages/.translation-cache.json

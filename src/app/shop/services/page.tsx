@@ -104,6 +104,7 @@ export default function ShopServicesPage() {
   useRequireAuth(['shop']);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [shopId, setShopId] = useState('');
   const [shopType, setShopType] = useState<string>('mixed');
 
@@ -152,6 +153,9 @@ export default function ShopServicesPage() {
       if (svcRes.ok) {
         const d = await svcRes.json();
         setServices(d.services || []);
+        setLoadError('');
+      } else {
+        setLoadError('Could not load shop services.');
       }
       if (profileRes.ok) {
         const p = await profileRes.json();
@@ -310,7 +314,11 @@ export default function ShopServicesPage() {
               </div>
             )}
 
-            {filteredServices.length === 0 ? (
+            {loadError ? (
+              <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: '40px 32px', textAlign: 'center', color: '#fca5a5' }}>
+                {loadError}
+              </div>
+            ) : filteredServices.length === 0 ? (
               <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: '60px 40px', textAlign: 'center' }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}><FaWrench style={{marginRight:4}} /></div>
                 <h3 style={{ color: '#e5e7eb', marginBottom: 8 }}>No services yet</h3>

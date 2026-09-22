@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
-import { isActiveWorkOrder } from '@/lib/workOrderMetrics';
+import { isActiveWorkOrder, workOrderTitle } from '@/lib/workOrderMetrics';
 
 export default function CustomerWorkOrdersPage() {
   const { user, isLoading } = useRequireAuth(['customer']);
@@ -38,17 +38,17 @@ export default function CustomerWorkOrdersPage() {
           <div style={{ color: '#9aa3b2' }}>No work orders yet. <Link href="/customer/appointments/new" style={{ color: '#e5332a' }}>Book a service</Link>.</div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
-            {[...open, ...rest].map((order) => (
+            {[...open, ...rest].filter((order) => order?.id).map((order) => (
               <Link
                 key={order.id}
                 href={`/customer/workorders/${order.id}` as any}
                 style={{ display: 'block', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16, textDecoration: 'none' }}
               >
                 <div style={{ color: '#e5e7eb', fontWeight: 700 }}>
-                  WO-{String(order.id).slice(-8).toUpperCase()} · {order.serviceType || order.issueDescription || 'Service'}
+                  WO-{String(order.id).slice(-8).toUpperCase()} · {workOrderTitle(order)}
                 </div>
                 <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>
-                  {order.status} {order.shop?.shopName ? `· ${order.shop.shopName}` : ''}
+                  {typeof order.status === 'string' ? order.status : ''} {typeof order.shop?.shopName === 'string' ? `· ${order.shop.shopName}` : ''}
                 </div>
               </Link>
             ))}

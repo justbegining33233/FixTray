@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { actorMayAccessShop } from '@/lib/shopAccess';
 
 // GET - List all inventory items with optional low stock filter
 export async function GET(request: NextRequest) {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const shopId = searchParams.get('shopId');
     // Data isolation: the requested shopId must belong to the authenticated user
     // (admins/superadmins can query any shop)
-    if (decoded.role !== 'superadmin' && shopId && shopId !== decoded.id) {
+    if (shopId && !actorMayAccessShop(decoded, shopId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

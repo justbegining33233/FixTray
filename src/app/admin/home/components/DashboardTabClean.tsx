@@ -6,6 +6,7 @@ import SalesFunnel from './SalesFunnel';
 import SystemHealth from './SystemHealth';
 import type { HealthMetric } from './SystemHealth';
 import type { StatusTone } from './StatusBadge';
+import { ownerShopHeadline } from '@/lib/shopCensus';
 
 interface PlatformStats {
   totalRevenue: string;
@@ -70,6 +71,7 @@ interface DashboardTabProps {
   pendingShops: any[];
   approvedShops: any[];
   shopsLiveMetrics?: {
+    totalShops?: number;
     activeShops: number;
     inactiveShops: number;
     approvedShops: number;
@@ -92,6 +94,7 @@ export function DashboardTab({
   infraHealth,
 }: DashboardTabProps) {
   const revenueTrend = liveMetrics.revenueTrend?.length ? liveMetrics.revenueTrend : [];
+  const shopHeadline = ownerShopHeadline(shopsLiveMetrics);
 
   const kpiCards = [
     {
@@ -103,12 +106,14 @@ export function DashboardTab({
       caption: 'Paid work orders this month'
     },
     {
-      title: 'Active Shops',
-      value: (shopsLiveMetrics?.activeShops ?? 0).toLocaleString(),
-      change: `${shopsLiveMetrics?.activeShops ?? 0} currently active`,
+      title: 'Total Shops',
+      value: shopHeadline.totalShops.toLocaleString(),
+      change: `${shopHeadline.approvedShops} approved`,
       trend: [],
       accent: 'sky' as const,
-      caption: 'Live storefronts'
+      caption: shopHeadline.activeUsage > 0
+        ? `${shopHeadline.activeUsage} with recent activity`
+        : 'All shops on the platform'
     },
     {
       title: 'Active Users',
@@ -121,7 +126,7 @@ export function DashboardTab({
     {
       title: 'Pending Approvals',
       value: platformStats.pendingShops.toString(),
-      change: `${platformStats.totalShops} active shops`,
+      change: `${shopHeadline.approvedShops} approved shops`,
       trend: [],
       accent: 'amber' as const,
       caption: 'Ready for review'

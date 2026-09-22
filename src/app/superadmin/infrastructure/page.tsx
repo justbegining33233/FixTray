@@ -47,7 +47,7 @@ export default function SuperAdminInfrastructure() {
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
     try {
       const [runtimeRes, envRes] = await Promise.all([
-        fetch('/api/health', { credentials: 'include' }),
+        fetch('/api/health', { headers, credentials: 'include' }),
         fetch('/api/admin/health', { headers, credentials: 'include' }),
       ]);
 

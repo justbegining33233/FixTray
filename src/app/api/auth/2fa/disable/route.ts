@@ -5,9 +5,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { verifyTotpToken, decryptSecret } from '@/lib/two-factor';
+import { ACCOUNT_TWO_FACTOR_ROLES, readTwoFactorAccount, writeTwoFactorAccount } from '@/lib/twoFactorAccount';
 
 export async function POST(request: NextRequest) {
-  const auth = requireRole(request, ['shop']);
+  const auth = requireRole(request, [...ACCOUNT_TWO_FACTOR_ROLES]);
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json().catch(() => null);
@@ -17,22 +18,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const prisma = (await import('@/lib/prisma')).default;
-    const shop = await prisma.shop.findUnique({ where: { id: auth.id } });
-    if (!shop) return NextResponse.json({ error: 'Shop not found' }, { status: 404 });
+    const account = await readTwoFactorAccount(prisma, auth);
+    if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
 
-    if (!shop.twoFactorEnabled || !shop.twoFactorSecret) {
+    if (!account.twoFactorEnabled || !account.twoFactorSecret) {
       return NextResponse.json({ message: '2FA is not currently enabled', enabled: false });
     }
 
-    const valid = verifyTotpToken(decryptSecret(shop.twoFactorSecret), String(body.token));
+    const valid = verifyTotpToken(decryptSecret(account.twoFactorSecret), String(body.token));
     if (!valid) {
       return NextResponse.json({ error: 'Invalid TOTP token' }, { status: 400 });
     }
 
-    await prisma.shop.update({
-      where: { id: auth.id },
-      data: { twoFactorEnabled: false, twoFactorSecret: null },
-    });
+    await writeTwoFactorAccount(prisma, auth, { twoFactorEnabled: false, twoFactorSecret: null });
 
     return NextResponse.json({ message: '2FA disabled successfully', enabled: false });
   } catch (error) {

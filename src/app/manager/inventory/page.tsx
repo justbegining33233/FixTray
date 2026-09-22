@@ -37,7 +37,7 @@ export default function ManagerInventory() {
   const fetchInventory = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const shopId = localStorage.getItem('shopId');
+      const shopId = user?.shopId || localStorage.getItem('shopId') || '';
       if (!token || !shopId) return;
       const url = `/api/shop/inventory-stock?shopId=${encodeURIComponent(shopId)}${showLowStock ? '&lowStockOnly=true' : ''}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -48,7 +48,7 @@ export default function ManagerInventory() {
     } catch (err) {
       console.error('Error fetching inventory:', err);
     }
-  }, [showLowStock]);
+  }, [showLowStock, user?.shopId]);
 
   useEffect(() => {
     if (hasInventoryAccess) fetchInventory();
@@ -56,7 +56,7 @@ export default function ManagerInventory() {
 
   const handleSave = async () => {
     const token = localStorage.getItem('token');
-    const shopId = localStorage.getItem('shopId');
+    const shopId = user?.shopId || localStorage.getItem('shopId') || '';
     if (!token || !shopId) return;
 
     const method = editingItem ? 'PUT' : 'POST';

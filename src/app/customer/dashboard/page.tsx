@@ -13,6 +13,7 @@ import { useIsNative } from '../../../context/NativeContext';
 import { summarizeAppointments } from '@/lib/appointmentValidation';
 import { unwrapVehicles, unwrapWorkOrders } from '@/lib/workOrderList';
 import { isCompletedWorkOrder, summarizeWorkOrders, type WorkOrderSummary } from '@/lib/workOrderMetrics';
+import { loyaltyPointsFromRewards } from '@/lib/rewardPayload';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
@@ -139,19 +140,13 @@ export default function CustomerDashboard() {
         paymentMethods: Array.isArray(paymentMethods) ? paymentMethods.length : 0,
       });
 
-      // Fetch loyalty points from API; fall back to client-side calculation
-      let pts = completed.length * 50;
+      // Rewards API reports loyaltyPoints. The 50-per-job figure is only a fallback when that call fails.
       const rewardsData = await safeFetchJson('/api/customers/rewards');
-        if (rewardsData) {
-          if (typeof rewardsData.points === 'number') pts = rewardsData.points;
-          if (typeof rewardsData.tier === 'string') {
-            setTier(rewardsData.tier);
-            setLoyaltyPoints(pts);
-          } else {
-            setLoyaltyPoints(pts);
-            setTier(pts >= 1000 ? 'Gold' : pts >= 200 ? 'Silver' : 'Bronze');
-          }
-        } else {
+      const pts = loyaltyPointsFromRewards(rewardsData, completed.length * 50);
+      if (rewardsData && typeof rewardsData.tier === 'string') {
+        setTier(rewardsData.tier);
+        setLoyaltyPoints(pts);
+      } else {
         setLoyaltyPoints(pts);
         setTier(pts >= 1000 ? 'Gold' : pts >= 200 ? 'Silver' : 'Bronze');
       }

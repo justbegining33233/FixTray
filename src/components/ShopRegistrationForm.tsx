@@ -383,8 +383,8 @@ export default function ShopRegistrationForm() {
         const errorData = await res.json();
         setError(errorData.error || 'Registration failed');
       }
-    } catch {
-      console.error('Shop registration failed:', error);
+    } catch (err) {
+      console.error('Shop registration failed:', err);
       setError('Network error or server issue');
     } finally {
       setLoading(false);

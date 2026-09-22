@@ -22,6 +22,14 @@ export async function GET(request: NextRequest) {
       prisma.$queryRaw`SELECT 1`,
     ]);
 
+    const memory = process.memoryUsage();
+    const runtime = {
+      uptimeSeconds: Math.floor(process.uptime()),
+      memory: {
+        rssMb: memory.rss / (1024 * 1024),
+        heapUsedMb: memory.heapUsed / (1024 * 1024),
+      },
+    };
     const lastIssueAt = lastIssue?.createdAt ? lastIssue.createdAt.getTime() : null;
     const lastIssueAgeSeconds = lastIssueAt
       ? Math.max(0, Math.floor((timestamp - lastIssueAt) / 1000))
@@ -33,6 +41,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       status: 'ok',
       timestamp,
+      ...runtime,
       db: {
         connected: true,
         checkedAt: timestamp,
@@ -46,9 +55,15 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch {
+    const memory = process.memoryUsage();
     return NextResponse.json({
       status: 'degraded',
       timestamp,
+      uptimeSeconds: Math.floor(process.uptime()),
+      memory: {
+        rssMb: memory.rss / (1024 * 1024),
+        heapUsedMb: memory.heapUsed / (1024 * 1024),
+      },
       db: {
         connected: false,
         checkedAt: timestamp,

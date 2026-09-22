@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { platformFeeForPaidOrders } from '@/lib/platformFees';
 
 export async function GET(req: NextRequest) {
   const auth = requireRole(req, ['admin', 'superadmin']);
@@ -27,13 +28,15 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const platformConfig = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
+    const serviceFeeCents = platformConfig?.serviceFee;
+
     // Calculate total revenue from work orders
     const totalRevenue = workOrders.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
     
-    // Platform fees are currently fixed to zero (no commission model enabled)
-    const platformFees = 0;
+    // Same per-paid-order service fee the revenue page uses. Shop payout stays the gross job payment.
+    const platformFees = platformFeeForPaidOrders(workOrders.length, serviceFeeCents);
     
-    // Total payouts to shops (100% since no commission)
     const totalPayouts = totalRevenue;
 
     // Get pending work orders for pending payouts
@@ -64,25 +67,36 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const paidCountByMonth: { [key: string]: number } = {};
+    for (const wo of workOrders) {
+      if (wo.createdAt < sixMonthsAgo) continue;
+      const date = new Date(wo.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      paidCountByMonth[monthKey] = (paidCountByMonth[monthKey] || 0) + 1;
+    }
+
     // Group by month
-    const monthlyData: { [key: string]: number } = {};
+    const monthlyData: { [key: string]: { revenue: number; count: number } } = {};
     monthlyRevenue.forEach((item) => {
       const date = new Date(item.createdAt);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + (item._sum?.amountPaid || 0);
+      const bucket = monthlyData[monthKey] || { revenue: 0, count: 0 };
+      bucket.revenue += item._sum?.amountPaid || 0;
+      bucket.count = paidCountByMonth[monthKey] || 0;
+      monthlyData[monthKey] = bucket;
     });
 
     // Format monthly data
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const formattedMonthlyData = Object.entries(monthlyData).map(([key, revenue]) => {
+    const formattedMonthlyData = Object.entries(monthlyData).map(([key, bucket]) => {
       const [year, month] = key.split('-');
       const monthName = months[parseInt(month) - 1];
-      const payouts = revenue; // 100% payout since no commission
-      const fees = 0; // No commission fees
+      const payouts = bucket.revenue;
+      const fees = platformFeeForPaidOrders(bucket.count, serviceFeeCents);
       
       return {
         month: `${monthName} ${year}`,
-        revenue: `$${revenue.toFixed(2)}`,
+        revenue: `$${bucket.revenue.toFixed(2)}`,
         payouts: `$${payouts.toFixed(2)}`,
         fees: `$${fees.toFixed(2)}`,
       };
@@ -115,8 +129,9 @@ export async function GET(req: NextRequest) {
         });
         
         const revenue = item._sum?.amountPaid || 0;
-        const fees = 0; // No commission fees
-        const payout = revenue; // 100% payout
+        const paidForShop = workOrders.filter((wo) => wo.shopId === item.shopId).length;
+        const fees = platformFeeForPaidOrders(paidForShop, serviceFeeCents);
+        const payout = revenue;
         
         return {
           name: shop?.shopName || 'Unknown Shop',

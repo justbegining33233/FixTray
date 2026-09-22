@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { configureLeafletIcons } from '@/lib/leafletIcons';
 
 interface Location { latitude: number; longitude: number; estimatedArrival?: string }
 
@@ -60,6 +61,7 @@ export default function TechLiveMap({ workOrderId, initialLocation, techName }: 
       if (!mounted) return;
       const L = LRef.current;
       if (!L) return;
+      configureLeafletIcons(L);
 
       const lat = initialLocation?.latitude ?? 39.9526;
       const lng = initialLocation?.longitude ?? -75.1652;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { parseDeploymentDoc } from '@/lib/deploymentHistory';
 
 type DeploymentStatus = 'success' | 'failed' | 'in-progress' | 'pending';
 
@@ -15,10 +16,14 @@ type DeploymentRecord = {
   source: string;
 };
 
-function parseVersionFromFileName(fileName: string): string | null {
-  const match = fileName.match(/(?:VERSION_|CHANGELOG-v)(\d+\.\d+\.\d+)\.md$/i);
-  if (!match) return null;
-  return `v${match[1]}`;
+async function currentPackageVersion(): Promise<string> {
+  try {
+    const raw = await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf8');
+    const version = (JSON.parse(raw) as { version?: string }).version;
+    return version ? `v${version}` : 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }
 
 async function buildDeploymentHistory(): Promise<DeploymentRecord[]> {
@@ -30,18 +35,20 @@ async function buildDeploymentHistory(): Promise<DeploymentRecord[]> {
     const candidates = files.filter((file) => /^(VERSION_|CHANGELOG-v).*\.md$/i.test(file));
 
     for (const fileName of candidates) {
-      const version = parseVersionFromFileName(fileName);
-      if (!version) continue;
-
       const fullPath = path.join(docsDir, fileName);
-      const stats = await fs.stat(fullPath);
+      const [markdown, stats] = await Promise.all([
+        fs.readFile(fullPath, 'utf8'),
+        fs.stat(fullPath),
+      ]);
+      const parsed = parseDeploymentDoc(markdown, fileName, stats.mtime);
+      if (!parsed) continue;
 
       history.push({
         id: `docs-${fileName}`,
-        version,
+        version: parsed.version,
         environment: 'Production',
         status: 'success',
-        timestamp: stats.mtime.toISOString(),
+        timestamp: parsed.timestamp,
         deployer: 'System',
         source: `docs/${fileName}`,
       });
@@ -66,17 +73,13 @@ export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
-  const deployments = await buildDeploymentHistory();
-
-  if (deployments.length > 0) {
-    return NextResponse.json({
-      currentVersion: deployments[0].version,
-      deployments,
-    });
-  }
+  const [deployments, currentVersion] = await Promise.all([
+    buildDeploymentHistory(),
+    currentPackageVersion(),
+  ]);
 
   return NextResponse.json({
-    currentVersion: 'unknown',
-    deployments: [],
+    currentVersion,
+    deployments,
   });
 }

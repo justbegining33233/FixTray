@@ -35,7 +35,7 @@ export default function ManagerTeamPage() {
     setLoadingTeam(true);
     try {
       const token = localStorage.getItem('token');
-      const shopId = localStorage.getItem('shopId');
+      const shopId = user?.shopId || localStorage.getItem('shopId') || '';
       if (!shopId) return;
 
       const res = await fetch(`/api/techs?shopId=${shopId}`, {

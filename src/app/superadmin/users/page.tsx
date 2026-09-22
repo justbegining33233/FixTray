@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { platformUserLabel } from '@/lib/platformUserLabel';
 import {
   FaSearch, FaArrowLeft, FaUserShield, FaStore,
   FaUser, FaWrench, FaUserTie,
@@ -64,7 +65,8 @@ export default function SuperAdminUsers() {
   if (!user) return null;
 
   const filtered = users.filter(u => {
-    const matchSearch = !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase());
+    const label = platformUserLabel(u);
+    const matchSearch = !search || label.name.toLowerCase().includes(search.toLowerCase()) || label.shopName.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase());
     const matchRole = filterRole === 'all' || u.role === filterRole;
     return matchSearch && matchRole;
   });
@@ -139,11 +141,12 @@ export default function SuperAdminUsers() {
                 filtered.map(u => {
                   const badge = ROLE_BADGES[u.role] || ROLE_BADGES.customer;
                   const RoleIcon = badge.icon;
+                  const label = platformUserLabel(u);
                   return (
                     <tr key={u.id} className="hover:bg-white/5">
                       <td className="px-5 py-3">
                         <div>
-                          <p className="font-medium text-white">{u.name || '—'}</p>
+                          <p className="font-medium text-white">{label.name || '—'}</p>
                           <p className="text-xs text-zinc-400">{u.email}</p>
                         </div>
                       </td>
@@ -164,7 +167,7 @@ export default function SuperAdminUsers() {
                         })()}
                       </td>
                       <td className="px-5 py-3 text-sm text-zinc-300">{u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}</td>
-                      <td className="px-5 py-3 text-sm text-zinc-300">{u.shopName || '—'}</td>
+                      <td className="px-5 py-3 text-sm text-zinc-300">{label.shopName || '—'}</td>
                       <td className="px-5 py-3 text-sm text-zinc-400">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
                     </tr>
                   );

@@ -14,6 +14,7 @@ import { UsersTab } from '@/app/admin/home/components/UsersTab';
 import { HierarchyTab } from '@/components/admin/HierarchyTab';
 import { useAdminData } from '@/hooks/useAdminData';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { ownerShopHeadline } from '@/lib/shopCensus';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,8 +51,14 @@ function AdminHomeContent() {
   const { logout } = useAuth();
 
   const pendingApprovalsCount = platformStats.pendingShops ?? pendingShops.length;
-  const approvedShopsCount = shopsLiveMetrics?.approvedShops ?? approvedShops.length;
-  const activeShopsCount = shopsLiveMetrics?.activeShops ?? 0;
+  const shopHeadline = ownerShopHeadline({
+    totalShops: shopsLiveMetrics?.totalShops,
+    approvedShops: shopsLiveMetrics?.approvedShops ?? approvedShops.length,
+    activeShops: shopsLiveMetrics?.activeShops,
+  });
+  const approvedShopsCount = shopHeadline.approvedShops;
+  const totalShopsCount = shopHeadline.totalShops;
+  const activeShopsCount = shopHeadline.activeUsage;
   const customersCount = usersLiveMetrics?.totalCustomers ?? allUsers.length;
 
   const handleSignOut = () => {
@@ -151,7 +158,7 @@ function AdminHomeContent() {
     // Customer & Users Management
     { id: 'users', label: 'Customers', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', badge: customersCount, category: 'business' },
     // Shops & Organizations
-    { id: 'hierarchy', label: 'Shops', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', badge: approvedShopsCount, category: 'business' },
+    { id: 'hierarchy', label: 'Shops', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', badge: totalShopsCount, category: 'business' },
   ];
 
   const quickLinks = [
@@ -176,6 +183,7 @@ function AdminHomeContent() {
 
   const _signalItems = [
     { label: 'Pending approvals', value: pendingApprovalsCount ?? 0 },
+    { label: 'Total shops', value: totalShopsCount ?? 0 },
     { label: 'Approved shops', value: approvedShopsCount ?? 0 },
     { label: 'Active shops', value: activeShopsCount ?? 0 },
     { label: 'Customers', value: customersCount ?? 0 },
@@ -370,8 +378,8 @@ function AdminHomeContent() {
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
                   <div>
-                    <p className="text-xs text-slate-300">Active shops</p>
-                    <p className="text-lg font-semibold text-white">{approvedShopsCount ?? 0}</p>
+                    <p className="text-xs text-slate-300">Total shops</p>
+                    <p className="text-lg font-semibold text-white">{totalShopsCount ?? 0}</p>
                   </div>
                   <Link href="/admin/revenue" className="text-xs text-orange-300 hover:text-orange-200 no-underline">View</Link>
                 </div>

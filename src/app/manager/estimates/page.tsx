@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
+import { formatEstimateMoney } from '@/lib/estimateMoney';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 
 interface EstimateLineItem {
@@ -441,7 +442,7 @@ function ManagerEstimatesContent() {
                       }}
                     />
                     <div style={{ color: '#22c55e', fontWeight: 600, textAlign: 'right' }}>
-                      ${item.total.toFixed(2)}
+                      {formatEstimateMoney(item.total)}
                     </div>
                     <button
                       onClick={() => removeLineItem(item.id)}
@@ -520,11 +521,11 @@ function ManagerEstimatesContent() {
             <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Estimate Summary</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, maxWidth: 300 }}>
               <div style={{ color: '#9aa3b2' }}>Subtotal:</div>
-              <div style={{ color: '#e5e7eb', textAlign: 'right' }}>${estimate.subtotal.toFixed(2)}</div>
+              <div style={{ color: '#e5e7eb', textAlign: 'right' }}>{formatEstimateMoney(estimate.subtotal)}</div>
               <div style={{ color: '#9aa3b2' }}>Tax ({estimate.taxRate}%):</div>
-              <div style={{ color: '#e5e7eb', textAlign: 'right' }}>${estimate.taxAmount.toFixed(2)}</div>
+              <div style={{ color: '#e5e7eb', textAlign: 'right' }}>{formatEstimateMoney(estimate.taxAmount)}</div>
               <div style={{ color: '#e5e7eb', fontWeight: 600, borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>Total:</div>
-              <div style={{ color: '#22c55e', fontWeight: 600, fontSize: 18, textAlign: 'right', borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>${estimate.total.toFixed(2)}</div>
+              <div style={{ color: '#22c55e', fontWeight: 600, fontSize: 18, textAlign: 'right', borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>{formatEstimateMoney(estimate.total)}</div>
             </div>
           </div>
 

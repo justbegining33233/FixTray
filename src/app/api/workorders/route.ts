@@ -13,6 +13,7 @@ import { featureFlags } from '@/lib/featureFlags';
 import logger from '@/lib/logger';
 import { extractServiceNames, findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
 import { ROADSIDE_LOCATION_VALUES } from '@/lib/waitingRoomBoard';
+import { MAX_WORK_ORDER_LIST_LIMIT } from '@/lib/workOrderList';
 import {
   activeWorkOrderWhere,
   completedThisMonthWhere,
@@ -59,8 +60,8 @@ export async function GET(request: NextRequest) {
     if (isNaN(page) || page < 1) {
       return NextResponse.json({ error: 'Invalid page parameter' }, { status: 400 });
     }
-    if (isNaN(limit) || limit < 1 || limit > 100) {
-      return NextResponse.json({ error: 'Invalid limit parameter (1-100)' }, { status: 400 });
+    if (isNaN(limit) || limit < 1 || limit > MAX_WORK_ORDER_LIST_LIMIT) {
+      return NextResponse.json({ error: `Invalid limit parameter (1-${MAX_WORK_ORDER_LIST_LIMIT})` }, { status: 400 });
     }
 
     const status = searchParams.get('status');

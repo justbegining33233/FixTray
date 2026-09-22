@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logAdminAction } from '@/lib/auditLog';
+import { describeUserUpdate } from '@/lib/auditDetails';
+import { latestShopName, personName } from '@/lib/platformUserLabel';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { hashPassword } from '@/lib/auth';
@@ -83,6 +85,7 @@ export async function GET(request: NextRequest) {
             amountPaid: true,
             paymentStatus: true,
             createdAt: true,
+            shop: { select: { shopName: true } },
           }
         }
       },
@@ -114,6 +117,7 @@ export async function GET(request: NextRequest) {
         available: true,
         createdAt: true,
         shopId: true,
+        shop: { select: { shopName: true } },
         assignedWorkOrders: {
           select: {
             id: true,
@@ -155,6 +159,7 @@ export async function GET(request: NextRequest) {
         id: true,
         username: true,
         email: true,
+        shopName: true,
         ownerName: true,
         status: true,
         createdAt: true,
@@ -273,6 +278,8 @@ export async function GET(request: NextRequest) {
           userType: 'customer' as const,
           username: customer.username,
           email: customer.email,
+          name: personName(customer.firstName, customer.lastName, customer.username || customer.email),
+          shopName: latestShopName(customer.workOrders),
           firstName: customer.firstName || '',
           lastName: customer.lastName || '',
           role: 'customer' as const,
@@ -304,6 +311,8 @@ export async function GET(request: NextRequest) {
           userType: tech.role as 'tech' | 'manager',
           username: tech.email,
           email: tech.email,
+          name: personName(tech.firstName, tech.lastName, tech.email),
+          shopName: tech.shop?.shopName || '',
           firstName: tech.firstName,
           lastName: tech.lastName,
           role: tech.role as 'tech' | 'manager',
@@ -338,6 +347,8 @@ export async function GET(request: NextRequest) {
           userType: 'shop' as const,
           username: shop.username,
           email: shop.email,
+          name: personName(shop.ownerName?.split(' ')[0], shop.ownerName?.split(' ').slice(1).join(' '), shop.shopName || shop.username),
+          shopName: shop.shopName || '',
           firstName: shop.ownerName?.split(' ')[0] || '',
           lastName: shop.ownerName?.split(' ').slice(1).join(' ') || '',
           role: 'shop' as const,
@@ -363,8 +374,10 @@ export async function GET(request: NextRequest) {
           userType: 'admin' as const,
           username: admin.username,
           email: admin.email,
+          name: personName('FixTray', admin.isSuperAdmin ? 'Owner' : 'Admin', admin.username),
+          shopName: '',
           firstName: 'FixTray',
-          lastName: 'Admin',
+          lastName: admin.isSuperAdmin ? 'Owner' : 'Admin',
           role: 'admin' as const,
           status: activityStatus,
           accountStatus: 'active',
@@ -771,7 +784,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
     }
 
-    await logAdminAction(auth.id, `Updated user ${id}`, `Type: ${normalizedUserType}, Role: ${role}, Status: ${status}`);
+    await logAdminAction(auth.id, `Updated user ${id}`, describeUserUpdate({ userType: normalizedUserType, role, status }));
     return NextResponse.json({ success: true, user: updated });
   } catch (error) {
     console.error('Error updating user:', error);

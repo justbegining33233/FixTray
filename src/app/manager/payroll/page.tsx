@@ -65,7 +65,7 @@ export default function ManagerPayrollPage() {
                   </div>
                   <div style={{ color: '#9aa3b2', fontSize: 14 }}>
                     <FaDollarSign style={{ marginRight: 2 }} />
-                    {e.payType === 'salary' ? `$${(e.salary || 0).toLocaleString()}/yr` : `$${e.hourlyRate.toFixed(2)}/hr`}
+                    {e.payType === 'salary' ? `$${(e.salary || 0).toLocaleString()}/yr` : `$${Number(e.hourlyRate || 0).toFixed(2)}/hr`}
                   </div>
                 </div>
               ))}

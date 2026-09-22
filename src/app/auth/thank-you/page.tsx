@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Route } from 'next';
 import '@/styles/sos-theme.css';
-import { BrandWordmark } from '@/components/BrandLogo';
 
 export default function ThankYouPage() {
   const router = useRouter();
@@ -62,7 +61,7 @@ export default function ThankYouPage() {
       <div className="sos-card">
         <div className="sos-header">
           <div className="sos-brand">
-            <BrandWordmark variant="nav" />
+            <span className="mark">FixTray</span>
           </div>
           <span className="sos-pill">Signed In</span>
         </div>

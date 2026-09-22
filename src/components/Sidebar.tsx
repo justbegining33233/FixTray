@@ -8,7 +8,6 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
-import { BrandMark, BrandWordmark } from '@/components/BrandLogo';
 
 interface MenuItem {
   icon: ReactNode;
@@ -470,26 +469,26 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
 
         {/* Header */}
         <div style={{
-          padding: collapsed ? '12px 6px' : '12px 14px',
+          padding: collapsed ? '16px 0' : '16px 14px',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
-          flexDirection: collapsed ? 'column' : 'row',
-          gap: collapsed ? 8 : 8,
+          gap: 8,
           flexShrink: 0,
           minHeight: 54,
         }}>
-          <Link
-            href={(role === 'shop' ? '/shop/home'
-              : role === 'manager' ? '/manager/home'
-              : role === 'tech' ? '/tech/home'
-              : '/admin/home') as Route}
-            title="FixTray"
-            style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', minWidth: 0 }}
-          >
-            {collapsed ? <BrandMark width={44} /> : <BrandWordmark variant="nav" />}
-          </Link>
+          {!collapsed && (
+            <div style={{
+              fontSize: 16,
+              fontWeight: 800,
+              color: '#e5332a',
+              letterSpacing: '-0.5px',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+            }}>
+              FixTray
+            </div>
+          )}
           <button
             onClick={() => setCollapsed(!collapsed)}
             style={{

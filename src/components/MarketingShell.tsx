@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { Route } from "next";
 import type { ReactNode } from "react";
 import OilSlickCanvas from "@/components/OilSlickCanvas";
-import { BrandWordmark } from "@/components/BrandLogo";
 
 const navLinks = [
   { href: "/features", label: "Features" },
@@ -36,11 +35,21 @@ export default function MarketingShell({ children }: MarketingShellProps) {
         }}
       >
         <div
-          className="flex items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-6 sm:py-3"
+          className="flex items-center justify-between px-6 py-4"
           style={{ width: "100%", maxWidth: 1152, marginLeft: "auto", marginRight: "auto" }}
         >
-          <Link href="/" className="min-w-0 shrink">
-            <BrandWordmark variant="header" priority />
+          <Link href="/" className="flex items-center gap-2">
+            <span
+              style={{
+                fontWeight: 800,
+                fontSize: 20,
+                letterSpacing: "-0.5px",
+                color: "#e5332a",
+                fontFamily: '"Plus Jakarta Sans", "Inter", system-ui, sans-serif',
+              }}
+            >
+              FixTray
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm md:flex" style={{ color: "#94a3b8" }}>
@@ -51,15 +60,20 @@ export default function MarketingShell({ children }: MarketingShellProps) {
             ))}
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2 text-sm sm:gap-3">
-            <Link href="/auth/login" style={{ color: "#94a3b8" }} className="whitespace-nowrap text-xs transition hover:text-white sm:text-sm">
+          <div className="flex items-center gap-3 text-sm">
+            <Link href="/auth/login" style={{ color: "#94a3b8" }} className="transition hover:text-white">
               Log in
             </Link>
             <Link
               href="/auth/login"
-              className="whitespace-nowrap rounded-[9px] px-3 py-1.5 text-xs font-bold text-white transition sm:px-[18px] sm:py-2 sm:text-[13px]"
+              className="transition"
               style={{
                 background: "#e5332a",
+                color: "#fff",
+                borderRadius: 9,
+                padding: "8px 18px",
+                fontWeight: 700,
+                fontSize: 13,
                 boxShadow: "0 2px 10px rgba(229,51,42,0.35)",
               }}
             >
@@ -86,7 +100,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
           style={{ width: "100%", maxWidth: 1152, marginLeft: "auto", marginRight: "auto" }}
         >
           <div>
-            <BrandWordmark variant="footer" className="mx-auto md:mx-0" />
+            <p style={{ fontWeight: 800, color: "#e5332a", fontSize: 18 }}>FixTray</p>
             <p className="mt-3 text-sm" style={{ color: "#94a3b8" }}>
               The command center for modern work orders, approvals, and customer-ready updates.
             </p>

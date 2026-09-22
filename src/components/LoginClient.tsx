@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { IconUser, IconWrench } from '@/components/icons';
 import '@/styles/sos-theme.css';
 import OilSlickCanvas from '@/components/OilSlickCanvas';
-import { BrandWordmark } from '@/components/BrandLogo';
 
 const MIN_USERNAME_LENGTH = 3;
 const MIN_PASSWORD_LENGTH = 8;
@@ -255,7 +254,7 @@ export default function LoginClient() {
       <div className="sos-card">
         <div className="sos-header">
           <div className="sos-brand">
-            <BrandWordmark variant="nav" priority />
+            <span className="mark">FixTray</span>
           </div>
         </div>
         <div className="sos-content">

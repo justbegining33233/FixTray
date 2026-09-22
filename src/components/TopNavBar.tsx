@@ -11,7 +11,6 @@ import ShopSwitcher from '@/components/ShopSwitcher';
 import GlobalSearch from '@/components/GlobalSearch';
 import { FaArrowRight, FaBell, FaCaretDown, FaCaretRight, FaCog, FaSignOutAlt, FaSquare, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
 import { workOrderNotificationCopy } from '@/lib/notificationCopy';
-import { BrandWordmark } from '@/components/BrandLogo';
 import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
 
@@ -788,8 +787,16 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
             </button>
           )}
 
-          <Link href={getHomeLink() as Route} style={{ textDecoration: 'none', flexShrink: 0 }} aria-label="FixTray home">
-            <BrandWordmark variant="nav" />
+          <Link href={getHomeLink() as Route} style={{ textDecoration: 'none' }}>
+            <span style={{
+              fontSize: 17,
+              fontWeight: 800,
+              color: '#e5332a',
+              letterSpacing: '-0.4px',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+            }}>
+              FixTray
+            </span>
           </Link>
 
           {shopName && (

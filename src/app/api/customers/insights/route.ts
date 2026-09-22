@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { loyaltyPointsFromOrders } from '@/lib/rewardPayload';
+import { workOrderTitle } from '@/lib/workOrderMetrics';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['customer']);
@@ -46,8 +48,9 @@ export async function GET(request: NextRequest) {
     const avgRating = reviews.length
       ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
       : null;
-    const loyaltyPoints = completed.length * 50;
+    const loyaltyPoints = loyaltyPointsFromOrders(completed);
     const last30Orders = workOrders.filter(w => w.createdAt >= thirtyDaysAgo).length;
+    const pointsToReward = Math.max(0, 200 - loyaltyPoints);
 
     // Build insight cards
     const insights = [
@@ -58,6 +61,7 @@ export async function GET(request: NextRequest) {
         trend: totalSpent > 0 ? ' Active customer' : ' No spend yet',
         color: '#22c55e',
         description: `You have spent a total of $${totalSpent.toFixed(2)} across ${completed.length} completed service${completed.length !== 1 ? 's' : ''}.`,
+        href: '/customer/insights/total-spent',
       },
       {
         id: 'last-90-days',
@@ -66,6 +70,7 @@ export async function GET(request: NextRequest) {
         trend: last90Spent > 0 ? ' Recent activity' : ' No recent spend',
         color: '#e5332a',
         description: `You have completed ${recentCompleted.length} service${recentCompleted.length !== 1 ? 's' : ''} in the last 90 days totalling $${last90Spent.toFixed(2)}.`,
+        href: '/customer/insights/last-90-days',
       },
       {
         id: 'loyalty-points',
@@ -73,7 +78,8 @@ export async function GET(request: NextRequest) {
         value: `${loyaltyPoints} pts`,
         trend: loyaltyPoints >= 200 ? ' Reward available' : ' Keep going',
         color: '#a855f7',
-        description: `Earn 50 points per completed service. You are ${Math.max(0, 200 - loyaltyPoints)} points away from your next reward.`,
+        description: `You earn 1 point for each dollar spent. You are ${pointsToReward} points away from your next reward.`,
+        href: '/customer/insights/loyalty-points',
       },
       ...(avgRating
         ? [{
@@ -83,6 +89,7 @@ export async function GET(request: NextRequest) {
             trend: parseFloat(avgRating) >= 4 ? ' Satisfied customer' : ' Room for improvement',
             color: '#f59e0b',
             description: `Based on ${reviews.length} review${reviews.length !== 1 ? 's' : ''} you have left. Your feedback helps shops improve.`,
+            href: '/customer/insights/avg-rating',
           }]
         : []),
     ];
@@ -96,7 +103,15 @@ export async function GET(request: NextRequest) {
       last30Days: last30Orders,
     };
 
-    return NextResponse.json({ insights, summary });
+    const breakdown = completed.slice(0, 20).map((order) => ({
+      id: order.id,
+      service: workOrderTitle(order),
+      shop: order.shop?.shopName || 'Shop',
+      amount: order.amountPaid || order.estimatedCost || 0,
+      date: (order.completedAt || order.createdAt).toISOString(),
+    }));
+
+    return NextResponse.json({ insights, summary, breakdown });
   } catch (error) {
     console.error('Error fetching customer insights:', error);
     return NextResponse.json({ error: 'Failed to fetch insights' }, { status: 500 });

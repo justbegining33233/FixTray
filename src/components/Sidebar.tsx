@@ -52,7 +52,7 @@ const shopGroups: MenuGroup[] = [
       { icon: <FaRoad />,  label: 'Roadside Jobs',    href: '/workorders/roadside' },
       { icon: <FaClipboardList />, label: 'Estimates', href: '/shop/estimates' },
       { icon: <FaEdit />,  label: 'Authorizations',    href: '/shop/work-authorizations' },
-      { icon: <FaTools />,  label: 'Templates',          href: '/shop/services' },
+      { icon: <FaTools />,  label: 'Templates',          href: '/shop/templates' },
       { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/shop/recurring-workorders' },
       { icon: <FaDesktop />,  label: 'Waiting Room',       href: '/shop/waiting-room' },
     ],

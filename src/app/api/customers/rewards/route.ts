@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { REWARD_TIERS, buildCustomerRewards, emptyRewardsPayload } from '@/lib/rewardPayload';
+import { REWARD_TIERS, buildCustomerRewards, emptyRewardsPayload, loyaltyPointsFromOrders } from '@/lib/rewardPayload';
 
-// Extract loyalty points calculation to shared function (Phase 2: Consolidate logic)
 async function calculateLoyaltyPoints(customerId: string): Promise<number> {
   const completedWOs = await prisma.workOrder.findMany({
     where: {
@@ -12,10 +11,7 @@ async function calculateLoyaltyPoints(customerId: string): Promise<number> {
     },
     select: { amountPaid: true, estimatedCost: true },
   });
-  return completedWOs.reduce((sum, w) => {
-    const paid = w.amountPaid || w.estimatedCost || 0;
-    return sum + Math.floor(paid);
-  }, 0);
+  return loyaltyPointsFromOrders(completedWOs);
 }
 
 export async function GET(request: NextRequest) {

@@ -27,7 +27,11 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
 
   useEffect(() => {
     // Fetch tech locations from API
-    fetch(`/api/tech/tracking?shopId=${shopId}`, { credentials: 'include' })
+    const token = localStorage.getItem('token');
+    fetch(`/api/tech/tracking?shopId=${shopId}`, {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then(r => r.ok ? r.json() : { techs: [] })
       .then(data => {
         setTechs(data.techs || []);

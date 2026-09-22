@@ -6,8 +6,8 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCheck, FaCheckCircle, FaDollarSign, FaEnvelope, FaHandPointRight, FaHardHat, FaKey, FaTimesCircle, FaWrench } from 'react-icons/fa';
 
 export default function EmailTemplates() {
-  const { user, isLoading } = useRequireAuth(['admin']);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>('welcome');
 
   // Show loading state while checking authentication
   if (isLoading) {

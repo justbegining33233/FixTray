@@ -3,6 +3,9 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaStar } from 'react-icons/fa';
+import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { isCompletedWorkOrder, workOrderTitle } from '@/lib/workOrderMetrics';
+import { historySpend } from '@/lib/rewardPayload';
 
 interface HistoryItem {
   id: string;
@@ -29,20 +32,20 @@ export default function History() {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const res = await fetch('/api/workorders?status=closed', {
+      const res = await fetch('/api/workorders?limit=100', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
-        const orders = data.workOrders ?? data ?? [];
+        const orders = unwrapWorkOrders(data).filter((wo) => isCompletedWorkOrder(wo));
         const mapped: HistoryItem[] = orders.map((wo: any) => ({
           id: wo.id,
-          service: wo.issueDescription || 'Service',
+          service: workOrderTitle(wo),
           shop: wo.shop?.shopName || 'Shop',
           vehicle: wo.vehicle ? `${wo.vehicle.year || ''} ${wo.vehicle.make || ''} ${wo.vehicle.model || ''}`.trim() : 'Vehicle',
           date: wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : new Date(wo.updatedAt).toLocaleDateString(),
-          cost: wo.amountPaid || wo.estimatedCost || 0,
-          rating: wo.review?.rating || 0,
+          cost: historySpend(wo),
+          rating: wo.review?.rating || wo.reviews?.[0]?.rating || 0,
           status: wo.status,
         }));
         setHistory(mapped);

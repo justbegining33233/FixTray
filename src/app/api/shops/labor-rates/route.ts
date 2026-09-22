@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const { shopId, name, rate, category } = parsed.data;
 
     // Shop-role users may only create rates for their own shop
-    if (user.role === 'shop' && user.shopId !== shopId) {
+    if (user.role === 'shop' && user.shopId !== shopId && user.id !== shopId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
     // Verify ownership before mutating
     const existing = await prisma.shopLaborRate.findUnique({ where: { id }, select: { shopId: true } });
     if (!existing) return NextResponse.json({ error: 'Labor rate not found' }, { status: 404 });
-    if (user.role === 'shop' && user.shopId !== existing.shopId) {
+    if (user.role === 'shop' && user.shopId !== existing.shopId && user.id !== existing.shopId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -132,7 +132,7 @@ export async function DELETE(request: NextRequest) {
     // Verify ownership before deleting
     const existing = await prisma.shopLaborRate.findUnique({ where: { id }, select: { shopId: true } });
     if (!existing) return NextResponse.json({ error: 'Labor rate not found' }, { status: 404 });
-    if (user.role === 'shop' && user.shopId !== existing.shopId) {
+    if (user.role === 'shop' && user.shopId !== existing.shopId && user.id !== existing.shopId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

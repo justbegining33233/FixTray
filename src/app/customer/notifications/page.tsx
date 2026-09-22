@@ -30,7 +30,11 @@ export default function CustomerNotificationsPage() {
       const res = await fetch('/api/notifications-db', { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
-        setNotifications(Array.isArray(data) ? data : []);
+        const rows = Array.isArray(data) ? data : [];
+        setNotifications(rows.map((row: Notification & { message?: string }) => ({
+          ...row,
+          body: row.body || row.message || '',
+        })));
       }
     } catch {}
     finally { setLoading(false); }

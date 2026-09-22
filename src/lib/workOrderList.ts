@@ -27,6 +27,17 @@ export function isAwaitingClockIn(wo: { assignedTechId?: string | null; assigned
   return !wo.assignedTechId && !wo.assignedTo;
 }
 
+export function unwrapTeam(payload: unknown): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === 'object') {
+    const record = payload as { team?: unknown; technicians?: unknown; techs?: unknown };
+    if (Array.isArray(record.team)) return record.team;
+    if (Array.isArray(record.technicians)) return record.technicians;
+    if (Array.isArray(record.techs)) return record.techs;
+  }
+  return [];
+}
+
 export function unwrapVehicles(payload: unknown): any[] {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === 'object' && Array.isArray((payload as { vehicles?: unknown }).vehicles)) {

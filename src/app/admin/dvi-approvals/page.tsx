@@ -29,11 +29,13 @@ export default function DVIApprovalsPage() {
   const fetchApprovals = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
       const res = await fetch(
-        `/api/dvi-approvals?${filter === 'pending' ? 'pending=true' : `status=${filter}`}`
+        `/api/dvi-approvals?${filter === 'pending' ? 'pending=true' : `status=${filter}`}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: 'include' }
       );
       const data = await res.json();
-      setApprovals(data);
+      setApprovals(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching approvals:', error);
     } finally {
@@ -49,9 +51,11 @@ export default function DVIApprovalsPage() {
     nextDate.setDate(nextDate.getDate() + parseInt(daysToNextInspection));
 
     try {
+      const token = localStorage.getItem('token');
       await fetch(`/api/dvi-approvals/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        credentials: 'include',
         body: JSON.stringify({
           approvalStatus: 'approved',
           nextInspectionDue: nextDate.toISOString(),
@@ -68,9 +72,11 @@ export default function DVIApprovalsPage() {
     if (!reason) return;
 
     try {
+      const token = localStorage.getItem('token');
       await fetch(`/api/dvi-approvals/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        credentials: 'include',
         body: JSON.stringify({
           approvalStatus: 'rejected',
           notes: reason,

@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import logger from '@/lib/logger';
 import { z } from 'zod';
+import { usableShopId } from '@/lib/shopAccess';
+import { resolveShiftReader, shiftListWhere } from '@/lib/shiftQuery';
 
 const shiftSchema = z.object({
   techId: z.string().min(1, 'Tech required'),
@@ -17,26 +19,32 @@ const shiftSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireRole(request, ['shop_owner', 'manager', 'admin']);
+    const auth = requireRole(request, ['shop', 'manager', 'admin', 'tech']);
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const techId = searchParams.get('techId');
-
-    if (!shopId) {
-      return NextResponse.json(
-        { error: 'shopId required' },
-        { status: 400 }
-      );
+    const reader = resolveShiftReader(
+      auth,
+      usableShopId(searchParams.get('shopId')),
+      usableShopId(searchParams.get('techId')),
+    );
+    if ('error' in reader) {
+      return NextResponse.json({ error: reader.error }, { status: reader.status });
     }
 
-    const where: any = { shopId };
-    if (startDate) where.date = { gte: new Date(startDate) };
-    if (endDate) where.date = { ...where.date, lte: new Date(endDate) };
-    if (techId) where.techId = techId;
+    const where: Record<string, unknown> = shiftListWhere({
+      shopId: reader.shopId,
+      techId: reader.techId,
+      status: searchParams.get('status'),
+    });
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    if (startDate || endDate) {
+      const date: Record<string, Date> = {};
+      if (startDate) date.gte = new Date(startDate);
+      if (endDate) date.lte = new Date(endDate);
+      where.date = date;
+    }
 
     const shifts = await prisma.shift.findMany({
       where,
@@ -47,7 +55,7 @@ export async function GET(request: NextRequest) {
       orderBy: { date: 'asc' },
     });
 
-    logger.debug('Shifts retrieved', { shopId, count: shifts.length });
+    logger.debug('Shifts retrieved', { shopId: reader.shopId, count: shifts.length });
 
     return NextResponse.json(shifts);
   } catch (error) {
@@ -61,14 +69,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireRole(request, ['shop_owner', 'manager', 'admin']);
+    const auth = requireRole(request, ['shop', 'manager', 'admin']);
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
     const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
+    const requestedShop = usableShopId(searchParams.get('shopId'));
+    const shopId = auth.role === 'shop'
+      ? (auth.shopId || auth.id)
+      : (auth.shopId || requestedShop);
 
-    if (!shopId) {
+    if (!shopId || (requestedShop && requestedShop !== shopId && auth.role !== 'admin' && auth.role !== 'superadmin')) {
       return NextResponse.json(
         { error: 'shopId required' },
         { status: 400 }

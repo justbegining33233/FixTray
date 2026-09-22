@@ -13,6 +13,7 @@ interface Insight {
   value: string;
   color: string;
   description: string;
+  href?: string;
 }
 
 export default function Insights() {
@@ -98,7 +99,7 @@ export default function Insights() {
                 </div>
                 <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5}}>{insight.description}</div>
               </div>
-              <button onClick={() => router.push('/customer/workorders' as Route)} style={{
+              <button onClick={() => router.push((insight.href || `/customer/insights/${insight.id}`) as Route)} style={{
                 width:'100%',
                 padding:'12px',
                 background:'#e5332a',

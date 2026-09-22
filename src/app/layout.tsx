@@ -39,6 +39,17 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'FixTray',
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
+      { url: '/icons/fixtray-ft-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/fixtray-ft-48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/icons/fixtray-ft-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/fixtray-ft-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: ['/favicon.ico'],
+  },
   // Performance optimizations
   other: {
     'dns-prefetch': 'https://res.cloudinary.com',

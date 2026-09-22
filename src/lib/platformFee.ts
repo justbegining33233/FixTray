@@ -31,3 +31,21 @@ export async function getPlatformServiceFeeUsd(): Promise<number> {
 export function serviceFeeUsdToCents(usd: number): number {
   return Math.round(Math.max(0, usd) * 100);
 }
+
+/**
+ * PlatformConfig.serviceFee is stored in cents.
+ * System settings and superadmin both submit cents (`serviceFee` or `serviceFeeRaw`).
+ * Do not multiply by 100 again — that turns a $10 fee (1000) into $1,000.
+ */
+export function normalizePlatformServiceFeeCents(body: {
+  serviceFee?: unknown;
+  serviceFeeRaw?: unknown;
+}): number | undefined {
+  const raw = typeof body.serviceFeeRaw === 'number' && Number.isFinite(body.serviceFeeRaw)
+    ? body.serviceFeeRaw
+    : typeof body.serviceFee === 'number' && Number.isFinite(body.serviceFee)
+      ? body.serviceFee
+      : undefined;
+  if (raw === undefined) return undefined;
+  return Math.max(0, Math.round(raw));
+}

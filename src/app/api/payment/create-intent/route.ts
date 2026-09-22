@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
-import { createPaymentIntent } from '@/lib/stripe';
+import { createPaymentIntent, shopConnectPayoutReady } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { invoiceTotal } from '@/lib/workOrderCloseout';
+import { buildConnectDestinationSplit } from '@/lib/stripeConnectSplit';
 import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -33,22 +34,36 @@ export async function POST(request: NextRequest) {
     }
     
     const bill = invoiceTotal(workOrder, await getPlatformServiceFeeUsd());
-    if (bill.quoteAmount <= 0) {
-      return NextResponse.json({ error: 'No estimate available' }, { status: 400 });
+    const shop = await prisma.shop.findUnique({ where: { id: workOrder.shopId } });
+    const split = buildConnectDestinationSplit({
+      quoteUsd: bill.quoteAmount,
+      serviceFeeUsd: bill.serviceFee,
+      connectedAccountId: shop?.stripeAccountId,
+    });
+    if (!split.ok) {
+      return NextResponse.json({ error: split.error }, { status: split.status });
     }
+
+    const payoutReady = await shopConnectPayoutReady(split.destination);
+    if (!payoutReady) {
+      return NextResponse.json(
+        {
+          error:
+            "This shop's Stripe account cannot receive payouts yet. Finish Connect onboarding, then try again.",
+        },
+        { status: 409 }
+      );
+    }
+
     const serviceFee = bill.serviceFee;
     const totalAmount = bill.amount;
 
-    // Fetch shop's Stripe connected account for automatic split
-    const shop = await prisma.shop.findUnique({ where: { id: workOrder.shopId } });
-
-    // Create payment intent — platform fee goes to FixTray, rest to shop when connected
-    const paymentIntent = await createPaymentIntent(
-      totalAmount,
-      { workOrderId: workOrder.id, customerId: workOrder.customerId },
-      shop?.stripeAccountId ?? undefined,
-      serviceFee,
-    );
+    // Destination charge: application fee is the live platform fee only.
+    const paymentIntent = await createPaymentIntent(split, {
+      workOrderId: workOrder.id,
+      customerId: workOrder.customerId,
+      shopId: workOrder.shopId,
+    });
     
     // Update work order
     await prisma.workOrder.update({

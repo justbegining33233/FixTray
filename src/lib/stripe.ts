@@ -1,4 +1,9 @@
 import Stripe from 'stripe';
+import {
+  shopCanReceiveConnectTransfer,
+  type ConnectDestinationSplit,
+  destinationChargeParams,
+} from '@/lib/stripeConnectSplit';
 
 // Only instantiate Stripe when the secret key is provided. During build-time
 // (or in environments where Stripe isn't configured) constructing the Stripe
@@ -83,30 +88,30 @@ export const STRIPE_PRODUCTS = {
 
 export type StripePlan = keyof typeof STRIPE_PRODUCTS;
 
+/**
+ * Destination charge for a work order.
+ * The platform keeps only the live service fee (application_fee_amount).
+ * The rest transfers to the connected shop. Callers must pass a split that
+ * already has a connected account — this does not create a platform-only charge.
+ */
 export async function createPaymentIntent(
-  amount: number,
+  split: ConnectDestinationSplit,
   metadata: Record<string, string>,
-  connectedAccountId?: string,
-  serviceFeeUsd: number = 0,
 ) {
   const params: Stripe.PaymentIntentCreateParams = {
-    amount: Math.round(amount * 100), // Convert to cents
-    currency: 'usd',
-    metadata,
+    ...destinationChargeParams(split, metadata),
     automatic_payment_methods: {
       enabled: true,
     },
   };
 
-  // Stripe Connect: FixTray keeps the live platform fee; rest goes to shop.
-  // A zero fee is not sent as an application fee.
-  if (connectedAccountId) {
-    const feeCents = Math.round(Math.max(0, serviceFeeUsd) * 100);
-    if (feeCents > 0) params.application_fee_amount = feeCents;
-    params.transfer_data = { destination: connectedAccountId };
-  }
-
   return stripe.paymentIntents.create(params);
+}
+
+/** True when the connected account can receive the shop's transfer. */
+export async function shopConnectPayoutReady(connectedAccountId: string): Promise<boolean> {
+  const account = await stripe.accounts.retrieve(connectedAccountId);
+  return shopCanReceiveConnectTransfer(account);
 }
 
 export async function createCustomer(email: string, name: string) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { normalizePlatformServiceFeeCents } from '@/lib/platformFee';
 
 async function getOrCreateConfig() {
   let config = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
@@ -29,8 +30,8 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const updateData: Record<string, unknown> = {};
-    if (typeof body.serviceFee === 'number') updateData.serviceFee = Math.round(body.serviceFee * 100);
-    if (typeof body.serviceFeeRaw === 'number') updateData.serviceFee = body.serviceFeeRaw;
+    const serviceFeeCents = normalizePlatformServiceFeeCents(body);
+    if (serviceFeeCents !== undefined) updateData.serviceFee = serviceFeeCents;
     if (typeof body.platformName === 'string') updateData.platformName = body.platformName;
     if (typeof body.supportEmail === 'string') updateData.supportEmail = body.supportEmail;
     if (typeof body.maintenanceMode === 'boolean') updateData.maintenanceMode = body.maintenanceMode;

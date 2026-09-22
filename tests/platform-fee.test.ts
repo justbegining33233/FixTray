@@ -11,7 +11,7 @@ jest.mock('../src/lib/prisma', () => ({
 }));
 
 import prisma from '../src/lib/prisma';
-import { getPlatformServiceFeeUsd } from '../src/lib/platformFee';
+import { getPlatformServiceFeeUsd, normalizePlatformServiceFeeCents } from '../src/lib/platformFee';
 
 describe('getPlatformServiceFeeUsd', () => {
   it('reads PlatformConfig.serviceFee (cents) set by superadmin', async () => {
@@ -22,6 +22,16 @@ describe('getPlatformServiceFeeUsd', () => {
   it('falls back to the default $5 when config is missing', async () => {
     (prisma.platformConfig.findUnique as jest.Mock).mockResolvedValue(null);
     await expect(getPlatformServiceFeeUsd()).resolves.toBe(5);
+  });
+});
+
+describe('normalizePlatformServiceFeeCents', () => {
+  it('stores the settings value as cents and does not multiply a cent amount by 100', () => {
+    expect(normalizePlatformServiceFeeCents({ serviceFee: 1000 })).toBe(1000);
+    expect(normalizePlatformServiceFeeCents({ serviceFee: 1000, serviceFeeRaw: 750 })).toBe(750);
+    expect(normalizePlatformServiceFeeCents({ serviceFeeRaw: 0 })).toBe(0);
+    expect(normalizePlatformServiceFeeCents({ serviceFee: -20 })).toBe(0);
+    expect(normalizePlatformServiceFeeCents({})).toBeUndefined();
   });
 });
 

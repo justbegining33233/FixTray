@@ -99,7 +99,14 @@ export async function POST(request: NextRequest) {
     if (record.adminId) {
       const admin = await prisma.admin.findUnique({ where: { id: record.adminId } });
       if (!admin) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-      payload = { id: admin.id, username: admin.username, role: 'superadmin', isSuperAdmin: admin.isSuperAdmin };
+      const { isOwnerAdmin } = await import('@/lib/owner-access');
+      payload = {
+        id: admin.id,
+        username: admin.username,
+        role: 'superadmin',
+        isSuperAdmin: admin.isSuperAdmin,
+        isOwner: isOwnerAdmin({ id: admin.id, username: admin.username }),
+      };
     } else if (record.metadata) {
       let meta: { customerId?: string; shopId?: string; techId?: string } = {};
       try { meta = JSON.parse(record.metadata) as typeof meta; } catch { return NextResponse.json({ error: 'Invalid session' }, { status: 401 }); }

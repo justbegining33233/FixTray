@@ -25,9 +25,16 @@ export async function GET(
         zipCode: true,
         ownerName: true,
         status: true,
+        shopType: true,
+        businessLicense: true,
+        insurancePolicy: true,
+        profileComplete: true,
+        createdAt: true,
+        approvedAt: true,
         workOrders: {
           select: {
             id: true,
+            customerId: true,
             status: true,
             amountPaid: true,
             paymentStatus: true,
@@ -69,10 +76,12 @@ export async function GET(
     const avgRating = shop.reviews.length > 0
       ? shop.reviews.reduce((sum, r) => sum + r.rating, 0) / shop.reviews.length
       : 0;
+    const customers = new Set(shop.workOrders.map((wo) => wo.customerId).filter(Boolean)).size;
 
     const formattedShop = {
       id: shop.id,
       name: shop.shopName,
+      shopName: shop.shopName,
       email: shop.email,
       phone: shop.phone,
       location: shop.city && shop.state ? `${shop.city}, ${shop.state}` : shop.address || 'N/A',
@@ -92,6 +101,20 @@ export async function GET(
       state: shop.state,
       zipCode: shop.zipCode,
       ownerName: shop.ownerName,
+      shopType: shop.shopType || '',
+      businessLicense: shop.businessLicense || '',
+      insurancePolicy: shop.insurancePolicy || '',
+      profileComplete: shop.profileComplete,
+      createdAt: shop.createdAt.toISOString(),
+      approvedAt: shop.approvedAt ? shop.approvedAt.toISOString() : null,
+      stats: {
+        totalWorkOrders: totalJobs,
+        completedWorkOrders: completedJobs,
+        totalRevenue,
+        technicians: shop.techs.length,
+        customers,
+        avgRating,
+      },
     };
 
     return NextResponse.json({ shop: formattedShop }, { status: 200 });

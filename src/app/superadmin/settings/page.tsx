@@ -128,6 +128,7 @@ export default function SuperAdminSettings() {
                 <option value="en">English</option>
                 <option value="es">Spanish</option>
               </select>
+              <p className="text-xs text-[#64748b] mt-1">Platform default for people who have not chosen a language. Each person can switch from the sign-in page or profile menu.</p>
             </div>
           </div>
         </div>

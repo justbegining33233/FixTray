@@ -19,6 +19,8 @@ describe('production column ensure', () => {
     expect(sql).toContain('"availableRoadside"');
     expect(sql).toContain('"shop_settings"');
     expect(sql).toContain('"require2FA"');
+    expect(sql).toContain('"platform_config"');
+    expect(sql).toContain('"defaultLanguage"');
     expect(sql).toContain('"tax_rules"');
     expect(sql).toContain('"state"');
     expect(sql).toContain('"county"');

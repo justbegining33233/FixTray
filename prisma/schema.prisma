@@ -1732,6 +1732,7 @@ model PlatformConfig {
   platformName             String   @default("FixTray")
   supportEmail             String   @default("support@fixtray.app")
   timezone                 String   @default("America/New_York")
+  defaultLanguage          String   @default("en")
   maintenanceMode          Boolean  @default(false)
   enableShopRegistration   Boolean  @default(true)
   enableCustomerPortal     Boolean  @default(true)

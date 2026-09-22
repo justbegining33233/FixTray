@@ -112,6 +112,14 @@ export default function SystemSettings() {
               <input style={fieldStyle} type="email" value={settings.supportEmail || ''} onChange={e => set('supportEmail', e.target.value)} />
             </div>
             <div>
+              <label style={labelStyle}>Default Language</label>
+              <select style={fieldStyle} value={settings.defaultLanguage || 'en'} onChange={e => set('defaultLanguage', e.target.value)}>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+              </select>
+              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Used until a person picks a language on the sign-in page or profile menu.</div>
+            </div>
+            <div>
               <label style={labelStyle}>Timezone</label>
               <select style={fieldStyle} value={settings.timezone || 'America/New_York'} onChange={e => set('timezone', e.target.value)}>
                 <option value="America/New_York">Eastern Time (ET)</option>

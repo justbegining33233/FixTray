@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { getPlatformConfig } from '@/lib/platformConfig';
 import { isOwnerAdmin } from '@/lib/owner-access';
 import logger from '@/lib/logger';
 import { displayPersonName } from '@/lib/platformUserLabel';
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
-    const platformConfig = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
+    const platformConfig = await getPlatformConfig();
     const feePerWorkOrder = (platformConfig?.serviceFee || 500) / 100;
 
     const [

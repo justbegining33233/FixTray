@@ -98,6 +98,26 @@
     "validation": "Please check your input and try again.",
     "server": "Server error. Please try again later."
   },
+  "chrome": {
+    "language": "Language",
+    "myProfile": "My Profile",
+    "clockIn": "Clock In",
+    "clockOut": "Clock Out",
+    "mobileView": "Mobile View",
+    "webView": "Switch to Web View",
+    "signOut": "Sign Out"
+  },
+  "login": {
+    "welcome": "Welcome back",
+    "subtitle": "Sign in to manage your work orders, customers, and teams.",
+    "signIn": "Sign In",
+    "createAccount": "Create Account",
+    "username": "Username",
+    "password": "Password",
+    "signingIn": "Signing in...",
+    "forgotPassword": "Forgot / Reset password",
+    "hideReset": "Hide password reset"
+  },
   "validation": {
     "required": "This field is required",
     "email": "Please enter a valid email address",

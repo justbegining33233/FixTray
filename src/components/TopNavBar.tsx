@@ -10,6 +10,8 @@ import OilSlickNavCanvas from '@/components/OilSlickNavCanvas';
 import ShopSwitcher from '@/components/ShopSwitcher';
 import GlobalSearch from '@/components/GlobalSearch';
 import { FaArrowRight, FaBell, FaCaretDown, FaCaretRight, FaCog, FaSignOutAlt, FaSquare, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { workOrderNotificationCopy } from '@/lib/notificationCopy';
 import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
@@ -20,6 +22,7 @@ interface TopNavBarProps {
 }
 
 export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopNavBarProps) {
+  const t = useTranslations('chrome');
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { isConnected, emit, on, off } = useSocket();
@@ -944,7 +947,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                     }}
                   >
                     <FaUser style={{ fontSize: 16, color: '#6366f1' }} />
-                    <span>My Profile</span>
+                    <span>{t('myProfile')}</span>
                   </Link>
 
                   {/* Clock In/Out for tech/manager */}
@@ -979,12 +982,16 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                       }}
                     >
                       <span style={{ fontSize: 16 }}>{isClockedIn ? <FaSquare /> : <FaCaretRight />}</span>
-                      <span>{isClockedIn ? 'Clock Out' : 'Clock In'}</span>
+                      <span>{isClockedIn ? t('clockOut') : t('clockIn')}</span>
                     </button>
                   )}
 
                   {/* Divider */}
                   <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+
+                  <div style={{ padding: '4px 8px 8px' }}>
+                    <LanguageSwitcher />
+                  </div>
 
                   {/* Switch to Mobile View */}
                   <button
@@ -1018,7 +1025,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                     }}
                   >
                     <span style={{ fontSize: 16 }}>📱</span>
-                    <span>Mobile View</span>
+                    <span>{t('mobileView')}</span>
                   </button>
 
                   {/* Sign Out */}
@@ -1050,7 +1057,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                     }}
                   >
                     <FaSignOutAlt style={{ fontSize: 16 }} />
-                    <span>Sign Out</span>
+                    <span>{t('signOut')}</span>
                   </button>
                 </div>
               </div>

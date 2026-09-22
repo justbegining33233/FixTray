@@ -98,6 +98,26 @@
     "validation": "Por favor verifica tu entrada e intenta de nuevo.",
     "server": "Error del servidor. Por favor intenta más tarde."
   },
+  "chrome": {
+    "language": "Idioma",
+    "myProfile": "Mi perfil",
+    "clockIn": "Registrar entrada",
+    "clockOut": "Registrar salida",
+    "mobileView": "Vista móvil",
+    "webView": "Cambiar a vista web",
+    "signOut": "Cerrar sesión"
+  },
+  "login": {
+    "welcome": "Bienvenido de nuevo",
+    "subtitle": "Inicia sesión para gestionar órdenes de trabajo, clientes y equipos.",
+    "signIn": "Iniciar sesión",
+    "createAccount": "Crear cuenta",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "signingIn": "Iniciando sesión...",
+    "forgotPassword": "Olvidé / restablecer contraseña",
+    "hideReset": "Ocultar restablecimiento"
+  },
   "validation": {
     "required": "Este campo es obligatorio",
     "email": "Por favor ingresa un correo electrónico válido",

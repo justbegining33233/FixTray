@@ -8,6 +8,8 @@ import FloatingSignOut from '@/components/FloatingSignOut';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import { NativeProvider } from '@/context/NativeContext';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -61,20 +63,24 @@ export default async function RootLayout({
   // desktop layout on phones/tablets.
   const ua = headersList.get('user-agent') ?? '';
   const isMobileUA = isNative || /Mobile|Android|iPhone|iPad|iPod/i.test(ua);
+  const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${inter.variable} ${plusJakartaSans.variable}`}>
-        <ErrorBoundary>
-          <NativeProvider isNative={isNative} platform={nativeHeader ?? null} isMobileUA={isMobileUA}>
-            <ClientAuthProvider>
-              {children}
-              <OfflineBanner />
-              <FloatingSignOut />
-              <ServiceWorkerRegister />
-            </ClientAuthProvider>
-          </NativeProvider>
-        </ErrorBoundary>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ErrorBoundary>
+            <NativeProvider isNative={isNative} platform={nativeHeader ?? null} isMobileUA={isMobileUA}>
+              <ClientAuthProvider>
+                {children}
+                <OfflineBanner />
+                <FloatingSignOut />
+                <ServiceWorkerRegister />
+              </ClientAuthProvider>
+            </NativeProvider>
+          </ErrorBoundary>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -21,6 +21,7 @@ export const PRODUCTION_COLUMN_STATEMENTS = [
   `ALTER TABLE "environmental_fees" ADD COLUMN IF NOT EXISTS "feeType" TEXT`,
   `ALTER TABLE "environmental_fees" ADD COLUMN IF NOT EXISTS "description" TEXT`,
   `ALTER TABLE "shop_settings" ADD COLUMN IF NOT EXISTS "require2FA" BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE "platform_config" ADD COLUMN IF NOT EXISTS "defaultLanguage" TEXT NOT NULL DEFAULT 'en'`,
 ] as const;
 
 let pending: Promise<void> | null = null;

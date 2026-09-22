@@ -6,6 +6,8 @@ import type { Route } from 'next';
 import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin';
 
@@ -600,6 +602,7 @@ export default function MobileShell({
   children,
   unreadMessages = 0,
 }: MobileShellProps) {
+  const t = useTranslations('chrome');
   const isNative = useIsNative();
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -1096,6 +1099,10 @@ export default function MobileShell({
               ))}
             </div>
 
+            <div style={{ padding: '8px 16px 0' }}>
+              <LanguageSwitcher />
+            </div>
+
             {/* Switch to Web View */}
             <div style={{ padding: '6px 16px 0' }}>
               <button
@@ -1110,7 +1117,7 @@ export default function MobileShell({
                   padding: '8px 12px', borderRadius: 8, width: '100%', textAlign: 'left',
                   touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
                 }}
-              >🖥️ Switch to Web View</button>
+              >🖥️ {t('webView')}</button>
             </div>
 
             {/* Sign out */}
@@ -1125,7 +1132,7 @@ export default function MobileShell({
                   touchAction: 'manipulation',
                   WebkitTapHighlightColor: 'transparent',
                 }}
-              >🚪 Sign Out</button>
+              >🚪 {t('signOut')}</button>
             </div>
           </div>
         </div>

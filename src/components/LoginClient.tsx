@@ -9,11 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { IconUser, IconWrench } from '@/components/icons';
 import '@/styles/sos-theme.css';
 import OilSlickCanvas from '@/components/OilSlickCanvas';
+import { useTranslations } from 'next-intl';
 
 const MIN_USERNAME_LENGTH = 3;
 const MIN_PASSWORD_LENGTH = 8;
 
 export default function LoginClient() {
+  const t = useTranslations('login');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -259,29 +261,29 @@ export default function LoginClient() {
         </div>
         <div className="sos-content">
           <div className="sos-pane">
-            <div className="sos-title">Welcome back</div>
-            <p className="sos-desc">Sign in to manage your work orders, customers, and teams.</p>
+            <div className="sos-title">{t('welcome')}</div>
+            <p className="sos-desc">{t('subtitle')}</p>
             <div className="sos-tabs">
-              <button className={`sos-tab ${activeTab === 'login' ? 'active' : ''}`} onClick={() => { setActiveTab('login'); setErrors({}); }}>Sign In</button>
-              <button className={`sos-tab ${activeTab === 'signup' ? 'active' : ''}`} onClick={() => { setActiveTab('signup'); setErrors({}); }}>Create Account</button>
+              <button className={`sos-tab ${activeTab === 'login' ? 'active' : ''}`} onClick={() => { setActiveTab('login'); setErrors({}); }}>{t('signIn')}</button>
+              <button className={`sos-tab ${activeTab === 'signup' ? 'active' : ''}`} onClick={() => { setActiveTab('signup'); setErrors({}); }}>{t('createAccount')}</button>
             </div>
             {activeTab === 'login' && (
               <form onSubmit={handleLoginSubmit} className="sos-form" autoComplete="off">
                 <div className="sos-field">
-                  <label>Username</label>
+                  <label>{t('username')}</label>
                   <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} className="sos-input" placeholder="Employee #, username, email, or phone" autoComplete="off" />
                   {errors.username && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.username}</p>)}
                 </div>
                 <div className="sos-field">
-                  <label>Password</label>
+                  <label>{t('password')}</label>
                   <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} className="sos-input" placeholder="--------" autoComplete="new-password" />
                   {errors.password && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{errors.password}</p>)}
                 </div>
                 <div className="sos-actions">
-                  <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? 'Signing in...' : 'Sign In'}</button>
+                  <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? t('signingIn') : t('signIn')}</button>
                 </div>
                 <div style={{marginTop:8, textAlign:'center'}}>
-                  <button type="button" onClick={toggleReset} className="btn-link" style={{fontSize:13}}>{showReset ? 'Hide password reset' : 'Forgot / Reset password'}</button>
+                  <button type="button" onClick={toggleReset} className="btn-link" style={{fontSize:13}}>{showReset ? t('hideReset') : t('forgotPassword')}</button>
                 </div>
                 {showReset && (<PasswordResetForm onClose={() => setShowReset(false)} />)}
               </form>

@@ -62,7 +62,6 @@ export async function POST(
     const laborTotal = labor.reduce((sum: number, l: any) => sum + (l.hours || 0) * (l.ratePerHour || 0), 0);
     const chargesTotal = charges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
     const subtotal = partsTotal + laborTotal + chargesTotal;
-    const serviceFee = await getPlatformServiceFeeUsd();
     const totalDue = Math.round((subtotal + serviceFee) * 100) / 100;
 
     // Send email with invoice details

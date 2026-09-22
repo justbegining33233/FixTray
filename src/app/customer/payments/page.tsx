@@ -148,7 +148,7 @@ export default function Payments() {
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{formatDate(payment.date)}</div>
                     {payment.status === 'Pending' && payment.amount > 0 && (
                       <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                        Service ${payment.serviceCost.toFixed(2)} + FixTray fee $5.00
+                        Service ${payment.serviceCost.toFixed(2)} + FixTray fee ${(payment.fixtrayFee ?? 5).toFixed(2)}
                       </div>
                     )}
                   </div>

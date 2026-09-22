@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
 
 export async function GET(
   request: NextRequest,
@@ -69,6 +70,9 @@ export async function GET(
 
     // Format the response
     const estimate = workOrder.estimate as any;
+    const quoteAmount = Number(
+      estimate?.amount ?? estimate?.total ?? workOrder.estimatedCost ?? 0
+    ) || 0;
     const response = {
       id: workOrder.id,
       issueDescription: workOrder.issueDescription,
@@ -83,11 +87,13 @@ export async function GET(
       assignedTo: workOrder.assignedTo,
       vehicle: workOrder.vehicle,
       tracking: workOrder.tracking || null,
-      estimate: estimate ? {
-        amount: estimate.amount || 0,
-        serviceFee: 5,
-        totalDue: (estimate.amount || 0) + 5,
-        status: estimate.status || null,
+      estimate: (estimate || quoteAmount > 0) ? {
+        amount: quoteAmount,
+        serviceFee: FIXTRAY_SERVICE_FEE,
+        totalDue: quoteAmount > 0
+          ? Math.round((quoteAmount + FIXTRAY_SERVICE_FEE) * 100) / 100
+          : 0,
+        status: estimate?.status || null,
       } : null,
     };
 

@@ -3,6 +3,7 @@
 import { Notification } from '@/types/customer';
 import { sendStatusUpdateSms } from '@/lib/smsService';
 import { workOrderNotificationCopy } from './notificationCopy';
+import { isCustomerVisibleNotification } from './customerNotifications';
 
 function toDomainNotification(rec: any): Notification {
   return {
@@ -28,7 +29,7 @@ export async function getNotifications(customerId?: string): Promise<Notificatio
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
-    return records.map(toDomainNotification);
+    return records.filter(isCustomerVisibleNotification).map(toDomainNotification);
   } catch {
     return [];
   }

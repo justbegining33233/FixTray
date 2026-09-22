@@ -6,6 +6,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { workOrderTitle } from '@/lib/workOrderMetrics';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { formatEstimateMoney } from '@/lib/estimateMoney';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
@@ -331,7 +332,7 @@ function ManagerEstimatesContent() {
               </div>
               <div>
                 <div style={{ color: '#9aa3b2', fontSize: 12 }}>Issue</div>
-                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{workOrder.issueDescription}</div>
+                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{workOrderTitle(workOrder)}</div>
               </div>
               <div>
                 <div style={{ color: '#9aa3b2', fontSize: 12 }}>Priority</div>

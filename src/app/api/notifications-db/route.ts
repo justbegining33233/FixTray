@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { isCustomerVisibleNotification } from '@/lib/customerNotifications';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       take: 50,
     });
     
-    return NextResponse.json(notifications);
+    return NextResponse.json(notifications.filter(isCustomerVisibleNotification));
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });

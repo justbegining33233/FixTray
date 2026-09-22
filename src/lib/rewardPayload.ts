@@ -79,6 +79,25 @@ export function buildCustomerRewards(input: {
   return { loyaltyPoints: points, rewards, history };
 }
 
+/** One point per dollar actually paid (or estimated, when nothing was recorded as paid). */
+export function loyaltyPointsFromOrders(
+  orders: Array<{ amountPaid?: number | null; estimatedCost?: number | null }>,
+): number {
+  return orders.reduce((sum, order) => {
+    const paid = Number(order.amountPaid);
+    const amount = Number.isFinite(paid) && paid > 0 ? paid : Number(order.estimatedCost);
+    if (!Number.isFinite(amount) || amount <= 0) return sum;
+    return sum + Math.floor(amount);
+  }, 0);
+}
+
+export function historySpend(order: { amountPaid?: number | null; estimatedCost?: number | null }): number {
+  const paid = Number(order.amountPaid);
+  if (Number.isFinite(paid) && paid > 0) return paid;
+  const estimated = Number(order.estimatedCost);
+  return Number.isFinite(estimated) && estimated > 0 ? estimated : 0;
+}
+
 /** Rewards API field is `loyaltyPoints`. Older callers looked for `points` and then invented 50 per job. */
 export function loyaltyPointsFromRewards(payload: unknown, fallback = 0): number {
   if (!payload || typeof payload !== 'object') return fallback;

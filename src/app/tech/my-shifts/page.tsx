@@ -32,19 +32,23 @@ export default function MyShiftsPage() {
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [swapReason, setSwapReason] = useState('');
 
-  const techId = localStorage.getItem('userId') || '';
-
   useEffect(() => {
     loadShifts();
     loadSwapRequests();
   }, [filter]);
 
+  const authHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const loadShifts = async () => {
     try {
-      const response = await fetch(`/api/shifts?techId=${techId}&status=${filter}`);
+      const response = await fetch(`/api/shifts?status=${filter}`, { headers: authHeaders() });
       if (!response.ok) throw new Error('Failed to load shifts');
       const data = await response.json();
-      setShifts(data);
+      setShifts(Array.isArray(data) ? data : []);
+      setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading shifts');
     } finally {
@@ -54,10 +58,10 @@ export default function MyShiftsPage() {
 
   const loadSwapRequests = async () => {
     try {
-      const response = await fetch(`/api/shift-swaps?techId=${techId}`);
+      const response = await fetch('/api/shift-swaps', { headers: authHeaders() });
       if (!response.ok) throw new Error('Failed to load swap requests');
       const data = await response.json();
-      setSwapRequests(data);
+      setSwapRequests(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error loading swap requests:', err);
     }

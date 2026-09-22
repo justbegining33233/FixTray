@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { isCompletedWorkOrder, normalizeWorkOrderStatus } from '@/lib/workOrderMetrics';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -81,8 +82,12 @@ export async function GET(request: NextRequest) {
     });
 
     const totalJobs     = workOrders.length;
-    const completedJobs = workOrders.filter(w => w.status === 'closed').length;
-    const pendingJobs   = workOrders.filter(w => !['closed', 'denied-estimate'].includes(w.status)).length;
+    const completedJobs = workOrders.filter((w) => isCompletedWorkOrder(w)).length;
+    const pendingJobs   = workOrders.filter((w) => {
+      if (isCompletedWorkOrder(w)) return false;
+      const status = normalizeWorkOrderStatus(w.status);
+      return !['denied-estimate', 'cancelled', 'canceled'].includes(status);
+    }).length;
 
     // Revenue = sum of amountPaid where paymentStatus === 'paid'
     const totalRevenue = workOrders.reduce((sum, wo) => {

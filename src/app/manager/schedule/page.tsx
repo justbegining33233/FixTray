@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ShiftSwapModal from '@/components/ShiftSwapModal';
 import { FaCalendarAlt, FaUser, FaClock, FaSync } from 'react-icons/fa';
+import { unwrapTeam } from '@/lib/workOrderList';
 
 interface ScheduleEntry {
   id: string;
@@ -44,7 +45,7 @@ export default function ManagerSchedulePage() {
       const res = await fetch('/api/shop/team', { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const team = await res.json();
-        const entries: ScheduleEntry[] = (Array.isArray(team) ? team : team.technicians ?? []).map(
+        const entries: ScheduleEntry[] = unwrapTeam(team).map(
           (t: { id: string; name?: string; firstName?: string; lastName?: string }) => ({
             id: t.id,
             techName: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim() || 'Technician',

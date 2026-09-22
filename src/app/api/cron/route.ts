@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendSms } from '@/lib/smsService';
-import { sendEmail } from '@/lib/emailService';
+import { sendEmail, sendLowStockAlert } from '@/lib/emailService';
 import { APPOINTMENT_OPEN_STATUSES, APPOINTMENT_OVERDUE_GRACE_MS } from '@/lib/appointmentValidation';
 
 // Cron secret to prevent unauthorized access
@@ -125,48 +125,45 @@ export async function GET(request: NextRequest) {
     const needsReorder = lowStockItems.filter(item => item.quantity <= (item.reorderPoint ?? 0));
 
     // Group by shop
-    const byShop: Record<string, { shopName: string; items: string[] }> = {};
+    const byShop: Record<string, { shopName: string; email: string | null; items: typeof needsReorder }> = {};
     for (const item of needsReorder) {
       if (!byShop[item.shopId]) {
-        byShop[item.shopId] = { shopName: item.shop.shopName, items: [] };
+        byShop[item.shopId] = { shopName: item.shop.shopName, email: item.shop.email, items: [] };
       }
-      byShop[item.shopId].items.push(`${item.name} (${item.quantity} left, reorder at ${item.reorderPoint})`);
+      byShop[item.shopId].items.push(item);
     }
 
-    // Create notifications for each shop (once per day — check existing)
+    // Shop inventory alerts go to the shop, never onto a customer's notification feed.
     let alertCount = 0;
     const todayStr = now.toISOString().split('T')[0];
     for (const [shopId, data] of Object.entries(byShop)) {
-      // Low stock alerts go to the first customer associated with the shop, or skip
-      // Since Notification requires customerId, we create a log instead
-      // For shop-facing alerts, we check if there's a recent one
-      const existing = await prisma.notification.findFirst({
+      const existing = await prisma.activityLog.findFirst({
         where: {
           type: 'low_stock_alert',
+          shopId,
           createdAt: { gte: new Date(todayStr) },
-          metadata: { contains: shopId },
         },
       });
       if (existing) continue;
 
-      // Find the shop owner (first tech or use a placeholder)
-      // Store as metadata since this is a shop-facing notification
-      const shopCustomers = await prisma.workOrder.findFirst({
-        where: { shopId },
-        select: { customerId: true },
-      });
-      if (!shopCustomers) continue;
-
-      await prisma.notification.create({
+      const summary = data.items
+        .slice(0, 3)
+        .map((item) => `${item.name} (${item.quantity} left)`)
+        .join(', ');
+      await prisma.activityLog.create({
         data: {
-          customerId: shopCustomers.customerId,
           type: 'low_stock_alert',
-          title: 'Low Stock Alert',
-          message: `${data.items.length} item(s) are at or below reorder point: ${data.items.slice(0, 3).join(', ')}${data.items.length > 3 ? ` and ${data.items.length - 3} more` : ''}.`,
-          deliveryMethod: 'in-app',
-          metadata: JSON.stringify({ shopId, shopName: data.shopName }),
+          action: 'low_stock_alert',
+          details: `${data.items.length} item(s) at or below reorder point: ${summary}`,
+          severity: 'warning',
+          user: 'system',
+          shopId,
         },
       });
+      const first = data.items[0];
+      if (data.email && first) {
+        await sendLowStockAlert(data.email, summary, first.quantity, first.reorderPoint ?? 0).catch(() => {});
+      }
       alertCount++;
     }
     results.lowStockAlerts = { shopsNotified: alertCount, totalLowItems: needsReorder.length };

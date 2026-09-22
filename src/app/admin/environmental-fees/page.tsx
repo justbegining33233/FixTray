@@ -10,6 +10,12 @@ interface EnvironmentalFee {
   unit: string;
   description?: string;
   active: boolean;
+  shopName?: string;
+}
+
+interface ShopOption {
+  id: string;
+  name: string;
 }
 
 export default function EnvironmentalFeesPage() {
@@ -17,6 +23,8 @@ export default function EnvironmentalFeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [shops, setShops] = useState<ShopOption[]>([]);
+  const [selectedShopId, setSelectedShopId] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     feeAmount: 0,
@@ -24,17 +32,34 @@ export default function EnvironmentalFeesPage() {
     description: '',
   });
 
+  const authHeaders = (json = false): HeadersInit => {
+    const token = localStorage.getItem('token');
+    return {
+      ...(json ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   useEffect(() => {
     loadFees();
+    const token = localStorage.getItem('token');
+    fetch('/api/admin/tenants', { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: 'include' })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((rows) => {
+        if (!Array.isArray(rows)) return;
+        setShops(rows.map((row: { id: string; name?: string }) => ({ id: row.id, name: row.name || row.id })));
+      })
+      .catch(() => {});
   }, []);
 
-  const loadFees = async () => {
+  const loadFees = async (shopId = selectedShopId) => {
     try {
-      const shopId = localStorage.getItem('shopId');
-      const response = await fetch(`/api/environmental-fees?shopId=${shopId}`);
+      const query = shopId ? `?shopId=${encodeURIComponent(shopId)}` : '';
+      const response = await fetch(`/api/environmental-fees${query}`, { headers: authHeaders(), credentials: 'include' });
       if (!response.ok) throw new Error('Failed to load');
       const data = await response.json();
-      setFees(data);
+      setFees(Array.isArray(data) ? data : []);
+      setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading fees');
     } finally {
@@ -45,11 +70,12 @@ export default function EnvironmentalFeesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const shopId = localStorage.getItem('shopId');
-      const response = await fetch(`/api/environmental-fees?shopId=${shopId}`, {
+      if (!selectedShopId) throw new Error('Select a shop before creating a fee');
+      const response = await fetch('/api/environmental-fees', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        headers: authHeaders(true),
+        credentials: 'include',
+        body: JSON.stringify({ ...formData, shopId: selectedShopId }),
       });
 
       if (!response.ok) throw new Error('Failed to create fee');
@@ -68,6 +94,8 @@ export default function EnvironmentalFeesPage() {
     try {
       const response = await fetch(`/api/environmental-fees/${id}`, {
         method: 'DELETE',
+        headers: authHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) throw new Error('Failed to delete');
@@ -83,12 +111,28 @@ export default function EnvironmentalFeesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Environmental Fees</h1>
+        <div className="flex gap-2 items-center">
+          <select
+            aria-label="Shop"
+            value={selectedShopId}
+            onChange={(event) => {
+              setSelectedShopId(event.target.value);
+              loadFees(event.target.value);
+            }}
+            className="border rounded px-3 py-2"
+          >
+            <option value="">All shops</option>
+            {shops.map((shop) => (
+              <option key={shop.id} value={shop.id}>{shop.name}</option>
+            ))}
+          </select>
         <button
           onClick={() => setFormOpen(!formOpen)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           + New Fee
         </button>
+        </div>
       </div>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded mb-6">{error}</div>}
@@ -180,9 +224,10 @@ export default function EnvironmentalFeesPage() {
                 <tr key={fee.id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <p className="font-semibold">{fee.name}</p>
+                    {fee.shopName && <p className="text-sm text-gray-500">{fee.shopName}</p>}
                     {fee.description && <p className="text-sm text-gray-600">{fee.description}</p>}
                   </td>
-                  <td className="px-4 py-3">${fee.feeAmount.toFixed(2)}</td>
+                  <td className="px-4 py-3">${Number(fee.feeAmount || 0).toFixed(2)}</td>
                   <td className="px-4 py-3">{fee.unit}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${fee.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>

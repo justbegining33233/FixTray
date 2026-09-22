@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { WorkOrder } from '../../../types/workorder';
+import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { workOrderTitle } from '@/lib/workOrderMetrics';
 import NotificationBell from '../../../components/NotificationBell';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import '../../../styles/sos-theme.css';
@@ -27,9 +29,13 @@ function TechPortalEnhancedContent() {
 
   const fetchWorkOrders = async () => {
     try {
-      const res = await fetch('/api/workorders', { credentials: 'include' });
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/workorders', {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json();
-      setWorkOrders(data || []);
+      setWorkOrders(unwrapWorkOrders(data));
     } catch (error) {
       console.error('Failed to fetch work orders:', error);
     }
@@ -56,10 +62,18 @@ function TechPortalEnhancedContent() {
 
   // Work orders are already scoped to this tech's shop via the API;
   // further filter to those assigned to this tech (by id or name)
-  const assigned = workOrders.filter(w => {
-    if (w.status === 'closed') return false;
+  const assigned = (Array.isArray(workOrders) ? workOrders : []).filter((w) => {
+    const status = String(w.status || '');
+    if (['closed', 'completed', 'cancelled', 'canceled'].includes(status)) return false;
     if (!user) return true;
-    return !w.assignedTo || w.assignedTo === user.id || w.assignedTo === techName;
+    const raw = w as WorkOrder & { assignedTechId?: string | null; assignedTo?: unknown };
+    const assignedTo = raw.assignedTo;
+    const assignee = typeof assignedTo === 'string'
+      ? assignedTo
+      : assignedTo && typeof assignedTo === 'object' && 'id' in assignedTo
+        ? String((assignedTo as { id?: string }).id || '')
+        : '';
+    return !assignee || assignee === user.id || raw.assignedTechId === user.id || assignee === techName;
   });
 
   return (
@@ -161,7 +175,7 @@ function AssignmentsTab({ workOrders, onRefresh }: { workOrders: WorkOrder[], on
                 <span className="sos-pill" style={{fontSize:10}}>{wo.status}</span>
               </div>
               <div style={{fontSize:13, color:'#b8beca', marginBottom:8}}>
-                {wo.vehicleType} - {wo.services.repairs?.[0]?.type || wo.services.maintenance?.[0]?.type || 'Service'}
+                {wo.vehicleType} - {wo.services?.repairs?.[0]?.type || wo.services?.maintenance?.[0]?.type || workOrderTitle(wo)}
               </div>
               <div style={{fontSize:12, color:'#9aa3b2', marginBottom:12}}>
                 Customer: {wo.createdBy || 'Unknown'}

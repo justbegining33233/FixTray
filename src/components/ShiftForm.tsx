@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { unwrapTeam } from '@/lib/workOrderList';
 
 interface ShiftFormProps {
   shiftId?: string;
@@ -20,6 +21,24 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [loadedTechs, setLoadedTechs] = useState<Array<{ id: string; name: string }>>([]);
+  const technicianOptions = techs.length > 0 ? techs : loadedTechs;
+
+  useEffect(() => {
+    if (techs.length > 0) return;
+    const token = localStorage.getItem('token');
+    fetch('/api/shop/team', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setLoadedTechs(unwrapTeam(data).map((member) => ({
+          id: String(member.id),
+          name: member.name || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Technician',
+        })));
+      })
+      .catch(() => {});
+  }, [techs.length]);
 
   const [formData, setFormData] = useState({
     date: initialData?.date || new Date().toISOString().split('T')[0],
@@ -55,10 +74,17 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
         ? `/api/shifts/${shiftId}`
         : `/api/shifts?shopId=${shopId}`;
 
+      const token = localStorage.getItem('token');
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          ...formData,
+          date: new Date(`${formData.date}T00:00:00`).toISOString(),
+        }),
       });
 
       if (!response.ok) {
@@ -126,7 +152,7 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
         >
           <option value="">Select a technician...</option>
-          {techs.map(tech => (
+          {technicianOptions.map(tech => (
             <option key={tech.id} value={tech.id}>
               {tech.name}
             </option>

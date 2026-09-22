@@ -45,7 +45,7 @@ export default function AppGuidePage() {
         { name: 'CSRF Protection', description: 'Cross-site request forgery prevention', status: 'ready', apiEndpoint: '/api/auth/csrf' },
         { name: 'Rate Limiting', description: 'Brute force protection on login', status: 'ready', notes: 'Built into auth endpoints' },
         { name: 'Session Management', description: 'View and revoke active sessions', status: 'ready', apiEndpoint: '/api/auth/sessions' },
-        { name: 'Two-Factor Auth (2FA)', description: 'Additional login security', status: 'ready', route: '/shop/settings/two-factor', apiEndpoint: '/api/auth/2fa/status', notes: 'OTP-based 2FA; generate code via /api/auth/2fa/setup <FaArrowRight style={{marginRight:4}} /> verify with /api/auth/2fa/verify -> disable with /api/auth/2fa/disable' },
+        { name: 'Two-Factor Auth (2FA)', description: 'Additional login security', status: 'ready', route: '/shop/settings?tab=security', apiEndpoint: '/api/auth/2fa/status', notes: 'OTP-based 2FA lives in Shop Settings → Security' },
       ]
     },
     {
@@ -88,7 +88,7 @@ export default function AppGuidePage() {
         { name: 'Employee Profiles', description: 'Individual employee detail pages with hours, pay, and performance', status: 'ready', route: '/shop/admin/employee/[id]', apiEndpoint: '/api/shop/team' },
         { name: 'Budget Tracking', description: 'Weekly and monthly payroll budget vs actual spend', status: 'ready', route: '/shop/admin', apiEndpoint: '/api/shop/payroll' },
         { name: 'Admin Settings', description: 'Shop admin configuration panel', status: 'ready', route: '/shop/admin/settings' },
-        { name: 'Parts & Labor Management', description: 'Manage parts pricing, labor rates, and markups', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shops/settings' },
+        { name: 'Parts & Labor Management', description: 'Manage parts pricing, labor rates, and markups', status: 'ready', route: '/shop/parts-labor', apiEndpoint: '/api/shops/labor-rates' },
         { name: 'Customer Messages (Shop View)', description: 'Manage all customer conversations from the shop side', status: 'ready', route: '/shop/customer-messages', apiEndpoint: '/api/shop/messages' },
         { name: 'Schedule Settings', description: 'Configure shop schedule and availability', status: 'ready', route: '/shop/settings/schedule' },
       ]
@@ -101,7 +101,7 @@ export default function AppGuidePage() {
         { name: 'Shop Dashboard', description: 'Shop overview and stats', status: 'ready', route: '/shop/home' },
         { name: 'Shop Profile', description: 'Edit shop info, hours, logo', status: 'ready', route: '/shop/settings', apiEndpoint: '/api/shop/profile' },
         { name: 'Service Catalog', description: 'Manage services offered', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shops/services' },
-        { name: 'Labor Rates', description: 'Set hourly labor rates', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shops/labor-rates' },
+        { name: 'Labor Rates', description: 'Set hourly labor rates', status: 'ready', route: '/shop/parts-labor', apiEndpoint: '/api/shops/labor-rates' },
         { name: 'Team Management', description: 'Add/manage technicians', status: 'ready', route: '/shop/manage-team', apiEndpoint: '/api/shop/team' },
         { name: 'Manager Role', description: 'Assign manager permissions', status: 'ready', apiEndpoint: '/api/manager/dashboard' },
         { name: 'Work Assignments', description: 'Assign jobs to technicians', status: 'ready', apiEndpoint: '/api/manager/assignments' },
@@ -185,7 +185,7 @@ export default function AppGuidePage() {
         { name: 'Invoice Generation', description: 'Create invoice from work order', status: 'ready', apiEndpoint: '/api/workorders/[id]/invoice' },
         { name: 'Payment Processing', description: 'Record payments on orders', status: 'ready', apiEndpoint: '/api/workorders/payment' },
         { name: 'Print Work Order', description: 'Print-friendly work order view', status: 'ready', notes: 'Print-optimized layout with CSS @media print' },
-        { name: 'Work Order Templates', description: 'Save common job templates', status: 'ready', route: '/shop/services', apiEndpoint: '/api/shop/templates' },
+        { name: 'Work Order Templates', description: 'Save common job templates', status: 'ready', route: '/shop/templates', apiEndpoint: '/api/shop/templates' },
       ]
     },
     {

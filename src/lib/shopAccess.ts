@@ -27,7 +27,15 @@ export function resolveShopId(
   stored: string | null | undefined,
   tokenShopId: string | null | undefined,
 ): string {
-  const fromStore = typeof stored === 'string' ? stored.trim() : '';
+  const fromStore = usableShopId(stored) || '';
   if (fromStore) return fromStore;
-  return typeof tokenShopId === 'string' ? tokenShopId.trim() : '';
+  return usableShopId(tokenShopId) || '';
+}
+
+/** Query values like "null", "undefined", and "current" are not shop ids. */
+export function usableShopId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined' || trimmed === 'current') return null;
+  return trimmed;
 }

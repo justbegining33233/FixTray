@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from 'next-intl/plugin';
 import { GUESSED_SHOP_REDIRECTS, LEGACY_SHOP_REDIRECTS } from './src/lib/legacyShopRoutes';
+import { SHOP_RESTRICTED_REDIRECTS } from './src/lib/shopRestrictedRoutes';
 import { PUBLIC_AND_ADMIN_REDIRECTS } from './src/lib/publicRedirects';
 
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
@@ -89,6 +90,7 @@ const nextConfig: NextConfig = {
       ...PUBLIC_AND_ADMIN_REDIRECTS,
       ...LEGACY_SHOP_REDIRECTS,
       ...GUESSED_SHOP_REDIRECTS,
+      ...SHOP_RESTRICTED_REDIRECTS,
       { source: '/shop/review-requests',      destination: '/shop/reviews',          permanent: false },
     ];
   },

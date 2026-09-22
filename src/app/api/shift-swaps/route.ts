@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { usableShopId } from '@/lib/shopAccess';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 
@@ -17,21 +18,24 @@ const swapApprovalSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireRole(request, ['shop_owner', 'manager', 'admin', 'tech']);
+    const auth = requireRole(request, ['shop', 'manager', 'admin', 'tech']);
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
-    const shopId = searchParams.get('shopId');
+    const requestedShop = usableShopId(searchParams.get('shopId'));
     const status = searchParams.get('status');
+    const shopId = auth.role === 'shop' ? (auth.shopId || auth.id) : (auth.shopId || requestedShop);
 
-    if (!shopId) {
+    if (!shopId && auth.role !== 'tech') {
       return NextResponse.json(
         { error: 'shopId required' },
         { status: 400 }
       );
     }
 
-    const where: any = { shopId };
+    const where: Record<string, unknown> = {};
+    if (shopId) where.shopId = shopId;
+    if (auth.role === 'tech') where.requesterId = auth.id;
     if (status) where.status = status;
 
     const requests = await prisma.shiftSwapRequest.findMany({

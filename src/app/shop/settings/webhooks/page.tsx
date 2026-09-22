@@ -1,12 +1,7 @@
 'use client';
 
-import ShopRestrictedSurface from '@/components/ShopRestrictedSurface';
+import ShopRestrictedRedirect from '@/components/ShopRestrictedRedirect';
 
 export default function WebhooksPage() {
-  return (
-    <ShopRestrictedSurface
-      title="Webhooks are not available from the shop portal."
-      detail="This page does not call the webhook service."
-    />
-  );
+  return <ShopRestrictedRedirect fallback="/shop/integrations" />;
 }

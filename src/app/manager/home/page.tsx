@@ -578,7 +578,7 @@ export default function ManagerHome() {
                       <Link href="/shop/new-roadside-job" style={{padding:12, background:'rgba(59,130,246,0.2)', borderRadius:8, textDecoration:'none', color:'#60a5fa', fontSize:14, fontWeight:700, border:'1px solid rgba(59,130,246,0.35)'}}>
                         <FaClipboardList style={{marginRight:4}} /> Create Roadside Work Order
                       </Link>
-                      <Link href="/shop/home" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600, cursor:'pointer'}}>
+                      <Link href="/manager/dashboard" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600, cursor:'pointer'}}>
                         <FaChartBar style={{marginRight:4}} /> View Center Control
                       </Link>
                       <Link href="/shop/manage-team" style={{padding:12, background:'rgba(168,85,247,0.1)', borderRadius:8, textDecoration:'none', color:'#a855f7', fontSize:14, fontWeight:600}}>

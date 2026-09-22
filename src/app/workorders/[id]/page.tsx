@@ -170,6 +170,8 @@ export default function WorkOrderDetailPage() {
   const [closeoutBusy,  setCloseoutBusy]  = useState<string | null>(null);
   const [closeoutMsg,   setCloseoutMsg]   = useState('');
   const [paymentUrl,    setPaymentUrl]    = useState<string | null>(null);
+  const [invoiceBill,   setInvoiceBill]   = useState<{ quoteAmount: number; serviceFee: number; totalDue: number } | null>(null);
+  const [platformFee,   setPlatformFee]   = useState<number>(5);
 
   // Messaging state
   const [messages,   setMessages]     = useState<WOMessage[]>([]);
@@ -233,6 +235,11 @@ export default function WorkOrderDetailPage() {
         setWo(w);
         setLineItems(parseLineItems(w));
         setMessages(w.messages ?? []);
+        if (typeof data?.fixtrayServiceFee === 'number' && Number.isFinite(data.fixtrayServiceFee)) {
+          setPlatformFee(data.fixtrayServiceFee);
+        } else if (typeof (w as { fixtrayServiceFee?: number }).fixtrayServiceFee === 'number') {
+          setPlatformFee((w as { fixtrayServiceFee: number }).fixtrayServiceFee);
+        }
       })
       .catch(code => setError(
         code === 404 ? 'Work order not found.' : code === 403 ? 'Not authorized.' : 'Failed to load work order.'
@@ -385,6 +392,16 @@ export default function WorkOrderDetailPage() {
         return;
       }
       if (data.workOrder) setWo(data.workOrder);
+      if (data.invoice) {
+        setInvoiceBill({
+          quoteAmount: Number(data.invoice.quoteAmount) || 0,
+          serviceFee: Number(data.invoice.serviceFee) || platformFee,
+          totalDue: Number(data.invoice.totalDue) || 0,
+        });
+        if (typeof data.invoice.serviceFee === 'number') {
+          setPlatformFee(data.invoice.serviceFee);
+        }
+      }
       if (data.paymentLink?.url && typeof window !== 'undefined') {
         const url = `${window.location.origin}${data.paymentLink.url}`;
         setPaymentUrl(url);
@@ -699,6 +716,30 @@ export default function WorkOrderDetailPage() {
                             ? 'Invoice this work order, mark it paid, then complete the job.'
                             : 'Invoice unlocks after the customer accepts and signs and the job is in progress.'}
               </p>
+              {(() => {
+                const quote = invoiceBill?.quoteAmount
+                  ?? (typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 ? wo.estimatedCost : grandTotal);
+                const fee = invoiceBill?.serviceFee ?? platformFee;
+                const totalDue = invoiceBill?.totalDue ?? (quote > 0 ? Math.round((quote + fee) * 100) / 100 : 0);
+                if (quote <= 0 && !invoiceBill) return null;
+                return (
+                  <div style={{ marginBottom: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8, fontWeight: 600 }}>Final bill</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#e5e7eb', marginBottom: 6 }}>
+                      <span>Services &amp; Parts</span>
+                      <span>{fmt(quote)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2', marginBottom: 6 }}>
+                      <span>FixTray Service Fee</span>
+                      <span>{fmt(fee)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: '#22c55e', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+                      <span>Total Due</span>
+                      <span>{fmt(totalDue)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   onClick={() => handleCloseout('invoice')}

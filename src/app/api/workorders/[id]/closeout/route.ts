@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import crypto from 'crypto';
 import { closeoutTransition } from '@/lib/workOrderCloseout';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 
 const CLOSEOUT_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
 
@@ -47,7 +48,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const transition = closeoutTransition(workOrder, body.action);
+    const serviceFeeUsd = await getPlatformServiceFeeUsd();
+    const transition = closeoutTransition(workOrder, body.action, serviceFeeUsd);
     if (!transition.ok) {
       return NextResponse.json({ error: transition.error }, { status: 400 });
     }
@@ -58,26 +60,47 @@ export async function POST(
         orderBy: { createdAt: 'desc' },
         select: PAYMENT_LINK_SELECT,
       });
-      const link = existing ?? await prisma.paymentLink.create({
-        data: {
-          shopId: workOrder.shopId,
-          workOrderId: workOrder.id,
-          customerId: workOrder.customerId,
-          token: crypto.randomBytes(24).toString('hex'),
-          amount: transition.amount,
-          description: `Invoice for work order ${workOrder.id}`,
-          status: 'pending',
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        },
-        select: PAYMENT_LINK_SELECT,
-      });
+      // Always store the final bill (quote + FixTray fee). Refresh pending links
+      // so earlier amounts that omitted the fee do not stick around.
+      const link = existing
+        ? await prisma.paymentLink.update({
+            where: { id: existing.id },
+            data: {
+              amount: transition.amount,
+              description: `Invoice for work order ${workOrder.id}`,
+            },
+            select: PAYMENT_LINK_SELECT,
+          })
+        : await prisma.paymentLink.create({
+            data: {
+              shopId: workOrder.shopId,
+              workOrderId: workOrder.id,
+              customerId: workOrder.customerId,
+              token: crypto.randomBytes(24).toString('hex'),
+              amount: transition.amount,
+              description: `Invoice for work order ${workOrder.id}`,
+              status: 'pending',
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            },
+            select: PAYMENT_LINK_SELECT,
+          });
       const updated = await prisma.workOrder.update({
         where: { id },
         data: { status: transition.status, paymentStatus: transition.paymentStatus },
       });
       return NextResponse.json({
         workOrder: updated,
-        paymentLink: { ...link, url: `/customer/pay/${link.token}` },
+        invoice: {
+          quoteAmount: transition.quoteAmount,
+          serviceFee: transition.serviceFee,
+          totalDue: transition.amount,
+        },
+        paymentLink: {
+          ...link,
+          quoteAmount: transition.quoteAmount,
+          serviceFee: transition.serviceFee,
+          url: `/customer/pay/${link.token}`,
+        },
       });
     }
 

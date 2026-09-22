@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,9 +40,19 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
+    const fixtrayFee = await getPlatformServiceFeeUsd();
+
     const payments = workOrders.map((wo) => {
-      const serviceCost = wo.estimatedCost || wo.amountPaid || 0;
-      const totalDue = serviceCost > 0 ? serviceCost + 5 : 0;
+      // Prefer quote subtotal; amountPaid already includes the FixTray fee after closeout.
+      let serviceCost = 0;
+      if (typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0) {
+        serviceCost = wo.estimatedCost;
+      } else if (typeof wo.amountPaid === 'number' && wo.amountPaid > 0) {
+        serviceCost = Math.max(0, Math.round((wo.amountPaid - fixtrayFee) * 100) / 100);
+      }
+      const totalDue = serviceCost > 0
+        ? Math.round((serviceCost + fixtrayFee) * 100) / 100
+        : 0;
 
       return {
         id: wo.id,
@@ -49,7 +60,7 @@ export async function GET(request: NextRequest) {
         workOrderStatus: wo.status,
         amount: totalDue,
         serviceCost,
-        fixtrayFee: 5,
+        fixtrayFee,
         amountPaid: wo.amountPaid || 0,
         service: wo.issueDescription || 'Vehicle Service',
         shop: wo.shop?.shopName || 'Unknown Shop',

@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { validateCsrf } from '@/lib/csrf';
+import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 
 // GET shop settings
 export async function GET(request: NextRequest) {
@@ -10,6 +11,7 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    await ensureProductionColumns();
     const { searchParams } = new URL(request.url);
     // Scope shopId: admins choose; shop owners use their id; managers/techs use their shopId
     const shopId = (auth.role === 'superadmin')
@@ -83,6 +85,7 @@ export async function PUT(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    await ensureProductionColumns();
     // Require CSRF when using cookie-based auth
     if (!request.headers.get('authorization')) {
       const ok = await validateCsrf(request);

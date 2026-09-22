@@ -9,6 +9,7 @@ import {
   summarizeWorkOrders,
   unassignedWorkOrderWhere,
   workOrderScope,
+  workOrderTitle,
 } from '../src/lib/workOrderMetrics';
 
 const now = new Date('2026-09-21T18:00:00');
@@ -78,6 +79,14 @@ describe('shared work order counters', () => {
     expect(workOrderScope({ id: 'manager-1', role: 'manager', shopId: 'shop-1' }, 'stale-shop')).toEqual({
       scope: { shopId: 'shop-1' },
     });
+  });
+});
+
+describe('customer work order titles', () => {
+  it('uses the list API symptoms object instead of rendering it', () => {
+    expect(workOrderTitle({
+      issueDescription: { symptoms: 'AUDIT TEST SERVICE r7k2: Audit estimate', pictures: [] },
+    })).toBe('AUDIT TEST SERVICE r7k2: Audit estimate');
   });
 });
 

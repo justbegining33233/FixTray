@@ -124,6 +124,8 @@ export async function POST(request: NextRequest) {
     resetRateLimit(rateLimitKey);
 
     // Check if shop requires 2FA for team members
+    const { ensureProductionColumns } = await import('@/lib/ensureProductionColumns');
+    await ensureProductionColumns();
     const shopSettings = await prisma.shopSettings.findUnique({
       where: { shopId: tech.shopId },
       select: { require2FA: true },

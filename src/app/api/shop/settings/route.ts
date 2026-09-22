@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 
 // GET - Get operational shop settings (GPS, labor rates, budgets, clock rules).
 // For shop profile + notification settings use /api/shops/settings.
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    await ensureProductionColumns();
     const { searchParams } = new URL(request.url);
     // Scope shopId: admins can pass any; shop owners use their own id; managers/techs use their shopId
     const shopId = (decoded.role === 'superadmin')

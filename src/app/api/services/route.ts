@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth';
 import { rateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 import { validateRequest, serviceCreateSchema } from '@/lib/validation';
 import { sanitizeObject } from '@/lib/sanitize';
+import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 
 // GET - List all services for a shop
 export async function GET(request: NextRequest) {
@@ -49,6 +50,8 @@ export async function GET(request: NextRequest) {
       if (channel === 'roadside') where.availableRoadside = true;
       if (channel === 'in-shop') where.availableInShop = true;
     }
+
+    await ensureProductionColumns();
 
     const services = await prisma.shopService.findMany({
       where,

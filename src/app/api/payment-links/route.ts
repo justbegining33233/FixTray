@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
 import crypto from 'crypto';
 import { validatePaymentLink } from '@/lib/shopFormValidation';
+import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 
 function publicPaymentLink(link: {
   id: string;
@@ -59,6 +60,7 @@ async function settlePaymentLink(token: string) {
 }
 
 export async function GET(req: NextRequest) {
+  await ensureProductionColumns();
   const token = req.nextUrl.searchParams.get('token');
   if (token) {
     const link = await prisma.paymentLink.findUnique({ where: { token } });
@@ -88,6 +90,7 @@ export async function POST(req: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
   if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
+  await ensureProductionColumns();
   const linkCheck = validatePaymentLink(body);
   if (!linkCheck.ok) return NextResponse.json({ error: linkCheck.error }, { status: 400 });
   const token = crypto.randomBytes(24).toString('hex');

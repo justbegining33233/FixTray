@@ -87,6 +87,7 @@ export async function createPaymentIntent(
   amount: number,
   metadata: Record<string, string>,
   connectedAccountId?: string,
+  serviceFeeUsd: number = 5,
 ) {
   const params: Stripe.PaymentIntentCreateParams = {
     amount: Math.round(amount * 100), // Convert to cents
@@ -97,9 +98,9 @@ export async function createPaymentIntent(
     },
   };
 
-  // Stripe Connect: FixTray keeps $5, rest goes to shop's connected account
+  // Stripe Connect: FixTray keeps the configured platform fee; rest goes to shop
   if (connectedAccountId) {
-    params.application_fee_amount = 500; // $5.00 in cents
+    params.application_fee_amount = Math.round(Math.max(0, serviceFeeUsd) * 100);
     params.transfer_data = { destination: connectedAccountId };
   }
 

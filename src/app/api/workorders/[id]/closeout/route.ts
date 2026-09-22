@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import crypto from 'crypto';
 import { closeoutTransition } from '@/lib/workOrderCloseout';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 
 const CLOSEOUT_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
 
@@ -47,7 +48,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const transition = closeoutTransition(workOrder, body.action);
+    const serviceFeeUsd = await getPlatformServiceFeeUsd();
+    const transition = closeoutTransition(workOrder, body.action, serviceFeeUsd);
     if (!transition.ok) {
       return NextResponse.json({ error: transition.error }, { status: 400 });
     }

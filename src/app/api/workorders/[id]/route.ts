@@ -7,6 +7,7 @@ import { sendSms } from '@/lib/smsService';
 import { awardLoyaltyPoints } from '@/lib/loyaltyService';
 import { dispatchWebhook } from '@/lib/webhookService';
 import logger from '@/lib/logger';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
 
@@ -89,7 +90,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
-    return NextResponse.json(workOrder, { headers: corsHeaders });
+    return NextResponse.json(
+      { ...workOrder, fixtrayServiceFee: await getPlatformServiceFeeUsd() },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     logger.error('Error fetching work order', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to fetch work order' }, { status: 500 });

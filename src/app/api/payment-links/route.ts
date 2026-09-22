@@ -4,18 +4,48 @@ import { authenticateRequest } from '@/lib/auth';
 import crypto from 'crypto';
 import { validatePaymentLink } from '@/lib/shopFormValidation';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { quoteAmount } from '@/lib/workOrderCloseout';
 
-function invoiceBreakdown(totalAmount: number) {
-  const amount = Number(totalAmount) || 0;
-  // Final-bill amounts from closeout include the FixTray fee. Derive the
-  // services subtotal for display; never show a negative service line.
-  const serviceFee = amount > 0 ? Math.min(FIXTRAY_SERVICE_FEE, amount) : 0;
-  const serviceCost = Math.round((amount - serviceFee) * 100) / 100;
-  return { serviceCost, serviceFee, amount };
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
-function publicPaymentLink(link: {
+async function invoiceBreakdown(link: {
+  amount: number;
+  workOrderId: string | null;
+}) {
+  const amount = Number(link.amount) || 0;
+  if (amount <= 0) {
+    return { serviceCost: 0, serviceFee: 0, amount: 0 };
+  }
+
+  // Prefer fee baked into the link at invoice time: total − quote.
+  // That keeps already-issued bills stable if superadmin changes the fee later.
+  if (link.workOrderId) {
+    const workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
+    if (workOrder) {
+      const serviceCost = quoteAmount(workOrder);
+      if (serviceCost > 0 && amount >= serviceCost) {
+        return {
+          serviceCost,
+          serviceFee: round2(amount - serviceCost),
+          amount,
+        };
+      }
+    }
+  }
+
+  const platformFee = await getPlatformServiceFeeUsd();
+  const serviceFee = Math.min(platformFee, amount);
+  return {
+    serviceCost: round2(amount - serviceFee),
+    serviceFee,
+    amount,
+  };
+}
+
+async function publicPaymentLink(link: {
   id: string;
   token: string;
   amount: number;
@@ -25,7 +55,7 @@ function publicPaymentLink(link: {
   expiresAt: Date | null;
   workOrderId: string | null;
 }) {
-  const breakdown = invoiceBreakdown(link.amount);
+  const breakdown = await invoiceBreakdown(link);
   return {
     id: link.id,
     token: link.token,
@@ -69,7 +99,7 @@ async function settlePaymentLink(token: string) {
   }
 
   const paid = await prisma.paymentLink.findUnique({ where: { token } });
-  return NextResponse.json(publicPaymentLink(paid!));
+  return NextResponse.json(await publicPaymentLink(paid!));
 }
 
 export async function GET(req: NextRequest) {
@@ -78,7 +108,7 @@ export async function GET(req: NextRequest) {
   if (token) {
     const link = await prisma.paymentLink.findUnique({ where: { token } });
     if (!link) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(publicPaymentLink(link));
+    return NextResponse.json(await publicPaymentLink(link));
   }
 
   const auth = authenticateRequest(req);

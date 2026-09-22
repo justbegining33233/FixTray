@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 
 export async function GET(
   request: NextRequest,
@@ -73,6 +73,7 @@ export async function GET(
     const quoteAmount = Number(
       estimate?.amount ?? estimate?.total ?? workOrder.estimatedCost ?? 0
     ) || 0;
+    const serviceFee = await getPlatformServiceFeeUsd();
     const response = {
       id: workOrder.id,
       issueDescription: workOrder.issueDescription,
@@ -89,9 +90,9 @@ export async function GET(
       tracking: workOrder.tracking || null,
       estimate: (estimate || quoteAmount > 0) ? {
         amount: quoteAmount,
-        serviceFee: FIXTRAY_SERVICE_FEE,
+        serviceFee,
         totalDue: quoteAmount > 0
-          ? Math.round((quoteAmount + FIXTRAY_SERVICE_FEE) * 100) / 100
+          ? Math.round((quoteAmount + serviceFee) * 100) / 100
           : 0,
         status: estimate?.status || null,
       } : null,

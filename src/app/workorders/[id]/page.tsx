@@ -26,6 +26,8 @@ type WorkOrder = {
   dueDate?: string | null; createdAt: string;
   repairs?: unknown; maintenance?: unknown; partsMaterials?: unknown;
   partsUsed?: unknown; techLabor?: unknown; estimate?: unknown; location?: unknown;
+  /** Live PlatformConfig fee (USD) attached by GET /api/workorders/[id]. */
+  fixtrayServiceFee?: number;
   customer?: { id: string; firstName: string; lastName: string; email?: string; phone?: string; company?: string };
   assignedTo?: { id: string; firstName: string; lastName: string };
   vehicle?: Vehicle | null;
@@ -235,10 +237,9 @@ export default function WorkOrderDetailPage() {
         setWo(w);
         setLineItems(parseLineItems(w));
         setMessages(w.messages ?? []);
-        if (typeof data?.fixtrayServiceFee === 'number' && Number.isFinite(data.fixtrayServiceFee)) {
-          setPlatformFee(data.fixtrayServiceFee);
-        } else if (typeof (w as { fixtrayServiceFee?: number }).fixtrayServiceFee === 'number') {
-          setPlatformFee((w as { fixtrayServiceFee: number }).fixtrayServiceFee);
+        const liveFee = data?.fixtrayServiceFee ?? w.fixtrayServiceFee;
+        if (typeof liveFee === 'number' && Number.isFinite(liveFee)) {
+          setPlatformFee(liveFee);
         }
       })
       .catch(code => setError(

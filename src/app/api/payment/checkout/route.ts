@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import stripe from '@/lib/stripe';
 import Stripe from 'stripe';
 
@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
+    const serviceFee = await getPlatformServiceFeeUsd();
+    const serviceFeeCents = Math.round(serviceFee * 100);
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
               name: 'FixTray Service Fee',
               description: 'Platform service fee',
             },
-            unit_amount: Math.round(FIXTRAY_SERVICE_FEE * 100),
+            unit_amount: serviceFeeCents,
           },
           quantity: 1,
         },
@@ -83,10 +85,10 @@ export async function POST(request: NextRequest) {
       cancel_url: `${appUrl}/payment/cancel?workOrderId=${workOrder.id}`,
     };
 
-    // If shop has a connected Stripe account, auto-split: $5 stays, rest transfers to shop
+    // If shop has a connected Stripe account, auto-split: platform fee stays with FixTray
     if (workOrder.shop?.stripeAccountId) {
       sessionParams.payment_intent_data = {
-        application_fee_amount: Math.round(FIXTRAY_SERVICE_FEE * 100),
+        application_fee_amount: serviceFeeCents,
         transfer_data: { destination: workOrder.shop.stripeAccountId },
       };
     }

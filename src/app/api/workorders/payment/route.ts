@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
 import { validateCsrf } from '@/lib/csrf';
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 
 export async function POST(request: NextRequest) {
   const auth = requireAuth(request);
@@ -33,11 +33,13 @@ export async function POST(request: NextRequest) {
 
     const totalPaid = (workOrder.amountPaid || 0) + payment;
 
-    // Auto-close if fully paid (estimate + FixTray $5 service fee)
+    // Auto-close if fully paid (estimate + current FixTray service fee)
     const est = workOrder.estimate as Record<string, unknown> | null;
     const estimateAmount = Number(est?.amount) || workOrder.estimatedCost || 0;
+    const serviceFee = await getPlatformServiceFeeUsd();
+    const amountDue = estimateAmount + serviceFee;
     let status = workOrder.status;
-    if (totalPaid >= (estimateAmount + FIXTRAY_SERVICE_FEE) && status === 'waiting-for-payment') {
+    if (totalPaid >= amountDue && status === 'waiting-for-payment') {
       status = 'closed';
     }
 
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
       where: { id: workOrderId },
       data: {
         amountPaid: totalPaid,
-        paymentStatus: totalPaid >= (estimateAmount + FIXTRAY_SERVICE_FEE) ? 'paid' : 'pending',
+        paymentStatus: totalPaid >= amountDue ? 'paid' : 'pending',
         status,
       },
     });

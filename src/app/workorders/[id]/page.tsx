@@ -10,7 +10,6 @@ import {
 } from 'react-icons/fa';
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -172,6 +171,7 @@ export default function WorkOrderDetailPage() {
   const [closeoutMsg,   setCloseoutMsg]   = useState('');
   const [paymentUrl,    setPaymentUrl]    = useState<string | null>(null);
   const [invoiceBill,   setInvoiceBill]   = useState<{ quoteAmount: number; serviceFee: number; totalDue: number } | null>(null);
+  const [platformFee,   setPlatformFee]   = useState<number>(5);
 
   // Messaging state
   const [messages,   setMessages]     = useState<WOMessage[]>([]);
@@ -235,6 +235,11 @@ export default function WorkOrderDetailPage() {
         setWo(w);
         setLineItems(parseLineItems(w));
         setMessages(w.messages ?? []);
+        if (typeof data?.fixtrayServiceFee === 'number' && Number.isFinite(data.fixtrayServiceFee)) {
+          setPlatformFee(data.fixtrayServiceFee);
+        } else if (typeof (w as { fixtrayServiceFee?: number }).fixtrayServiceFee === 'number') {
+          setPlatformFee((w as { fixtrayServiceFee: number }).fixtrayServiceFee);
+        }
       })
       .catch(code => setError(
         code === 404 ? 'Work order not found.' : code === 403 ? 'Not authorized.' : 'Failed to load work order.'
@@ -390,9 +395,12 @@ export default function WorkOrderDetailPage() {
       if (data.invoice) {
         setInvoiceBill({
           quoteAmount: Number(data.invoice.quoteAmount) || 0,
-          serviceFee: Number(data.invoice.serviceFee) || FIXTRAY_SERVICE_FEE,
+          serviceFee: Number(data.invoice.serviceFee) || platformFee,
           totalDue: Number(data.invoice.totalDue) || 0,
         });
+        if (typeof data.invoice.serviceFee === 'number') {
+          setPlatformFee(data.invoice.serviceFee);
+        }
       }
       if (data.paymentLink?.url && typeof window !== 'undefined') {
         const url = `${window.location.origin}${data.paymentLink.url}`;
@@ -711,7 +719,7 @@ export default function WorkOrderDetailPage() {
               {(() => {
                 const quote = invoiceBill?.quoteAmount
                   ?? (typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 ? wo.estimatedCost : grandTotal);
-                const fee = invoiceBill?.serviceFee ?? FIXTRAY_SERVICE_FEE;
+                const fee = invoiceBill?.serviceFee ?? platformFee;
                 const totalDue = invoiceBill?.totalDue ?? (quote > 0 ? Math.round((quote + fee) * 100) / 100 : 0);
                 if (quote <= 0 && !invoiceBill) return null;
                 return (

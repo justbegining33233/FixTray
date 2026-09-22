@@ -2,11 +2,10 @@
  * Work-order closeout: invoice (payment link for this job) → paid → complete.
  * Marking paid does not complete the job.
  *
- * Invoice totals include the FixTray service fee (see FIXTRAY_SERVICE_FEE),
- * matching Stripe checkout, PDF invoices, and the customer payment UI.
+ * Invoice totals include the FixTray service fee from PlatformConfig
+ * (superadmin settings). Pass the current fee into closeoutTransition /
+ * invoiceTotal — do not hardcode it here.
  */
-
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
 
 export type CloseoutAction = 'invoice' | 'paid' | 'complete';
 
@@ -56,30 +55,35 @@ export function quoteAmount(workOrder: CloseoutWorkOrder): number {
   return 0;
 }
 
-/** FixTray fee applied on every invoiced work order (USD). */
-export function fixtrayServiceFee(): number {
-  return FIXTRAY_SERVICE_FEE;
-}
-
-/** Final bill total: quote subtotal + FixTray service fee. */
-export function invoiceTotal(workOrder: CloseoutWorkOrder): {
+/**
+ * Final bill total: quote subtotal + current FixTray service fee.
+ * @param serviceFeeUsd fee from PlatformConfig (USD), not a hardcoded constant
+ */
+export function invoiceTotal(
+  workOrder: CloseoutWorkOrder,
+  serviceFeeUsd: number
+): {
   quoteAmount: number;
   serviceFee: number;
   amount: number;
 } {
   const quote = quoteAmount(workOrder);
-  const serviceFee = quote > 0 ? fixtrayServiceFee() : 0;
+  const fee = quote > 0 ? round2(Math.max(0, Number(serviceFeeUsd) || 0)) : 0;
   return {
     quoteAmount: quote,
-    serviceFee,
-    amount: round2(quote + serviceFee),
+    serviceFee: fee,
+    amount: round2(quote + fee),
   };
 }
 
-export function closeoutTransition(workOrder: CloseoutWorkOrder, action: unknown): CloseoutResult {
+export function closeoutTransition(
+  workOrder: CloseoutWorkOrder,
+  action: unknown,
+  serviceFeeUsd: number
+): CloseoutResult {
   const status = String(workOrder.status || '').toLowerCase();
   const paymentStatus = String(workOrder.paymentStatus || 'unpaid').toLowerCase();
-  const { quoteAmount: quote, serviceFee, amount } = invoiceTotal(workOrder);
+  const { quoteAmount: quote, serviceFee, amount } = invoiceTotal(workOrder, serviceFeeUsd);
 
   if (action !== 'invoice' && action !== 'paid' && action !== 'complete') {
     return { ok: false, error: 'Unknown closeout action.' };

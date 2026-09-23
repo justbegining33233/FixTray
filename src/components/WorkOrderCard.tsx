@@ -6,13 +6,6 @@ import { WorkOrder } from '@/types/workorder';
 import Link from 'next/link';
 import { FaCar, FaTruck, FaWrench } from 'react-icons/fa';
 
-const vehicleTypeLabels: Record<string, React.ReactNode> = {
-  'semi-truck': <><FaTruck style={{marginRight:4}} /> {say("Semi Truck")}</>,
-  'trailer': <><FaTruck style={{marginRight:4}} /> {say("Trailer")}</>,
-  'equipment': <><FaWrench style={{marginRight:4}} /> {say("Equipment")}</>,
-  'personal-vehicle': <><FaCar style={{marginRight:4}} /> {say("Personal Vehicle")}</>,
-};
-
 const statusColors = {
   pending: 'bg-yellow-100 text-yellow-800',
   'in-progress': 'bg-blue-100 text-blue-800',
@@ -36,6 +29,12 @@ function getServiceSummary(workOrder: WorkOrder): string {
 
 export default function WorkOrderCard({ workOrder }: { workOrder: WorkOrder }) {
   const say = usePhrase();
+  const vehicleTypeLabels: Record<string, React.ReactNode> = {
+    'semi-truck': <><FaTruck style={{marginRight:4}} /> {say("Semi Truck")}</>,
+    'trailer': <><FaTruck style={{marginRight:4}} /> {say("Trailer")}</>,
+    'equipment': <><FaWrench style={{marginRight:4}} /> {say("Equipment")}</>,
+    'personal-vehicle': <><FaCar style={{marginRight:4}} /> {say("Personal Vehicle")}</>,
+  };
   return (
     <Link href={`/workorders/${workOrder.id}`}>
       <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 cursor-pointer border border-gray-200">

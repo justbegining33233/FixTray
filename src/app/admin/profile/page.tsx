@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type AdminProfileSection = 'profile' | 'contact' | 'links';
 
@@ -193,6 +194,9 @@ function AdminProfilePageContent() {
                   {say("Contact & Settings")}{' '}</button>
                 <button onClick={() => openSection('links')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'links' ? '1px solid rgba(229,51,42,0.45)' : '1px solid transparent', background: section === 'links' ? 'rgba(229,51,42,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer' }}>
                   {say("Quick Links")}{' '}</button>
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #1e293b' }}>
+                  <LanguageSwitcher />
+                </div>
               </div>
             </div>
           </div>

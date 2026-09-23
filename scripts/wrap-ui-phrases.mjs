@@ -177,7 +177,21 @@ function callArgument(node) {
   return ts.isCallExpression(node.parent) || ts.isNewExpression(node.parent);
 }
 
+function insideStyleElement(node) {
+  let current = node.parent;
+  while (current) {
+    if (ts.isJsxElement(current)) {
+      const tag = current.openingElement.tagName;
+      if (ts.isIdentifier(tag) && tag.text === 'style') return true;
+    }
+    if (isFunction(current)) return false;
+    current = current.parent;
+  }
+  return false;
+}
+
 function inDisplayExpression(node) {
+  if (insideStyleElement(node)) return false;
   let current = node.parent;
   while (current) {
     if (isFunction(current)) return false;

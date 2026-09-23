@@ -23,14 +23,6 @@ interface AutomationRule {
   _count?: { executions: number };
 }
 
-const TYPE_LABELS: Record<string, ReactNode> = {
-  appointment_reminder: <><FaCalendarAlt style={{marginRight:4}} /> {say("Appointment Reminder")}</>,
-  follow_up: <><FaSyncAlt style={{marginRight:4}} /> {say("Follow-Up")}</>,
-  review_request: <><FaStar style={{marginRight:4}} /> {say("Review Request")}</>,
-  overdue_invoice: <><FaDollarSign style={{marginRight:4}} /> {say("Overdue Invoice")}</>,
-  custom: <><FaCog style={{marginRight:4}} /> {say("Custom")}</>,
-};
-
 const TRIGGER_OPTIONS = [
   { value: 'days_before_appointment', label: 'Days before appointment' },
   { value: 'hours_before_appointment', label: 'Hours before appointment' },
@@ -43,6 +35,13 @@ const VARIABLE_HINTS = ['{customer_name}', '{vehicle}', '{shop_name}', '{tech_na
 
 export default function AutomationsPage() {
   const say = usePhrase();
+  const TYPE_LABELS: Record<string, ReactNode> = {
+    appointment_reminder: <><FaCalendarAlt style={{marginRight:4}} /> {say("Appointment Reminder")}</>,
+    follow_up: <><FaSyncAlt style={{marginRight:4}} /> {say("Follow-Up")}</>,
+    review_request: <><FaStar style={{marginRight:4}} /> {say("Review Request")}</>,
+    overdue_invoice: <><FaDollarSign style={{marginRight:4}} /> {say("Overdue Invoice")}</>,
+    custom: <><FaCog style={{marginRight:4}} /> {say("Custom")}</>,
+  };
   const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [loading, setLoading] = useState(true);

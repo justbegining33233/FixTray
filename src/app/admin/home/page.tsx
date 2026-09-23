@@ -10,6 +10,7 @@ import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
 import MobileShell from '@/components/MobileShell';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { DashboardTab } from '@/app/admin/home/components/DashboardTabClean';
 import { UsersTab } from '@/app/admin/home/components/UsersTab';
 import { HierarchyTab } from '@/components/admin/HierarchyTab';
@@ -324,6 +325,10 @@ function AdminHomeContent() {
                         onClick={() => setShowProfileMenu(false)}
                       >
                         {say("My Profile")}{' '}</Link>
+
+                      <div className="px-4 py-3 border-t border-white/10">
+                        <LanguageSwitcher />
+                      </div>
 
                       {isOwnerProfile && (
                         <>

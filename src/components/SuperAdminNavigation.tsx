@@ -9,6 +9,7 @@ import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 import { usePhrase } from '@/lib/usePhrase';
 import { useAuth } from '@/contexts/AuthContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {
   FaHome,
   FaUsers,
@@ -258,6 +259,9 @@ export default function SuperAdminNavigation({
                     >
                       <FaGlobe className="w-4 h-4" />
                       {say("Settings")}{' '}</Link>
+                    <div className="px-4 py-3 border-t border-[rgba(255,255,255,0.08)]">
+                      <LanguageSwitcher />
+                    </div>
                     <button
                       onClick={logout}
                       className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#f87171] hover:bg-[rgba(248,113,113,0.08)] text-left"

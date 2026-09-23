@@ -3,10 +3,10 @@
  *
  * Git history only ever listed English, Spanish, and French
  * (superadmin settings, commit 75ad5bb). French was dropped in 60e5cbb.
- * The rest of this list is the next most common languages spoken at home
- * in the United States (US Census American Community Survey), so shops can
- * serve the customers they actually see. It is not a list recovered from
- * an older FixTray enum.
+ * The next languages are the most common languages spoken at home in the
+ * United States (US Census American Community Survey). Georgian and the
+ * Indian languages after Urdu were added later at Jose's request. None of
+ * those codes were recovered from an older FixTray enum.
  */
 export const SUPPORTED_LOCALES = [
   'en',
@@ -25,6 +25,13 @@ export const SUPPORTED_LOCALES = [
   'it',
   'pl',
   'ur',
+  'ka',
+  'bn',
+  'ta',
+  'te',
+  'gu',
+  'pa',
+  'mr',
 ] as const;
 
 export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
@@ -52,6 +59,13 @@ export const LOCALE_LABELS: Record<AppLocale, string> = {
   it: 'Italiano',
   pl: 'Polski',
   ur: 'اردو',
+  ka: 'ქართული',
+  bn: 'বাংলা',
+  ta: 'தமிழ்',
+  te: 'తెలుగు',
+  gu: 'ગુજરાતી',
+  pa: 'ਪੰਜਾਬੀ',
+  mr: 'मराठी',
 };
 
 const LOCALE_BY_BASE: Record<string, AppLocale> = {
@@ -72,6 +86,13 @@ const LOCALE_BY_BASE: Record<string, AppLocale> = {
   it: 'it',
   pl: 'pl',
   ur: 'ur',
+  ka: 'ka',
+  bn: 'bn',
+  ta: 'ta',
+  te: 'te',
+  gu: 'gu',
+  pa: 'pa',
+  mr: 'mr',
 };
 
 function localeBase(value: string): string {

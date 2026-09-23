@@ -31,16 +31,15 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   on_hold:     { label: 'On Hold', color: '#f97316', bg: 'rgba(249,115,22,0.15)', icon: <FaExclamationTriangle style={{marginRight:4}} /> },
 };
 
-const PROMOS = [
-  ' Summer Tire Special  -  $15 off any set of 4 tires this month!',
-  <><FaOilCan style={{marginRight:4}} /> {say("Oil change + tire rotation package  -  only $59.99!")}</>,
-  <><FaStar style={{marginRight:4}} /> {say("Refer a friend and get $25 off your next service")}</>,
-  <><FaMobileAlt style={{marginRight:4}} /> {say("Text us your VIN for an instant maintenance report")}</>,
-  <><FaBatteryFull style={{marginRight:4}} /> {say("Free battery test with any service this week")}</>,
-];
-
 function WaitingRoomContent() {
   const say = usePhrase();
+  const PROMOS = [
+    ' Summer Tire Special  -  $15 off any set of 4 tires this month!',
+    <><FaOilCan style={{marginRight:4}} /> {say("Oil change + tire rotation package  -  only $59.99!")}</>,
+    <><FaStar style={{marginRight:4}} /> {say("Refer a friend and get $25 off your next service")}</>,
+    <><FaMobileAlt style={{marginRight:4}} /> {say("Text us your VIN for an instant maintenance report")}</>,
+    <><FaBatteryFull style={{marginRight:4}} /> {say("Free battery test with any service this week")}</>,
+  ];
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const queryShopId = searchParams?.get('shopId') || '';

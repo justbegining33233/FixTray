@@ -487,7 +487,13 @@ export default function EnhancedBarcodeScanner({
         )}
       </div>
 
-      <style jsx>{say("\n        @keyframes scan {\n          0% { clip-path: inset(0 0 100% 0); }\n          50% { clip-path: inset(0 0 0 0); }\n          100% { clip-path: inset(100% 0 0 0); }\n        }\n      ")}</style>
+      <style jsx>{`
+        @keyframes scan {
+          0% { clip-path: inset(0 0 100% 0); }
+          50% { clip-path: inset(0 0 0 0); }
+          100% { clip-path: inset(100% 0 0 0); }
+        }
+      `}</style>
     </div>
   );
 }

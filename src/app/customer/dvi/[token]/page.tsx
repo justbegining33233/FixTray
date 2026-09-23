@@ -37,14 +37,13 @@ const conditionBg: Record<string, string> = {
   yellow: 'rgba(245,158,11,0.1)',
   red: 'rgba(229,51,42,0.1)',
 };
-const conditionLabel: Record<string, ReactNode> = {
-  green: <><FaCheckCircle style={{marginRight:4}} /> {say("Good")}</>,
-  yellow: <><FaExclamationTriangle style={{marginRight:4}} /> {say("Attention")}</>,
-  red: ' Urgent',
-};
-
 export default function CustomerDVIPage() {
   const say = usePhrase();
+  const conditionLabel: Record<string, ReactNode> = {
+    green: <><FaCheckCircle style={{marginRight:4}} /> {say("Good")}</>,
+    yellow: <><FaExclamationTriangle style={{marginRight:4}} /> {say("Attention")}</>,
+    red: ' Urgent',
+  };
   const params = useParams();
   const token = params?.token as string;
 

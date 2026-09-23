@@ -489,7 +489,12 @@ export default function NativeMobileLayout({
       </div>
 
       {/* Add styles for animations */}
-      <style jsx>{say("\n        @keyframes pulse {\n          0%, 100% { opacity: 1; }\n          50% { opacity: 0.5; }\n        }\n      ")}</style>
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -23,11 +23,25 @@ const catalogs: Record<AppLocale, () => Promise<{ default: Record<string, unknow
   it: () => import('./messages/it.json'),
   pl: () => import('./messages/pl.json'),
   ur: () => import('./messages/ur.json'),
+  ka: () => import('./messages/ka.json'),
+  bn: () => import('./messages/bn.json'),
+  ta: () => import('./messages/ta.json'),
+  te: () => import('./messages/te.json'),
+  gu: () => import('./messages/gu.json'),
+  pa: () => import('./messages/pa.json'),
+  mr: () => import('./messages/mr.json'),
 };
 
 async function loadMessages(locale: AppLocale) {
-  const load = catalogs[locale] ?? catalogs.en;
-  return (await load()).default;
+  try {
+    const load = catalogs[locale] ?? catalogs.en;
+    const loaded = await load();
+    if (loaded?.default && typeof loaded.default === 'object') return loaded.default;
+  } catch (error) {
+    console.error(`Locale catalog ${locale} failed to load. Using English.`, error);
+  }
+  const english = await catalogs.en();
+  return english.default;
 }
 
 export default getRequestConfig(async () => {

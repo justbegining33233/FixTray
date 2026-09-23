@@ -330,7 +330,11 @@ export default function Home() {
         </div>
       </section>
 
-      <style jsx global>{say("\n        .carousel-shot {\n          clip-path: inset(0 14px 0 0);\n        }\n      ")}</style>
+      <style jsx global>{`
+        .carousel-shot {
+          clip-path: inset(0 14px 0 0);
+        }
+      `}</style>
     </MarketingShell>
   );
 }

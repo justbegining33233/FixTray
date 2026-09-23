@@ -53,11 +53,20 @@ describe('locale resolution', () => {
     expect(normalizeLocale('zh-CN')).toBe('zh');
     expect(normalizeLocale('fil')).toBe('tl');
     expect(normalizeLocale('fr')).toBe('fr');
+    expect(normalizeLocale('ru')).toBe('ru');
+    expect(normalizeLocale('ka')).toBe('ka');
+    expect(normalizeLocale('bn-IN')).toBe('bn');
+    expect(normalizeLocale('pa')).toBe('pa');
+    expect(normalizeLocale('mr')).toBe('mr');
     expect(isSupportedLocaleInput('es-MX')).toBe(true);
     expect(isSupportedLocaleInput('fr')).toBe(true);
+    expect(isSupportedLocaleInput('ka')).toBe(true);
+    expect(isSupportedLocaleInput('ta')).toBe(true);
+    expect(isSupportedLocaleInput('te')).toBe(true);
+    expect(isSupportedLocaleInput('gu')).toBe(true);
     expect(isSupportedLocaleInput('zz')).toBe(false);
     expect(isSupportedLocaleInput(1)).toBe(false);
-    expect(SUPPORTED_LOCALES).toHaveLength(16);
+    expect(SUPPORTED_LOCALES).toHaveLength(23);
   });
 });
 
@@ -67,6 +76,9 @@ describe('platform language setting', () => {
     expect(platformSettingsUpdate({ defaultLanguage: 'es-MX' }).data).toEqual({ defaultLanguage: 'es' });
     expect(platformSettingsUpdate({ defaultLanguage: 'fr' }).data).toEqual({ defaultLanguage: 'fr' });
     expect(platformSettingsUpdate({ defaultLanguage: 'ht' }).data).toEqual({ defaultLanguage: 'ht' });
+    expect(platformSettingsUpdate({ defaultLanguage: 'ru' }).data).toEqual({ defaultLanguage: 'ru' });
+    expect(platformSettingsUpdate({ defaultLanguage: 'ka' }).data).toEqual({ defaultLanguage: 'ka' });
+    expect(platformSettingsUpdate({ defaultLanguage: 'bn' }).data).toEqual({ defaultLanguage: 'bn' });
     expect(platformSettingsUpdate({ defaultLanguage: 'zz' }).error).toMatch(/Unsupported language/);
     expect(platformSettingsUpdate({ defaultLanguage: 'zz' }).data).toEqual({});
   });

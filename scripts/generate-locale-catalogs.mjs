@@ -28,6 +28,13 @@ const TARGETS = {
   it: 'it',
   pl: 'pl',
   ur: 'ur',
+  ka: 'ka',
+  bn: 'bn',
+  ta: 'ta',
+  te: 'te',
+  gu: 'gu',
+  pa: 'pa',
+  mr: 'mr',
 };
 
 function phraseKey(text) {

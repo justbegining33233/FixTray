@@ -22,12 +22,11 @@ export default function ShopDetailsPage() {
   const say = usePhrase();
   const params = useParams();
   const router = useRouter();
-  const { user, isLoading } = useRequireAuth(['admin']);
+  const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [shop, setShop] = useState<ShopDetailsView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
   const [shopMsg, setShopMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const [statusConfirm, setStatusConfirm] = useState<string|null>(null);
   const [backFrom, setBackFrom] = useState<string | null>(null);
@@ -43,20 +42,15 @@ export default function ShopDetailsPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem('token');
-      setToken(storedToken);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isLoading || !user || !shopId || !token) return;
+    if (isLoading || !user || !shopId) return;
+    let cancelled = false;
 
     const fetchShopDetails = async () => {
       try {
+        const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         const headers: Record<string, string> = {};
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+        if (storedToken) {
+          headers['Authorization'] = `Bearer ${storedToken}`;
         }
         
         const res = await fetch(`/api/admin/shops/${shopId}`, {
@@ -64,6 +58,7 @@ export default function ShopDetailsPage() {
           headers
         });
         
+        if (cancelled) return;
         if (!res.ok) {
           if (res.status === 404) {
             setError('Shop not found');
@@ -78,6 +73,7 @@ export default function ShopDetailsPage() {
         }
         
         const data = await res.json();
+        if (cancelled) return;
         const view = normalizeShopDetails(data);
         if (!view) {
           setError('Failed to load shop details');
@@ -86,15 +82,19 @@ export default function ShopDetailsPage() {
         }
         setShop(view);
       } catch (err) {
+        if (cancelled) return;
         console.error('Error fetching shop:', err);
         setError('Failed to load shop details');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchShopDetails();
-  }, [isLoading, user, shopId, token, router]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, user, shopId, router]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!shop) return;
@@ -103,9 +103,10 @@ export default function ShopDetailsPage() {
     
     setActionLoading(true);
     try {
+      const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      if (storedToken) {
+        headers['Authorization'] = `Bearer ${storedToken}`;
       }
       
       const res = await fetch(`/api/admin/shops/${shop.id}/status`, {

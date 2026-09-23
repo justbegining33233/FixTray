@@ -543,7 +543,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     tabGroups: [
       {
-        match: ['/admin/manage-shops', '/admin/pending-shops', '/admin/accepted-shops'],
+        match: ['/admin/manage-shops', '/admin/pending-shops', '/admin/accepted-shops', '/admin/shop-details'],
         tabs: [
           { ico: '🏪', label: 'Shops', href: '/admin/manage-shops' },
           { ico: '⏳', label: 'Pending', href: '/admin/pending-shops' },

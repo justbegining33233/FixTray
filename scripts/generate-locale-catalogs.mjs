@@ -64,10 +64,11 @@ function collectEnglish(files) {
   const sayRe = /say\(\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*\)|say\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*\)/g;
   const propRe = /(?:name|sub|label|title|roleLabel|description|desc|detail|badge):\s*(?:'([^'\\]*)'|"([^"\\]*)")/g;
   const assignedRe = /(?:newErrors\.\w+|setStatus|text:)\s*=?\s*'([^'\\]+)'/g;
+  const sayTextRe = /<SayText\s+text=(?:"([^"]*)"|'([^']*)')/g;
   for (const file of files) {
     const src = fs.readFileSync(file, 'utf8');
-    if (!src.includes('usePhrase') && !src.includes('say(')) continue;
-    for (const re of [sayRe, propRe, assignedRe]) {
+    if (!src.includes('usePhrase') && !src.includes('say(') && !src.includes('SayText')) continue;
+    for (const re of [sayRe, propRe, assignedRe, sayTextRe]) {
       re.lastIndex = 0;
       let match;
       while ((match = re.exec(src))) {

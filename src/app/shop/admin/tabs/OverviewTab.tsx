@@ -71,11 +71,11 @@ export default function OverviewTab({
       {/* Top Metrics */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14, marginBottom: 18 }}>
         {[
-          { label: say("Open Work Orders"), value: String(openWorkOrders), sub: `${shopStats.workOrders.completedToday || 0} completed today`, color: '#e5332a', icon: <FaClock /> },
-          { label: say("Weekly Revenue"), value: `$${(shopStats.revenue?.week ?? 0).toFixed(2)}`, sub: `$${(shopStats.revenue?.today ?? 0).toFixed(2)} today`, color: '#22c55e', icon: <FaChartBar /> },
+          { label: say("Open Work Orders"), value: String(openWorkOrders), sub: <>{shopStats.workOrders.completedToday || 0} {say("completed today")}</>, color: '#e5332a', icon: <FaClock /> },
+          { label: say("Weekly Revenue"), value: `$${(shopStats.revenue?.week ?? 0).toFixed(2)}`, sub: <>${(shopStats.revenue?.today ?? 0).toFixed(2)} {say("today")}</>, color: '#22c55e', icon: <FaChartBar /> },
           { label: say("Team On Shift"), value: `${shopStats.team.clockedIn || 0}/${shopStats.team.total || 0}`, sub: say("Live staffing coverage"), color: '#f59e0b', icon: <FaUsers /> },
-          { label: say("Pending Actions"), value: String((shopStats.workOrders.pendingApprovals || 0) + (shopStats.inventory.pendingRequests || 0)), sub: `${shopStats.inventory.pendingRequests || 0} inventory approvals`, color: '#e5332a', icon: <FaExclamationTriangle /> },
-          { label: say("Inventory Items"), value: String(inventoryStock.length), sub: `${lowStockCount} low stock`, color: '#8b5cf6', icon: <FaBox /> },
+          { label: say("Pending Actions"), value: String((shopStats.workOrders.pendingApprovals || 0) + (shopStats.inventory.pendingRequests || 0)), sub: <>{shopStats.inventory.pendingRequests || 0} {say("inventory approvals")}</>, color: '#e5332a', icon: <FaExclamationTriangle /> },
+          { label: say("Inventory Items"), value: String(inventoryStock.length), sub: <>{lowStockCount} {say("low stock")}</>, color: '#8b5cf6', icon: <FaBox /> },
         ].map((card) => (
           <div key={card.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12, padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -83,7 +83,7 @@ export default function OverviewTab({
               <div style={{ color: card.color }}>{say(card.icon)}</div>
             </div>
             <div style={{ fontSize: 30, fontWeight: 800, color: '#e5e7eb', lineHeight: 1.1 }}>{say(card.value)}</div>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>{say(card.sub)}</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>{typeof card.sub === 'string' ? say(card.sub) : card.sub}</div>
           </div>
         ))}
       </div>

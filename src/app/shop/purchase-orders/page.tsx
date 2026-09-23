@@ -290,7 +290,7 @@ export default function PurchaseOrdersPage() {
           <div style={{ textAlign: 'center', padding: '60px 0', background: 'rgba(255,255,255,0.03)', borderRadius: 14, border: '1px dashed rgba(255,255,255,0.12)' }}>
             <div style={{ fontSize: 52, marginBottom: 16 }}><FaShoppingCart style={{marginRight:4}} /></div>
             <div style={{ fontSize: 18, fontWeight: 600, color: '#e5e7eb', marginBottom: 8 }}>
-              {statusFilter === 'all' ? say("No purchase orders yet") : `No ${statusFilter} orders`}
+              {statusFilter === 'all' ? say("No purchase orders yet") : <>{say("No")} {statusFilter} {say("orders")}</>}
             </div>
             <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>
               {statusFilter === 'all' ? say("Create your first purchase order to start tracking parts procurement.") : say("Try a different status filter.")}

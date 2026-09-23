@@ -631,7 +631,7 @@ export default function ShopHome() {
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{say("Pending Queue")}</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardReady ? `${pendingQueueCount} job${pendingQueueCount !== 1 ? 's' : ''}` : '…'}</span>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardReady ? <>{pendingQueueCount} {say(pendingQueueCount === 1 ? 'job' : 'jobs')}</> : '…'}</span>
                   </div>
                   {dragOverTarget === 'pending' && (
                     <div style={{marginBottom:10, padding:'10px 12px', border:'1px dashed rgba(245,158,11,0.7)', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#f59e0b', fontSize:12, fontWeight:700}}>

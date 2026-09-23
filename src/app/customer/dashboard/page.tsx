@@ -240,7 +240,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Appointments', 
       desc: 'Book and manage service appointments', 
-      detail: `${stats.upcomingAppointments} upcoming · ${stats.appointmentCount} total`, 
+      detail: <>{stats.upcomingAppointments} {say('upcoming')} · {stats.appointmentCount} {say('total')}</>, 
       badge: stats.upcomingAppointments > 0 ? 'Active' : '', 
       badgeColor: '#10b981', 
       link: '/customer/appointments',
@@ -251,7 +251,7 @@ export default function CustomerDashboard() {
       icon: '',
       name: 'Work Orders',
       desc: 'Track all your repair and service work orders',
-      detail: `${stats.historyCount} completed`,
+      detail: <>{stats.historyCount} {say('completed')}</>,
       badge: stats.historyCount > 0 ? 'History' : '',
       badgeColor: '#f59e0b',
       link: '/customer/workorders',
@@ -287,7 +287,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'My Vehicles', 
       desc: 'Manage your fleet information', 
-      detail: `${stats.vehicleCount} vehicle${stats.vehicleCount !== 1 ? 's' : ''} registered`, 
+      detail: <>{stats.vehicleCount} {say(stats.vehicleCount === 1 ? 'vehicle registered' : 'vehicles registered')}</>, 
       badge: 'Essential', 
       badgeColor: '#f59e0b', 
       link: '/customer/vehicles',
@@ -301,7 +301,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Reviews', 
       desc: 'Share your service experiences', 
-      detail: `${stats.reviewCount} review${stats.reviewCount !== 1 ? 's' : ''} written`, 
+      detail: <>{stats.reviewCount} {say(stats.reviewCount === 1 ? 'review written' : 'reviews written')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/reviews',
@@ -312,7 +312,7 @@ export default function CustomerDashboard() {
       icon: <FaHeart style={{marginRight:4}} />, 
       name: 'Favorite Shops', 
       desc: 'Quick access to preferred shops', 
-      detail: `${stats.favoriteCount} saved favorite${stats.favoriteCount !== 1 ? 's' : ''}`, 
+      detail: <>{stats.favoriteCount} {say(stats.favoriteCount === 1 ? 'saved favorite' : 'saved favorites')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/favorites',
@@ -323,7 +323,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Rewards', 
       desc: 'Earn points and unlock perks', 
-      detail: `${loyaltyPoints} points - ${tier} tier`, 
+      detail: <>{loyaltyPoints} {say('points')} - {tier} {say('tier')}</>, 
       badge: 'New', 
       badgeColor: '#a855f7', 
       link: '/customer/rewards',
@@ -334,7 +334,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Payments', 
       desc: 'Manage payment methods', 
-      detail: `${stats.paymentMethods} saved payment method${stats.paymentMethods !== 1 ? 's' : ''}`, 
+      detail: <>{stats.paymentMethods} {say(stats.paymentMethods === 1 ? 'saved payment method' : 'saved payment methods')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/payments',
@@ -370,7 +370,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Service History', 
       desc: 'View past service records', 
-      detail: `${stats.historyCount} completed service${stats.historyCount !== 1 ? 's' : ''}`, 
+      detail: <>{stats.historyCount} {say(stats.historyCount === 1 ? 'completed service' : 'completed services')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/history',
@@ -381,7 +381,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Documents', 
       desc: 'Access invoices and receipts', 
-      detail: `${stats.documentCount} document${stats.documentCount !== 1 ? 's' : ''} available`, 
+      detail: <>{stats.documentCount} {say(stats.documentCount === 1 ? 'document available' : 'documents available')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/documents',
@@ -563,7 +563,7 @@ export default function CustomerDashboard() {
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {say(feature.detail)}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {/* Recent Items */}
@@ -628,7 +628,7 @@ export default function CustomerDashboard() {
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {say(feature.detail)}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {recentItems && recentItems.length > 0 ? (
@@ -692,7 +692,7 @@ export default function CustomerDashboard() {
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {say(feature.detail)}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {recentItems && recentItems.length > 0 ? (
@@ -756,7 +756,7 @@ export default function CustomerDashboard() {
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {say(feature.detail)}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {recentItems && recentItems.length > 0 ? (

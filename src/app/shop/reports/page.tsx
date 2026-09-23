@@ -1,7 +1,7 @@
 "use client";
 
 import { usePhrase } from '@/lib/usePhrase';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -155,10 +155,10 @@ export default function ShopReportsPage() {
           <>
             {/* Summary Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 32 }}>
-              <SummaryCard label={say("Total Revenue")} value={`$${report.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="#22c55e" border="rgba(34,197,94,0.3)" sub={`${report.totalJobs} total jobs`} />
-              <SummaryCard label={say("Completed Jobs")} value={report.completedJobs} color="#3b82f6" border="rgba(59,130,246,0.3)" sub={`${report.pendingJobs} still pending`} />
-              <SummaryCard label={say("Avg Job Value")} value={`$${report.avgJobValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="#f59e0b" border="rgba(245,158,11,0.3)" sub="per completed job" />
-              <SummaryCard label={say("Completion Rate")} value={report.totalJobs > 0 ? `${Math.round((report.completedJobs / report.totalJobs) * 100)}%` : ' - '} color="#8b5cf6" border="rgba(139,92,246,0.3)" sub={`${report.totalJobs} total jobs`} />
+              <SummaryCard label={say("Total Revenue")} value={`$${report.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="#22c55e" border="rgba(34,197,94,0.3)" sub={<>{report.totalJobs} {say("total jobs")}</>} />
+              <SummaryCard label={say("Completed Jobs")} value={report.completedJobs} color="#3b82f6" border="rgba(59,130,246,0.3)" sub={<>{report.pendingJobs} {say("still pending")}</>} />
+              <SummaryCard label={say("Avg Job Value")} value={`$${report.avgJobValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="#f59e0b" border="rgba(245,158,11,0.3)" sub={say("per completed job")} />
+              <SummaryCard label={say("Completion Rate")} value={report.totalJobs > 0 ? `${Math.round((report.completedJobs / report.totalJobs) * 100)}%` : ' - '} color="#8b5cf6" border="rgba(139,92,246,0.3)" sub={<>{report.totalJobs} {say("total jobs")}</>} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, marginBottom: 24 }}>
@@ -242,13 +242,13 @@ export default function ShopReportsPage() {
   );
 }
 
-function SummaryCard({ label, value, color, border, sub }: { label: string; value: string | number; color: string; border: string; sub: string }) {
+function SummaryCard({ label, value, color, border, sub }: { label: string; value: string | number; color: string; border: string; sub: ReactNode }) {
   const say = usePhrase();
   return (
     <div style={{ background: 'rgba(0,0,0,0.3)', border: `1px solid ${border}`, borderRadius: 12, padding: 24 }}>
       <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 8 }}>{say(label)}</div>
       <div style={{ fontSize: 30, fontWeight: 700, color, marginBottom: 4 }}>{say(value)}</div>
-      <div style={{ fontSize: 12, color: '#6b7280' }}>{say(sub)}</div>
+      <div style={{ fontSize: 12, color: '#6b7280' }}>{typeof sub === 'string' ? say(sub) : sub}</div>
     </div>
   );
 }

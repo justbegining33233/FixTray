@@ -11,6 +11,7 @@ import '@/styles/sos-theme.css';
 import OilSlickCanvas from '@/components/OilSlickCanvas';
 import { useTranslations } from 'next-intl';
 import { usePhrase } from '@/lib/usePhrase';
+import { loginProbeOrder, type LoginProbe } from '@/lib/customerSession';
 
 const MIN_USERNAME_LENGTH = 3;
 const MIN_PASSWORD_LENGTH = 8;
@@ -74,91 +75,112 @@ export default function LoginClient() {
     setLoading(true);
     try {
       let serverError = false;
+      const credentials = { username: loginForm.username, password: loginForm.password };
+      const jsonHeaders = { 'Content-Type': 'application/json' };
 
-      // Admin
-      try {
-        let adminResponse = await fetch('/api/auth/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: loginForm.username, password: loginForm.password }), credentials: 'include' });
-        if (adminResponse.status === 404) {
-          try {
-            adminResponse = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: loginForm.username, password: loginForm.password }), credentials: 'include' });
-          } catch { /* ignore */ }
-        }
-        if (adminResponse.ok) {
-          const adminData = await adminResponse.json();
-          login({ token: adminData.accessToken, role: 'admin', name: adminData.username, id: adminData.id, isSuperAdmin: adminData.isSuperAdmin, isOwner: adminData.isOwner });
-          setLoading(false);
-          if (adminData.isSuperAdmin) {
-            navigateAfterLogin('/admin/home');
-          } else {
-            navigateAfterLogin(getPostLoginRoute('/admin/home'));
+      const attemptAdmin = async (): Promise<boolean> => {
+        try {
+          let adminResponse = await fetch('/api/auth/admin', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(credentials), credentials: 'include' });
+          if (adminResponse.status === 404) {
+            try {
+              adminResponse = await fetch('/api/admin/login', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(credentials), credentials: 'include' });
+            } catch { /* ignore */ }
           }
-          return;
-        }
-        if (adminResponse.status >= 500) serverError = true;
-      } catch { serverError = true; }
-
-      // Tech/Manager
-      try {
-        const techResponse = await fetch('/api/auth/tech', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: loginForm.username, password: loginForm.password }), credentials: 'include' });
-        if (techResponse.ok) {
-          const techData = await techResponse.json();
-
-          if ((techData.requires2FA || techData.requires2FASetup) && techData.tempToken) {
-            if (typeof window !== 'undefined') {
-              sessionStorage.setItem('tech2fa_temp_token', techData.tempToken);
+          if (adminResponse.ok) {
+            const adminData = await adminResponse.json();
+            login({ token: adminData.accessToken, role: 'admin', name: adminData.username, id: adminData.id, isSuperAdmin: adminData.isSuperAdmin, isOwner: adminData.isOwner });
+            setLoading(false);
+            if (adminData.isSuperAdmin) {
+              navigateAfterLogin('/admin/home');
+            } else {
+              navigateAfterLogin(getPostLoginRoute('/admin/home'));
             }
-            setLoading(false);
-            const mode = techData.requires2FASetup ? 'setup' : 'challenge';
-            navigateAfterLogin(`/auth/tech-2fa?mode=${encodeURIComponent(mode)}`);
-            return;
+            return true;
           }
+          if (adminResponse.status >= 500) serverError = true;
+        } catch { serverError = true; }
+        return false;
+      };
 
-          if (!techData.accessToken) {
-            setErrors({ username: 'Tech login requires additional verification. Please try again.' });
+      const attemptTech = async (): Promise<boolean> => {
+        try {
+          const techResponse = await fetch('/api/auth/tech', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(credentials), credentials: 'include' });
+          if (techResponse.ok) {
+            const techData = await techResponse.json();
+
+            if ((techData.requires2FA || techData.requires2FASetup) && techData.tempToken) {
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('tech2fa_temp_token', techData.tempToken);
+              }
+              setLoading(false);
+              const mode = techData.requires2FASetup ? 'setup' : 'challenge';
+              navigateAfterLogin(`/auth/tech-2fa?mode=${encodeURIComponent(mode)}`);
+              return true;
+            }
+
+            if (!techData.accessToken) {
+              setErrors({ username: 'Tech login requires additional verification. Please try again.' });
+              setLoading(false);
+              return true;
+            }
+
+            login({ token: techData.accessToken, role: techData.role, name: techData.name, id: techData.id, shopId: techData.shopId });
             setLoading(false);
-            return;
+            if (techData.role === 'tech') navigateAfterLogin(getPostLoginRoute('/tech/home', ['/tech/', '/workorders/']));
+            else if (techData.role === 'manager') navigateAfterLogin(getPostLoginRoute('/manager/home', ['/manager/', '/workorders/']));
+            return true;
           }
+          if (techResponse.status >= 500) serverError = true;
+        } catch { serverError = true; }
+        return false;
+      };
 
-          login({ token: techData.accessToken, role: techData.role, name: techData.name, id: techData.id, shopId: techData.shopId });
-          setLoading(false);
-          if (techData.role === 'tech') navigateAfterLogin(getPostLoginRoute('/tech/home', ['/tech/', '/workorders/']));
-          else if (techData.role === 'manager') navigateAfterLogin(getPostLoginRoute('/manager/home', ['/manager/', '/workorders/']));
-          return;
-        }
-        if (techResponse.status >= 500) serverError = true;
-      } catch { serverError = true; }
+      const attemptShop = async (): Promise<boolean> => {
+        try {
+          const shopResponse = await fetch('/api/auth/shop', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(credentials), credentials: 'include' });
+          if (shopResponse.ok) {
+            const shopAccount = await shopResponse.json();
+            const profileComplete = !!shopAccount.profileComplete;
+            if (!profileComplete && typeof window !== 'undefined') localStorage.removeItem('shopProfileComplete');
+            login({ token: shopAccount.accessToken, role: 'shop', name: shopAccount.shopName, id: shopAccount.id, shopId: shopAccount.id, isShopAdmin: true, shopProfileComplete: profileComplete });
+            setLoading(false);
+            const nextRoute = profileComplete ? '/shop/home' : '/shop/complete-profile';
+            navigateAfterLogin(getPostLoginRoute(nextRoute, ['/shop/', '/workorders/']));
+            return true;
+          }
+          if (shopResponse.status >= 500) serverError = true;
+        } catch { serverError = true; }
+        return false;
+      };
 
-      // Shop
-      try {
-        const shopResponse = await fetch('/api/auth/shop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: loginForm.username, password: loginForm.password }), credentials: 'include' });
-        if (shopResponse.ok) {
-          const shopAccount = await shopResponse.json();
-          const profileComplete = !!shopAccount.profileComplete;
-          if (!profileComplete && typeof window !== 'undefined') localStorage.removeItem('shopProfileComplete');
-          login({ token: shopAccount.accessToken, role: 'shop', name: shopAccount.shopName, id: shopAccount.id, shopId: shopAccount.id, isShopAdmin: true, shopProfileComplete: profileComplete });
-          setLoading(false);
-          const nextRoute = profileComplete ? '/shop/home' : '/shop/complete-profile';
-          navigateAfterLogin(getPostLoginRoute(nextRoute, ['/shop/', '/workorders/']));
-          return;
-        }
-        if (shopResponse.status >= 500) serverError = true;
-      } catch { serverError = true; }
+      const attemptCustomer = async (): Promise<boolean> => {
+        try {
+          const customerResponse = await fetch('/api/auth/customer', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ email: loginForm.username, password: loginForm.password }), credentials: 'include' });
+          if (customerResponse.ok) {
+            const customerData = await customerResponse.json();
+            const token = customerData.token || customerData.accessToken || customerData.access_token;
+            const name = customerData.fullName || `${customerData.firstName || ''} ${customerData.lastName || ''}`.trim();
+            const id = customerData.id || (customerData.user && customerData.user.id);
+            login({ token, role: 'customer', name: name || 'Customer', id: id || '' });
+            setLoading(false);
+            navigateAfterLogin(getPostLoginRoute('/customer/dashboard', ['/customer/']));
+            return true;
+          }
+          if (customerResponse.status >= 500) serverError = true;
+        } catch { serverError = true; }
+        return false;
+      };
 
-      // Customer
-      try {
-        const customerResponse = await fetch('/api/auth/customer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: loginForm.username, password: loginForm.password }), credentials: 'include' });
-        if (customerResponse.ok) {
-          const customerData = await customerResponse.json();
-          const token = customerData.token || customerData.accessToken || customerData.access_token;
-          const name = customerData.fullName || `${customerData.firstName || ''} ${customerData.lastName || ''}`.trim();
-          const id = customerData.id || (customerData.user && customerData.user.id);
-          login({ token, role: 'customer', name: name || 'Customer', id: id || '' });
-          setLoading(false);
-          navigateAfterLogin(getPostLoginRoute('/customer/dashboard', ['/customer/']));
-          return;
-        }
-        if (customerResponse.status >= 500) serverError = true;
-      } catch { serverError = true; }
+      const probes: Record<LoginProbe, () => Promise<boolean>> = {
+        customer: attemptCustomer,
+        admin: attemptAdmin,
+        tech: attemptTech,
+        shop: attemptShop,
+      };
+
+      for (const probe of loginProbeOrder(loginForm.username)) {
+        if (await probes[probe]()) return;
+      }
 
       if (serverError) {
         setErrors({ username: 'Server error  -  please try again in a moment.' });

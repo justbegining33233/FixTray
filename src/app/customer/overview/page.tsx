@@ -6,6 +6,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { isActiveWorkOrder, summarizeWorkOrders, workOrderTitle, type WorkOrderSummary } from '@/lib/workOrderMetrics';
 import { FaExclamationTriangle } from 'react-icons/fa';
+import { welcomeDisplayName } from '@/lib/customerSession';
 
 interface OverviewStats {
   activeOrders: number;
@@ -28,6 +29,7 @@ export default function CustomerOverview() {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -84,6 +86,8 @@ export default function CustomerOverview() {
     }
   }, []);
 
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => { if (user) fetchStats(); }, [user, fetchStats]);
 
   const handleSignOut = () => {
@@ -93,7 +97,11 @@ export default function CustomerOverview() {
     window.location.href = '/auth/login';
   };
 
-  const userName = (user as any)?.name || (typeof window !== 'undefined' ? localStorage.getItem('userName') : '') || '';
+  const userName = welcomeDisplayName({
+    mounted,
+    accountName: (user as { name?: string } | null)?.name,
+    storedName: mounted ? localStorage.getItem('userName') : '',
+  });
 
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>

@@ -16,6 +16,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { workOrderNotificationCopy } from '@/lib/notificationCopy';
 import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
+import { roleUsesShopAdminApis } from '@/lib/customerSession';
 
 interface TopNavBarProps {
   onMenuToggle?: () => void;
@@ -84,18 +85,24 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     const decoded = token ? decodeToken(token) : null;
     resolvedShop = resolveShopId(resolvedShop, decoded?.shopId);
 
+    const effectiveRole = resolvedRole || (pathname.split('/')[1] || '');
+    const mayReadShop = roleUsesShopAdminApis(effectiveRole);
+
     if (resolvedRole) localStorage.setItem('userRole', resolvedRole);
     if (resolvedName) localStorage.setItem('userName', resolvedName);
     if (resolvedUserId) localStorage.setItem('userId', resolvedUserId);
-    if (resolvedShop) localStorage.setItem('shopId', resolvedShop);
+    if (mayReadShop && resolvedShop) localStorage.setItem('shopId', resolvedShop);
+    if (effectiveRole === 'customer') localStorage.removeItem('shopId');
 
     setUserRole(resolvedRole);
     setUserName(resolvedName);
     setUserId(resolvedUserId);
 
-    if (resolvedShop) {
+    if (mayReadShop && resolvedShop) {
       setShopId(resolvedShop);
       fetchShopName(resolvedShop);
+    } else if (!mayReadShop) {
+      setShopId('');
     }
 
     if (resolvedUserId && (resolvedRole === 'tech' || resolvedRole === 'manager')) {
@@ -120,7 +127,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   }, []);
 
   useEffect(() => {
-    if (!shopId) return;
+    if (!shopId || !roleUsesShopAdminApis(userRole || pathRole)) return;
 
     const fetchNotificationSettings = async () => {
       try {
@@ -147,7 +154,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     fetchNotificationSettings();
     const interval = setInterval(fetchNotificationSettings, 30000);
     return () => clearInterval(interval);
-  }, [shopId]);
+  }, [shopId, userRole, pathRole]);
 
   const formatTimeAgo = (dateValue: string) => {
     const date = new Date(dateValue);

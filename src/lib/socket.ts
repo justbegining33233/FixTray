@@ -88,7 +88,8 @@ function getSocket(): Socket | null {
     socketConnected = true;
     const shopId = localStorage.getItem('shopId');
     const userId = localStorage.getItem('userId');
-    if (shopId) socketInstance?.emit('join-shop', shopId);
+    const role = localStorage.getItem('userRole');
+    if (shopId && role !== 'customer') socketInstance?.emit('join-shop', shopId);
     if (userId) socketInstance?.emit('join-user', userId);
   });
 

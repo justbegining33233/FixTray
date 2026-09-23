@@ -4,6 +4,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, Suspense } from 'react';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBox, FaBuilding, FaCalendarAlt, FaCar, FaCheck, FaClipboardList, FaClock, FaCog, FaComments, FaCreditCard, FaExclamationCircle, FaLock, FaSignOutAlt, FaStar, FaTimes, FaTrash, FaTruck, FaWrench } from 'react-icons/fa';
 import ShopSecurityPanel from '@/components/ShopSecurityPanel';
+import ShopStripeConnectCard from '@/components/ShopStripeConnectCard';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -293,10 +294,6 @@ function ShopSettingsPageContent() {
   const [agreementError, setAgreementError] = useState('');
   const [showAgreementModal, setShowAgreementModal] = useState(false);
 
-  // Stripe Connect payout account state
-  const [_stripeConnected, setStripeConnected] = useState<boolean | null>(null);
-  const [_stripeConnectMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
   // Billing tab removed.
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [serviceMsg, setServiceMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -345,7 +342,6 @@ function ShopSettingsPageContent() {
           shopType: data.shop.shopType || 'diesel',
         }));
         setServices(Array.isArray(data.shop.services) ? data.shop.services : []);
-        setStripeConnected(!!data.shop.stripeConnected);
       }
 
       if (data?.settings) {
@@ -394,8 +390,11 @@ function ShopSettingsPageContent() {
       router.replace('/shop/settings' as Route, { scroll: false });
     }
 
+    const stripeConnect = searchParams?.get('stripe_connect');
     const requestedTab = searchParams?.get('tab');
-    if (requestedTab && ['general', 'hours', 'notifications', 'security'].includes(requestedTab)) {
+    if (stripeConnect) {
+      setActiveTab('payments');
+    } else if (requestedTab && ['general', 'hours', 'notifications', 'security', 'payments'].includes(requestedTab)) {
       setActiveTab(requestedTab);
     }
 
@@ -676,6 +675,7 @@ function ShopSettingsPageContent() {
 
   const tabs = [
     { id: 'general', icon: <FaBuilding />, name: 'General Info' },
+    { id: 'payments', icon: <FaCreditCard />, name: 'Payments' },
     { id: 'hours', icon: <FaClock />, name: 'Operating Hours' },
     { id: 'notifications', icon: <FaBell />, name: 'Notifications' },
     { id: 'security', icon: <FaLock />, name: 'Security' },
@@ -1269,10 +1269,20 @@ function ShopSettingsPageContent() {
               </div>
             )}
 
+            {activeTab === 'payments' && (
+              <div>
+                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>Payments</h2>
+                <p style={{fontSize:14, color:'#9aa3b2', marginTop:0, marginBottom:20, lineHeight:1.5}}>
+                  Connect a Stripe payout account so customers can pay work orders. Labor, parts, and shop fees transfer to the shop. FixTray keeps only the service fee.
+                </p>
+                <ShopStripeConnectCard origin="settings" />
+              </div>
+            )}
+
             {activeTab === 'security' && <ShopSecurityPanel />}
 
             {/* Save Button */}
-            {activeTab !== 'security' && (
+            {activeTab !== 'security' && activeTab !== 'payments' && (
             <div style={{marginTop:32, paddingTop:24, borderTop:'1px solid rgba(255,255,255,0.1)'}}>
               <button onClick={handleSave} style={{padding:'12px 32px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
                 {say("Save Changes")}{' '}</button>

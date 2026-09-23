@@ -8,6 +8,8 @@ interface PaymentLink {
   id: string;
   token: string;
   amount: number;
+  serviceCost?: number;
+  serviceFee?: number;
   description?: string;
   status: string;
   paidAt?: string;
@@ -128,9 +130,21 @@ export default function CustomerPayPage() {
         <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 24, marginBottom: 20 }}>
           <h2 style={{ margin: '0 0 16px', fontSize: 18, color: '#f1f5f9' }}>{say("Invoice Summary")}</h2>
           {link?.workOrderId && <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>{say("Work Order: #")}{say(link.workOrderId)}</div>}
-          {link?.description && <p style={{ color: '#374151', fontSize: 15, lineHeight: 1.5, margin: '0 0 16px' }}>{say(link.description)}</p>}
+          {link?.description && <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.5, margin: '0 0 16px' }}>{say(link.description)}</p>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#e5e7eb' }}>
+              <span>{say("Services &amp; Parts")}</span>
+              <span>${Number(link?.serviceCost ?? Math.max(0, Number(link?.amount) - Number(link?.serviceFee || 0))).toFixed(2)}</span>
+            </div>
+            {Number(link?.serviceFee) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#9aa3b2' }}>
+                <span>{say("FixTray Service Fee")}</span>
+                <span>${Number(link?.serviceFee).toFixed(2)}</span>
+              </div>
+            )}
+          </div>
           <div style={{ background: 'linear-gradient(135deg,#e5332a,#c41f16)', borderRadius: 10, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>{say("Amount Due")}</span>
+            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>{say("Total Due")}</span>
             <span style={{ color: '#fff', fontSize: 28, fontWeight: 800 }}>${Number(link?.amount).toFixed(2)}</span>
           </div>
         </div>

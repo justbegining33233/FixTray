@@ -1,8 +1,9 @@
 'use client';
 
 import { usePhrase } from '@/lib/usePhrase';
-import { useState } from 'react';
-import { FaArrowRight, FaCreditCard, FaLink } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaArrowRight, FaCreditCard } from 'react-icons/fa';
+import ShopStripeConnectCard from '@/components/ShopStripeConnectCard';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -209,6 +210,11 @@ export default function CompleteProfile() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    const flag = new URLSearchParams(window.location.search).get('stripe_connect');
+    if (flag) setStep(2);
+  }, []);
   const [submitError, setSubmitError] = useState('');
   const [formData, setFormData] = useState({
     businessLicense: '',
@@ -343,30 +349,7 @@ export default function CompleteProfile() {
     }
   };
 
-  const [stripeLoading, setStripeLoading] = useState(false);
-
-  const handleConnectStripe = async () => {
-    setStripeLoading(true);
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const res = await fetch('/api/stripe/connect?from=onboarding', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setSubmitError(data.error || 'Failed to start Stripe Connect. Please try again.');
-        setStripeLoading(false);
-      }
-    } catch {
-      setSubmitError('Failed to connect to Stripe. Please try again.');
-      setStripeLoading(false);
-    }
-  };
-
   if (step === 2) {
-    const _token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     return (
       <div style={{minHeight:'100vh', background: 'transparent'}}>
         <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
@@ -380,26 +363,11 @@ export default function CompleteProfile() {
             <p style={{color:'#9aa3b2', fontSize:15, marginBottom:8, lineHeight:1.6}}>
               {say("Connect your Stripe account to receive customer payments directly into your bank account. You can do this later from your settings.")}{' '}</p>
             <p style={{color:'#9aa3b2', fontSize:14, marginBottom:32, lineHeight:1.6}}>
-              {say("When a customer pays a work order, Stripe sends the full repair amount straight to you. FixTray only collects a separate $5 service fee added on top  -  your money never passes through us.")}{' '}</p>
-            <button
-              onClick={handleConnectStripe}
-              disabled={stripeLoading}
-              style={{
-                display:'block',
-                width:'100%',
-                padding:'16px 32px',
-                background: stripeLoading ? '#4b4b8f' : '#635bff',
-                color:'white',
-                borderRadius:10,
-                fontSize:16,
-                fontWeight:700,
-                border:'none',
-                cursor: stripeLoading ? 'not-allowed' : 'pointer',
-                marginBottom:12,
-              }}
-            >
-              {stripeLoading ? say("Connecting...") : <><FaLink style={{marginRight:8}} />{say("Connect with Stripe")}</>}
-            </button>
+              When a customer pays a work order, Stripe charges the invoice total. Labor, parts, and shop fees transfer to this account. FixTray keeps only the FixTray Service Fee from platform settings, and does not keep the shop payment for the work. Customers cannot pay in Stripe until this account can receive transfers.
+            </p>
+            <div style={{ textAlign: 'left', marginBottom: 12 }}>
+              <ShopStripeConnectCard origin="onboarding" />
+            </div>
             <button
               onClick={() => { router.push('/shop/admin' as Route); }}
               style={{
@@ -419,7 +387,8 @@ export default function CompleteProfile() {
               {say("Skip for now")}{' '}<FaArrowRight style={{marginRight:4}} />
             </button>
             <p style={{color:'#6b7280', fontSize:12}}>
-              {say("You'll be taken to Stripe's secure onboarding. Once complete you'll be redirected back to your dashboard.")}{' '}</p>
+              Stripe hosts onboarding. When you return, this page shows Connected if payouts are ready, or Finish onboarding if transfers are not active yet.
+            </p>
           </div>
         </div>
       </div>

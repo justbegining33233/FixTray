@@ -10,6 +10,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { issueSummary } from '@/lib/waitingRoomBoard';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
+import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 import Sidebar from '@/components/Sidebar';
 import TopNavBar from '@/components/TopNavBar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -75,10 +76,12 @@ function ShopEstimatesContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [serviceFeeUsd, setServiceFeeUsd] = useState(0);
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
   const taxAmount = subtotal * (taxRate / 100);
-  const total = subtotal + taxAmount;
+  const quoteTotal = subtotal + taxAmount;
+  const estimateBill = billWithServiceFee(quoteTotal, serviceFeeUsd);
 
   const applyEstimate = (job: ShopJob | undefined) => {
     const existing = job?.estimate?.lineItems;
@@ -113,6 +116,9 @@ function ShopEstimatesContent() {
       return;
     }
     const data = await response.json();
+    if (typeof data.fixtrayServiceFee === 'number' && Number.isFinite(data.fixtrayServiceFee)) {
+      setServiceFeeUsd(data.fixtrayServiceFee);
+    }
     const open = unwrapWorkOrders(data).filter((wo) => !CLOSED.has(String(wo.status || ''))) as ShopJob[];
     setJobs(open);
     const nextId = preferredId && open.some((job) => job.id === preferredId) ? preferredId : '';
@@ -244,6 +250,7 @@ function ShopEstimatesContent() {
               <div style={{ display: 'grid', gap: 8 }}>
                 {jobs.map((job) => {
                   const amount = quoteAmount(job);
+                  const listed = amount == null ? null : billWithServiceFee(amount, serviceFeeUsd);
                   const active = job.id === selectedId;
                   return (
                     <button
@@ -269,7 +276,11 @@ function ShopEstimatesContent() {
                         {issueSummary(job.issueDescription) || say("Service")}
                       </div>
                       <div style={{ fontSize: 13, color: amount == null ? '#f59e0b' : '#22c55e', marginTop: 6 }}>
-                        {amount == null ? say("No estimate yet") : `Estimate $${amount.toFixed(2)}`}
+                        {listed == null
+                          ? say("No estimate yet")
+                          : listed.serviceFee > 0
+                            ? `Estimate $${listed.total.toFixed(2)} · ${say(FIXTRAY_SERVICE_FEE_LABEL)} $${listed.serviceFee.toFixed(2)}`
+                            : `Estimate $${listed.total.toFixed(2)}`}
                       </div>
                     </button>
                   );
@@ -329,7 +340,10 @@ function ShopEstimatesContent() {
             <div style={{ marginTop: 16, color: '#e5e7eb' }}>
               <div>{say("Subtotal: $")}{subtotal.toFixed(2)}</div>
               <div>{say("Tax: $")}{taxAmount.toFixed(2)}</div>
-              <div style={{ color: '#22c55e', fontWeight: 700, fontSize: 18 }}>{say("Total: $")}{total.toFixed(2)}</div>
+              {estimateBill.serviceFee > 0 && (
+                <div>{say(FIXTRAY_SERVICE_FEE_LABEL)}: ${estimateBill.serviceFee.toFixed(2)}</div>
+              )}
+              <div style={{ color: '#22c55e', fontWeight: 700, fontSize: 18 }}>{say("Total: $")}{estimateBill.total.toFixed(2)}</div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>

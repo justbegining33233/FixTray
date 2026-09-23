@@ -1,8 +1,9 @@
 import jsPDF from 'jspdf';
 import { WorkOrder } from '@/types/workorder';
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import { quoteAmount } from '@/lib/workOrderCloseout';
+import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
-export function generateInvoicePDF(workOrder: WorkOrder) {
+export function generateInvoicePDF(workOrder: WorkOrder, serviceFeeUsd: number) {
   const doc = new jsPDF();
   
   // Header
@@ -72,18 +73,25 @@ export function generateInvoicePDF(workOrder: WorkOrder) {
   doc.line(140, y, 190, y);
   y += 7;
   
-  const subtotal = workOrder.estimate?.amount || 0;
-  const totalDue = subtotal + FIXTRAY_SERVICE_FEE;
+  const bill = billWithServiceFee(
+    quoteAmount(workOrder) || Number(workOrder.estimate?.amount) || 0,
+    serviceFeeUsd
+  );
+  const subtotal = bill.subtotal;
+  const serviceFee = bill.serviceFee;
+  const totalDue = bill.total;
   
   doc.text('Subtotal:', 140, y);
   doc.text(`$${subtotal.toFixed(2)}`, 180, y, { align: 'right' });
   y += 7;
-  
-  doc.setTextColor(150, 150, 150);
-  doc.text('FixTray Service Fee:', 140, y);
-  doc.text(`$${FIXTRAY_SERVICE_FEE.toFixed(2)}`, 180, y, { align: 'right' });
-  y += 7;
-  doc.setTextColor(0, 0, 0);
+
+  if (serviceFee > 0) {
+    doc.setTextColor(150, 150, 150);
+    doc.text('FixTray Service Fee:', 140, y);
+    doc.text(`$${serviceFee.toFixed(2)}`, 180, y, { align: 'right' });
+    y += 7;
+    doc.setTextColor(0, 0, 0);
+  }
   
   doc.line(140, y, 190, y);
   y += 7;
@@ -115,8 +123,8 @@ export function generateInvoicePDF(workOrder: WorkOrder) {
   return doc;
 }
 
-export function generateInvoiceBuffer(workOrder: WorkOrder): Buffer {
-  const doc = generateInvoicePDF(workOrder);
+export function generateInvoiceBuffer(workOrder: WorkOrder, serviceFeeUsd: number): Buffer {
+  const doc = generateInvoicePDF(workOrder, serviceFeeUsd);
   const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
   return pdfBuffer;
 }

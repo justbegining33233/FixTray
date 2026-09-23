@@ -96,6 +96,8 @@ describe('platform language setting', () => {
       maintenanceMode: false,
       defaultLanguage: 'en',
     });
+    expect(platformSettingsUpdate({ serviceFee: 1000 }).data.serviceFee).toBe(1000);
+    expect(platformSettingsUpdate({ serviceFee: 1000, serviceFeeRaw: 750 }).data.serviceFee).toBe(750);
   });
 });
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { customerPaymentBill } from '@/lib/serviceFeeBill';
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,17 +41,23 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
+    const fixtrayFee = await getPlatformServiceFeeUsd();
+
     const payments = workOrders.map((wo) => {
-      const serviceCost = wo.estimatedCost || wo.amountPaid || 0;
-      const totalDue = serviceCost > 0 ? serviceCost + 5 : 0;
+      // Quote stays services-only. The bill total always adds the live platform fee.
+      const bill = customerPaymentBill({
+        estimatedCost: wo.estimatedCost,
+        amountPaid: wo.amountPaid,
+        serviceFeeUsd: fixtrayFee,
+      });
 
       return {
         id: wo.id,
         status: wo.paymentStatus === 'paid' ? 'Paid' : 'Pending',
         workOrderStatus: wo.status,
-        amount: totalDue,
-        serviceCost,
-        fixtrayFee: 5,
+        amount: bill.total,
+        serviceCost: bill.subtotal,
+        fixtrayFee: bill.serviceFee,
         amountPaid: wo.amountPaid || 0,
         service: wo.issueDescription || 'Vehicle Service',
         shop: wo.shop?.shopName || 'Unknown Shop',
@@ -65,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     const totalPaid = payments
       .filter((p) => p.status === 'Paid')
-      .reduce((sum, p) => sum + p.amountPaid, 0);
+      .reduce((sum, p) => sum + p.amount, 0);
 
     const totalPending = payments
       .filter((p) => p.status === 'Pending')

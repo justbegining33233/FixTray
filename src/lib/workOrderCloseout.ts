@@ -1,7 +1,13 @@
 /**
  * Work-order closeout: invoice (payment link for this job) → paid → complete.
  * Marking paid does not complete the job.
+ *
+ * Invoice totals include the FixTray service fee from PlatformConfig
+ * (superadmin settings). Pass the current fee into closeoutTransition /
+ * invoiceTotal — do not hardcode it here.
  */
+
+import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 export type CloseoutAction = 'invoice' | 'paid' | 'complete';
 
@@ -19,6 +25,11 @@ export type CloseoutResult =
       action: CloseoutAction;
       status: string;
       paymentStatus: string;
+      /** Quote / services subtotal (excludes FixTray fee) */
+      quoteAmount: number;
+      /** FixTray platform service fee included on the final bill */
+      serviceFee: number;
+      /** Total charged to the customer (quote + service fee) */
       amount: number;
     };
 
@@ -28,6 +39,7 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/** Services & parts subtotal from the authorized estimate (no platform fee). */
 export function quoteAmount(workOrder: CloseoutWorkOrder): number {
   if (typeof workOrder.estimatedCost === 'number' && workOrder.estimatedCost > 0) {
     return round2(workOrder.estimatedCost);
@@ -45,10 +57,34 @@ export function quoteAmount(workOrder: CloseoutWorkOrder): number {
   return 0;
 }
 
-export function closeoutTransition(workOrder: CloseoutWorkOrder, action: unknown): CloseoutResult {
+/**
+ * Final bill total: quote subtotal + current FixTray service fee.
+ * @param serviceFeeUsd fee from PlatformConfig (USD), not a hardcoded constant
+ */
+export function invoiceTotal(
+  workOrder: CloseoutWorkOrder,
+  serviceFeeUsd: number
+): {
+  quoteAmount: number;
+  serviceFee: number;
+  amount: number;
+} {
+  const bill = billWithServiceFee(quoteAmount(workOrder), serviceFeeUsd);
+  return {
+    quoteAmount: bill.subtotal,
+    serviceFee: bill.serviceFee,
+    amount: bill.total,
+  };
+}
+
+export function closeoutTransition(
+  workOrder: CloseoutWorkOrder,
+  action: unknown,
+  serviceFeeUsd: number
+): CloseoutResult {
   const status = String(workOrder.status || '').toLowerCase();
   const paymentStatus = String(workOrder.paymentStatus || 'unpaid').toLowerCase();
-  const amount = quoteAmount(workOrder);
+  const { quoteAmount: quote, serviceFee, amount } = invoiceTotal(workOrder, serviceFeeUsd);
 
   if (action !== 'invoice' && action !== 'paid' && action !== 'complete') {
     return { ok: false, error: 'Unknown closeout action.' };
@@ -67,7 +103,7 @@ export function closeoutTransition(workOrder: CloseoutWorkOrder, action: unknown
     if (!INVOICE_STATUSES.has(status)) {
       return { ok: false, error: 'Invoice this job after the customer has signed and work is in progress.' };
     }
-    if (amount <= 0) {
+    if (quote <= 0) {
       return { ok: false, error: 'Add an estimate total before requesting payment.' };
     }
     return {
@@ -75,18 +111,36 @@ export function closeoutTransition(workOrder: CloseoutWorkOrder, action: unknown
       action: 'invoice',
       status: 'waiting-for-payment',
       paymentStatus: paymentStatus === 'paid' ? 'paid' : 'unpaid',
+      quoteAmount: quote,
+      serviceFee,
       amount,
     };
   }
 
   if (action === 'paid') {
     if (paymentStatus === 'paid' && status === 'waiting-for-payment') {
-      return { ok: true, action: 'paid', status: 'waiting-for-payment', paymentStatus: 'paid', amount };
+      return {
+        ok: true,
+        action: 'paid',
+        status: 'waiting-for-payment',
+        paymentStatus: 'paid',
+        quoteAmount: quote,
+        serviceFee,
+        amount,
+      };
     }
     if (status !== 'waiting-for-payment') {
       return { ok: false, error: 'Request payment before marking this job paid.' };
     }
-    return { ok: true, action: 'paid', status: 'waiting-for-payment', paymentStatus: 'paid', amount };
+    return {
+      ok: true,
+      action: 'paid',
+      status: 'waiting-for-payment',
+      paymentStatus: 'paid',
+      quoteAmount: quote,
+      serviceFee,
+      amount,
+    };
   }
 
   if (paymentStatus !== 'paid') {
@@ -95,5 +149,13 @@ export function closeoutTransition(workOrder: CloseoutWorkOrder, action: unknown
   if (status === 'completed' || status === 'closed') {
     return { ok: false, error: 'This job is already complete.' };
   }
-  return { ok: true, action: 'complete', status: 'completed', paymentStatus: 'paid', amount };
+  return {
+    ok: true,
+    action: 'complete',
+    status: 'completed',
+    paymentStatus: 'paid',
+    quoteAmount: quote,
+    serviceFee,
+    amount,
+  };
 }

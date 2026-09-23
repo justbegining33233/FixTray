@@ -3,21 +3,14 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { canConnectIntegration, integrationFieldsComplete } from '@/lib/integrationConnect';
-import { FaBriefcase, FaCalendarAlt, FaCar, FaChartBar, FaCircle, FaCog, FaCreditCard, FaEnvelope, FaMobileAlt, FaPlug, FaRegCircle, FaWrench } from 'react-icons/fa';
-
-interface IntegrationConfig {
-  id: string;
-  provider: string;
-  isEnabled: boolean;
-  lastSync?: string;
-  settings?: Record<string, string>;
-}
+import { normalizeIntegrationConfig, type IntegrationConfigView } from '@/lib/integrationConfigShape';
+import ShopStripeConnectCard from '@/components/ShopStripeConnectCard';
+import { FaBriefcase, FaCalendarAlt, FaCar, FaChartBar, FaCircle, FaCog, FaEnvelope, FaMobileAlt, FaPlug, FaRegCircle, FaWrench } from 'react-icons/fa';
 
 const PROVIDERS = [
   { key: 'quickbooks', name: 'QuickBooks Online', icon: <FaChartBar style={{marginRight:4}} />, description: 'Sync invoices, payments, and customers bidirectionally', color: '#2CA01C', fields: [{ k: 'clientId', label: 'Client ID' }, { k: 'clientSecret', label: 'Client Secret', type: 'password' }, { k: 'realmId', label: 'Realm ID' }] },
   { key: 'xero', name: 'Xero', icon: <FaBriefcase style={{marginRight:4}} />, description: 'Export invoices and contacts to Xero accounting', color: '#1AB4D7', fields: [{ k: 'clientId', label: 'Client ID' }, { k: 'clientSecret', label: 'Client Secret', type: 'password' }] },
   { key: 'google_calendar', name: 'Google Calendar', icon: <FaCalendarAlt style={{marginRight:4}} />, description: 'Sync appointments with Google Calendar', color: '#4285F4', fields: [{ k: 'calendarId', label: 'Calendar ID' }, { k: 'serviceAccountJson', label: 'Service Account JSON', type: 'password' }] },
-  { key: 'stripe', name: 'Stripe', icon: <FaCreditCard style={{marginRight:4}} />, description: 'Accept online payments via Stripe', color: '#635BFF', fields: [{ k: 'publishableKey', label: 'Publishable Key' }, { k: 'secretKey', label: 'Secret Key', type: 'password' }, { k: 'webhookSecret', label: 'Webhook Secret', type: 'password' }] },
   { key: 'twilio', name: 'Twilio', icon: <FaMobileAlt style={{marginRight:4}} />, description: 'Send SMS notifications and reminders', color: '#F22F46', fields: [{ k: 'accountSid', label: 'Account SID' }, { k: 'authToken', label: 'Auth Token', type: 'password' }, { k: 'fromNumber', label: 'From Number' }] },
   { key: 'sendgrid', name: 'SendGrid', icon: <FaEnvelope style={{marginRight:4}} />, description: 'Send transactional emails and campaigns', color: '#1A82E2', fields: [{ k: 'apiKey', label: 'API Key', type: 'password' }, { k: 'fromEmail', label: 'From Email' }, { k: 'fromName', label: 'From Name' }] },
   { key: 'carfax', name: 'CARFAX', icon: <FaCar style={{marginRight:4}} />, description: 'Pull vehicle history reports automatically', color: '#E31837', fields: [{ k: 'dealerCode', label: 'Dealer Code' }, { k: 'username', label: 'Username' }, { k: 'password', label: 'Password', type: 'password' }] },
@@ -27,7 +20,7 @@ const PROVIDERS = [
 export default function IntegrationsPage() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
-  const [configs, setConfigs] = useState<IntegrationConfig[]>([]);
+  const [configs, setConfigs] = useState<IntegrationConfigView[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [formFields, setFormFields] = useState<Record<string, string>>({});
@@ -37,7 +30,14 @@ export default function IntegrationsPage() {
     setLoading(true);
     const token = localStorage.getItem('token');
     const r = await fetch('/api/integrations', { headers: { Authorization: `Bearer ${token}` } });
-    if (r.ok) setConfigs(await r.json());
+    if (r.ok) {
+      const rows: unknown = await r.json();
+      setConfigs(
+        (Array.isArray(rows) ? rows : [])
+          .map((row) => normalizeIntegrationConfig(row as Parameters<typeof normalizeIntegrationConfig>[0]))
+          .filter((row) => row.provider !== 'stripe'),
+      );
+    }
     setLoading(false);
   };
 
@@ -55,7 +55,7 @@ export default function IntegrationsPage() {
     const r = await fetch('/api/integrations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ provider, isEnabled, settings: formFields }),
+      body: JSON.stringify({ provider, enabled: isEnabled, isEnabled, settings: formFields }),
     });
     if (!r.ok) {
       setSaving(false);
@@ -72,7 +72,7 @@ export default function IntegrationsPage() {
     await fetch('/api/integrations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ provider, isEnabled: !existing?.isEnabled }),
+      body: JSON.stringify({ provider, enabled: !existing?.isEnabled, isEnabled: !existing?.isEnabled }),
     });
     load();
   };
@@ -90,6 +90,7 @@ export default function IntegrationsPage() {
       <div style={{ padding: 32 }}>
         {loading ? <div style={{ color: '#6b7280' }}>{say("Loading...")}</div> : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+            <ShopStripeConnectCard origin="integrations" />
             {PROVIDERS.map(prov => {
               const config = configs.find(c => c.provider === prov.key);
               const isEnabled = config?.isEnabled || false;

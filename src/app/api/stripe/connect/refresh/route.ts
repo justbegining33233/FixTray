@@ -1,33 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import stripe from '@/lib/stripe';
 import prisma from '@/lib/prisma';
+import stripe from '@/lib/stripe';
+import { shopCanReceiveConnectTransfer } from '@/lib/stripeConnectSplit';
+import {
+  appBaseUrl,
+  connectReturnPath,
+  isStripeAccountId,
+  parseConnectOrigin,
+  stripePlatformConfigured,
+} from '@/lib/stripeConnectOnboarding';
+import { createShopAccountLink } from '@/lib/stripeConnectFlow';
+
+export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/stripe/connect/refresh?shopId=...
- * Stripe calls this when an Account Link has expired. We generate a fresh one
- * and redirect the shop owner back to Stripe's onboarding.
+ * GET /api/stripe/connect/refresh?shopId=...&from=...
+ * Stripe calls this when an Account Link expires or the shop leaves onboarding
+ * before it is finished. A fresh link sends them back to hosted onboarding.
  */
 export async function GET(request: NextRequest) {
-  const shopId = new URL(request.url).searchParams.get('shopId');
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
-  const errorRedirect = `${appUrl}/shop/settings?stripe_connect=error&tab=general`;
+  const params = new URL(request.url).searchParams;
+  const shopId = (params.get('shopId') || '').trim();
+  const origin = parseConnectOrigin(params.get('from'));
+  const errorRedirect = connectReturnPath(origin, appBaseUrl(), 'error');
 
-  if (!shopId) return NextResponse.redirect(errorRedirect);
+  if (!/^[a-zA-Z0-9_-]{8,}$/.test(shopId)) {
+    return NextResponse.redirect(errorRedirect);
+  }
 
   try {
-    const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { stripeAccountId: true } });
-    if (!shop?.stripeAccountId) return NextResponse.redirect(errorRedirect);
+    if (!stripePlatformConfigured()) return NextResponse.redirect(errorRedirect);
 
-    const accountLink = await stripe.accountLinks.create({
-      account: shop.stripeAccountId,
-      refresh_url: `${appUrl}/api/stripe/connect/refresh?shopId=${shopId}`,
-      return_url: `${appUrl}/shop/settings?stripe_connect=success&tab=general`,
-      type: 'account_onboarding',
+    const shop = await prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true, stripeAccountId: true },
     });
+    if (!shop || !isStripeAccountId(shop.stripeAccountId)) {
+      return NextResponse.redirect(errorRedirect);
+    }
 
-    return NextResponse.redirect(accountLink.url);
-  } catch (err) {
-    console.error('[stripe/connect/refresh] Error:', err);
+    const account = await stripe.accounts.retrieve(shop.stripeAccountId);
+    const payoutsReady = shopCanReceiveConnectTransfer(account);
+    const url = await createShopAccountLink(shop.stripeAccountId, shop.id, origin, payoutsReady);
+    return NextResponse.redirect(url);
+  } catch {
+    console.error('[stripe/connect/refresh] Error');
     return NextResponse.redirect(errorRedirect);
   }
 }

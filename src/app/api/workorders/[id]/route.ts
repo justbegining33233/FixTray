@@ -7,6 +7,8 @@ import { sendSms } from '@/lib/smsService';
 import { awardLoyaltyPoints } from '@/lib/loyaltyService';
 import { dispatchWebhook } from '@/lib/webhookService';
 import logger from '@/lib/logger';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
 
@@ -89,7 +91,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
-    return NextResponse.json(workOrder, { headers: corsHeaders });
+    return NextResponse.json(
+      { ...workOrder, fixtrayServiceFee: await getPlatformServiceFeeUsd() },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     logger.error('Error fetching work order', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to fetch work order' }, { status: 500 });
@@ -139,6 +144,8 @@ export async function PUT(
     if (!canUpdate) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const platformFeeUsd = await getPlatformServiceFeeUsd();
     
     // Track status change
     if (data.status && data.status !== current.status) {
@@ -159,14 +166,16 @@ export async function PUT(
 
       // Send branded job-completed email when shop submits estimate and work is done
       if ((data.status as string) === 'waiting-for-payment') {
-        const totalDue = (current.estimatedCost || data.estimatedCost || 0) + 5;
+        const completedBill = billWithServiceFee(current.estimatedCost || data.estimatedCost || 0, platformFeeUsd);
+        const totalDue = completedBill.total;
         sendJobCompletedEmail(
           current.customer.email,
           `${current.customer.firstName} ${current.customer.lastName}`,
           id,
           totalDue,
           current.shop?.shopName || 'Your Shop',
-          current.issueDescription || 'Vehicle Service'
+          current.issueDescription || 'Vehicle Service',
+          completedBill.serviceFee
         ).catch((err) => {
           logger.error('Failed to send job completed email', { error: err instanceof Error ? err.message : String(err), workOrderId: id, totalDue });
         });
@@ -204,13 +213,14 @@ export async function PUT(
     
     // Send estimate email if estimated cost added
     if (data.estimatedCost && !current.estimatedCost) {
-      // Send branded estimate-ready email via Resend
-      const totalDue = data.estimatedCost + 5;
+      const estimateBill = billWithServiceFee(data.estimatedCost, platformFeeUsd);
+      const totalDue = estimateBill.total;
       sendEstimateReadyEmail(
         current.customer.email,
         `${current.customer.firstName} ${current.customer.lastName}`,
         id,
-        data.estimatedCost,
+        estimateBill.subtotal,
+        estimateBill.serviceFee,
         totalDue,
         current.shop?.shopName || 'Your Shop',
         current.issueDescription || 'Vehicle Service'
@@ -223,9 +233,12 @@ export async function PUT(
 
       // SMS notification for estimate ready
       if (current.customer.phone) {
+        const feeNote = estimateBill.serviceFee > 0
+          ? ` including FixTray Service Fee $${estimateBill.serviceFee.toFixed(2)}`
+          : '';
         sendSms(
           current.customer.phone,
-          `FixTray: Your estimate is ready — $${data.estimatedCost.toFixed(2)} for "${current.issueDescription?.slice(0, 40) || 'Vehicle Service'}". Review at fixtray.app/customer (WO: ...${id.slice(-6)})`
+          `FixTray: Your estimate is ready — $${totalDue.toFixed(2)}${feeNote} for "${current.issueDescription?.slice(0, 40) || 'Vehicle Service'}". Review at fixtray.app/customer (WO: ...${id.slice(-6)})`
         ).catch((err) => {
           logger.warn('Failed to send estimate ready SMS', { workOrderId: id, phone: current.customer.phone });
         });
@@ -241,7 +254,7 @@ export async function PUT(
           customerId: current.customerId,
           type: 'estimate',
           title: 'Estimate Ready',
-          message: `Your estimate for work order ${id} is ready: $${data.estimatedCost}`,
+          message: `Your estimate for work order ${id} is ready: $${billWithServiceFee(data.estimatedCost, platformFeeUsd).total.toFixed(2)}`,
           workOrderId: id,
           deliveryMethod: 'in-app',
         },

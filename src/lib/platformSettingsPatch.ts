@@ -1,4 +1,5 @@
 import { isSupportedLocaleInput, normalizeLocale } from './locale';
+import { normalizePlatformServiceFeeCents } from './platformFee';
 
 export function platformSettingsUpdate(body: Record<string, unknown>): {
   data: Record<string, unknown>;
@@ -6,12 +7,9 @@ export function platformSettingsUpdate(body: Record<string, unknown>): {
 } {
   const data: Record<string, unknown> = {};
 
-  if (typeof body.serviceFee === 'number' && Number.isFinite(body.serviceFee)) {
-    data.serviceFee = Math.round(body.serviceFee * 100);
-  }
-  if (typeof body.serviceFeeRaw === 'number' && Number.isFinite(body.serviceFeeRaw)) {
-    data.serviceFee = Math.round(body.serviceFeeRaw);
-  }
+  // System settings and superadmin both submit cents. Do not multiply again.
+  const serviceFeeCents = normalizePlatformServiceFeeCents(body);
+  if (serviceFeeCents !== undefined) data.serviceFee = serviceFeeCents;
   if (typeof body.platformName === 'string') data.platformName = body.platformName;
   if (typeof body.supportEmail === 'string') data.supportEmail = body.supportEmail;
   if (typeof body.maintenanceMode === 'boolean') data.maintenanceMode = body.maintenanceMode;

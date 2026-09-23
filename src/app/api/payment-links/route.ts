@@ -4,8 +4,30 @@ import { authenticateRequest } from '@/lib/auth';
 import crypto from 'crypto';
 import { validatePaymentLink } from '@/lib/shopFormValidation';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { quoteAmount } from '@/lib/workOrderCloseout';
+import { paymentLinkFeeBreakdown } from '@/lib/serviceFeeBill';
 
-function publicPaymentLink(link: {
+async function invoiceBreakdown(link: {
+  amount: number;
+  workOrderId: string | null;
+}) {
+  const amount = Number(link.amount) || 0;
+  let quote = 0;
+  if (amount > 0 && link.workOrderId) {
+    const workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
+    if (workOrder) quote = quoteAmount(workOrder);
+  }
+  const platformFee = amount > 0 ? await getPlatformServiceFeeUsd() : 0;
+  const bill = paymentLinkFeeBreakdown(amount, quote, platformFee);
+  return {
+    serviceCost: bill.serviceCost,
+    serviceFee: bill.serviceFee,
+    amount: bill.amount,
+  };
+}
+
+async function publicPaymentLink(link: {
   id: string;
   token: string;
   amount: number;
@@ -15,10 +37,13 @@ function publicPaymentLink(link: {
   expiresAt: Date | null;
   workOrderId: string | null;
 }) {
+  const breakdown = await invoiceBreakdown(link);
   return {
     id: link.id,
     token: link.token,
-    amount: link.amount,
+    amount: breakdown.amount,
+    serviceCost: breakdown.serviceCost,
+    serviceFee: breakdown.serviceFee,
     description: link.description,
     status: link.status,
     paidAt: link.paidAt,
@@ -36,9 +61,10 @@ async function settlePaymentLink(token: string) {
   }
 
   if (link.status !== 'paid') {
+    const breakdown = await invoiceBreakdown(link);
     await prisma.paymentLink.update({
       where: { id: link.id },
-      data: { status: 'paid', paidAt: new Date() },
+      data: { status: 'paid', paidAt: new Date(), amount: breakdown.amount },
     });
     if (link.workOrderId) {
       const workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
@@ -47,7 +73,7 @@ async function settlePaymentLink(token: string) {
           where: { id: workOrder.id },
           data: {
             paymentStatus: 'paid',
-            amountPaid: link.amount,
+            amountPaid: breakdown.amount,
             status: workOrder.status === 'waiting-for-payment' ? 'waiting-for-payment' : workOrder.status,
           },
         });
@@ -56,7 +82,7 @@ async function settlePaymentLink(token: string) {
   }
 
   const paid = await prisma.paymentLink.findUnique({ where: { token } });
-  return NextResponse.json(publicPaymentLink(paid!));
+  return NextResponse.json(await publicPaymentLink(paid!));
 }
 
 export async function GET(req: NextRequest) {
@@ -65,7 +91,7 @@ export async function GET(req: NextRequest) {
   if (token) {
     const link = await prisma.paymentLink.findUnique({ where: { token } });
     if (!link) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(publicPaymentLink(link));
+    return NextResponse.json(await publicPaymentLink(link));
   }
 
   const auth = authenticateRequest(req);

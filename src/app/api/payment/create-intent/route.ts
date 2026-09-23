@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
-import { createPaymentIntent } from '@/lib/stripe';
+import { createPaymentIntent, shopConnectPayoutReady } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
-import { FIXTRAY_SERVICE_FEE } from '@/lib/constants';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { invoiceTotal } from '@/lib/workOrderCloseout';
+import { buildConnectDestinationSplit } from '@/lib/stripeConnectSplit';
 import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -31,23 +33,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
-    const estimate = workOrder.estimate as any;
-    if (!estimate?.amount) {
-      return NextResponse.json({ error: 'No estimate available' }, { status: 400 });
-    }
-    
-    // Total charged to customer = estimate + FixTray $5 service fee
-    const totalAmount = estimate.amount + FIXTRAY_SERVICE_FEE;
-
-    // Fetch shop's Stripe connected account for automatic split
+    const bill = invoiceTotal(workOrder, await getPlatformServiceFeeUsd());
     const shop = await prisma.shop.findUnique({ where: { id: workOrder.shopId } });
+    const split = buildConnectDestinationSplit({
+      quoteUsd: bill.quoteAmount,
+      serviceFeeUsd: bill.serviceFee,
+      connectedAccountId: shop?.stripeAccountId,
+    });
+    if (!split.ok) {
+      return NextResponse.json({ error: split.error }, { status: split.status });
+    }
 
-    // Create payment intent — if shop has connected account, $5 goes to FixTray, rest to shop automatically
-    const paymentIntent = await createPaymentIntent(
-      totalAmount,
-      { workOrderId: workOrder.id, customerId: workOrder.customerId },
-      shop?.stripeAccountId ?? undefined,
-    );
+    const payoutReady = await shopConnectPayoutReady(split.destination);
+    if (!payoutReady) {
+      return NextResponse.json(
+        {
+          error:
+            "This shop's Stripe account cannot receive payouts yet. Finish Connect onboarding, then try again.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const serviceFee = bill.serviceFee;
+    const totalAmount = bill.amount;
+
+    // Destination charge: application fee is the live platform fee only.
+    const paymentIntent = await createPaymentIntent(split, {
+      workOrderId: workOrder.id,
+      customerId: workOrder.customerId,
+      shopId: workOrder.shopId,
+    });
     
     // Update work order
     await prisma.workOrder.update({
@@ -61,7 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       amount: totalAmount,
-      serviceFee: FIXTRAY_SERVICE_FEE,
+      serviceFee,
     });
   } catch (error) {
     logger.error('Payment intent error', { error: error instanceof Error ? error.message : String(error) });

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
 import { generateInvoicePDF } from '@/lib/pdf';
+import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 
 export async function GET(
   request: NextRequest,
@@ -38,8 +39,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
-    // Generate PDF - cast to WorkOrder type
-    const pdf = generateInvoicePDF(workOrder as any);
+    const serviceFee = await getPlatformServiceFeeUsd();
+    const pdf = generateInvoicePDF(workOrder as any, serviceFee);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
     
     return new NextResponse(pdfBuffer, {

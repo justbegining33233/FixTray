@@ -73,7 +73,7 @@ export default function Payments() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setPayError('Could not initiate payment. Please try again.');
+        setPayError(typeof data.error === 'string' && data.error ? data.error : 'Could not initiate payment. Please try again.');
         setPaying(null);
       }
     } catch {
@@ -142,14 +142,22 @@ export default function Payments() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
-                      {payment.status === "Paid" ? `$${payment.amountPaid.toFixed(2)} paid` : `$${payment.amount.toFixed(2)} due`}
+                      {payment.status === 'Paid' ? `$${payment.amount.toFixed(2)} paid` : `$${payment.amount.toFixed(2)} due`}
                     </div>
                     <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 4 }}>{say(payment.service)}</div>
                     <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{say(payment.shop)}  {say(payment.vehicle)}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{formatDate(payment.date)}</div>
-                    {payment.status === "Pending" && payment.amount > 0 && (
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                        {say("Service $")}{payment.serviceCost.toFixed(2)} {say("+ FixTray fee $5.00")}{' '}</div>
+                    {payment.fixtrayFee > 0 && (
+                      <div style={{ marginTop: 8, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#e5e7eb' }}>
+                          <span>{say("Services &amp; Parts")}</span>
+                          <span>${payment.serviceCost.toFixed(2)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2' }}>
+                          <span>{say("FixTray Service Fee")}</span>
+                          <span>${payment.fixtrayFee.toFixed(2)}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
                   <span style={{

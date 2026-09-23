@@ -8,7 +8,7 @@ import {
   manualAuthorizationCreateAllowed,
   MANUAL_AUTHORIZATION_BLOCKED_MESSAGE,
 } from '../src/lib/estimateAuthorization';
-import { closeoutTransition } from '../src/lib/workOrderCloseout';
+import { closeoutTransition, invoiceTotal, quoteAmount } from '../src/lib/workOrderCloseout';
 
 const signature = {
   signerName: 'Ada Customer',
@@ -80,30 +80,72 @@ describe('parts and labor estimate lines', () => {
   });
 });
 
+describe('invoice FixTray fee', () => {
+  it('keeps quoteAmount as services-only and adds the configured platform fee on the final bill', () => {
+    expect(quoteAmount({ estimatedCost: 100 })).toBe(100);
+    expect(invoiceTotal({ estimatedCost: 100 }, 5)).toEqual({
+      quoteAmount: 100,
+      serviceFee: 5,
+      amount: 105,
+    });
+    expect(invoiceTotal({ estimatedCost: 100 }, 7.5)).toEqual({
+      quoteAmount: 100,
+      serviceFee: 7.5,
+      amount: 107.5,
+    });
+  });
+
+  it('does not charge a fee when there is no quote', () => {
+    expect(invoiceTotal({ estimatedCost: 0 }, 5)).toEqual({
+      quoteAmount: 0,
+      serviceFee: 0,
+      amount: 0,
+    });
+  });
+});
+
 describe('work order closeout', () => {
   const quoted = { estimatedCost: 1.08, paymentStatus: 'unpaid' };
+  const fee = 5;
 
   it('does not invoice an estimate that is still waiting on the customer', () => {
-    const result = closeoutTransition({ ...quoted, status: 'estimate-submitted' }, 'invoice');
+    const result = closeoutTransition({ ...quoted, status: 'estimate-submitted' }, 'invoice', fee);
     expect(result.ok).toBe(false);
   });
 
   it('does not invoice a denied quote', () => {
-    const result = closeoutTransition({ ...quoted, status: 'denied-estimate' }, 'invoice');
+    const result = closeoutTransition({ ...quoted, status: 'denied-estimate' }, 'invoice', fee);
     expect(result.ok).toBe(false);
   });
 
   it('requests payment on the authorized job without marking it complete', () => {
-    const invoiced = closeoutTransition({ ...quoted, status: 'in-progress' }, 'invoice');
-    expect(invoiced).toMatchObject({ ok: true, status: 'waiting-for-payment', paymentStatus: 'unpaid', amount: 1.08 });
+    const invoiced = closeoutTransition({ ...quoted, status: 'in-progress' }, 'invoice', fee);
+    // Final bill = quote ($1.08) + configured FixTray service fee
+    expect(invoiced).toMatchObject({
+      ok: true,
+      status: 'waiting-for-payment',
+      paymentStatus: 'unpaid',
+      quoteAmount: 1.08,
+      serviceFee: fee,
+      amount: 6.08,
+    });
 
-    const paid = closeoutTransition({ ...quoted, status: 'waiting-for-payment' }, 'paid');
-    expect(paid).toMatchObject({ ok: true, status: 'waiting-for-payment', paymentStatus: 'paid' });
+    const paid = closeoutTransition({ ...quoted, status: 'waiting-for-payment' }, 'paid', fee);
+    expect(paid).toMatchObject({ ok: true, status: 'waiting-for-payment', paymentStatus: 'paid', amount: 6.08 });
+  });
+
+  it('uses the superadmin-configured fee amount on the invoice total', () => {
+    const invoiced = closeoutTransition({ ...quoted, status: 'in-progress' }, 'invoice', 3.25);
+    expect(invoiced).toMatchObject({
+      ok: true,
+      serviceFee: 3.25,
+      amount: 4.33,
+    });
   });
 
   it('completes the job only after it is paid', () => {
-    expect(closeoutTransition({ ...quoted, status: 'waiting-for-payment', paymentStatus: 'unpaid' }, 'complete').ok).toBe(false);
-    expect(closeoutTransition({ ...quoted, status: 'waiting-for-payment', paymentStatus: 'paid' }, 'complete')).toMatchObject({
+    expect(closeoutTransition({ ...quoted, status: 'waiting-for-payment', paymentStatus: 'unpaid' }, 'complete', fee).ok).toBe(false);
+    expect(closeoutTransition({ ...quoted, status: 'waiting-for-payment', paymentStatus: 'paid' }, 'complete', fee)).toMatchObject({
       ok: true,
       status: 'completed',
       paymentStatus: 'paid',

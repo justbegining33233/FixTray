@@ -10,6 +10,7 @@ import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { workOrderTitle } from '@/lib/workOrderMetrics';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { formatEstimateMoney } from '@/lib/estimateMoney';
+import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 
 interface EstimateLineItem {
@@ -54,6 +55,11 @@ function ManagerEstimatesContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [estimateMsg, setEstimateMsg] = useState<{type:'success'|'error';text:string}|null>(null);
+  const [serviceFeeUsd, setServiceFeeUsd] = useState(0);
+
+  const rememberFee = (value: unknown) => {
+    if (typeof value === 'number' && Number.isFinite(value)) setServiceFeeUsd(value);
+  };
 
   useEffect(() => {
     fetchTargetingData();
@@ -66,6 +72,7 @@ function ManagerEstimatesContent() {
       const listRes = await fetch('/api/workorders?limit=100', { headers });
       if (listRes.ok) {
         const listData = await listRes.json();
+        rememberFee(listData.fixtrayServiceFee);
         const open = unwrapWorkOrders(listData).filter((wo: any) =>
           !['closed', 'cancelled', 'completed'].includes(String(wo.status || ''))
         );
@@ -89,6 +96,7 @@ function ManagerEstimatesContent() {
           const data = await response.json();
           const loaded = data.workOrder ?? data;
           setWorkOrder(loaded);
+          rememberFee(loaded.fixtrayServiceFee);
           setSelectedWorkOrderId(workOrderId);
           hydrateEstimate(loaded);
         }
@@ -114,6 +122,7 @@ function ManagerEstimatesContent() {
         const data = await response.json();
         const loaded = data.workOrder ?? data;
         setWorkOrder(loaded);
+        rememberFee(loaded.fixtrayServiceFee);
         hydrateEstimate(loaded);
       }
     } catch (error) {
@@ -523,8 +532,14 @@ function ManagerEstimatesContent() {
               <div style={{ color: '#e5e7eb', textAlign: 'right' }}>{formatEstimateMoney(estimate.subtotal)}</div>
               <div style={{ color: '#9aa3b2' }}>{say("Tax (")}{say(estimate.taxRate)}%):</div>
               <div style={{ color: '#e5e7eb', textAlign: 'right' }}>{formatEstimateMoney(estimate.taxAmount)}</div>
+              {billWithServiceFee(estimate.total, serviceFeeUsd).serviceFee > 0 && (
+                <>
+                  <div style={{ color: '#9aa3b2' }}>{say(FIXTRAY_SERVICE_FEE_LABEL)}:</div>
+                  <div style={{ color: '#e5e7eb', textAlign: 'right' }}>{formatEstimateMoney(billWithServiceFee(estimate.total, serviceFeeUsd).serviceFee)}</div>
+                </>
+              )}
               <div style={{ color: '#e5e7eb', fontWeight: 600, borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>{say("Total:")}</div>
-              <div style={{ color: '#22c55e', fontWeight: 600, fontSize: 18, textAlign: 'right', borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>{formatEstimateMoney(estimate.total)}</div>
+              <div style={{ color: '#22c55e', fontWeight: 600, fontSize: 18, textAlign: 'right', borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>{formatEstimateMoney(billWithServiceFee(estimate.total, serviceFeeUsd).total)}</div>
             </div>
           </div>
 

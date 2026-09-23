@@ -1952,6 +1952,8 @@
     "loading_shop_details": "கடை விவரங்களை ஏற்றுகிறது...",
     "shop_not_found": "கடை கிடைக்கவில்லை",
     "back_to_manage_customers": "வாடிக்கையாளர்களை நிர்வகி பக்கத்துக்குத் திரும்பு",
+    "back_to_manage_shops": "கடைகளை நிர்வகிக்க திரும்பு",
+    "back_to_accepted_shops": "ஏற்றுக்கொண்ட கடைகளுக்குத் திரும்பு",
     "auto": "ஆட்டோ",
     "suspend_shop": "சஸ்பெண்ட் கடை",
     "reactivate_shop": "கடையை மீண்டும் இயக்கவும்",

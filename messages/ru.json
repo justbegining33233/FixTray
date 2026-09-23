@@ -1952,6 +1952,8 @@
     "loading_shop_details": "Загрузка информации о магазине...",
     "shop_not_found": "Магазин не найден",
     "back_to_manage_customers": "Вернуться к управлению клиентами",
+    "back_to_manage_shops": "Вернуться к управлению магазинами",
+    "back_to_accepted_shops": "Вернуться к принятым магазинам",
     "auto": "Авто",
     "suspend_shop": "Приостановить магазин",
     "reactivate_shop": "Возобновить магазин",

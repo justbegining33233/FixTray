@@ -1952,6 +1952,8 @@
     "loading_shop_details": "მაღაზიის დეტალების ჩატვირთვა...",
     "shop_not_found": "მაღაზია ვერ მოიძებნა",
     "back_to_manage_customers": "კლიენტების მართვაზე დაბრუნება",
+    "back_to_manage_shops": "მაღაზიების მართვაზე დაბრუნება",
+    "back_to_accepted_shops": "მიღებულ მაღაზიებზე დაბრუნება",
     "auto": "ავტო",
     "suspend_shop": "შეაჩერე მაღაზია",
     "reactivate_shop": "ხელახლა გააქტიურეთ მაღაზია",

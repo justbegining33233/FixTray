@@ -18,6 +18,11 @@ interface CalendarEvent {
   service?: string;
 }
 
+/** String href only. Folding Next's Route union into this ternary exceeds TS's complexity limit. */
+function calendarEventViewHref(event: Pick<CalendarEvent, 'type' | 'id'>, home: string): string {
+  return event.type === 'appointment' ? home : `/workorders/${event.id}`;
+}
+
 export default function ShopCalendar() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop', 'manager', 'tech']);
@@ -108,7 +113,8 @@ export default function ShopCalendar() {
   if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
-  const dashboardHref = portalDashboardHref(user.role) as Route;
+  const dashboardPath = portalDashboardHref(user.role);
+  const dashboardHref = dashboardPath as Route;
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -302,7 +308,7 @@ export default function ShopCalendar() {
                   <span style={{padding:'4px 10px', borderRadius:12, fontSize:11, fontWeight:700, background:`${statusColor(ev.status)}20`, color: statusColor(ev.status), textTransform:'uppercase'}}>
                     {say(ev.status)}
                   </span>
-                  <Link href={(ev.type === 'appointment' ? dashboardHref : `/workorders/${ev.id}`) as Route} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
+                  <Link href={calendarEventViewHref(ev, dashboardPath) as Route} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
                     {say("View")}{' '}</Link>
                 </div>
               ))}

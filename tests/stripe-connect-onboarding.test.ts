@@ -7,16 +7,21 @@ import {
 } from '../src/lib/integrationConfigShape';
 import {
   accountLinkType,
+  appBaseUrl,
   connectActionLabel,
+  connectFailureMessage,
   connectRefreshUrl,
   connectReturnPath,
+  expressAccountCreateAttempts,
   expressAccountCreateParams,
+  expressLinkPlan,
   isStripeAccountId,
   isStripeAccountLinkUrl,
   parseConnectOrigin,
   parseOAuthState,
   publicConnectStatus,
   shopConnectUiState,
+  shouldRetryExpressAccountCreate,
   stripeConnectControlAvailable,
   stripePlatformConfigured,
 } from '../src/lib/stripeConnectOnboarding';
@@ -95,6 +100,32 @@ describe('Stripe Connect account links', () => {
       metadata: { shopId: 'shop_1' },
     });
     expect(expressAccountCreateParams({ id: 'shop_1', email: '  ' }).email).toBeUndefined();
+    expect(expressAccountCreateParams({ id: 'shop_1', email: 'not-an-email' }).email).toBeUndefined();
+
+    const attempts = expressAccountCreateAttempts({ id: 'shop_1', email: 'owner@shop.test' });
+    expect(attempts[0]).toEqual(expressAccountCreateParams({ id: 'shop_1', email: 'owner@shop.test' }));
+    expect(attempts[1].capabilities).toEqual({ transfers: { requested: true } });
+    expect(attempts[1].capabilities).not.toHaveProperty('card_payments');
+    expect(attempts[2].capabilities).toBeUndefined();
+    expect(attempts[3].type).toBeUndefined();
+    expect(attempts[3].controller?.stripe_dashboard.type).toBe('express');
+    expect(attempts.some((attempt) => JSON.stringify(attempt).includes('sk_'))).toBe(false);
+
+    expect(shouldRetryExpressAccountCreate({ message: 'You cannot request the card_payments capability for this account.' })).toBe(true);
+    expect(shouldRetryExpressAccountCreate({ message: 'You can only create new accounts if you have signed up for Connect.' })).toBe(false);
+    expect(connectFailureMessage({ message: 'Invalid API key sk_live_abc123secret' })).not.toContain('sk_live_');
+    expect(connectFailureMessage({ message: 'You can only create new accounts if you have signed up for Connect.' }))
+      .toContain('Turn on Connect');
+
+    expect(expressLinkPlan(false)).toEqual(['account_onboarding']);
+    expect(expressLinkPlan(true)).toEqual(['login', 'account_onboarding']);
+    expect(expressLinkPlan(false)).not.toContain('account_update');
+
+    expect(appBaseUrl('https://fixtray.app/')).toBe('https://fixtray.app');
+    expect(appBaseUrl('fixtray.app')).toBe('https://fixtray.app');
+    expect(appBaseUrl('http://fixtray.app')).toBe('https://fixtray.app');
+    expect(appBaseUrl('http://localhost:3000')).toBe('http://localhost:3000');
+    expect(appBaseUrl('')).toBe('https://fixtray.app');
     expect(accountLinkType(false)).toBe('account_onboarding');
     expect(accountLinkType(true)).toBe('account_update');
     expect(isStripeAccountId('acct_abc123')).toBe(true);

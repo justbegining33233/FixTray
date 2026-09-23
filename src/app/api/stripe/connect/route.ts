@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
-import { parseConnectOrigin } from '@/lib/stripeConnectOnboarding';
+import { connectFailureMessage, parseConnectOrigin } from '@/lib/stripeConnectOnboarding';
 import { startShopStripeConnect, StripeConnectHttpError } from '@/lib/stripeConnectFlow';
 
 export const dynamic = 'force-dynamic';
@@ -21,13 +21,15 @@ export async function GET(request: NextRequest) {
   const origin = parseConnectOrigin(new URL(request.url).searchParams.get('from'));
 
   try {
-    const { url } = await startShopStripeConnect(auth.id, origin);
+    const { url } = await startShopStripeConnect(auth.shopId || auth.id, origin);
     return NextResponse.json({ url });
   } catch (err) {
     if (err instanceof StripeConnectHttpError) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
-    console.error('[stripe/connect] Error creating account link');
-    return NextResponse.json({ error: 'Failed to start Stripe Connect' }, { status: 500 });
+    console.error('[stripe/connect] Error creating account link', {
+      message: connectFailureMessage(err),
+    });
+    return NextResponse.json({ error: connectFailureMessage(err) }, { status: 502 });
   }
 }

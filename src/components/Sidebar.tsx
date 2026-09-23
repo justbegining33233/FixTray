@@ -48,7 +48,7 @@ const shopGroups: MenuGroup[] = [
     icon: <FaClipboardList />,
     defaultOpen: true,
     items: [
-      { icon: <FaListAlt />,  label: 'All Orders',       href: '/shop/home' },
+      { icon: <FaListAlt />,  label: 'All Orders',       href: '/shop/jobs' },
       { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
       { icon: <FaRoad />,  label: 'Roadside Jobs',    href: '/workorders/roadside' },
       { icon: <FaClipboardList />, label: 'Estimates', href: '/shop/estimates' },

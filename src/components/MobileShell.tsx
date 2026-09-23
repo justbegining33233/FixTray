@@ -6,7 +6,7 @@ import type { Route } from 'next';
 import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
-import { shellHrefForRole } from '@/lib/roleNav';
+import { normalizeRole, readClientActorRole, shellHrefForRole } from '@/lib/roleNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -580,6 +580,32 @@ const ROLES: Record<ShellRole, RoleConfig> = {
   },
 };
 
+function mapShellHrefs<T extends { href: string }>(items: T[], actor: string): T[] {
+  return items.map((item) => {
+    const href = shellHrefForRole(item.href, actor);
+    return href === item.href ? item : { ...item, href };
+  });
+}
+
+/** Shop calendar Switch View keeps its tabs, but manager clicks leave shop-only pages. */
+function roleConfigForActor(cfg: RoleConfig, actor: string): RoleConfig {
+  if (actor !== 'manager') return cfg;
+  return {
+    ...cfg,
+    tiles: mapShellHrefs(cfg.tiles, actor),
+    footer: mapShellHrefs(cfg.footer, actor),
+    newOptions: mapShellHrefs(cfg.newOptions, actor),
+    drawer: cfg.drawer.map((section) => ({
+      ...section,
+      items: mapShellHrefs(section.items, actor),
+    })),
+    tabGroups: cfg.tabGroups.map((group) => ({
+      ...group,
+      tabs: mapShellHrefs(group.tabs, actor),
+    })),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Shell props
 // ---------------------------------------------------------------------------
@@ -680,15 +706,15 @@ export default function MobileShell({
   // Render shell in native app (server-detected) or mobile browser (client-detected).
   if (!isNative && !isMobile) return <>{children}</>;
 
-  const cfg = ROLES[role];
+  const actorRole = normalizeRole(user?.role) || role;
+  const cfg = roleConfigForActor(ROLES[role], actorRole);
   const accent = cfg.accentColor;
 
   const isActivePath = (href: string) =>
     href === pathname || (href !== '/' && (pathname ?? '').startsWith(href + '/'));
 
   const go = (href: string) => {
-    const storedRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
-    router.push(shellHrefForRole(href, user?.role || storedRole || role) as Route);
+    router.push(shellHrefForRole(href, readClientActorRole(user?.role, role)) as Route);
   };
 
   const signOut = () => {

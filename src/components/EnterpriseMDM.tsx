@@ -210,13 +210,13 @@ export default function EnterpriseMDM() {
         });
 
         localStorage.setItem('mdm_status', JSON.stringify(mdmStatus));
-        alert('Device enrolled successfully in MDM');
+        alert(say('Device enrolled successfully in MDM'));
       } else {
         throw new Error('Enrollment failed');
       }
     } catch (error) {
       console.error('MDM enrollment failed:', error);
-      alert('Failed to enroll device in MDM');
+      alert(say('Failed to enroll device in MDM'));
     }
   };
 
@@ -250,13 +250,13 @@ export default function EnterpriseMDM() {
         });
 
         localStorage.removeItem('mdm_status');
-        alert('Device unenrolled from MDM');
+        alert(say('Device unenrolled from MDM'));
       } else {
         throw new Error('Unenrollment failed');
       }
     } catch (error) {
       console.error('MDM unenrollment failed:', error);
-      alert('Failed to unenroll device from MDM');
+      alert(say('Failed to unenroll device from MDM'));
     }
   };
 
@@ -274,7 +274,7 @@ export default function EnterpriseMDM() {
       }
 
       // In a real implementation, would also clear app data, cache, etc.
-      alert('Device has been remotely wiped. All data cleared.');
+      alert(say('Device has been remotely wiped. All data cleared.'));
       window.location.reload();
     } catch (error) {
       console.error('Remote wipe failed:', error);

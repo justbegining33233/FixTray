@@ -81,7 +81,7 @@ export default function ManagerInventory() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this inventory item?')) return;
+    if (!confirm(say('Delete this inventory item?'))) return;
     const token = localStorage.getItem('token');
     try {
       await fetch(`/api/shop/inventory-stock?id=${id}`, {

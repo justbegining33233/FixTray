@@ -129,7 +129,7 @@ export default function UserManagement() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(data?.error || 'Failed to update status');
+        alert(say(data?.error || 'Failed to update status'));
         return;
       }
 
@@ -160,7 +160,7 @@ export default function UserManagement() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(data?.error || 'Failed to update user');
+        alert(say(data?.error || 'Failed to update user'));
         return;
       }
 
@@ -182,7 +182,7 @@ export default function UserManagement() {
   const handleResetPassword = async () => {
     if (!selectedUser) return;
     if (newPassword.length < 8) {
-      alert('Password must be at least 8 characters.');
+      alert(say('Password must be at least 8 characters.'));
       return;
     }
     setSavingAction(true);
@@ -199,10 +199,10 @@ export default function UserManagement() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(data?.error || 'Failed to reset password');
+        alert(say(data?.error || 'Failed to reset password'));
         return;
       }
-      alert('Password reset successfully.');
+      alert(say('Password reset successfully.'));
       closeModal();
     } finally {
       setSavingAction(false);

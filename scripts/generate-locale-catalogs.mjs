@@ -65,6 +65,9 @@ function collectEnglish(files) {
   const propRe = /(?:name|sub|label|title|roleLabel|description|desc|detail|badge):\s*(?:'([^'\\]*)'|"([^"\\]*)")/g;
   const assignedRe = /(?:newErrors\.\w+|setStatus|text:)\s*=?\s*'([^'\\]+)'/g;
   const sayTextRe = /<SayText\s+text=(?:"([^"]*)"|'([^']*)')/g;
+  // Static sentences passed to status helpers. The screen shows them through say(error).
+  const statusCallRe = /(?:setError|setMessage|setSuccess|alert|confirm)\(\s*([\s\S]{0,500}?)\)/g;
+  const quotedRe = /'([^'\\]+)'|"([^"\\]+)"/g;
   for (const file of files) {
     const src = fs.readFileSync(file, 'utf8');
     if (!src.includes('usePhrase') && !src.includes('say(') && !src.includes('SayText')) continue;
@@ -75,6 +78,17 @@ function collectEnglish(files) {
         const text = (match[1] || match[2] || '').replace(/\\'/g, "'");
         if (!text || text.length > 400) continue;
         if (text.includes('${')) continue;
+        found.add(text);
+      }
+    }
+    statusCallRe.lastIndex = 0;
+    let statusMatch;
+    while ((statusMatch = statusCallRe.exec(src))) {
+      quotedRe.lastIndex = 0;
+      let quoted;
+      while ((quoted = quotedRe.exec(statusMatch[1]))) {
+        const text = (quoted[1] || quoted[2] || '').replace(/\\'/g, "'");
+        if (!text || text.length > 400 || text.includes('${') || !text.includes(' ')) continue;
         found.add(text);
       }
     }

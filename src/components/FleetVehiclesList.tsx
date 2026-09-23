@@ -40,7 +40,7 @@ export function FleetVehiclesList({ fleetAccountId }: { fleetAccountId: string }
   };
 
   const handleDelete = async (vehicleId: string) => {
-    if (!confirm('Delete this vehicle?')) return;
+    if (!confirm(say('Delete this vehicle?'))) return;
 
     try {
       const response = await fetch(`/api/fleet-vehicles/${vehicleId}`, {

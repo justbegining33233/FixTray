@@ -76,7 +76,7 @@ export default function CampaignsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this campaign?')) return;
+    if (!confirm(say('Delete this campaign?'))) return;
 
     try {
       const response = await fetch(`/api/campaigns/${id}`, {

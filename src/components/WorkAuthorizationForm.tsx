@@ -89,12 +89,12 @@ export default function WorkAuthorizationForm({
 
   const handleSubmit = async () => {
     if (!fullName.trim()) {
-      alert('Please enter your full name');
+      alert(say('Please enter your full name'));
       return;
     }
 
     if (!signatureData) {
-      alert('Please sign the authorization form');
+      alert(say('Please sign the authorization form'));
       return;
     }
 
@@ -121,12 +121,12 @@ export default function WorkAuthorizationForm({
         if (response.ok) {
           setSubmitted(true);
           setShowSignaturePad(false);
-          alert('Work authorization submitted successfully!');
+          alert(say('Work authorization submitted successfully!'));
         } else {
-          alert('Failed to submit authorization');
+          alert(say('Failed to submit authorization'));
         }
       } catch (err) {
-        alert('Error submitting authorization');
+        alert(say('Error submitting authorization'));
         console.error(err);
       }
     }

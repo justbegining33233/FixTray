@@ -91,7 +91,7 @@ export default function EnvironmentalFeesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this fee?')) return;
+    if (!confirm(say('Delete this fee?'))) return;
 
     try {
       const response = await fetch(`/api/environmental-fees/${id}`, {

@@ -136,7 +136,7 @@ export default function ShopDetailsPage() {
       <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}><FaTimesCircle style={{marginRight:4}} /></div>
-          <div style={{ fontSize: 20, marginBottom: 16 }}>{error || say("Shop not found")}</div>
+          <div style={{ fontSize: 20, marginBottom: 16 }}>{error ? say(error) : say("Shop not found")}</div>
           <Link href="/admin/manage-customers" style={{ color: '#3b82f6', textDecoration: 'none' }}>
             <FaArrowLeft style={{marginRight:4}} /> {say("Back to Manage Customers")}{' '}</Link>
         </div>

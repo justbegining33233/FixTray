@@ -52,7 +52,7 @@ export function LoanerVehicleList({ shopId, onCheckout, onCheckin }: LoanerVehic
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this loaner vehicle?')) return;
+    if (!confirm(say('Delete this loaner vehicle?'))) return;
 
     try {
       const response = await fetch(`/api/loaner-vehicles/${id}`, {

@@ -596,7 +596,7 @@ export default function WorkOrderDetailPage() {
     <main style={{ minHeight: '100vh', background: '#0a0a0a', padding: '40px 24px' }}>
       <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#9aa3b2', fontSize: 14, cursor: 'pointer', marginBottom: 24 }}>
         <FaArrowLeft /> {say("Back")}{' '}</button>
-      <div style={{ color: '#f87171' }}>{error || say("Work order not found.")}</div>
+      <div style={{ color: '#f87171' }}>{error ? say(error) : say("Work order not found.")}</div>
     </main>
   );
 

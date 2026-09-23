@@ -10,6 +10,7 @@ import {
   type ShopConnectPublicStatus,
   type ShopConnectUiState,
 } from '@/lib/stripeConnectOnboarding';
+import { roleMayStartStripeConnect } from '@/lib/customerSession';
 
 const BADGE: Record<ShopConnectUiState, { color: string; border: string; background: string }> = {
   ready: { color: '#86efac', border: '#22c55e', background: 'rgba(34,197,94,0.18)' },
@@ -26,6 +27,12 @@ export default function ShopStripeConnectCard({ origin }: { origin: ConnectRetur
   const [returnNotice, setReturnNotice] = useState('');
 
   const load = async (keepError = false) => {
+    const role = localStorage.getItem('userRole');
+    if (!roleMayStartStripeConnect(role)) {
+      setStatus(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     if (!keepError) setError('');
     try {
@@ -66,6 +73,7 @@ export default function ShopStripeConnectCard({ origin }: { origin: ConnectRetur
 
   const start = async () => {
     if (!canStart || busy) return;
+    if (!roleMayStartStripeConnect(localStorage.getItem('userRole'))) return;
     setStarting(true);
     setError('');
     try {

@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { FaCar, FaSearch, FaUser, FaWrench } from 'react-icons/fa';
+import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 
 interface SearchResults {
   customers: Array<{ id: string; firstName: string; lastName: string; email: string; phone: string | null }>;
@@ -167,7 +168,7 @@ export default function GlobalSearch() {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaWrench style={{marginRight:4}} /> {wo.id.slice(0, 8)}  -  {say(wo.customer.firstName)} {say(wo.customer.lastName)}</span>
+                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaWrench style={{marginRight:4}} /> {shortWorkOrderLabel(wo.id)}  -  {say(wo.customer.firstName)} {say(wo.customer.lastName)}</span>
                   <span style={{ color: '#9aa3b2', fontSize: 12 }}>{say(wo.status)}</span>
                 </div>
               ))}

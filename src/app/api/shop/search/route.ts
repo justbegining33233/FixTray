@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { workOrderSearchScope, workOrderTextMatch } from '@/lib/workOrderSearch';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -11,7 +12,10 @@ export async function GET(request: NextRequest) {
   }
 
   const shopId = auth.role === 'shop' ? auth.id : auth.shopId;
-  if (!shopId) {
+  const techScope = auth.role === 'tech'
+    ? workOrderSearchScope({ role: 'tech', id: auth.id, shopId: shopId || null })
+    : null;
+  if (!shopId && !techScope) {
     return NextResponse.json({ error: 'Shop not found' }, { status: 400 });
   }
 
@@ -23,8 +27,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const emptyCatalog = { customers: [], vehicles: [], parts: [], laborRates: [] };
     // Search customers
-    const customers = await prisma.customer.findMany({
+    const customers = shopId ? await prisma.customer.findMany({
       where: {
         AND: [
           { workOrders: { some: { shopId } } },
@@ -40,18 +45,16 @@ export async function GET(request: NextRequest) {
       },
       select: { id: true, firstName: true, lastName: true, email: true, phone: true },
       take: 5,
-    });
+    }) : emptyCatalog.customers;
 
-    // Search work orders by ID prefix or description
+    // Match the labels the UI actually shows (WO- + id suffix/prefix), the raw id,
+    // and either letter case. Techs also match jobs assigned to them.
+    const textMatch = workOrderTextMatch(q);
+    const workOrderWhere = techScope
+      ? { AND: [techScope, textMatch] }
+      : { shopId, ...textMatch };
     const workOrders = await prisma.workOrder.findMany({
-      where: {
-        shopId,
-        OR: [
-          { id: { startsWith: q } },
-          { issueDescription: { contains: q, mode: 'insensitive' } },
-          { vehicleType: { contains: q, mode: 'insensitive' } },
-        ],
-      },
+      where: workOrderWhere,
       select: {
         id: true,
         status: true,
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Search vehicles
-    const vehicles = await prisma.vehicle.findMany({
+    const vehicles = shopId ? await prisma.vehicle.findMany({
       where: {
         customer: { workOrders: { some: { shopId } } },
         OR: [
@@ -84,10 +87,10 @@ export async function GET(request: NextRequest) {
         customer: { select: { firstName: true, lastName: true } },
       },
       take: 5,
-    });
+    }) : emptyCatalog.vehicles;
 
     // Search parts/inventory
-    const parts = await prisma.inventoryItem.findMany({
+    const parts = shopId ? await prisma.inventoryItem.findMany({
       where: {
         shopId,
         OR: [
@@ -106,10 +109,10 @@ export async function GET(request: NextRequest) {
       },
       take: 5,
       orderBy: { updatedAt: 'desc' },
-    });
+    }) : emptyCatalog.parts;
 
     // Search labor rates
-    const laborRates = await prisma.shopLaborRate.findMany({
+    const laborRates = shopId ? await prisma.shopLaborRate.findMany({
       where: {
         shopId,
         OR: [
@@ -125,7 +128,7 @@ export async function GET(request: NextRequest) {
       },
       take: 5,
       orderBy: { updatedAt: 'desc' },
-    });
+    }) : emptyCatalog.laborRates;
 
     return NextResponse.json({ customers, workOrders, vehicles, parts, laborRates });
   } catch (error) {

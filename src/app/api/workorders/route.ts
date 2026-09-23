@@ -28,6 +28,7 @@ import {
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { workOrderTextMatch } from '@/lib/workOrderSearch';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -120,11 +121,7 @@ export async function GET(request: NextRequest) {
       where.customerId = customerId;
     }
     if (search) {
-      where.OR = [
-        { id: { contains: search, mode: 'insensitive' } },
-        { issueDescription: { contains: search, mode: 'insensitive' } },
-        { vehicleType: { contains: search, mode: 'insensitive' } },
-      ];
+      Object.assign(where, workOrderTextMatch(search));
     }
 
     // Advanced filtering (if feature flag enabled)

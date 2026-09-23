@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
     scrollRestoration: true,
   },
   typedRoutes: true,
+  // Keep locale JSON available at runtime even when a catalog is loaded from disk.
+  outputFileTracingIncludes: {
+    '/*': ['./messages/*.json'],
+  },
   // Disable pages router since we're using app router
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   // Compression configuration

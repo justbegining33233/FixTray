@@ -206,6 +206,16 @@ async function main() {
   const cachePath = path.join(root, 'messages/.translation-cache.json');
   const cache = fs.existsSync(cachePath) ? JSON.parse(fs.readFileSync(cachePath, 'utf8')) : {};
 
+  // Write an English stub before translation starts so a missing catalog
+  // cannot crash the app while this script is still running.
+  for (const locale of Object.keys(TARGETS)) {
+    const existingPath = path.join(root, `messages/${locale}.json`);
+    if (!fs.existsSync(existingPath)) {
+      fs.copyFileSync(enPath, existingPath);
+      console.log(`stubbed ${locale} with English`);
+    }
+  }
+
   for (const [locale, tl] of Object.entries(TARGETS)) {
     cache[locale] = cache[locale] || {};
     const missing = unique.filter((text) => cache[locale][text] == null);

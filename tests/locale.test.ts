@@ -8,6 +8,7 @@ import {
   SUPPORTED_LOCALES,
 } from '../src/lib/locale';
 import { platformSettingsUpdate } from '../src/lib/platformSettingsPatch';
+import { englishCatalog, readLocaleCatalog } from '../src/lib/messageCatalog';
 
 function flattenKeys(value: unknown, prefix = ''): string[] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix];
@@ -95,6 +96,15 @@ describe('platform language setting', () => {
       maintenanceMode: false,
       defaultLanguage: 'en',
     });
+  });
+});
+
+describe('catalog fallback', () => {
+  it('returns null for a missing or unsafe locale and keeps English readable', () => {
+    expect(readLocaleCatalog('zz')).toBeNull();
+    expect(readLocaleCatalog('../en')).toBeNull();
+    expect(readLocaleCatalog('ka')).not.toBeNull();
+    expect(englishCatalog()).toEqual(readLocaleCatalog('en'));
   });
 });
 

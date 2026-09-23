@@ -1952,6 +1952,8 @@
     "loading_shop_details": "Carregando detalhes da loja...",
     "shop_not_found": "Loja não encontrada",
     "back_to_manage_customers": "Voltar para gerenciar clientes",
+    "back_to_manage_shops": "Voltar para gerenciar lojas",
+    "back_to_accepted_shops": "Voltar para lojas aceitas",
     "auto": "Auto",
     "suspend_shop": "Suspender Loja",
     "reactivate_shop": "Reativar Loja",

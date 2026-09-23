@@ -1952,6 +1952,8 @@
     "loading_shop_details": "正在加载商店详细信息...",
     "shop_not_found": "未找到商店",
     "back_to_manage_customers": "返回管理客户",
+    "back_to_manage_shops": "返回管理店铺",
+    "back_to_accepted_shops": "返回已接受的店铺",
     "auto": "汽车",
     "suspend_shop": "暂停营业",
     "reactivate_shop": "重新激活商店",

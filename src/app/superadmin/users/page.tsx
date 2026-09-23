@@ -85,10 +85,13 @@ export default function SuperAdminUsers() {
           <Link href={"/superadmin/analytics" as Route} className="p-2 hover:bg-white/5 rounded-lg">
             <FaArrowLeft className="w-4 h-4 text-zinc-400" />
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-bold text-white">{say("User Management")}</h1>
             <p className="text-zinc-400 mt-1">{say(users.length)} {say("total users")}</p>
           </div>
+          <Link href={"/superadmin/users/new" as Route} className="px-4 py-2 rounded-xl bg-[#e5332a] text-white text-sm font-semibold">
+            {say("Add User")}
+          </Link>
         </div>
 
         {/* Role Summary */}

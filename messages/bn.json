@@ -1952,6 +1952,8 @@
     "loading_shop_details": "দোকানের বিবরণ লোড হচ্ছে...",
     "shop_not_found": "দোকান পাওয়া যায়নি",
     "back_to_manage_customers": "গ্রাহকদের পরিচালনায় ফিরে যান",
+    "back_to_manage_shops": "দোকান পরিচালনায় ফিরে যান",
+    "back_to_accepted_shops": "গৃহীত দোকানে ফিরে যান",
     "auto": "অটো",
     "suspend_shop": "দোকান স্থগিত",
     "reactivate_shop": "দোকান পুনরায় সক্রিয় করুন",

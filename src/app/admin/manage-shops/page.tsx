@@ -3,6 +3,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowLeft, FaBan, FaCheck, FaSyncAlt } from 'react-icons/fa';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 
 interface ShopData {
@@ -145,8 +146,13 @@ export default function ManageShops() {
             <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Manage Shops")}</div>
           </div>
         </div>
-        <Link href="/admin/home" style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:600}}>
-          <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
+        <div style={{display:'flex', gap:12, alignItems:'center'}}>
+          <Link href={"/admin/manage-shops/new" as Route} style={{padding:'8px 16px', background:'#e5332a', color:'white', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:700}}>
+            {say("Add Shop")}
+          </Link>
+          <Link href="/admin/home" style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:600}}>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
+        </div>
       </div>
 
       <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>

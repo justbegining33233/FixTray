@@ -1952,6 +1952,8 @@
     "loading_shop_details": "Nilo-load ang mga detalye ng shop...",
     "shop_not_found": "Hindi nahanap ang tindahan",
     "back_to_manage_customers": "Bumalik sa Pamahalaan ang Mga Customer",
+    "back_to_manage_shops": "Bumalik sa Pamahalaan ang mga Tindahan",
+    "back_to_accepted_shops": "Bumalik sa mga Tinanggap na Tindahan",
     "auto": "Auto",
     "suspend_shop": "Suspindihin ang Tindahan",
     "reactivate_shop": "I-reactivate ang Shop",

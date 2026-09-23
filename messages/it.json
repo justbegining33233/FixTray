@@ -1952,6 +1952,8 @@
     "loading_shop_details": "Caricamento dei dettagli del negozio...",
     "shop_not_found": "Negozio non trovato",
     "back_to_manage_customers": "Torna a Gestisci clienti",
+    "back_to_manage_shops": "Torna a Gestisci negozi",
+    "back_to_accepted_shops": "Torna ai negozi accettati",
     "auto": "Auto",
     "suspend_shop": "Sospendere il negozio",
     "reactivate_shop": "Riattiva il negozio",

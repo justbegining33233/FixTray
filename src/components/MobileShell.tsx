@@ -137,6 +137,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         title: 'Operations',
         items: [
           { ico: '🗂️', label: 'Work Orders', href: '/shop/jobs' },
+          { ico: '🗺️', label: 'Road Map', href: '/shop/map' },
           { ico: '📅', label: 'Calendar', href: '/shop/calendar' },
           { ico: '🏪', label: 'Ops Overview / Waiting Room', href: '/shop/home' },
           { ico: '🔍', label: 'DVI Inspections', href: '/shop/dvi' },
@@ -453,6 +454,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         title: 'Operations',
         items: [
           { ico: '📋', label: 'Assignments', href: '/manager/assignments' },
+          { ico: '🗺️', label: 'Road Map', href: '/manager/map' },
           { ico: '✅', label: 'Approvals', href: '/manager/approvals' },
           { ico: '📝', label: 'Work Authorizations', href: '/manager/work-authorizations' },
           { ico: '🔄', label: 'Recurring Jobs', href: '/manager/recurring-workorders' },

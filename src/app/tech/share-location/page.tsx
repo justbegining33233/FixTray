@@ -1,7 +1,7 @@
 'use client';
 
 import { usePhrase } from '@/lib/usePhrase';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -15,6 +15,32 @@ export default function ShareLocation() {
   const [sharing, setSharing] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [locationMsg, setLocationMsg] = useState<{type:'success'|'error';text:string}|null>(null);
+  const roadCallId = useRef<string | null>(null);
+  const watchId = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+  }, []);
+
+  const publishRoadCallFix = async (lat: number, lng: number) => {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch('/api/tech/tracking?shopId=current', { credentials: 'include', headers });
+    if (!response.ok) return 'Location captured. The shop map could not be updated.';
+    const data = await response.json();
+    const mine = (data.techs || []).find((tech: { id?: string; jobs?: { id: string }[] }) => tech.id === user?.id);
+    const jobId = mine?.jobs?.[0]?.id || null;
+    roadCallId.current = jobId;
+    if (!jobId) return 'Location captured. The shop map tracks you only during an active road call.';
+    const post = await fetch('/api/tech/tracking', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workOrderId: jobId, latitude: lat, longitude: lng }),
+    });
+    if (!post.ok) return 'Location captured, but the shop map did not accept it.';
+    return 'Location sent to the shop road-call map.';
+  };
 
   if (isLoading) {
     return (
@@ -46,7 +72,9 @@ export default function ShareLocation() {
         };
         setLocation(coords);
         setAddress(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
-        setLocationMsg({ type: 'success', text: 'Location captured.' });
+        publishRoadCallFix(coords.lat, coords.lng)
+          .then((text) => setLocationMsg({ type: 'success', text }))
+          .catch(() => setLocationMsg({ type: 'error', text: 'Location captured, but the shop map could not be updated.' }));
       },
       (error) => {
         setLocationMsg({ type: 'error', text: error.message || 'Unable to get location. Please allow location access.' });
@@ -55,7 +83,7 @@ export default function ShareLocation() {
     );
   };
 
-  const startSharing = () => {
+  const startSharing = async () => {
     if (!location) {
       setLocationMsg({type:'error',text:'Please get your current location first'});
       return;
@@ -63,6 +91,32 @@ export default function ShareLocation() {
     setSharing(true);
     const link = `https://maps.google.com/?q=${location.lat},${location.lng}`;
     setShareLink(link);
+    try {
+      const note = await publishRoadCallFix(location.lat, location.lng);
+      setLocationMsg({ type: 'success', text: note });
+    } catch {
+      setLocationMsg({ type: 'error', text: 'Location captured, but the shop map could not be updated.' });
+      return;
+    }
+    if (!roadCallId.current || !navigator.geolocation) return;
+    if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+    const jobId = roadCallId.current;
+    watchId.current = navigator.geolocation.watchPosition((position) => {
+      const token = localStorage.getItem('token');
+      fetch('/api/tech/tracking', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          workOrderId: jobId,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }),
+      }).catch(() => {});
+    });
   };
 
   const copyLink = () => {
@@ -144,7 +198,13 @@ export default function ShareLocation() {
                   </a>
                 </div>
 
-                <button onClick={() => setSharing(false)} style={{width:'100%', marginTop:12, padding:'14px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
+                <button onClick={() => {
+                  setSharing(false);
+                  if (watchId.current != null) {
+                    navigator.geolocation.clearWatch(watchId.current);
+                    watchId.current = null;
+                  }
+                }} style={{width:'100%', marginTop:12, padding:'14px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
                   {say("Stop Sharing")}{' '}</button>
               </div>
             )}

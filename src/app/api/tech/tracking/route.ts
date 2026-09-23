@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { authenticateRequest, verifyToken } from '@/lib/auth';
+import { geocodeAddresses } from '@/lib/geocodeAddress';
 import { actorMayAccessShop, usableShopId } from '@/lib/shopAccess';
-import { workOrderTitle } from '@/lib/workOrderMetrics';
+import { TRACKABLE_WORK_ORDER_STATUSES } from '@/lib/customerTracking';
+import {
+  addressesToGeocode,
+  buildRoadCallMap,
+  isTrackableRoadCall,
+  readStoredPoint,
+  shopAddressFromRecord,
+  type RoadCallJobInput,
+  type RoadCallTechInput,
+} from '@/lib/roadCallMap';
+import { isRoadsideLocation, ROADSIDE_LOCATION_VALUES } from '@/lib/waitingRoomBoard';
 
 function trackingShopId(actor: { id: string; role: string; shopId?: string | null }, requested: unknown): { shopId: string } | { error: string; status: number } {
   const requestedId = usableShopId(requested);
@@ -16,7 +27,7 @@ function trackingShopId(actor: { id: string; role: string; shopId?: string | nul
   return { shopId: own };
 }
 
-// GET /api/tech/tracking?shopId=current — manager/shop live locations
+// GET /api/tech/tracking?shopId=current — shop pin + active road-call techs and jobs
 export async function GET(request: NextRequest) {
   try {
     const auth = authenticateRequest(request);
@@ -28,58 +39,109 @@ export async function GET(request: NextRequest) {
     const resolved = trackingShopId(auth, new URL(request.url).searchParams.get('shopId'));
     if ('error' in resolved) return NextResponse.json({ error: resolved.error }, { status: resolved.status });
 
-    const [techs, pins] = await Promise.all([
-      prisma.tech.findMany({
-        where: { shopId: resolved.shopId },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          latitude: true,
-          longitude: true,
-          lastLocationUpdate: true,
-          available: true,
+    const shop = await prisma.shop.findUnique({
+      where: { id: resolved.shopId },
+      select: {
+        id: true,
+        shopName: true,
+        address: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        shopLocations: {
+          select: { address: true, city: true, state: true, zip: true, isMain: true, status: true },
         },
-      }),
-      prisma.techTracking.findMany({
-        where: { workOrder: { shopId: resolved.shopId } },
-        include: {
-          workOrder: {
-            select: { id: true, assignedTechId: true, issueDescription: true, status: true },
+      },
+    });
+    if (!shop) return NextResponse.json({ error: 'Shop not found' }, { status: 404 });
+
+    const rows = await prisma.workOrder.findMany({
+      where: {
+        shopId: resolved.shopId,
+        status: { in: [...TRACKABLE_WORK_ORDER_STATUSES] },
+        serviceLocation: { in: [...ROADSIDE_LOCATION_VALUES], mode: 'insensitive' },
+      },
+      select: {
+        id: true,
+        status: true,
+        serviceLocation: true,
+        issueDescription: true,
+        location: true,
+        assignedTechId: true,
+        customer: { select: { firstName: true, lastName: true } },
+        assignedTo: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            latitude: true,
+            longitude: true,
+            lastLocationUpdate: true,
           },
         },
-      }),
-    ]);
-
-    const pinByTech = new Map(pins.filter((pin) => pin.workOrder.assignedTechId).map((pin) => [pin.workOrder.assignedTechId as string, pin]));
-    const located = techs.flatMap((tech) => {
-      const pin = pinByTech.get(tech.id);
-      const latitude = pin?.latitude ?? tech.latitude;
-      const longitude = pin?.longitude ?? tech.longitude;
-      if (latitude == null || longitude == null) return [];
-      const onJob = !!pin && ['in-progress', 'en-route', 'assigned'].includes(pin.workOrder.status);
-      const updated = pin?.updatedAt || tech.lastLocationUpdate;
-      return [{
-        id: tech.id,
-        name: `${tech.firstName} ${tech.lastName}`.trim() || 'Technician',
-        phone: tech.phone || '',
-        latitude,
-        longitude,
-        status: onJob ? 'on-job' : tech.available ? 'clocked-in' : 'clocked-out',
-        currentJob: onJob ? workOrderTitle(pin.workOrder) : undefined,
-        lastUpdate: updated ? new Date(updated).toLocaleString() : 'Unknown',
-      }];
+        tracking: { select: { latitude: true, longitude: true, updatedAt: true } },
+        workOrderTimeEntries: {
+          where: { clockOut: null, status: { not: 'completed' } },
+          select: {
+            tech: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                latitude: true,
+                longitude: true,
+                lastLocationUpdate: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    return NextResponse.json({ techs: located });
+    const jobs: RoadCallJobInput[] = rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      serviceLocation: row.serviceLocation,
+      issueDescription: row.issueDescription,
+      location: row.location,
+      assignedTechId: row.assignedTechId,
+      customer: row.customer,
+      assignedTo: row.assignedTo,
+      tracking: row.tracking,
+      clockedInTechs: row.workOrderTimeEntries.flatMap((entry) => {
+        const tech = entry.tech;
+        if (!tech?.id) return [];
+        const rowTech: RoadCallTechInput = {
+          id: tech.id,
+          firstName: tech.firstName,
+          lastName: tech.lastName,
+          phone: tech.phone,
+          latitude: tech.latitude,
+          longitude: tech.longitude,
+          lastLocationUpdate: tech.lastLocationUpdate,
+        };
+        return [rowTech];
+      }),
+    }));
+
+    const address = shopAddressFromRecord(shop);
+    const geocodes = await geocodeAddresses(addressesToGeocode(address, jobs));
+    const map = buildRoadCallMap({
+      shop: { id: shop.id, name: shop.shopName, address },
+      jobs,
+      geocodes,
+    });
+
+    return NextResponse.json(map);
   } catch (error) {
     console.error('Tracking list error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// POST /api/tech/tracking - Tech updates their GPS location
+// POST /api/tech/tracking - Tech shares GPS only while on an active road call
 export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -90,33 +152,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tech account required' }, { status: 403 });
     }
 
-    const { workOrderId, latitude, longitude, estimatedArrival } = await request.json();
-    if (!workOrderId || latitude == null || longitude == null) {
+    const body = await request.json();
+    const point = readStoredPoint({ latitude: body?.latitude, longitude: body?.longitude });
+    const workOrderId = typeof body?.workOrderId === 'string' ? body.workOrderId : '';
+    if (!workOrderId || !point) {
       return NextResponse.json({ error: 'workOrderId, latitude, longitude are required' }, { status: 400 });
     }
 
-    // Verify work order is assigned to this tech
     const workOrder = await prisma.workOrder.findFirst({
-      where: { id: workOrderId, assignedTechId: decoded.id, status: { in: ['in-progress', 'en-route', 'assigned'] } },
+      where: {
+        id: workOrderId,
+        status: { in: [...TRACKABLE_WORK_ORDER_STATUSES] },
+        OR: [
+          { assignedTechId: decoded.id },
+          {
+            workOrderTimeEntries: {
+              some: { techId: decoded.id, clockOut: null, status: { not: 'completed' } },
+            },
+          },
+        ],
+      },
+      select: { id: true, serviceLocation: true, status: true },
     });
-    if (!workOrder) {
+    if (!workOrder || !isTrackableRoadCall(workOrder)) {
+      if (workOrder && !isRoadsideLocation(workOrder.serviceLocation)) {
+        return NextResponse.json({ error: 'Location is shared only during an active road call' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'Work order not found or not assigned to you' }, { status: 404 });
     }
 
-    const tracking = await prisma.techTracking.upsert({
-      where: { workOrderId },
-      create: {
-        workOrderId,
-        latitude,
-        longitude,
-        estimatedArrival: estimatedArrival ? new Date(estimatedArrival) : null,
-      },
-      update: {
-        latitude,
-        longitude,
-        estimatedArrival: estimatedArrival ? new Date(estimatedArrival) : null,
-      },
-    });
+    const estimatedArrival = body?.estimatedArrival ? new Date(body.estimatedArrival) : null;
+    const [tracking] = await Promise.all([
+      prisma.techTracking.upsert({
+        where: { workOrderId },
+        create: {
+          workOrderId,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          estimatedArrival,
+        },
+        update: {
+          latitude: point.latitude,
+          longitude: point.longitude,
+          estimatedArrival,
+        },
+      }),
+      prisma.tech.update({
+        where: { id: decoded.id },
+        data: {
+          latitude: point.latitude,
+          longitude: point.longitude,
+          lastLocationUpdate: new Date(),
+        },
+      }),
+    ]);
 
     return NextResponse.json({ tracking });
   } catch (error) {

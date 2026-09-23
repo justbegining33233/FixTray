@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { portalDashboardHref } from '@/lib/portalHome';
 
 interface CalendarEvent {
   id: string;
@@ -107,6 +108,8 @@ export default function ShopCalendar() {
   if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
+  const dashboardHref = portalDashboardHref(user.role) as Route;
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -158,13 +161,13 @@ export default function ShopCalendar() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/shop/home" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
+          <Link href={dashboardHref} style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
             <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Shop Calendar")}</div>
             <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Appointments & Work Orders")}</div>
           </div>
         </div>
-        <Link href="/shop/home" style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:600}}>
+        <Link href={dashboardHref} style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:600}}>
           <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
       </div>
 
@@ -299,7 +302,7 @@ export default function ShopCalendar() {
                   <span style={{padding:'4px 10px', borderRadius:12, fontSize:11, fontWeight:700, background:`${statusColor(ev.status)}20`, color: statusColor(ev.status), textTransform:'uppercase'}}>
                     {say(ev.status)}
                   </span>
-                  <Link href={(ev.type === 'appointment' ? `/shop/home` : `/workorders/${ev.id}`) as Route} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
+                  <Link href={(ev.type === 'appointment' ? dashboardHref : `/workorders/${ev.id}`) as Route} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
                     {say("View")}{' '}</Link>
                 </div>
               ))}

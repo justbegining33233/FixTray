@@ -49,9 +49,25 @@ export function parseOAuthState(raw: string | null | undefined): { shopId: strin
   };
 }
 
+const DEFAULT_APP_ORIGIN = 'https://fixtray.app';
+
+/**
+ * Absolute origin for Account Link return and refresh URLs.
+ * Stripe live mode rejects non-HTTPS redirects, and a bare host
+ * (fixtray.app) is not a valid URL. Localhost may stay on HTTP.
+ */
 export function appBaseUrl(configuredUrl?: string | null): string {
-  const configured = (configuredUrl === undefined ? process.env.NEXT_PUBLIC_APP_URL : configuredUrl)?.trim();
-  return (configured && configured.length > 0 ? configured : 'https://fixtray.app').replace(/\/$/, '');
+  const raw = (configuredUrl === undefined ? process.env.NEXT_PUBLIC_APP_URL : configuredUrl)?.trim() || '';
+  const candidate = raw ? (/^https?:\/\//i.test(raw) ? raw : `https://${raw}`) : DEFAULT_APP_ORIGIN;
+  try {
+    const parsed = new URL(candidate);
+    const local = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return DEFAULT_APP_ORIGIN;
+    if (parsed.protocol !== 'https:' && !local) parsed.protocol = 'https:';
+    return parsed.origin;
+  } catch {
+    return DEFAULT_APP_ORIGIN;
+  }
 }
 
 export function connectReturnPath(
@@ -156,6 +172,28 @@ export function publicConnectStatus(input: {
   };
 }
 
+export function connectShopEmail(email?: string | null): string | undefined {
+  const value = email?.trim();
+  if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return undefined;
+  return value;
+}
+
+export type ExpressAccountCreateParams = {
+  type?: 'express';
+  country: 'US';
+  email?: string;
+  metadata: { shopId: string };
+  capabilities?: {
+    card_payments?: { requested: true };
+    transfers?: { requested: true };
+  };
+  controller?: {
+    fees: { payer: 'application' };
+    losses: { payments: 'application' };
+    stripe_dashboard: { type: 'express' };
+  };
+};
+
 export function expressAccountCreateParams(shop: { id: string; email?: string | null }): {
   type: 'express';
   country: 'US';
@@ -166,7 +204,7 @@ export function expressAccountCreateParams(shop: { id: string; email?: string | 
   };
   metadata: { shopId: string };
 } {
-  const email = shop.email?.trim();
+  const email = connectShopEmail(shop.email);
   return {
     type: 'express',
     country: 'US',
@@ -177,6 +215,99 @@ export function expressAccountCreateParams(shop: { id: string; email?: string | 
     },
     metadata: { shopId: shop.id },
   };
+}
+
+/**
+ * Ordered Express create payloads. The first matches destination charges
+ * (card_payments + transfers). Later attempts recover when the platform
+ * Express profile only allows transfers, or when this API version wants
+ * controller properties instead of type=express.
+ */
+export function expressAccountCreateAttempts(shop: { id: string; email?: string | null }): ExpressAccountCreateParams[] {
+  const primary = expressAccountCreateParams(shop);
+  const identity = {
+    country: primary.country,
+    ...(primary.email ? { email: primary.email } : {}),
+    metadata: primary.metadata,
+  };
+  const transfersOnly = { transfers: { requested: true as const } };
+  const controller = {
+    fees: { payer: 'application' as const },
+    losses: { payments: 'application' as const },
+    stripe_dashboard: { type: 'express' as const },
+  };
+  return [
+    primary,
+    { ...identity, type: 'express', capabilities: transfersOnly },
+    { ...identity, type: 'express' },
+    { ...identity, controller, capabilities: primary.capabilities },
+    { ...identity, controller, capabilities: transfersOnly },
+  ];
+}
+
+export function errorText(err: unknown): string {
+  if (!err) return '';
+  if (typeof err === 'string') return err;
+  if (err instanceof Error) return err.message || '';
+  if (typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
+    return (err as { message: string }).message;
+  }
+  return '';
+}
+
+/** True when another Express create shape might be accepted. Auth and platform-setup errors are not retried. */
+export function shouldRetryExpressAccountCreate(err: unknown): boolean {
+  const message = errorText(err).toLowerCase();
+  if (!message) return false;
+  if (
+    message.includes('signed up for connect') ||
+    message.includes('api key') ||
+    message.includes('expired api key') ||
+    message.includes('rate limit')
+  ) {
+    return false;
+  }
+  return (
+    message.includes('capabilit') ||
+    message.includes('controller') ||
+    message.includes('card_payments') ||
+    message.includes('transfers') ||
+    message.includes('recipient') ||
+    message.includes('unknown parameter') ||
+    message.includes('account type') ||
+    (message.includes('type') && message.includes('express'))
+  );
+}
+
+const STRIPE_SECRET_PATTERN = /\b(?:sk|rk|pk)_(?:live|test)_[A-Za-z0-9]+|\bwhsec_[A-Za-z0-9]+/g;
+
+/** Shop-facing Connect failure. Never includes a platform secret. */
+export function connectFailureMessage(err: unknown): string {
+  const raw = errorText(err).replace(STRIPE_SECRET_PATTERN, '[redacted]').replace(/\s+/g, ' ').trim();
+  if (!raw) {
+    return 'Stripe could not start Connect. Confirm the platform secret key can create Express accounts, then try again.';
+  }
+  if (/signed up for connect/i.test(raw)) {
+    return 'Stripe Connect is not enabled on the platform account. Turn on Connect in the Stripe Dashboard, then try again.';
+  }
+  if (/https/i.test(raw) && /redirect/i.test(raw)) {
+    return 'Stripe rejected the return URL because it is not HTTPS. Set NEXT_PUBLIC_APP_URL to https://fixtray.app and try again.';
+  }
+  return raw.length > 240 ? `${raw.slice(0, 237)}...` : raw;
+}
+
+/**
+ * Express accounts use hosted onboarding. account_update links are rejected
+ * for Express dashboards and were masking the real Stripe error.
+ * A payout-ready account opens the Express dashboard (login link) first.
+ */
+export function expressLinkPlan(payoutsReady: boolean): Array<'login' | 'account_onboarding'> {
+  return payoutsReady ? ['login', 'account_onboarding'] : ['account_onboarding'];
+}
+
+export function isNullableColumnReadError(err: unknown): boolean {
+  const text = errorText(err).toLowerCase();
+  return text.includes('incompatible value of null') || text.includes('inconsistent column data');
 }
 
 /** Incomplete accounts stay on hosted onboarding. Ready accounts open the update form. */

@@ -6,6 +6,8 @@ import type { Route } from 'next';
 import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
+import { shellHrefForRole } from '@/lib/roleNav';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { usePhrase } from '@/lib/usePhrase';
@@ -76,15 +78,15 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     footer: [
       { ico: '🏠', label: 'Home', href: '/shop/home' },
-      { ico: '🗂️', label: 'Jobs', href: '/shop/home' },
+      { ico: '🗂️', label: 'Jobs', href: '/shop/jobs' },
       { ico: '💬', label: 'Chat', href: '/shop/customer-messages' },
       { ico: '📊', label: 'Reports', href: '/shop/analytics' },
     ],
     tabGroups: [
       {
-        match: ['/shop/home', '/shop/calendar', '/shop/dvi', '/shop/work-authorizations', '/shop/recurring-workorders', '/shop/new-inshop-job', '/shop/waiting-room', '/shop/estimates'],
+        match: ['/shop/home', '/shop/jobs', '/shop/calendar', '/shop/dvi', '/shop/work-authorizations', '/shop/recurring-workorders', '/shop/new-inshop-job', '/shop/waiting-room', '/shop/estimates'],
         tabs: [
-          { ico: '🗂️', label: 'Jobs', href: '/shop/home' },
+          { ico: '🗂️', label: 'Jobs', href: '/shop/jobs' },
           { ico: '📅', label: 'Calendar', href: '/shop/calendar' },
           { ico: '🏪', label: 'Ops', href: '/shop/home' },
           { ico: '💰', label: 'Estimates', href: '/shop/estimates' },
@@ -128,13 +130,13 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     newOptions: [
       { ico: '🏪', title: 'In-Shop Job', sub: 'Customer at the shop', href: '/shop/new-inshop-job' },
-      { ico: '🚐', title: 'Roadside Job', sub: 'Vehicle at another location', href: '/tech/new-roadside-job' },
+      { ico: '🚐', title: 'Roadside Job', sub: 'Vehicle at another location', href: '/shop/new-roadside-job' },
     ],
     drawer: [
       {
         title: 'Operations',
         items: [
-          { ico: '🗂️', label: 'Work Orders', href: '/shop/home' },
+          { ico: '🗂️', label: 'Work Orders', href: '/shop/jobs' },
           { ico: '📅', label: 'Calendar', href: '/shop/calendar' },
           { ico: '🏪', label: 'Ops Overview / Waiting Room', href: '/shop/home' },
           { ico: '🔍', label: 'DVI Inspections', href: '/shop/dvi' },
@@ -444,7 +446,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     newOptions: [
       { ico: '🏪', title: 'In-Shop Job', sub: 'Create new in-shop work order', href: '/shop/new-inshop-job' },
-      { ico: '🚐', title: 'Roadside Job', sub: 'Dispatch a roadside job', href: '/tech/new-roadside-job' },
+      { ico: '🚐', title: 'Roadside Job', sub: 'Dispatch a roadside job', href: '/shop/new-roadside-job' },
     ],
     drawer: [
       {
@@ -606,6 +608,7 @@ export default function MobileShell({
 }: MobileShellProps) {
   const t = useTranslations('chrome');
   const say = usePhrase();
+  const { user } = useAuth();
   const isNative = useIsNative();
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -683,7 +686,10 @@ export default function MobileShell({
   const isActivePath = (href: string) =>
     href === pathname || (href !== '/' && (pathname ?? '').startsWith(href + '/'));
 
-  const go = (href: string) => router.push(href as Route);
+  const go = (href: string) => {
+    const storedRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+    router.push(shellHrefForRole(href, user?.role || storedRole || role) as Route);
+  };
 
   const signOut = () => {
     if (typeof window !== 'undefined') {

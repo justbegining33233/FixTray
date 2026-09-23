@@ -1,32 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { authenticateRequest } from '@/lib/auth';
+import { authenticateRequest, type AuthUser } from '@/lib/auth';
+import { integrationWriteFromBody, normalizeIntegrationConfig } from '@/lib/integrationConfigShape';
 
-// GET/PATCH integrations for a shop
+function shopIdFromAuth(auth: AuthUser): string | undefined {
+  return auth.role === 'shop' ? auth.id : auth.shopId;
+}
+
+// GET/POST integrations for a shop
 export async function GET(req: NextRequest) {
   const auth = authenticateRequest(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
+  const shopId = shopIdFromAuth(auth);
   if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
   const configs = await prisma.integrationConfig.findMany({ where: { shopId } });
-  // Remove sensitive tokens from response
-  return NextResponse.json(configs.map(c => ({ ...c, accessToken: c.accessToken ? '***' : null, refreshToken: null })));
+  return NextResponse.json(configs.map((row) => normalizeIntegrationConfig(row)));
 }
 
 export async function POST(req: NextRequest) {
   const auth = authenticateRequest(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
+  const shopId = shopIdFromAuth(auth);
   if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
   const body = await req.json();
+  const provider = typeof body?.provider === 'string' ? body.provider.trim() : '';
+  if (!provider) return NextResponse.json({ error: 'Provider is required' }, { status: 400 });
 
+  if (provider === 'stripe') {
+    return NextResponse.json(
+      { error: 'Stripe payouts use Connect. Start onboarding from shop integrations — do not paste secret keys.' },
+      { status: 400 },
+    );
+  }
+
+  const write = integrationWriteFromBody(body);
   const config = await prisma.integrationConfig.upsert({
-    where: { shopId_provider: { shopId, provider: body.provider } },
-    update: { enabled: body.enabled, settings: body.settings, accountId: body.accountId },
+    where: { shopId_provider: { shopId, provider } },
+    update: {
+      enabled: write.enabled,
+      ...(write.settings !== undefined ? { settings: write.settings } : {}),
+      ...(write.accountId !== undefined ? { accountId: write.accountId } : {}),
+    },
     create: {
-      shopId, provider: body.provider, enabled: body.enabled || false,
-      settings: body.settings || null, accountId: body.accountId || null,
+      shopId,
+      provider,
+      enabled: write.enabled,
+      settings: write.settings ?? null,
+      accountId: write.accountId ?? null,
     },
   });
-  return NextResponse.json({ ...config, accessToken: null, refreshToken: null }, { status: 201 });
+  return NextResponse.json(normalizeIntegrationConfig(config), { status: 201 });
 }

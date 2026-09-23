@@ -13,10 +13,12 @@ import { useIsNative } from '../../../context/NativeContext';
 import { summarizeAppointments } from '@/lib/appointmentValidation';
 import { unwrapVehicles, unwrapWorkOrders } from '@/lib/workOrderList';
 import { isCompletedWorkOrder, summarizeWorkOrders, type WorkOrderSummary } from '@/lib/workOrderMetrics';
+import { usePhrase } from '@/lib/usePhrase';
 import { loyaltyPointsFromRewards } from '@/lib/rewardPayload';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
+  const say = usePhrase();
   const isMountedRef = useRef(true);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
@@ -238,7 +240,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Appointments', 
       desc: 'Book and manage service appointments', 
-      detail: `${stats.upcomingAppointments} upcoming · ${stats.appointmentCount} total`, 
+      detail: <>{stats.upcomingAppointments} {say('upcoming')} · {stats.appointmentCount} {say('total')}</>, 
       badge: stats.upcomingAppointments > 0 ? 'Active' : '', 
       badgeColor: '#10b981', 
       link: '/customer/appointments',
@@ -249,7 +251,7 @@ export default function CustomerDashboard() {
       icon: '',
       name: 'Work Orders',
       desc: 'Track all your repair and service work orders',
-      detail: `${stats.historyCount} completed`,
+      detail: <>{stats.historyCount} {say('completed')}</>,
       badge: stats.historyCount > 0 ? 'History' : '',
       badgeColor: '#f59e0b',
       link: '/customer/workorders',
@@ -285,7 +287,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'My Vehicles', 
       desc: 'Manage your fleet information', 
-      detail: `${stats.vehicleCount} vehicle${stats.vehicleCount !== 1 ? 's' : ''} registered`, 
+      detail: <>{stats.vehicleCount} {say(stats.vehicleCount === 1 ? 'vehicle registered' : 'vehicles registered')}</>, 
       badge: 'Essential', 
       badgeColor: '#f59e0b', 
       link: '/customer/vehicles',
@@ -299,7 +301,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Reviews', 
       desc: 'Share your service experiences', 
-      detail: `${stats.reviewCount} review${stats.reviewCount !== 1 ? 's' : ''} written`, 
+      detail: <>{stats.reviewCount} {say(stats.reviewCount === 1 ? 'review written' : 'reviews written')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/reviews',
@@ -310,7 +312,7 @@ export default function CustomerDashboard() {
       icon: <FaHeart style={{marginRight:4}} />, 
       name: 'Favorite Shops', 
       desc: 'Quick access to preferred shops', 
-      detail: `${stats.favoriteCount} saved favorite${stats.favoriteCount !== 1 ? 's' : ''}`, 
+      detail: <>{stats.favoriteCount} {say(stats.favoriteCount === 1 ? 'saved favorite' : 'saved favorites')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/favorites',
@@ -321,7 +323,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Rewards', 
       desc: 'Earn points and unlock perks', 
-      detail: `${loyaltyPoints} points - ${tier} tier`, 
+      detail: <>{loyaltyPoints} {say('points')} - {tier} {say('tier')}</>, 
       badge: 'New', 
       badgeColor: '#a855f7', 
       link: '/customer/rewards',
@@ -332,7 +334,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Payments', 
       desc: 'Manage payment methods', 
-      detail: `${stats.paymentMethods} saved payment method${stats.paymentMethods !== 1 ? 's' : ''}`, 
+      detail: <>{stats.paymentMethods} {say(stats.paymentMethods === 1 ? 'saved payment method' : 'saved payment methods')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/payments',
@@ -368,7 +370,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Service History', 
       desc: 'View past service records', 
-      detail: `${stats.historyCount} completed service${stats.historyCount !== 1 ? 's' : ''}`, 
+      detail: <>{stats.historyCount} {say(stats.historyCount === 1 ? 'completed service' : 'completed services')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/history',
@@ -379,7 +381,7 @@ export default function CustomerDashboard() {
       icon: '', 
       name: 'Documents', 
       desc: 'Access invoices and receipts', 
-      detail: `${stats.documentCount} document${stats.documentCount !== 1 ? 's' : ''} available`, 
+      detail: <>{stats.documentCount} {say(stats.documentCount === 1 ? 'document available' : 'documents available')}</>, 
       badge: '', 
       badgeColor: '', 
       link: '/customer/documents',
@@ -408,7 +410,7 @@ export default function CustomerDashboard() {
   if (!statsReady) {
     return (
       <div style={{minHeight:'100vh', background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', color:'#e5e7eb', fontSize:18}}>
-        Syncing your live dashboard data...
+        {say('Syncing your live dashboard data...')}
       </div>
     );
   }
@@ -418,23 +420,23 @@ export default function CustomerDashboard() {
       {/* Top Navigation */}
       <TopNavBar showMenuButton={false} />
       <div style={{background:'rgba(0,0,0,0.15)', padding:'8px 32px', display:'flex', justifyContent:'flex-end'}}>
-        <div style={{fontSize:12, color:'#b8beca'}}>{tier} - {loyaltyPoints} pts</div>
+        <div style={{fontSize:12, color:'#b8beca'}}>{say(tier)} - {say(loyaltyPoints)} pts</div>
       </div>
 
       <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
         {/* Customer Stats */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16, marginBottom:32}}>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Active Jobs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{customerStats.openOrders}</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say('Active Jobs')}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{say(customerStats.openOrders)}</div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Total Vehicles</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{stats.vehicleCount}</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say('Total Vehicles')}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{say(stats.vehicleCount)}</div>
           </div>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Loyalty Points</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{loyaltyPoints}</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say('Loyalty Points')}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{say(loyaltyPoints)}</div>
           </div>
         </div>
 
@@ -464,7 +466,7 @@ export default function CustomerDashboard() {
                 whiteSpace:'nowrap'
               }}
             >
-              <FaSearch style={{marginRight:4}} /> Discover
+              <FaSearch style={{marginRight:4}} /> {say('Discover')}
             </button>
             <button
               onClick={() => setActiveTab('active')}
@@ -482,7 +484,7 @@ export default function CustomerDashboard() {
                 whiteSpace:'nowrap'
               }}
             >
-              <FaBolt style={{marginRight:4}} /> Active Services
+              <FaBolt style={{marginRight:4}} /> {say('Active Services')}
             </button>
             <button
               onClick={() => setActiveTab('account')}
@@ -500,7 +502,7 @@ export default function CustomerDashboard() {
                 whiteSpace:'nowrap'
               }}
             >
-              <FaUser style={{marginRight:4}} /> Account
+              <FaUser style={{marginRight:4}} /> {say('Account')}
             </button>
             <button
               onClick={() => setActiveTab('records')}
@@ -518,7 +520,7 @@ export default function CustomerDashboard() {
                 whiteSpace:'nowrap'
               }}
             >
-              <FaChartBar style={{marginRight:4}} /> Records
+              <FaChartBar style={{marginRight:4}} /> {say('Records')}
             </button>
           </div>
         </div>
@@ -526,7 +528,7 @@ export default function CustomerDashboard() {
         {/* Feature Cards Grid - Conditional Rendering Based on Active Tab */}
         {activeTab === 'discover' && (
           <div style={{marginBottom:32}}>
-            <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaSearch style={{marginRight:4}} /> Discover</h2>
+            <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaSearch style={{marginRight:4}} /> {say('Discover')}</h2>
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20}}>
               {discoverFeatures.map(feature => {
                 const recentItems = feature.getData();
@@ -554,32 +556,32 @@ export default function CustomerDashboard() {
                 }}>
                   {feature.badge && (
                     <div style={{position:'absolute', top:12, right:12, padding:'4px 10px', background:feature.badgeColor, color:'white', borderRadius:12, fontSize:10, fontWeight:700}}>
-                      {feature.badge}
+                      {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
-                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{feature.name}</div>
-                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{feature.desc}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
+                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
+                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {feature.detail}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {/* Recent Items */}
                   {recentItems && recentItems.length > 0 ? (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12}}>
-                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>Recent</div>
+                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>{say('Recent')}</div>
                       {recentItems.map((item: any, idx: number) => (
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {item.serviceType || item.shop?.shopName || (typeof item.issueDescription === 'string' ? item.issueDescription : item.issueDescription?.symptoms) || 'Item'}
+                            {item.serviceType || item.shop?.shopName || (typeof item.issueDescription === 'string' ? item.issueDescription : item.issueDescription?.symptoms) || say('Item')}
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12, fontSize:11, color:'#6b7280', textAlign:'center'}}>
-                      No recent activity
+                      {say('No recent activity')}
                     </div>
                   )}
                 </div>
@@ -591,7 +593,7 @@ export default function CustomerDashboard() {
 
         {activeTab === 'active' && (
         <div style={{marginBottom:32}}>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaBolt style={{marginRight:4}} /> Active Services</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaBolt style={{marginRight:4}} /> {say('Active Services')}</h2>
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20}}>
             {activeFeatures.map(feature => {
               const recentItems = feature.getData();
@@ -619,31 +621,31 @@ export default function CustomerDashboard() {
                 }}>
                   {feature.badge && (
                     <div style={{position:'absolute', top:12, right:12, padding:'4px 10px', background:feature.badgeColor, color:'white', borderRadius:12, fontSize:10, fontWeight:700}}>
-                      {feature.badge}
+                      {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
-                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{feature.name}</div>
-                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{feature.desc}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
+                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
+                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {feature.detail}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {recentItems && recentItems.length > 0 ? (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12}}>
-                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>Recent</div>
+                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>{say('Recent')}</div>
                       {recentItems.map((item: any, idx: number) => (
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {item.lastMessage || item.contactName || [item.year, item.make, item.model].filter(Boolean).join(' ') || 'Item'}
+                            {item.lastMessage || item.contactName || [item.year, item.make, item.model].filter(Boolean).join(' ') || say('Item')}
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12, fontSize:11, color:'#6b7280', textAlign:'center'}}>
-                      No recent activity
+                      {say('No recent activity')}
                     </div>
                   )}
                 </div>
@@ -655,7 +657,7 @@ export default function CustomerDashboard() {
 
         {activeTab === 'account' && (
         <div style={{marginBottom:32}}>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaUser style={{marginRight:4}} /> Account</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaUser style={{marginRight:4}} /> {say('Account')}</h2>
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20}}>
             {accountFeatures.map(feature => {
               const recentItems = feature.getData();
@@ -683,31 +685,31 @@ export default function CustomerDashboard() {
                 }}>
                   {feature.badge && (
                     <div style={{position:'absolute', top:12, right:12, padding:'4px 10px', background:feature.badgeColor, color:'white', borderRadius:12, fontSize:10, fontWeight:700}}>
-                      {feature.badge}
+                      {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
-                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{feature.name}</div>
-                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{feature.desc}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
+                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
+                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {feature.detail}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {recentItems && recentItems.length > 0 ? (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12}}>
-                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>Recent</div>
+                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>{say('Recent')}</div>
                       {recentItems.map((item: any, idx: number) => (
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {item.shop?.shopName || item.comment || (item.brand && item.last4 ? `${item.brand} ••••${item.last4}` : item.brand || item.type) || 'Item'}
+                            {item.shop?.shopName || item.comment || (item.brand && item.last4 ? `${item.brand} ••••${item.last4}` : item.brand || item.type) || say('Item')}
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12, fontSize:11, color:'#6b7280', textAlign:'center'}}>
-                      No recent activity
+                      {say('No recent activity')}
                     </div>
                   )}
                 </div>
@@ -719,7 +721,7 @@ export default function CustomerDashboard() {
 
         {activeTab === 'records' && (
         <div>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaChartBar style={{marginRight:4}} /> Records</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaChartBar style={{marginRight:4}} /> {say('Records')}</h2>
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20}}>
             {recordsFeatures.map(feature => {
               const recentItems = feature.getData();
@@ -747,31 +749,31 @@ export default function CustomerDashboard() {
                 }}>
                   {feature.badge && (
                     <div style={{position:'absolute', top:12, right:12, padding:'4px 10px', background:feature.badgeColor, color:'white', borderRadius:12, fontSize:10, fontWeight:700}}>
-                      {feature.badge}
+                      {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
-                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{feature.name}</div>
-                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{feature.desc}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
+                  <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
+                  <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
-                    {feature.detail}
+                    {typeof feature.detail === 'string' ? say(feature.detail) : feature.detail}
                   </div>
                   
                   {recentItems && recentItems.length > 0 ? (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12}}>
-                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>Recent</div>
+                      <div style={{fontSize:11, fontWeight:600, color:'#9aa3b2', marginBottom:8, textTransform:'uppercase'}}>{say('Recent')}</div>
                       {recentItems.map((item: any, idx: number) => (
                         <div key={idx} style={{fontSize:11, color:'#b8beca', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
                           <span style={{color:'#e5332a'}}>-</span>
                           <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {(typeof item.issueDescription === 'string' ? item.issueDescription : item.issueDescription?.symptoms) || item.name || 'Item'}
+                            {(typeof item.issueDescription === 'string' ? item.issueDescription : item.issueDescription?.symptoms) || item.name || say('Item')}
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div style={{marginTop:12, borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12, fontSize:11, color:'#6b7280', textAlign:'center'}}>
-                      No recent activity
+                      {say('No recent activity')}
                     </div>
                   )}
                 </div>

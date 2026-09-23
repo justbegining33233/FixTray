@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
+import { usePhrase } from '@/lib/usePhrase';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   FaHome,
@@ -41,6 +42,7 @@ export default function ShopNavigation({
 }: ShopNavProps) {
   const { logout, user } = useAuth();
   const pathname = usePathname();
+  const say = usePhrase();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
 
@@ -128,8 +130,8 @@ export default function ShopNavigation({
               <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">F</span>
               </div>
-              <span className="text-xl font-bold text-white">FixTray</span>
-              <span className="text-sm text-[#94a3b8]">Shop Portal</span>
+              <span className="text-xl font-bold text-white">{say("FixTray")}</span>
+              <span className="text-sm text-[#94a3b8]">{say("Shop Portal")}</span>
             </Link>
 
             {/* Main Navigation */}
@@ -146,7 +148,7 @@ export default function ShopNavigation({
                 >
                   <div className="flex items-center space-x-2">
                     <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
+                    <span>{say(item.name)}</span>
                     {item.badge && (
                       <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {item.badge > 9 ? '9+' : item.badge}
@@ -163,7 +165,7 @@ export default function ShopNavigation({
               {(newReviews > 0 || revenueAlerts > 0) && (
                 <div className="flex items-center space-x-2 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-sm">
                   <FaStar className="w-4 h-4" />
-                  <span>Updates</span>
+                  <span>{say("Updates")}</span>
                   <span className="bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {newReviews + revenueAlerts}
                   </span>
@@ -185,8 +187,7 @@ export default function ShopNavigation({
                   href={"/shop/home" as Route}
                 className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                View Jobs
-              </Link>
+                {say("View Jobs")}{' '}</Link>
 
               {/* User Menu */}
               <div className="relative">
@@ -194,7 +195,7 @@ export default function ShopNavigation({
                   <div className="w-8 h-8 bg-[rgba(255,255,255,0.1)] rounded-full flex items-center justify-center">
                     <FaUser className="w-4 h-4 text-gray-600" />
                   </div>
-                  <span className="text-sm font-medium text-[#f1f5f9]">{user?.name || 'Shop Owner'}</span>
+                  <span className="text-sm font-medium text-[#f1f5f9]">{user?.name || say("Shop Owner")}</span>
                 </button>
               </div>
             </div>
@@ -221,7 +222,7 @@ export default function ShopNavigation({
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium">{item.name.split(' ')[0]}</span>
+              <span className="text-xs font-medium">{say(item.name)}</span>
             </Link>
           ))}
 
@@ -231,7 +232,7 @@ export default function ShopNavigation({
             className="flex flex-col items-center justify-center space-y-1 text-[#64748b]"
           >
             <FaBars className="w-5 h-5" />
-            <span className="text-xs font-medium">More</span>
+            <span className="text-xs font-medium">{say('More')}</span>
           </button>
         </div>
       </nav>
@@ -241,7 +242,7 @@ export default function ShopNavigation({
         <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="absolute bottom-0 left-0 right-0 bg-[#0d1425] rounded-t-2xl p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-[#f1f5f9]">Menu</h3>
+              <h3 className="text-lg font-semibold text-[#f1f5f9]">{say('Menu')}</h3>
               <button onClick={() => setIsMobileMenuOpen(false)}>
                 <FaTimes className="w-5 h-5 text-[#94a3b8]" />
               </button>
@@ -259,12 +260,12 @@ export default function ShopNavigation({
                 >
                   <item.icon className="w-5 h-5" />
                   <div>
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-gray-500">{item.description}</div>
+                    <div className="font-medium">{say(item.name)}</div>
+                    <div className="text-sm text-gray-500">{say(item.description)}</div>
                   </div>
                   {item.badge && (
                     <span className="bg-green-500 text-white text-xs rounded-full px-2 py-1">
-                      {item.badge}
+                      {say(item.badge)}
                     </span>
                   )}
                 </Link>
@@ -277,7 +278,7 @@ export default function ShopNavigation({
                 className="flex items-center space-x-3 p-3 rounded-lg text-[#94a3b8] hover:bg-[rgba(255,255,255,0.06)] w-full text-left"
               >
                 <FaSignOutAlt className="w-5 h-5" />
-                <span className="font-medium">Sign Out</span>
+                <span className="font-medium">{say('Sign Out')}</span>
               </button>
             </div>
           </div>

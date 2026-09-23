@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useMemo, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -21,6 +22,7 @@ interface TimeEntry {
 }
 
 export default function ShopTimeClockPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [periodLabel, setPeriodLabel] = useState('Weekly');
@@ -160,7 +162,7 @@ export default function ShopTimeClockPage() {
     loadShopEntries();
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -170,22 +172,22 @@ export default function ShopTimeClockPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>Time Clock</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>{say("Time Clock")}</h1>
 
           <div style={{ marginBottom: 16, background: '#121212', border: '1px solid rgba(229,51,42,0.35)', borderRadius: 10, padding: '12px 16px', color: '#e5e7eb' }}>
-            <div style={{ fontSize: 12, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: 0.8 }}>Shop Team Clock-Ins</div>
-            <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{shopEntriesLoading ? 'Loading...' : `${shopEntries.length} total records`}</div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>All employee clock-in/clock-out entries for this shop.</div>
+            <div style={{ fontSize: 12, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: 0.8 }}>{say("Shop Team Clock-Ins")}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{shopEntriesLoading ? say("Loading...") : `${shopEntries.length} total records`}</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>{say("All employee clock-in/clock-out entries for this shop.")}</div>
           </div>
 
           <div style={{ marginBottom: 16, background: '#1e293b', border: '1px solid #334155', borderRadius: 10, padding: '12px 16px', color: '#e5e7eb' }}>
-            <div style={{ fontSize: 12, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8 }}>{periodLabel} Hours</div>
+            <div style={{ fontSize: 12, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8 }}>{say(periodLabel)} {say("Hours")}</div>
             <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{periodHours.toFixed(1)}h</div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>Based on your current {periodLabel.toLowerCase()} payroll cycle.</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>{say("Based on your current")}{' '}{periodLabel.toLowerCase()} {say("payroll cycle.")}</div>
           </div>
 
           <div style={{ marginBottom: 16, background: '#111827', border: '1px solid #374151', borderRadius: 10, padding: '12px 16px', color: '#e5e7eb' }}>
-            <div style={{ fontSize: 12, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>Monday - Sunday Hours Calendar</div>
+            <div style={{ fontSize: 12, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>{say("Monday - Sunday Hours Calendar")}</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
               {weekAnalytics.thisWeekDays.map(({ day, total }) => (
                 <div key={day.toISOString()} style={{ background: '#0b1220', border: '1px solid #273244', borderRadius: 8, padding: 10 }}>
@@ -198,33 +200,33 @@ export default function ShopTimeClockPage() {
           </div>
 
           <div style={{ marginBottom: 16, background: '#1f1311', border: '1px solid rgba(229,51,42,0.35)', borderRadius: 10, padding: '12px 16px', color: '#e5e7eb' }}>
-            <div style={{ fontSize: 12, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: 0.8 }}>Last Week Hours</div>
+            <div style={{ fontSize: 12, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: 0.8 }}>{say("Last Week Hours")}</div>
             <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2 }}>{weekAnalytics.previousWeekHours.toFixed(1)}h</div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>{weekAnalytics.previousWeekLabel}</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>{say(weekAnalytics.previousWeekLabel)}</div>
           </div>
 
           <div style={{ marginBottom: 16, background: '#0f172a', border: '1px solid #334155', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #334155', color: '#e5e7eb', fontWeight: 700 }}>Employee Clock-In Times</div>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #334155', color: '#e5e7eb', fontWeight: 700 }}>{say("Employee Clock-In Times")}</div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
                 <thead>
                   <tr style={{ background: '#111827' }}>
-                    <th style={{ textAlign: 'left', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>Employee</th>
-                    <th style={{ textAlign: 'left', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>Clock In</th>
-                    <th style={{ textAlign: 'left', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>Clock Out</th>
-                    <th style={{ textAlign: 'right', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>Hours</th>
-                    <th style={{ textAlign: 'center', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>Status</th>
+                    <th style={{ textAlign: 'left', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>{say("Employee")}</th>
+                    <th style={{ textAlign: 'left', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>{say("Clock In")}</th>
+                    <th style={{ textAlign: 'left', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>{say("Clock Out")}</th>
+                    <th style={{ textAlign: 'right', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>{say("Hours")}</th>
+                    <th style={{ textAlign: 'center', color: '#9ca3af', fontSize: 12, padding: '10px 12px' }}>{say("Status")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {shopEntriesLoading && (
                     <tr>
-                      <td colSpan={5} style={{ color: '#94a3b8', fontSize: 13, padding: '14px 12px', textAlign: 'center' }}>Loading clock-ins...</td>
+                      <td colSpan={5} style={{ color: '#94a3b8', fontSize: 13, padding: '14px 12px', textAlign: 'center' }}>{say("Loading clock-ins...")}</td>
                     </tr>
                   )}
                   {!shopEntriesLoading && shopEntries.length === 0 && (
                     <tr>
-                      <td colSpan={5} style={{ color: '#94a3b8', fontSize: 13, padding: '14px 12px', textAlign: 'center' }}>No clock-in records found for this shop.</td>
+                      <td colSpan={5} style={{ color: '#94a3b8', fontSize: 13, padding: '14px 12px', textAlign: 'center' }}>{say("No clock-in records found for this shop.")}</td>
                     </tr>
                   )}
                   {!shopEntriesLoading && shopEntries.map((entry) => {
@@ -232,9 +234,9 @@ export default function ShopTimeClockPage() {
                     const active = !entry.clockOut;
                     return (
                       <tr key={entry.id} style={{ borderTop: '1px solid #1f2937' }}>
-                        <td style={{ color: '#e5e7eb', fontSize: 13, padding: '10px 12px' }}>{employeeName}</td>
+                        <td style={{ color: '#e5e7eb', fontSize: 13, padding: '10px 12px' }}>{say(employeeName)}</td>
                         <td style={{ color: '#cbd5e1', fontSize: 13, padding: '10px 12px' }}>{new Date(entry.clockIn).toLocaleString()}</td>
-                        <td style={{ color: '#cbd5e1', fontSize: 13, padding: '10px 12px' }}>{entry.clockOut ? new Date(entry.clockOut).toLocaleString() : 'Still clocked in'}</td>
+                        <td style={{ color: '#cbd5e1', fontSize: 13, padding: '10px 12px' }}>{entry.clockOut ? new Date(entry.clockOut).toLocaleString() : say("Still clocked in")}</td>
                         <td style={{ color: '#22c55e', fontSize: 13, padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{getEntryHours(entry).toFixed(2)}h</td>
                         <td style={{ textAlign: 'center', padding: '10px 12px' }}>
                           <span style={{
@@ -247,7 +249,7 @@ export default function ShopTimeClockPage() {
                             background: active ? 'rgba(34,197,94,0.18)' : 'rgba(229,51,42,0.16)',
                             border: active ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(229,51,42,0.35)',
                           }}>
-                            {active ? 'CLOCKED IN' : 'CLOCKED OUT'}
+                            {active ? say("CLOCKED IN") : say("CLOCKED OUT")}
                           </span>
                         </td>
                       </tr>

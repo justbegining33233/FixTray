@@ -1,6 +1,7 @@
 import { FaCheck, FaHourglassHalf } from 'react-icons/fa';
 
 import Link from 'next/link';
+import SayText from '@/components/SayText';
 
 export default function PendingApproval() {
   return (
@@ -29,7 +30,7 @@ export default function PendingApproval() {
           color: '#e5e7eb',
           marginBottom: '16px'
         }}>
-          Registration Submitted!
+          <SayText text="Registration Submitted!" />
         </h1>
         
         <p style={{
@@ -38,7 +39,7 @@ export default function PendingApproval() {
           marginBottom: '32px',
           lineHeight: '1.6'
         }}>
-          Thank you for registering your shop. Your application is now pending approval from our admin team.
+          <SayText text="Thank you for registering your shop. Your application is now pending approval from our admin team." />
         </p>
         
         <div style={{
@@ -55,7 +56,7 @@ export default function PendingApproval() {
             color: '#f59e0b',
             marginBottom: '12px'
           }}>
-            What happens next?
+            <SayText text="What happens next?" />
           </h3>
           <ul style={{
             listStyle: 'none',
@@ -65,9 +66,9 @@ export default function PendingApproval() {
             fontSize: '14px',
             lineHeight: '1.8'
           }}>
-            <li style={{marginBottom: '8px'}}><FaCheck style={{marginRight:4}} /> Our admin team will review your application</li>
-            <li style={{marginBottom: '8px'}}><FaCheck style={{marginRight:4}} /> You&apos;ll receive an email notification once approved</li>
-            <li style={{marginBottom: '8px'}}><FaCheck style={{marginRight:4}} /> After approval, you can log in and start using the system</li>
+            <li style={{marginBottom: '8px'}}><FaCheck style={{marginRight:4}} /> <SayText text="Our admin team will review your application" /></li>
+            <li style={{marginBottom: '8px'}}><FaCheck style={{marginRight:4}} /> <SayText text="You'll receive an email notification once approved" /></li>
+            <li style={{marginBottom: '8px'}}><FaCheck style={{marginRight:4}} /> <SayText text="After approval, you can log in and start using the system" /></li>
           </ul>
         </div>
         
@@ -76,7 +77,7 @@ export default function PendingApproval() {
           color: '#6b7280',
           marginBottom: '24px'
         }}>
-          Approval typically takes 1-2 business days
+          <SayText text="Approval typically takes 1-2 business days" />
         </p>
         
         <Link
@@ -95,7 +96,7 @@ export default function PendingApproval() {
             transition: 'all 0.3s ease'
           }}
         >
-          Back to Login
+          <SayText text="Back to Login" />
         </Link>
       </div>
     </div>

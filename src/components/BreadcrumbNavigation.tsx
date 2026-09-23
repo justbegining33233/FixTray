@@ -1,8 +1,7 @@
+'use client';
+import { usePhrase } from '@/lib/usePhrase';
 // Breadcrumb Navigation Component
 // Helps users understand their current location and navigate back easily
-
-'use client';
-
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -25,6 +24,7 @@ export default function BreadcrumbNavigation({
   showHome = true,
   className = ''
 }: BreadcrumbNavigationProps) {
+  const say = usePhrase();
   const pathname = usePathname();
 
   const generateBreadcrumbs = (path: string): BreadcrumbItem[] => {
@@ -132,7 +132,7 @@ export default function BreadcrumbNavigation({
   }
 
   return (
-    <nav className={`flex items-center space-x-2 text-sm ${className}`} aria-label="Breadcrumb">
+    <nav className={`flex items-center space-x-2 text-sm ${className}`} aria-label={say("Breadcrumb")}>
       {breadcrumbs.map((item, index) => (
         <div key={item.href} className="flex items-center">
           {index > 0 && (
@@ -141,7 +141,7 @@ export default function BreadcrumbNavigation({
 
           {item.isActive ? (
             <span className="text-gray-900 font-medium" aria-current="page">
-              {item.label}
+              {say(item.label)}
             </span>
           ) : (
             <Link
@@ -149,7 +149,7 @@ export default function BreadcrumbNavigation({
               className="text-gray-600 hover:text-gray-900 transition-colors flex items-center space-x-1"
             >
               {index === 0 && showHome && <FaHome className="w-3 h-3" />}
-              <span>{item.label}</span>
+              <span>{say(item.label)}</span>
             </Link>
           )}
         </div>

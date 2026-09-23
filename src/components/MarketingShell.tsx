@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhrase } from '@/lib/usePhrase';
 import Link from "next/link";
 import type { Route } from "next";
 import type { ReactNode } from "react";
@@ -16,6 +17,7 @@ interface MarketingShellProps {
 }
 
 export default function MarketingShell({ children }: MarketingShellProps) {
+  const say = usePhrase();
   const pageStyle: React.CSSProperties = {
     background: "#09090b",
     fontFamily: '"Plus Jakarta Sans", "Inter", system-ui, sans-serif',
@@ -48,22 +50,20 @@ export default function MarketingShell({ children }: MarketingShellProps) {
                 fontFamily: '"Plus Jakarta Sans", "Inter", system-ui, sans-serif',
               }}
             >
-              FixTray
-            </span>
+              {say("FixTray")}{' '}</span>
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm md:flex" style={{ color: "#94a3b8" }}>
             {navLinks.map((item) => (
               <Link key={item.href} href={item.href as Route} className="transition hover:text-white">
-                {item.label}
+                {say(item.label)}
               </Link>
             ))}
           </nav>
 
           <div className="flex items-center gap-3 text-sm">
             <Link href="/auth/login" style={{ color: "#94a3b8" }} className="transition hover:text-white">
-              Log in
-            </Link>
+              {say("Log in")}{' '}</Link>
             <Link
               href="/auth/login"
               className="transition"
@@ -77,8 +77,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
                 boxShadow: "0 2px 10px rgba(229,51,42,0.35)",
               }}
             >
-              Get started
-            </Link>
+              {say("Get started")}{' '}</Link>
           </div>
         </div>
       </header>
@@ -100,31 +99,30 @@ export default function MarketingShell({ children }: MarketingShellProps) {
           style={{ width: "100%", maxWidth: 1152, marginLeft: "auto", marginRight: "auto" }}
         >
           <div>
-            <p style={{ fontWeight: 800, color: "#e5332a", fontSize: 18 }}>FixTray</p>
+            <p style={{ fontWeight: 800, color: "#e5332a", fontSize: 18 }}>{say("FixTray")}</p>
             <p className="mt-3 text-sm" style={{ color: "#94a3b8" }}>
-              The command center for modern work orders, approvals, and customer-ready updates.
-            </p>
+              {say("The command center for modern work orders, approvals, and customer-ready updates.")}{' '}</p>
           </div>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>Product</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Product")}</p>
             <ul className="mt-4 space-y-2 text-sm" style={{ color: "#cbd5e1" }}>
-              <li><Link href="/features" className="hover:text-white">Features</Link></li>
-              <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
-              <li><Link href="/security" className="hover:text-white">Security</Link></li>
+              <li><Link href="/features" className="hover:text-white">{say("Features")}</Link></li>
+              <li><Link href="/pricing" className="hover:text-white">{say("Pricing")}</Link></li>
+              <li><Link href="/security" className="hover:text-white">{say("Security")}</Link></li>
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>Company</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Company")}</p>
             <ul className="mt-4 space-y-2 text-sm" style={{ color: "#cbd5e1" }}>
-              <li><Link href="/about" className="hover:text-white">About</Link></li>
-              <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
+              <li><Link href="/about" className="hover:text-white">{say("About")}</Link></li>
+              <li><Link href="/contact" className="hover:text-white">{say("Contact")}</Link></li>
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>Support</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Support")}</p>
             <ul className="mt-4 space-y-2 text-sm" style={{ color: "#cbd5e1" }}>
-              <li><Link href="/contact" className="hover:text-white">Help Center</Link></li>
-              <li><Link href="/contact" className="hover:text-white">Book a demo</Link></li>
+              <li><Link href="/contact" className="hover:text-white">{say("Help Center")}</Link></li>
+              <li><Link href="/contact" className="hover:text-white">{say("Book a demo")}</Link></li>
             </ul>
           </div>
         </div>
@@ -139,8 +137,8 @@ export default function MarketingShell({ children }: MarketingShellProps) {
             borderTop: "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          <span> 2026 FixTray. All rights reserved.</span>
-          <span>Built for owner-operators, growing shop teams, and multi-shop service groups.</span>
+          <span> {say("2026 FixTray. All rights reserved.")}</span>
+          <span>{say("Built for owner-operators, growing shop teams, and multi-shop service groups.")}</span>
         </div>
       </footer>
     </div>

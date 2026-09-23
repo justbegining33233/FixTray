@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -20,6 +21,7 @@ interface FleetAccountFormProps {
 }
 
 export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFormProps) {
+  const say = usePhrase();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -81,7 +83,7 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
       {error && (
         <div className="p-4 bg-red-100 text-red-800 rounded">
-          {error}
+          {say(error)}
         </div>
       )}
 
@@ -89,8 +91,7 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
         {/* Company Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Company Name *
-          </label>
+            {say("Company Name *")}{' '}</label>
           <input
             type="text"
             name="companyName"
@@ -98,32 +99,30 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
             onChange={handleChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-            placeholder="ABC Fleet Services"
+            placeholder={say("ABC Fleet Services")}
           />
         </div>
 
         {/* Status */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Status
-          </label>
+            {say("Status")}{' '}</label>
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
+            <option value="active">{say("Active")}</option>
+            <option value="inactive">{say("Inactive")}</option>
+            <option value="suspended">{say("Suspended")}</option>
           </select>
         </div>
 
         {/* Contact Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Contact Name *
-          </label>
+            {say("Contact Name *")}{' '}</label>
           <input
             type="text"
             name="contactName"
@@ -131,15 +130,14 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
             onChange={handleChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-            placeholder="John Smith"
+            placeholder={say("John Smith")}
           />
         </div>
 
         {/* Contact Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Contact Email *
-          </label>
+            {say("Contact Email *")}{' '}</label>
           <input
             type="email"
             name="contactEmail"
@@ -147,15 +145,14 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
             onChange={handleChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-            placeholder="john@company.com"
+            placeholder={say("john@company.com")}
           />
         </div>
 
         {/* Contact Phone */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Contact Phone
-          </label>
+            {say("Contact Phone")}{' '}</label>
           <input
             type="tel"
             name="contactPhone"
@@ -169,8 +166,7 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
         {/* Net Terms */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Net Terms (days)
-          </label>
+            {say("Net Terms (days)")}{' '}</label>
           <input
             type="number"
             name="netTerms"
@@ -184,8 +180,7 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
         {/* Credit Limit */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Credit Limit ($)
-          </label>
+            {say("Credit Limit ($)")}{' '}</label>
           <input
             type="number"
             name="creditLimit"
@@ -200,45 +195,42 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
         {/* Tax ID */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tax ID
-          </label>
+            {say("Tax ID")}{' '}</label>
           <input
             type="text"
             name="taxId"
             value={formData.taxId}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-            placeholder="XX-XXXXXXX"
+            placeholder={say("XX-XXXXXXX")}
           />
         </div>
 
         {/* Billing Address */}
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Billing Address
-          </label>
+            {say("Billing Address")}{' '}</label>
           <input
             type="text"
             name="billingAddress"
             value={formData.billingAddress}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-            placeholder="123 Business Ave, City, State 12345"
+            placeholder={say("123 Business Ave, City, State 12345")}
           />
         </div>
 
         {/* Notes */}
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Notes
-          </label>
+            {say("Notes")}{' '}</label>
           <textarea
             name="notes"
             value={formData.notes}
             onChange={handleChange}
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-            placeholder="Additional notes..."
+            placeholder={say("Additional notes...")}
           />
         </div>
       </div>
@@ -249,14 +241,13 @@ export function FleetAccountForm({ fleetAccountId, initialData }: FleetAccountFo
           onClick={() => router.back()}
           className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          Cancel
-        </button>
+          {say("Cancel")}{' '}</button>
         <button
           type="submit"
           disabled={loading}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? 'Saving...' : fleetAccountId ? 'Update Fleet Account' : 'Create Fleet Account'}
+          {loading ? say("Saving...") : fleetAccountId ? say("Update Fleet Account") : say("Create Fleet Account")}
         </button>
       </div>
     </form>

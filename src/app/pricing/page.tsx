@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhrase } from '@/lib/usePhrase';
 import Link from "next/link";
 import MarketingShell from "@/components/MarketingShell";
 
@@ -19,24 +20,25 @@ const capabilityGroups = [
 ];
 
 export default function PricingPage() {
+  const say = usePhrase();
   return (
     <MarketingShell>
       <section className="mx-auto max-w-6xl px-6 pt-24 pb-16 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Capabilities</p>
-        <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">Everything your shop needs in one platform.</h1>
-        <p className="mt-5 text-lg text-slate-300">FixTray combines operations, communication, and reporting so your team can run faster with fewer handoffs.</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">{say("Capabilities")}</p>
+        <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">{say("Everything your shop needs in one platform.")}</h1>
+        <p className="mt-5 text-lg text-slate-300">{say("FixTray combines operations, communication, and reporting so your team can run faster with fewer handoffs.")}</p>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <div className="grid gap-6 md:grid-cols-3">
           {capabilityGroups.map((group) => (
             <div key={group.title} className="rounded-3xl border border-white/10 bg-black p-6">
-              <h2 className="text-xl font-semibold text-white">{group.title}</h2>
+              <h2 className="text-xl font-semibold text-white">{say(group.title)}</h2>
               <ul className="mt-4 space-y-3 text-sm text-slate-200">
                 {group.items.map((item) => (
                   <li key={item} className="flex items-center gap-3">
                     <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                    {item}
+                    {say(item)}
                   </li>
                 ))}
               </ul>
@@ -46,8 +48,7 @@ export default function PricingPage() {
 
         <div className="mt-10 text-center">
           <Link href="/auth/login" className="inline-flex items-center justify-center rounded-full border border-slate-700/70 px-6 py-3 text-sm font-semibold text-slate-100">
-            Start With FixTray
-          </Link>
+            {say("Start With FixTray")}{' '}</Link>
         </div>
       </section>
     </MarketingShell>

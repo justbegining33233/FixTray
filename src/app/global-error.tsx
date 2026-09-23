@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhrase } from '@/lib/usePhrase';
 import Link from 'next/link';
 
 export default function GlobalError({
@@ -9,6 +10,7 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const say = usePhrase();
   return (
     <html lang="en">
       <body>
@@ -32,12 +34,9 @@ export default function GlobalError({
               &#9888;
             </div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '0.5rem' }}>
-              Something went wrong
-            </h1>
+              {say("Something went wrong")}{' '}</h1>
             <p style={{ color: '#94a3b8', marginBottom: '2rem', lineHeight: 1.6 }}>
-              An unexpected error occurred. This has been logged and we&apos;ll look into it.
-              You can try again or go back to the home page.
-            </p>
+              {say("An unexpected error occurred. This has been logged and we&apos;ll look into it.\n              You can try again or go back to the home page.")}{' '}</p>
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
                 onClick={reset}
@@ -47,8 +46,7 @@ export default function GlobalError({
                   cursor: 'pointer', fontSize: '0.875rem',
                 }}
               >
-                Try Again
-              </button>
+                {say("Try Again")}{' '}</button>
               <Link
                 href="/"
                 style={{
@@ -57,12 +55,11 @@ export default function GlobalError({
                   textDecoration: 'none', fontSize: '0.875rem',
                 }}
               >
-                Go Home
-              </Link>
+                {say("Go Home")}{' '}</Link>
             </div>
             {error.digest && (
               <p style={{ marginTop: '2rem', fontSize: '0.75rem', color: '#9ca3af' }}>
-                Error ID: {error.digest}
+                {say("Error ID:")}{' '}{say(error.digest)}
               </p>
             )}
           </div>

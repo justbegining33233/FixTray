@@ -1,11 +1,13 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { FaLock } from 'react-icons/fa';
 
 export default function AdminLoginPage() {
+  const say = usePhrase();
   const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
@@ -84,8 +86,8 @@ export default function AdminLoginPage() {
         {/* Logo/Header */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}><FaLock style={{marginRight:4}} /></div>
-          <h1 style={{ color: '#fff', fontSize: 28, margin: 0, marginBottom: 8 }}>Admin Access</h1>
-          <p style={{ color: '#9aa3b2', margin: 0, fontSize: 14 }}>FixTray Management Portal</p>
+          <h1 style={{ color: '#fff', fontSize: 28, margin: 0, marginBottom: 8 }}>{say("Admin Access")}</h1>
+          <p style={{ color: '#9aa3b2', margin: 0, fontSize: 14 }}>{say("FixTray Management Portal")}</p>
         </div>
 
         {/* Login Form */}
@@ -103,7 +105,7 @@ export default function AdminLoginPage() {
                 textAlign: 'center',
               }}
             >
-              {error}
+              {say(error)}
             </div>
           )}
 
@@ -117,8 +119,7 @@ export default function AdminLoginPage() {
                 fontWeight: 600,
               }}
             >
-              Username
-            </label>
+              {say("Username")}{' '}</label>
             <input
               type="text"
               value={formData.username}
@@ -154,8 +155,7 @@ export default function AdminLoginPage() {
                 fontWeight: 600,
               }}
             >
-              Password
-            </label>
+              {say("Password")}{' '}</label>
             <input
               type="password"
               value={formData.password}
@@ -196,15 +196,14 @@ export default function AdminLoginPage() {
               transition: 'background 0.2s',
             }}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? say("Logging in...") : say("Login")}
           </button>
         </form>
 
         {/* Footer */}
         <div style={{ marginTop: 32, textAlign: 'center' }}>
           <p style={{ color: '#6b7280', fontSize: 12 }}>
-            Authorized personnel only
-          </p>
+            {say("Authorized personnel only")}{' '}</p>
         </div>
       </div>
     </div>

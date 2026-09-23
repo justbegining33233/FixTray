@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -16,6 +17,7 @@ interface LogEntry {
 }
 
 export default function ManagerLogsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -33,7 +35,7 @@ export default function ManagerLogsPage() {
     load();
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -43,21 +45,21 @@ export default function ManagerLogsPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaClipboardList style={{ marginRight: 8 }} />Audit Logs</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaClipboardList style={{ marginRight: 8 }} />{say("Audit Logs")}</h1>
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : logs.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
               <FaClipboardList style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p>No audit log entries found.</p>
+              <p>{say("No audit log entries found.")}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {logs.map(l => (
                 <div key={l.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                   <div>
-                    <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 14 }}>{l.action}</span>
-                    {l.details && <span style={{ color: '#9aa3b2', fontSize: 13, marginLeft: 8 }}> {l.details}</span>}
+                    <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 14 }}>{say(l.action)}</span>
+                    {l.details && <span style={{ color: '#9aa3b2', fontSize: 13, marginLeft: 8 }}> {say(l.details)}</span>}
                   </div>
                   <span style={{ color: '#6b7280', fontSize: 12 }}>{new Date(l.createdAt).toLocaleString()}</span>
                 </div>

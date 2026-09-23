@@ -1,8 +1,10 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 
 export default function OfflineBanner() {
+  const say = usePhrase();
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
@@ -33,7 +35,6 @@ export default function OfflineBanner() {
       fontSize: 13,
       fontWeight: 600,
     }}>
-      You are offline. Some features may be unavailable.
-    </div>
+      {say("You are offline. Some features may be unavailable.")}{' '}</div>
   );
 }

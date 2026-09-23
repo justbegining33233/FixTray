@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { FaMapMarkerAlt, FaClock, FaPhone, FaRoute } from 'react-icons/fa';
 
@@ -20,6 +21,7 @@ interface TechTrackingMapProps {
 }
 
 export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapProps) {
+  const say = usePhrase();
   const [techs, setTechs] = useState<Tech[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTech, setSelectedTech] = useState<Tech | null>(null);
@@ -70,15 +72,15 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
           <div className="flex items-center gap-3">
             <FaMapMarkerAlt className="text-cyan-400 text-xl" />
             <div>
-              <h3 className="text-lg font-semibold text-white">Technician Locations</h3>
-              <p className="text-xs text-slate-500">Real-time GPS tracking</p>
+              <h3 className="text-lg font-semibold text-white">{say("Technician Locations")}</h3>
+              <p className="text-xs text-slate-500">{say("Real-time GPS tracking")}</p>
             </div>
           </div>
           <button
             onClick={() => setShowMap(!showMap)}
             className="px-3 py-1 bg-cyan-600/20 text-cyan-400 rounded text-xs font-medium hover:bg-cyan-600/30 transition"
           >
-            {showMap ? 'List View' : 'Map View'}
+            {showMap ? say("List View") : say("Map View")}
           </button>
         </div>
       </div>
@@ -86,20 +88,18 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
       <div className="p-4">
         {loading ? (
           <div className="flex items-center justify-center h-64 text-slate-500">
-            Loading technician data...
-          </div>
+            {say("Loading technician data...")}{' '}</div>
         ) : techs.length === 0 ? (
           <div className="flex items-center justify-center h-64 text-slate-500">
-            No technicians currently clocked in
-          </div>
+            {say("No technicians currently clocked in")}{' '}</div>
         ) : showMap ? (
           // Map View (simplified - would use actual map library)
           <div className="relative w-full h-96 bg-slate-950/50 rounded border border-slate-700 overflow-hidden flex items-center justify-center">
             <div className="text-center text-slate-500">
-              <p className="mb-2">📍 Map View</p>
-              <p className="text-xs">Integration with Google Maps / Mapbox</p>
+              <p className="mb-2">{say("📍 Map View")}</p>
+              <p className="text-xs">{say("Integration with Google Maps / Mapbox")}</p>
               <p className="text-xs mt-3 text-cyan-500/50">
-                {techs.length} technician{techs.length !== 1 ? 's' : ''} visible
+                {say(techs.length)} technician{techs.length !== 1 ? 's' : ''} visible
               </p>
             </div>
 
@@ -132,7 +132,7 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: getStatusColor(tech.status) }}
                     />
-                    <h4 className="font-semibold text-white">{tech.name}</h4>
+                    <h4 className="font-semibold text-white">{say(tech.name)}</h4>
                   </div>
                   <span className="text-xs px-2 py-1 bg-slate-800 text-slate-300 rounded">
                     {getStatusLabel(tech.status)}
@@ -142,18 +142,18 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
                 <div className="grid grid-cols-2 gap-3 text-sm text-slate-400">
                   <div className="flex items-center gap-2">
                     <FaClock size={13} className="text-slate-600" />
-                    <span>Updated {tech.lastUpdate}</span>
+                    <span>{say("Updated")}{' '}{say(tech.lastUpdate)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <FaPhone size={13} className="text-slate-600" />
-                    <a href={`tel:${tech.phone}`} className="text-cyan-400 hover:text-cyan-300">{tech.phone}</a>
+                    <a href={`tel:${tech.phone}`} className="text-cyan-400 hover:text-cyan-300">{say(tech.phone)}</a>
                   </div>
                 </div>
 
                 {tech.currentJob && (
                   <div className="mt-2 pt-2 border-t border-slate-700">
                     <p className="text-xs text-slate-500 flex items-center gap-2">
-                      <FaRoute size={11} /> {tech.currentJob}
+                      <FaRoute size={11} /> {say(tech.currentJob)}
                     </p>
                   </div>
                 )}
@@ -166,7 +166,7 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
         {selectedTech && (
           <div className="mt-4 p-4 bg-cyan-600/10 border border-cyan-500/30 rounded-lg">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-cyan-300">{selectedTech.name}</h4>
+              <h4 className="font-semibold text-cyan-300">{say(selectedTech.name)}</h4>
               <button
                 onClick={() => setSelectedTech(null)}
                 className="text-cyan-400 hover:text-cyan-300"
@@ -175,10 +175,10 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
               </button>
             </div>
             <div className="space-y-2 text-sm text-slate-300">
-              <p>📍 Location: {selectedTech.latitude.toFixed(4)}, {selectedTech.longitude.toFixed(4)}</p>
-              <p>Status: <span style={{ color: getStatusColor(selectedTech.status) }}>{getStatusLabel(selectedTech.status)}</span></p>
-              <p>Last Update: {selectedTech.lastUpdate}</p>
-              <a href={`tel:${selectedTech.phone}`} className="text-cyan-400 hover:text-cyan-300">Call: {selectedTech.phone}</a>
+              <p>{say("📍 Location:")}{' '}{selectedTech.latitude.toFixed(4)}, {selectedTech.longitude.toFixed(4)}</p>
+              <p>{say("Status:")}{' '}<span style={{ color: getStatusColor(selectedTech.status) }}>{getStatusLabel(selectedTech.status)}</span></p>
+              <p>{say("Last Update:")}{' '}{say(selectedTech.lastUpdate)}</p>
+              <a href={`tel:${selectedTech.phone}`} className="text-cyan-400 hover:text-cyan-300">{say("Call:")}{' '}{say(selectedTech.phone)}</a>
             </div>
           </div>
         )}
@@ -187,16 +187,16 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
       {/* Footer Stats */}
       <div className="grid grid-cols-3 border-t border-slate-700 bg-slate-950/50">
         <div className="p-3 border-r border-slate-700 text-center text-xs">
-          <p className="text-2xl font-bold text-cyan-400">{techs.filter(t => t.status === 'on-job').length}</p>
-          <p className="text-slate-500">On Jobs</p>
+          <p className="text-2xl font-bold text-cyan-400">{say(techs.filter(t => t.status === 'on-job').length)}</p>
+          <p className="text-slate-500">{say("On Jobs")}</p>
         </div>
         <div className="p-3 border-r border-slate-700 text-center text-xs">
-          <p className="text-2xl font-bold text-blue-400">{techs.filter(t => t.status === 'clocked-in').length}</p>
-          <p className="text-slate-500">Clocked In</p>
+          <p className="text-2xl font-bold text-blue-400">{say(techs.filter(t => t.status === 'clocked-in').length)}</p>
+          <p className="text-slate-500">{say("Clocked In")}</p>
         </div>
         <div className="p-3 text-center text-xs">
-          <p className="text-2xl font-bold text-amber-400">{techs.filter(t => t.status === 'break').length}</p>
-          <p className="text-slate-500">On Break</p>
+          <p className="text-2xl font-bold text-amber-400">{say(techs.filter(t => t.status === 'break').length)}</p>
+          <p className="text-slate-500">{say("On Break")}</p>
         </div>
       </div>
     </div>

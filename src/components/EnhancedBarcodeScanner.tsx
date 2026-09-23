@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { FaCamera, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { Capacitor } from '@capacitor/core';
@@ -28,6 +29,7 @@ export default function EnhancedBarcodeScanner({
   label = 'Scan a Barcode',
   enablePhotoCapture = true
 }: EnhancedBarcodeScannerProps) {
+  const say = usePhrase();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [_supported, setSupported] = useState<boolean | null>(null);
@@ -228,7 +230,7 @@ export default function EnhancedBarcodeScanner({
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-        <h3 style={{ color: '#e5e7eb', margin: 0, fontSize: '18px' }}>{label}</h3>
+        <h3 style={{ color: '#e5e7eb', margin: 0, fontSize: '18px' }}>{say(label)}</h3>
         <button
           onClick={onClose}
           style={{
@@ -270,7 +272,7 @@ export default function EnhancedBarcodeScanner({
           }}>
             <div style={{ textAlign: 'center' }}>
               <FaCamera style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.7 }} />
-              <p>Tap scan to open camera</p>
+              <p>{say("Tap scan to open camera")}</p>
             </div>
           </div>
         )}
@@ -285,7 +287,7 @@ export default function EnhancedBarcodeScanner({
           }}>
             <div style={{ textAlign: 'center' }}>
               <FaCamera style={{ fontSize: '64px', marginBottom: '24px', opacity: 0.5 }} />
-              <p style={{ fontSize: '18px', marginBottom: '32px' }}>Ready to scan</p>
+              <p style={{ fontSize: '18px', marginBottom: '32px' }}>{say("Ready to scan")}</p>
             </div>
           </div>
         )}
@@ -346,7 +348,7 @@ export default function EnhancedBarcodeScanner({
             }}
           >
             <FaCamera />
-            {scanning ? 'Scanning...' : 'Scan'}
+            {scanning ? say("Scanning...") : say("Scan")}
           </button>
 
           {enablePhotoCapture && (
@@ -369,8 +371,7 @@ export default function EnhancedBarcodeScanner({
               }}
             >
               <FaCamera />
-              Photo
-            </button>
+              {say("Photo")}{' '}</button>
           )}
         </div>
 
@@ -381,7 +382,7 @@ export default function EnhancedBarcodeScanner({
               type="text"
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
-              placeholder="Or enter code manually"
+              placeholder={say("Or enter code manually")}
               style={{
                 flex: 1,
                 padding: '12px',
@@ -424,7 +425,7 @@ export default function EnhancedBarcodeScanner({
             gap: '8px',
           }}>
             <FaExclamationTriangle />
-            {error}
+            {say(error)}
           </div>
         )}
 
@@ -440,14 +441,14 @@ export default function EnhancedBarcodeScanner({
             gap: '8px',
           }}>
             <FaCheckCircle />
-            Scanned: {lastResult}
+            {say("Scanned:")}{' '}{say(lastResult)}
           </div>
         )}
 
         {/* Captured Photos */}
         {capturedPhotos.length > 0 && (
           <div style={{ marginTop: '16px' }}>
-            <h4 style={{ color: '#e5e7eb', marginBottom: '8px' }}>Captured Photos ({capturedPhotos.length})</h4>
+            <h4 style={{ color: '#e5e7eb', marginBottom: '8px' }}>{say("Captured Photos (")}{say(capturedPhotos.length)})</h4>
             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
               {capturedPhotos.map((photo, index) => (
                 <div key={index} style={{ position: 'relative' }}>

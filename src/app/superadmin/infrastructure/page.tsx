@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -35,6 +36,7 @@ type EnvHealth = {
 };
 
 export default function SuperAdminInfrastructure() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [runtimeHealth, setRuntimeHealth] = useState<RuntimeHealth | null>(null);
   const [envHealth, setEnvHealth] = useState<EnvHealth | null>(null);
@@ -108,8 +110,8 @@ export default function SuperAdminInfrastructure() {
               <FaArrowLeft className="w-4 h-4 text-[#94a3b8]" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-white">Infrastructure</h1>
-              <p className="text-[#94a3b8] mt-1">System health &amp; resources</p>
+              <h1 className="text-3xl font-bold text-white">{say("Infrastructure")}</h1>
+              <p className="text-[#94a3b8] mt-1">{say("System health &amp; resources")}</p>
             </div>
           </div>
           <button
@@ -118,12 +120,11 @@ export default function SuperAdminInfrastructure() {
             className="flex items-center gap-2 px-4 py-2 text-white rounded-xl hover:opacity-90 disabled:opacity-50 transition-colors text-sm font-medium" style={{background:"#e5332a"}}
           >
             <FaSyncAlt className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+            {say("Refresh")}{' '}</button>
         </div>
 
         {lastCheck && (
-          <p className="text-sm text-gray-400 mb-6">Last checked: {lastCheck.toLocaleTimeString()}</p>
+          <p className="text-sm text-gray-400 mb-6">{say("Last checked:")}{' '}{lastCheck.toLocaleTimeString()}</p>
         )}
 
         {/* Status Banner */}
@@ -136,10 +137,10 @@ export default function SuperAdminInfrastructure() {
             )}
             <div>
               <h2 className="text-xl font-bold text-white">
-                {systemOk ? 'All Systems Operational' : 'System Issues Detected'}
+                {systemOk ? say("All Systems Operational") : say("System Issues Detected")}
               </h2>
               <p className="text-sm text-[#94a3b8]">
-                Runtime: {runtimeOk ? 'OK' : 'Unavailable'} &bull; Uptime: {formatUptime(runtimeHealth?.uptimeSeconds)}
+                {say("Runtime:")}{' '}{runtimeOk ? say("OK") : say("Unavailable")} {say("&bull; Uptime:")}{' '}{formatUptime(runtimeHealth?.uptimeSeconds)}
               </p>
             </div>
           </div>
@@ -152,13 +153,13 @@ export default function SuperAdminInfrastructure() {
               <div className="w-10 h-10 bg-[#e5332a]/10 rounded-xl flex items-center justify-center">
                 <FaDatabase className="w-5 h-5 text-[#ff6b64]" />
               </div>
-              <h3 className="font-semibold text-[#f1f5f9]">Environment Checks</h3>
+              <h3 className="font-semibold text-[#f1f5f9]">{say("Environment Checks")}</h3>
             </div>
             <p className={`text-sm font-medium ${envOk ? 'text-green-600' : 'text-red-600'}`}>
-              {envOk ? 'No missing requirements' : `${missingChecks} required missing`}
+              {envOk ? say("No missing requirements") : `${missingChecks} required missing`}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              {envHealth?.summary?.ok ?? 0} ok, {warningChecks} warnings
+              {envHealth?.summary?.ok ?? 0} {say("ok,")}{' '}{say(warningChecks)} warnings
             </p>
           </div>
           <div className="rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
@@ -166,22 +167,22 @@ export default function SuperAdminInfrastructure() {
               <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
                 <FaMemory className="w-5 h-5 text-purple-600" />
               </div>
-              <h3 className="font-semibold text-[#f1f5f9]">Runtime Memory</h3>
+              <h3 className="font-semibold text-[#f1f5f9]">{say("Runtime Memory")}</h3>
             </div>
-            <p className="text-sm text-gray-700">Heap: {formatBytes(runtimeHealth?.memory?.heapUsedMb)}</p>
-            <p className="text-xs text-gray-400 mt-1">RSS: {formatBytes(runtimeHealth?.memory?.rssMb)}</p>
+            <p className="text-sm text-gray-700">{say("Heap:")}{' '}{formatBytes(runtimeHealth?.memory?.heapUsedMb)}</p>
+            <p className="text-xs text-gray-400 mt-1">{say("RSS:")}{' '}{formatBytes(runtimeHealth?.memory?.rssMb)}</p>
           </div>
           <div className="rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
                 <FaMicrochip className="w-5 h-5 text-amber-400" />
               </div>
-              <h3 className="font-semibold text-[#f1f5f9]">Runtime Status</h3>
+              <h3 className="font-semibold text-[#f1f5f9]">{say("Runtime Status")}</h3>
             </div>
             <p className={`text-sm font-medium ${runtimeOk ? 'text-green-600' : 'text-red-600'}`}>
-              {runtimeOk ? 'Healthy' : 'Unavailable'}
+              {runtimeOk ? say("Healthy") : say("Unavailable")}
             </p>
-            <p className="text-xs text-gray-400 mt-1">Last timestamp: {runtimeHealth?.timestamp ? new Date(runtimeHealth.timestamp).toLocaleString() : '-'}</p>
+            <p className="text-xs text-gray-400 mt-1">{say("Last timestamp:")}{' '}{runtimeHealth?.timestamp ? new Date(runtimeHealth.timestamp).toLocaleString() : '-'}</p>
           </div>
         </div>
       </div>

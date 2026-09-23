@@ -1,10 +1,12 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaUndo } from 'react-icons/fa';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 function CancelContent() {
+  const say = usePhrase();
   const searchParams = useSearchParams();
   const workOrderId = searchParams?.get('workOrderId');
 
@@ -28,11 +30,9 @@ function CancelContent() {
       }}>
         <div style={{fontSize: 64, marginBottom: 16}}><FaUndo style={{marginRight:4}} /></div>
         <h1 style={{fontSize: 28, fontWeight: 700, color: '#f59e0b', marginBottom: 8}}>
-          Payment Cancelled
-        </h1>
+          {say("Payment Cancelled")}{' '}</h1>
         <p style={{color: '#9aa3b2', fontSize: 16, marginBottom: 32}}>
-          No charge was made. You can try again whenever you&apos;re ready.
-        </p>
+          {say("No charge was made. You can try again whenever you&apos;re ready.")}{' '}</p>
         {workOrderId && (
           <Link
             href={`/customer/workorders/${workOrderId}`}
@@ -48,8 +48,7 @@ function CancelContent() {
               marginBottom: 12,
             }}
           >
-            Return to Work Order
-          </Link>
+            {say("Return to Work Order")}{' '}</Link>
         )}
         <Link
           href="/customer/dashboard"
@@ -61,8 +60,7 @@ function CancelContent() {
             textDecoration: 'none',
           }}
         >
-          Go to Dashboard
-        </Link>
+          {say("Go to Dashboard")}{' '}</Link>
       </div>
     </div>
   );

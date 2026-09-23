@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaTimes } from 'react-icons/fa';
 
 import { useState, useEffect, ReactNode } from 'react';
@@ -93,6 +94,7 @@ const navConfig: Record<string, { primary: NavItem[]; more: NavItem[] }> = {
 };
 
 export default function MobileNav({ role }: MobileNavProps) {
+  const say = usePhrase();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
@@ -150,8 +152,7 @@ export default function MobileNav({ role }: MobileNavProps) {
           margin: '0 auto 16px',
         }} />
         <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, letterSpacing: '0.06em', marginBottom: 12, textTransform: 'uppercase' }}>
-          More
-        </div>
+          {say("More")}{' '}</div>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -175,8 +176,8 @@ export default function MobileNav({ role }: MobileNavProps) {
                   transition: 'all 0.15s',
                 }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon}</span>
-                <span style={{ fontSize: 10, fontWeight: 500 }}>{item.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{say(item.icon)}</span>
+                <span style={{ fontSize: 10, fontWeight: 500 }}>{say(item.label)}</span>
               </button>
             );
           })}
@@ -208,8 +209,7 @@ export default function MobileNav({ role }: MobileNavProps) {
             cursor: 'pointer',
           }}
         >
-          <IconLogOut size={16} /> Sign Out
-        </button>
+          <IconLogOut size={16} /> {say("Sign Out")}{' '}</button>
       </div>
 
       {/* Bottom nav bar */}
@@ -255,9 +255,9 @@ export default function MobileNav({ role }: MobileNavProps) {
                   background: '#e5332a',
                 }} />
               )}
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#e5332a' : '#6b7280' }}>{item.icon}</span>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#e5332a' : '#6b7280' }}>{say(item.icon)}</span>
               <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, letterSpacing: '0.02em' }}>
-                {item.label}
+                {say(item.label)}
               </span>
             </button>
           );
@@ -278,7 +278,7 @@ export default function MobileNav({ role }: MobileNavProps) {
           }}
         >
           <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{drawerOpen ? <span style={{ fontSize: 18, lineHeight: 1 }}><FaTimes style={{marginRight:4}} /></span> : <IconGrid size={20} />}</span>
-          <span style={{ fontSize: 10, fontWeight: 400 }}>More</span>
+          <span style={{ fontSize: 10, fontWeight: 400 }}>{say("More")}</span>
         </button>
       </div>
     </>

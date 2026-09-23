@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useRequireAuth from '@/lib/useRequireAuth';
@@ -22,6 +23,7 @@ interface BlockedDate {
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function ScheduleSettingsPage() {
+  const say = usePhrase();
   useRequireAuth(['shop']);
   const router = useRouter();
   
@@ -147,8 +149,7 @@ export default function ScheduleSettingsPage() {
     return (
       <div style={{ minHeight: '100vh', background: 'transparent', padding: 24 }}>
         <div style={{ maxWidth: 900, margin: '0 auto', color: 'white', textAlign: 'center', paddingTop: 100 }}>
-          Loading schedule settings...
-        </div>
+          {say("Loading schedule settings...")}{' '}</div>
       </div>
     );
   }
@@ -165,11 +166,10 @@ export default function ScheduleSettingsPage() {
               padding: '8px 16px', color: 'white', cursor: 'pointer'
             }}
           >
-            <FaArrowLeft style={{marginRight:4}} /> Back
-          </button>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back")}{' '}</button>
           <div>
-            <h1 style={{ color: 'white', fontSize: 28, fontWeight: 700, margin: 0 }}><FaCalendarAlt style={{marginRight:4}} /> Schedule Settings</h1>
-            <p style={{ color: '#9aa3b2', fontSize: 14, margin: '4px 0 0' }}>Manage your business hours, capacity, and blocked dates</p>
+            <h1 style={{ color: 'white', fontSize: 28, fontWeight: 700, margin: 0 }}><FaCalendarAlt style={{marginRight:4}} /> {say("Schedule Settings")}</h1>
+            <p style={{ color: '#9aa3b2', fontSize: 14, margin: '4px 0 0' }}>{say("Manage your business hours, capacity, and blocked dates")}</p>
           </div>
         </div>
 
@@ -181,7 +181,7 @@ export default function ScheduleSettingsPage() {
             border: `1px solid ${message.type === 'success' ? '#22c55e' : '#ef4444'}`,
             color: message.type === 'success' ? '#22c55e' : '#ef4444'
           }}>
-            {message.text}
+            {say(message.text)}
           </div>
         )}
 
@@ -190,13 +190,12 @@ export default function ScheduleSettingsPage() {
           background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: 12, padding: 24, marginBottom: 24
         }}>
-          <h2 style={{ color: 'white', fontSize: 20, fontWeight: 600, marginBottom: 20 }}><FaWrench style={{marginRight:4}} /> Capacity Settings</h2>
+          <h2 style={{ color: 'white', fontSize: 20, fontWeight: 600, marginBottom: 20 }}><FaWrench style={{marginRight:4}} /> {say("Capacity Settings")}</h2>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             <div>
               <label style={{ display: 'block', color: '#9aa3b2', fontSize: 14, marginBottom: 8 }}>
-                Number of Bays/Simultaneous Appointments
-              </label>
+                {say("Number of Bays/Simultaneous Appointments")}{' '}</label>
               <input
                 type="number"
                 min="1"
@@ -210,14 +209,12 @@ export default function ScheduleSettingsPage() {
                 }}
               />
               <p style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>
-                How many appointments can you handle at the same time?
-              </p>
+                {say("How many appointments can you handle at the same time?")}{' '}</p>
             </div>
 
             <div>
               <label style={{ display: 'block', color: '#9aa3b2', fontSize: 14, marginBottom: 8 }}>
-                Time Slot Duration (minutes)
-              </label>
+                {say("Time Slot Duration (minutes)")}{' '}</label>
               <select
                 value={slotDuration}
                 onChange={(e) => setSlotDuration(parseInt(e.target.value))}
@@ -227,16 +224,15 @@ export default function ScheduleSettingsPage() {
                   color: 'white', fontSize: 16
                 }}
               >
-                <option value={15}>15 minutes</option>
-                <option value={30}>30 minutes</option>
-                <option value={45}>45 minutes</option>
-                <option value={60}>1 hour</option>
-                <option value={90}>1.5 hours</option>
-                <option value={120}>2 hours</option>
+                <option value={15}>{say("15 minutes")}</option>
+                <option value={30}>{say("30 minutes")}</option>
+                <option value={45}>{say("45 minutes")}</option>
+                <option value={60}>{say("1 hour")}</option>
+                <option value={90}>{say("1.5 hours")}</option>
+                <option value={120}>{say("2 hours")}</option>
               </select>
               <p style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>
-                How long is each appointment slot?
-              </p>
+                {say("How long is each appointment slot?")}{' '}</p>
             </div>
           </div>
         </div>
@@ -246,7 +242,7 @@ export default function ScheduleSettingsPage() {
           background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: 12, padding: 24, marginBottom: 24
         }}>
-          <h2 style={{ color: 'white', fontSize: 20, fontWeight: 600, marginBottom: 20 }}><FaClock style={{marginRight:4}} /> Business Hours</h2>
+          <h2 style={{ color: 'white', fontSize: 20, fontWeight: 600, marginBottom: 20 }}><FaClock style={{marginRight:4}} /> {say("Business Hours")}</h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {schedules.map(schedule => (
@@ -268,14 +264,14 @@ export default function ScheduleSettingsPage() {
                     style={{ width: 18, height: 18, cursor: 'pointer' }}
                   />
                   <span style={{ color: schedule.isOpen ? '#22c55e' : '#ef4444', fontSize: 13 }}>
-                    {schedule.isOpen ? 'Open' : 'Closed'}
+                    {schedule.isOpen ? say("Open") : say("Closed")}
                   </span>
                 </label>
 
                 {schedule.isOpen ? (
                   <>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>Open:</span>
+                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>{say("Open:")}</span>
                       <input
                         type="time"
                         value={schedule.openTime}
@@ -288,7 +284,7 @@ export default function ScheduleSettingsPage() {
                       />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>Close:</span>
+                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>{say("Close:")}</span>
                       <input
                         type="time"
                         value={schedule.closeTime}
@@ -303,8 +299,7 @@ export default function ScheduleSettingsPage() {
                   </>
                 ) : (
                   <span style={{ color: '#6b7280', fontSize: 13, gridColumn: 'span 2' }}>
-                    Shop is closed on this day
-                  </span>
+                    {say("Shop is closed on this day")}{' '}</span>
                 )}
               </div>
             ))}
@@ -321,7 +316,7 @@ export default function ScheduleSettingsPage() {
               width: '100%'
             }}
           >
-            {saving ? 'Saving...' : <><FaSave style={{marginRight:4}} /> Save Schedule Settings</>}
+            {saving ? say("Saving...") : <><FaSave style={{marginRight:4}} /> {say("Save Schedule Settings")}</>}
           </button>
         </div>
 
@@ -330,10 +325,9 @@ export default function ScheduleSettingsPage() {
           background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: 12, padding: 24
         }}>
-          <h2 style={{ color: 'white', fontSize: 20, fontWeight: 600, marginBottom: 20 }}><FaBan style={{marginRight:4}} /> Blocked Dates</h2>
+          <h2 style={{ color: 'white', fontSize: 20, fontWeight: 600, marginBottom: 20 }}><FaBan style={{marginRight:4}} /> {say("Blocked Dates")}</h2>
           <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>
-            Add dates when your shop will be closed (holidays, vacations, maintenance, etc.)
-          </p>
+            {say("Add dates when your shop will be closed (holidays, vacations, maintenance, etc.)")}{' '}</p>
           
           {/* Add new blocked date */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -350,7 +344,7 @@ export default function ScheduleSettingsPage() {
             />
             <input
               type="text"
-              placeholder="Reason (optional)"
+              placeholder={say("Reason (optional)")}
               value={newBlockedReason}
               onChange={(e) => setNewBlockedReason(e.target.value)}
               style={{
@@ -369,15 +363,13 @@ export default function ScheduleSettingsPage() {
                 whiteSpace: 'nowrap'
               }}
             >
-              + Add Date
-            </button>
+              {say("+ Add Date")}{' '}</button>
           </div>
 
           {/* List of blocked dates */}
           {blockedDates.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 30, color: '#6b7280' }}>
-              No blocked dates. Your shop is available on all scheduled days.
-            </div>
+              {say("No blocked dates. Your shop is available on all scheduled days.")}{' '}</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {blockedDates.map(blocked => (
@@ -397,7 +389,7 @@ export default function ScheduleSettingsPage() {
                     </span>
                     {blocked.reason && (
                       <span style={{ color: '#9aa3b2', marginLeft: 12, fontSize: 13 }}>
-                         -  {blocked.reason}
+                         -  {say(blocked.reason)}
                       </span>
                     )}
                   </div>
@@ -409,8 +401,7 @@ export default function ScheduleSettingsPage() {
                       fontSize: 13, cursor: 'pointer'
                     }}
                   >
-                    Remove
-                  </button>
+                    {say("Remove")}{' '}</button>
                 </div>
               ))}
             </div>

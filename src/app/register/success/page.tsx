@@ -1,10 +1,12 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 function SuccessContent() {
+  const say = usePhrase();
   const params = useSearchParams();
   const shopId = params?.get('shopId') ?? null;
 
@@ -19,20 +21,17 @@ function SuccessContent() {
         </div>
 
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#f1f5f9', marginBottom: 12 }}>
-          You&rsquo;re all set!
-        </h1>
+          {say("You&rsquo;re all set!")}{' '}</h1>
 
         <p style={{ color: '#94a3b8', lineHeight: 1.6, marginBottom: 8 }}>
-          Your 7-day free trial has started. Your card won&rsquo;t be charged until the trial ends.
-        </p>
+          {say("Your 7-day free trial has started. Your card won&rsquo;t be charged until the trial ends.")}{' '}</p>
 
         <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.6, marginBottom: 32 }}>
-          Our team will review your shop and send your login credentials once approved. Keep an eye on your inbox!
-        </p>
+          {say("Our team will review your shop and send your login credentials once approved. Keep an eye on your inbox!")}{' '}</p>
 
         {shopId && (
           <p style={{ fontSize: 12, color: '#475569', marginBottom: 24 }}>
-            Shop reference: <code style={{ fontFamily: 'monospace', color: '#94a3b8' }}>{shopId}</code>
+            {say("Shop reference:")}{' '}<code style={{ fontFamily: 'monospace', color: '#94a3b8' }}>{say(shopId)}</code>
           </p>
         )}
 
@@ -40,8 +39,7 @@ function SuccessContent() {
           href="/"
           style={{ display: 'inline-block', background: '#e5332a', color: '#fff', padding: '12px 28px', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: 15 }}
         >
-          Go to Homepage
-        </Link>
+          {say("Go to Homepage")}{' '}</Link>
       </div>
     </div>
   );

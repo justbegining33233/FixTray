@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -31,6 +32,7 @@ type CustomerResult = {
 };
 
 export default function ShopNewInShopJob() {
+  const say = usePhrase();
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['shop', 'manager', 'tech']);
   const [userName, setUserName] = useState('');
@@ -141,8 +143,7 @@ export default function ShopNewInShopJob() {
         color: '#e5e7eb',
         fontSize: '18px'
       }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -245,10 +246,9 @@ export default function ShopNewInShopJob() {
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto'}}>
           <Link href={portalDashboardHref(user.role) as Route} style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-          </Link>
-          <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaBuilding style={{marginRight:4}} /> New In-Shop Job</h1>
-          <p style={{fontSize:14, color:'#9aa3b2'}}>Create a new in-shop service work order</p>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
+          <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaBuilding style={{marginRight:4}} /> {say("New In-Shop Job")}</h1>
+          <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Create a new in-shop service work order")}</p>
         </div>
       </div>
 
@@ -256,13 +256,12 @@ export default function ShopNewInShopJob() {
         <form onSubmit={handleSubmit}>
           {/* Customer Information */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginBottom:24}}>
-            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Customer Information</h2>
+            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>{say("Customer Information")}</h2>
 
             {/* Recurring Customer / Fleet Search */}
             <div ref={searchBoxRef} style={{ marginBottom: 20, position: 'relative' }}>
               <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8, fontWeight:600}}>
-                <FaSearch style={{marginRight:6, fontSize:11}} />Recurring Customer / Fleet Search
-              </label>
+                <FaSearch style={{marginRight:6, fontSize:11}} />{say("Recurring Customer / Fleet Search")}{' '}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="text"
@@ -275,12 +274,12 @@ export default function ShopNewInShopJob() {
                     border: selectedCustomer ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(255,255,255,0.2)',
                     borderRadius: 8, color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box',
                   }}
-                  placeholder="Search by name, phone, email, VIN, plate…"
+                  placeholder={say("Search by name, phone, email, VIN, plate…")}
                   autoComplete="off"
                 />
                 <FaSearch style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: 13, pointerEvents: 'none' }} />
                 {searching && (
-                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: '#9aa3b2' }}>Searching…</span>
+                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: '#9aa3b2' }}>{say("Searching…")}</span>
                 )}
               </div>
 
@@ -297,12 +296,12 @@ export default function ShopNewInShopJob() {
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <div style={{ fontWeight: 700, fontSize: 13 }}>
-                        {c.firstName} {c.lastName}
-                        {c.company && <span style={{ fontWeight: 400, color: '#9aa3b2', marginLeft: 8 }}>· {c.company}</span>}
+                        {say(c.firstName)} {say(c.lastName)}
+                        {c.company && <span style={{ fontWeight: 400, color: '#9aa3b2', marginLeft: 8 }}>· {say(c.company)}</span>}
                       </div>
                       <div style={{ fontSize: 11, color: '#9aa3b2', marginTop: 2 }}>
-                        {c.phone && <span style={{ marginRight: 10 }}>{c.phone}</span>}
-                        {c.email && <span>{c.email}</span>}
+                        {c.phone && <span style={{ marginRight: 10 }}>{say(c.phone)}</span>}
+                        {c.email && <span>{say(c.email)}</span>}
                       </div>
                       {c.vehicles.length > 0 && (
                         <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -322,8 +321,7 @@ export default function ShopNewInShopJob() {
               )}
               {showDropdown && !searching && searchResults.length === 0 && customerSearch.trim().length >= 2 && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, marginTop: 4, background: '#111111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#6b7280' }}>
-                  No existing customers found — fill in the form below to create one.
-                </div>
+                  {say("No existing customers found — fill in the form below to create one.")}{' '}</div>
               )}
             </div>
 
@@ -331,7 +329,7 @@ export default function ShopNewInShopJob() {
             {vehiclePickerOpen && selectedCustomer && selectedCustomer.vehicles.length > 1 && (
               <div style={{ marginBottom: 20, padding: 14, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 10 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#60a5fa', marginBottom: 10 }}>
-                  <FaCar style={{ marginRight: 6 }} />Select a vehicle for {selectedCustomer.firstName} {selectedCustomer.lastName}
+                  <FaCar style={{ marginRight: 6 }} />{say("Select a vehicle for")}{' '}{say(selectedCustomer.firstName)} {say(selectedCustomer.lastName)}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {selectedCustomer.vehicles.map(v => (
@@ -344,8 +342,8 @@ export default function ShopNewInShopJob() {
                       onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                     >
                       <strong>{[v.year, v.make, v.model].filter(Boolean).join(' ') || v.vehicleType}</strong>
-                      {v.vin && <span style={{ color: '#9aa3b2', marginLeft: 10, fontSize: 11 }}>VIN {v.vin}</span>}
-                      {v.licensePlate && <span style={{ color: '#9aa3b2', marginLeft: 10, fontSize: 11 }}>Plate {v.licensePlate}</span>}
+                      {v.vin && <span style={{ color: '#9aa3b2', marginLeft: 10, fontSize: 11 }}>{say("VIN")}{' '}{say(v.vin)}</span>}
+                      {v.licensePlate && <span style={{ color: '#9aa3b2', marginLeft: 10, fontSize: 11 }}>{say("Plate")}{' '}{say(v.licensePlate)}</span>}
                     </button>
                   ))}
                 </div>
@@ -353,18 +351,18 @@ export default function ShopNewInShopJob() {
             )}
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Customer Name *</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Customer Name *")}</label>
                 <input
                   type="text"
                   required
                   value={formData.customerName}
                   onChange={(e) => setFormData({...formData, customerName: e.target.value})}
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
-                  placeholder="John Doe"
+                  placeholder={say("John Doe")}
                 />
               </div>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Phone Number *</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Phone Number *")}</label>
                 <input
                   type="tel"
                   required
@@ -375,13 +373,13 @@ export default function ShopNewInShopJob() {
                 />
               </div>
               <div style={{gridColumn:'1 / -1'}}>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Email</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Email")}</label>
                 <input
                   type="email"
                   value={formData.customerEmail}
                   onChange={(e) => setFormData({...formData, customerEmail: e.target.value})}
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
-                  placeholder="customer@email.com"
+                  placeholder={say("customer@email.com")}
                 />
               </div>
             </div>
@@ -389,10 +387,10 @@ export default function ShopNewInShopJob() {
 
           {/* Vehicle Information */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginBottom:24}}>
-            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Vehicle Information</h2>
+            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>{say("Vehicle Information")}</h2>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16}}>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Year *</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Year *")}</label>
                 <input
                   type="text"
                   required
@@ -403,39 +401,39 @@ export default function ShopNewInShopJob() {
                 />
               </div>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Make *</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Make *")}</label>
                 <input
                   type="text"
                   required
                   value={formData.vehicleMake}
                   onChange={(e) => setFormData({...formData, vehicleMake: e.target.value})}
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
-                  placeholder="Ford"
+                  placeholder={say("Ford")}
                 />
               </div>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Model *</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Model *")}</label>
                 <input
                   type="text"
                   required
                   value={formData.vehicleModel}
                   onChange={(e) => setFormData({...formData, vehicleModel: e.target.value})}
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
-                  placeholder="F-150"
+                  placeholder={say("F-150")}
                 />
               </div>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>VIN</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("VIN")}</label>
                 <input
                   type="text"
                   value={formData.vin}
                   onChange={(e) => setFormData({...formData, vin: e.target.value})}
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
-                  placeholder="1FTFW1E84MFA12345"
+                  placeholder={say("1FTFW1E84MFA12345")}
                 />
               </div>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Mileage</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Mileage")}</label>
                 <input
                   type="text"
                   value={formData.mileage}
@@ -449,17 +447,15 @@ export default function ShopNewInShopJob() {
 
           {/* Service Details */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginBottom:24}}>
-            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Service Details</h2>
+            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>{say("Service Details")}</h2>
             <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:12}}>Select Services *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say("Select Services *")}</label>
               {!servicesLoaded ? (
                 <div style={{ padding: '12px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', color: '#9aa3b2', fontSize: 13 }}>
-                  Loading live shop services...
-                </div>
+                  {say("Loading live shop services...")}{' '}</div>
               ) : serviceOptions.length === 0 ? (
                 <div style={{ padding: '12px 14px', borderRadius: 8, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontSize: 13, fontWeight: 600 }}>
-                  No services are configured for this shop. Add services in Shop Services before creating work orders.
-                </div>
+                  {say("No services are configured for this shop. Add services in Shop Services before creating work orders.")}{' '}</div>
               ) : (
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:12}}>
                 {serviceOptions.map(option => (
@@ -479,7 +475,7 @@ export default function ShopNewInShopJob() {
                       textAlign:'left'
                     }}
                   >
-                    {option.label}
+                    {say(option.label)}
                   </button>
                 ))}
               </div>
@@ -488,7 +484,7 @@ export default function ShopNewInShopJob() {
 
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20}}>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Appointment Date</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Appointment Date")}</label>
                 <input
                   type="date"
                   value={formData.appointmentDate}
@@ -497,7 +493,7 @@ export default function ShopNewInShopJob() {
                 />
               </div>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Appointment Time</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Appointment Time")}</label>
                 <input
                   type="time"
                   value={formData.appointmentTime}
@@ -508,7 +504,7 @@ export default function ShopNewInShopJob() {
             </div>
 
             <div>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Estimated Hours</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Estimated Hours")}</label>
               <input
                 type="text"
                 value={formData.estimatedHours}
@@ -521,13 +517,13 @@ export default function ShopNewInShopJob() {
 
           {/* Additional Notes */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginBottom:24}}>
-            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>Additional Notes</h2>
+            <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>{say("Additional Notes")}</h2>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({...formData, notes: e.target.value})}
               rows={6}
               style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14, resize:'vertical'}}
-              placeholder="Enter any additional information about the service..."
+              placeholder={say("Enter any additional information about the service...")}
             />
           </div>
 
@@ -535,12 +531,10 @@ export default function ShopNewInShopJob() {
           <div style={{display:'flex', gap:12}}>
             <Link href={portalDashboardHref(user.role) as Route} style={{flex:1}}>
               <button type="button" style={{width:'100%', padding:'16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:16, fontWeight:600, cursor:'pointer'}}>
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
             </Link>
             <button type="submit" style={{flex:1, padding:'16px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:16, fontWeight:600, cursor:'pointer'}}>
-              Create In-Shop Job
-            </button>
+              {say("Create In-Shop Job")}{' '}</button>
           </div>
         </form>
       </div>

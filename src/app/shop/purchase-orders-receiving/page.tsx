@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -31,6 +32,7 @@ const statusColors = {
 };
 
 export default function PurchaseOrdersRecievingPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop', 'manager']);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +106,7 @@ export default function PurchaseOrdersRecievingPage() {
     }
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const orderedOrders = orders.filter(o => o.status === 'ordered');
@@ -118,18 +120,17 @@ export default function PurchaseOrdersRecievingPage() {
         <main style={{ flex: 1, padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 32 }}>
             <FaTruck style={{ marginRight: 12, verticalAlign: 'middle' }} />
-            Receiving Workflow
-          </h1>
+            {say("Receiving Workflow")}{' '}</h1>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading orders...</div>
+            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>{say("Loading orders...")}</div>
           ) : (
             <>
               {/* Awaiting Shipment */}
               {orderedOrders.length > 0 && (
                 <div style={{ marginBottom: 32 }}>
                   <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginBottom: 16 }}>
-                    Awaiting Shipment ({orderedOrders.length})
+                    {say("Awaiting Shipment (")}{say(orderedOrders.length)})
                   </h2>
                   <div style={{ display: 'grid', gap: 12 }}>
                     {orderedOrders.map(order => {
@@ -149,10 +150,10 @@ export default function PurchaseOrdersRecievingPage() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                             <div>
                               <div style={{ color: '#e5e7eb', fontWeight: 600, marginBottom: 8 }}>
-                                {order.vendor} - {order.items.length} items
+                                {say(order.vendor)} - {say(order.items.length)} items
                               </div>
                               <div style={{ color: '#9ca3af', fontSize: 13 }}>
-                                Ordered: {new Date(order.createdAt).toLocaleDateString()}
+                                {say("Ordered:")}{' '}{new Date(order.createdAt).toLocaleDateString()}
                                 {order.expectedDate && ` | Expected: ${new Date(order.expectedDate).toLocaleDateString()}`}
                               </div>
                             </div>
@@ -169,8 +170,8 @@ export default function PurchaseOrdersRecievingPage() {
                                 alignItems: 'center',
                                 gap: 4,
                               }}>
-                                {style.icon}
-                                {style.text}
+                                {say(style.icon)}
+                                {say(style.text)}
                               </div>
                               <div style={{ color: '#ec4899', fontWeight: 600, fontSize: 14 }}>
                                 ${order.totalCost.toFixed(2)}
@@ -188,7 +189,7 @@ export default function PurchaseOrdersRecievingPage() {
               {shippedOrders.length > 0 && (
                 <div style={{ marginBottom: 32 }}>
                   <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginBottom: 16 }}>
-                    In Transit ({shippedOrders.length})
+                    {say("In Transit (")}{say(shippedOrders.length)})
                   </h2>
                   <div style={{ display: 'grid', gap: 12 }}>
                     {shippedOrders.map(order => {
@@ -206,10 +207,10 @@ export default function PurchaseOrdersRecievingPage() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
                             <div>
                               <div style={{ color: '#e5e7eb', fontWeight: 600, marginBottom: 8 }}>
-                                {order.vendor} - {order.items.length} items
+                                {say(order.vendor)} - {say(order.items.length)} items
                               </div>
                               <div style={{ color: '#9ca3af', fontSize: 13 }}>
-                                Expected: {order.expectedDate ? new Date(order.expectedDate).toLocaleDateString() : 'N/A'}
+                                {say("Expected:")}{' '}{order.expectedDate ? new Date(order.expectedDate).toLocaleDateString() : say("N/A")}
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
@@ -225,8 +226,8 @@ export default function PurchaseOrdersRecievingPage() {
                                 alignItems: 'center',
                                 gap: 4,
                               }}>
-                                {style.icon}
-                                {style.text}
+                                {say(style.icon)}
+                                {say(style.text)}
                               </div>
                             </div>
                           </div>
@@ -245,8 +246,7 @@ export default function PurchaseOrdersRecievingPage() {
                             }}
                           >
                             <FaCheckCircle style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                            Mark as Received
-                          </button>
+                            {say("Mark as Received")}{' '}</button>
                         </div>
                       );
                     })}
@@ -256,8 +256,7 @@ export default function PurchaseOrdersRecievingPage() {
 
               {orders.length === 0 && (
                 <div style={{ textAlign: 'center', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, color: '#9ca3af' }}>
-                  No purchase orders
-                </div>
+                  {say("No purchase orders")}{' '}</div>
               )}
             </>
           )}
@@ -283,11 +282,11 @@ export default function PurchaseOrdersRecievingPage() {
                 padding: 24,
               }}>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 16 }}>
-                  PO: {selectedOrder.vendor}
+                  {say("PO:")}{' '}{say(selectedOrder.vendor)}
                 </h2>
 
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>Items</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>{say("Items")}</div>
                   <div style={{ display: 'grid', gap: 8 }}>
                     {selectedOrder.items.map(item => (
                       <div key={item.id} style={{
@@ -298,11 +297,11 @@ export default function PurchaseOrdersRecievingPage() {
                         justifyContent: 'space-between',
                       }}>
                         <div>
-                          <div style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 13 }}>{item.itemName}</div>
-                          <div style={{ color: '#9ca3af', fontSize: 11 }}>SKU: {item.sku}</div>
+                          <div style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 13 }}>{say(item.itemName)}</div>
+                          <div style={{ color: '#9ca3af', fontSize: 11 }}>{say("SKU:")}{' '}{say(item.sku)}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ color: '#e5e7eb', fontWeight: 600 }}>Qty: {item.quantity}</div>
+                          <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{say("Qty:")}{' '}{say(item.quantity)}</div>
                           <div style={{ color: '#9ca3af', fontSize: 11 }}>${item.unitCost.toFixed(2)}/ea</div>
                         </div>
                       </div>
@@ -325,8 +324,7 @@ export default function PurchaseOrdersRecievingPage() {
                       fontSize: 13,
                     }}
                   >
-                    Close
-                  </button>
+                    {say("Close")}{' '}</button>
                   {selectedOrder.status === 'shipped' && (
                     <button
                       onClick={() => handleReceiveOrder(selectedOrder.id)}
@@ -344,7 +342,7 @@ export default function PurchaseOrdersRecievingPage() {
                         opacity: receiving ? 0.6 : 1,
                       }}
                     >
-                      {receiving ? 'Processing...' : 'Confirm Receipt'}
+                      {receiving ? say("Processing...") : say("Confirm Receipt")}
                     </button>
                   )}
                 </div>

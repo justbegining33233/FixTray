@@ -1,8 +1,10 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { FaSatelliteDish } from 'react-icons/fa';
 
 export default function OfflinePage() {
+  const say = usePhrase();
   return (
     <div style={{
       minHeight: '100dvh',
@@ -17,10 +19,9 @@ export default function OfflinePage() {
       textAlign: 'center',
     }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}><FaSatelliteDish style={{marginRight:4}} /></div>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>You&apos;re Offline</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{say("You&apos;re Offline")}</h1>
       <p style={{ fontSize: 14, color: '#94a3b8', maxWidth: 320, marginBottom: 24 }}>
-        It looks like you&apos;ve lost your internet connection. Some features may be unavailable until you reconnect.
-      </p>
+        {say("It looks like you&apos;ve lost your internet connection. Some features may be unavailable until you reconnect.")}{' '}</p>
       <button
         onClick={() => window.location.reload()}
         className="btn-primary"
@@ -30,8 +31,7 @@ export default function OfflinePage() {
           fontWeight: 700,
         }}
       >
-        Try Again
-      </button>
+        {say("Try Again")}{' '}</button>
     </div>
   );
 }

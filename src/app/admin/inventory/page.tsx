@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -30,6 +31,7 @@ interface InventoryStats {
 }
 
 export default function AdminInventoryPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [stats, setStats] = useState<InventoryStats | null>(null);
@@ -81,7 +83,7 @@ export default function AdminInventoryPage() {
     }
   });
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -94,14 +96,13 @@ export default function AdminInventoryPage() {
           <div style={{ marginBottom: 32 }}>
             <h1 style={{ fontSize: 32, fontWeight: 700, color: '#e5e7eb', margin: '0 0 8px' }}>
               <FaBox style={{ marginRight: 12, verticalAlign: 'middle' }} />
-              Platform Inventory
-            </h1>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>Monitor inventory across all shops</p>
+              {say("Platform Inventory")}{' '}</h1>
+            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>{say("Monitor inventory across all shops")}</p>
           </div>
 
           {error && (
             <div style={{ background: 'rgba(229,51,42,0.15)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 16, marginBottom: 24, color: '#fca5a5' }}>
-              {error}
+              {say(error)}
             </div>
           )}
 
@@ -109,17 +110,17 @@ export default function AdminInventoryPage() {
           {stats && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
               {[
-                { label: 'Total Items', value: stats.totalItems, icon: <FaBox />, color: '#3b82f6' },
-                { label: 'Low Stock', value: stats.lowStockItems, icon: <FaExclamationTriangle />, color: '#f59e0b' },
-                { label: 'Out of Stock', value: stats.outOfStockItems, icon: <FaArrowDown />, color: '#e5332a' },
-                { label: 'Total Value', value: `$${(stats.totalValue / 1000).toFixed(1)}K`, icon: <FaArrowUp />, color: '#ec4899' },
+                { label: say("Total Items"), value: stats.totalItems, icon: <FaBox />, color: '#3b82f6' },
+                { label: say("Low Stock"), value: stats.lowStockItems, icon: <FaExclamationTriangle />, color: '#f59e0b' },
+                { label: say("Out of Stock"), value: stats.outOfStockItems, icon: <FaArrowDown />, color: '#e5332a' },
+                { label: say("Total Value"), value: `$${(stats.totalValue / 1000).toFixed(1)}K`, icon: <FaArrowUp />, color: '#ec4899' },
               ].map((stat, i) => (
                 <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <span style={{ color: stat.color, fontSize: 20 }}>{stat.icon}</span>
-                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{stat.label}</div>
+                    <span style={{ color: stat.color, fontSize: 20 }}>{say(stat.icon)}</span>
+                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{say(stat.label)}</div>
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{say(stat.value)}</div>
                 </div>
               ))}
             </div>
@@ -129,8 +130,7 @@ export default function AdminInventoryPage() {
           {outOfStockItems.length > 0 && (
             <div style={{ background: 'rgba(229,51,42,0.15)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#fca5a5', marginBottom: 12 }}>
-                🚨 {outOfStockItems.length} Items Out of Stock
-              </div>
+                🚨 {say(outOfStockItems.length)} {say("Items Out of Stock")}{' '}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {outOfStockItems.slice(0, 5).map(item => (
                   <div key={item.id} style={{
@@ -140,7 +140,7 @@ export default function AdminInventoryPage() {
                     borderRadius: 6,
                     fontSize: 12,
                   }}>
-                    {item.itemName} (SKU: {item.sku})
+                    {say(item.itemName)} {say("(SKU:")}{' '}{say(item.sku)})
                   </div>
                 ))}
               </div>
@@ -150,7 +150,7 @@ export default function AdminInventoryPage() {
           {/* Filters */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
             <div>
-              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Sort by</label>
+              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>{say("Sort by")}</label>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
@@ -163,32 +163,31 @@ export default function AdminInventoryPage() {
                   fontSize: 13,
                 }}
               >
-                <option value="quantity">Low to High Quantity</option>
-                <option value="value">Highest Value</option>
-                <option value="reorder">Closest to Reorder Point</option>
+                <option value="quantity">{say("Low to High Quantity")}</option>
+                <option value="value">{say("Highest Value")}</option>
+                <option value="reorder">{say("Closest to Reorder Point")}</option>
               </select>
             </div>
           </div>
 
           {/* Inventory Table */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading inventory...</div>
+            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>{say("Loading inventory...")}</div>
           ) : inventory.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
-              No inventory items found
-            </div>
+              {say("No inventory items found")}{' '}</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Item Name</th>
-                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>SKU</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Quantity</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Reorder Point</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Unit Cost</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Total Value</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Item Name")}</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("SKU")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Quantity")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Reorder Point")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Unit Cost")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Total Value")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -205,10 +204,10 @@ export default function AdminInventoryPage() {
                     }
                     return (
                       <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '16px', color: '#e5e7eb', fontWeight: 500 }}>{item.itemName}</td>
-                        <td style={{ padding: '16px', color: '#9ca3af', fontSize: 12 }}>{item.sku}</td>
-                        <td style={{ padding: '16px', textAlign: 'center', color: '#e5e7eb', fontWeight: 600 }}>{item.quantity}</td>
-                        <td style={{ padding: '16px', textAlign: 'center', color: '#9ca3af' }}>{item.reorderPoint}</td>
+                        <td style={{ padding: '16px', color: '#e5e7eb', fontWeight: 500 }}>{say(item.itemName)}</td>
+                        <td style={{ padding: '16px', color: '#9ca3af', fontSize: 12 }}>{say(item.sku)}</td>
+                        <td style={{ padding: '16px', textAlign: 'center', color: '#e5e7eb', fontWeight: 600 }}>{say(item.quantity)}</td>
+                        <td style={{ padding: '16px', textAlign: 'center', color: '#9ca3af' }}>{say(item.reorderPoint)}</td>
                         <td style={{ padding: '16px', textAlign: 'center', color: '#e5e7eb' }}>${item.unitCost.toFixed(2)}</td>
                         <td style={{ padding: '16px', textAlign: 'center', color: '#ec4899', fontWeight: 600 }}>${totalValue.toFixed(2)}</td>
                         <td style={{ padding: '16px', textAlign: 'center' }}>
@@ -220,7 +219,7 @@ export default function AdminInventoryPage() {
                             fontSize: 11,
                             fontWeight: 600,
                           }}>
-                            {status}
+                            {say(status)}
                           </span>
                         </td>
                       </tr>
@@ -230,7 +229,7 @@ export default function AdminInventoryPage() {
               </table>
               {sortedInventory.length > 50 && (
                 <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 12 }}>
-                  Showing 50 of {sortedInventory.length} items
+                  {say("Showing 50 of")}{' '}{say(sortedInventory.length)} items
                 </div>
               )}
             </div>

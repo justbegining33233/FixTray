@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TopNavBar from '@/components/TopNavBar';
@@ -52,6 +53,7 @@ const activityStyles = {
 };
 
 export default function AdminShopsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const router = useRouter();
   const [shops, setShops] = useState<Shop[]>([]);
@@ -108,7 +110,7 @@ export default function AdminShopsPage() {
     }
   });
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -121,25 +123,24 @@ export default function AdminShopsPage() {
           <div style={{ marginBottom: 32 }}>
             <h1 style={{ fontSize: 32, fontWeight: 700, color: '#e5e7eb', margin: '0 0 8px' }}>
               <FaBuilding style={{ marginRight: 12, verticalAlign: 'middle' }} />
-              Shop Management
-            </h1>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>Monitor all shops on the platform</p>
+              {say("Shop Management")}{' '}</h1>
+            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>{say("Monitor all shops on the platform")}</p>
           </div>
 
           {/* Stats Grid */}
           {stats && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
               {[
-                { label: 'Total Shops', value: stats.totalShops, color: '#3b82f6' },
-                { label: 'Active', value: stats.activeShops, color: '#22c55e' },
-                { label: 'Inactive', value: stats.inactiveShops, color: '#9ca3af' },
-                { label: 'Pending', value: stats.pendingShops, color: '#f59e0b' },
-                { label: 'Platform Revenue', value: `$${(stats.totalPlatformRevenue / 1000).toFixed(1)}K`, color: '#ec4899' },
-                { label: 'Growth (This Month)', value: `${stats.shopGrowth > 0 ? '+' : ''}${stats.shopGrowth}%`, color: stats.shopGrowth > 0 ? '#22c55e' : '#e5332a' },
+                { label: say("Total Shops"), value: stats.totalShops, color: '#3b82f6' },
+                { label: say("Active"), value: stats.activeShops, color: '#22c55e' },
+                { label: say("Inactive"), value: stats.inactiveShops, color: '#9ca3af' },
+                { label: say("Pending"), value: stats.pendingShops, color: '#f59e0b' },
+                { label: say("Platform Revenue"), value: `$${(stats.totalPlatformRevenue / 1000).toFixed(1)}K`, color: '#ec4899' },
+                { label: say("Growth (This Month)"), value: `${stats.shopGrowth > 0 ? '+' : ''}${stats.shopGrowth}%`, color: stats.shopGrowth > 0 ? '#22c55e' : '#e5332a' },
               ].map((stat, i) => (
                 <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
-                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>{stat.label}</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>{say(stat.label)}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{say(stat.value)}</div>
                 </div>
               ))}
             </div>
@@ -147,14 +148,14 @@ export default function AdminShopsPage() {
 
           {error && (
             <div style={{ background: 'rgba(229,51,42,0.15)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 16, marginBottom: 24, color: '#fca5a5' }}>
-              {error}
+              {say(error)}
             </div>
           )}
 
           {/* Filters and Sort */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
             <div>
-              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Filter by Status</label>
+              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>{say("Filter by Status")}</label>
               <select
                 value={filterStatus}
                 onChange={e => setFilterStatus(e.target.value)}
@@ -167,15 +168,15 @@ export default function AdminShopsPage() {
                   fontSize: 13,
                 }}
               >
-                <option value="all">All Statuses</option>
-                <option value="approved">Approved</option>
-                <option value="pending">Pending</option>
-                <option value="suspended">Suspended</option>
+                <option value="all">{say("All Statuses")}</option>
+                <option value="approved">{say("Approved")}</option>
+                <option value="pending">{say("Pending")}</option>
+                <option value="suspended">{say("Suspended")}</option>
               </select>
             </div>
 
             <div>
-              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Sort by</label>
+              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>{say("Sort by")}</label>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
@@ -188,33 +189,32 @@ export default function AdminShopsPage() {
                   fontSize: 13,
                 }}
               >
-                <option value="revenue">Revenue</option>
-                <option value="jobs">Jobs Count</option>
-                <option value="rating">Rating</option>
-                <option value="activity">Activity Status</option>
+                <option value="revenue">{say("Revenue")}</option>
+                <option value="jobs">{say("Jobs Count")}</option>
+                <option value="rating">{say("Rating")}</option>
+                <option value="activity">{say("Activity Status")}</option>
               </select>
             </div>
           </div>
 
           {/* Shops Table */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading shops...</div>
+            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>{say("Loading shops...")}</div>
           ) : sortedShops.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
-              No shops found
-            </div>
+              {say("No shops found")}{' '}</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Shop Name</th>
-                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Status</th>
-                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Activity</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Jobs</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Revenue</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Rating</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Action</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Shop Name")}</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Status")}</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Activity")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Jobs")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Revenue")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Rating")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Action")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -224,8 +224,8 @@ export default function AdminShopsPage() {
                     return (
                       <tr key={shop.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <td style={{ padding: '16px', color: '#e5e7eb', fontWeight: 500 }}>
-                          <div>{shop.name}</div>
-                          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{shop.email}</div>
+                          <div>{say(shop.name)}</div>
+                          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{say(shop.email)}</div>
                         </td>
                         <td style={{ padding: '16px' }}>
                           <span style={{
@@ -236,7 +236,7 @@ export default function AdminShopsPage() {
                             fontSize: 11,
                             fontWeight: 600,
                           }}>
-                            {statusStyle.text}
+                            {say(statusStyle.text)}
                           </span>
                         </td>
                         <td style={{ padding: '16px' }}>
@@ -252,17 +252,17 @@ export default function AdminShopsPage() {
                             gap: 4,
                             width: 'fit-content',
                           }}>
-                            {activityStyle.icon}
-                            {shop.activityStatus === 'active' ? 'Active' : 'Inactive'}
+                            {say(activityStyle.icon)}
+                            {shop.activityStatus === 'active' ? say("Active") : say("Inactive")}
                           </div>
                         </td>
                         <td style={{ padding: '16px', textAlign: 'center', color: '#e5e7eb' }}>
-                          <div style={{ fontWeight: 600 }}>{shop.completedJobs}/{shop.totalJobs}</div>
-                          <div style={{ fontSize: 11, color: '#9ca3af' }}>{shop.completionRate}%</div>
+                          <div style={{ fontWeight: 600 }}>{say(shop.completedJobs)}/{say(shop.totalJobs)}</div>
+                          <div style={{ fontSize: 11, color: '#9ca3af' }}>{say(shop.completionRate)}%</div>
                         </td>
                         <td style={{ padding: '16px', textAlign: 'center' }}>
                           <div style={{ fontWeight: 600, color: '#ec4899' }}>${(shop.totalRevenue / 1000).toFixed(1)}K</div>
-                          <div style={{ fontSize: 11, color: '#9ca3af' }}>Month: ${(shop.revenueThisMonth / 1000).toFixed(1)}K</div>
+                          <div style={{ fontSize: 11, color: '#9ca3af' }}>{say("Month: $")}{(shop.revenueThisMonth / 1000).toFixed(1)}K</div>
                         </td>
                         <td style={{ padding: '16px', textAlign: 'center', color: '#fbbf24', fontWeight: 600 }}>
                           {shop.rating.toFixed(1)} ⭐
@@ -285,7 +285,7 @@ export default function AdminShopsPage() {
                               margin: '0 auto',
                             }}
                           >
-                            View <FaArrowRight />
+                            {say("View")}{' '}<FaArrowRight />
                           </button>
                         </td>
                       </tr>

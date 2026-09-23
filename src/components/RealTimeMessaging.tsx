@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '@/lib/socket';
 
@@ -18,6 +19,7 @@ export default function RealTimeMessaging({
   recipientId,
   recipientRole
 }: RealTimeMessagingProps) {
+  const say = usePhrase();
   const { isConnected, emit, on, off } = useSocket();
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -125,7 +127,7 @@ export default function RealTimeMessaging({
         fontWeight: 600,
         borderBottom: '1px solid rgba(255,255,255,0.1)',
       }}>
-        {isConnected ? ' Connected' : ' Disconnected'}
+        {isConnected ? say(" Connected") : say(" Disconnected")}
       </div>
 
       {/* Messages */}
@@ -157,7 +159,7 @@ export default function RealTimeMessaging({
               color: '#e5e7eb',
               fontSize: 14,
             }}>
-              {message.content}
+              {say(message.content)}
             </div>
             <div style={{
               fontSize: 11,
@@ -198,7 +200,7 @@ export default function RealTimeMessaging({
           onKeyPress={handleKeyPress}
           onFocus={handleTyping}
           onBlur={handleStopTyping}
-          placeholder="Type a message..."
+          placeholder={say("Type a message...")}
           style={{
             flex: 1,
             padding: '8px 12px',
@@ -227,8 +229,7 @@ export default function RealTimeMessaging({
             fontWeight: 600,
           }}
         >
-          Send
-        </button>
+          {say("Send")}{' '}</button>
       </div>
     </div>
   );

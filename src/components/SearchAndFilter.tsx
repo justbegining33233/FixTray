@@ -1,8 +1,7 @@
+'use client';
+import { usePhrase } from '@/lib/usePhrase';
 // Enhanced Search and Filter Component
 // Makes it easy for users to find and filter content
-
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import {
   FaSearch,
@@ -53,6 +52,7 @@ export default function SearchAndFilter({
   showLocationFilter = false,
   className = ''
 }: SearchAndFilterProps) {
+  const say = usePhrase();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
   const [sortBy, setSortBy] = useState('');
@@ -175,7 +175,7 @@ export default function SearchAndFilter({
           <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder={placeholder}
+            placeholder={say(placeholder)}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -202,7 +202,7 @@ export default function SearchAndFilter({
               }`}
             >
               <FaFilter className="w-4 h-4" />
-              <span>Filters</span>
+              <span>{say("Filters")}</span>
               {hasActiveFilters && (
                 <span className="text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" style={{background:'#e5332a'}}>
                   {getActiveFilterCount()}
@@ -216,14 +216,13 @@ export default function SearchAndFilter({
               <div className="absolute top-full mt-2 right-0 w-80 rounded-lg shadow-lg z-50" style={{background:"rgba(10,16,32,0.95)",border:"1px solid rgba(255,255,255,0.1)"}}>
                 <div className="p-4 max-h-96 overflow-y-auto">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900">Filters</h3>
+                    <h3 className="font-semibold text-gray-900">{say("Filters")}</h3>
                     {hasActiveFilters && (
                       <button
                         onClick={clearFilters}
                         className="text-sm text-blue-600 hover:text-blue-800"
                       >
-                        Clear all
-                      </button>
+                        {say("Clear all")}{' '}</button>
                     )}
                   </div>
 
@@ -232,8 +231,7 @@ export default function SearchAndFilter({
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <FaCalendarAlt className="inline w-4 h-4 mr-1" />
-                        Date Range
-                      </label>
+                        {say("Date Range")}{' '}</label>
                       <div className="grid grid-cols-2 gap-2">
                         <input
                           type="date"
@@ -264,11 +262,10 @@ export default function SearchAndFilter({
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         <FaMapMarkerAlt className="inline w-4 h-4 mr-1" />
-                        Location
-                      </label>
+                        {say("Location")}{' '}</label>
                       <input
                         type="text"
-                        placeholder="Enter location..."
+                        placeholder={say("Enter location...")}
                         value={location}
                         onChange={(e) => {
                           setLocation(e.target.value);
@@ -283,7 +280,7 @@ export default function SearchAndFilter({
                   {filterGroups.map((group) => (
                     <div key={group.id} className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {group.label}
+                        {say(group.label)}
                       </label>
                       <div className="space-y-2">
                         {group.options.map((option) => {
@@ -304,10 +301,10 @@ export default function SearchAndFilter({
                                 onChange={() => handleFilterChange(group.id, option.value, group.type)}
                                 className="text-blue-600 focus:ring-blue-500"
                               />
-                              <span className="text-sm text-gray-700">{option.label}</span>
+                              <span className="text-sm text-gray-700">{say(option.label)}</span>
                               {option.count !== undefined && (
                                 <span className="text-xs text-[#94a3b8] px-2 py-1 rounded-full" style={{background:"rgba(255,255,255,0.08)"}}>
-                                  {option.count}
+                                  {say(option.count)}
                                 </span>
                               )}
                               {isSelected && (
@@ -333,7 +330,7 @@ export default function SearchAndFilter({
               className="flex items-center space-x-2 px-4 py-2 border border-[rgba(255,255,255,0.12)] rounded-lg text-[#94a3b8] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
             >
               <FaSort className="w-4 h-4" />
-              <span>Sort</span>
+              <span>{say("Sort")}</span>
               <FaChevronDown className={`w-3 h-3 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -349,7 +346,7 @@ export default function SearchAndFilter({
                         sortBy === option.id ? 'text-[#e5332a] bg-[rgba(229,51,42,0.08)]' : 'text-[#94a3b8]'
                       }`}
                     >
-                      {option.label}
+                      {say(option.label)}
                       {sortBy === option.id && (
                         <span className="ml-2">
                           {sortOrder === 'desc' ? '↓' : '↑'}
@@ -367,7 +364,7 @@ export default function SearchAndFilter({
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-gray-600">Active filters:</span>
+          <span className="text-sm text-gray-600">{say("Active filters:")}</span>
 
           {Object.entries(activeFilters).map(([groupId, value]) => {
             const group = filterGroups.find(g => g.id === groupId);
@@ -381,7 +378,7 @@ export default function SearchAndFilter({
                     key={`${groupId}-${val}`}
                     className="inline-flex items-center space-x-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
                   >
-                    <span>{option.label}</span>
+                    <span>{say(option.label)}</span>
                     <button
                       onClick={() => handleFilterChange(groupId, val, 'multiple')}
                       className="hover:text-blue-600"
@@ -398,7 +395,7 @@ export default function SearchAndFilter({
                   key={`${groupId}-${value}`}
                   className="inline-flex items-center space-x-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
                 >
-                  <span>{option.label}</span>
+                  <span>{say(option.label)}</span>
                   <button
                     onClick={() => handleFilterChange(groupId, value, 'single')}
                     className="hover:text-blue-600"
@@ -434,7 +431,7 @@ export default function SearchAndFilter({
 
           {(showLocationFilter && location) && (
             <span className="inline-flex items-center space-x-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-              <span>{location}</span>
+              <span>{say(location)}</span>
               <button
                 onClick={() => {
                   setLocation('');
@@ -451,8 +448,7 @@ export default function SearchAndFilter({
             onClick={clearFilters}
             className="text-sm text-blue-600 hover:text-blue-800 underline"
           >
-            Clear all
-          </button>
+            {say("Clear all")}{' '}</button>
         </div>
       )}
     </div>

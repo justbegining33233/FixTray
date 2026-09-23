@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -12,6 +13,7 @@ import '../../../styles/sos-theme.css';
 import { FaArrowLeft, FaCamera, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
 
 function TechPortalEnhancedContent() {
+  const say = usePhrase();
   const { user } = useRequireAuth(['tech']);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -81,8 +83,8 @@ function TechPortalEnhancedContent() {
       <div className="sos-card" style={{maxWidth:1400}}>
         <div className="sos-header">
           <div className="sos-brand">
-            <span className="mark">FixTray</span>
-            <span className="sub">Tech Portal - {techName}</span>
+            <span className="mark">{say("FixTray")}</span>
+            <span className="sub">{say("Tech Portal -")}{' '}{say(techName)}</span>
           </div>
           <div style={{display:'flex', gap:12, alignItems:'center'}}>
             <NotificationBell />
@@ -94,9 +96,8 @@ function TechPortalEnhancedContent() {
               }}
               className="btn-outline"
             >
-              Sign Out
-            </button>
-            <Link href="/" className="btn-outline"><FaArrowLeft style={{marginRight:4}} /> Home</Link>
+              {say("Sign Out")}{' '}</button>
+            <Link href="/" className="btn-outline"><FaArrowLeft style={{marginRight:4}} /> {say("Home")}</Link>
           </div>
         </div>
 
@@ -116,8 +117,8 @@ function TechPortalEnhancedContent() {
                     color: activeTab === feature.id ? '#ffb3ad' : '#f5f7fb',
                   }}
                 >
-                  <span style={{marginRight:8}}>{feature.icon}</span>
-                  <span style={{fontSize:13}}>{feature.name}</span>
+                  <span style={{marginRight:8}}>{say(feature.icon)}</span>
+                  <span style={{fontSize:13}}>{say(feature.name)}</span>
                 </button>
               ))}
             </div>
@@ -135,7 +136,7 @@ function TechPortalEnhancedContent() {
         </div>
 
         <div className="sos-footer">
-          <span className="sos-tagline">© {new Date().getFullYear()} FixTray</span>
+          <span className="sos-tagline">© {new Date().getFullYear()} {say("FixTray")}</span>
           <div className="accent-bar" style={{width:112, borderRadius:6}} />
         </div>
       </div>
@@ -144,6 +145,7 @@ function TechPortalEnhancedContent() {
 }
 
 function AssignmentsTab({ workOrders, onRefresh }: { workOrders: WorkOrder[], onRefresh: () => void }) {
+  const say = usePhrase();
   const completeJob = async (woId: string) => {
     try {
       const csrf = typeof document !== 'undefined' ? document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1] : null;
@@ -161,32 +163,30 @@ function AssignmentsTab({ workOrders, onRefresh }: { workOrders: WorkOrder[], on
 
   return (
     <div>
-      <div className="sos-title">My Assignments</div>
-      <p className="sos-desc">Active work orders assigned to you</p>
+      <div className="sos-title">{say("My Assignments")}</div>
+      <p className="sos-desc">{say("Active work orders assigned to you")}</p>
       
       <div className="sos-list" style={{marginTop:24}}>
         {workOrders.length === 0 ? (
-          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>No active assignments</div>
+          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>{say("No active assignments")}</div>
         ) : (
           workOrders.map(wo => (
             <div key={wo.id} className="sos-item" style={{flexDirection:'column', alignItems:'flex-start'}}>
               <div style={{display:'flex', justifyContent:'space-between', width:'100%', marginBottom:8}}>
-                <div style={{fontWeight:700}}>WO #{wo.id.slice(0,8)}</div>
-                <span className="sos-pill" style={{fontSize:10}}>{wo.status}</span>
+                <div style={{fontWeight:700}}>{say("WO #")}{wo.id.slice(0,8)}</div>
+                <span className="sos-pill" style={{fontSize:10}}>{say(wo.status)}</span>
               </div>
               <div style={{fontSize:13, color:'#b8beca', marginBottom:8}}>
-                {wo.vehicleType} - {wo.services?.repairs?.[0]?.type || wo.services?.maintenance?.[0]?.type || workOrderTitle(wo)}
+                {say(wo.vehicleType)} - {wo.services?.repairs?.[0]?.type || wo.services?.maintenance?.[0]?.type || workOrderTitle(wo)}
               </div>
               <div style={{fontSize:12, color:'#9aa3b2', marginBottom:12}}>
-                Customer: {wo.createdBy || 'Unknown'}
+                {say("Customer:")}{' '}{wo.createdBy || say("Unknown")}
               </div>
               <div style={{display:'flex', gap:8, width:'100%'}}>
                 <button className="btn-primary" onClick={() => completeJob(wo.id)} style={{flex:1}}>
-                  Mark Complete
-                </button>
+                  {say("Mark Complete")}{' '}</button>
                 <Link href={`/workorders/${wo.id}`} className="btn-outline" style={{flex:1, textAlign:'center'}}>
-                  View Details
-                </Link>
+                  {say("View Details")}{' '}</Link>
               </div>
             </div>
           ))
@@ -197,32 +197,34 @@ function AssignmentsTab({ workOrders, onRefresh }: { workOrders: WorkOrder[], on
 }
 
 function LocationTab({ location, techName }: { location: { lat: number, lng: number }, techName: string }) {
+  const say = usePhrase();
   return (
     <div>
-      <div className="sos-title">Location Sharing</div>
-      <p className="sos-desc">Your location is shared with customers for ETA tracking</p>
+      <div className="sos-title">{say("Location Sharing")}</div>
+      <p className="sos-desc">{say("Your location is shared with customers for ETA tracking")}</p>
       
       <div className="sos-item" style={{marginTop:24, padding:24, flexDirection:'column', alignItems:'center'}}>
         <div style={{fontSize:48, marginBottom:16}}><FaMapMarkerAlt style={{marginRight:4}} /></div>
-        <div style={{fontSize:16, fontWeight:700, marginBottom:8}}>{techName}</div>
-        <div style={{fontSize:13, color:'#b8beca', marginBottom:16}}>Location Sharing: Active</div>
+        <div style={{fontSize:16, fontWeight:700, marginBottom:8}}>{say(techName)}</div>
+        <div style={{fontSize:13, color:'#b8beca', marginBottom:16}}>{say("Location Sharing: Active")}</div>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, width:'100%'}}>
           <div className="sos-item" style={{flexDirection:'column'}}>
-            <div style={{fontSize:11, color:'#9aa3b2'}}>Latitude</div>
+            <div style={{fontSize:11, color:'#9aa3b2'}}>{say("Latitude")}</div>
             <div style={{fontSize:14, fontWeight:600}}>{location.lat.toFixed(4)}</div>
           </div>
           <div className="sos-item" style={{flexDirection:'column'}}>
-            <div style={{fontSize:11, color:'#9aa3b2'}}>Longitude</div>
+            <div style={{fontSize:11, color:'#9aa3b2'}}>{say("Longitude")}</div>
             <div style={{fontSize:14, fontWeight:600}}>{location.lng.toFixed(4)}</div>
           </div>
         </div>
-        <button className="btn-outline" style={{marginTop:16, width:'100%'}}>Pause Location Sharing</button>
+        <button className="btn-outline" style={{marginTop:16, width:'100%'}}>{say("Pause Location Sharing")}</button>
       </div>
     </div>
   );
 }
 
 function MessagesTab({ techName }: { techName: string }) {
+  const say = usePhrase();
   const [messages, setMessages] = useState<{sender:string;message:string;time:string;type:string}[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -256,12 +258,12 @@ function MessagesTab({ techName }: { techName: string }) {
 
   return (
     <div>
-      <div className="sos-title">Messages</div>
-      <p className="sos-desc">Chat with customers and managers</p>
+      <div className="sos-title">{say("Messages")}</div>
+      <p className="sos-desc">{say("Chat with customers and managers")}</p>
       
       <div className="sos-list" style={{marginTop:24}}>
         {messages.length === 0 && (
-          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>No messages yet</div>
+          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>{say("No messages yet")}</div>
         )}
         {messages.map((msg, i) => (
           <div key={i} className="sos-item" style={{
@@ -269,9 +271,9 @@ function MessagesTab({ techName }: { techName: string }) {
             alignItems: msg.type === 'sent' ? 'flex-end' : 'flex-start',
             background: msg.type === 'sent' ? 'rgba(229,51,42,0.14)' : '#454545',
           }}>
-            <div style={{fontSize:11, fontWeight:600, marginBottom:4}}>{msg.sender}</div>
-            <div style={{fontSize:13, marginBottom:4}}>{msg.message}</div>
-            <div style={{fontSize:10, color:'#9aa3b2'}}>{msg.time}</div>
+            <div style={{fontSize:11, fontWeight:600, marginBottom:4}}>{say(msg.sender)}</div>
+            <div style={{fontSize:13, marginBottom:4}}>{say(msg.message)}</div>
+            <div style={{fontSize:10, color:'#9aa3b2'}}>{say(msg.time)}</div>
           </div>
         ))}
       </div>
@@ -279,7 +281,7 @@ function MessagesTab({ techName }: { techName: string }) {
       <div style={{marginTop:16, display:'flex', gap:8}}>
         <input
           className="sos-input"
-          placeholder="Type a message..."
+          placeholder={say("Type a message...")}
           style={{flex:1}}
           value={newMessage}
           onChange={e => setNewMessage(e.target.value)}
@@ -287,7 +289,7 @@ function MessagesTab({ techName }: { techName: string }) {
           disabled={sending}
         />
         <button className="btn-primary" onClick={handleSend} disabled={sending || !newMessage.trim()}>
-          {sending ? '...' : 'Send'}
+          {sending ? '...' : say("Send")}
         </button>
       </div>
     </div>
@@ -295,29 +297,30 @@ function MessagesTab({ techName }: { techName: string }) {
 }
 
 function PhotosTab() {
+  const say = usePhrase();
   return (
     <div>
-      <div className="sos-title">Work Photos</div>
-      <p className="sos-desc">Upload before/after photos and documentation</p>
+      <div className="sos-title">{say("Work Photos")}</div>
+      <p className="sos-desc">{say("Upload before/after photos and documentation")}</p>
       
       <div style={{marginTop:24}}>
         <div className="sos-item" style={{padding:40, flexDirection:'column', border:'2px dashed #5a5a5a'}}>
           <div style={{fontSize:48, marginBottom:12}}><FaCamera style={{marginRight:4}} /></div>
-          <div style={{fontSize:14, color:'#b8beca', marginBottom:16}}>Click to upload or drag and drop</div>
-          <button className="btn-primary">Choose Files</button>
+          <div style={{fontSize:14, color:'#b8beca', marginBottom:16}}>{say("Click to upload or drag and drop")}</div>
+          <button className="btn-primary">{say("Choose Files")}</button>
         </div>
       </div>
 
       <div style={{marginTop:24}}>
-        <div style={{fontSize:14, fontWeight:700, marginBottom:12}}>Recent Uploads</div>
+        <div style={{fontSize:14, fontWeight:700, marginBottom:12}}>{say("Recent Uploads")}</div>
         <div className="sos-list">
-          {['Before - Engine', 'After - Engine', 'Parts Documentation'].map((photo, i) => (
+          {[say("Before - Engine"), say("After - Engine"), say("Parts Documentation")].map((photo, i) => (
             <div key={i} className="sos-item">
               <div>
-                <div style={{fontWeight:600}}>{photo}</div>
-                <div style={{fontSize:12, color:'#9aa3b2'}}>Today, {10 + i}:30 AM</div>
+                <div style={{fontWeight:600}}>{say(photo)}</div>
+                <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Today,")}{' '}{10 + i}{say(":30 AM")}</div>
               </div>
-              <button className="btn-outline" style={{fontSize:12}}>View</button>
+              <button className="btn-outline" style={{fontSize:12}}>{say("View")}</button>
             </div>
           ))}
         </div>
@@ -327,23 +330,24 @@ function PhotosTab() {
 }
 
 function DocumentsTab() {
+  const say = usePhrase();
   return (
     <div>
-      <div className="sos-title">Documents</div>
-      <p className="sos-desc">Service manuals, warranties, and work orders</p>
+      <div className="sos-title">{say("Documents")}</div>
+      <p className="sos-desc">{say("Service manuals, warranties, and work orders")}</p>
       
       <div className="sos-list" style={{marginTop:24}}>
         {[
-          { name: 'Service Manual - Semi Truck', type: 'PDF' },
-          { name: 'Parts Warranty', type: 'PDF' },
-          { name: 'Work Order #1234', type: 'PDF' },
+          { name: say("Service Manual - Semi Truck"), type: say("PDF") },
+          { name: say("Parts Warranty"), type: say("PDF") },
+          { name: say("Work Order #1234"), type: say("PDF") },
         ].map((doc, i) => (
           <div key={i} className="sos-item">
             <div>
-              <div style={{fontWeight:600}}>{doc.name}</div>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>{doc.type}</div>
+              <div style={{fontWeight:600}}>{say(doc.name)}</div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>{say(doc.type)}</div>
             </div>
-            <button className="btn-outline">Download</button>
+            <button className="btn-outline">{say("Download")}</button>
           </div>
         ))}
       </div>
@@ -352,23 +356,24 @@ function DocumentsTab() {
 }
 
 function ScheduleTab() {
+  const say = usePhrase();
   return (
     <div>
-      <div className="sos-title">My Schedule</div>
-      <p className="sos-desc">Today's appointments and upcoming work</p>
+      <div className="sos-title">{say("My Schedule")}</div>
+      <p className="sos-desc">{say("Today's appointments and upcoming work")}</p>
       
       <div className="sos-list" style={{marginTop:24}}>
         {[
-          { time: '9:00 AM', customer: 'John Doe', service: 'Oil Change', status: 'Completed' },
-          { time: '11:00 AM', customer: 'Jane Smith', service: 'Tire Rotation', status: 'In Progress' },
-          { time: '2:00 PM', customer: 'Bob Johnson', service: 'Brake Repair', status: 'Scheduled' },
+          { time: say("9:00 AM"), customer: say("John Doe"), service: say("Oil Change"), status: say("Completed") },
+          { time: say("11:00 AM"), customer: say("Jane Smith"), service: say("Tire Rotation"), status: say("In Progress") },
+          { time: say("2:00 PM"), customer: say("Bob Johnson"), service: say("Brake Repair"), status: say("Scheduled") },
         ].map((appt, i) => (
           <div key={i} className="sos-item">
             <div style={{flex:1}}>
-              <div style={{fontWeight:600}}>{appt.time} - {appt.customer}</div>
-              <div style={{fontSize:12, color:'#b8beca'}}>{appt.service}</div>
+              <div style={{fontWeight:600}}>{say(appt.time)} - {say(appt.customer)}</div>
+              <div style={{fontSize:12, color:'#b8beca'}}>{say(appt.service)}</div>
             </div>
-            <span className="sos-pill" style={{fontSize:10}}>{appt.status}</span>
+            <span className="sos-pill" style={{fontSize:10}}>{say(appt.status)}</span>
           </div>
         ))}
       </div>
@@ -377,31 +382,32 @@ function ScheduleTab() {
 }
 
 function PerformanceTab() {
+  const say = usePhrase();
   return (
     <div>
-      <div className="sos-title">Performance Metrics</div>
-      <p className="sos-desc">Your stats and achievements</p>
+      <div className="sos-title">{say("Performance Metrics")}</div>
+      <p className="sos-desc">{say("Your stats and achievements")}</p>
       
       <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:16, marginTop:24}}>
         {[
-          { label: 'Jobs Completed', value: '48', color: '#4ade80' },
-          { label: 'Avg Rating', value: '4.8', color: '#fbbf24' },
-          { label: 'On-Time Rate', value: '96%', color: '#60a5fa' },
+          { label: say("Jobs Completed"), value: '48', color: '#4ade80' },
+          { label: say("Avg Rating"), value: '4.8', color: '#fbbf24' },
+          { label: say("On-Time Rate"), value: '96%', color: '#60a5fa' },
         ].map((stat, i) => (
           <div key={i} className="sos-item" style={{flexDirection:'column', alignItems:'flex-start'}}>
-            <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{stat.label}</div>
-            <div style={{fontSize:24, fontWeight:800, color:stat.color}}>{stat.value}</div>
+            <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{say(stat.label)}</div>
+            <div style={{fontSize:24, fontWeight:800, color:stat.color}}>{say(stat.value)}</div>
           </div>
         ))}
       </div>
 
       <div style={{marginTop:32}}>
-        <div style={{fontSize:14, fontWeight:700, marginBottom:12}}>Recent Reviews</div>
+        <div style={{fontSize:14, fontWeight:700, marginBottom:12}}>{say("Recent Reviews")}</div>
         <div className="sos-list">
           <div className="sos-item" style={{flexDirection:'column', alignItems:'flex-start'}}>
             <div style={{marginBottom:8}}><FaStar style={{marginRight:4}} /></div>
-            <div style={{fontSize:13, marginBottom:4}}>"Excellent work! Very professional."</div>
-            <div style={{fontSize:11, color:'#9aa3b2'}}>John Doe - 12/10/2025</div>
+            <div style={{fontSize:13, marginBottom:4}}>{say("\"Excellent work! Very professional.\"")}</div>
+            <div style={{fontSize:11, color:'#9aa3b2'}}>{say("John Doe - 12/10/2025")}</div>
           </div>
         </div>
       </div>
@@ -410,8 +416,9 @@ function PerformanceTab() {
 }
 
 export default function TechPortalEnhanced() {
+  const say = usePhrase();
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{say("Loading...")}</div>}>
       <TechPortalEnhancedContent />
     </Suspense>
   );

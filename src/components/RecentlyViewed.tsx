@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { Route } from 'next';
@@ -19,6 +20,7 @@ interface RecentlyViewedProps {
 }
 
 export default function RecentlyViewed({ maxItems = 5, showInSidebar = false }: RecentlyViewedProps) {
+  const say = usePhrase();
   const [recentItems, setRecentItems] = useState<RecentlyViewedItem[]>([]);
   const [currentTimestamp, setCurrentTimestamp] = useState<number>(() => Date.now());
   const router = useRouter();
@@ -143,8 +145,7 @@ export default function RecentlyViewed({ maxItems = 5, showInSidebar = false }: 
           marginBottom: 8,
         }}>
           <FaHistory style={{ marginRight: 6 }} />
-          Recently Viewed
-        </div>
+          {say("Recently Viewed")}{' '}</div>
         <div style={{ padding: '0 6px' }}>
           {recentItems.slice(0, 3).map((item) => (
             <button
@@ -180,7 +181,7 @@ export default function RecentlyViewed({ maxItems = 5, showInSidebar = false }: 
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                 }}>
-                  {item.title}
+                  {say(item.title)}
                 </div>
                 <div style={{
                   fontSize: 10,
@@ -219,8 +220,7 @@ export default function RecentlyViewed({ maxItems = 5, showInSidebar = false }: 
           color: '#e2e8f0',
           margin: 0,
         }}>
-          Recently Viewed
-        </h3>
+          {say("Recently Viewed")}{' '}</h3>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -264,7 +264,7 @@ export default function RecentlyViewed({ maxItems = 5, showInSidebar = false }: 
                   color: '#e2e8f0',
                   marginBottom: 2,
                 }}>
-                  {item.title}
+                  {say(item.title)}
                 </div>
                 <div style={{
                   fontSize: 11,

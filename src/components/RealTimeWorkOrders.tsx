@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useSocket } from '@/lib/socket';
 
@@ -14,6 +15,7 @@ export default function RealTimeWorkOrders({
   userId: _userId,
   onWorkOrderUpdate
 }: RealTimeWorkOrdersProps) {
+  const say = usePhrase();
   const { isConnected, on, off } = useSocket();
   const [recentUpdates, setRecentUpdates] = useState<any[]>([]);
 
@@ -56,10 +58,9 @@ export default function RealTimeWorkOrders({
         gap: 8,
         marginBottom: 8,
       }}>
-        <span style={{ fontSize: 12, color: '#22c55e' }}> Live Updates</span>
+        <span style={{ fontSize: 12, color: '#22c55e' }}> {say("Live Updates")}</span>
         <span style={{ fontSize: 10, color: '#9aa3b2' }}>
-          Connected to real-time work order updates
-        </span>
+          {say("Connected to real-time work order updates")}{' '}</span>
       </div>
 
       {recentUpdates.length > 0 && (
@@ -70,8 +71,7 @@ export default function RealTimeWorkOrders({
             marginBottom: 4,
             fontWeight: 600,
           }}>
-            Recent Updates:
-          </div>
+            {say("Recent Updates:")}{' '}</div>
           {recentUpdates.map((update, index) => (
             <div
               key={index}
@@ -84,7 +84,7 @@ export default function RealTimeWorkOrders({
                   : 'none',
               }}
             >
-              Work Order #{update.workOrderId} {update.action} by {update.updatedBy}
+              {say("Work Order #")}{say(update.workOrderId)} {say(update.action)} by {say(update.updatedBy)}
               <span style={{ color: '#9aa3b2', marginLeft: 8 }}>
                 {new Date(update.timestamp).toLocaleTimeString()}
               </span>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useRef, useState } from 'react';
 
 interface SignatureCaptureProps {
@@ -7,6 +8,7 @@ interface SignatureCaptureProps {
 }
 
 export default function SignatureCapture({ onChange }: SignatureCaptureProps) {
+  const say = usePhrase();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const stroked = useRef(false);
@@ -86,7 +88,7 @@ export default function SignatureCapture({ onChange }: SignatureCaptureProps) {
         ref={canvasRef}
         width={640}
         height={180}
-        aria-label="Signature"
+        aria-label={say("Signature")}
         style={{ width: '100%', height: 140, background: '#fff', borderRadius: 8, touchAction: 'none', display: 'block', cursor: 'crosshair' }}
         onMouseDown={start}
         onMouseMove={move}
@@ -97,10 +99,9 @@ export default function SignatureCapture({ onChange }: SignatureCaptureProps) {
         onTouchEnd={end}
       />
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: 12, color: '#9aa3b2' }}>{hasStroke ? 'Signature captured' : 'Sign in the box'}</span>
+        <span style={{ fontSize: 12, color: '#9aa3b2' }}>{hasStroke ? say("Signature captured") : say("Sign in the box")}</span>
         <button type="button" onClick={clear} style={{ background: 'transparent', color: '#9aa3b2', border: 'none', cursor: 'pointer', fontSize: 12 }}>
-          Clear
-        </button>
+          {say("Clear")}{' '}</button>
       </div>
     </div>
   );

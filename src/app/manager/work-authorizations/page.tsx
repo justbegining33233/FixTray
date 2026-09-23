@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -29,6 +30,7 @@ const statusColor: Record<string, { bg: string; color: string; text: string }> =
 };
 
 export default function ManagerWorkAuthorizationsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [auths, setAuths] = useState<WorkAuthorization[]>([]);
@@ -51,7 +53,7 @@ export default function ManagerWorkAuthorizationsPage() {
     return 'pending';
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -61,13 +63,13 @@ export default function ManagerWorkAuthorizationsPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>Work Authorizations</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>{say("Work Authorizations")}</h1>
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : auths.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
               <FaPencilAlt style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p>No signed authorizations yet. They appear after a customer accepts an estimate and signs. Submitting a quote does not create one.</p>
+              <p>{say("No signed authorizations yet. They appear after a customer accepts an estimate and signs. Submitting a quote does not create one.")}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -80,19 +82,18 @@ export default function ManagerWorkAuthorizationsPage() {
                       <div>
                         <span style={{ background: sc.bg, color: sc.color, padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600, marginRight: 8 }}>
                           {s === 'signed' ? <FaCheckCircle style={{ marginRight: 4 }} /> : <FaHourglassHalf style={{ marginRight: 4 }} />}
-                          {sc.text}
+                          {say(sc.text)}
                         </span>
-                        <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{a.workSummary}</span>
+                        <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(a.workSummary)}</span>
                       </div>
                       {a.workOrderId ? (
                         <a href={`/workorders/${a.workOrderId}`} style={{ background: 'rgba(229,51,42,0.15)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13, textDecoration: 'none' }}>
-                          Open work order
-                        </a>
+                          {say("Open work order")}{' '}</a>
                       ) : null}
                     </div>
-                    {a.estimateTotal && <p style={{ color: '#9aa3b2', fontSize: 14, marginTop: 8 }}>Estimate: ${a.estimateTotal.toFixed(2)}</p>}
-                    {a.signerName && <p style={{ color: '#22c55e', fontSize: 13, marginTop: 4 }}>Signed by {a.signerName}{a.signedAt ? ` on ${new Date(a.signedAt).toLocaleDateString()}` : ''}</p>}
-                    <p style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>Created {new Date(a.createdAt).toLocaleDateString()}</p>
+                    {a.estimateTotal && <p style={{ color: '#9aa3b2', fontSize: 14, marginTop: 8 }}>{say("Estimate: $")}{a.estimateTotal.toFixed(2)}</p>}
+                    {a.signerName && <p style={{ color: '#22c55e', fontSize: 13, marginTop: 4 }}>{say("Signed by")}{' '}{say(a.signerName)}{a.signedAt ? ` on ${new Date(a.signedAt).toLocaleDateString()}` : ''}</p>}
+                    <p style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>{say("Created")}{' '}{new Date(a.createdAt).toLocaleDateString()}</p>
                   </div>
                 );
               })}

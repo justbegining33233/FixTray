@@ -1,8 +1,7 @@
+'use client';
+import { usePhrase } from '@/lib/usePhrase';
 // Contextual Help Tooltip Component
 // Provides in-app guidance to reduce user confusion
-
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { FaQuestionCircle, FaTimes, FaLightbulb } from 'react-icons/fa';
 
@@ -27,6 +26,7 @@ export default function HelpTooltip({
   persistent = false,
   children
 }: HelpTooltipProps) {
+  const say = usePhrase();
   const [isVisible, setIsVisible] = useState(false);
   const [, setHasBeenShown] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -141,10 +141,10 @@ export default function HelpTooltip({
               {title && (
                 <div className="flex items-center space-x-2 mb-2">
                   <FaLightbulb className="w-4 h-4 text-yellow-400" />
-                  <h4 className="font-semibold text-sm">{title}</h4>
+                  <h4 className="font-semibold text-sm">{say(title)}</h4>
                 </div>
               )}
-              <p className="text-sm leading-relaxed">{content}</p>
+              <p className="text-sm leading-relaxed">{say(content)}</p>
             </div>
           </div>
         </div>
@@ -156,22 +156,24 @@ export default function HelpTooltip({
 // Pre-configured help tooltips for common UI elements
 export const HelpTooltips = {
   // Navigation help
-  Navigation: () => (
+  Navigation: () => { const say = usePhrase();
+return ((
     <HelpTooltip
-      title="Navigation Menu"
+      title={say("Navigation Menu")}
       content="Use this menu to quickly access different sections of the application. Each item shows relevant information like active jobs or unread messages."
       position="bottom"
     />
-  ),
+  )); },
 
   // Dashboard help
-  DashboardStats: () => (
+  DashboardStats: () => { const say = usePhrase();
+return ((
     <HelpTooltip
-      title="Dashboard Overview"
+      title={say("Dashboard Overview")}
       content="This section shows key metrics and recent activity. Click on any card to view more details or take action."
       position="right"
     />
-  ),
+  )); },
 
   // Form help
   RequiredField: () => (
@@ -200,31 +202,34 @@ export const HelpTooltips = {
   ),
 
   // Search and filters
-  SearchBar: () => (
+  SearchBar: () => { const say = usePhrase();
+return ((
     <HelpTooltip
-      title="Search & Filter"
+      title={say("Search & Filter")}
       content="Use this search bar to find specific items. You can also use filters to narrow down results by status, date, or other criteria."
       position="bottom"
     />
-  ),
+  )); },
 
   // Notifications
-  Notifications: () => (
+  Notifications: () => { const say = usePhrase();
+return ((
     <HelpTooltip
-      title="Notifications"
+      title={say("Notifications")}
       content="Check here for important updates, messages, and alerts. Click the bell icon to see all notifications."
       position="bottom"
     />
-  ),
+  )); },
 
   // Profile and settings
-  ProfileMenu: () => (
+  ProfileMenu: () => { const say = usePhrase();
+return ((
     <HelpTooltip
-      title="Account Menu"
+      title={say("Account Menu")}
       content="Access your profile settings, account preferences, and sign out options from this menu."
       position="bottom"
     />
-  )
+  )); }
 };
 
 function getStatusDescription(status: string): string {

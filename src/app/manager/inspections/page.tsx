@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -17,6 +18,7 @@ interface Inspection {
 }
 
 export default function ManagerInspectionsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inspections, setInspections] = useState<Inspection[]>([]);
@@ -41,7 +43,7 @@ export default function ManagerInspectionsPage() {
     load();
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const filtered = inspections
@@ -64,14 +66,14 @@ export default function ManagerInspectionsPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaClipboardCheck style={{ marginRight: 8 }} />Vehicle Inspections</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaClipboardCheck style={{ marginRight: 8 }} />{say("Vehicle Inspections")}</h1>
 
           <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
               <FaSearch style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
               <input
                 type="text"
-                placeholder="Search inspections..."
+                placeholder={say("Search inspections...")}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ width: '100%', padding: '10px 10px 10px 36px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#e5e7eb', fontSize: 14 }}
@@ -89,28 +91,28 @@ export default function ManagerInspectionsPage() {
                   textTransform: 'capitalize',
                 }}
               >
-                {f}
+                {say(f)}
               </button>
             ))}
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading inspections...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading inspections...")}</div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, color: '#6b7280' }}>
               <FaCar style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p style={{ fontSize: 18 }}>No inspections found</p>
+              <p style={{ fontSize: 18 }}>{say("No inspections found")}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {filtered.map(ins => (
                 <div key={ins.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16 }}>{ins.vehicleInfo}</div>
-                    <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>Inspector: {ins.inspector} &bull; {new Date(ins.date).toLocaleDateString()}</div>
-                    {ins.notes && <div style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>{ins.notes}</div>}
+                    <div style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16 }}>{say(ins.vehicleInfo)}</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>{say("Inspector:")}{' '}{say(ins.inspector)} {say("&bull;")}{' '}{new Date(ins.date).toLocaleDateString()}</div>
+                    {ins.notes && <div style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>{say(ins.notes)}</div>}
                   </div>
-                  <span style={{ color: statusColor(ins.status), fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{ins.status}</span>
+                  <span style={{ color: statusColor(ins.status), fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{say(ins.status)}</span>
                 </div>
               ))}
             </div>

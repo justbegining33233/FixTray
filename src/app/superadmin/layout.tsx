@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import MobileShell from '@/components/MobileShell';
+import SuperAdminNavigation from '@/components/SuperAdminNavigation';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,5 +32,12 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
     );
   }
 
-  return <div className={`role-route-shell ${isDesktopMode ? 'desktop-mode-shell' : ''}`}><div data-page-shell>{children}</div></div>;
+  return (
+    <>
+      <SuperAdminNavigation />
+      <div className={`role-route-shell ${isDesktopMode ? 'desktop-mode-shell' : ''}`} style={{ paddingTop: 64 }}>
+        <div data-page-shell>{children}</div>
+      </div>
+    </>
+  );
 }

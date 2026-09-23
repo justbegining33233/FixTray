@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import Link from 'next/link';
 import { FaClock, FaEnvelope, FaPhone, FaUserCog, FaUsers, FaWrench } from 'react-icons/fa';
 
@@ -8,6 +9,7 @@ interface TeamTabProps {
 }
 
 export default function TeamTab({ teamData }: TeamTabProps) {
+  const say = usePhrase();
   const totalMembers = teamData.length;
   const clockedIn = teamData.filter((m: any) => m.isClockedIn).length;
   const managers = teamData.filter((m: any) => m.role === 'manager').length;
@@ -17,8 +19,8 @@ export default function TeamTab({ teamData }: TeamTabProps) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 10, flexWrap: 'wrap' }}>
         <div>
-          <h2 style={{ color: '#e5e7eb', fontSize: 24, margin: 0 }}>Team Management</h2>
-          <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>Staffing visibility, active shifts, and quick profile access.</div>
+          <h2 style={{ color: '#e5e7eb', fontSize: 24, margin: 0 }}>{say("Team Management")}</h2>
+          <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>{say("Staffing visibility, active shifts, and quick profile access.")}</div>
         </div>
         <Link
           href="/shop/manage-team"
@@ -33,33 +35,32 @@ export default function TeamTab({ teamData }: TeamTabProps) {
             fontSize: 13,
           }}
         >
-          Add Team Member
-        </Link>
+          {say("Add Team Member")}{' '}</Link>
       </div>
 
       <div style={{ marginBottom: 18, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
         <div style={{ background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.25)', borderRadius: 10, padding: 12 }}>
-          <div style={{ color: '#9aa3b2', fontSize: 11 }}>Total Members</div>
-          <div style={{ color: '#ff6b64', fontSize: 24, fontWeight: 800 }}>{totalMembers}</div>
+          <div style={{ color: '#9aa3b2', fontSize: 11 }}>{say("Total Members")}</div>
+          <div style={{ color: '#ff6b64', fontSize: 24, fontWeight: 800 }}>{say(totalMembers)}</div>
         </div>
         <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: 12 }}>
-          <div style={{ color: '#9aa3b2', fontSize: 11 }}>Clocked In</div>
-          <div style={{ color: '#22c55e', fontSize: 24, fontWeight: 800 }}>{clockedIn}</div>
+          <div style={{ color: '#9aa3b2', fontSize: 11 }}>{say("Clocked In")}</div>
+          <div style={{ color: '#22c55e', fontSize: 24, fontWeight: 800 }}>{say(clockedIn)}</div>
         </div>
         <div style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 10, padding: 12 }}>
-          <div style={{ color: '#9aa3b2', fontSize: 11 }}>Weekly Hours</div>
+          <div style={{ color: '#9aa3b2', fontSize: 11 }}>{say("Weekly Hours")}</div>
           <div style={{ color: '#a78bfa', fontSize: 24, fontWeight: 800 }}>{totalHours.toFixed(1)}</div>
         </div>
         <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: 12 }}>
-          <div style={{ color: '#9aa3b2', fontSize: 11 }}>Managers</div>
-          <div style={{ color: '#f59e0b', fontSize: 24, fontWeight: 800 }}>{managers}</div>
+          <div style={{ color: '#9aa3b2', fontSize: 11 }}>{say("Managers")}</div>
+          <div style={{ color: '#f59e0b', fontSize: 24, fontWeight: 800 }}>{say(managers)}</div>
         </div>
       </div>
 
       {teamData.length === 0 ? (
         <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 48, textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 12, color: '#9aa3b2' }}><FaUsers /></div>
-          <div style={{ color: '#9aa3b2', fontSize: 16 }}>No team members found</div>
+          <div style={{ color: '#9aa3b2', fontSize: 16 }}>{say("No team members found")}</div>
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
@@ -92,25 +93,25 @@ export default function TeamTab({ teamData }: TeamTabProps) {
                       {member.role === 'manager' ? <FaUserCog /> : <FaWrench />}
                     </div>
                     <div>
-                      <div style={{ color: '#e5e7eb', fontSize: 17, fontWeight: 700 }}>{member.name}</div>
-                      <div style={{ color: '#9aa3b2', fontSize: 12 }}>{member.role === 'manager' ? 'Manager' : 'Technician'}</div>
+                      <div style={{ color: '#e5e7eb', fontSize: 17, fontWeight: 700 }}>{say(member.name)}</div>
+                      <div style={{ color: '#9aa3b2', fontSize: 12 }}>{member.role === 'manager' ? say("Manager") : say("Technician")}</div>
                     </div>
                   </div>
-                  {member.isClockedIn && <div style={{ color: '#22c55e', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Currently clocked in</div>}
-                  <div style={{ color: '#9aa3b2', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}><FaEnvelope /> {member.email}</div>
+                  {member.isClockedIn && <div style={{ color: '#22c55e', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{say("Currently clocked in")}</div>}
+                  <div style={{ color: '#9aa3b2', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}><FaEnvelope /> {say(member.email)}</div>
                   {member.employeeNumber && (
-                    <div style={{ color: '#9aa3b2', fontSize: 12, marginTop: 4 }}>Employee #: {member.employeeNumber}</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 12, marginTop: 4 }}>{say("Employee #:")}{' '}{say(member.employeeNumber)}</div>
                   )}
-                  <div style={{ color: '#9aa3b2', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}><FaPhone /> {member.phone || 'No phone'}</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}><FaPhone /> {member.phone || say("No phone")}</div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ color: '#9aa3b2', fontSize: 11, marginBottom: 4 }}>Weekly Hours</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 11, marginBottom: 4 }}>{say("Weekly Hours")}</div>
                   <div style={{ color: '#ff6b64', fontWeight: 800, fontSize: 20 }}>{(member.weeklyHours || 0).toFixed(1)}</div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ color: '#9aa3b2', fontSize: 11, marginBottom: 4 }}>Hourly Rate</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 11, marginBottom: 4 }}>{say("Hourly Rate")}</div>
                   <div style={{ color: '#e5e7eb', fontWeight: 700, fontSize: 18 }}>${member.hourlyRate || 0}</div>
                 </div>
               </div>
@@ -130,10 +131,9 @@ export default function TeamTab({ teamData }: TeamTabProps) {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  View Profile
-                </Link>
+                  {say("View Profile")}{' '}</Link>
                 <div style={{ color: '#9aa3b2', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FaClock /> Last active: {member.lastActive ? new Date(member.lastActive).toLocaleDateString() : 'Never'}
+                  <FaClock /> {say("Last active:")}{' '}{member.lastActive ? new Date(member.lastActive).toLocaleDateString() : say("Never")}
                 </div>
               </div>
             </div>

@@ -1,11 +1,13 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Notification } from '@/types/customer';
 
 export default function NotificationBell() {
+  const say = usePhrase();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -123,7 +125,7 @@ export default function NotificationBell() {
             justifyContent:'center',
             fontWeight:700
           }}>
-            {unreadCount}
+            {say(unreadCount)}
           </span>
         )}
       </button>
@@ -149,19 +151,17 @@ export default function NotificationBell() {
             justifyContent:'space-between',
             alignItems:'center'
           }}>
-            <div style={{fontWeight:700, fontSize:14, color:'#e5e7eb'}}>Notifications</div>
+            <div style={{fontWeight:700, fontSize:14, color:'#e5e7eb'}}>{say("Notifications")}</div>
             {unreadCount > 0 && (
               <button onClick={markAllRead} style={{fontSize:11, color:'#93c5fd', fontWeight:600, background:'none', border:'none', cursor:'pointer'}}>
-                Mark all read
-              </button>
+                {say("Mark all read")}{' '}</button>
             )}
           </div>
 
           <div style={{maxHeight:'400px', overflowY:'auto'}}>
             {notifications.length === 0 ? (
               <div style={{padding:'40px 20px', textAlign:'center', color:'#9aa3b2', fontSize:13}}>
-                No notifications
-              </div>
+                {say("No notifications")}{' '}</div>
             ) : (
               notifications.map(notif => (
                 <div 
@@ -176,7 +176,7 @@ export default function NotificationBell() {
                   }}
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4}}>
-                    <div style={{fontWeight:600, fontSize:13, color:'#e5e7eb'}}>{notif.title}</div>
+                    <div style={{fontWeight:600, fontSize:13, color:'#e5e7eb'}}>{say(notif.title)}</div>
                     <button 
                       onClick={(e) => { e.stopPropagation(); deleteNotif(notif.id); }}
                       style={{fontSize:16, color:'#6b7280', lineHeight:1, background:'none', border:'none', cursor:'pointer'}}
@@ -184,12 +184,12 @@ export default function NotificationBell() {
                       Ã - 
                     </button>
                   </div>
-                  <div style={{fontSize:12, color:'#9ca3af', marginBottom:4}}>{notif.message}</div>
+                  <div style={{fontSize:12, color:'#9ca3af', marginBottom:4}}>{say(notif.message)}</div>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                     <div style={{fontSize:10, color:'#6b7280'}}>
                       {new Date(notif.createdAt).toLocaleString()}
                     </div>
-                    <div style={{fontSize:11, color:'#93c5fd'}}>View â'</div>
+                    <div style={{fontSize:11, color:'#93c5fd'}}>{say("View â'")}</div>
                   </div>
                 </div>
               ))

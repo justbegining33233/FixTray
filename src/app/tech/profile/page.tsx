@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
@@ -12,6 +13,7 @@ import { FaUser, FaCircle, FaRegCircle, FaSyncAlt } from 'react-icons/fa';
 type TechProfileSection = 'profile' | 'contact' | 'links';
 
 function TechProfilePageContent() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -112,8 +114,7 @@ function TechProfilePageContent() {
   if (isLoading) {
     return (
       <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -123,18 +124,17 @@ function TechProfilePageContent() {
     <div style={{ minHeight: '100vh', background: '#000000', color: '#e2e8f0' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         <Link href={'/tech/home' as Route} style={{ color: '#ffb4ad', textDecoration: 'none', fontSize: 14 }}>
-          Back to Tech Home
-        </Link>
+          {say("Back to Tech Home")}{' '}</Link>
 
         <div style={{ marginTop: 14, background: '#000000', border: '1px solid #1f2937', borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>Technician Profile</h1>
-              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>Your technician account details and preferences.</p>
+              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>{say("Technician Profile")}</h1>
+              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>{say("Your technician account details and preferences.")}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 999, background: 'rgba(14,165,233,0.14)', border: '1px solid rgba(14,165,233,0.35)', color: '#bae6fd', fontSize: 12, fontWeight: 700 }}>
-              <span style={{ width: 24, height: 24, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,165,233,0.25)', color: '#e0f2fe' }}>{initials}</span>
-              {name || user.name || 'Technician'}
+              <span style={{ width: 24, height: 24, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,165,233,0.25)', color: '#e0f2fe' }}>{say(initials)}</span>
+              {name || user.name || say("Technician")}
             </div>
           </div>
 
@@ -142,16 +142,16 @@ function TechProfilePageContent() {
             <div style={{ minWidth: 0 }}>
               {section === 'profile' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>My Profile</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Overview of your technician account.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("My Profile")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Overview of your technician account.")}</p>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Name</div>
-                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{name || 'Not set'}</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Name")}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{name || say("Not set")}</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Role</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Role")}</div>
                       <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>tech</div>
                     </div>
                   </div>
@@ -161,35 +161,34 @@ function TechProfilePageContent() {
                       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
                         <div style={{fontSize:32}}><FaUser style={{marginRight:4}} /></div>
                         <div>
-                          <div style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>{techProfile.firstName} {techProfile.lastName}</div>
-                          <div style={{fontSize:12, color:'#9aa3b2'}}>{techProfile.role === 'tech' ? 'Technician' : 'Manager'}</div>
+                          <div style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>{say(techProfile.firstName)} {say(techProfile.lastName)}</div>
+                          <div style={{fontSize:12, color:'#9aa3b2'}}>{techProfile.role === 'tech' ? say("Technician") : say("Manager")}</div>
                         </div>
                       </div>
                       <div style={{borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:12}}>
                         <div style={{display:'grid', gap:8}}>
                           <div style={{display:'flex', justifyContent:'space-between'}}>
-                            <span style={{fontSize:13, color:'#9aa3b2'}}>Email:</span>
-                            <span style={{fontSize:13, color:'#e5e7eb'}}>{techProfile.email}</span>
+                            <span style={{fontSize:13, color:'#9aa3b2'}}>{say("Email:")}</span>
+                            <span style={{fontSize:13, color:'#e5e7eb'}}>{say(techProfile.email)}</span>
                           </div>
                           <div style={{display:'flex', justifyContent:'space-between'}}>
-                            <span style={{fontSize:13, color:'#9aa3b2'}}>Phone:</span>
-                            <span style={{fontSize:13, color:'#e5e7eb'}}>{techProfile.phone || 'N/A'}</span>
+                            <span style={{fontSize:13, color:'#9aa3b2'}}>{say("Phone:")}</span>
+                            <span style={{fontSize:13, color:'#e5e7eb'}}>{techProfile.phone || say("N/A")}</span>
                           </div>
                           <div style={{display:'flex', justifyContent:'space-between', background:'rgba(229,51,42,0.2)', padding:'8px 12px', borderRadius:8, marginTop:4}}>
-                            <span style={{fontSize:13, fontWeight:600, color:'#ff6b64'}}>Hourly Rate:</span>
+                            <span style={{fontSize:13, fontWeight:600, color:'#ff6b64'}}>{say("Hourly Rate:")}</span>
                             <span style={{fontSize:16, fontWeight:700, color:'#ff6b64'}}>${(techProfile.hourlyRate ?? 0).toFixed(2)}/hr</span>
                           </div>
                           <div style={{display:'flex', justifyContent:'space-between'}}>
-                            <span style={{fontSize:13, color:'#9aa3b2'}}>Status:</span>
+                            <span style={{fontSize:13, color:'#9aa3b2'}}>{say("Status:")}</span>
                             <span style={{fontSize:13, fontWeight:600, color: techProfile.available ? '#22c55e' : '#ef4444'}}>
-                              {techProfile.available ? <><FaCircle style={{marginRight:4}} /> Active</> : <><FaRegCircle style={{marginRight:4}} /> Inactive</>}
+                              {techProfile.available ? <><FaCircle style={{marginRight:4}} /> {say("Active")}</> : <><FaRegCircle style={{marginRight:4}} /> {say("Inactive")}</>}
                             </span>
                           </div>
                         </div>
                       </div>
                       <div style={{marginTop:12, fontSize:11, color:'#6b7280', textAlign:'center'}}>
-                        <FaSyncAlt style={{marginRight:4}} /> Auto-refreshes every 30 seconds
-                      </div>
+                        <FaSyncAlt style={{marginRight:4}} /> {say("Auto-refreshes every 30 seconds")}{' '}</div>
                     </div>
                   )}
                 </div>
@@ -197,15 +196,15 @@ function TechProfilePageContent() {
 
               {section === 'contact' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Contact & Settings</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Update your technician profile details.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Contact & Settings")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Update your technician profile details.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 620 }}>
-                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <input value={email} disabled placeholder="Email" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #1f2937', background: '#0b1220', color: '#94a3b8' }} />
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder={say("Full name")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input value={email} disabled placeholder={say("Email")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #1f2937', background: '#0b1220', color: '#94a3b8' }} />
+                    <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={say("Phone")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
                     <button onClick={handleSave} disabled={saving} style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}>
-                      {saving ? 'Saving...' : 'Save Changes'}
+                      {saving ? say("Saving...") : say("Save Changes")}
                     </button>
                   </div>
                 </div>
@@ -213,39 +212,34 @@ function TechProfilePageContent() {
 
               {section === 'links' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Quick Links</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Useful technician pages.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Quick Links")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Useful technician pages.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 460 }}>
                     <Link href={'/tech/timeclock' as Route} style={{ textDecoration: 'none', color: '#bae6fd', border: '1px solid #075985', borderRadius: 8, padding: '10px 12px', background: 'rgba(7,89,133,0.2)' }}>
-                      Time Clock
-                    </Link>
+                      {say("Time Clock")}{' '}</Link>
                     <Link href={'/tech/home' as Route} style={{ textDecoration: 'none', color: '#bae6fd', border: '1px solid #075985', borderRadius: 8, padding: '10px 12px', background: 'rgba(7,89,133,0.2)' }}>
-                      Technician Dashboard
-                    </Link>
+                      {say("Technician Dashboard")}{' '}</Link>
                   </div>
                 </div>
               )}
 
               {message && (
                 <div style={{ marginTop: 12, fontSize: 13, color: message.toLowerCase().includes('success') ? '#4ade80' : '#fda4af' }}>
-                  {message}
+                  {say(message)}
                 </div>
               )}
             </div>
 
             <div>
               <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 12, position: 'sticky', top: 24 }}>
-                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Menu</div>
+                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{say("Menu")}</div>
                 <button onClick={() => openSection('profile')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'profile' ? '1px solid rgba(14,165,233,0.45)' : '1px solid transparent', background: section === 'profile' ? 'rgba(14,165,233,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  My Profile
-                </button>
+                  {say("My Profile")}{' '}</button>
                 <button onClick={() => openSection('contact')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'contact' ? '1px solid rgba(14,165,233,0.45)' : '1px solid transparent', background: section === 'contact' ? 'rgba(14,165,233,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  Contact & Settings
-                </button>
+                  {say("Contact & Settings")}{' '}</button>
                 <button onClick={() => openSection('links')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'links' ? '1px solid rgba(14,165,233,0.45)' : '1px solid transparent', background: section === 'links' ? 'rgba(14,165,233,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer' }}>
-                  Quick Links
-                </button>
+                  {say("Quick Links")}{' '}</button>
               </div>
             </div>
           </div>
@@ -256,12 +250,12 @@ function TechProfilePageContent() {
 }
 
 export default function TechProfilePage() {
+  const say = usePhrase();
   return (
     <Suspense
       fallback={
         <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          Loading...
-        </div>
+          {say("Loading...")}{' '}</div>
       }
     >
       <TechProfilePageContent />

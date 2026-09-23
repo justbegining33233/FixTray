@@ -1,9 +1,11 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
 export default function AddFleetVehiclePage() {
+  const say = usePhrase();
   const router = useRouter();
   const params = useParams();
   const fleetAccountId = params.id as string;
@@ -57,12 +59,12 @@ export default function AddFleetVehiclePage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Add Vehicle to Fleet</h1>
+      <h1 className="text-3xl font-bold mb-6">{say("Add Vehicle to Fleet")}</h1>
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow max-w-2xl">
         {error && (
           <div className="p-4 bg-red-100 text-red-800 rounded mb-6">
-            {error}
+            {say(error)}
           </div>
         )}
 
@@ -70,8 +72,7 @@ export default function AddFleetVehiclePage() {
           {/* Year */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Year *
-            </label>
+              {say("Year *")}{' '}</label>
             <input
               type="number"
               name="year"
@@ -87,8 +88,7 @@ export default function AddFleetVehiclePage() {
           {/* Make */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Make *
-            </label>
+              {say("Make *")}{' '}</label>
             <input
               type="text"
               name="make"
@@ -96,15 +96,14 @@ export default function AddFleetVehiclePage() {
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-              placeholder="Ford"
+              placeholder={say("Ford")}
             />
           </div>
 
           {/* Model */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Model *
-            </label>
+              {say("Model *")}{' '}</label>
             <input
               type="text"
               name="model"
@@ -112,60 +111,56 @@ export default function AddFleetVehiclePage() {
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-              placeholder="F-150"
+              placeholder={say("F-150")}
             />
           </div>
 
           {/* Unit Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Unit Number
-            </label>
+              {say("Unit Number")}{' '}</label>
             <input
               type="text"
               name="unitNumber"
               value={formData.unitNumber}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-              placeholder="Unit #"
+              placeholder={say("Unit #")}
             />
           </div>
 
           {/* License Plate */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              License Plate
-            </label>
+              {say("License Plate")}{' '}</label>
             <input
               type="text"
               name="licensePlate"
               value={formData.licensePlate}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-              placeholder="ABC1234"
+              placeholder={say("ABC1234")}
             />
           </div>
 
           {/* VIN */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              VIN
-            </label>
+              {say("VIN")}{' '}</label>
             <input
               type="text"
               name="vin"
               value={formData.vin}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-              placeholder="5FDUJ6H77LB123456"
+              placeholder={say("5FDUJ6H77LB123456")}
             />
           </div>
 
           {/* Mileage */}
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Current Mileage
-            </label>
+              {say("Current Mileage")}{' '}</label>
             <input
               type="number"
               name="mileage"
@@ -180,15 +175,14 @@ export default function AddFleetVehiclePage() {
           {/* Notes */}
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
-            </label>
+              {say("Notes")}{' '}</label>
             <textarea
               name="notes"
               value={formData.notes}
               onChange={handleChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500"
-              placeholder="Additional notes..."
+              placeholder={say("Additional notes...")}
             />
           </div>
         </div>
@@ -199,14 +193,13 @@ export default function AddFleetVehiclePage() {
             onClick={() => router.back()}
             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
           >
-            Cancel
-          </button>
+            {say("Cancel")}{' '}</button>
           <button
             type="submit"
             disabled={loading}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
           >
-            {loading ? 'Adding...' : 'Add Vehicle'}
+            {loading ? say("Adding...") : say("Add Vehicle")}
           </button>
         </div>
       </form>

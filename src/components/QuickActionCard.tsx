@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowRight } from 'react-icons/fa';
 
 import Link from 'next/link';
@@ -17,6 +18,7 @@ interface QuickActionCardProps {
 }
 
 export default function QuickActionCard(props: QuickActionCardProps) {
+  const say = usePhrase();
   const {
     icon,
     title,
@@ -95,7 +97,7 @@ export default function QuickActionCard(props: QuickActionCardProps) {
           fontSize: 32,
           filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
         }}>
-          {icon}
+          {say(icon)}
         </div>
         <div style={{ flex: 1 }}>
           <h3 style={{ 
@@ -105,7 +107,7 @@ export default function QuickActionCard(props: QuickActionCardProps) {
             margin: 0,
             marginBottom: 4,
           }}>
-            {title}
+            {say(title)}
           </h3>
           {value !== undefined && (
             <div style={{
@@ -114,7 +116,7 @@ export default function QuickActionCard(props: QuickActionCardProps) {
               fontWeight: 800,
               lineHeight: 1,
             }}>
-              {value}
+              {say(value)}
             </div>
           )}
         </div>
@@ -127,7 +129,7 @@ export default function QuickActionCard(props: QuickActionCardProps) {
         margin: 0,
         lineHeight: 1.5,
       }}>
-        {description}
+        {say(description)}
       </p>
 
       {/* Action Arrow */}

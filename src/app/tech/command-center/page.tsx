@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -31,6 +32,7 @@ interface Job {
 }
 
 export default function TechCommandCenter() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
   const isMobile = useIsMobile();
   const isNative = useIsNative();
@@ -231,21 +233,20 @@ export default function TechCommandCenter() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
           <span style={{ padding: '2px 8px', background: badgeBackground, color: badgeColor, borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
-            {badgeLabel}
+            {say(badgeLabel)}
           </span>
-          <span style={{ fontSize: 10, color: '#64748b' }}>{order.time}</span>
+          <span style={{ fontSize: 10, color: '#64748b' }}>{say(order.time)}</span>
         </div>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
-          {order.service}
+          {say(order.service)}
         </div>
-        <div style={{ fontSize: 11, color: '#94a3b8' }}>{order.customer}</div>
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>{say(order.customer)}</div>
         <Link
           href={`/workorders/${order.sourceId || order.id}` as Route}
           onClick={(event) => event.stopPropagation()}
           style={{ display: 'inline-block', marginTop: 6, fontSize: 11, color: '#22c55e', fontWeight: 700, textDecoration: 'none' }}
         >
-          Open details
-        </Link>
+          {say("Open details")}{' '}</Link>
       </div>
     );
   };
@@ -265,8 +266,7 @@ export default function TechCommandCenter() {
         color: '#e5e7eb',
         fontSize: '18px'
       }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -291,19 +291,19 @@ export default function TechCommandCenter() {
         <div style={{background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:12, padding:24, marginBottom:32, minHeight:800}}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, gap:12, flexWrap:'wrap'}}>
             <div>
-              <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Ops Overview</h2>
+              <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Ops Overview")}</h2>
               <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
                 <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.16)', color:'#93c5fd', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  Roadcalls: {dashboardSettled ? stats.roadcalls : '…'}
+                  {say("Roadcalls:")}{' '}{dashboardSettled ? stats.roadcalls : '…'}
                 </span>
                 <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  In-Shop Appointments: {dashboardSettled ? stats.appointments : '…'}
+                  {say("In-Shop Appointments:")}{' '}{dashboardSettled ? stats.appointments : '…'}
                 </span>
                 <span style={{padding:'4px 10px', background:'rgba(245,158,11,0.16)', color:'#fbbf24', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  In-Shop Walk-ins: {dashboardSettled ? stats.walkins : '…'}
+                  {say("In-Shop Walk-ins:")}{' '}{dashboardSettled ? stats.walkins : '…'}
                 </span>
                 <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  Bays: {dashboardSettled ? `${stats.baysConfigured} configured (${stats.baysActive} active)` : '…'}
+                  {say("Bays:")}{' '}{dashboardSettled ? `${stats.baysConfigured} configured (${stats.baysActive} active)` : '…'}
                 </span>
               </div>
             </div>
@@ -321,19 +321,17 @@ export default function TechCommandCenter() {
               }}
             >
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-                <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
-                <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardSettled ? `${pendingWorkOrders.length} job${pendingWorkOrders.length !== 1 ? 's' : ''}` : 'Loading…'}</span>
+                <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{say("Pending Queue")}</div>
+                <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardSettled ? `${pendingWorkOrders.length} job${pendingWorkOrders.length !== 1 ? 's' : ''}` : say("Loading…")}</span>
               </div>
               <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:520, overflowY:'auto', paddingRight:2}}>
                 {!dashboardSettled && (
                   <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
-                    Loading jobs…
-                  </div>
+                    {say("Loading jobs…")}{' '}</div>
                 )}
                 {dashboardSettled && pendingWorkOrders.length === 0 && (
                   <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
-                    No jobs waiting  -  nice work.
-                  </div>
+                    {say("No jobs waiting  -  nice work.")}{' '}</div>
                 )}
                 {pendingWorkOrders.map(order => renderPendingCard(order))}
               </div>
@@ -342,16 +340,15 @@ export default function TechCommandCenter() {
             {/* Bays Board */}
             <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-                <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Service Bays</div>
-                <span style={{fontSize:12, color:'#9aa3b2'}}>Drag to place on a bay</span>
+                <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{say("Service Bays")}</div>
+                <span style={{fontSize:12, color:'#9aa3b2'}}>{say("Drag to place on a bay")}</span>
               </div>
 
               <p style={{ margin: '0 0 10px', fontSize: 12, color: '#9aa3b2' }}>
-                Placing a job on a bay organizes the board. A technician is assigned when they clock in.
-              </p>
+                {say("Placing a job on a bay organizes the board. A technician is assigned when they clock in.")}{' '}</p>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10}}>
                 {!dashboardSettled && bays.length === 0 && (
-                  <div style={{color:'#9aa3b2', fontSize:13, padding:12}}>Loading bays…</div>
+                  <div style={{color:'#9aa3b2', fontSize:13, padding:12}}>{say("Loading bays…")}</div>
                 )}
                 {bays.map((bay) => (
                   <div
@@ -371,12 +368,12 @@ export default function TechCommandCenter() {
                     }}
                   >
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-                      <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13}}>{bay.name}</div>
-                      <span style={{color: bay.jobs.length ? '#22c55e' : '#9aa3b2', fontSize:11}}>{bay.jobs.length} job(s)</span>
+                      <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13}}>{say(bay.name)}</div>
+                      <span style={{color: bay.jobs.length ? '#22c55e' : '#9aa3b2', fontSize:11}}>{say(bay.jobs.length)} {say("job(s)")}</span>
                     </div>
 
                     {bay.jobs.length === 0 ? (
-                      <div style={{fontSize:12, color:'#9aa3b2'}}>Drop work order here</div>
+                      <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Drop work order here")}</div>
                     ) : (
                       <div style={{display:'flex', flexDirection:'column', gap:8}}>
                         {bay.jobs.map((job) => (
@@ -393,21 +390,19 @@ export default function TechCommandCenter() {
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                           >
-                            <div style={{fontSize:12, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{job.service}</div>
-                            <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{job.customer}</div>
+                            <div style={{fontSize:12, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{say(job.service)}</div>
+                            <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{say(job.customer)}</div>
                             <Link
                               href={`/workorders/${job.sourceId || job.id}` as Route}
                               onClick={(event) => event.stopPropagation()}
                               style={{display:'inline-block', fontSize:11, color:'#22c55e', fontWeight:700, textDecoration:'none', marginBottom:8}}
                             >
-                              Open details
-                            </Link>
+                              {say("Open details")}{' '}</Link>
                             <button
                               onClick={(event) => { event.stopPropagation(); handleReturnToPending(bay.id, job.id); }}
                               style={{width:'100%', padding:'6px 8px', background:'rgba(245,158,11,0.12)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.3)', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer'}}
                             >
-                              Return To Queue
-                            </button>
+                              {say("Return To Queue")}{' '}</button>
                           </div>
                         ))}
                       </div>

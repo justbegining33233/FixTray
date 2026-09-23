@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -27,6 +28,7 @@ type Tenant = {
 };
 
 export default function SuperAdminTenants() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['superadmin']);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [search, setSearch] = useState('');
@@ -70,22 +72,22 @@ export default function SuperAdminTenants() {
             <FaArrowLeft className="w-4 h-4 text-gray-500" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tenant Management</h1>
-            <p className="text-gray-500 mt-1">{tenants.length} registered shops</p>
+            <h1 className="text-3xl font-bold text-gray-900">{say("Tenant Management")}</h1>
+            <p className="text-gray-500 mt-1">{say(tenants.length)} {say("registered shops")}</p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input type="text" placeholder="Search shops or owners..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900" />
+            <input type="text" placeholder={say("Search shops or owners...")} value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900" />
           </div>
         </div>
 
         {filtered.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <FaBuilding className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">{search ? 'No matching tenants found' : 'No tenants registered yet'}</p>
+            <p className="text-gray-500">{search ? say("No matching tenants found") : say("No tenants registered yet")}</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -97,18 +99,17 @@ export default function SuperAdminTenants() {
                       <FaBuilding className="w-5 h-5 text-indigo-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{t.name || t.shopName || 'Unnamed Shop'}</p>
+                      <p className="font-semibold text-gray-900">{t.name || t.shopName || say("Unnamed Shop")}</p>
                       <p className="text-sm text-gray-500">{t.ownerName || t.email || ''}</p>
                     </div>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500`}>
-                    Active
-                  </span>
+                    {say("Active")}{' '}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center py-3 border-t border-gray-100">
-                  <div><p className="text-lg font-bold text-gray-900">{t.totalJobs ?? 0}</p><p className="text-xs text-gray-400">Jobs</p></div>
-                  <div><p className="text-lg font-bold text-gray-900">{t.teamMembers ?? 0}</p><p className="text-xs text-gray-400">Team</p></div>
-                  <div><p className="text-lg font-bold text-gray-900">{t.rating ? t.rating.toFixed(1) : '\u2014'}</p><p className="text-xs text-gray-400">Rating</p></div>
+                  <div><p className="text-lg font-bold text-gray-900">{t.totalJobs ?? 0}</p><p className="text-xs text-gray-400">{say("Jobs")}</p></div>
+                  <div><p className="text-lg font-bold text-gray-900">{t.teamMembers ?? 0}</p><p className="text-xs text-gray-400">{say("Team")}</p></div>
+                  <div><p className="text-lg font-bold text-gray-900">{t.rating ? t.rating.toFixed(1) : '\u2014'}</p><p className="text-xs text-gray-400">{say("Rating")}</p></div>
                 </div>
                 {t.healthScore !== undefined && (
                   <div className="mt-3 flex items-center gap-2">
@@ -116,7 +117,7 @@ export default function SuperAdminTenants() {
                     <div className="flex-1 bg-gray-100 rounded-full h-2">
                       <div className={`h-2 rounded-full ${t.healthScore >= 70 ? 'bg-green-500' : t.healthScore >= 40 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${t.healthScore}%` }} />
                     </div>
-                    <span className="text-xs text-gray-500">{t.healthScore}%</span>
+                    <span className="text-xs text-gray-500">{say(t.healthScore)}%</span>
                   </div>
                 )}
               </div>

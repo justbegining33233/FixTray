@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { platformFeeForPaidOrders } from '@/lib/platformFees';
+import { getPlatformConfig } from '@/lib/platformConfig';
 
 export async function GET(req: NextRequest) {
   const auth = requireRole(req, ['admin', 'superadmin']);
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const platformConfig = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
+    const platformConfig = await getPlatformConfig();
     const serviceFeeCents = platformConfig?.serviceFee;
 
     // Calculate total revenue from work orders

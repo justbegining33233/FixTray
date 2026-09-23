@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { formatPermissionLabel } from '@/lib/permissionLabels';
@@ -12,6 +13,7 @@ interface TechPermissions {
 }
 
 export default function TeamPermissionsTable({ readOnly = false }: { readOnly?: boolean }) {
+  const say = usePhrase();
   const [techs, setTechs] = useState<TechPermissions[]>([]);
   const [allPermissions, setAllPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,17 +73,17 @@ export default function TeamPermissionsTable({ readOnly = false }: { readOnly?: 
   const formatPerm = formatPermissionLabel;
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading permissions...</div>;
+    return <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>{say("Loading permissions...")}</div>;
   }
 
   if (error) {
-    return <div style={{ background: '#1e293b', borderRadius: 12, padding: 24, color: '#fca5a5' }}>{error}</div>;
+    return <div style={{ background: '#1e293b', borderRadius: 12, padding: 24, color: '#fca5a5' }}>{say(error)}</div>;
   }
 
   if (techs.length === 0) {
     return (
       <div style={{ background: '#1e293b', borderRadius: 12, padding: 40, textAlign: 'center', border: '1px solid #334155' }}>
-        <div style={{ color: '#6b7280' }}>No team members found. Add team members first.</div>
+        <div style={{ color: '#6b7280' }}>{say("No team members found. Add team members first.")}</div>
       </div>
     );
   }
@@ -90,7 +92,7 @@ export default function TeamPermissionsTable({ readOnly = false }: { readOnly?: 
     <div>
       {toast && (
         <div style={{ position: 'fixed', top: 80, right: 24, background: '#052e16', color: '#22c55e', padding: '12px 20px', borderRadius: 8, border: '1px solid #16a34a', zIndex: 50, fontSize: 14 }}>
-          <FaCheckCircle style={{ marginRight: 4 }} /> {toast}
+          <FaCheckCircle style={{ marginRight: 4 }} /> {say(toast)}
         </div>
       )}
       <div style={{ overflowX: 'auto' }}>
@@ -98,12 +100,11 @@ export default function TeamPermissionsTable({ readOnly = false }: { readOnly?: 
           <thead>
             <tr style={{ borderBottom: '2px solid #334155' }}>
               <th style={{ textAlign: 'left', padding: '14px 16px', color: '#9ca3af', fontSize: 13, fontWeight: 500, position: 'sticky', left: 0, background: '#1e293b', minWidth: 180 }}>
-                Permission
-              </th>
+                {say("Permission")}{' '}</th>
               {techs.map((tech) => (
                 <th key={tech.techId} style={{ textAlign: 'center', padding: '14px 12px', color: '#e5e7eb', fontSize: 13 }}>
-                  <div>{tech.name}</div>
-                  <div style={{ color: '#6b7280', fontSize: 11, fontWeight: 400, textTransform: 'capitalize' }}>{tech.role}</div>
+                  <div>{say(tech.name)}</div>
+                  <div style={{ color: '#6b7280', fontSize: 11, fontWeight: 400, textTransform: 'capitalize' }}>{say(tech.role)}</div>
                 </th>
               ))}
             </tr>

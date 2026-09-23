@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import Link from 'next/link';
 import { FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
@@ -6,6 +7,7 @@ import { FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 type Step = 'request' | 'confirm' | 'done';
 
 export default function ResetPasswordPage() {
+  const say = usePhrase();
   const [step, setStep] = useState<Step>('request');
   const [identifier, setIdentifier] = useState('');
   const [token, setToken] = useState('');
@@ -61,98 +63,95 @@ export default function ResetPasswordPage() {
         {step === 'done' ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}><FaCheckCircle style={{marginRight:4}} /></div>
-            <h2 style={{ marginBottom: 8, color: '#f1f5f9' }}>Password Updated</h2>
-            <p style={{ color: '#94a3b8', marginBottom: 24 }}>Your password has been reset successfully.</p>
+            <h2 style={{ marginBottom: 8, color: '#f1f5f9' }}>{say("Password Updated")}</h2>
+            <p style={{ color: '#94a3b8', marginBottom: 24 }}>{say("Your password has been reset successfully.")}</p>
             <Link href="/auth/login" style={{ display: 'inline-block', background: '#e5332a', color: 'white', padding: '12px 32px', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
-              Back to Login
-            </Link>
+              {say("Back to Login")}{' '}</Link>
           </div>
         ) : step === 'confirm' ? (
           <>
-            <h2 style={{ marginBottom: 4, color: '#f1f5f9', fontSize: 22 }}>Enter your code</h2>
+            <h2 style={{ marginBottom: 4, color: '#f1f5f9', fontSize: 22 }}>{say("Enter your code")}</h2>
             <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>
-              If <strong>{identifier}</strong> has an account, we emailed a verification code. Check your inbox.
-            </p>
+              {say("If")}{' '}<strong>{say(identifier)}</strong> {say("has an account, we emailed a verification code. Check your inbox.")}{' '}</p>
             <form onSubmit={handleConfirm}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>Verification Code</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>{say("Verification Code")}</label>
                 <input
                   type="text"
                   value={token}
                   onChange={e => setToken(e.target.value)}
-                  placeholder="Enter the code from your email"
+                  placeholder={say("Enter the code from your email")}
                   required
                   style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>New Password</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>{say("New Password")}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder={say("At least 8 characters")}
                   required
                   style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>Confirm Password</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>{say("Confirm Password")}</label>
                 <input
                   type="password"
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
-                  placeholder="Repeat new password"
+                  placeholder={say("Repeat new password")}
                   required
                   style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
-              {error && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 12 }}>{error}</p>}
+              {error && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 12 }}>{say(error)}</p>}
               <button
                 type="submit"
                 disabled={loading}
                 style={{ width: '100%', padding: '12px', background: loading ? 'rgba(229,51,42,0.5)' : '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
               >
-                {loading ? 'Updating...' : 'Reset Password'}
+                {loading ? say("Updating...") : say("Reset Password")}
               </button>
               <button
                 type="button"
                 onClick={() => { setStep('request'); setToken(''); setPassword(''); setConfirm(''); setError(''); }}
                 style={{ width: '100%', padding: '10px', background: 'transparent', color: '#94a3b8', border: 'none', fontSize: 14, cursor: 'pointer', marginTop: 8 }}
               >
-                <FaArrowLeft style={{marginRight:4}} /> Use a different email
-              </button>
+                <FaArrowLeft style={{marginRight:4}} /> {say("Use a different email")}{' '}</button>
             </form>
           </>
         ) : (
           <>
-            <h2 style={{ marginBottom: 4, color: '#f1f5f9', fontSize: 22 }}>Forgot Password</h2>
-            <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>Enter your email or username and we'll send you a reset code.</p>
+            <h2 style={{ marginBottom: 4, color: '#f1f5f9', fontSize: 22 }}>{say("Forgot Password")}</h2>
+            <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>{say("Enter your email or username and we'll send you a reset code.")}</p>
             <form onSubmit={handleRequest}>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>Email or Username</label>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#94a3b8' }}>{say("Email or Username")}</label>
                 <input
                   type="text"
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={say("you@example.com")}
                   required
                   autoFocus
                   style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, fontSize: 15, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', color: '#f1f5f9' }}
                 />
               </div>
-              {error && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 12 }}>{error}</p>}
+              {error && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 12 }}>{say(error)}</p>}
               <button
                 type="submit"
                 disabled={loading}
                 style={{ width: '100%', padding: '12px', background: loading ? 'rgba(229,51,42,0.5)' : '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
               >
-                {loading ? 'Sending...' : 'Send Reset Code'}
+                {loading ? say("Sending...") : say("Send Reset Code")}
               </button>
             </form>
             <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#94a3b8' }}>
-              Remember it?{' '}
-              <Link href="/auth/login" style={{ color: '#e5332a', textDecoration: 'none', fontWeight: 500 }}>Sign in</Link>
+              {say("Remember it?")}{' '}
+              <Link href="/auth/login" style={{ color: '#e5332a', textDecoration: 'none', fontWeight: 500 }}>{say("Sign in")}</Link>
             </p>
           </>
         )}

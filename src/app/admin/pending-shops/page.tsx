@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, startTransition } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -22,6 +23,7 @@ type PendingShop = {
 };
 
 export default function PendingShops() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin']);
   const [mounted, setMounted] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
@@ -131,8 +133,7 @@ export default function PendingShops() {
         color: '#e5e7eb',
         fontSize: '18px'
       }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -254,28 +255,26 @@ export default function PendingShops() {
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1400, margin:'0 auto'}}>
           <Link href="/admin/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-          </Link>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <div>
-              <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>Pending Shop Approvals</h1>
-              <p style={{fontSize:14, color:'#9aa3b2'}}>Review and approve new shop applications</p>
+              <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say("Pending Shop Approvals")}</h1>
+              <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Review and approve new shop applications")}</p>
             </div>
             <div style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', borderRadius:8, fontSize:14, fontWeight:700}}>
-              {pendingShops.length} Pending
-            </div>
+              {say(pendingShops.length)} {say("Pending")}{' '}</div>
           </div>
         </div>
       </div>
 
       <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
         {loading ? (
-          <div style={{textAlign:'center', padding:80, color:'#9aa3b2', fontSize:16}}>Loading...</div>
+          <div style={{textAlign:'center', padding:80, color:'#9aa3b2', fontSize:16}}>{say("Loading...")}</div>
         ) : pendingShops.length === 0 ? (
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:80, textAlign:'center'}}>
             <div style={{fontSize:48, marginBottom:16}}><FaCheck style={{marginRight:4}} /></div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>No Pending Applications</div>
-            <div style={{fontSize:14, color:'#9aa3b2'}}>All shop applications have been reviewed</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say("No Pending Applications")}</div>
+            <div style={{fontSize:14, color:'#9aa3b2'}}>{say("All shop applications have been reviewed")}</div>
           </div>
         ) : (
           <div style={{display:'grid', gap:16}}>
@@ -284,36 +283,35 @@ export default function PendingShops() {
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20}}>
                   <div style={{flex:1}}>
                     <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
-                      <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{shop.name}</h2>
+                      <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say(shop.name)}</h2>
                       <span style={{padding:'4px 12px', background:'rgba(245,158,11,0.2)', color:'#f59e0b', borderRadius:8, fontSize:11, fontWeight:600}}>
-                        PENDING
-                      </span>
+                        {say("PENDING")}{' '}</span>
                     </div>
                     <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>
-                      <FaMapMarkerAlt style={{marginRight:4}} /> {shop.location}
+                      <FaMapMarkerAlt style={{marginRight:4}} /> {say(shop.location)}
                     </div>
                     <div style={{fontSize:13, color:'#6b7280'}}>
-                      {shop.services} services - Submitted {getTimeAgo(shop.submitted)}
+                      {say(shop.services)} {say("services - Submitted")}{' '}{getTimeAgo(shop.submitted)}
                     </div>
                   </div>
                 </div>
 
                 <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12, marginBottom:20, padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8}}>
                   <div>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Owner Name</div>
-                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{shop.ownerName}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Owner Name")}</div>
+                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{say(shop.ownerName)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Email</div>
-                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{shop.email}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Email")}</div>
+                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{say(shop.email)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Phone</div>
-                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{shop.phone}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Phone")}</div>
+                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{say(shop.phone)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Business License</div>
-                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{shop.businessLicense}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Business License")}</div>
+                    <div style={{fontSize:14, color:'#e5e7eb', fontWeight:600}}>{say(shop.businessLicense)}</div>
                   </div>
                 </div>
 
@@ -322,20 +320,17 @@ export default function PendingShops() {
                     onClick={() => handleApproveClick(shop)}
                     style={{flex:1, padding:'12px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                   >
-                    <FaCheck style={{marginRight:4}} /> Approve Shop
-                  </button>
+                    <FaCheck style={{marginRight:4}} /> {say("Approve Shop")}{' '}</button>
                   <button 
                     onClick={() => handleReviewDetails(shop)}
                     style={{flex:1, padding:'12px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                   >
-                    Review Details
-                  </button>
+                    {say("Review Details")}{' '}</button>
                   <button 
                     onClick={() => setDenyConfirmId(shop.id)}
                     style={{padding:'12px 24px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                   >
-                    <FaTimes style={{marginRight:4}} /> Deny
-                  </button>
+                    <FaTimes style={{marginRight:4}} /> {say("Deny")}{' '}</button>
                 </div>
               </div>
             ))}
@@ -348,65 +343,64 @@ export default function PendingShops() {
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.8)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:32}}>
           <div style={{background:'#000000', border:'2px solid rgba(229,51,42,0.3)', borderRadius:16, padding:32, maxWidth:800, width:'100%', maxHeight:'90vh', overflowY:'auto'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
-              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Shop Application Details</h2>
+              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>{say("Shop Application Details")}</h2>
               <button 
                 onClick={() => setShowDetails(false)}
                 style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
-                <FaTimes style={{marginRight:4}} /> Close
-              </button>
+                <FaTimes style={{marginRight:4}} /> {say("Close")}{' '}</button>
             </div>
 
             <div style={{display:'flex', flexDirection:'column', gap:20}}>
               <div>
-                <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:12}}>Business Information</h3>
+                <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:12}}>{say("Business Information")}</h3>
                 <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:16}}>
                   <div style={{marginBottom:12}}>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Shop Name</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.shopName}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Shop Name")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.shopName)}</div>
                   </div>
                   <div style={{marginBottom:12}}>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Owner Name</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.ownerName}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Owner Name")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.ownerName)}</div>
                   </div>
                   <div style={{marginBottom:12}}>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Full Address</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.address}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Full Address")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.address)}</div>
                   </div>
                   <div style={{marginBottom:12}}>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Business License #</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.businessLicense}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Business License #")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.businessLicense)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Insurance Policy #</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.insurancePolicy}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Insurance Policy #")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.insurancePolicy)}</div>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:12}}>Contact Information</h3>
+                <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:12}}>{say("Contact Information")}</h3>
                 <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:16}}>
                   <div style={{marginBottom:12}}>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Email</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.email}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Email")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.email)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Phone</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.phone}</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Phone")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.phone)}</div>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:12}}>Application Details</h3>
+                <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:12}}>{say("Application Details")}</h3>
                 <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:16}}>
                   <div style={{marginBottom:12}}>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Services Offered</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{selectedShop.services} services</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Services Offered")}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.services)} services</div>
                   </div>
                   <div>
-                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Submitted</div>
+                    <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Submitted")}</div>
                     <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>
                       {new Date(selectedShop.submitted).toLocaleString()} ({getTimeAgo(selectedShop.submitted)})
                     </div>
@@ -420,14 +414,12 @@ export default function PendingShops() {
                 onClick={() => handleApproveClick(selectedShop)}
                 style={{flex:1, padding:'14px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer'}}
               >
-                <FaCheck style={{marginRight:4}} /> Approve This Shop
-              </button>
+                <FaCheck style={{marginRight:4}} /> {say("Approve This Shop")}{' '}</button>
               <button 
                 onClick={() => setDenyConfirmId(selectedShop.id)}
                 style={{padding:'14px 32px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer'}}
               >
-                <FaTimes style={{marginRight:4}} /> Deny Application
-              </button>
+                <FaTimes style={{marginRight:4}} /> {say("Deny Application")}{' '}</button>
             </div>
           </div>
         </div>
@@ -439,36 +431,36 @@ export default function PendingShops() {
           <div style={{background:'#000000', border:'2px solid rgba(34,197,94,0.5)', borderRadius:16, padding:32, maxWidth:600, width:'100%'}}>
             <div style={{textAlign:'center', marginBottom:24}}>
               <div style={{fontSize:48, marginBottom:16}}><FaCheck style={{marginRight:4}} /></div>
-              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>Approve Shop Application?</h2>
-              <p style={{fontSize:14, color:'#9aa3b2'}}>You are about to approve the following shop:</p>
+              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say("Approve Shop Application?")}</h2>
+              <p style={{fontSize:14, color:'#9aa3b2'}}>{say("You are about to approve the following shop:")}</p>
             </div>
 
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20, marginBottom:24}}>
               <div style={{marginBottom:12}}>
-                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Shop Name</div>
-                <div style={{fontSize:18, color:'#e5e7eb', fontWeight:700}}>{shopToApprove.shopName}</div>
+                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Shop Name")}</div>
+                <div style={{fontSize:18, color:'#e5e7eb', fontWeight:700}}>{say(shopToApprove.shopName)}</div>
               </div>
               <div style={{marginBottom:12}}>
-                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Owner</div>
-                <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{shopToApprove.ownerName}</div>
+                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Owner")}</div>
+                <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(shopToApprove.ownerName)}</div>
               </div>
               <div style={{marginBottom:12}}>
-                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Location</div>
-                <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{shopToApprove.location}</div>
+                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Location")}</div>
+                <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(shopToApprove.location)}</div>
               </div>
               <div>
-                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>Contact</div>
-                <div style={{fontSize:14, color:'#e5e7eb'}}>{shopToApprove.email} - {shopToApprove.phone}</div>
+                <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Contact")}</div>
+                <div style={{fontSize:14, color:'#e5e7eb'}}>{say(shopToApprove.email)} - {say(shopToApprove.phone)}</div>
               </div>
             </div>
 
             <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:8, padding:16, marginBottom:24}}>
-              <div style={{fontSize:13, color:'#22c55e', fontWeight:600, marginBottom:8}}><FaCheck style={{marginRight:4}} /> Upon approval, the shop will:</div>
+              <div style={{fontSize:13, color:'#22c55e', fontWeight:600, marginBottom:8}}><FaCheck style={{marginRight:4}} /> {say("Upon approval, the shop will:")}</div>
               <ul style={{margin:0, paddingLeft:20, color:'#9aa3b2', fontSize:13, lineHeight:1.8}}>
-                <li>Receive login access to their account</li>
-                <li>Be redirected to complete their profile (business license, insurance, services)</li>
-                <li>Access their dashboard and start receiving work orders</li>
-                <li>Appear in the accepted shops list</li>
+                <li>{say("Receive login access to their account")}</li>
+                <li>{say("Be redirected to complete their profile (business license, insurance, services)")}</li>
+                <li>{say("Access their dashboard and start receiving work orders")}</li>
+                <li>{say("Appear in the accepted shops list")}</li>
               </ul>
             </div>
 
@@ -489,7 +481,7 @@ export default function PendingShops() {
                   opacity: approving ? 0.7 : 1
                 }}
               >
-                {approving ? 'Approving...' : <><FaCheck style={{marginRight:4}} /> Yes, Approve Shop</>}
+                {approving ? say("Approving...") : <><FaCheck style={{marginRight:4}} /> {say("Yes, Approve Shop")}</>}
               </button>
               <button 
                 onClick={() => {
@@ -508,8 +500,7 @@ export default function PendingShops() {
                   cursor: approving ? 'not-allowed' : 'pointer'
                 }}
               >
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
             </div>
           </div>
         </div>
@@ -517,11 +508,11 @@ export default function PendingShops() {
       {denyConfirmId && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
           <div style={{background:'#1e2533',borderRadius:14,padding:32,minWidth:300,maxWidth:420,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
-            <h3 style={{fontSize:18,fontWeight:700,color:'#e5e7eb',marginBottom:12}}>Deny Shop?</h3>
-            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:24}}>Are you sure you want to deny this shop application? This action cannot be undone.</p>
+            <h3 style={{fontSize:18,fontWeight:700,color:'#e5e7eb',marginBottom:12}}>{say("Deny Shop?")}</h3>
+            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:24}}>{say("Are you sure you want to deny this shop application? This action cannot be undone.")}</p>
             <div style={{display:'flex',gap:12}}>
-              <button onClick={()=>handleDeny(denyConfirmId)} style={{flex:1,padding:'10px 0',background:'#ef4444',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Deny</button>
-              <button onClick={()=>setDenyConfirmId(null)} style={{flex:1,padding:'10px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,cursor:'pointer'}}>Cancel</button>
+              <button onClick={()=>handleDeny(denyConfirmId)} style={{flex:1,padding:'10px 0',background:'#ef4444',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>{say("Deny")}</button>
+              <button onClick={()=>setDenyConfirmId(null)} style={{flex:1,padding:'10px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
@@ -529,23 +520,23 @@ export default function PendingShops() {
       {approveResult && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
           <div style={{background:'#1e2533',borderRadius:14,padding:32,minWidth:320,maxWidth:460,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
-            <h3 style={{fontSize:18,fontWeight:700,color:'#22c55e',marginBottom:12}}><FaCheckCircle style={{marginRight:4}} /> {approveResult.shopName} Approved!</h3>
-            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:16}}>The shop can now log in, complete their profile, access their dashboard and receive work orders.</p>
+            <h3 style={{fontSize:18,fontWeight:700,color:'#22c55e',marginBottom:12}}><FaCheckCircle style={{marginRight:4}} /> {say(approveResult.shopName)} {say("Approved!")}</h3>
+            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:16}}>{say("The shop can now log in, complete their profile, access their dashboard and receive work orders.")}</p>
             {approveResult.username && approveResult.tempPassword && (
               <div style={{background:'rgba(255,255,255,0.06)',borderRadius:8,padding:'12px 16px',marginBottom:16}}>
-                <p style={{fontSize:13,color:'#e5e7eb',marginBottom:6,fontWeight:600}}>Generated Credentials:</p>
-                <p style={{fontSize:13,color:'#9aa3b2',margin:0}}>Username: <strong style={{color:'#e5e7eb'}}>{approveResult.username}</strong></p>
-                <p style={{fontSize:13,color:'#9aa3b2',margin:'4px 0 0'}}>Password: <strong style={{color:'#e5e7eb'}}>{approveResult.tempPassword}</strong></p>
-                <p style={{fontSize:12,color:'#6b7280',marginTop:8}}>Ask the shop to change their password after first login.</p>
+                <p style={{fontSize:13,color:'#e5e7eb',marginBottom:6,fontWeight:600}}>{say("Generated Credentials:")}</p>
+                <p style={{fontSize:13,color:'#9aa3b2',margin:0}}>{say("Username:")}{' '}<strong style={{color:'#e5e7eb'}}>{say(approveResult.username)}</strong></p>
+                <p style={{fontSize:13,color:'#9aa3b2',margin:'4px 0 0'}}>{say("Password:")}{' '}<strong style={{color:'#e5e7eb'}}>{say(approveResult.tempPassword)}</strong></p>
+                <p style={{fontSize:12,color:'#6b7280',marginTop:8}}>{say("Ask the shop to change their password after first login.")}</p>
               </div>
             )}
-            <button onClick={()=>setApproveResult(null)} style={{width:'100%',padding:'10px 0',background:'#22c55e',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Done</button>
+            <button onClick={()=>setApproveResult(null)} style={{width:'100%',padding:'10px 0',background:'#22c55e',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>{say("Done")}</button>
           </div>
         </div>
       )}
       {pendingMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:pendingMsg.type==='success'?'#dcfce7':'#fde8e8',color:pendingMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {pendingMsg.text}
+          {say(pendingMsg.text)}
           <button onClick={()=>setPendingMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}

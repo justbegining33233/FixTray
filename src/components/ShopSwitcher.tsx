@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaCaretDown, FaCheck, FaStore } from 'react-icons/fa';
@@ -11,6 +12,7 @@ interface Shop {
 }
 
 export default function ShopSwitcher() {
+  const say = usePhrase();
   const router = useRouter();
   const [shops, setShops] = useState<Shop[]>([]);
   const [currentShopId, setCurrentShopId] = useState('');
@@ -74,7 +76,7 @@ export default function ShopSwitcher() {
       >
         <span><FaStore style={{marginRight:4}} /></span>
         <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {current?.businessName || 'Switch Shop'}
+          {current?.businessName || say("Switch Shop")}
         </span>
         <span style={{ color: '#6b7280', fontSize: 10 }}><FaCaretDown style={{marginRight:4}} /></span>
       </button>
@@ -86,8 +88,7 @@ export default function ShopSwitcher() {
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
         }}>
           <div style={{ padding: '8px 12px', borderBottom: '1px solid #334155', color: '#9ca3af', fontSize: 11, fontWeight: 600 }}>
-            YOUR SHOPS
-          </div>
+            {say("YOUR SHOPS")}{' '}</div>
           {shops.map(shop => (
             <button
               key={shop.id}
@@ -102,8 +103,8 @@ export default function ShopSwitcher() {
             >
               {shop.id === currentShopId && <span style={{ color: '#22c55e' }}><FaCheck style={{marginRight:4}} /></span>}
               <div>
-                <div style={{ fontWeight: shop.id === currentShopId ? 600 : 400 }}>{shop.businessName}</div>
-                <div style={{ color: '#6b7280', fontSize: 11 }}>{shop.email}</div>
+                <div style={{ fontWeight: shop.id === currentShopId ? 600 : 400 }}>{say(shop.businessName)}</div>
+                <div style={{ color: '#6b7280', fontSize: 11 }}>{say(shop.email)}</div>
               </div>
             </button>
           ))}

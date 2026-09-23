@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -43,6 +44,7 @@ const severityColors = {
 };
 
 export default function AdminSecurityPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [metrics, setMetrics] = useState<SecurityMetrics | null>(null);
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
@@ -77,7 +79,7 @@ export default function AdminSecurityPage() {
     }
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const riskStyle = metrics ? riskColors[metrics.riskLevel] : riskColors.low;
@@ -92,19 +94,18 @@ export default function AdminSecurityPage() {
           <div style={{ marginBottom: 32 }}>
             <h1 style={{ fontSize: 32, fontWeight: 700, color: '#e5e7eb', margin: '0 0 8px' }}>
               <FaLock style={{ marginRight: 12, verticalAlign: 'middle' }} />
-              Security Dashboard
-            </h1>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>Real-time security monitoring and threat detection</p>
+              {say("Security Dashboard")}{' '}</h1>
+            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>{say("Real-time security monitoring and threat detection")}</p>
           </div>
 
           {error && (
             <div style={{ background: 'rgba(229,51,42,0.15)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 16, marginBottom: 24, color: '#fca5a5' }}>
-              {error}
+              {say(error)}
             </div>
           )}
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading security data...</div>
+            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>{say("Loading security data...")}</div>
           ) : metrics ? (
             <>
               {/* Risk Score Card */}
@@ -119,9 +120,9 @@ export default function AdminSecurityPage() {
                 gap: 24,
               }}>
                 <div>
-                  <div style={{ fontSize: 14, color: '#9ca3af', marginBottom: 8 }}>Platform Risk Score</div>
+                  <div style={{ fontSize: 14, color: '#9ca3af', marginBottom: 8 }}>{say("Platform Risk Score")}</div>
                   <div style={{ fontSize: 48, fontWeight: 700, color: riskStyle.color }}>
-                    {metrics.riskScore}/100
+                    {say(metrics.riskScore)}/100
                   </div>
                 </div>
                 <div style={{ flex: 1, textAlign: 'right' }}>
@@ -134,7 +135,7 @@ export default function AdminSecurityPage() {
                     fontWeight: 700,
                     display: 'inline-block',
                   }}>
-                    {riskStyle.text}
+                    {say(riskStyle.text)}
                   </div>
                 </div>
               </div>
@@ -142,19 +143,19 @@ export default function AdminSecurityPage() {
               {/* Metrics Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
                 {[
-                  { label: 'Successful Logins (24h)', value: metrics.successfulLogins24h, icon: <FaCheckCircle />, color: '#22c55e' },
-                  { label: 'Failed Logins (24h)', value: metrics.failedLogins24h, icon: <FaLock />, color: '#f59e0b' },
-                  { label: 'Account Lockouts', value: metrics.accountLockouts24h, icon: <FaExclamationTriangle />, color: '#e5332a' },
-                  { label: 'Unauthorized Attempts', value: metrics.unauthorizedAttempts24h, icon: <FaExclamationTriangle />, color: '#e5332a' },
-                  { label: 'Suspicious IPs', value: metrics.suspiciousIPs.length, icon: <FaServer />, color: '#f59e0b' },
-                  { label: '2FA Enabled', value: metrics.twoFAEnabled, icon: <FaLock />, color: '#3b82f6' },
+                  { label: say("Successful Logins (24h)"), value: metrics.successfulLogins24h, icon: <FaCheckCircle />, color: '#22c55e' },
+                  { label: say("Failed Logins (24h)"), value: metrics.failedLogins24h, icon: <FaLock />, color: '#f59e0b' },
+                  { label: say("Account Lockouts"), value: metrics.accountLockouts24h, icon: <FaExclamationTriangle />, color: '#e5332a' },
+                  { label: say("Unauthorized Attempts"), value: metrics.unauthorizedAttempts24h, icon: <FaExclamationTriangle />, color: '#e5332a' },
+                  { label: say("Suspicious IPs"), value: metrics.suspiciousIPs.length, icon: <FaServer />, color: '#f59e0b' },
+                  { label: say("2FA Enabled"), value: metrics.twoFAEnabled, icon: <FaLock />, color: '#3b82f6' },
                 ].map((stat, i) => (
                   <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <span style={{ color: stat.color, fontSize: 20 }}>{stat.icon}</span>
-                      <div style={{ fontSize: 12, color: '#9ca3af' }}>{stat.label}</div>
+                      <span style={{ color: stat.color, fontSize: 20 }}>{say(stat.icon)}</span>
+                      <div style={{ fontSize: 12, color: '#9ca3af' }}>{say(stat.label)}</div>
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{say(stat.value)}</div>
                   </div>
                 ))}
               </div>
@@ -162,11 +163,11 @@ export default function AdminSecurityPage() {
               {/* System Health */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
                 {[
-                  { label: 'API Status', healthy: metrics.apiHealthy },
-                  { label: 'Database Status', healthy: metrics.databaseHealthy },
+                  { label: say("API Status"), healthy: metrics.apiHealthy },
+                  { label: say("Database Status"), healthy: metrics.databaseHealthy },
                 ].map((health, i) => (
                   <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
-                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>{health.label}</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>{say(health.label)}</div>
                     <div style={{
                       background: health.healthy ? 'rgba(34,197,94,0.15)' : 'rgba(229,51,42,0.15)',
                       color: health.healthy ? '#22c55e' : '#e5332a',
@@ -175,7 +176,7 @@ export default function AdminSecurityPage() {
                       fontWeight: 600,
                       textAlign: 'center',
                     }}>
-                      {health.healthy ? '✓ Healthy' : '✗ Issues'}
+                      {health.healthy ? say("✓ Healthy") : say("✗ Issues")}
                     </div>
                   </div>
                 ))}
@@ -185,8 +186,7 @@ export default function AdminSecurityPage() {
               {metrics.suspiciousIPs.length > 0 && (
                 <div style={{ background: 'rgba(229,51,42,0.15)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 20, marginBottom: 32 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#fca5a5', marginBottom: 16 }}>
-                    ⚠️ Suspicious IP Addresses Detected
-                  </div>
+                    {say("⚠️ Suspicious IP Addresses Detected")}{' '}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {metrics.suspiciousIPs.map((ip, i) => (
                       <code key={i} style={{
@@ -196,7 +196,7 @@ export default function AdminSecurityPage() {
                         borderRadius: 6,
                         fontSize: 12,
                       }}>
-                        {ip}
+                        {say(ip)}
                       </code>
                     ))}
                   </div>
@@ -206,12 +206,11 @@ export default function AdminSecurityPage() {
               {/* Recent Alerts */}
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginBottom: 16 }}>
-                  Recent Security Alerts ({alerts.length})
+                  {say("Recent Security Alerts (")}{say(alerts.length)})
                 </h2>
                 {alerts.length === 0 ? (
                   <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 40, textAlign: 'center', color: '#9ca3af' }}>
-                    No recent alerts
-                  </div>
+                    {say("No recent alerts")}{' '}</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {alerts.slice(0, 10).map(alert => (
@@ -226,8 +225,8 @@ export default function AdminSecurityPage() {
                         alignItems: 'center',
                       }}>
                         <div>
-                          <div style={{ color: '#e5e7eb', fontWeight: 600, marginBottom: 4 }}>{alert.type}</div>
-                          <div style={{ color: '#9ca3af', fontSize: 13 }}>{alert.message}</div>
+                          <div style={{ color: '#e5e7eb', fontWeight: 600, marginBottom: 4 }}>{say(alert.type)}</div>
+                          <div style={{ color: '#9ca3af', fontSize: 13 }}>{say(alert.message)}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <span style={{

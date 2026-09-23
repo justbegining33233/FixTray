@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -7,6 +8,7 @@ import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { isActiveWorkOrder, workOrderTitle } from '@/lib/workOrderMetrics';
 
 export default function CustomerWorkOrdersPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['customer']);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ export default function CustomerWorkOrdersPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const open = orders.filter((order) => isActiveWorkOrder(order));
@@ -30,12 +32,12 @@ export default function CustomerWorkOrdersPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', padding: 24 }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <h1 style={{ color: '#e5e7eb', fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Work Orders</h1>
-        <p style={{ color: '#9aa3b2', marginBottom: 24 }}>Open jobs first, then recent history.</p>
+        <h1 style={{ color: '#e5e7eb', fontSize: 28, fontWeight: 700, marginBottom: 8 }}>{say("Work Orders")}</h1>
+        <p style={{ color: '#9aa3b2', marginBottom: 24 }}>{say("Open jobs first, then recent history.")}</p>
         {loading ? (
-          <div style={{ color: '#9aa3b2' }}>Loading work orders...</div>
+          <div style={{ color: '#9aa3b2' }}>{say("Loading work orders...")}</div>
         ) : orders.length === 0 ? (
-          <div style={{ color: '#9aa3b2' }}>No work orders yet. <Link href="/customer/appointments/new" style={{ color: '#e5332a' }}>Book a service</Link>.</div>
+          <div style={{ color: '#9aa3b2' }}>{say("No work orders yet.")}{' '}<Link href="/customer/appointments/new" style={{ color: '#e5332a' }}>{say("Book a service")}</Link>.</div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
             {[...open, ...rest].filter((order) => order?.id).map((order) => (
@@ -45,7 +47,7 @@ export default function CustomerWorkOrdersPage() {
                 style={{ display: 'block', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16, textDecoration: 'none' }}
               >
                 <div style={{ color: '#e5e7eb', fontWeight: 700 }}>
-                  WO-{String(order.id).slice(-8).toUpperCase()} · {workOrderTitle(order)}
+                  {say("WO-")}{String(order.id).slice(-8).toUpperCase()} · {workOrderTitle(order)}
                 </div>
                 <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>
                   {typeof order.status === 'string' ? order.status : ''} {typeof order.shop?.shopName === 'string' ? `· ${order.shop.shopName}` : ''}

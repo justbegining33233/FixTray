@@ -1,4 +1,5 @@
 "use client";
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
@@ -39,6 +40,7 @@ type SessionsApiResponse = {
 };
 
 export default function AdminSessionsPage() {
+  const say = usePhrase();
   const { user, isLoading: authLoading } = useRequireAuth(['admin', 'superadmin']);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [buckets, setBuckets] = useState<Buckets>({
@@ -92,7 +94,7 @@ export default function AdminSessionsPage() {
 
   // Show loading state while checking authentication
   if (authLoading) {
-    return <div className="p-4">Loading...</div>;
+    return <div className="p-4">{say("Loading...")}</div>;
   }
 
   // If no user, the useRequireAuth hook will handle redirect
@@ -127,11 +129,11 @@ export default function AdminSessionsPage() {
           <div className="flex items-center gap-3">
             <Link href="/admin/home" className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"><FaArrowLeft style={{marginRight:4}} /></Link>
             <div>
-              <h1 className="text-2xl font-bold">Session Control Center</h1>
-              <p className="text-sm text-slate-400">Monitor live admin presence and activity windows</p>
+              <h1 className="text-2xl font-bold">{say("Session Control Center")}</h1>
+              <p className="text-sm text-slate-400">{say("Monitor live admin presence and activity windows")}</p>
             </div>
           </div>
-          <button onClick={load} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-sm"><FaSyncAlt style={{marginRight:4}} /> Refresh</button>
+          <button onClick={load} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-sm"><FaSyncAlt style={{marginRight:4}} /> {say("Refresh")}</button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -145,9 +147,9 @@ export default function AdminSessionsPage() {
                   : 'bg-white/5 border-white/10 hover:bg-white/10'
               }`}
             >
-              <div className="text-xs text-slate-400 mb-1">{tab.label}</div>
-              <div className="text-3xl font-bold text-white">{tab.count}</div>
-              <div className="text-xs text-slate-500 mt-2">{tab.icon} Live grouped count</div>
+              <div className="text-xs text-slate-400 mb-1">{say(tab.label)}</div>
+              <div className="text-3xl font-bold text-white">{say(tab.count)}</div>
+              <div className="text-xs text-slate-500 mt-2">{say(tab.icon)} {say("Live grouped count")}</div>
             </button>
           ))}
         </div>
@@ -155,15 +157,15 @@ export default function AdminSessionsPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
           <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
             <div className="font-semibold">
-              {activeTab === 'currently-on' && 'Currently On'}
-              {activeTab === 'last-24h' && 'Not Logged In, Still Active In Last 24 Hours'}
-              {activeTab === 'inactive-48h' && 'Not Active For More Than 48 Hours'}
+              {activeTab === 'currently-on' && say("Currently On")}
+              {activeTab === 'last-24h' && say("Not Logged In, Still Active In Last 24 Hours")}
+              {activeTab === 'inactive-48h' && say("Not Active For More Than 48 Hours")}
             </div>
-            {loading && <div className="text-xs text-slate-400">Loading...</div>}
+            {loading && <div className="text-xs text-slate-400">{say("Loading...")}</div>}
           </div>
 
           {activeUsers.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">No users in this bucket.</div>
+            <div className="p-8 text-center text-slate-400">{say("No users in this bucket.")}</div>
           ) : (
             <div className="divide-y divide-white/10">
               {activeUsers.map((u) => {
@@ -173,17 +175,17 @@ export default function AdminSessionsPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                       <div>
                         <div className="font-semibold text-white flex items-center gap-2">
-                          {u.username}
-                          {u.isSuperAdmin && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e5332a]/15 border border-[#e5332a]/30 text-[#ff6b64]">Superadmin</span>}
+                          {say(u.username)}
+                          {u.isSuperAdmin && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e5332a]/15 border border-[#e5332a]/30 text-[#ff6b64]">{say("Superadmin")}</span>}
                         </div>
-                        <div className="text-sm text-slate-400">{u.email}</div>
-                        <div className="text-xs text-slate-500 mt-1"><FaRegClock style={{marginRight:4}} /> Last activity: {formatRelativeFromMinutes(u.lastActivityAgeMinutes)}</div>
+                        <div className="text-sm text-slate-400">{say(u.email)}</div>
+                        <div className="text-xs text-slate-500 mt-1"><FaRegClock style={{marginRight:4}} /> {say("Last activity:")}{' '}{formatRelativeFromMinutes(u.lastActivityAgeMinutes)}</div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         {activeTab === 'currently-on' && (
                           <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                            {userActiveSessions.length} active session{userActiveSessions.length === 1 ? '' : 's'}
+                            {say(userActiveSessions.length)} {say("active session")}{userActiveSessions.length === 1 ? '' : 's'}
                           </span>
                         )}
                       </div>
@@ -194,11 +196,11 @@ export default function AdminSessionsPage() {
                         {userActiveSessions.map((s) => (
                           <div key={s.id} className="p-3 rounded-lg border border-white/10 bg-black/40 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                             <div className="text-xs text-slate-400">
-                              <div>Session: {s.id}</div>
-                              <div>Created: {new Date(s.createdAt).toLocaleString()}</div>
-                              <div>Expires: {s.expiresAt ? new Date(s.expiresAt).toLocaleString() : 'Never'}</div>
+                              <div>{say("Session:")}{' '}{say(s.id)}</div>
+                              <div>{say("Created:")}{' '}{new Date(s.createdAt).toLocaleString()}</div>
+                              <div>{say("Expires:")}{' '}{s.expiresAt ? new Date(s.expiresAt).toLocaleString() : say("Never")}</div>
                             </div>
-                            <button onClick={() => setRevokeId(s.id)} className="px-3 py-1.5 rounded-md bg-red-600/90 hover:bg-red-600 text-white text-sm">Revoke</button>
+                            <button onClick={() => setRevokeId(s.id)} className="px-3 py-1.5 rounded-md bg-red-600/90 hover:bg-red-600 text-white text-sm">{say("Revoke")}</button>
                           </div>
                         ))}
                       </div>
@@ -211,19 +213,19 @@ export default function AdminSessionsPage() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="text-sm font-semibold mb-2">Session Inventory</div>
-          <div className="text-xs text-slate-400">Total records: {sessions.length} | Active right now: {sessions.filter((s) => s.isActive).length}</div>
+          <div className="text-sm font-semibold mb-2">{say("Session Inventory")}</div>
+          <div className="text-xs text-slate-400">{say("Total records:")}{' '}{say(sessions.length)} {say("| Active right now:")}{' '}{say(sessions.filter((s) => s.isActive).length)}</div>
         </div>
       </div>
 
       {revokeId && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:16}}>
           <div style={{background:'#1e2533',borderRadius:14,padding:24,minWidth:300,maxWidth:420,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',width:'100%'}}>
-            <h3 style={{fontSize:18,fontWeight:700,color:'#e5e7eb',marginBottom:12}}>Revoke Session?</h3>
-            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:24}}>Are you sure you want to revoke this session? The user will be logged out immediately.</p>
+            <h3 style={{fontSize:18,fontWeight:700,color:'#e5e7eb',marginBottom:12}}>{say("Revoke Session?")}</h3>
+            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:24}}>{say("Are you sure you want to revoke this session? The user will be logged out immediately.")}</p>
             <div style={{display:'flex',gap:12}}>
-              <button onClick={()=>revoke(revokeId)} style={{flex:1,padding:'10px 0',background:'#ef4444',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Revoke</button>
-              <button onClick={()=>setRevokeId(null)} style={{flex:1,padding:'10px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,cursor:'pointer'}}>Cancel</button>
+              <button onClick={()=>revoke(revokeId)} style={{flex:1,padding:'10px 0',background:'#ef4444',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>{say("Revoke")}</button>
+              <button onClick={()=>setRevokeId(null)} style={{flex:1,padding:'10px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>

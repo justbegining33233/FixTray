@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -22,6 +23,7 @@ type AuditEntry = {
 };
 
 export default function SuperAdminSecurity() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,8 +91,8 @@ export default function SuperAdminSecurity() {
             <FaArrowLeft className="w-4 h-4 text-zinc-400" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-white">Security Center</h1>
-            <p className="text-zinc-400 mt-1">Security posture &amp; audit logs</p>
+            <h1 className="text-3xl font-bold text-white">{say("Security Center")}</h1>
+            <p className="text-zinc-400 mt-1">{say("Security posture &amp; audit logs")}</p>
           </div>
         </div>
 
@@ -102,16 +104,16 @@ export default function SuperAdminSecurity() {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:"rgba(229,51,42,0.15)"}}>
                   <card.icon className="w-5 h-5 text-[#ff6b64]" />
                 </div>
-                <h3 className="font-semibold text-[#f1f5f9]">{card.title}</h3>
+                <h3 className="font-semibold text-[#f1f5f9]">{say(card.title)}</h3>
               </div>
-              <p className="text-sm text-gray-500 mb-3">{card.desc}</p>
+              <p className="text-sm text-gray-500 mb-3">{say(card.desc)}</p>
               <div className="flex items-center gap-1.5">
                 {card.ok ? (
                   <FaCheckCircle className="w-4 h-4 text-green-500" />
                 ) : (
                   <FaExclamationTriangle className="w-4 h-4 text-amber-500" />
                 )}
-                <span className={`text-sm font-medium ${card.ok ? 'text-green-600' : 'text-amber-600'}`}>{card.status}</span>
+                <span className={`text-sm font-medium ${card.ok ? 'text-green-600' : 'text-amber-600'}`}>{say(card.status)}</span>
               </div>
             </div>
           ))}
@@ -124,8 +126,8 @@ export default function SuperAdminSecurity() {
               <FaLock className="w-6 h-6 text-indigo-400" />
             </div>
             <div>
-              <p className="font-semibold text-[#f1f5f9]">Security Settings</p>
-              <p className="text-sm text-[#94a3b8]">Configure password policies, 2FA, session timeouts</p>
+              <p className="font-semibold text-[#f1f5f9]">{say("Security Settings")}</p>
+              <p className="text-sm text-[#94a3b8]">{say("Configure password policies, 2FA, session timeouts")}</p>
             </div>
           </Link>
           <Link href={"/admin/activity-logs" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
@@ -133,8 +135,8 @@ export default function SuperAdminSecurity() {
               <FaHistory className="w-6 h-6 text-indigo-400" />
             </div>
             <div>
-              <p className="font-semibold text-[#f1f5f9]">Activity Logs</p>
-              <p className="text-sm text-[#94a3b8]">Full searchable activity log with filters</p>
+              <p className="font-semibold text-[#f1f5f9]">{say("Activity Logs")}</p>
+              <p className="text-sm text-[#94a3b8]">{say("Full searchable activity log with filters")}</p>
             </div>
           </Link>
         </div>
@@ -143,18 +145,18 @@ export default function SuperAdminSecurity() {
         <div className="rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
           <div className="flex items-center gap-2 mb-4">
             <FaHistory className="w-5 h-5 text-[#ff6b64]" />
-            <h2 className="text-lg font-semibold text-white">Recent Audit Logs</h2>
+            <h2 className="text-lg font-semibold text-white">{say("Recent Audit Logs")}</h2>
           </div>
           {auditLogs.length === 0 ? (
-            <p className="text-zinc-400 text-sm">No audit entries found</p>
+            <p className="text-zinc-400 text-sm">{say("No audit entries found")}</p>
           ) : (
             <div className="space-y-2">
               {auditLogs.map((e, i) => (
                 <div key={e.id || i} className="flex items-start gap-3 p-3 rounded-xl text-sm" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)'}}>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[#f1f5f9]">{e.action}</p>
+                    <p className="font-medium text-[#f1f5f9]">{say(e.action)}</p>
                     <p className="text-gray-500 text-xs mt-0.5">
-                      {e.userName || e.user || 'System'}{e.ip ? ` - ${e.ip}` : ''} - {new Date(e.timestamp || e.createdAt || '').toLocaleString()}
+                      {e.userName || e.user || say("System")}{e.ip ? ` - ${e.ip}` : ''} - {new Date(e.timestamp || e.createdAt || '').toLocaleString()}
                     </p>
                     {presentAuditDetails(e.details) && <p className="text-gray-400 text-xs mt-1">{presentAuditDetails(e.details)}</p>}
                   </div>

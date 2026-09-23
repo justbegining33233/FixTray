@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -25,6 +26,7 @@ type UserRow = {
 };
 
 function OwnerControlCenterPageContent() {
+  const say = usePhrase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
@@ -225,16 +227,14 @@ function OwnerControlCenterPageContent() {
   if (isLoading || !user) {
     return (
       <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
   if (!isOwnerProfile) {
     return (
       <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Redirecting...
-      </div>
+        {say("Redirecting...")}{' '}</div>
     );
   }
 
@@ -242,56 +242,53 @@ function OwnerControlCenterPageContent() {
     <div style={{ minHeight: '100vh', background: '#000000', color: '#e2e8f0' }}>
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px 20px' }}>
         <Link href={'/admin/home' as Route} style={{ color: '#ffb4ad', textDecoration: 'none', fontSize: 14 }}>
-          Back to Admin Home
-        </Link>
+          {say("Back to Admin Home")}{' '}</Link>
 
         <div style={{ marginTop: 14, background: '#000000', border: '1px solid #1f2937', borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>Owner Control Center</h1>
-              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>Personal tools for SupAdm1006 only.</p>
+              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>{say("Owner Control Center")}</h1>
+              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>{say("Personal tools for SupAdm1006 only.")}</p>
             </div>
             <div style={{ padding: '8px 12px', borderRadius: 999, background: 'rgba(249,115,22,0.14)', border: '1px solid rgba(249,115,22,0.35)', color: '#fdba74', fontSize: 12, fontWeight: 700 }}>
-              FixTray Owner Access
-            </div>
+              {say("FixTray Owner Access")}{' '}</div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 260px', gap: 18, marginTop: 20 }}>
             <div style={{ minWidth: 0 }}>
               {section === 'profile' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>My Profile</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Owner account information and platform details.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("My Profile")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Owner account information and platform details.")}</p>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Username</div>
-                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{user.name}</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Username")}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{say(user.name)}</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Role</div>
-                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>Owner Super Admin</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Role")}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{say("Owner Super Admin")}</div>
                     </div>
                   </div>
 
                   <div style={{ marginTop: 16, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: 14 }}>
-                    <div style={{ color: '#86efac', fontWeight: 700, marginBottom: 6 }}>Important FixTray Information</div>
+                    <div style={{ color: '#86efac', fontWeight: 700, marginBottom: 6 }}>{say("Important FixTray Information")}</div>
                     <div style={{ color: '#cbd5e1', fontSize: 14 }}>
-                      This owner menu controls sensitive account tools and should not be visible for other users or profiles.
-                    </div>
+                      {say("This owner menu controls sensitive account tools and should not be visible for other users or profiles.")}{' '}</div>
                   </div>
                 </div>
               )}
 
               {section === 'quick-edit' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Quick Edit User Info</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 12 }}>Select a user, edit their details, and save instantly.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Quick Edit User Info")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 12 }}>{say("Select a user, edit their details, and save instantly.")}</p>
 
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search by name, email, username, role"
+                    placeholder={say("Search by name, email, username, role")}
                     style={{ width: '100%', maxWidth: 560, padding: '10px 12px', borderRadius: 10, border: '1px solid #334155', background: '#020617', color: '#e2e8f0', marginBottom: 12 }}
                   />
 
@@ -299,7 +296,7 @@ function OwnerControlCenterPageContent() {
                     <div style={{ width: '100%', maxWidth: 560, marginBottom: 12, border: '1px solid #1f2937', borderRadius: 10, background: '#020617', overflow: 'hidden' }}>
                       {suggestions.length === 0 ? (
                         <div style={{ padding: '10px 12px', color: '#94a3b8', fontSize: 13 }}>
-                          {isSearchingUsers ? 'Searching users...' : 'No matching users found'}
+                          {isSearchingUsers ? say("Searching users...") : say("No matching users found")}
                         </div>
                       ) : (
                         suggestions.map((u) => {
@@ -310,8 +307,8 @@ function OwnerControlCenterPageContent() {
                               onClick={() => pickSuggestion(u)}
                               style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: '#e2e8f0', cursor: 'pointer' }}
                             >
-                              <div style={{ fontWeight: 700, fontSize: 13 }}>{fullName}</div>
-                              <div style={{ fontSize: 12, color: '#94a3b8' }}>{u.email}</div>
+                              <div style={{ fontWeight: 700, fontSize: 13 }}>{say(fullName)}</div>
+                              <div style={{ fontSize: 12, color: '#94a3b8' }}>{say(u.email)}</div>
                             </button>
                           );
                         })
@@ -323,8 +320,8 @@ function OwnerControlCenterPageContent() {
                     <div style={{ border: '1px solid #1f2937', borderRadius: 10, maxHeight: 460, overflow: 'auto' }}>
                       {!query.trim() ? (
                         <div style={{ padding: 14 }}>
-                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Users</div>
-                          <div style={{ color: '#64748b', fontSize: 13, marginTop: 8 }}>Type a name above to search users.</div>
+                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{say("Users")}</div>
+                          <div style={{ color: '#64748b', fontSize: 13, marginTop: 8 }}>{say("Type a name above to search users.")}</div>
                         </div>
                       ) : (
                         filtered.map((u) => (
@@ -333,10 +330,10 @@ function OwnerControlCenterPageContent() {
                             onClick={() => selectUserForEdit(u)}
                             style={{ width: '100%', textAlign: 'left', padding: 12, border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', background: selected?.id === u.id ? 'rgba(37,99,235,0.15)' : 'transparent', color: '#e2e8f0', cursor: 'pointer' }}
                           >
-                            <div style={{ fontWeight: 700 }}>{[u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.username || 'Unnamed user'}</div>
-                            {u.username && <div style={{ fontSize: 12, color: '#a5b4fc' }}>@{u.username}</div>}
-                            <div style={{ fontSize: 12, color: '#94a3b8' }}>{u.email}</div>
-                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{u.role}</div>
+                            <div style={{ fontWeight: 700 }}>{[u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.username || say("Unnamed user")}</div>
+                            {u.username && <div style={{ fontSize: 12, color: '#a5b4fc' }}>@{say(u.username)}</div>}
+                            <div style={{ fontSize: 12, color: '#94a3b8' }}>{say(u.email)}</div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{say(u.role)}</div>
                           </button>
                         ))
                       )}
@@ -345,17 +342,17 @@ function OwnerControlCenterPageContent() {
                     <div style={{ border: '1px solid #1f2937', borderRadius: 10, padding: 12 }}>
                       {!query.trim() ? (
                         <div>
-                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>User Info</div>
-                          <div style={{ color: '#64748b', marginTop: 8 }}>User details will appear here after search and selection.</div>
+                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{say("User Info")}</div>
+                          <div style={{ color: '#64748b', marginTop: 8 }}>{say("User details will appear here after search and selection.")}</div>
                         </div>
                       ) : !selected ? (
-                        <div style={{ color: '#94a3b8' }}>Select a user to edit.</div>
+                        <div style={{ color: '#94a3b8' }}>{say("Select a user to edit.")}</div>
                       ) : (
                         <div style={{ display: 'grid', gap: 10 }}>
-                          <input value={editForm.firstName} onChange={(e) => setEditForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First name" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                          <input value={editForm.lastName} onChange={(e) => setEditForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                          <input value={editForm.username} onChange={(e) => setEditForm((p) => ({ ...p, username: e.target.value }))} placeholder="Username" disabled={!selected.capabilities?.canEditUsername} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: !selected.capabilities?.canEditUsername ? '#000000' : '#020617', color: '#e2e8f0', opacity: selected.capabilities?.canEditUsername ? 1 : 0.7 }} />
-                          <input value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                          <input value={editForm.firstName} onChange={(e) => setEditForm((p) => ({ ...p, firstName: e.target.value }))} placeholder={say("First name")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                          <input value={editForm.lastName} onChange={(e) => setEditForm((p) => ({ ...p, lastName: e.target.value }))} placeholder={say("Last name")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                          <input value={editForm.username} onChange={(e) => setEditForm((p) => ({ ...p, username: e.target.value }))} placeholder={say("Username")} disabled={!selected.capabilities?.canEditUsername} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: !selected.capabilities?.canEditUsername ? '#000000' : '#020617', color: '#e2e8f0', opacity: selected.capabilities?.canEditUsername ? 1 : 0.7 }} />
+                          <input value={editForm.email} onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))} placeholder={say("Email")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                             <select value={editForm.role} onChange={(e) => setEditForm((p) => ({ ...p, role: e.target.value }))} disabled={!selected.capabilities?.canEditRole} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: !selected.capabilities?.canEditRole ? '#000000' : '#020617', color: '#e2e8f0', opacity: selected.capabilities?.canEditRole ? 1 : 0.7 }}>
                               <option value="admin">admin</option>
@@ -372,13 +369,13 @@ function OwnerControlCenterPageContent() {
                           </div>
                           <div style={{ fontSize: 12, color: '#94a3b8' }}>
                             {!selected.capabilities?.canEditRole && !selected.capabilities?.canEditStatus && !selected.capabilities?.canEditUsername
-                              ? 'This account only supports name and email updates from the owner tools.'
+                              ? say("This account only supports name and email updates from the owner tools.")
                               : !selected.capabilities?.canEditStatus
-                                ? 'Status changes are only persisted for shop accounts.'
-                                : 'Fields are enabled only when the backing user type supports them.'}
+                                ? say("Status changes are only persisted for shop accounts.")
+                                : say("Fields are enabled only when the backing user type supports them.")}
                           </div>
                           <button onClick={saveUserEdit} disabled={saving} style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-                            {saving ? 'Saving...' : 'Save User Changes'}
+                            {saving ? say("Saving...") : say("Save User Changes")}
                           </button>
                         </div>
                       )}
@@ -389,13 +386,13 @@ function OwnerControlCenterPageContent() {
 
               {section === 'reset-password' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Reset User Password</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 12 }}>Select a user and set a temporary password.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Reset User Password")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 12 }}>{say("Select a user and set a temporary password.")}</p>
 
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search user"
+                    placeholder={say("Search user")}
                     style={{ width: '100%', maxWidth: 560, padding: '10px 12px', borderRadius: 10, border: '1px solid #334155', background: '#020617', color: '#e2e8f0', marginBottom: 12 }}
                   />
 
@@ -403,7 +400,7 @@ function OwnerControlCenterPageContent() {
                     <div style={{ width: '100%', maxWidth: 560, marginBottom: 12, border: '1px solid #1f2937', borderRadius: 10, background: '#020617', overflow: 'hidden' }}>
                       {suggestions.length === 0 ? (
                         <div style={{ padding: '10px 12px', color: '#94a3b8', fontSize: 13 }}>
-                          {isSearchingUsers ? 'Searching users...' : 'No matching users found'}
+                          {isSearchingUsers ? say("Searching users...") : say("No matching users found")}
                         </div>
                       ) : (
                         suggestions.map((u) => {
@@ -414,8 +411,8 @@ function OwnerControlCenterPageContent() {
                               onClick={() => pickSuggestion(u)}
                               style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: '#e2e8f0', cursor: 'pointer' }}
                             >
-                              <div style={{ fontWeight: 700, fontSize: 13 }}>{fullName}</div>
-                              <div style={{ fontSize: 12, color: '#94a3b8' }}>{u.email}</div>
+                              <div style={{ fontWeight: 700, fontSize: 13 }}>{say(fullName)}</div>
+                              <div style={{ fontSize: 12, color: '#94a3b8' }}>{say(u.email)}</div>
                             </button>
                           );
                         })
@@ -427,8 +424,8 @@ function OwnerControlCenterPageContent() {
                     <div style={{ border: '1px solid #1f2937', borderRadius: 10, maxHeight: 460, overflow: 'auto' }}>
                       {!query.trim() ? (
                         <div style={{ padding: 14 }}>
-                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Users</div>
-                          <div style={{ color: '#64748b', fontSize: 13, marginTop: 8 }}>Type a name above to search users.</div>
+                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{say("Users")}</div>
+                          <div style={{ color: '#64748b', fontSize: 13, marginTop: 8 }}>{say("Type a name above to search users.")}</div>
                         </div>
                       ) : (
                         filtered.map((u) => (
@@ -437,10 +434,10 @@ function OwnerControlCenterPageContent() {
                             onClick={() => selectUserForReset(u)}
                             style={{ width: '100%', textAlign: 'left', padding: 12, border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', background: selected?.id === u.id ? 'rgba(124,58,237,0.15)' : 'transparent', color: '#e2e8f0', cursor: 'pointer' }}
                           >
-                            <div style={{ fontWeight: 700 }}>{[u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.username || 'Unnamed user'}</div>
-                            {u.username && <div style={{ fontSize: 12, color: '#c4b5fd' }}>@{u.username}</div>}
-                            <div style={{ fontSize: 12, color: '#94a3b8' }}>{u.email}</div>
-                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{u.role}</div>
+                            <div style={{ fontWeight: 700 }}>{[u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.username || say("Unnamed user")}</div>
+                            {u.username && <div style={{ fontSize: 12, color: '#c4b5fd' }}>@{say(u.username)}</div>}
+                            <div style={{ fontSize: 12, color: '#94a3b8' }}>{say(u.email)}</div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{say(u.role)}</div>
                           </button>
                         ))
                       )}
@@ -449,25 +446,25 @@ function OwnerControlCenterPageContent() {
                     <div style={{ border: '1px solid #1f2937', borderRadius: 10, padding: 12 }}>
                       {!query.trim() ? (
                         <div>
-                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>User Info</div>
-                          <div style={{ color: '#64748b', marginTop: 8 }}>User details will appear here after search and selection.</div>
+                          <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{say("User Info")}</div>
+                          <div style={{ color: '#64748b', marginTop: 8 }}>{say("User details will appear here after search and selection.")}</div>
                         </div>
                       ) : !selected ? (
-                        <div style={{ color: '#94a3b8' }}>Select a user to reset password.</div>
+                        <div style={{ color: '#94a3b8' }}>{say("Select a user to reset password.")}</div>
                       ) : (
                         <div style={{ display: 'grid', gap: 10 }}>
                           <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-                            Selected: <strong>{[selected.firstName, selected.lastName].filter(Boolean).join(' ').trim() || selected.username || selected.email}</strong>
+                            {say("Selected:")}{' '}<strong>{[selected.firstName, selected.lastName].filter(Boolean).join(' ').trim() || selected.username || selected.email}</strong>
                           </div>
                           <input
                             type="password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="New password (minimum 8 characters)"
+                            placeholder={say("New password (minimum 8 characters)")}
                             style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }}
                           />
                           <button onClick={resetUserPassword} disabled={saving} style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: '#7c3aed', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-                            {saving ? 'Resetting...' : 'Reset Password'}
+                            {saving ? say("Resetting...") : say("Reset Password")}
                           </button>
                         </div>
                       )}
@@ -478,23 +475,20 @@ function OwnerControlCenterPageContent() {
 
               {message && (
                 <div style={{ marginTop: 12, fontSize: 13, color: message.toLowerCase().includes('success') || message.toLowerCase().includes('updated') ? '#4ade80' : '#fda4af' }}>
-                  {message}
+                  {say(message)}
                 </div>
               )}
             </div>
 
             <div>
               <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 12, position: 'sticky', top: 24 }}>
-                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Menu</div>
+                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{say("Menu")}</div>
                 <button onClick={() => openSection('profile')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'profile' ? '1px solid rgba(229,51,42,0.45)' : '1px solid transparent', background: section === 'profile' ? 'rgba(229,51,42,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  My Profile
-                </button>
+                  {say("My Profile")}{' '}</button>
                 <button onClick={() => openSection('quick-edit')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'quick-edit' ? '1px solid rgba(229,51,42,0.45)' : '1px solid transparent', background: section === 'quick-edit' ? 'rgba(229,51,42,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  Quick Edit User Info
-                </button>
+                  {say("Quick Edit User Info")}{' '}</button>
                 <button onClick={() => openSection('reset-password')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'reset-password' ? '1px solid rgba(124,58,237,0.45)' : '1px solid transparent', background: section === 'reset-password' ? 'rgba(124,58,237,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer' }}>
-                  Reset User Password
-                </button>
+                  {say("Reset User Password")}{' '}</button>
               </div>
             </div>
           </div>
@@ -505,12 +499,12 @@ function OwnerControlCenterPageContent() {
 }
 
 export default function OwnerControlCenterPage() {
+  const say = usePhrase();
   return (
     <Suspense
       fallback={
         <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          Loading...
-        </div>
+          {say("Loading...")}{' '}</div>
       }
     >
       <OwnerControlCenterPageContent />

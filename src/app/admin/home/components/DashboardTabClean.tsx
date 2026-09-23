@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React from 'react';
 import KpiCard from './KpiCard';
 import SalesFunnel from './SalesFunnel';
@@ -93,6 +94,7 @@ export function DashboardTab({
   liveMetrics,
   infraHealth,
 }: DashboardTabProps) {
+  const say = usePhrase();
   const revenueTrend = liveMetrics.revenueTrend?.length ? liveMetrics.revenueTrend : [];
   const shopHeadline = ownerShopHeadline(shopsLiveMetrics);
 
@@ -251,7 +253,7 @@ export function DashboardTab({
         {kpiCards.map((card) => (
           <KpiCard
             key={card.title}
-            title={card.title}
+            title={say(card.title)}
             value={card.value}
             change={card.change}
             trend={card.trend}

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -18,6 +19,7 @@ function getTitle(pathname: string): string {
 }
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
+  const say = usePhrase();
   const pathname = usePathname() ?? '';
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -81,8 +83,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
             boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
           }}
         >
-          <FaArrowLeft style={{ marginRight: 4 }} /> Back to Dashboard
-        </Link>
+          <FaArrowLeft style={{ marginRight: 4 }} /> {say("Back to Dashboard")}{' '}</Link>
       )}
       <div className={`role-route-shell ${isDesktopMode ? 'desktop-mode-shell' : ''}`}><div data-page-shell>{children}</div></div>
     </>

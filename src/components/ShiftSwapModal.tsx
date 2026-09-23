@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { FaCheck, FaTimes, FaClock, FaUser, FaCalendarAlt, FaSync } from 'react-icons/fa';
 
@@ -22,6 +23,7 @@ export default function ShiftSwapModal({
   onRequestSwap,
   onClose,
 }: ShiftSwapModalProps) {
+  const say = usePhrase();
   const [selectedSwapShift, setSelectedSwapShift] = useState<string | null>(null);
   const [requestNote, setRequestNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -76,13 +78,11 @@ export default function ShiftSwapModal({
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-slate-900 rounded-lg border border-slate-700 max-w-md w-full shadow-2xl p-8 text-center">
           <FaCheck className="text-4xl text-green-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">Swap Request Sent</h3>
+          <h3 className="text-xl font-bold text-white mb-2">{say("Swap Request Sent")}</h3>
           <p className="text-slate-400 mb-4">
-            Your shift swap request has been submitted to the other technician and your manager for approval.
-          </p>
+            {say("Your shift swap request has been submitted to the other technician and your manager for approval.")}{' '}</p>
           <p className="text-sm text-slate-500">
-            You'll be notified when they respond.
-          </p>
+            {say("You'll be notified when they respond.")}{' '}</p>
         </div>
       </div>
     );
@@ -97,8 +97,8 @@ export default function ShiftSwapModal({
             <div className="flex items-center gap-3">
               <FaSync className="text-cyan-400 text-2xl" />
               <div>
-                <h3 className="text-xl font-bold text-white">Request Shift Swap</h3>
-                <p className="text-sm text-slate-400">Find someone to trade shifts with</p>
+                <h3 className="text-xl font-bold text-white">{say("Request Shift Swap")}</h3>
+                <p className="text-sm text-slate-400">{say("Find someone to trade shifts with")}</p>
               </div>
             </div>
             <button
@@ -113,20 +113,20 @@ export default function ShiftSwapModal({
         <div className="p-6 space-y-6">
           {/* Current Shift */}
           <div>
-            <h4 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Your Current Shift</h4>
+            <h4 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">{say("Your Current Shift")}</h4>
             <div className="bg-slate-950/50 border border-slate-700 rounded-lg p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">Date</p>
+                  <p className="text-xs text-slate-500 mb-1">{say("Date")}</p>
                   <p className="text-lg font-semibold text-white">{new Date(currentShift.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">Time</p>
-                  <p className="text-lg font-semibold text-white">{currentShift.startTime} - {currentShift.endTime}</p>
+                  <p className="text-xs text-slate-500 mb-1">{say("Time")}</p>
+                  <p className="text-lg font-semibold text-white">{say(currentShift.startTime)} - {say(currentShift.endTime)}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-xs text-slate-500 mb-1">Location</p>
-                  <p className="text-base font-semibold text-cyan-400">{currentShift.location}</p>
+                  <p className="text-xs text-slate-500 mb-1">{say("Location")}</p>
+                  <p className="text-base font-semibold text-cyan-400">{say(currentShift.location)}</p>
                 </div>
               </div>
             </div>
@@ -134,7 +134,7 @@ export default function ShiftSwapModal({
 
           {/* Available Shifts to Swap */}
           <div>
-            <h4 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Available Shifts to Swap</h4>
+            <h4 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">{say("Available Shifts to Swap")}</h4>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {availableShifts.map(shift => (
                 <button
@@ -149,16 +149,16 @@ export default function ShiftSwapModal({
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <FaUser className="text-slate-500 flex-shrink-0" />
-                      <span className="font-semibold text-white">{shift.techName}</span>
+                      <span className="font-semibold text-white">{say(shift.techName)}</span>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-500">{new Date(shift.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                      <p className="text-sm font-semibold text-cyan-400">{shift.startTime} - {shift.endTime}</p>
+                      <p className="text-sm font-semibold text-cyan-400">{say(shift.startTime)} - {say(shift.endTime)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-400">
                     <FaCalendarAlt size={12} />
-                    {shift.location}
+                    {say(shift.location)}
                   </div>
                 </button>
               ))}
@@ -166,18 +166,18 @@ export default function ShiftSwapModal({
             {availableShifts.length === 0 && (
               <div className="text-center py-8 text-slate-500">
                 <FaClock size={32} className="mx-auto mb-3 opacity-50" />
-                <p>No available shifts to swap with right now</p>
+                <p>{say("No available shifts to swap with right now")}</p>
               </div>
             )}
           </div>
 
           {/* Request Note */}
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">Add a Message (Optional)</label>
+            <label className="text-sm font-semibold text-slate-300 mb-2 block">{say("Add a Message (Optional)")}</label>
             <textarea
               value={requestNote}
               onChange={(e) => setRequestNote(e.target.value)}
-              placeholder="Explain why you need this swap... (e.g., 'Doctor's appointment', 'Family event')"
+              placeholder={say("Explain why you need this swap... (e.g., 'Doctor's appointment', 'Family event')")}
               className="w-full px-4 py-3 bg-slate-950 border border-slate-600 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 resize-none h-24"
             />
           </div>
@@ -185,18 +185,18 @@ export default function ShiftSwapModal({
           {/* Error Message */}
           {error && (
             <div className="p-4 bg-red-600/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
-              {error}
+              {say(error)}
             </div>
           )}
 
           {/* Info Box */}
           <div className="p-4 bg-blue-600/10 border border-blue-500/30 rounded-lg text-sm text-blue-300">
-            <p className="font-semibold mb-2">How it works:</p>
+            <p className="font-semibold mb-2">{say("How it works:")}</p>
             <ul className="space-y-1 text-xs text-blue-200">
-              <li>• Your request goes to the other technician and your manager</li>
-              <li>• Both must approve for the swap to be confirmed</li>
-              <li>• You'll get notified when they respond</li>
-              <li>• Once approved, shifts will be updated automatically</li>
+              <li>{say("• Your request goes to the other technician and your manager")}</li>
+              <li>{say("• Both must approve for the swap to be confirmed")}</li>
+              <li>{say("• You'll get notified when they respond")}</li>
+              <li>{say("• Once approved, shifts will be updated automatically")}</li>
             </ul>
           </div>
 
@@ -206,8 +206,7 @@ export default function ShiftSwapModal({
               onClick={onClose}
               className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition"
             >
-              <FaTimes className="inline mr-2" /> Cancel
-            </button>
+              <FaTimes className="inline mr-2" /> {say("Cancel")}{' '}</button>
             <button
               onClick={handleRequestSwap}
               disabled={!selectedSwapShift || submitting}
@@ -215,12 +214,10 @@ export default function ShiftSwapModal({
             >
               {submitting ? (
                 <>
-                  <FaClock className="inline mr-2 animate-spin" /> Sending...
-                </>
+                  <FaClock className="inline mr-2 animate-spin" /> {say("Sending...")}{' '}</>
               ) : (
                 <>
-                  <FaSync className="inline mr-2" /> Request Swap
-                </>
+                  <FaSync className="inline mr-2" /> {say("Request Swap")}{' '}</>
               )}
             </button>
           </div>

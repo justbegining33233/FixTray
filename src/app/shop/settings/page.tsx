@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, Suspense } from 'react';
 import { FaArrowLeft, FaArrowRight, FaBell, FaBox, FaBuilding, FaCalendarAlt, FaCar, FaCheck, FaClipboardList, FaClock, FaCog, FaComments, FaCreditCard, FaExclamationCircle, FaLock, FaSignOutAlt, FaStar, FaTimes, FaTrash, FaTruck, FaWrench } from 'react-icons/fa';
 import ShopSecurityPanel from '@/components/ShopSecurityPanel';
@@ -215,6 +216,7 @@ interface Service {
 }
 
 function ShopSettingsPageContent() {
+  const say = usePhrase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useRequireAuth(['shop']);
@@ -686,12 +688,10 @@ function ShopSettingsPageContent() {
         <div style={{maxWidth:1200, margin:'0 auto', display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div>
             <Link href="/shop/admin#overview" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:8, display:'inline-block'}}>
-              <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-            </Link>
+              <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
             <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:4, display:'flex', alignItems:'center', gap:12}}>
-              <FaCog style={{fontSize:28, color:'#e5e7eb'}} /> Shop Settings
-            </h1>
-            <p style={{fontSize:14, color:'#9aa3b2'}}>Manage your shop information and preferences</p>
+              <FaCog style={{fontSize:28, color:'#e5e7eb'}} /> {say("Shop Settings")}{' '}</h1>
+            <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Manage your shop information and preferences")}</p>
           </div>
           <button
             onClick={() => {
@@ -716,8 +716,7 @@ function ShopSettingsPageContent() {
               gap:8
             }}
           >
-            <FaSignOutAlt style={{marginRight:8}} /> Sign Out
-          </button>
+            <FaSignOutAlt style={{marginRight:8}} /> {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
@@ -746,8 +745,8 @@ function ShopSettingsPageContent() {
                   gap:12
                 }}
               >
-                <span>{tab.icon}</span>
-                {tab.name}
+                <span>{say(tab.icon)}</span>
+                {say(tab.name)}
               </button>
             ))}
           </div>
@@ -756,52 +755,52 @@ function ShopSettingsPageContent() {
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:32}}>
             {activeTab === 'general' && (
               <div>
-                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>General Information</h2>
+                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>{say("General Information")}</h2>
                 
                 <div style={{display:'grid', gap:20}}>
                   <div>
-                    <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Shop Name</label>
+                    <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Shop Name")}</label>
                     <input type="text" value={settings.shopName} onChange={(e) => setSettings({...settings, shopName: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                   </div>
 
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Email</label>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Email")}</label>
                       <input type="email" value={settings.email} onChange={(e) => setSettings({...settings, email: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Phone</label>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Phone")}</label>
                       <input type="tel" value={settings.phone} onChange={(e) => setSettings({...settings, phone: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                   </div>
 
                   <div>
-                    <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Address</label>
+                    <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Address")}</label>
                     <input type="text" value={settings.address} onChange={(e) => setSettings({...settings, address: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                   </div>
 
                   <div style={{display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:16}}>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>City</label>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("City")}</label>
                       <input type="text" value={settings.city} onChange={(e) => setSettings({...settings, city: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>State</label>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("State")}</label>
                       <input type="text" value={settings.state} onChange={(e) => setSettings({...settings, state: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>ZIP Code</label>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("ZIP Code")}</label>
                       <input type="text" value={settings.zipCode} onChange={(e) => setSettings({...settings, zipCode: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                   </div>
 
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Business License</label>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Business License")}</label>
                       <input type="text" value={settings.businessLicense} onChange={(e) => setSettings({...settings, businessLicense: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Insurance Policy</label>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Insurance Policy")}</label>
                       <input type="text" value={settings.insurancePolicy} onChange={(e) => setSettings({...settings, insurancePolicy: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                   </div>
@@ -809,28 +808,27 @@ function ShopSettingsPageContent() {
                   <div style={{ marginTop: 8, padding: 16, borderRadius: 10, background: 'rgba(229,51,42,0.10)', border: '1px solid rgba(229,51,42,0.35)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
                       <div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb' }}>FixTray Shop Participation Agreement</div>
-                        <div style={{ fontSize: 12, color: '#9aa3b2' }}>Agreement version: {FIXTRAY_AGREEMENT_VERSION}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb' }}>{say("FixTray Shop Participation Agreement")}</div>
+                        <div style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Agreement version:")}{' '}{say(FIXTRAY_AGREEMENT_VERSION)}</div>
                       </div>
                       <button
                         onClick={() => setShowAgreementModal(true)}
                         style={{ padding: '10px 14px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.35)', color: '#e5e7eb', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                       >
-                        {agreementSignedAt ? 'Review Agreement' : 'Read and Sign Agreement'}
+                        {agreementSignedAt ? say("Review Agreement") : say("Read and Sign Agreement")}
                       </button>
                     </div>
 
                     {agreementSignedAt ? (
                       <div style={{ color: '#86efac', fontSize: 12 }}>
-                        Signed by {agreementSignature || 'Shop Admin'} on {new Date(agreementSignedAt).toLocaleString()}
+                        {say("Signed by")}{' '}{agreementSignature || say("Shop Admin")} on {new Date(agreementSignedAt).toLocaleString()}
                       </div>
                     ) : (
                       <div style={{ color: '#fde68a', fontSize: 12 }}>
-                        Signature required before saving settings and continuing platform access.
-                      </div>
+                        {say("Signature required before saving settings and continuing platform access.")}{' '}</div>
                     )}
 
-                    {agreementError ? <div style={{ color: '#fca5a5', fontSize: 12, marginTop: 8 }}>{agreementError}</div> : null}
+                    {agreementError ? <div style={{ color: '#fca5a5', fontSize: 12, marginTop: 8 }}>{say(agreementError)}</div> : null}
                   </div>
                 </div>
               </div>
@@ -838,7 +836,7 @@ function ShopSettingsPageContent() {
 
             {activeTab === 'hours' && (
               <div>
-                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:16}}>Operating Hours</h2>
+                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:16}}>{say("Operating Hours")}</h2>
                 
                 {/* Schedule Settings Link */}
                 <Link
@@ -852,11 +850,9 @@ function ShopSettingsPageContent() {
                 >
                   <div>
                     <div style={{ display:'flex', alignItems:'center', gap:8, fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
-                      <FaCalendarAlt /> Advanced Scheduling Settings
-                    </div>
+                      <FaCalendarAlt /> {say("Advanced Scheduling Settings")}{' '}</div>
                     <div style={{ fontSize: 13, color: '#9aa3b2' }}>
-                      Manage capacity, time slots, blocked dates & customer booking availability
-                    </div>
+                      {say("Manage capacity, time slots, blocked dates & customer booking availability")}{' '}</div>
                   </div>
                   <FaArrowRight style={{ fontSize: 24, color: '#e5332a' }} />
                 </Link>
@@ -864,7 +860,7 @@ function ShopSettingsPageContent() {
                 <div style={{display:'grid', gap:16}}>
                   {Object.entries(settings.operatingHours).map(([day, hours]) => (
                     <div key={day} style={{display:'flex', alignItems:'center', gap:16, padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8}}>
-                      <div style={{width:100, fontSize:14, fontWeight:600, color:'#e5e7eb', textTransform:'capitalize'}}>{day}</div>
+                      <div style={{width:100, fontSize:14, fontWeight:600, color:'#e5e7eb', textTransform:'capitalize'}}>{say(day)}</div>
                       <input
                         type="time"
                         value={hours.open}
@@ -911,8 +907,7 @@ function ShopSettingsPageContent() {
                           }}
                           style={{width:18, height:18, cursor:'pointer'}}
                         />
-                        Closed
-                      </label>
+                        {say("Closed")}{' '}</label>
                     </div>
                   ))}
                 </div>
@@ -922,42 +917,39 @@ function ShopSettingsPageContent() {
             {activeTab === 'services_removed' && (
               <div>
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
-                  <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Offered Services</h2>
+                  <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Offered Services")}</h2>
                   <div style={{display:'flex', gap:12}}>
                     <button 
                       onClick={() => setShowAddServiceModal(true)}
                       style={{padding:'10px 20px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                     >
-                      + Add Service
-                    </button>
+                      {say("+ Add Service")}{' '}</button>
                     <button
                       onClick={handlePopulateDefaults}
                       style={{padding:'10px 20px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
-                      title="Import default services for all categories"
+                      title={say("Import default services for all categories")}
                     >
-                      Import Default Services
-                    </button>
+                      {say("Import Default Services")}{' '}</button>
                   </div>
                 </div>
                 
                 {loading ? (
-                  <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>Loading services...</div>
+                  <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>{say("Loading services...")}</div>
                 ) : services.length === 0 ? (
                   <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
                     <div style={{fontSize:48, marginBottom:16}}><FaWrench style={{marginRight:4}} /></div>
-                    <p style={{marginBottom:16}}>No services configured</p>
+                    <p style={{marginBottom:16}}>{say("No services configured")}</p>
                     <button 
                       onClick={() => setShowAddServiceModal(true)}
                       style={{padding:'12px 24px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                     >
-                      + Add First Service
-                    </button>
+                      {say("+ Add First Service")}{' '}</button>
                   </div>
                 ) : (
                   <div style={{display:'grid', gap:24}}>
                     {services.some((s) => isCustomService(s)) && (
                       <div>
-                        <h3 style={{fontSize:16, fontWeight:700, color:'#f59e0b', marginBottom:12}}>Custom Services ({services.filter(isCustomService).length})</h3>
+                        <h3 style={{fontSize:16, fontWeight:700, color:'#f59e0b', marginBottom:12}}>{say("Custom Services (")}{say(services.filter(isCustomService).length)})</h3>
                         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(250px, 1fr))', gap:12}}>
                           {services.filter(isCustomService).map((service) => (
                             <div
@@ -986,7 +978,7 @@ function ShopSettingsPageContent() {
                               <div style={{display:'flex', alignItems:'center', gap:8, flex:1}}>
                                 <span style={{color:'#f59e0b', fontSize:16}}><FaStar style={{marginRight:4}} /></span>
                                 <div>
-                                  <div style={{color:'#e5e7eb', fontSize:14, fontWeight:600}}>{service.serviceName}</div>
+                                  <div style={{color:'#e5e7eb', fontSize:14, fontWeight:600}}>{say(service.serviceName)}</div>
                                   {(service.price || service.duration) && (
                                     <div style={{color:'#9aa3b2', fontSize:11, marginTop:2}}>
                                       {service.price && `$${service.price}`}
@@ -994,7 +986,7 @@ function ShopSettingsPageContent() {
                                       {service.duration && `${(service.duration / 60).toFixed(1)}h`}
                                     </div>
                                   )}
-                                  <div style={{color:'#9aa3b2', fontSize:11, marginTop:4}}>Category: {service.category}</div>
+                                  <div style={{color:'#9aa3b2', fontSize:11, marginTop:4}}>{say("Category:")}{' '}{say(service.category)}</div>
                                 </div>
                               </div>
                               <button
@@ -1003,7 +995,7 @@ function ShopSettingsPageContent() {
                                   setRemoveServiceConfirmId(service.id);
                                 }}
                                 style={{background:'transparent', border:'none', color:'#e5332a', cursor:'pointer', fontSize:18, padding:4}}
-                                title="Remove service"
+                                title={say("Remove service")}
                               >
                                 
                               </button>
@@ -1018,7 +1010,7 @@ function ShopSettingsPageContent() {
                       return (
                         <div key={cat.id}>
                           <h3 style={{fontSize:16, fontWeight:600, color:cat.color, marginBottom:12}}>
-                            {cat.label} ({filtered.length})
+                            {say(cat.label)} ({say(filtered.length)})
                           </h3>
                           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(250px, 1fr))', gap:12}}>
                             {filtered.map((service) => (
@@ -1048,7 +1040,7 @@ function ShopSettingsPageContent() {
                                 <div style={{display:'flex', alignItems:'center', gap:8, flex:1}}>
                                   <span style={{color:cat.color, fontSize:16}}><FaCheck style={{marginRight:4}} /></span>
                                   <div>
-                                    <div style={{color:'#e5e7eb', fontSize:14, fontWeight:600}}>{service.serviceName}</div>
+                                    <div style={{color:'#e5e7eb', fontSize:14, fontWeight:600}}>{say(service.serviceName)}</div>
                                     {(service.price || service.duration) && (
                                       <div style={{color:'#9aa3b2', fontSize:11, marginTop:2}}>
                                         {service.price && `$${service.price}`}
@@ -1064,7 +1056,7 @@ function ShopSettingsPageContent() {
                                     setRemoveServiceConfirmId(service.id);
                                   }}
                                   style={{background:'transparent', border:'none', color:'#e5332a', cursor:'pointer', fontSize:18, padding:4}}
-                                  title="Remove service"
+                                  title={say("Remove service")}
                                 >
                                   
                                 </button>
@@ -1072,7 +1064,7 @@ function ShopSettingsPageContent() {
                             ))}
                             {filtered.length === 0 && (
                               <div style={{padding:16, border:`1px dashed ${cat.border}`, borderRadius:8, color:'#9aa3b2', fontSize:13}}>
-                                No services added yet for {cat.label}.
+                                {say("No services added yet for")}{' '}{say(cat.label)}.
                               </div>
                             )}
                           </div>
@@ -1086,14 +1078,14 @@ function ShopSettingsPageContent() {
 
             {activeTab === 'notifications' && (
               <div>
-                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>Notification Preferences</h2>
-                <p style={{color:'#9aa3b2', marginBottom:32}}>Choose which notifications you want to receive</p>
+                <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>{say("Notification Preferences")}</h2>
+                <p style={{color:'#9aa3b2', marginBottom:32}}>{say("Choose which notifications you want to receive")}</p>
 
                 <div style={{marginBottom:24, padding:16, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12}}>
                   <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap'}}>
                     <div>
-                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Enable notifications for all shop users</div>
-                      <div style={{color:'#9aa3b2', fontSize:13}}>Applies to techs and managers (bell icon + in-app alerts).</div>
+                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Enable notifications for all shop users")}</div>
+                      <div style={{color:'#9aa3b2', fontSize:13}}>{say("Applies to techs and managers (bell icon + in-app alerts).")}</div>
                     </div>
                     <button
                       onClick={() => {
@@ -1103,7 +1095,7 @@ function ShopSettingsPageContent() {
                       }}
                       style={{padding:'10px 16px', background:notificationsEnabled ? '#16a34a' : '#334155', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, fontWeight:600, cursor:'pointer'}}
                     >
-                      {notificationsEnabled ? 'Enabled' : 'Disabled'}
+                      {notificationsEnabled ? say("Enabled") : say("Disabled")}
                     </button>
                   </div>
                 </div>
@@ -1111,8 +1103,8 @@ function ShopSettingsPageContent() {
                 <div style={{marginBottom:24, padding:16, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12}}>
                   <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap'}}>
                     <div>
-                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Play audio chime</div>
-                      <div style={{color:'#9aa3b2', fontSize:13}}>Plays a chime when new notifications arrive.</div>
+                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Play audio chime")}</div>
+                      <div style={{color:'#9aa3b2', fontSize:13}}>{say("Plays a chime when new notifications arrive.")}</div>
                     </div>
                     <button
                       onClick={() => {
@@ -1122,7 +1114,7 @@ function ShopSettingsPageContent() {
                       }}
                       style={{padding:'10px 16px', background:notificationSoundEnabled ? '#16a34a' : '#334155', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, fontWeight:600, cursor:'pointer'}}
                     >
-                      {notificationSoundEnabled ? 'Sound On' : 'Sound Off'}
+                      {notificationSoundEnabled ? say("Sound On") : say("Sound Off")}
                     </button>
                   </div>
                 </div>
@@ -1130,45 +1122,43 @@ function ShopSettingsPageContent() {
                 <div style={{marginBottom:32, padding:16, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12}}>
                   <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap'}}>
                     <div>
-                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Enable push notifications</div>
-                      <div style={{color:'#9aa3b2', fontSize:13}}>Allow browser alerts for shop activity.</div>
+                      <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Enable push notifications")}</div>
+                      <div style={{color:'#9aa3b2', fontSize:13}}>{say("Allow browser alerts for shop activity.")}</div>
                     </div>
                     <button onClick={handleEnablePush} style={{padding:'10px 16px', background:'#334155', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, fontWeight:600, cursor:'pointer'}}>
-                      Enable
-                    </button>
+                      {say("Enable")}{' '}</button>
                   </div>
                   {pushStatus ? (
-                    <div style={{marginTop:8, color:'#9aa3b2', fontSize:12}}>Status: {pushStatus}</div>
+                    <div style={{marginTop:8, color:'#9aa3b2', fontSize:12}}>{say("Status:")}{' '}{say(pushStatus)}</div>
                   ) : null}
                   {notificationSaveMessage ? (
-                    <div style={{marginTop:8, color:'#9aa3b2', fontSize:12}}>{notificationSaveMessage}</div>
+                    <div style={{marginTop:8, color:'#9aa3b2', fontSize:12}}>{say(notificationSaveMessage)}</div>
                   ) : null}
                 </div>
 
                 {/* Parts Notifications */}
                 <div style={{marginBottom:32}}>
                   <h3 style={{fontSize:16, fontWeight:600, color:'#f59e0b', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
-                    <span><FaBox style={{marginRight:4}} /></span> Parts & Inventory
-                  </h3>
+                    <span><FaBox style={{marginRight:4}} /></span> {say("Parts & Inventory")}{' '}</h3>
                   <div style={{display:'grid', gap:12}}>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Low Inventory Alert</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Get notified when parts inventory is running low</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Low Inventory Alert")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Get notified when parts inventory is running low")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.lowInventory} onChange={() => handleNotificationToggle('lowInventory')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Parts Delivered</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Get notified when ordered parts arrive</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Parts Delivered")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Get notified when ordered parts arrive")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.partsDelivered} onChange={() => handleNotificationToggle('partsDelivered')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Parts Ordered</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Get notified when team members order parts</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Parts Ordered")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Get notified when team members order parts")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.partsOrdered} onChange={() => handleNotificationToggle('partsOrdered')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
@@ -1178,13 +1168,12 @@ function ShopSettingsPageContent() {
                 {/* Customer Work Orders */}
                 <div style={{marginBottom:32}}>
                   <h3 style={{fontSize:16, fontWeight:600, color:'#e5332a', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
-                    <span><FaExclamationCircle style={{marginRight:4}} /></span> Customer Work Orders
-                  </h3>
+                    <span><FaExclamationCircle style={{marginRight:4}} /></span> {say("Customer Work Orders")}{' '}</h3>
                   <div style={{display:'grid', gap:12}}>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>New Road Call Order</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Get notified when customers create new roadside assistance requests</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("New Road Call Order")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Get notified when customers create new roadside assistance requests")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.newRoadCallOrder} onChange={() => handleNotificationToggle('newRoadCallOrder')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
@@ -1194,13 +1183,12 @@ function ShopSettingsPageContent() {
                 {/* Payment Notifications */}
                 <div style={{marginBottom:32}}>
                   <h3 style={{fontSize:16, fontWeight:600, color:'#22c55e', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
-                    <span><FaCreditCard style={{marginRight:4}} /></span> Payments
-                  </h3>
+                    <span><FaCreditCard style={{marginRight:4}} /></span> {say("Payments")}{' '}</h3>
                   <div style={{display:'grid', gap:12}}>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Payment Received</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Get notified when customers make payments</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Payment Received")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Get notified when customers make payments")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.paymentReceived} onChange={() => handleNotificationToggle('paymentReceived')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
@@ -1210,13 +1198,12 @@ function ShopSettingsPageContent() {
                 {/* Message Notifications */}
                 <div style={{marginBottom:32}}>
                   <h3 style={{fontSize:16, fontWeight:600, color:'#ff6b64', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
-                    <span><FaComments style={{marginRight:4}} /></span> Messages
-                  </h3>
+                    <span><FaComments style={{marginRight:4}} /></span> {say("Messages")}{' '}</h3>
                   <div style={{display:'grid', gap:12}}>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>New Message Alerts</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Notify techs and managers when new messages arrive</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("New Message Alerts")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Notify techs and managers when new messages arrive")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.messages} onChange={() => handleNotificationToggle('messages')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
@@ -1226,55 +1213,54 @@ function ShopSettingsPageContent() {
                 {/* Work Order Status Updates */}
                 <div style={{marginBottom:32}}>
                   <h3 style={{fontSize:16, fontWeight:600, color:'#e5332a', marginBottom:16, display:'flex', alignItems:'center', gap:8}}>
-                    <span><FaClipboardList style={{marginRight:4}} /></span> Work Order Status Updates
-                  </h3>
+                    <span><FaClipboardList style={{marginRight:4}} /></span> {say("Work Order Status Updates")}{' '}</h3>
                   <div style={{display:'grid', gap:12}}>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Work Order Created</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>New work order has been created</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Work Order Created")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("New work order has been created")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.workOrderCreated} onChange={() => handleNotificationToggle('workOrderCreated')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Work Started</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Technician has started working on a job</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Work Started")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Technician has started working on a job")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.workOrderStarted} onChange={() => handleNotificationToggle('workOrderStarted')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Work Completed</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Work order has been completed</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Work Completed")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Work order has been completed")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.workOrderCompleted} onChange={() => handleNotificationToggle('workOrderCompleted')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Tech Arrived</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Technician has arrived at the location</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Tech Arrived")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Technician has arrived at the location")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.techArrived} onChange={() => handleNotificationToggle('techArrived')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Tech Leaving</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Technician is leaving the location</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Tech Leaving")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Technician is leaving the location")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.techLeaving} onChange={() => handleNotificationToggle('techLeaving')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Estimate Approved</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Customer has approved an estimate</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Estimate Approved")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Customer has approved an estimate")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.estimateApproved} onChange={() => handleNotificationToggle('estimateApproved')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
                     <label style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, cursor:'pointer'}}>
                       <div>
-                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>Estimate Rejected</div>
-                        <div style={{color:'#9aa3b2', fontSize:13}}>Customer has rejected an estimate</div>
+                        <div style={{color:'#e5e7eb', fontWeight:600, marginBottom:4}}>{say("Estimate Rejected")}</div>
+                        <div style={{color:'#9aa3b2', fontSize:13}}>{say("Customer has rejected an estimate")}</div>
                       </div>
                       <input type="checkbox" checked={notifications.estimateRejected} onChange={() => handleNotificationToggle('estimateRejected')} style={{width:20, height:20, cursor:'pointer'}} />
                     </label>
@@ -1299,8 +1285,7 @@ function ShopSettingsPageContent() {
             {activeTab !== 'security' && activeTab !== 'payments' && (
             <div style={{marginTop:32, paddingTop:24, borderTop:'1px solid rgba(255,255,255,0.1)'}}>
               <button onClick={handleSave} style={{padding:'12px 32px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
-                Save Changes
-              </button>
+                {say("Save Changes")}{' '}</button>
             </div>
             )}
           </div>
@@ -1313,15 +1298,15 @@ function ShopSettingsPageContent() {
           <div style={{ background: '#030303', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 16, maxWidth: 980, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.14)' }}>
               <div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#e5e7eb' }}>FixTray Shop Participation Agreement</div>
-                <div style={{ fontSize: 12, color: '#9aa3b2' }}>Read the full agreement text and sign electronically.</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#e5e7eb' }}>{say("FixTray Shop Participation Agreement")}</div>
+                <div style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Read the full agreement text and sign electronically.")}</div>
               </div>
               <button onClick={() => setShowAgreementModal(false)} style={{ background: 'transparent', border: 'none', color: '#9aa3b2', fontSize: 26, cursor: 'pointer' }}><FaTimes /></button>
             </div>
 
             <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
               <pre style={{ whiteSpace: 'pre-wrap', margin: 0, color: '#cbd5e1', fontSize: 12, lineHeight: 1.6, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
-                {agreementDisplayText}
+                {say(agreementDisplayText)}
               </pre>
             </div>
 
@@ -1329,22 +1314,22 @@ function ShopSettingsPageContent() {
               <div style={{ display: 'grid', gap: 12 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Shop Legal Name</label>
+                    <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>{say("Shop Legal Name")}</label>
                     <input type="text" value={settings.shopName} readOnly style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, color: '#e5e7eb', fontSize: 13 }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Admin Email</label>
+                    <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>{say("Admin Email")}</label>
                     <input type="text" value={settings.email} readOnly style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, color: '#e5e7eb', fontSize: 13 }} />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Digital Signature (full legal name)</label>
+                  <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>{say("Digital Signature (full legal name)")}</label>
                   <input
                     type="text"
                     value={agreementSignature}
                     onChange={(e) => setAgreementSignature(e.target.value)}
-                    placeholder="Type full legal name"
+                    placeholder={say("Type full legal name")}
                     style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 8, color: '#e5e7eb', fontSize: 14 }}
                   />
                 </div>
@@ -1356,15 +1341,15 @@ function ShopSettingsPageContent() {
                     onChange={(e) => setAgreementAccepted(e.target.checked)}
                     style={{ width: 18, height: 18, marginTop: 2, cursor: 'pointer' }}
                   />
-                  <span>I am authorized to bind this Shop and I agree to the FixTray Shop Participation Agreement.</span>
+                  <span>{say("I am authorized to bind this Shop and I agree to the FixTray Shop Participation Agreement.")}</span>
                 </label>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  {agreementSignedAt ? <div style={{ color: '#9aa3b2', fontSize: 12 }}>Current signed timestamp: {new Date(agreementSignedAt).toLocaleString()}</div> : <div style={{ color: '#9aa3b2', fontSize: 12 }}>Signing will timestamp this agreement in UTC.</div>}
-                  <button onClick={handleSignAgreement} style={{ padding: '10px 18px', border: 'none', background: '#22c55e', color: '#fff', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Sign Agreement</button>
+                  {agreementSignedAt ? <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Current signed timestamp:")}{' '}{new Date(agreementSignedAt).toLocaleString()}</div> : <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Signing will timestamp this agreement in UTC.")}</div>}
+                  <button onClick={handleSignAgreement} style={{ padding: '10px 18px', border: 'none', background: '#22c55e', color: '#fff', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Sign Agreement")}</button>
                 </div>
 
-                {agreementError ? <div style={{ color: '#fca5a5', fontSize: 12 }}>{agreementError}</div> : null}
+                {agreementError ? <div style={{ color: '#fca5a5', fontSize: 12 }}>{say(agreementError)}</div> : null}
               </div>
             </div>
           </div>
@@ -1375,7 +1360,7 @@ function ShopSettingsPageContent() {
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
           <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
-              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Add New Service</h2>
+              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>{say("Add New Service")}</h2>
               <button onClick={() => setShowAddServiceModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
@@ -1394,8 +1379,7 @@ function ShopSettingsPageContent() {
                   cursor:'pointer'
                 }}
               >
-                Browse Catalog
-              </button>
+                {say("Browse Catalog")}{' '}</button>
               <button
                 type="button"
                 onClick={() => setNewServiceMode('custom')}
@@ -1410,12 +1394,11 @@ function ShopSettingsPageContent() {
                   cursor:'pointer'
                 }}
               >
-                Custom Service
-              </button>
+                {say("Custom Service")}{' '}</button>
             </div>
 
             <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Service Category *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Service Category *")}</label>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(150px, 1fr))', gap:12}}>
                 {CATEGORY_CONFIG.map((cat) => (
                   <button
@@ -1434,7 +1417,7 @@ function ShopSettingsPageContent() {
                       textAlign:'left'
                     }}
                   >
-                    {cat.label}
+                    {say(cat.label)}
                   </button>
                 ))}
               </div>
@@ -1442,35 +1425,35 @@ function ShopSettingsPageContent() {
 
             {newServiceMode === 'catalog' ? (
               <div style={{marginBottom:16}}>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Service Name *</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Service Name *")}</label>
                 <select 
                   value={newService.serviceName} 
                   onChange={(e) => setNewService({...newService, serviceName: e.target.value, customName: ''})} 
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
                 >
-                  <option value="" disabled>Select a service...</option>
+                  <option value="" disabled>{say("Select a service...")}</option>
                   {(SERVICE_OPTIONS[newService.category] || []).map(service => (
                     <option key={service} value={service} style={{background:'rgba(0,0,0,0.8)', color:'#e5e7eb'}}>
-                      {service}
+                      {say(service)}
                     </option>
                   ))}
                 </select>
               </div>
             ) : (
               <div style={{marginBottom:16}}>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Custom Service Name *</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Custom Service Name *")}</label>
                 <input
                   type="text"
                   value={newService.customName}
                   onChange={(e) => setNewService({...newService, customName: e.target.value, serviceName: ''})}
-                  placeholder="e.g., Mobile Hydraulic Rescue"
+                  placeholder={say("e.g., Mobile Hydraulic Rescue")}
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
                 />
               </div>
             )}
 
             <div style={{marginBottom:24}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Price (Optional)</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Price (Optional)")}</label>
               <input 
                 type="number" 
                 value={newService.price} 
@@ -1482,21 +1465,19 @@ function ShopSettingsPageContent() {
             </div>
 
             {serviceMsg && (
-              <div style={{ marginBottom: 16, background: serviceMsg.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', border: `1px solid ${serviceMsg.type === 'success' ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`, borderRadius: 8, padding: '8px 14px', color: serviceMsg.type === 'success' ? '#86efac' : '#fca5a5', fontSize: 13, fontWeight: 600 }}>{serviceMsg.text}</div>
+              <div style={{ marginBottom: 16, background: serviceMsg.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', border: `1px solid ${serviceMsg.type === 'success' ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`, borderRadius: 8, padding: '8px 14px', color: serviceMsg.type === 'success' ? '#86efac' : '#fca5a5', fontSize: 13, fontWeight: 600 }}>{say(serviceMsg.text)}</div>
             )}
             <div style={{display:'flex', gap:12}}>
               <button 
                 onClick={() => setShowAddServiceModal(false)} 
                 style={{flex:1, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
               <button 
                 onClick={handleAddService} 
                 style={{flex:1, padding:'12px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
-                Add Service
-              </button>
+                {say("Add Service")}{' '}</button>
             </div>
           </div>
         </div>
@@ -1508,7 +1489,7 @@ function ShopSettingsPageContent() {
           <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:600, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <div>
-                <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{selectedService.serviceName}</h2>
+                <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{say(selectedService.serviceName)}</h2>
                 <span style={{
                   padding:'4px 12px', 
                   background: selectedService.category === 'diesel' ? 'rgba(34,197,94,0.2)' : 'rgba(229,51,42,0.2)', 
@@ -1517,29 +1498,29 @@ function ShopSettingsPageContent() {
                   fontSize:12, 
                   fontWeight:600
                 }}>
-                  {selectedService.category === 'diesel' ? <><FaTruck style={{marginRight:4}} /> Diesel / Heavy-Duty</> : <><FaCar style={{marginRight:4}} /> Gas / Automotive</>}
+                  {selectedService.category === 'diesel' ? <><FaTruck style={{marginRight:4}} /> {say("Diesel / Heavy-Duty")}</> : <><FaCar style={{marginRight:4}} /> {say("Gas / Automotive")}</>}
                 </span>
               </div>
               <button onClick={() => setShowEditServiceModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
-            <p style={{color:'#9aa3b2', marginBottom:24, fontSize:14}}>Set labor time and pricing for this service</p>
+            <p style={{color:'#9aa3b2', marginBottom:24, fontSize:14}}>{say("Set labor time and pricing for this service")}</p>
 
             <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Labor Duration (hours)</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Labor Duration (hours)")}</label>
               <input 
                 type="number" 
                 value={editService.duration} 
                 onChange={(e) => setEditService({...editService, duration: e.target.value})} 
-                placeholder="e.g., 2.5"
+                placeholder={say("e.g., 2.5")}
                 step="0.25"
                 style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} 
               />
-              <div style={{color:'#6b7280', fontSize:12, marginTop:4}}>Estimated time to complete this service</div>
+              <div style={{color:'#6b7280', fontSize:12, marginTop:4}}>{say("Estimated time to complete this service")}</div>
             </div>
 
             <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Service Price ($)</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Service Price ($)")}</label>
               <input 
                 type="number" 
                 value={editService.price} 
@@ -1548,15 +1529,15 @@ function ShopSettingsPageContent() {
                 step="0.01"
                 style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} 
               />
-              <div style={{color:'#6b7280', fontSize:12, marginTop:4}}>Standard pricing for this service (excluding parts)</div>
+              <div style={{color:'#6b7280', fontSize:12, marginTop:4}}>{say("Standard pricing for this service (excluding parts)")}</div>
             </div>
 
             <div style={{marginBottom:24}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Description / Notes</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Description / Notes")}</label>
               <textarea 
                 value={editService.description} 
                 onChange={(e) => setEditService({...editService, description: e.target.value})} 
-                placeholder="Add any notes about this service..."
+                placeholder={say("Add any notes about this service...")}
                 rows={3}
                 style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14, resize:'vertical'}} 
               />
@@ -1567,14 +1548,12 @@ function ShopSettingsPageContent() {
                 onClick={() => setShowEditServiceModal(false)} 
                 style={{flex:1, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
               <button 
                 onClick={handleUpdateService} 
                 style={{flex:1, padding:'12px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
-                Save Changes
-              </button>
+                {say("Save Changes")}{' '}</button>
             </div>
           </div>
         </div>
@@ -1583,7 +1562,7 @@ function ShopSettingsPageContent() {
       {/* Settings toast */}
       {settingsMsg && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, background: settingsMsg.type === 'success' ? '#dcfce7' : '#fde8e8', color: settingsMsg.type === 'success' ? '#166534' : '#991b1b', border: `1px solid ${settingsMsg.type === 'success' ? '#86efac' : '#fca5a5'}`, borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxWidth: 420 }}>
-          {settingsMsg.text}
+          {say(settingsMsg.text)}
           <button onClick={() => setSettingsMsg(null)} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: settingsMsg.type === 'success' ? '#166534' : '#991b1b' }}><FaTimes style={{marginRight:4}} /></button>
         </div>
       )}
@@ -1593,11 +1572,11 @@ function ShopSettingsPageContent() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
           <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}><FaTrash style={{marginRight:4}} /></div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>Remove Service?</h3>
-            <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>This service will be removed from your shop catalog.</p>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>{say("Remove Service?")}</h3>
+            <p style={{ color: '#94a3b8', marginBottom: 24, fontSize: 14 }}>{say("This service will be removed from your shop catalog.")}</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setRemoveServiceConfirmId(null)} style={{ flex: 1, padding: '10px', background: '#334155', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', color: '#e2e8f0' }}>Cancel</button>
-              <button onClick={() => handleRemoveService(removeServiceConfirmId)} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Remove</button>
+              <button onClick={() => setRemoveServiceConfirmId(null)} style={{ flex: 1, padding: '10px', background: '#334155', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', color: '#e2e8f0' }}>{say("Cancel")}</button>
+              <button onClick={() => handleRemoveService(removeServiceConfirmId)} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Remove")}</button>
             </div>
           </div>
         </div>
@@ -1607,8 +1586,9 @@ function ShopSettingsPageContent() {
 }
 
 function ShopSettingsPageWrapper() {
+  const say = usePhrase();
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{say("Loading...")}</div>}>
       <ShopSettingsPageContent />
     </Suspense>
   );

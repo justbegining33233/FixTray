@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useCallback } from 'react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
@@ -16,6 +17,7 @@ interface ReportData {
 }
 
 export default function ManagerReportsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [data, setData] = useState<ReportData | null>(null);
@@ -55,7 +57,7 @@ export default function ManagerReportsPage() {
     return () => clearInterval(interval);
   }, [user, fetchReports]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const cards = [
@@ -73,35 +75,34 @@ export default function ManagerReportsPage() {
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 24px', flexWrap: 'wrap', gap: 12 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>Performance Reports</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>{say("Performance Reports")}</h1>
             <div style={{ display: 'flex', gap: 8 }}>
               <select value={dateRange} onChange={e => setDateRange(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.1)', fontSize: 14 }}>
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
+                <option value="7">{say("Last 7 days")}</option>
+                <option value="30">{say("Last 30 days")}</option>
+                <option value="90">{say("Last 90 days")}</option>
               </select>
               <a
                 href={`/api/analytics/export?format=csv&startDate=${new Date(Date.now() - parseInt(dateRange) * 86400000).toISOString()}&endDate=${new Date().toISOString()}`}
                 download
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#e5332a', color: '#fff', fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
               >
-                <FaDownload /> Export CSV
-              </a>
+                <FaDownload /> {say("Export CSV")}{' '}</a>
             </div>
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : (
             <>
               {/* Summary Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
                 {cards.map((c, i) => (
                   <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: `${c.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color, fontSize: 18 }}>{c.icon}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: `${c.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color, fontSize: 18 }}>{say(c.icon)}</div>
                     <div>
-                      <div style={{ color: '#6b7280', fontSize: 13 }}>{c.label}</div>
-                      <div style={{ color: '#e5e7eb', fontSize: 22, fontWeight: 700 }}>{c.value}</div>
+                      <div style={{ color: '#6b7280', fontSize: 13 }}>{say(c.label)}</div>
+                      <div style={{ color: '#e5e7eb', fontSize: 22, fontWeight: 700 }}>{say(c.value)}</div>
                     </div>
                   </div>
                 ))}
@@ -111,22 +112,22 @@ export default function ManagerReportsPage() {
               {(data?.techPerformance?.length ?? 0) > 0 && (
                 <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, overflow: 'hidden' }}>
                   <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <h2 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600 }}>Technician Performance</h2>
+                    <h2 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600 }}>{say("Technician Performance")}</h2>
                   </div>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                        <th style={{ textAlign: 'left', padding: '12px 20px', color: '#6b7280', fontSize: 13, fontWeight: 500 }}>Technician</th>
-                        <th style={{ textAlign: 'left', padding: '12px 20px', color: '#6b7280', fontSize: 13, fontWeight: 500 }}>Completed</th>
-                        <th style={{ textAlign: 'left', padding: '12px 20px', color: '#6b7280', fontSize: 13, fontWeight: 500 }}>Avg Time</th>
+                        <th style={{ textAlign: 'left', padding: '12px 20px', color: '#6b7280', fontSize: 13, fontWeight: 500 }}>{say("Technician")}</th>
+                        <th style={{ textAlign: 'left', padding: '12px 20px', color: '#6b7280', fontSize: 13, fontWeight: 500 }}>{say("Completed")}</th>
+                        <th style={{ textAlign: 'left', padding: '12px 20px', color: '#6b7280', fontSize: 13, fontWeight: 500 }}>{say("Avg Time")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data!.techPerformance.map((t, i) => (
                         <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                          <td style={{ padding: '12px 20px', color: '#e5e7eb', fontSize: 14 }}>{t.name}</td>
-                          <td style={{ padding: '12px 20px', color: '#9aa3b2', fontSize: 14 }}>{t.completed}</td>
-                          <td style={{ padding: '12px 20px', color: '#9aa3b2', fontSize: 14 }}>{t.avgTime}</td>
+                          <td style={{ padding: '12px 20px', color: '#e5e7eb', fontSize: 14 }}>{say(t.name)}</td>
+                          <td style={{ padding: '12px 20px', color: '#9aa3b2', fontSize: 14 }}>{say(t.completed)}</td>
+                          <td style={{ padding: '12px 20px', color: '#9aa3b2', fontSize: 14 }}>{say(t.avgTime)}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
@@ -19,6 +20,7 @@ export default function MobileLayout({
   sidebarContent,
   topNavContent
 }: MobileLayoutProps) {
+  const say = usePhrase();
   const isMobile = useIsMobile();
   const isNative = useIsNative();
   const [isCompactDesktop, setIsCompactDesktop] = useState(false);
@@ -46,7 +48,7 @@ export default function MobileLayout({
       flexDirection: 'column'
     }}>
       {/* Top Navigation */}
-      {topNavContent}
+      {say(topNavContent)}
 
       {/* Main Layout with Sidebar */}
       <div style={{ display: 'flex', flex: 1, position: 'relative' }}>

@@ -1,6 +1,6 @@
-// KpiCard.tsx - reusable KPI card with sparkline + delta
 'use client';
-
+import { usePhrase } from '@/lib/usePhrase';
+// KpiCard.tsx - reusable KPI card with sparkline + delta
 import React from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 import Sparkline from './Sparkline';
@@ -24,6 +24,7 @@ interface KpiCardProps {
  * KPI card showing value, change, and a sparkline trend with enhanced glow effects.
  */
 export default function KpiCard({ title, value, change, trend, accent = 'emerald', caption }: KpiCardProps) {
+  const say = usePhrase();
   const palette: Record<string, { ring: string; text: string; chip: string; chipText: string; shadow: string; color: string; glow: string }> = {
     emerald: { ring: 'border-[#e5332a]/30', text: 'text-[#ff6b64]', chip: 'bg-[#e5332a]/15', chipText: 'text-[#ff6b64]', shadow: 'shadow-[#e5332a]/20', color: '#e5332a', glow: 'shadow-[#e5332a]/50' },
     sky: { ring: 'border-[#1f2937]', text: 'text-zinc-100', chip: 'bg-white/5', chipText: 'text-zinc-200', shadow: 'shadow-black/20', color: '#e5332a', glow: 'shadow-[#e5332a]/50' },
@@ -40,15 +41,15 @@ export default function KpiCard({ title, value, change, trend, accent = 'emerald
 
       <div className="relative z-10 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.08em] text-zinc-400">{title}</p>
-          <p className="text-2xl font-semibold text-white leading-tight mt-1 group-hover:text-[#ff6b64] transition-colors">{value}</p>
+          <p className="text-[11px] uppercase tracking-[0.08em] text-zinc-400">{say(title)}</p>
+          <p className="text-2xl font-semibold text-white leading-tight mt-1 group-hover:text-[#ff6b64] transition-colors">{say(value)}</p>
           {change && (
             <span className={`inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-full text-xs ${tone.chip} ${tone.chipText} group-hover:scale-110 transition-transform`}>
               <span aria-hidden><FaExternalLinkAlt style={{marginRight:4}} /></span>
-              <span>{change}</span>
+              <span>{say(change)}</span>
             </span>
           )}
-          {caption && <p className="text-[11px] text-zinc-500 mt-2">{caption}</p>}
+          {caption && <p className="text-[11px] text-zinc-500 mt-2">{say(caption)}</p>}
         </div>
         <div className="w-28 group-hover:scale-110 transition-transform">
           <Sparkline data={trend} color={tone.color} />

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -15,6 +16,7 @@ import { useIsNative } from '@/context/NativeContext';
 import { FaArrowRight, FaBook, FaBox, FaCamera, FaCar, FaChartBar, FaCheckCircle, FaCircle, FaClipboardList, FaCog, FaComments, FaExclamationCircle, FaMapMarkerAlt, FaRegCircle, FaSearch, FaStopwatch, FaSyncAlt, FaTools, FaUser, FaWrench } from 'react-icons/fa';
 
 export default function TechHome() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
   const isMobile = useIsMobile();
   const isNative = useIsNative();
@@ -233,8 +235,7 @@ export default function TechHome() {
         color: '#e5e7eb',
         fontSize: '18px'
       }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -285,20 +286,20 @@ export default function TechHome() {
         {/* Shop Stats */}
         <div style={{display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? 10 : 16, marginBottom:24}}>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>My Open Jobs</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{todayJobs.length}</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("My Open Jobs")}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{say(todayJobs.length)}</div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Completed Today</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Completed Today")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStatsReady ? shopStats.completedToday : '...'} </div>
           </div>
           <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Parts Ordered</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Parts Ordered")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{shopStatsReady ? shopStats.partsOrdered : '...'} </div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Today's Revenue</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStatsReady ? shopStats.revenue : 'Syncing...'} </div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Today's Revenue")}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStatsReady ? shopStats.revenue : say("Syncing...")} </div>
           </div>
         </div>
 
@@ -307,7 +308,7 @@ export default function TechHome() {
           <div>
             {/* Tab Navigation for Tools */}
             <div style={{marginTop:0, marginBottom:24}}>
-              <div role="tablist" aria-label="Technician tools" style={{display:'flex', gap:8, borderBottom:'2px solid rgba(255,255,255,0.1)', paddingBottom:2, overflowX:'auto', marginBottom:24}}>
+              <div role="tablist" aria-label={say("Technician tools")} style={{display:'flex', gap:8, borderBottom:'2px solid rgba(255,255,255,0.1)', paddingBottom:2, overflowX:'auto', marginBottom:24}}>
                 <button
                   type="button"
                   role="tab"
@@ -327,8 +328,7 @@ export default function TechHome() {
                     whiteSpace:'nowrap'
                   }}
                 >
-                  <FaCar style={{marginRight:4}} /> Job Creation
-                </button>
+                  <FaCar style={{marginRight:4}} /> {say("Job Creation")}{' '}</button>
                 <button
                   type="button"
                   role="tab"
@@ -348,8 +348,7 @@ export default function TechHome() {
                     whiteSpace:'nowrap'
                   }}
                 >
-                  <FaClipboardList style={{marginRight:4}} /> Job Management
-                </button>
+                  <FaClipboardList style={{marginRight:4}} /> {say("Job Management")}{' '}</button>
                 <button
                   type="button"
                   role="tab"
@@ -372,8 +371,7 @@ export default function TechHome() {
                     gap:8
                   }}
                 >
-                   Field Tools
-                  {messageUnreadCount > 0 && (
+                   {say("Field Tools")}{' '}{messageUnreadCount > 0 && (
                     <span style={{
                       background:'#ef4444',
                       color:'white',
@@ -383,7 +381,7 @@ export default function TechHome() {
                       fontWeight:700,
                       lineHeight:1
                     }}>
-                      {messageUnreadCount}
+                      {say(messageUnreadCount)}
                     </span>
                   )}
                 </button>
@@ -406,8 +404,7 @@ export default function TechHome() {
                     whiteSpace:'nowrap'
                   }}
                 >
-                  <FaBox style={{marginRight:4}} /> Resources
-                </button>
+                  <FaBox style={{marginRight:4}} /> {say("Resources")}{' '}</button>
                 <button
                   type="button"
                   role="tab"
@@ -427,8 +424,7 @@ export default function TechHome() {
                     whiteSpace:'nowrap'
                   }}
                 >
-                  <FaWrench style={{marginRight:4}} /> Technical Tools
-                </button>
+                  <FaWrench style={{marginRight:4}} /> {say("Technical Tools")}{' '}</button>
               </div>
 
               {/* Tool Cards - Job Creation */}
@@ -455,9 +451,9 @@ export default function TechHome() {
                         e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}>
-                        <div style={{fontSize:48, marginBottom:12}}>{tool.icon}</div>
-                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{tool.title}</div>
-                        <div style={{fontSize:13, color:'#9aa3b2'}}>{tool.description}</div>
+                        <div style={{fontSize:48, marginBottom:12}}>{say(tool.icon)}</div>
+                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(tool.title)}</div>
+                        <div style={{fontSize:13, color:'#9aa3b2'}}>{say(tool.description)}</div>
                       </div>
                     </Link>
                   ))}
@@ -488,9 +484,9 @@ export default function TechHome() {
                         e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}>
-                        <div style={{fontSize:48, marginBottom:12}}>{tool.icon}</div>
-                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{tool.title}</div>
-                        <div style={{fontSize:13, color:'#9aa3b2'}}>{tool.description}</div>
+                        <div style={{fontSize:48, marginBottom:12}}>{say(tool.icon)}</div>
+                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(tool.title)}</div>
+                        <div style={{fontSize:13, color:'#9aa3b2'}}>{say(tool.description)}</div>
                       </div>
                     </Link>
                   ))}
@@ -522,15 +518,15 @@ export default function TechHome() {
                         e.currentTarget.style.boxShadow = 'none';
                       }}>
                         <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12}}>
-                          <div style={{fontSize:48}}>{tool.icon}</div>
+                          <div style={{fontSize:48}}>{say(tool.icon)}</div>
                           {'badge' in tool && (tool as any).badge > 0 ? (
                             <div style={{background:'#ef4444', color:'white', borderRadius:999, padding:'4px 10px', fontSize:12, fontWeight:700}}>
-                              {(tool as any).badge}
+                              {say((tool as any).badge)}
                             </div>
                           ) : null}
                         </div>
-                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{tool.title}</div>
-                        <div style={{fontSize:13, color:'#9aa3b2'}}>{tool.description}</div>
+                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(tool.title)}</div>
+                        <div style={{fontSize:13, color:'#9aa3b2'}}>{say(tool.description)}</div>
                       </div>
                     </Link>
                   ))}
@@ -561,9 +557,9 @@ export default function TechHome() {
                         e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}>
-                        <div style={{fontSize:48, marginBottom:12}}>{tool.icon}</div>
-                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{tool.title}</div>
-                        <div style={{fontSize:13, color:'#9aa3b2'}}>{tool.description}</div>
+                        <div style={{fontSize:48, marginBottom:12}}>{say(tool.icon)}</div>
+                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(tool.title)}</div>
+                        <div style={{fontSize:13, color:'#9aa3b2'}}>{say(tool.description)}</div>
                       </div>
                     </Link>
                   ))}
@@ -594,9 +590,9 @@ export default function TechHome() {
                         e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}>
-                        <div style={{fontSize:48, marginBottom:12}}>{tool.icon}</div>
-                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{tool.title}</div>
-                        <div style={{fontSize:13, color:'#9aa3b2'}}>{tool.description}</div>
+                        <div style={{fontSize:48, marginBottom:12}}>{say(tool.icon)}</div>
+                        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(tool.title)}</div>
+                        <div style={{fontSize:13, color:'#9aa3b2'}}>{say(tool.description)}</div>
                       </div>
                     </Link>
                   ))}
@@ -609,8 +605,8 @@ export default function TechHome() {
               {todayJobs.length === 0 ? (
                 <div style={{textAlign:'center', padding:48, color:'#9aa3b2'}}>
                   <div style={{fontSize:48, marginBottom:16}}><FaCheckCircle style={{marginRight:4}} /></div>
-                  <div style={{fontSize:18, fontWeight:600, marginBottom:8}}>All caught up!</div>
-                  <div style={{fontSize:14}}>No work orders assigned yet</div>
+                  <div style={{fontSize:18, fontWeight:600, marginBottom:8}}>{say("All caught up!")}</div>
+                  <div style={{fontSize:14}}>{say("No work orders assigned yet")}</div>
                 </div>
               ) : (
                 <div style={{display:'flex', flexDirection:'column', gap:12}}>
@@ -619,7 +615,7 @@ export default function TechHome() {
                       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12}}>
                         <div style={{flex:1}}>
                           <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:4}}>
-                            <span style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{job.vehicleType || 'Vehicle Service'}</span>
+                            <span style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{job.vehicleType || say("Vehicle Service")}</span>
                             <span style={{
                               padding:'2px 8px',
                               borderRadius:8,
@@ -635,7 +631,7 @@ export default function TechHome() {
                             {typeof job.issueDescription?.symptoms === 'string' ? job.issueDescription.symptoms.substring(0, 80) : String(job.issueDescription?.symptoms || '').substring(0, 80)}...
                           </div>
                           <div style={{fontSize:12, color:'#6b7280'}}>
-                            WO-{job.id.substring(0, 8)} - {new Date(job.createdAt).toLocaleDateString()}
+                            {say("WO-")}{job.id.substring(0, 8)} - {new Date(job.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                         <Link
@@ -650,8 +646,7 @@ export default function TechHome() {
                             fontWeight:600,
                           }}
                         >
-                          View
-                        </Link>
+                          {say("View")}{' '}</Link>
                       </div>
                     </div>
                   ))}
@@ -661,7 +656,7 @@ export default function TechHome() {
 
             {/* Live Shop Location Map */}
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, marginTop:32, marginBottom:32, overflow:'hidden', flex:1, display:'flex', flexDirection:'column'}}>
-              <h3 style={{color:'#e5e7eb', margin:'16px 0 0 16px', fontSize:16, fontWeight:700}}><FaMapMarkerAlt style={{marginRight:4}} /> Shop Location</h3>
+              <h3 style={{color:'#e5e7eb', margin:'16px 0 0 16px', fontSize:16, fontWeight:700}}><FaMapMarkerAlt style={{marginRight:4}} /> {say("Shop Location")}</h3>
               <div style={{flex:1, display:'flex', flexDirection:'column'}}>
                 {shopCoords ? (
                   <div style={{display:'flex', flexDirection: isMobile ? 'column' : 'row', flex:1}}>
@@ -678,13 +673,13 @@ export default function TechHome() {
                     <div style={{flex: isMobile ? 'none' : 3, borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none', display:'flex', flexDirection:'column', padding:'12px', gap:12, overflowY:'auto'}}>
                       {/* Section 1: Road Call */}
                       <div style={{borderRadius:8, padding:12, background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.03)'}}>
-                        <div style={{fontSize:15, fontWeight:800, color:'#e5e7eb'}}><FaExclamationCircle style={{marginRight:4}} /> Road Call</div>
+                        <div style={{fontSize:15, fontWeight:800, color:'#e5e7eb'}}><FaExclamationCircle style={{marginRight:4}} /> {say("Road Call")}</div>
                         <div style={{height:2, background:'rgba(255,255,255,0.06)', margin:'8px 0'}} />
 
                         {/* compact WO list */}
                         <div style={{minHeight:48, marginBottom:8}}>
                           {roadCalls.length === 0 ? (
-                            <div style={{fontSize:12, color:'#9aa3b2'}}>No active road calls</div>
+                            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("No active road calls")}</div>
                           ) : (
                             <div style={{display:'flex', flexDirection:'column', gap:6}}>
                               {roadCalls.map((wo: any) => (
@@ -719,21 +714,21 @@ export default function TechHome() {
                               btn.dataset.showing = '1';
                               btn.textContent = 'Hide';
                             } catch (err) { console.error(err); setHomeMsg({type:'error',text:'Error loading road calls'}); }
-                          }} style={{padding:8, borderRadius:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', color:'#e5e7eb', cursor:'pointer'}}>Show</button>
+                          }} style={{padding:8, borderRadius:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', color:'#e5e7eb', cursor:'pointer'}}>{say("Show")}</button>
 
-                          <Link href="/tech/new-roadside-job" style={{display:'inline-block', padding:'8px 10px', background:'#e5332a', color:'white', borderRadius:6, textDecoration:'none', fontWeight:700, fontSize:13}}>Create Road Call</Link>
+                          <Link href="/tech/new-roadside-job" style={{display:'inline-block', padding:'8px 10px', background:'#e5332a', color:'white', borderRadius:6, textDecoration:'none', fontWeight:700, fontSize:13}}>{say("Create Road Call")}</Link>
                         </div>
                       </div>
 
                       {/* Section 2: Parts */}
                       <div style={{borderRadius:8, padding:12, background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.03)'}}>
-                        <div style={{fontSize:15, fontWeight:800, color:'#e5e7eb'}}><FaCog style={{marginRight:4}} /> Parts</div>
+                        <div style={{fontSize:15, fontWeight:800, color:'#e5e7eb'}}><FaCog style={{marginRight:4}} /> {say("Parts")}</div>
                         <div style={{height:2, background:'rgba(255,255,255,0.06)', margin:'8px 0 12px'}} />
 
                         {/* Show vendor addresses from recent POs when available */}
                         <div style={{minHeight:48, marginBottom:8}}>
                           {partsVendors.length === 0 ? (
-                            <div style={{fontSize:12, color:'#9aa3b2'}}>No recent POs  -  shop pickup shown on map</div>
+                            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("No recent POs  -  shop pickup shown on map")}</div>
                           ) : (
                             <div style={{display:'flex', flexDirection:'column', gap:6}}>
                               {partsVendors.map(p => (
@@ -832,16 +827,16 @@ export default function TechHome() {
                               console.error('Error loading parts vendors', err);
                               setHomeMsg({type:'error',text:'Failed to load parts pickup locations'});
                             }
-                          }} style={{padding:8, borderRadius:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', color:'#e5e7eb', cursor:'pointer'}}>Show</button>
+                          }} style={{padding:8, borderRadius:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', color:'#e5e7eb', cursor:'pointer'}}>{say("Show")}</button>
 
-                          <Link href="/tech/inventory" style={{display:'inline-block', padding:'8px 10px', background:'#10b981', color:'white', borderRadius:6, textDecoration:'none', fontWeight:700, fontSize:13}}>Open Inventory</Link>
+                          <Link href="/tech/inventory" style={{display:'inline-block', padding:'8px 10px', background:'#10b981', color:'white', borderRadius:6, textDecoration:'none', fontWeight:700, fontSize:13}}>{say("Open Inventory")}</Link>
                         </div>
                       </div>
 
                       {/* Section 3: User Location (share if permitted) */}
                       <div style={{borderRadius:8, padding:8, background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.03)'}}>
-                        <div style={{fontSize:13, fontWeight:700, color:'#e5e7eb', marginBottom:6}}><FaMapMarkerAlt style={{marginRight:4}} /> Your Location</div>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:8}}>Share your live location on the map (optional)</div>
+                        <div style={{fontSize:13, fontWeight:700, color:'#e5e7eb', marginBottom:6}}><FaMapMarkerAlt style={{marginRight:4}} /> {say("Your Location")}</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:8}}>{say("Share your live location on the map (optional)")}</div>
                         <div style={{display:'flex', gap:8}}>
                           <button id="share-location-btn" onClick={async () => {
                             try {
@@ -863,7 +858,7 @@ export default function TechHome() {
                               const stopBtn = document.getElementById('stop-share-btn') as HTMLButtonElement | null;
                               if (stopBtn) stopBtn.style.display = 'inline-block';
                             } catch (err) { console.error('Location error', err); setHomeMsg({type:'error',text:'Failed to get location'}); }
-                          }} style={{flex:1, padding:8, borderRadius:6, background:'#e5332a', color:'white', border:'none', fontWeight:700}}>Share</button>
+                          }} style={{flex:1, padding:8, borderRadius:6, background:'#e5332a', color:'white', border:'none', fontWeight:700}}>{say("Share")}</button>
                           <button id="stop-share-btn" onClick={() => {
                             const id = (window as any).__shop_location_watch;
                             if (id !== undefined) { navigator.geolocation.clearWatch(id); (window as any).__shop_location_watch = undefined; }
@@ -871,17 +866,17 @@ export default function TechHome() {
                             window.dispatchEvent(new CustomEvent('tech-location-updated', { detail: { workOrderId: 'shop-location', clear: true } }));
                             (document.getElementById('stop-share-btn') as HTMLButtonElement).style.display = 'none';
                             (document.getElementById('share-location-btn') as HTMLButtonElement).style.display = 'inline-block';
-                          }} style={{display:'none', padding:8, borderRadius:6, background:'#ef4444', color:'white', border:'none', fontWeight:700}}>Stop</button>
+                          }} style={{display:'none', padding:8, borderRadius:6, background:'#ef4444', color:'white', border:'none', fontWeight:700}}>{say("Stop")}</button>
                         </div>
                         <div id="user-loc-display" style={{marginTop:8, fontSize:12, color:'#9aa3b2'}}></div>
                       </div>
 
                       <div style={{flex:1}} />
-                      <div style={{fontSize:10, color:'#9aa3b2', textAlign:'center'}}>Leaflet |  OpenStreetMap contributors</div>
+                      <div style={{fontSize:10, color:'#9aa3b2', textAlign:'center'}}>{say("Leaflet |  OpenStreetMap contributors")}</div>
                     </div>
                   </div>
                 ) : (
-                  <div style={{color:'#9aa3b2', textAlign:'center', marginTop:40}}>Loading map...</div>
+                  <div style={{color:'#9aa3b2', textAlign:'center', marginTop:40}}>{say("Loading map...")}</div>
                 )}
               </div>
             </div>
@@ -890,7 +885,7 @@ export default function TechHome() {
 
       {homeMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:homeMsg.type==='success'?'#dcfce7':'#fde8e8',color:homeMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {homeMsg.text}
+          {say(homeMsg.text)}
           <button onClick={()=>setHomeMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}

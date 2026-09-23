@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
@@ -23,6 +24,7 @@ type ShopInfo = {
 };
 
 function ShopProfilePageContent() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop', 'superadmin']);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -144,8 +146,7 @@ function ShopProfilePageContent() {
   if (isLoading || loadingShop) {
     return (
       <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -155,18 +156,17 @@ function ShopProfilePageContent() {
     <div style={{ minHeight: '100vh', background: '#000000', color: '#e2e8f0' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         <Link href={'/shop/home' as Route} style={{ color: '#ffb4ad', textDecoration: 'none', fontSize: 14 }}>
-          Back to Shop Home
-        </Link>
+          {say("Back to Shop Home")}{' '}</Link>
 
         <div style={{ marginTop: 14, background: '#000000', border: '1px solid #1f2937', borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>Shop Profile</h1>
-              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>Your shop details and account information.</p>
+              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>{say("Shop Profile")}</h1>
+              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>{say("Your shop details and account information.")}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 999, background: 'rgba(34,197,94,0.14)', border: '1px solid rgba(34,197,94,0.35)', color: '#86efac', fontSize: 12, fontWeight: 700 }}>
-              <span style={{ width: 24, height: 24, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.25)', color: '#dcfce7' }}>{initials}</span>
-              {shop.name || user.name || 'Shop'}
+              <span style={{ width: 24, height: 24, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.25)', color: '#dcfce7' }}>{say(initials)}</span>
+              {shop.name || user.name || say("Shop")}
             </div>
           </div>
 
@@ -174,17 +174,17 @@ function ShopProfilePageContent() {
             <div style={{ minWidth: 0 }}>
               {section === 'profile' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>My Profile</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Overview of your shop account.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("My Profile")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Overview of your shop account.")}</p>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Shop Name</div>
-                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{shop.name || 'Not set'}</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Shop Name")}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{shop.name || say("Not set")}</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Location</div>
-                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{[shop.city, shop.state].filter(Boolean).join(', ') || 'Not set'}</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Location")}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{[shop.city, shop.state].filter(Boolean).join(', ') || say("Not set")}</div>
                     </div>
                   </div>
                 </div>
@@ -192,23 +192,23 @@ function ShopProfilePageContent() {
 
               {section === 'details' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Shop Details</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Update your shop contact and address details.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Shop Details")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Update your shop contact and address details.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 700 }}>
-                    <input value={shop.name} onChange={(e) => setShop((p) => ({ ...p, name: e.target.value }))} placeholder="Shop name" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <input value={shop.phone} onChange={(e) => setShop((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <input value={shop.email} onChange={(e) => setShop((p) => ({ ...p, email: e.target.value }))} placeholder="Email" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <input value={shop.hours} onChange={(e) => setShop((p) => ({ ...p, hours: e.target.value }))} placeholder="Business hours" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                    <input value={shop.address} onChange={(e) => setShop((p) => ({ ...p, address: e.target.value }))} placeholder="Address" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input value={shop.name} onChange={(e) => setShop((p) => ({ ...p, name: e.target.value }))} placeholder={say("Shop name")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input value={shop.phone} onChange={(e) => setShop((p) => ({ ...p, phone: e.target.value }))} placeholder={say("Phone")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input value={shop.email} onChange={(e) => setShop((p) => ({ ...p, email: e.target.value }))} placeholder={say("Email")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input value={shop.hours} onChange={(e) => setShop((p) => ({ ...p, hours: e.target.value }))} placeholder={say("Business hours")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                    <input value={shop.address} onChange={(e) => setShop((p) => ({ ...p, address: e.target.value }))} placeholder={say("Address")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                      <input value={shop.city} onChange={(e) => setShop((p) => ({ ...p, city: e.target.value }))} placeholder="City" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                      <input value={shop.state} onChange={(e) => setShop((p) => ({ ...p, state: e.target.value }))} placeholder="State" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
-                      <input value={shop.zip} onChange={(e) => setShop((p) => ({ ...p, zip: e.target.value }))} placeholder="ZIP" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                      <input value={shop.city} onChange={(e) => setShop((p) => ({ ...p, city: e.target.value }))} placeholder={say("City")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                      <input value={shop.state} onChange={(e) => setShop((p) => ({ ...p, state: e.target.value }))} placeholder={say("State")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
+                      <input value={shop.zip} onChange={(e) => setShop((p) => ({ ...p, zip: e.target.value }))} placeholder={say("ZIP")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }} />
                     </div>
-                    <textarea value={shop.description} onChange={(e) => setShop((p) => ({ ...p, description: e.target.value }))} rows={4} placeholder="Shop description" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0', resize: 'vertical' }} />
+                    <textarea value={shop.description} onChange={(e) => setShop((p) => ({ ...p, description: e.target.value }))} rows={4} placeholder={say("Shop description")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0', resize: 'vertical' }} />
                     <button onClick={handleSave} disabled={saving} style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}>
-                      {saving ? 'Saving...' : 'Save Changes'}
+                      {saving ? say("Saving...") : say("Save Changes")}
                     </button>
                   </div>
                 </div>
@@ -216,39 +216,34 @@ function ShopProfilePageContent() {
 
               {section === 'links' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Quick Links</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Jump to commonly used shop pages.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Quick Links")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Jump to commonly used shop pages.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 460 }}>
                     <Link href={'/shop/settings' as Route} style={{ textDecoration: 'none', color: '#86efac', border: '1px solid #166534', borderRadius: 8, padding: '10px 12px', background: 'rgba(22,101,52,0.2)' }}>
-                      Shop Settings
-                    </Link>
+                      {say("Shop Settings")}{' '}</Link>
                     <Link href={'/shop/home' as Route} style={{ textDecoration: 'none', color: '#86efac', border: '1px solid #166534', borderRadius: 8, padding: '10px 12px', background: 'rgba(22,101,52,0.2)' }}>
-                      Shop Dashboard
-                    </Link>
+                      {say("Shop Dashboard")}{' '}</Link>
                   </div>
                 </div>
               )}
 
               {message && (
                 <div style={{ marginTop: 12, fontSize: 13, color: message.toLowerCase().includes('success') ? '#4ade80' : '#fda4af' }}>
-                  {message}
+                  {say(message)}
                 </div>
               )}
             </div>
 
             <div>
               <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 12, position: 'sticky', top: 24 }}>
-                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Menu</div>
+                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{say("Menu")}</div>
                 <button onClick={() => openSection('profile')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'profile' ? '1px solid rgba(34,197,94,0.45)' : '1px solid transparent', background: section === 'profile' ? 'rgba(34,197,94,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  My Profile
-                </button>
+                  {say("My Profile")}{' '}</button>
                 <button onClick={() => openSection('details')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'details' ? '1px solid rgba(34,197,94,0.45)' : '1px solid transparent', background: section === 'details' ? 'rgba(34,197,94,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  Shop Details
-                </button>
+                  {say("Shop Details")}{' '}</button>
                 <button onClick={() => openSection('links')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'links' ? '1px solid rgba(34,197,94,0.45)' : '1px solid transparent', background: section === 'links' ? 'rgba(34,197,94,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer' }}>
-                  Quick Links
-                </button>
+                  {say("Quick Links")}{' '}</button>
               </div>
             </div>
           </div>
@@ -259,12 +254,12 @@ function ShopProfilePageContent() {
 }
 
 export default function ShopProfilePage() {
+  const say = usePhrase();
   return (
     <Suspense
       fallback={
         <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          Loading...
-        </div>
+          {say("Loading...")}{' '}</div>
       }
     >
       <ShopProfilePageContent />

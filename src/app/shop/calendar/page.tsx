@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowLeft, FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -17,6 +18,7 @@ interface CalendarEvent {
 }
 
 export default function ShopCalendar() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop', 'manager', 'tech']);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -102,7 +104,7 @@ export default function ShopCalendar() {
     if (!isLoading && user) fetchEvents();
   }, [isLoading, user, fetchEvents]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const year = currentDate.getFullYear();
@@ -156,15 +158,14 @@ export default function ShopCalendar() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/shop/home" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/shop/home" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Shop Calendar</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Appointments & Work Orders</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Shop Calendar")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Appointments & Work Orders")}</div>
           </div>
         </div>
         <Link href="/shop/home" style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:600}}>
-          <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-        </Link>
+          <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
@@ -178,21 +179,21 @@ export default function ShopCalendar() {
             <button onClick={view === 'month' ? nextMonth : nextWeek} style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'none', borderRadius:8, cursor:'pointer', fontSize:16, fontWeight:700}}><FaChevronRight style={{marginRight:4}} /></button>
           </div>
           <div style={{display:'flex', gap:8}}>
-            <button onClick={goToday} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600}}>Today</button>
-            <button onClick={() => setView('month')} style={{padding:'8px 16px', background: view === 'month' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.1)', color: view === 'month' ? '#e5332a' : '#9aa3b2', border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600}}>Month</button>
-            <button onClick={() => setView('week')} style={{padding:'8px 16px', background: view === 'week' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.1)', color: view === 'week' ? '#e5332a' : '#9aa3b2', border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600}}>Week</button>
+            <button onClick={goToday} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600}}>{say("Today")}</button>
+            <button onClick={() => setView('month')} style={{padding:'8px 16px', background: view === 'month' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.1)', color: view === 'month' ? '#e5332a' : '#9aa3b2', border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600}}>{say("Month")}</button>
+            <button onClick={() => setView('week')} style={{padding:'8px 16px', background: view === 'week' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.1)', color: view === 'week' ? '#e5332a' : '#9aa3b2', border:'none', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600}}>{say("Week")}</button>
           </div>
         </div>
 
         {loading ? (
-          <div style={{textAlign:'center', padding:60, color:'#9aa3b2', fontSize:18}}>Loading calendar...</div>
+          <div style={{textAlign:'center', padding:60, color:'#9aa3b2', fontSize:18}}>{say("Loading calendar...")}</div>
         ) : view === 'month' ? (
           /* Month View */
           <div style={{background:'rgba(0,0,0,0.2)', borderRadius:12, border:'1px solid rgba(255,255,255,0.1)', overflow:'hidden'}}>
             {/* Day Headers */}
             <div style={{display:'grid', gridTemplateColumns:'repeat(7, 1fr)', borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                <div key={d} style={{padding:'12px 8px', textAlign:'center', fontSize:13, fontWeight:700, color:'#9aa3b2', textTransform:'uppercase'}}>{d}</div>
+              {[say("Sun"), say("Mon"), say("Tue"), say("Wed"), say("Thu"), say("Fri"), say("Sat")].map(d => (
+                <div key={d} style={{padding:'12px 8px', textAlign:'center', fontSize:13, fontWeight:700, color:'#9aa3b2', textTransform:'uppercase'}}>{say(d)}</div>
               ))}
             </div>
             {/* Calendar Grid */}
@@ -215,7 +216,7 @@ export default function ShopCalendar() {
                       marginBottom:4,
                       ...(isToday ? {background:'#e5332a', color:'white', width:26, height:26, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center'} : {}),
                     }}>
-                      {day}
+                      {say(day)}
                     </div>
                     {dayEvents.slice(0, 3).map(ev => (
                       <div key={ev.id} style={{
@@ -224,7 +225,7 @@ export default function ShopCalendar() {
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                         borderLeft: `3px solid ${statusColor(ev.status)}`,
                       }}>
-                        {ev.title}
+                        {say(ev.title)}
                       </div>
                     ))}
                     {dayEvents.length > 3 && (
@@ -255,13 +256,13 @@ export default function ShopCalendar() {
                           fontSize:12, padding:'8px 10px', borderRadius:6, marginBottom:6, cursor:'pointer',
                           background: typeColor(ev.type), borderLeft: `3px solid ${statusColor(ev.status)}`,
                         }}>
-                          <div style={{fontWeight:700, color:'#e5e7eb', marginBottom:2}}>{ev.time}</div>
-                          <div style={{color:'#9aa3b2', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{ev.title}</div>
-                          {ev.customer && <div style={{fontSize:10, color:'#6b7280', marginTop:2}}>{ev.customer}</div>}
+                          <div style={{fontWeight:700, color:'#e5e7eb', marginBottom:2}}>{say(ev.time)}</div>
+                          <div style={{color:'#9aa3b2', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{say(ev.title)}</div>
+                          {ev.customer && <div style={{fontSize:10, color:'#6b7280', marginTop:2}}>{say(ev.customer)}</div>}
                         </div>
                       ))}
                       {dayEvents.length === 0 && (
-                        <div style={{textAlign:'center', padding:20, color:'#4b5563', fontSize:12}}>No events</div>
+                        <div style={{textAlign:'center', padding:20, color:'#4b5563', fontSize:12}}>{say("No events")}</div>
                       )}
                     </div>
                   </div>
@@ -276,8 +277,8 @@ export default function ShopCalendar() {
           <div style={{marginTop:24, background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
               <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>
-                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                <span style={{fontSize:14, color:'#9aa3b2', fontWeight:400, marginLeft:12}}>{selectedEvents.length} event{selectedEvents.length !== 1 ? 's' : ''}</span>
+                {new Date(selectedDate + say("T12:00:00")).toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                <span style={{fontSize:14, color:'#9aa3b2', fontWeight:400, marginLeft:12}}>{say(selectedEvents.length)} event{selectedEvents.length !== 1 ? 's' : ''}</span>
               </h3>
               <button onClick={() => setSelectedDate(null)} style={{background:'none', border:'none', color:'#9aa3b2', fontSize:18, cursor:'pointer'}}><FaTimes style={{marginRight:4}} /></button>
             </div>
@@ -285,22 +286,21 @@ export default function ShopCalendar() {
               {selectedEvents.map(ev => (
                 <div key={ev.id} style={{display:'flex', gap:16, alignItems:'center', padding:16, background:'rgba(255,255,255,0.05)', borderRadius:8, borderLeft: `4px solid ${statusColor(ev.status)}`}}>
                   <div style={{minWidth:60, textAlign:'center'}}>
-                    <div style={{fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{ev.time}</div>
+                    <div style={{fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{say(ev.time)}</div>
                     <div style={{
                       fontSize:10, fontWeight:600, textTransform:'uppercase',
                       color: ev.type === 'appointment' ? '#e5332a' : '#a78bfa',
-                    }}>{ev.type === 'appointment' ? 'APPT' : 'WO'}</div>
+                    }}>{ev.type === 'appointment' ? say("APPT") : say("WO")}</div>
                   </div>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:15, fontWeight:600, color:'#e5e7eb'}}>{ev.title}</div>
-                    {ev.customer && <div style={{fontSize:13, color:'#9aa3b2'}}>{ev.customer}{ev.service ? `  ${ev.service}` : ''}</div>}
+                    <div style={{fontSize:15, fontWeight:600, color:'#e5e7eb'}}>{say(ev.title)}</div>
+                    {ev.customer && <div style={{fontSize:13, color:'#9aa3b2'}}>{say(ev.customer)}{ev.service ? `  ${ev.service}` : ''}</div>}
                   </div>
                   <span style={{padding:'4px 10px', borderRadius:12, fontSize:11, fontWeight:700, background:`${statusColor(ev.status)}20`, color: statusColor(ev.status), textTransform:'uppercase'}}>
-                    {ev.status}
+                    {say(ev.status)}
                   </span>
                   <Link href={(ev.type === 'appointment' ? `/shop/home` : `/workorders/${ev.id}`) as Route} style={{padding:'6px 12px', background:'#e5332a', color:'white', borderRadius:6, fontSize:12, fontWeight:600, textDecoration:'none'}}>
-                    View
-                  </Link>
+                    {say("View")}{' '}</Link>
                 </div>
               ))}
             </div>
@@ -311,23 +311,23 @@ export default function ShopCalendar() {
         <div style={{marginTop:24, display:'flex', gap:24, flexWrap:'wrap'}}>
           <div style={{display:'flex', alignItems:'center', gap:8}}>
             <div style={{width:12, height:12, borderRadius:3, background:'rgba(229,51,42,0.3)', border:'2px solid #e5332a'}} />
-            <span style={{fontSize:12, color:'#9aa3b2'}}>Appointment</span>
+            <span style={{fontSize:12, color:'#9aa3b2'}}>{say("Appointment")}</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:8}}>
             <div style={{width:12, height:12, borderRadius:3, background:'rgba(168,85,247,0.3)', border:'2px solid #a78bfa'}} />
-            <span style={{fontSize:12, color:'#9aa3b2'}}>Work Order</span>
+            <span style={{fontSize:12, color:'#9aa3b2'}}>{say("Work Order")}</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:6}}>
-            <div style={{width:8, height:8, borderRadius:'50%', background:'#f59e0b'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>Pending</span>
+            <div style={{width:8, height:8, borderRadius:'50%', background:'#f59e0b'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>{say("Pending")}</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:6}}>
-            <div style={{width:8, height:8, borderRadius:'50%', background:'#e5332a'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>In Progress</span>
+            <div style={{width:8, height:8, borderRadius:'50%', background:'#e5332a'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>{say("In Progress")}</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:6}}>
-            <div style={{width:8, height:8, borderRadius:'50%', background:'#22c55e'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>Completed</span>
+            <div style={{width:8, height:8, borderRadius:'50%', background:'#22c55e'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>{say("Completed")}</span>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:6}}>
-            <div style={{width:8, height:8, borderRadius:'50%', background:'#ef4444'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>Cancelled</span>
+            <div style={{width:8, height:8, borderRadius:'50%', background:'#ef4444'}} /><span style={{fontSize:11, color:'#9aa3b2'}}>{say("Cancelled")}</span>
           </div>
         </div>
       </div>

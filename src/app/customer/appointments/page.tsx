@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -29,6 +30,7 @@ interface Appointment {
 }
 
 export default function CustomerAppointmentsPage() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -232,7 +234,7 @@ export default function CustomerAppointmentsPage() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#e5e7eb', fontSize: 20 }}>Loading appointments...</div>
+        <div style={{ color: '#e5e7eb', fontSize: 20 }}>{say("Loading appointments...")}</div>
       </div>
     );
   }
@@ -243,21 +245,19 @@ export default function CustomerAppointmentsPage() {
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <Link href="/customer/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-          </Link>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaCalendarAlt style={{marginRight:4}} /> My Appointments</h1>
+              <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaCalendarAlt style={{marginRight:4}} /> {say("My Appointments")}</h1>
               <p style={{ fontSize: 14, color: '#9aa3b2' }}>
-                {appointmentSummary.upcoming} upcoming · {appointmentSummary.total} total
+                {say(appointmentSummary.upcoming)} {say("upcoming ·")}{' '}{say(appointmentSummary.total)} total
               </p>
             </div>
             <button
               onClick={() => router.push('/customer/appointments/new' as Route)}
               style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #e5332a 0%, #c62822 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
             >
-              + Book Appointment
-            </button>
+              {say("+ Book Appointment")}{' '}</button>
           </div>
         </div>
       </div>
@@ -268,22 +268,21 @@ export default function CustomerAppointmentsPage() {
           {appointments.length === 0 ? (
             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 60, textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}><FaCalendarAlt style={{marginRight:4}} /></div>
-              <h3 style={{ color: '#e5e7eb', fontSize: 20, marginBottom: 8 }}>No Appointments Yet</h3>
-              <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>Book your first appointment to get started</p>
+              <h3 style={{ color: '#e5e7eb', fontSize: 20, marginBottom: 8 }}>{say("No Appointments Yet")}</h3>
+              <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>{say("Book your first appointment to get started")}</p>
               <button
                 onClick={() => router.push('/customer/appointments/new' as Route)}
                 style={{ padding: '12px 24px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
-                Book Appointment
-              </button>
+                {say("Book Appointment")}{' '}</button>
             </div>
           ) : (
             appointments.map((apt) => (
               <div key={apt.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{apt.shop.shopName}</h3>
-                    <div style={{ color: '#9aa3b2', fontSize: 14 }}>{apt.shop.address}</div>
+                    <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{say(apt.shop.shopName)}</h3>
+                    <div style={{ color: '#9aa3b2', fontSize: 14 }}>{say(apt.shop.address)}</div>
                   </div>
                   <div style={{
                     padding: '6px 12px',
@@ -300,13 +299,13 @@ export default function CustomerAppointmentsPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                   <div>
-                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>Date & Time</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>{say("Date & Time")}</div>
                     <div style={{ color: '#e5e7eb', fontSize: 14, fontWeight: 600 }}>
                       {new Date(apt.scheduledDate).toLocaleString()}
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>Service Type</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>{say("Service Type")}</div>
                     <div style={{ color: '#e5e7eb', fontSize: 14, fontWeight: 600 }}>
                       {apt.serviceType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                     </div>
@@ -315,33 +314,31 @@ export default function CustomerAppointmentsPage() {
 
                 {apt.vehicle && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>Vehicle</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>{say("Vehicle")}</div>
                     <div style={{ color: '#e5e7eb', fontSize: 14, fontWeight: 600 }}>
-                      {apt.vehicle.year} {apt.vehicle.make} {apt.vehicle.model}
+                      {say(apt.vehicle.year)} {say(apt.vehicle.make)} {say(apt.vehicle.model)}
                     </div>
                   </div>
                 )}
 
                 {apt.notes && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>Notes</div>
-                    <div style={{ color: '#e5e7eb', fontSize: 14 }}>{apt.notes}</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 4 }}>{say("Notes")}</div>
+                    <div style={{ color: '#e5e7eb', fontSize: 14 }}>{say(apt.notes)}</div>
                   </div>
                 )}
 
                 <div style={{ display: 'flex', gap: 8 }}>
                   {/* Track button - goes to shop page */}
                   <Link href={`/customer/shop/${apt.shop.id}`} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
-                    <FaMapMarkerAlt style={{marginRight:4}} /> Track
-                  </Link>
+                    <FaMapMarkerAlt style={{marginRight:4}} /> {say("Track")}{' '}</Link>
 
                   {/* Message button - opens modal for this appointment */}
                   <button
                     onClick={() => openMessageModal(apt)}
                     style={{ flex: 1, padding: '10px', background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    <FaComments style={{marginRight:4}} /> Message
-                  </button>
+                    <FaComments style={{marginRight:4}} /> {say("Message")}{' '}</button>
                 </div>
               </div>
             ))
@@ -353,25 +350,25 @@ export default function CustomerAppointmentsPage() {
       {showBookForm && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#2a2a2a', borderRadius: 12, padding: 32, maxWidth: 500, width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ color: '#e5e7eb', fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Book Appointment</h2>
+            <h2 style={{ color: '#e5e7eb', fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{say("Book Appointment")}</h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Select Shop *</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Select Shop *")}</label>
                 <select
                   value={newAppointment.shopId}
                   onChange={(e) => setNewAppointment({ ...newAppointment, shopId: e.target.value })}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
-                  <option value="">Choose a shop...</option>
+                  <option value="">{say("Choose a shop...")}</option>
                   {shops.map((shop) => (
-                    <option key={shop.id} value={shop.id}>{shop.shopName}</option>
+                    <option key={shop.id} value={shop.id}>{say(shop.shopName)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Date & Time *</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Date & Time *")}</label>
                 <input
                   type="datetime-local"
                   value={newAppointment.scheduledDate}
@@ -381,43 +378,43 @@ export default function CustomerAppointmentsPage() {
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Service Type *</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Service Type *")}</label>
                 <select
                   value={newAppointment.serviceType}
                   onChange={(e) => setNewAppointment({ ...newAppointment, serviceType: e.target.value })}
                   disabled={!newAppointment.shopId || shopServiceOptions.length === 0}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
-                  {!newAppointment.shopId && <option value="">Select a shop first</option>}
-                  {newAppointment.shopId && shopServiceOptions.length === 0 && <option value="">No services configured for this shop</option>}
+                  {!newAppointment.shopId && <option value="">{say("Select a shop first")}</option>}
+                  {newAppointment.shopId && shopServiceOptions.length === 0 && <option value="">{say("No services configured for this shop")}</option>}
                   {shopServiceOptions.map((serviceName) => (
-                    <option key={serviceName} value={serviceName}>{serviceName}</option>
+                    <option key={serviceName} value={serviceName}>{say(serviceName)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Vehicle (Optional)</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Vehicle (Optional)")}</label>
                 <select
                   value={newAppointment.vehicleId}
                   onChange={(e) => setNewAppointment({ ...newAppointment, vehicleId: e.target.value })}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
-                  <option value="">No vehicle selected</option>
+                  <option value="">{say("No vehicle selected")}</option>
                   {vehicles.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.year} {vehicle.make} {vehicle.model}
+                      {say(vehicle.year)} {say(vehicle.make)} {say(vehicle.model)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Notes (Optional)</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Notes (Optional)")}</label>
                 <textarea
                   value={newAppointment.notes}
                   onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
-                  placeholder="Any special requests or details..."
+                  placeholder={say("Any special requests or details...")}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', minHeight: 80, resize: 'vertical' }}
                 />
               </div>
@@ -427,8 +424,7 @@ export default function CustomerAppointmentsPage() {
                   onClick={handleBookAppointment}
                   style={{ flex: 1, padding: 12, background: 'linear-gradient(135deg, #e5332a 0%, #c62822 100%)', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
-                  Confirm Booking
-                </button>
+                  {say("Confirm Booking")}{' '}</button>
                 <button
                   onClick={() => {
                     setShowBookForm(false);
@@ -436,8 +432,7 @@ export default function CustomerAppointmentsPage() {
                   }}
                   style={{ flex: 1, padding: 12, background: 'rgba(255,255,255,0.1)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               </div>
             </div>
           </div>
@@ -448,20 +443,20 @@ export default function CustomerAppointmentsPage() {
       {messageModal.isOpen && messageModal.appointment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
-            <h3 style={{fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 16}}>Message Shop</h3>
+            <h3 style={{fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 16}}>{say("Message Shop")}</h3>
             <div style={{fontSize: 14, color: '#9aa3b2', marginBottom: 16}}>
-              Appointment: {messageModal.appointment.scheduledDate}
-              <div>Shop: {messageModal.appointment.shop.shopName}</div>
+              {say("Appointment:")}{' '}{say(messageModal.appointment.scheduledDate)}
+              <div>{say("Shop:")}{' '}{say(messageModal.appointment.shop.shopName)}</div>
             </div>
             <textarea
               value={messageModal.message}
               onChange={(e) => setMessageModal(prev => ({ ...prev, message: e.target.value }))}
-              placeholder="Type your message here..."
+              placeholder={say("Type your message here...")}
               style={{ width: '100%', minHeight: 120, padding: 12, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, color: '#e5e7eb', fontSize: 14, resize: 'vertical', marginBottom: 16 }}
             />
             <div style={{display: 'flex', gap: 12, justifyContent: 'flex-end'}}>
-              <button onClick={closeMessageModal} style={{ padding: '8px 16px', background: 'transparent', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}>Cancel</button>
-              <button onClick={sendMessage} disabled={!messageModal.message.trim() || messageModal.sending} style={{ padding: '8px 16px', background: '#a855f7', color: 'white', border: 'none', borderRadius: 6, cursor: messageModal.message.trim() && !messageModal.sending ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 600, opacity: messageModal.message.trim() && !messageModal.sending ? 1 : 0.5 }}>{messageModal.sending ? 'Sending...' : 'Send Message'}</button>
+              <button onClick={closeMessageModal} style={{ padding: '8px 16px', background: 'transparent', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}>{say("Cancel")}</button>
+              <button onClick={sendMessage} disabled={!messageModal.message.trim() || messageModal.sending} style={{ padding: '8px 16px', background: '#a855f7', color: 'white', border: 'none', borderRadius: 6, cursor: messageModal.message.trim() && !messageModal.sending ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 600, opacity: messageModal.message.trim() && !messageModal.sending ? 1 : 0.5 }}>{messageModal.sending ? say("Sending...") : say("Send Message")}</button>
             </div>
           </div>
         </div>
@@ -469,7 +464,7 @@ export default function CustomerAppointmentsPage() {
 
       {apptMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:apptMsg.type==='success'?'#dcfce7':'#fde8e8',color:apptMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {apptMsg.text}
+          {say(apptMsg.text)}
           <button onClick={()=>setApptMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
@@ -477,11 +472,11 @@ export default function CustomerAppointmentsPage() {
       {cancelApptId && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
           <div style={{background:'#2a2a2a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:32,maxWidth:400,width:'90%'}}>
-            <h3 style={{color:'#e5e7eb',fontSize:18,fontWeight:700,marginBottom:12}}>Cancel Appointment?</h3>
-            <p style={{color:'#9aa3b2',fontSize:14,marginBottom:24}}>Are you sure you want to cancel this appointment?</p>
+            <h3 style={{color:'#e5e7eb',fontSize:18,fontWeight:700,marginBottom:12}}>{say("Cancel Appointment?")}</h3>
+            <p style={{color:'#9aa3b2',fontSize:14,marginBottom:24}}>{say("Are you sure you want to cancel this appointment?")}</p>
             <div style={{display:'flex',gap:12}}>
-              <button onClick={()=>handleCancelAppointment(cancelApptId)} style={{flex:1,padding:'11px 0',background:'#e5332a',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Yes, Cancel</button>
-              <button onClick={()=>setCancelApptId(null)} style={{flex:1,padding:'11px 0',background:'rgba(255,255,255,0.1)',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>Keep It</button>
+              <button onClick={()=>handleCancelAppointment(cancelApptId)} style={{flex:1,padding:'11px 0',background:'#e5332a',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>{say("Yes, Cancel")}</button>
+              <button onClick={()=>setCancelApptId(null)} style={{flex:1,padding:'11px 0',background:'rgba(255,255,255,0.1)',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>{say("Keep It")}</button>
             </div>
           </div>
         </div>

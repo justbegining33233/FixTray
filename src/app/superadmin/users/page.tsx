@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -34,6 +35,7 @@ const ROLE_BADGES: Record<string, { bg: string; text: string; icon: any }> = {
 };
 
 export default function SuperAdminUsers() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [users, setUsers] = useState<PlatformUser[]>([]);
   const [search, setSearch] = useState('');
@@ -84,8 +86,8 @@ export default function SuperAdminUsers() {
             <FaArrowLeft className="w-4 h-4 text-zinc-400" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-white">User Management</h1>
-            <p className="text-zinc-400 mt-1">{users.length} total users</p>
+            <h1 className="text-3xl font-bold text-white">{say("User Management")}</h1>
+            <p className="text-zinc-400 mt-1">{say(users.length)} {say("total users")}</p>
           </div>
         </div>
 
@@ -101,7 +103,7 @@ export default function SuperAdminUsers() {
                   filterRole === role ? 'bg-[#e5332a] text-white' : `${badge.bg} ${badge.text}`
                 }`}
               >
-                {role}: {count}
+                {say(role)}: {say(count)}
               </button>
             );
           })}
@@ -112,7 +114,7 @@ export default function SuperAdminUsers() {
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder={say("Search by name or email...")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-[#000000] border border-[#1f2937] rounded-xl focus:ring-2 focus:ring-[#e5332a] focus:border-transparent text-white"
@@ -124,18 +126,18 @@ export default function SuperAdminUsers() {
           <table className="w-full">
             <thead className="bg-[#000000]">
               <tr>
-                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">User</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">Role</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">Activity</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">Last Login</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">Shop</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">Joined</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">{say("User")}</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">{say("Role")}</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">{say("Activity")}</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">{say("Last Login")}</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">{say("Shop")}</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-zinc-400">{say("Joined")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-zinc-400">No users found</td>
+                  <td colSpan={6} className="text-center py-12 text-zinc-400">{say("No users found")}</td>
                 </tr>
               ) : (
                 filtered.map(u => {
@@ -147,12 +149,12 @@ export default function SuperAdminUsers() {
                       <td className="px-5 py-3">
                         <div>
                           <p className="font-medium text-white">{label.name || '—'}</p>
-                          <p className="text-xs text-zinc-400">{u.email}</p>
+                          <p className="text-xs text-zinc-400">{say(u.email)}</p>
                         </div>
                       </td>
                       <td className="px-5 py-3">
                         <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${badge.bg} ${badge.text}`}>
-                          <RoleIcon className="w-3 h-3" /> {u.role}
+                          <RoleIcon className="w-3 h-3" /> {say(u.role)}
                         </span>
                       </td>
                       <td className="px-5 py-3">
@@ -161,12 +163,12 @@ export default function SuperAdminUsers() {
                           const active = activity === 'active';
                           return (
                             <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${active ? 'bg-green-50 text-green-600' : 'bg-slate-700 text-slate-300'}`}>
-                              {active ? 'Active' : 'Inactive'}{u.hasActiveSession ? ' (session)' : ''}
+                              {active ? say("Active") : say("Inactive")}{u.hasActiveSession ? say(" (session)") : ''}
                             </span>
                           );
                         })()}
                       </td>
-                      <td className="px-5 py-3 text-sm text-zinc-300">{u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}</td>
+                      <td className="px-5 py-3 text-sm text-zinc-300">{u.lastLogin ? new Date(u.lastLogin).toLocaleString() : say("Never")}</td>
                       <td className="px-5 py-3 text-sm text-zinc-300">{label.shopName || '—'}</td>
                       <td className="px-5 py-3 text-sm text-zinc-400">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
                     </tr>

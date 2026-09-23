@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
@@ -16,6 +17,7 @@ interface FleetAccount {
 }
 
 export function FleetAccountList() {
+  const say = usePhrase();
   const [accounts, setAccounts] = useState<FleetAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -38,25 +40,23 @@ export function FleetAccountList() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading fleet accounts...</div>;
-  if (error) return <div className="text-red-600 py-4">{error}</div>;
+  if (loading) return <div className="text-center py-8">{say("Loading fleet accounts...")}</div>;
+  if (error) return <div className="text-red-600 py-4">{say(error)}</div>;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Fleet Accounts</h2>
+        <h2 className="text-2xl font-bold">{say("Fleet Accounts")}</h2>
         <Link
           href="/shop/fleet/new"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          + New Fleet Account
-        </Link>
+          {say("+ New Fleet Account")}{' '}</Link>
       </div>
 
       {accounts.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No fleet accounts yet. Create one to get started.
-        </div>
+          {say("No fleet accounts yet. Create one to get started.")}{' '}</div>
       ) : (
         <div className="grid gap-4">
           {accounts.map((account) => {
@@ -71,12 +71,12 @@ export function FleetAccountList() {
               >
                 <div className="grid grid-cols-4 gap-4">
                   <div>
-                    <h3 className="font-semibold text-lg">{account.companyName}</h3>
-                    <p className="text-sm text-gray-600">{account.contactName}</p>
-                    <p className="text-xs text-gray-500">{account.contactEmail}</p>
+                    <h3 className="font-semibold text-lg">{say(account.companyName)}</h3>
+                    <p className="text-sm text-gray-600">{say(account.contactName)}</p>
+                    <p className="text-xs text-gray-500">{say(account.contactEmail)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Status</p>
+                    <p className="text-sm text-gray-600">{say("Status")}</p>
                     <span
                       className={`px-2 py-1 rounded text-xs font-semibold ${
                         account.status === 'active'
@@ -84,15 +84,15 @@ export function FleetAccountList() {
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {account.status}
+                      {say(account.status)}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Vehicles</p>
-                    <p className="text-lg font-semibold">{vehicleCount}</p>
+                    <p className="text-sm text-gray-600">{say("Vehicles")}</p>
+                    <p className="text-lg font-semibold">{say(vehicleCount)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total Revenue</p>
+                    <p className="text-sm text-gray-600">{say("Total Revenue")}</p>
                     <p className="text-lg font-semibold">{formatCurrency(totalRevenue)}</p>
                   </div>
                 </div>

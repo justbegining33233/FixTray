@@ -7,7 +7,9 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
+import { usePhrase } from '@/lib/usePhrase';
 import { useAuth } from '@/contexts/AuthContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {
   FaHome,
   FaUsers,
@@ -37,6 +39,7 @@ export default function SuperAdminNavigation({
 }: SuperAdminNavProps) {
   const { logout, user } = useAuth();
   const pathname = usePathname();
+  const say = usePhrase();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -135,8 +138,8 @@ export default function SuperAdminNavigation({
               <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">F</span>
               </div>
-              <span className="text-xl font-bold text-white">FixTray</span>
-              <span className="text-sm text-[#94a3b8]">Super Admin</span>
+              <span className="text-xl font-bold text-white">{say("FixTray")}</span>
+              <span className="text-sm text-[#94a3b8]">{say("Super Admin")}</span>
             </Link>
 
             {/* Main Navigation */}
@@ -153,7 +156,7 @@ export default function SuperAdminNavigation({
                 >
                   <div className="flex items-center space-x-2">
                     <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
+                    <span>{say(item.name)}</span>
                     {item.badge && (
                       <span className="absolute -top-1 -right-1 bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {item.badge > 9 ? '9+' : item.badge}
@@ -170,7 +173,7 @@ export default function SuperAdminNavigation({
               {(systemAlerts > 0 || securityIncidents > 0) && (
                 <div className="flex items-center space-x-2 bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm">
                   <FaExclamationTriangle className="w-4 h-4" />
-                  <span>Critical Alerts</span>
+                  <span>{say("Critical Alerts")}</span>
                   <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {systemAlerts + securityIncidents}
                   </span>
@@ -195,10 +198,10 @@ export default function SuperAdminNavigation({
 
                 {showNotifications && (
                   <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[#0f172a] shadow-2xl overflow-hidden z-[1200]">
-                    <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)] text-sm font-semibold text-[#f1f5f9]">Recent Notifications</div>
+                    <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)] text-sm font-semibold text-[#f1f5f9]">{say("Recent Notifications")}</div>
                     <div className="max-h-80 overflow-y-auto">
                       {recentNotifications.length === 0 ? (
-                        <div className="px-4 py-6 text-sm text-[#94a3b8] text-center">No new notifications</div>
+                        <div className="px-4 py-6 text-sm text-[#94a3b8] text-center">{say("No new notifications")}</div>
                       ) : recentNotifications.map((n) => (
                         <Link
                           key={n.id}
@@ -206,8 +209,8 @@ export default function SuperAdminNavigation({
                           onClick={() => setShowNotifications(false)}
                           className="block px-4 py-3 border-b border-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.04)]"
                         >
-                          <div className="text-sm font-medium text-[#e2e8f0]">{n.title}</div>
-                          <div className="text-xs text-[#94a3b8] mt-1">{n.description}</div>
+                          <div className="text-sm font-medium text-[#e2e8f0]">{say(n.title)}</div>
+                          <div className="text-xs text-[#94a3b8] mt-1">{say(n.description)}</div>
                         </Link>
                       ))}
                     </div>
@@ -220,8 +223,7 @@ export default function SuperAdminNavigation({
                 href={"/superadmin/users" as Route}
                 className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                Manage Users
-              </Link>
+                {say("Manage Users")}{' '}</Link>
 
               {/* User Menu */}
               <div className="relative" ref={userMenuRef}>
@@ -234,13 +236,13 @@ export default function SuperAdminNavigation({
                   <div className="w-8 h-8 bg-[rgba(255,255,255,0.1)] rounded-full flex items-center justify-center">
                     <FaUser className="w-4 h-4 text-gray-600" />
                   </div>
-                  <span className="text-sm font-medium text-[#f1f5f9]">{user?.name || 'Super Admin'}</span>
+                  <span className="text-sm font-medium text-[#f1f5f9]">{user?.name || say("Super Admin")}</span>
                 </button>
 
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-56 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[#0f172a] shadow-2xl overflow-hidden z-[1200]">
                     <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)]">
-                      <div className="text-sm font-semibold text-[#f1f5f9] truncate">{user?.name || 'Super Admin'}</div>
+                      <div className="text-sm font-semibold text-[#f1f5f9] truncate">{user?.name || say("Super Admin")}</div>
                       <div className="text-xs text-[#94a3b8] mt-1">superadmin</div>
                     </div>
                     <Link
@@ -249,23 +251,23 @@ export default function SuperAdminNavigation({
                       className="flex items-center gap-2 px-4 py-3 text-sm text-[#e2e8f0] hover:bg-[rgba(255,255,255,0.04)]"
                     >
                       <FaUser className="w-4 h-4" />
-                      My Profile
-                    </Link>
+                      {say("My Profile")}{' '}</Link>
                     <Link
                       href={'/superadmin/settings' as Route}
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2 px-4 py-3 text-sm text-[#e2e8f0] hover:bg-[rgba(255,255,255,0.04)]"
                     >
                       <FaGlobe className="w-4 h-4" />
-                      Settings
-                    </Link>
+                      {say("Settings")}{' '}</Link>
+                    <div className="px-4 py-3 border-t border-[rgba(255,255,255,0.08)]">
+                      <LanguageSwitcher />
+                    </div>
                     <button
                       onClick={logout}
                       className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#f87171] hover:bg-[rgba(248,113,113,0.08)] text-left"
                     >
                       <FaSignOutAlt className="w-4 h-4" />
-                      Sign Out
-                    </button>
+                      {say("Sign Out")}{' '}</button>
                   </div>
                 )}
               </div>
@@ -293,7 +295,7 @@ export default function SuperAdminNavigation({
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium">{item.name.split(' ')[0]}</span>
+              <span className="text-xs font-medium">{say(item.name)}</span>
             </Link>
           ))}
 
@@ -303,7 +305,7 @@ export default function SuperAdminNavigation({
             className="flex flex-col items-center justify-center space-y-1 text-[#64748b]"
           >
             <FaBars className="w-5 h-5" />
-            <span className="text-xs font-medium">More</span>
+            <span className="text-xs font-medium">{say('More')}</span>
           </button>
         </div>
       </nav>
@@ -313,7 +315,7 @@ export default function SuperAdminNavigation({
         <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="absolute bottom-0 left-0 right-0 bg-[#0d1425] rounded-t-2xl p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-[#f1f5f9]">Menu</h3>
+              <h3 className="text-lg font-semibold text-[#f1f5f9]">{say('Menu')}</h3>
               <button onClick={() => setIsMobileMenuOpen(false)}>
                 <FaTimes className="w-5 h-5 text-[#94a3b8]" />
               </button>
@@ -331,12 +333,12 @@ export default function SuperAdminNavigation({
                 >
                   <item.icon className="w-5 h-5" />
                   <div>
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-gray-500">{item.description}</div>
+                    <div className="font-medium">{say(item.name)}</div>
+                    <div className="text-sm text-gray-500">{say(item.description)}</div>
                   </div>
                   {item.badge && (
                     <span className="bg-indigo-500 text-white text-xs rounded-full px-2 py-1">
-                      {item.badge}
+                      {say(item.badge)}
                     </span>
                   )}
                 </Link>
@@ -349,7 +351,7 @@ export default function SuperAdminNavigation({
                 className="flex items-center space-x-3 p-3 rounded-lg text-[#94a3b8] hover:bg-[rgba(255,255,255,0.06)] w-full text-left"
               >
                 <FaSignOutAlt className="w-5 h-5" />
-                <span className="font-medium">Sign Out</span>
+                <span className="font-medium">{say('Sign Out')}</span>
               </button>
             </div>
           </div>

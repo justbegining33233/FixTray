@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -14,6 +15,7 @@ interface SearchResults {
 }
 
 export default function GlobalSearch() {
+  const say = usePhrase();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
@@ -103,7 +105,7 @@ export default function GlobalSearch() {
           value={query}
           onFocus={() => setIsFocused(true)}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search inventory, VIN/plate, work orders, customers, parts, labor"
+          placeholder={say("Search inventory, VIN/plate, work orders, customers, parts, labor")}
           style={{
             width: '100%',
             background: 'transparent',
@@ -113,7 +115,7 @@ export default function GlobalSearch() {
             outline: 'none',
           }}
         />
-        <kbd style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.08)', borderRadius: 4, fontSize: 10, color: '#6b7280' }}>Ctrl+K</kbd>
+        <kbd style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.08)', borderRadius: 4, fontSize: 10, color: '#6b7280' }}>{say("Ctrl+K")}</kbd>
       </div>
 
       {showResults && (
@@ -130,15 +132,15 @@ export default function GlobalSearch() {
           zIndex: 1200,
         }}>
         <div style={{ maxHeight: 420, overflowY: 'auto', padding: 8 }}>
-          {loading && <div style={{ padding: 16, textAlign: 'center', color: '#9aa3b2', fontSize: 13 }}>Searching...</div>}
+          {loading && <div style={{ padding: 16, textAlign: 'center', color: '#9aa3b2', fontSize: 13 }}>{say("Searching...")}</div>}
 
           {!loading && query.length >= 2 && !hasResults && (
-            <div style={{ padding: 24, textAlign: 'center', color: '#9aa3b2', fontSize: 13 }}>No results found</div>
+            <div style={{ padding: 24, textAlign: 'center', color: '#9aa3b2', fontSize: 13 }}>{say("No results found")}</div>
           )}
 
           {results && results.customers.length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Customers</div>
+              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Customers")}</div>
               {results.customers.map(c => (
                 <div
                   key={c.id}
@@ -147,8 +149,8 @@ export default function GlobalSearch() {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaUser style={{marginRight:4}} /> {c.firstName} {c.lastName}</span>
-                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>{c.email}</span>
+                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaUser style={{marginRight:4}} /> {say(c.firstName)} {say(c.lastName)}</span>
+                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>{say(c.email)}</span>
                 </div>
               ))}
             </div>
@@ -156,7 +158,7 @@ export default function GlobalSearch() {
 
           {results && results.workOrders.length > 0 && (
             <div style={{ marginBottom: 8 }}>
-              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Work Orders</div>
+              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Work Orders")}</div>
               {results.workOrders.map(wo => (
                 <div
                   key={wo.id}
@@ -165,8 +167,8 @@ export default function GlobalSearch() {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaWrench style={{marginRight:4}} /> {wo.id.slice(0, 8)}  -  {wo.customer.firstName} {wo.customer.lastName}</span>
-                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>{wo.status}</span>
+                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaWrench style={{marginRight:4}} /> {wo.id.slice(0, 8)}  -  {say(wo.customer.firstName)} {say(wo.customer.lastName)}</span>
+                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>{say(wo.status)}</span>
                 </div>
               ))}
             </div>
@@ -174,7 +176,7 @@ export default function GlobalSearch() {
 
           {results && results.vehicles.length > 0 && (
             <div>
-              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Vehicles</div>
+              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Vehicles")}</div>
               {results.vehicles.map(v => (
                 <div
                   key={v.id}
@@ -183,8 +185,8 @@ export default function GlobalSearch() {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaCar style={{marginRight:4}} /> {v.year} {v.make} {v.model}</span>
-                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>{v.licensePlate || 'No plate'} | VIN: {v.vin || 'N/A'}</span>
+                  <span style={{ color: '#e5e7eb', fontSize: 14 }}><FaCar style={{marginRight:4}} /> {say(v.year)} {say(v.make)} {say(v.model)}</span>
+                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>{v.licensePlate || say("No plate")} {say("| VIN:")}{' '}{v.vin || say("N/A")}</span>
                 </div>
               ))}
             </div>
@@ -192,7 +194,7 @@ export default function GlobalSearch() {
 
           {results && results.parts.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Inventory / Parts</div>
+              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Inventory / Parts")}</div>
               {results.parts.map(p => (
                 <div
                   key={p.id}
@@ -201,8 +203,8 @@ export default function GlobalSearch() {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span style={{ color: '#e5e7eb', fontSize: 14 }}>{p.name}</span>
-                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>SKU: {p.sku || 'N/A'} | Qty: {p.quantity}</span>
+                  <span style={{ color: '#e5e7eb', fontSize: 14 }}>{say(p.name)}</span>
+                  <span style={{ color: '#9aa3b2', fontSize: 12 }}>{say("SKU:")}{' '}{p.sku || say("N/A")} {say("| Qty:")}{' '}{say(p.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -210,7 +212,7 @@ export default function GlobalSearch() {
 
           {results && results.laborRates.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Labor Rates</div>
+              <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Labor Rates")}</div>
               {results.laborRates.map(rate => (
                 <div
                   key={rate.id}
@@ -219,7 +221,7 @@ export default function GlobalSearch() {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <span style={{ color: '#e5e7eb', fontSize: 14 }}>{rate.name} ({rate.category})</span>
+                  <span style={{ color: '#e5e7eb', fontSize: 14 }}>{say(rate.name)} ({say(rate.category)})</span>
                   <span style={{ color: '#9aa3b2', fontSize: 12 }}>${rate.rate.toFixed(2)}/hr</span>
                 </div>
               ))}
@@ -228,8 +230,8 @@ export default function GlobalSearch() {
         </div>
 
         <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 11, color: '#6b7280' }}>Type at least 2 characters</span>
-          <span style={{ fontSize: 11, color: '#6b7280' }}>Esc to close</span>
+          <span style={{ fontSize: 11, color: '#6b7280' }}>{say("Type at least 2 characters")}</span>
+          <span style={{ fontSize: 11, color: '#6b7280' }}>{say("Esc to close")}</span>
         </div>
       </div>
       )}

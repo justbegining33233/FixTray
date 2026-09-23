@@ -1,4 +1,5 @@
 "use client";
+import { usePhrase } from '@/lib/usePhrase';
 import { FaCheck } from 'react-icons/fa';
 
 import { useState, useEffect } from 'react';
@@ -37,6 +38,7 @@ const PLANS = [
 ];
 
 export default function ShopSubscribePage() {
+  const say = usePhrase();
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['shop']);
   const [selectedPlan, setSelectedPlan] = useState('growth');
@@ -76,8 +78,7 @@ export default function ShopSubscribePage() {
   if (isLoading) {
     return (
       <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb', fontSize: 18 }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
   if (!user) return null;
@@ -87,11 +88,10 @@ export default function ShopSubscribePage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Step 2 of 2</div>
-          <h1 style={{ fontSize: 36, fontWeight: 800, color: '#f9fafb', marginBottom: 12 }}>Choose Your Plan</h1>
+          <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>{say("Step 2 of 2")}</div>
+          <h1 style={{ fontSize: 36, fontWeight: 800, color: '#f9fafb', marginBottom: 12 }}>{say("Choose Your Plan")}</h1>
           <p style={{ fontSize: 16, color: '#9aa3b2', maxWidth: 480, margin: '0 auto' }}>
-            All plans include a 14-day free trial. No credit card charged until your trial ends.
-          </p>
+            {say("All plans include a 14-day free trial. No credit card charged until your trial ends.")}{' '}</p>
         </div>
 
         {/* Plan Cards */}
@@ -114,14 +114,13 @@ export default function ShopSubscribePage() {
               >
                 {plan.recommended && (
                   <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#22c55e', color: 'white', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 999, letterSpacing: 1 }}>
-                    MOST POPULAR
-                  </div>
+                    {say("MOST POPULAR")}{' '}</div>
                 )}
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#f9fafb', marginBottom: 6 }}>{plan.name}</div>
-                  <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 16 }}>{plan.description}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#f9fafb', marginBottom: 6 }}>{say(plan.name)}</div>
+                  <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 16 }}>{say(plan.description)}</div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                    <span style={{ fontSize: 36, fontWeight: 800, color: plan.color }}>${plan.price}</span>
+                    <span style={{ fontSize: 36, fontWeight: 800, color: plan.color }}>${say(plan.price)}</span>
                     <span style={{ fontSize: 14, color: '#6b7280' }}>/mo</span>
                   </div>
                 </div>
@@ -129,13 +128,13 @@ export default function ShopSubscribePage() {
                   {plan.features.map((f, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#cbd5e1' }}>
                       <span style={{ color: plan.color, fontWeight: 700, fontSize: 16 }}><FaCheck style={{marginRight:4}} /></span>
-                      {f}
+                      {say(f)}
                     </div>
                   ))}
                 </div>
                 {isSelected && (
                   <div style={{ marginTop: 20, background: plan.color, borderRadius: 8, padding: '8px 0', textAlign: 'center', fontSize: 13, fontWeight: 700, color: 'white' }}>
-                    Selected <FaCheck style={{marginRight:4}} />
+                    {say("Selected")}{' '}<FaCheck style={{marginRight:4}} />
                   </div>
                 )}
               </div>
@@ -150,22 +149,20 @@ export default function ShopSubscribePage() {
             disabled={loading}
             style={{ padding: '16px 48px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: 'white', border: 'none', borderRadius: 12, fontSize: 17, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}
           >
-            {loading ? 'Redirecting to checkout...' : `Start Free Trial  -  ${PLANS.find(p => p.key === selectedPlan)?.name}`}
+            {loading ? say("Redirecting to checkout...") : `Start Free Trial  -  ${PLANS.find(p => p.key === selectedPlan)?.name}`}
           </button>
           <div style={{ marginTop: 16, fontSize: 13, color: '#6b7280' }}>
-            14-day free trial · Cancel anytime · No hidden fees
-          </div>
+            {say("14-day free trial · Cancel anytime · No hidden fees")}{' '}</div>
           <button
             onClick={() => router.push('/shop/home')}
             style={{ marginTop: 12, background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
           >
-            Skip for now (limited access)
-          </button>
+            {say("Skip for now (limited access)")}{' '}</button>
         </div>
       </div>
       {checkoutError && (
         <div style={{position:'fixed',bottom:24,right:24,background:'#fde8e8',color:'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {checkoutError}
+          {say(checkoutError)}
           <button onClick={()=>setCheckoutError('')} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}

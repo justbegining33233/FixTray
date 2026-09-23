@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhrase } from '@/lib/usePhrase';
 import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaComments, FaExclamationTriangle, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
@@ -64,6 +65,7 @@ const ROLE_FILTERS: { key: TabKey; label: string }[] = [
 // --- Component ---------------------------------------------------------------
 
 export default function CustomerMessagingCard({ header = "Messages", initialShopId }: CustomerMessagingCardProps) {
+  const say = usePhrase();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const selectedRef = useRef<Conversation | null>(null);
@@ -276,30 +278,28 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
       {/* Auth error banner */}
       {authError && (
         <div style={{ padding: "10px 16px", background: "rgba(239,68,68,0.15)", color: "#fecdd3", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>Session expired. Please sign in again.</span>
+          <span>{say("Session expired. Please sign in again.")}</span>
           <button onClick={() => { localStorage.clear(); window.location.href = "/auth/login"; }}
             style={{ padding: "4px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
-            Log-In
-          </button>
+            {say("Log-In")}{' '}</button>
         </div>
       )}
 
       {/* Header */}
       <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h3 style={{ margin: 0, color: "#e5e7eb", fontSize: 16, fontWeight: 700 }}>{header}</h3>
-          <p style={{ margin: 0, color: "#9ca3af", fontSize: 12 }}>Chat with shops, managers & techs</p>
+          <h3 style={{ margin: 0, color: "#e5e7eb", fontSize: 16, fontWeight: 700 }}>{say(header)}</h3>
+          <p style={{ margin: 0, color: "#9ca3af", fontSize: 12 }}>{say("Chat with shops, managers & techs")}</p>
         </div>
         <button
           onClick={() => { setShowCompose(true); setSelected(null); setComposeRoleFilter(activeTab); fetchAvailableContacts(); }}
           style={{ padding: "6px 12px", background: "#e5332a", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-          + New
-        </button>
+          {say("+ New")}{' '}</button>
       </div>
 
       {/* Category dropdown */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.2)" }}>
-        <label style={{ color: "#9ca3af", fontSize: 12, fontWeight: 600 }}>Category</label>
+        <label style={{ color: "#9ca3af", fontSize: 12, fontWeight: 600 }}>{say("Category")}</label>
         <select
           value={activeTab}
           onChange={(e) => {
@@ -311,13 +311,13 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
             const count = unreadByTab[filter.key] || 0;
             return (
               <option key={filter.key} value={filter.key}>
-                {filter.label}{count > 0 ? ` (${count > 99 ? "99+" : count} unread)` : ""}
+                {say(filter.label)}{count > 0 ? ` (${count > 99 ? "99+" : count} unread)` : ""}
               </option>
             );
           })}
         </select>
         <span style={{ fontSize: 11, color: "#6b7280" }}>
-          {filteredConversations.length} thread{filteredConversations.length === 1 ? "" : "s"}
+          {say(filteredConversations.length)} thread{filteredConversations.length === 1 ? "" : "s"}
         </span>
       </div>
 
@@ -329,9 +329,8 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
           {filteredConversations.length === 0 ? (
             <div style={{ padding: "24px 16px", color: "#6b7280", fontSize: 12, textAlign: "center" }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}><FaComments style={{marginRight:4}} /></div>
-              No conversations yet.
-              <br />
-              <span style={{ color: "#4b5563" }}>Click <strong style={{ color: "#e5332a" }}>+ New</strong> to start one.</span>
+              {say("No conversations yet.")}{' '}<br />
+              <span style={{ color: "#4b5563" }}>{say("Click")}{' '}<strong style={{ color: "#e5332a" }}>{say("+ New")}</strong> {say("to start one.")}</span>
             </div>
           ) : (
             filteredConversations.map((conv) => {
@@ -341,15 +340,15 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
               return (
                 <button key={`${conv.contactRole}_${conv.contactId}`} onClick={() => handleSelectConversation(conv)}
                   style={{ width: "100%", padding: "12px 14px", textAlign: "left", background: isActive ? "rgba(229,51,42,0.12)" : "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                  <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{say(icon)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: isActive ? "#f3f4f6" : "#e5e7eb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>
-                        {conv.contactName}
+                        {say(conv.contactName)}
                       </span>
                       {conv.unreadCount > 0 && (
                         <span style={{ background: "#e5332a", color: "white", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                          {conv.unreadCount}
+                          {say(conv.unreadCount)}
                         </span>
                       )}
                     </div>
@@ -375,7 +374,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
             /* Compose new message */
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16, gap: 12 }}>
               <div>
-                <label style={{ display: "block", color: "#9ca3af", fontSize: 12, marginBottom: 6 }}>Recipient type:</label>
+                <label style={{ display: "block", color: "#9ca3af", fontSize: 12, marginBottom: 6 }}>{say("Recipient type:")}</label>
                 <select
                   value={composeRoleFilter}
                   onChange={(e) => {
@@ -384,20 +383,18 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
                   }}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.3)", color: "#e5e7eb", fontSize: 13, marginBottom: 10 }}>
                   {ROLE_FILTERS.map((filter) => (
-                    <option key={`compose-${filter.key}`} value={filter.key}>{filter.label}</option>
+                    <option key={`compose-${filter.key}`} value={filter.key}>{say(filter.label)}</option>
                   ))}
                 </select>
 
-                <label style={{ display: "block", color: "#9ca3af", fontSize: 12, marginBottom: 6 }}>To:</label>
+                <label style={{ display: "block", color: "#9ca3af", fontSize: 12, marginBottom: 6 }}>{say("To:")}</label>
                 {contactsLoading ? (
-                  <div style={{ color: "#6b7280", fontSize: 12 }}>Loading contacts...</div>
+                  <div style={{ color: "#6b7280", fontSize: 12 }}>{say("Loading contacts...")}</div>
                 ) : noContacts || filteredAvailableContacts.length === 0 ? (
                   <div style={{ color: "#f59e0b", fontSize: 13, padding: "10px 12px", background: "rgba(245,158,11,0.08)", borderRadius: 8 }}>
-                    <FaExclamationTriangle style={{marginRight:4}} /> No messageable contacts found.
-                    <br />
+                    <FaExclamationTriangle style={{marginRight:4}} /> {say("No messageable contacts found.")}{' '}<br />
                     <span style={{ fontSize: 11, color: "#9ca3af" }}>
-                      You can message shops, managers, and techs only when you have an open work order, a road call request, or a booked appointment.
-                    </span>
+                      {say("You can message shops, managers, and techs only when you have an open work order, a road call request, or a booked appointment.")}{' '}</span>
                   </div>
                 ) : (
                   <select
@@ -412,17 +409,17 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
                       setNewRecipient(c ?? null);
                     }}
                     style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.3)", color: "#e5e7eb", fontSize: 13 }}>
-                    <option value=""> -  Select recipient  - </option>
+                    <option value=""> {say("-  Select recipient  -")}{' '}</option>
                     {filteredAvailableContacts.map((c) => (
                       <option key={`${c.role}_${c.id}`} value={`${c.role}_${c.id}`}>
-                        {ROLE_ICON[c.role]} {c.name} ({ROLE_LABEL[c.role] ?? c.role})  -  {c.contextLabel}
+                        {ROLE_ICON[c.role]} {say(c.name)} ({ROLE_LABEL[c.role] ?? c.role})  -  {say(c.contextLabel)}
                       </option>
                     ))}
                   </select>
                 )}
               </div>
               <textarea
-                placeholder="Type your message..."
+                placeholder={say("Type your message...")}
                 value={messageText}
                 maxLength={5000}
                 onChange={(e) => setMessageText(e.target.value)}
@@ -432,12 +429,11 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={handleSend} disabled={loading || !messageText.trim() || !newRecipient}
                   style={{ flex: 1, padding: "10px 0", background: "#e5332a", color: "white", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: loading || !messageText.trim() || !newRecipient ? "not-allowed" : "pointer", opacity: loading || !messageText.trim() || !newRecipient ? 0.5 : 1 }}>
-                  {loading ? "Sending..." : "Send Message"}
+                  {loading ? say("Sending...") : say("Send Message")}
                 </button>
                 <button onClick={() => { setShowCompose(false); setNewRecipient(null); setMessageText(""); setComposeRoleFilter(activeTab); }}
                   style={{ padding: "10px 16px", background: "rgba(255,255,255,0.07)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               </div>
             </div>
 
@@ -448,7 +444,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
               <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.2)" }}>
                 <span style={{ fontSize: 18 }}>{ROLE_ICON[selected.contactRole] ?? <FaUser />}</span>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#e5e7eb" }}>{selected.contactName}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#e5e7eb" }}>{say(selected.contactName)}</div>
                   <div style={{ fontSize: 11, color: ROLE_COLOR[selected.contactRole] ?? "#9ca3af", fontWeight: 600 }}>
                     {ROLE_LABEL[selected.contactRole] ?? selected.contactRole}
                   </div>
@@ -458,7 +454,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
               {/* Messages */}
               <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                 {threadMessages.length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>Loading messages...</div>
+                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>{say("Loading messages...")}</div>
                 )}
                 {threadMessages
                   .slice()
@@ -470,10 +466,10 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
                         <div style={{ background: isMine ? "rgba(229,51,42,0.2)" : "rgba(59,130,246,0.18)", border: `1px solid ${isMine ? "rgba(229,51,42,0.35)" : "rgba(59,130,246,0.35)"}`, borderRadius: 10, padding: "8px 12px" }}>
                           {!isMine && (
                             <div style={{ fontSize: 10, color: ROLE_COLOR[msg.senderRole] ?? "#9ca3af", fontWeight: 700, marginBottom: 4 }}>
-                              {msg.senderName}
+                              {say(msg.senderName)}
                             </div>
                           )}
-                          <div style={{ fontSize: 13, color: "#e5e7eb" }}>{msg.body}</div>
+                          <div style={{ fontSize: 13, color: "#e5e7eb" }}>{say(msg.body)}</div>
                           <div style={{ fontSize: 9, color: "#6b7280", marginTop: 4, textAlign: "right" }}>
                             {new Date(msg.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </div>
@@ -497,7 +493,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
                 />
                 <button onClick={handleSend} disabled={loading || !messageText.trim()}
                   style={{ padding: "8px 16px", background: "#e5332a", color: "white", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: loading || !messageText.trim() ? "not-allowed" : "pointer", opacity: loading || !messageText.trim() ? 0.5 : 1, alignSelf: "flex-end" }}>
-                  {loading ? "..." : "Send"}
+                  {loading ? "..." : say("Send")}
                 </button>
               </div>
             </>
@@ -507,19 +503,17 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#4b5563", gap: 8, padding: 24 }}>
               <span style={{ fontSize: 36 }}><FaComments style={{marginRight:4}} /></span>
               <div style={{ fontSize: 14, color: "#6b7280", textAlign: "center" }}>
-                Select a conversation on the left<br />or click <strong style={{ color: "#e5332a" }}>+ New</strong> to start one.
-              </div>
+                {say("Select a conversation on the left")}<br />{say("or click")}{' '}<strong style={{ color: "#e5332a" }}>{say("+ New")}</strong> {say("to start one.")}{' '}</div>
               <div style={{ fontSize: 11, color: "#374151", marginTop: 4, textAlign: "center" }}>
-                You can message shops, managers & techs when you have an open work order, a road call request, or a booked appointment.
-              </div>
+                {say("You can message shops, managers & techs when you have an open work order, a road call request, or a booked appointment.")}{' '}</div>
             </div>
           )}
         </div>
       </div>
       {custMsgMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:custMsgMsg.type==='success'?'#dcfce7':'#fde8e8',color:custMsgMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {custMsgMsg.text}
-          <button aria-label="Dismiss" onClick={()=>setCustMsgMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          {say(custMsgMsg.text)}
+          <button aria-label={say("Dismiss")} onClick={()=>setCustMsgMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}
     </div>

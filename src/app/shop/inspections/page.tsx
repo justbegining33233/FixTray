@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, ReactNode } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaCar, FaCheckCircle, FaExclamationTriangle, FaHourglassHalf, FaTag, FaTimesCircle } from 'react-icons/fa';
@@ -67,6 +68,7 @@ const RESULT_STYLE: Record<string, { bg: string; color: string; icon: ReactNode 
 };
 
 export default function StateInspectionsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [inspections, setInspections] = useState<StateInspection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +130,7 @@ export default function StateInspectionsPage() {
     }));
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const passRate = inspections.length ? Math.round(inspections.filter(i => i.result === 'pass').length / inspections.length * 100) : 0;
@@ -137,30 +139,30 @@ export default function StateInspectionsPage() {
     <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaCar style={{marginRight:4}} /> State Inspections</h1>
-          <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>Safety & emissions inspection records  -  track sticker numbers and expiry dates</p>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaCar style={{marginRight:4}} /> {say("State Inspections")}</h1>
+          <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>{say("Safety & emissions inspection records  -  track sticker numbers and expiry dates")}</p>
         </div>
-        <button onClick={() => setShowNew(true)} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ Record Inspection</button>
+        <button onClick={() => setShowNew(true)} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{say("+ Record Inspection")}</button>
       </div>
 
       <div style={{ padding: '24px 32px 0', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        {[{ label: 'Total', value: inspections.length, icon: '' }, { label: 'Passed', value: inspections.filter(i => i.result === 'pass').length, icon: '' }, { label: 'Failed', value: inspections.filter(i => i.result === 'fail').length, icon: '' }, { label: 'Pass Rate', value: `${passRate}%`, icon: '' }].map(s => (
+        {[{ label: say("Total"), value: inspections.length, icon: '' }, { label: say("Passed"), value: inspections.filter(i => i.result === 'pass').length, icon: '' }, { label: say("Failed"), value: inspections.filter(i => i.result === 'fail').length, icon: '' }, { label: say("Pass Rate"), value: `${passRate}%`, icon: '' }].map(s => (
           <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '14px 20px', minWidth: 110 }}>
-            <div style={{ fontSize: 22 }}>{s.icon}</div>
-            <div style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 2px' }}>{s.value}</div>
-            <div style={{ fontSize: 12, color: '#9ca3af' }}>{s.label}</div>
+            <div style={{ fontSize: 22 }}>{say(s.icon)}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 2px' }}>{say(s.value)}</div>
+            <div style={{ fontSize: 12, color: '#9ca3af' }}>{say(s.label)}</div>
           </div>
         ))}
       </div>
 
       <div style={{ padding: 32 }}>
-        {loading ? <div style={{ color: '#6b7280' }}>Loading...</div> :
+        {loading ? <div style={{ color: '#6b7280' }}>{say("Loading...")}</div> :
           inspections.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 80 }}>
               <div style={{ fontSize: 64 }}><FaCar style={{marginRight:4}} /></div>
-              <div style={{ fontSize: 18, fontWeight: 600, margin: '16px 0 8px' }}>No inspections recorded</div>
-              <div style={{ color: '#9ca3af', marginBottom: 24 }}>Start recording state safety and emissions inspections</div>
-              <button onClick={() => setShowNew(true)} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>+ Record First Inspection</button>
+              <div style={{ fontSize: 18, fontWeight: 600, margin: '16px 0 8px' }}>{say("No inspections recorded")}</div>
+              <div style={{ color: '#9ca3af', marginBottom: 24 }}>{say("Start recording state safety and emissions inspections")}</div>
+              <button onClick={() => setShowNew(true)} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>{say("+ Record First Inspection")}</button>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
@@ -170,15 +172,15 @@ export default function StateInspectionsPage() {
                   <div key={insp.id} style={{ background: rs.bg, border: `1px solid ${rs.color}30`, borderRadius: 12, padding: 18 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>{insp.vehicle ? `${insp.vehicle.year} ${insp.vehicle.make} ${insp.vehicle.model}` : (insp as { vehicleDesc?: string }).vehicleDesc || 'Vehicle'}</div>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{insp.vehicle ? `${insp.vehicle.year} ${insp.vehicle.make} ${insp.vehicle.model}` : (insp as { vehicleDesc?: string }).vehicleDesc || say("Vehicle")}</div>
                         <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{new Date(insp.createdAt).toLocaleDateString()}  {insp.inspectionType.replace('_', ' ')}</div>
                       </div>
-                      <span style={{ fontSize: 20 }}>{rs.icon}</span>
+                      <span style={{ fontSize: 20 }}>{say(rs.icon)}</span>
                     </div>
-                    {insp.stickerId && <div style={{ fontSize: 13, marginBottom: 4 }}><FaTag style={{marginRight:4}} /> Sticker #{insp.stickerId}</div>}
-                    {insp.expiryDate && <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 4 }}>Expires: {new Date(insp.expiryDate).toLocaleDateString()}</div>}
-                    {insp.fee && <div style={{ fontSize: 13, color: '#22c55e' }}>Fee charged: ${insp.fee}</div>}
-                    {insp.notes && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{insp.notes}</div>}
+                    {insp.stickerId && <div style={{ fontSize: 13, marginBottom: 4 }}><FaTag style={{marginRight:4}} /> {say("Sticker #")}{say(insp.stickerId)}</div>}
+                    {insp.expiryDate && <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 4 }}>{say("Expires:")}{' '}{new Date(insp.expiryDate).toLocaleDateString()}</div>}
+                    {insp.fee && <div style={{ fontSize: 13, color: '#22c55e' }}>{say("Fee charged: $")}{say(insp.fee)}</div>}
+                    {insp.notes && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{say(insp.notes)}</div>}
                   </div>
                 );
               })}
@@ -189,68 +191,68 @@ export default function StateInspectionsPage() {
       {showNew && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
           <div style={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 460, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Record State Inspection</h3>
-            {formError && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', borderRadius: 8, padding: '10px 12px', marginBottom: 12, fontSize: 13 }}>{formError}</div>}
+            <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{say("Record State Inspection")}</h3>
+            {formError && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', borderRadius: 8, padding: '10px 12px', marginBottom: 12, fontSize: 13 }}>{say(formError)}</div>}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>Vehicle (year / make / model) *</label>
-              <input value={form.vehicleDesc} onChange={e => setForm(p => ({ ...p, vehicleDesc: e.target.value }))} placeholder="2020 Ford F-150"
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say("Vehicle (year / make / model) *")}</label>
+              <input value={form.vehicleDesc} onChange={e => setForm(p => ({ ...p, vehicleDesc: e.target.value }))} placeholder={say("2020 Ford F-150")}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>VIN</label>
-              <input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder="Optional if vehicle or work order is set"
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say("VIN")}</label>
+              <input value={form.vin} onChange={e => setForm(p => ({ ...p, vin: e.target.value }))} placeholder={say("Optional if vehicle or work order is set")}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Inspection Template</label>
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>{say("Inspection Template")}</label>
               <select
                 value={selectedTemplateId}
                 onChange={(e) => applyTemplate(e.target.value)}
                 style={{ width: '100%', background: '#374151', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14 }}
               >
-                <option value="">Choose a template (optional)</option>
+                <option value="">{say("Choose a template (optional)")}</option>
                 {INSPECTION_TEMPLATES.map((t) => (
-                  <option key={t.id} value={t.id}>{t.label}</option>
+                  <option key={t.id} value={t.id}>{say(t.label)}</option>
                 ))}
               </select>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
-                <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Inspection Type</label>
+                <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>{say("Inspection Type")}</label>
                 <select value={form.inspectionType} onChange={e => setForm(p => ({ ...p, inspectionType: e.target.value }))}
                   style={{ width: '100%', background: '#374151', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14 }}>
-                  <option value="safety">Safety</option>
-                  <option value="emissions">Emissions</option>
-                  <option value="safety_emissions">Safety + Emissions</option>
-                  <option value="commercial">Commercial</option>
+                  <option value="safety">{say("Safety")}</option>
+                  <option value="emissions">{say("Emissions")}</option>
+                  <option value="safety_emissions">{say("Safety + Emissions")}</option>
+                  <option value="commercial">{say("Commercial")}</option>
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>Result</label>
+                <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 6 }}>{say("Result")}</label>
                 <select value={form.result} onChange={e => setForm(p => ({ ...p, result: e.target.value }))}
                   style={{ width: '100%', background: '#374151', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14 }}>
-                  <option value="pass"><FaCheckCircle style={{marginRight:4}} /> Pass</option>
-                  <option value="fail"><FaTimesCircle style={{marginRight:4}} /> Fail</option>
-                  <option value="waiver"><FaExclamationTriangle style={{marginRight:4}} /> Waiver</option>
-                  <option value="pending"><FaHourglassHalf style={{marginRight:4}} /> Pending</option>
+                  <option value="pass"><FaCheckCircle style={{marginRight:4}} /> {say("Pass")}</option>
+                  <option value="fail"><FaTimesCircle style={{marginRight:4}} /> {say("Fail")}</option>
+                  <option value="waiver"><FaExclamationTriangle style={{marginRight:4}} /> {say("Waiver")}</option>
+                  <option value="pending"><FaHourglassHalf style={{marginRight:4}} /> {say("Pending")}</option>
                 </select>
               </div>
             </div>
-            {[['stickerId', 'Sticker/Certificate #', 'INS-123456'], ['expiryDate', 'Expiry Date', ''], ['odometer', 'Odometer Reading', '85000'], ['fee', 'Fee Charged ($)', '37.00'], ['workOrderId', 'Work Order ID', 'WO-101']].map(([k, label, ph]) => (
+            {[["stickerId", say("Sticker/Certificate #"), say("INS-123456")], ["expiryDate", say("Expiry Date"), ''], ['odometer', say("Odometer Reading"), '85000'], ['fee', say("Fee Charged ($)"), '37.00'], ["workOrderId", say("Work Order ID"), say("WO-101")]].map(([k, label, ph]) => (
               <div key={k} style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{label}</label>
-                <input type={k === 'expiryDate' ? 'date' : 'text'} value={(form as any)[k]} onChange={e => setForm(p => ({ ...p, [k]: e.target.value }))} placeholder={ph}
+                <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say(label)}</label>
+                <input type={k === 'expiryDate' ? 'date' : 'text'} value={(form as any)[k]} onChange={e => setForm(p => ({ ...p, [k]: e.target.value }))} placeholder={say(ph)}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
             ))}
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>Notes</label>
+              <label style={{ fontSize: 13, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say("Notes")}</label>
               <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={create} disabled={saving || !inspectionReady} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !inspectionReady ? 'not-allowed' : 'pointer', opacity: saving || !inspectionReady ? 0.5 : 1 }}>{saving ? 'Saving...' : 'Record Inspection'}</button>
-              <button onClick={() => setShowNew(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={create} disabled={saving || !inspectionReady} style={{ flex: 1, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 600, cursor: saving || !inspectionReady ? 'not-allowed' : 'pointer', opacity: saving || !inspectionReady ? 0.5 : 1 }}>{saving ? say("Saving...") : say("Record Inspection")}</button>
+              <button onClick={() => setShowNew(false)} style={{ flex: 1, background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '11px 0', fontSize: 14, cursor: 'pointer' }}>{say("Cancel")}</button>
             </div>
           </div>
         </div>

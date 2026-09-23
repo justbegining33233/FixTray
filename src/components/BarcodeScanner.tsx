@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { FaCamera, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
@@ -10,6 +11,7 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ onScan, onClose, label = 'Scan a Barcode' }: BarcodeScannerProps) {
+  const say = usePhrase();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [supported, setSupported] = useState<boolean | null>(null);
@@ -97,23 +99,21 @@ export default function BarcodeScanner({ onScan, onClose, label = 'Scan a Barcod
       <div style={{ background: '#1e293b', borderRadius: 16, padding: 24, width: '100%', maxWidth: 480, border: '1px solid rgba(255,255,255,0.1)' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ color: '#f1f5f9', fontSize: 18, fontWeight: 700, margin: 0 }}><FaCamera style={{marginRight:4}} /> {label}</h2>
-          <button aria-label="Close" onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>×</button>
+          <h2 style={{ color: '#f1f5f9', fontSize: 18, fontWeight: 700, margin: 0 }}><FaCamera style={{marginRight:4}} /> {say(label)}</h2>
+          <button aria-label={say("Close")} onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>×</button>
         </div>
 
         {supported === false && (
           <div style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 10, padding: 16, marginBottom: 16 }}>
-            <p style={{ color: '#fbbf24', fontSize: 14, margin: '0 0 8px', fontWeight: 600 }}><FaExclamationTriangle style={{marginRight:4}} /> Barcode scanning not supported in this browser</p>
+            <p style={{ color: '#fbbf24', fontSize: 14, margin: '0 0 8px', fontWeight: 600 }}><FaExclamationTriangle style={{marginRight:4}} /> {say("Barcode scanning not supported in this browser")}</p>
             <p style={{ color: '#d4a017', fontSize: 13, margin: 0 }}>
-              The BarcodeDetector API requires Chrome 83+, Edge 83+, or Chrome for Android. 
-              Please enter the barcode manually below, or use a barcode scanner device.
-            </p>
+              {say("The BarcodeDetector API requires Chrome 83+, Edge 83+, or Chrome for Android. \n              Please enter the barcode manually below, or use a barcode scanner device.")}{' '}</p>
           </div>
         )}
 
         {error && (
           <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#fca5a5', fontSize: 13 }}>
-            {error}
+            {say(error)}
           </div>
         )}
 
@@ -134,14 +134,13 @@ export default function BarcodeScanner({ onScan, onClose, label = 'Scan a Barcod
             )}
             {scanning && (
               <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', color: '#93c5fd', fontSize: 13 }}>
-                Point camera at barcode...
-              </div>
+                {say("Point camera at barcode...")}{' '}</div>
             )}
             {lastResult && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
                 <div style={{ fontSize: 40 }}><FaCheckCircle style={{marginRight:4}} /></div>
-                <div style={{ color: '#34d399', fontSize: 16, fontWeight: 700, marginTop: 8 }}>Scanned!</div>
-                <div style={{ color: '#86efac', fontFamily: 'monospace', fontSize: 14, marginTop: 4 }}>{lastResult}</div>
+                <div style={{ color: '#34d399', fontSize: 16, fontWeight: 700, marginTop: 8 }}>{say("Scanned!")}</div>
+                <div style={{ color: '#86efac', fontFamily: 'monospace', fontSize: 14, marginTop: 4 }}>{say(lastResult)}</div>
               </div>
             )}
           </div>
@@ -149,25 +148,23 @@ export default function BarcodeScanner({ onScan, onClose, label = 'Scan a Barcod
 
         {/* Manual input fallback */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 16 }}>
-          <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 10px' }}>Or enter barcode / SKU manually:</p>
+          <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 10px' }}>{say("Or enter barcode / SKU manually:")}</p>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="text"
-              placeholder="e.g. 012345678905"
+              placeholder={say("e.g. 012345678905")}
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
               style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', fontSize: 14 }}
             />
             <button onClick={handleManualSubmit} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Use
-            </button>
+              {say("Use")}{' '}</button>
           </div>
         </div>
 
         <button onClick={onClose} style={{ width: '100%', marginTop: 14, padding: '10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: 14 }}>
-          Cancel
-        </button>
+          {say("Cancel")}{' '}</button>
       </div>
     </div>
   );

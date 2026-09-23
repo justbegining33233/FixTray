@@ -1,16 +1,10 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React from 'react';
 import { WorkOrder } from '@/types/workorder';
 import Link from 'next/link';
 import { FaCar, FaTruck, FaWrench } from 'react-icons/fa';
-
-const vehicleTypeLabels: Record<string, React.ReactNode> = {
-  'semi-truck': <><FaTruck style={{marginRight:4}} /> Semi Truck</>,
-  'trailer': <><FaTruck style={{marginRight:4}} /> Trailer</>,
-  'equipment': <><FaWrench style={{marginRight:4}} /> Equipment</>,
-  'personal-vehicle': <><FaCar style={{marginRight:4}} /> Personal Vehicle</>,
-};
 
 const statusColors = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -34,6 +28,13 @@ function getServiceSummary(workOrder: WorkOrder): string {
 }
 
 export default function WorkOrderCard({ workOrder }: { workOrder: WorkOrder }) {
+  const say = usePhrase();
+  const vehicleTypeLabels: Record<string, React.ReactNode> = {
+    'semi-truck': <><FaTruck style={{marginRight:4}} /> {say("Semi Truck")}</>,
+    'trailer': <><FaTruck style={{marginRight:4}} /> {say("Trailer")}</>,
+    'equipment': <><FaWrench style={{marginRight:4}} /> {say("Equipment")}</>,
+    'personal-vehicle': <><FaCar style={{marginRight:4}} /> {say("Personal Vehicle")}</>,
+  };
   return (
     <Link href={`/workorders/${workOrder.id}`}>
       <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 cursor-pointer border border-gray-200">
@@ -49,15 +50,15 @@ export default function WorkOrderCard({ workOrder }: { workOrder: WorkOrder }) {
         <p className="text-gray-600 text-sm mb-3">{getServiceSummary(workOrder)}</p>
 
         <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-          {workOrder.issueDescription.symptoms}
+          {say(workOrder.issueDescription.symptoms)}
         </p>
 
         <div className="flex justify-between items-center text-sm">
-          {workOrder.createdBy && <span className="text-gray-600">{workOrder.createdBy}</span>}
+          {workOrder.createdBy && <span className="text-gray-600">{say(workOrder.createdBy)}</span>}
         </div>
 
         <div className="mt-3 text-xs text-gray-500">
-          Created: {new Date(workOrder.createdAt).toLocaleDateString()}
+          {say("Created:")}{' '}{new Date(workOrder.createdAt).toLocaleDateString()}
         </div>
       </div>
     </Link>

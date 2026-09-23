@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -32,6 +33,7 @@ interface TrackingOrder {
 }
 
 export default function LiveTracking() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
@@ -173,32 +175,30 @@ export default function LiveTracking() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Customer Portal</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Live Tracking</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Customer Portal")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Live Tracking")}</div>
           </div>
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16}}>
-          <span style={{fontSize:14, color:'#9aa3b2'}}>Welcome, {userName}</span>
+          <span style={{fontSize:14, color:'#9aa3b2'}}>{say("Welcome,")}{' '}{say(userName)}</span>
           <button onClick={handleSignOut} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:600}}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
-        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Live Tracking</h1>
+        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>{say("Live Tracking")}</h1>
 
         {loading && (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-            Loading tracking data...
-          </div>
+            {say("Loading tracking data...")}{' '}</div>
         )}
 
         {error && (
           <div style={{textAlign:'center', padding:40, color:'#ef4444'}}>
-            {error}
+            {say(error)}
           </div>
         )}
 
@@ -207,18 +207,18 @@ export default function LiveTracking() {
             {trackingOrders.map(order => (
               <div key={order.workOrderId} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
                 <div style={{marginBottom:20}}>
-                  <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{order.issueDescription}</h3>
-                  <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>Work Order - {order.workOrderId}</div>
-                  <div style={{fontSize:16, color:'#e5332a', fontWeight:600, marginBottom:12}}>{order.status}</div>
+                  <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(order.issueDescription)}</h3>
+                  <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>{say("Work Order -")}{' '}{say(order.workOrderId)}</div>
+                  <div style={{fontSize:16, color:'#e5332a', fontWeight:600, marginBottom:12}}>{say(order.status)}</div>
 
                   {order.tech && (
                     <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>
-                      <FaUser style={{marginRight:4}} /><FaWrench style={{marginRight:4}} /> {order.tech.name}
+                      <FaUser style={{marginRight:4}} /><FaWrench style={{marginRight:4}} /> {say(order.tech.name)}
                     </div>
                   )}
 
                   <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>
-                    <FaStore style={{marginRight:4}} /> {order.shop.shopName}
+                    <FaStore style={{marginRight:4}} /> {say(order.shop.shopName)}
                   </div>
 
                   {order.isInShop || order.location?.shopAddress ? (
@@ -227,18 +227,18 @@ export default function LiveTracking() {
                         <FaMapMarkerAlt style={{marginRight:4}} /> {order.shop.address || order.location?.shopAddress}
                       </div>
                       <div style={{fontSize:14, color:'#f59e0b', fontWeight:600}}>
-                        <FaClock style={{marginRight:4}} /> Service Time: {order.serviceTime ? new Date(order.serviceTime).toLocaleString() : (order.estimatedArrival ? new Date(order.estimatedArrival).toLocaleString() : '')}
+                        <FaClock style={{marginRight:4}} /> {say("Service Time:")}{' '}{order.serviceTime ? new Date(order.serviceTime).toLocaleString() : (order.estimatedArrival ? new Date(order.estimatedArrival).toLocaleString() : '')}
                       </div>
                     </div>
                   ) : (
                     <div style={{display:'flex', flexDirection:'column', gap:6}}>
                       {order.location && order.location.latitude !== undefined && order.location.longitude !== undefined ? (
                         <div style={{display:'flex', gap:12, alignItems:'center'}}>
-                          <div style={{fontSize:14, color:'#e5e7eb'}}><FaMapMarkerAlt style={{marginRight:4}} /> Current Location: {order.location.latitude!.toFixed(4)}, {order.location.longitude!.toFixed(4)}</div>
-                          {order.location.estimatedArrival && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> ETA: {new Date(order.location.estimatedArrival).toLocaleTimeString()}</div>}
+                          <div style={{fontSize:14, color:'#e5e7eb'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say("Current Location:")}{' '}{order.location.latitude!.toFixed(4)}, {order.location.longitude!.toFixed(4)}</div>
+                          {order.location.estimatedArrival && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> {say("ETA:")}{' '}{new Date(order.location.estimatedArrival).toLocaleTimeString()}</div>}
                         </div>
                       ) : (
-                        <div style={{fontSize:14, color:'#9aa3b2'}}>Live tracking not available for this job yet.</div>
+                        <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Live tracking not available for this job yet.")}</div>
                       )}
                     </div>
                   )}
@@ -257,8 +257,7 @@ export default function LiveTracking() {
                     textAlign:'center',
                     display:'inline-block'
                   }}>
-                    View Details
-                  </Link>
+                    {say("View Details")}{' '}</Link>
                   <div style={{display:'flex', flex:1, gap:6}}>
                     {order.tech?.phone && (
                       <a href={`tel:${order.tech.phone}`} style={{
@@ -273,8 +272,7 @@ export default function LiveTracking() {
                         textDecoration:'none',
                         textAlign:'center'
                       }}>
-                        <FaPhone style={{marginRight:4}} /> Call
-                      </a>
+                        <FaPhone style={{marginRight:4}} /> {say("Call")}{' '}</a>
                     )}
                     <button onClick={() => openMessageModal(order)} style={{
                       flex:1,
@@ -287,8 +285,7 @@ export default function LiveTracking() {
                       fontWeight:600,
                       cursor:'pointer'
                     }}>
-                      <FaComments style={{marginRight:4}} /> Message
-                    </button>
+                      <FaComments style={{marginRight:4}} /> {say("Message")}{' '}</button>
                   </div>
                 </div>
               </div>
@@ -298,8 +295,7 @@ export default function LiveTracking() {
 
         {!loading && !error && trackingOrders.length === 0 && (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-            No active orders to track.
-          </div>
+            {say("No active orders to track.")}{' '}</div>
         )}
 
         {/* Back to Dashboard */}
@@ -315,8 +311,7 @@ export default function LiveTracking() {
             textDecoration:'none',
             cursor:'pointer'
           }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
       </div>
 
@@ -345,20 +340,20 @@ export default function LiveTracking() {
             overflow: 'auto'
           }}>
             <h3 style={{fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 16}}>
-              {messageModal.order.isInShop ? 'Message Shop' : 'Message Technician'}
+              {messageModal.order.isInShop ? say("Message Shop") : say("Message Technician")}
             </h3>
             <div style={{fontSize: 14, color: '#9aa3b2', marginBottom: 16}}>
-              Work Order: {messageModal.order.workOrderId}
+              {say("Work Order:")}{' '}{say(messageModal.order.workOrderId)}
               {messageModal.order.isInShop ? (
-                <div>Shop: {messageModal.order.shop.shopName}</div>
+                <div>{say("Shop:")}{' '}{say(messageModal.order.shop.shopName)}</div>
               ) : (
-                messageModal.order.tech && <div>Technician: {messageModal.order.tech.name}</div>
+                messageModal.order.tech && <div>{say("Technician:")}{' '}{say(messageModal.order.tech.name)}</div>
               )}
             </div>
             <textarea
               value={messageModal.message}
               onChange={(e) => setMessageModal(prev => ({ ...prev, message: e.target.value }))}
-              placeholder="Type your message here..."
+              placeholder={say("Type your message here...")}
               style={{
                 width: '100%',
                 minHeight: 120,
@@ -385,8 +380,7 @@ export default function LiveTracking() {
                   fontSize: 14
                 }}
               >
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
               <button
                 onClick={sendMessage}
                 disabled={!messageModal.message.trim() || messageModal.sending}
@@ -402,7 +396,7 @@ export default function LiveTracking() {
                   opacity: messageModal.message.trim() && !messageModal.sending ? 1 : 0.5
                 }}
               >
-                {messageModal.sending ? 'Sending...' : 'Send Message'}
+                {messageModal.sending ? say("Sending...") : say("Send Message")}
               </button>
             </div>
           </div>
@@ -411,7 +405,7 @@ export default function LiveTracking() {
 
       {trackingMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:trackingMsg.type==='success'?'#dcfce7':'#fde8e8',color:trackingMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {trackingMsg.text}
+          {say(trackingMsg.text)}
           <button onClick={()=>setTrackingMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}

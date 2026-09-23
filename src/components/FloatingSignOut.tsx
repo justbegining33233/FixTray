@@ -1,10 +1,12 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { FaSignOutAlt } from 'react-icons/fa';
 
 export default function FloatingSignOut() {
+  const say = usePhrase();
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -69,7 +71,7 @@ export default function FloatingSignOut() {
         boxShadow: '0 4px 14px rgba(229,51,42,0.4)',
         cursor: 'pointer',
       }}
-      title="Sign Out"
+      title={say("Sign Out")}
     >
       <FaSignOutAlt style={{marginRight:4}} />
     </button>

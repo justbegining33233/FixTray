@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaBook, FaSave, FaSlidersH, FaStethoscope } from 'react-icons/fa';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
@@ -9,6 +10,7 @@ import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
 import MobileShell from '@/components/MobileShell';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { DashboardTab } from '@/app/admin/home/components/DashboardTabClean';
 import { UsersTab } from '@/app/admin/home/components/UsersTab';
 import { HierarchyTab } from '@/components/admin/HierarchyTab';
@@ -19,6 +21,7 @@ import { ownerShopHeadline } from '@/lib/shopCensus';
 export const dynamic = 'force-dynamic';
 
 function AdminHomeContent() {
+  const say = usePhrase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
@@ -145,7 +148,7 @@ function AdminHomeContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <p className="text-[#71717A] text-[13px]">Redirecting to login...</p>
+          <p className="text-[#71717A] text-[13px]">{say("Redirecting to login...")}</p>
         </div>
       </div>
     );
@@ -162,7 +165,7 @@ function AdminHomeContent() {
   ];
 
   const quickLinks = [
-    { href: '/admin/command-center', label: <><FaSlidersH style={{marginRight:4}} /> Command Center</>, icon: 'command', highlight: true },
+    { href: '/admin/command-center', label: <><FaSlidersH style={{marginRight:4}} /> {say("Command Center")}</>, icon: 'command', highlight: true },
     { href: '/admin/messages', label: ' Messages', icon: 'messages' },
     ...(isOwnerProfile ? [{ href: '/admin/revenue', label: ' Revenue & Payouts', icon: 'money' }] : []),
     { href: '/admin/pending-shops', label: 'Pending Approvals', badge: pendingApprovalsCount, icon: 'clock' },
@@ -176,9 +179,9 @@ function AdminHomeContent() {
     { href: '/admin/sessions', label: ' Active Sessions', icon: 'sessions' },
     { href: '/admin/security-settings', label: ' Security Settings', icon: 'security' },
     { href: '/admin/system-settings', label: ' System Settings', icon: 'settings' },
-    { href: '/admin/backup-restore', label: <><FaSave style={{marginRight:4}} /> Backup & Restore</>, icon: 'backup' },
-    { href: '/admin/guide', label: <><FaBook style={{marginRight:4}} /> Documentation</>, icon: 'book' },
-    { href: '/admin/test', label: <><FaStethoscope style={{marginRight:4}} /> Health Check</>, icon: 'health' },
+    { href: '/admin/backup-restore', label: <><FaSave style={{marginRight:4}} /> {say("Backup & Restore")}</>, icon: 'backup' },
+    { href: '/admin/guide', label: <><FaBook style={{marginRight:4}} /> {say("Documentation")}</>, icon: 'book' },
+    { href: '/admin/test', label: <><FaStethoscope style={{marginRight:4}} /> {say("Health Check")}</>, icon: 'health' },
   ];
 
   const _signalItems = [
@@ -221,7 +224,7 @@ function AdminHomeContent() {
               </svg>
               <input
                 type="text"
-                placeholder="Search or jump to a section..."
+                placeholder={say("Search or jump to a section...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 bg-transparent text-slate-50 placeholder-slate-500 outline-none text-sm"
@@ -230,33 +233,33 @@ function AdminHomeContent() {
               <kbd className="px-1.5 py-0.5 bg-[#000000] border border-[#1f2937] rounded text-[10px] text-slate-400 font-mono">esc</kbd>
             </div>
             <div className="p-3 max-h-80 overflow-auto space-y-1">
-              <div className="px-2 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Navigate</div>
+              <div className="px-2 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{say("Navigate")}</div>
               {[
-                { label: 'Overview', action: () => handleSectionSelect('dashboard'), key: 'D' },
-                { label: 'Customers', action: () => handleSectionSelect('users'), key: 'U' },
-                ...(isOwnerProfile ? [{ label: 'Revenue', action: () => { router.push('/admin/revenue' as Route); setSearchOpen(false); }, key: 'R' }] : []),
-                { label: 'Shops', action: () => handleSectionSelect('hierarchy'), key: 'S' },
-                { label: 'Pending Approvals', action: () => { router.push('/admin/pending-shops' as Route); setSearchOpen(false); }, key: 'P' },
-                { label: 'Accepted Shops', action: () => { router.push('/admin/accepted-shops' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Manage Shops', action: () => { router.push('/admin/manage-shops' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Manage Customers', action: () => { router.push('/admin/manage-customers' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'User Management', action: () => { router.push('/admin/user-management' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Platform Analytics', action: () => { router.push('/admin/platform-analytics' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Financial Reports', action: () => { router.push('/admin/financial-reports' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Email Templates', action: () => { router.push('/admin/email-templates' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Active Sessions', action: () => { router.push('/admin/sessions' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Security Settings', action: () => { router.push('/admin/security-settings' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'System Settings', action: () => { router.push('/admin/system-settings' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'Backup & Restore', action: () => { router.push('/admin/backup-restore' as Route); setSearchOpen(false); }, key: '' },
-                { label: 'System Status', action: () => { router.push('/admin/test' as Route); setSearchOpen(false); }, key: 'T' },
+                { label: say("Overview"), action: () => handleSectionSelect('dashboard'), key: 'D' },
+                { label: say("Customers"), action: () => handleSectionSelect('users'), key: 'U' },
+                ...(isOwnerProfile ? [{ label: say("Revenue"), action: () => { router.push('/admin/revenue' as Route); setSearchOpen(false); }, key: 'R' }] : []),
+                { label: say("Shops"), action: () => handleSectionSelect('hierarchy'), key: 'S' },
+                { label: say("Pending Approvals"), action: () => { router.push('/admin/pending-shops' as Route); setSearchOpen(false); }, key: 'P' },
+                { label: say("Accepted Shops"), action: () => { router.push('/admin/accepted-shops' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Manage Shops"), action: () => { router.push('/admin/manage-shops' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Manage Customers"), action: () => { router.push('/admin/manage-customers' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("User Management"), action: () => { router.push('/admin/user-management' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Platform Analytics"), action: () => { router.push('/admin/platform-analytics' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Financial Reports"), action: () => { router.push('/admin/financial-reports' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Email Templates"), action: () => { router.push('/admin/email-templates' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Active Sessions"), action: () => { router.push('/admin/sessions' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Security Settings"), action: () => { router.push('/admin/security-settings' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("System Settings"), action: () => { router.push('/admin/system-settings' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Backup & Restore"), action: () => { router.push('/admin/backup-restore' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("System Status"), action: () => { router.push('/admin/test' as Route); setSearchOpen(false); }, key: 'T' },
               ].map((item, i) => (
                 <button
                   key={i}
                   onClick={() => { item.action(); setSearchOpen(false); }}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-100 hover:bg-[#000000] transition-colors group"
                 >
-                  <span>{item.label}</span>
-                  <kbd className="px-1.5 py-0.5 bg-[#0b1220] border border-[#1f2937] rounded text-[10px] text-slate-400 font-mono opacity-0 group-hover:opacity-100 transition-opacity">{item.key}</kbd>
+                  <span>{say(item.label)}</span>
+                  <kbd className="px-1.5 py-0.5 bg-[#0b1220] border border-[#1f2937] rounded text-[10px] text-slate-400 font-mono opacity-0 group-hover:opacity-100 transition-opacity">{say(item.key)}</kbd>
                 </button>
               ))}
             </div>
@@ -270,8 +273,8 @@ function AdminHomeContent() {
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#f97316] to-[#ea580c] text-white flex items-center justify-center font-semibold text-lg">F</div>
               <div>
-                <p className="text-sm text-slate-400">Admin Console</p>
-                <h1 className="text-xl font-semibold text-white">{activeSection === 'dashboard' ? 'Overview' : activeSection === 'users' ? 'Customers' : activeSection === 'hierarchy' ? 'Shops' : 'Admin'}</h1>
+                <p className="text-sm text-slate-400">{say("Admin Console")}</p>
+                <h1 className="text-xl font-semibold text-white">{activeSection === 'dashboard' ? say("Overview") : activeSection === 'users' ? say("Customers") : activeSection === 'hierarchy' ? say("Shops") : say("Admin")}</h1>
               </div>
             </div>
             <Breadcrumbs />
@@ -284,7 +287,7 @@ function AdminHomeContent() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <span>Search</span>
+                <span>{say("Search")}</span>
               </button>
 
               <div className="relative" ref={profileMenuRef}>
@@ -296,7 +299,7 @@ function AdminHomeContent() {
                     {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'A'}
                   </div>
                   <div className="hidden sm:block leading-tight text-left">
-                    <p className="text-sm text-white font-medium">{user.name || 'Admin'}</p>
+                    <p className="text-sm text-white font-medium">{user.name || say("Admin")}</p>
                     <p className="text-xs text-slate-300 capitalize">{user.role || 'administrator'}</p>
                   </div>
                 </button>
@@ -304,14 +307,14 @@ function AdminHomeContent() {
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-72 rounded-xl border border-white/10 bg-[#0b1220] shadow-2xl shadow-black/40 overflow-hidden z-50">
                     <div className="px-4 py-3 border-b border-white/10">
-                      <p className="text-sm text-white font-semibold">{user.name || 'Admin'}</p>
+                      <p className="text-sm text-white font-semibold">{user.name || say("Admin")}</p>
                       <p className="text-xs text-slate-400 capitalize">{user.role || 'administrator'}</p>
                     </div>
 
                     {isOwnerProfile && (
                       <div className="px-4 py-3 border-b border-white/10">
-                        <p className="text-[11px] uppercase tracking-wide text-slate-500 mb-2">FixTray Owner</p>
-                        <p className="text-xs text-slate-300">Platform control center and account recovery tools.</p>
+                        <p className="text-[11px] uppercase tracking-wide text-slate-500 mb-2">{say("FixTray Owner")}</p>
+                        <p className="text-xs text-slate-300">{say("Platform control center and account recovery tools.")}</p>
                       </div>
                     )}
 
@@ -321,8 +324,11 @@ function AdminHomeContent() {
                         className="block px-4 py-2 text-sm text-slate-200 hover:bg-white/10 no-underline"
                         onClick={() => setShowProfileMenu(false)}
                       >
-                        My Profile
-                      </Link>
+                        {say("My Profile")}{' '}</Link>
+
+                      <div className="px-4 py-3 border-t border-white/10">
+                        <LanguageSwitcher />
+                      </div>
 
                       {isOwnerProfile && (
                         <>
@@ -331,15 +337,13 @@ function AdminHomeContent() {
                             className="block px-4 py-2 text-sm text-slate-200 hover:bg-white/10 no-underline"
                             onClick={() => setShowProfileMenu(false)}
                           >
-                            Quick Edit User Info
-                          </Link>
+                            {say("Quick Edit User Info")}{' '}</Link>
                           <Link
                             href={'/admin/owner?section=reset-password' as Route}
                             className="block px-4 py-2 text-sm text-slate-200 hover:bg-white/10 no-underline"
                             onClick={() => setShowProfileMenu(false)}
                           >
-                            Reset User Password
-                          </Link>
+                            {say("Reset User Password")}{' '}</Link>
                         </>
                       )}
                     </div>
@@ -354,7 +358,7 @@ function AdminHomeContent() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                <span>Logout</span>
+                <span>{say("Logout")}</span>
               </button>
             </div>
           </div>
@@ -365,43 +369,43 @@ function AdminHomeContent() {
           <section className="space-y-4">
             <div className="rounded-2xl bg-[#000000] border border-[#1f2937] p-4 shadow-lg shadow-black/30">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
-                <span className="text-[11px] text-emerald-400">Live</span>
+                <p className="text-xs uppercase tracking-wide text-slate-400">{say("Status")}</p>
+                <span className="text-[11px] text-emerald-400">{say("Live")}</span>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
                   <div>
-                    <p className="text-xs text-slate-300">Pending approvals</p>
+                    <p className="text-xs text-slate-300">{say("Pending approvals")}</p>
                     <p className="text-lg font-semibold text-white">{pendingApprovalsCount ?? 0}</p>
                   </div>
-                  <Link href="/admin/pending-shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">Review</Link>
+                  <Link href="/admin/pending-shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("Review")}</Link>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
                   <div>
-                    <p className="text-xs text-slate-300">Total shops</p>
+                    <p className="text-xs text-slate-300">{say("Total shops")}</p>
                     <p className="text-lg font-semibold text-white">{totalShopsCount ?? 0}</p>
                   </div>
-                  <Link href="/admin/revenue" className="text-xs text-orange-300 hover:text-orange-200 no-underline">View</Link>
+                  <Link href="/admin/revenue" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("View")}</Link>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
                   <div>
-                    <p className="text-xs text-slate-300">Customers</p>
+                    <p className="text-xs text-slate-300">{say("Customers")}</p>
                     <p className="text-lg font-semibold text-white">{customersCount ?? 0}</p>
                   </div>
-                  <Link href="/admin/manage-customers" className="text-xs text-orange-300 hover:text-orange-200 no-underline">Manage</Link>
+                  <Link href="/admin/manage-customers" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("Manage")}</Link>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
                   <div>
-                    <p className="text-xs text-slate-300">Approved shops</p>
+                    <p className="text-xs text-slate-300">{say("Approved shops")}</p>
                     <p className="text-lg font-semibold text-white">{approvedShopsCount ?? 0}</p>
                   </div>
-                  <Link href="/admin/manage-shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">Open</Link>
+                  <Link href="/admin/manage-shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("Open")}</Link>
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl bg-[#000000] border border-[#1f2937] p-4 shadow-lg shadow-black/30 space-y-2">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Quick actions</p>
+              <p className="text-xs uppercase tracking-wide text-slate-400">{say("Quick actions")}</p>
               <div className="flex flex-wrap gap-2">
                 {actionButtons.map((action) => (
                   <Link
@@ -409,7 +413,7 @@ function AdminHomeContent() {
                     href={action.href as Route}
                     className="rounded-full bg-gradient-to-r from-[#f97316] to-[#fb923c] text-white text-sm px-3 py-2 no-underline shadow-md shadow-[#f97316]/30 hover:brightness-110 transition"
                   >
-                    {action.label}
+                    {say(action.label)}
                   </Link>
                 ))}
               </div>
@@ -433,10 +437,10 @@ function AdminHomeContent() {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
                     </svg>
-                    <span>{item.label}</span>
+                    <span>{say(item.label)}</span>
                     {item.badge !== undefined && (
                       <span className={`text-[11px] px-2 py-0.5 rounded-full ${activeSection === item.id ? 'bg-[#000000]/10 text-[#000000]' : 'bg-white/10 text-white'}`}>
-                        {item.badge}
+                        {say(item.badge)}
                       </span>
                     )}
                   </button>
@@ -449,7 +453,7 @@ function AdminHomeContent() {
 
               {activeSection === 'dashboard' && (
                 <div className="mt-5">
-                  <p className="text-xs uppercase tracking-wide text-slate-400 mb-3">Quick Navigation</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-400 mb-3">{say("Quick Navigation")}</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {quickLinks.map((link) => (
                       <Link
@@ -461,9 +465,9 @@ function AdminHomeContent() {
                             : 'bg-white/5 border-white/10 text-slate-200'
                         }`}
                       >
-                        <span className="truncate">{link.label}</span>
+                        <span className="truncate">{say(link.label)}</span>
                         {link.badge !== undefined && link.badge > 0 && (
-                          <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white shrink-0">{link.badge}</span>
+                          <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white shrink-0">{say(link.badge)}</span>
                         )}
                       </Link>
                     ))}
@@ -481,8 +485,9 @@ function AdminHomeContent() {
 }
 
 export default function AdminHome() {
+  const say = usePhrase();
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{say("Loading...")}</div>}>
       <AdminHomeContent />
     </Suspense>
   );

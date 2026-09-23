@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { formatDate, formatDuration } from '@/lib/utils';
 
@@ -23,6 +24,7 @@ interface ShiftCalendarProps {
 }
 
 export function ShiftCalendar({ shifts = [], onDayClick, onShiftClick, view = 'month' }: ShiftCalendarProps) {
+  const say = usePhrase();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [displayShifts, setDisplayShifts] = useState<Shift[]>([]);
 
@@ -85,29 +87,27 @@ export function ShiftCalendar({ shifts = [], onDayClick, onShiftClick, view = 'm
     <div className="bg-white rounded-lg shadow p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-bold">{monthName}</h3>
+        <h3 className="text-2xl font-bold">{say(monthName)}</h3>
         <div className="flex gap-2">
           <button
             onClick={handlePrevMonth}
             className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
           >
-            ← Prev
-          </button>
+            {say("← Prev")}{' '}</button>
           <button
             onClick={handleNextMonth}
             className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
           >
-            Next →
-          </button>
+            {say("Next →")}{' '}</button>
         </div>
       </div>
 
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1 mb-6">
         {/* Day headers */}
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+        {[say("Sun"), say("Mon"), say("Tue"), say("Wed"), say("Thu"), say("Fri"), say("Sat")].map(day => (
           <div key={day} className="text-center font-semibold text-gray-600 py-2">
-            {day}
+            {say(day)}
           </div>
         ))}
 
@@ -122,7 +122,7 @@ export function ShiftCalendar({ shifts = [], onDayClick, onShiftClick, view = 'm
           >
             {day && (
               <>
-                <div className="font-semibold text-sm mb-1">{day}</div>
+                <div className="font-semibold text-sm mb-1">{say(day)}</div>
                 <div className="space-y-1">
                   {getShiftsForDay(day).map(shift => (
                     <div
@@ -134,9 +134,9 @@ export function ShiftCalendar({ shifts = [], onDayClick, onShiftClick, view = 'm
                       className="text-xs bg-blue-100 text-blue-900 p-1 rounded cursor-pointer hover:bg-blue-200 truncate"
                       title={`${shift.techName}: ${shift.startTime} - ${shift.endTime}`}
                     >
-                      <span className="font-semibold">{shift.startTime}</span>
+                      <span className="font-semibold">{say(shift.startTime)}</span>
                       <br />
-                      <span className="text-xs">{shift.techName}</span>
+                      <span className="text-xs">{say(shift.techName)}</span>
                     </div>
                   ))}
                 </div>
@@ -151,11 +151,11 @@ export function ShiftCalendar({ shifts = [], onDayClick, onShiftClick, view = 'm
         <div className="text-sm text-gray-600">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-4 h-4 bg-blue-100 rounded border border-blue-300" />
-            <span>Scheduled shifts</span>
+            <span>{say("Scheduled shifts")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-gray-100 rounded border border-gray-300" />
-            <span>No shifts</span>
+            <span>{say("No shifts")}</span>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 // Use react-icons for all icons
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
@@ -346,6 +347,7 @@ const superadminGroups: MenuGroup[] = [
 // --- COMPONENT ---------------------------------------------------------------
 
 export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, activeHash }: SidebarProps) {
+  const say = usePhrase();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -486,8 +488,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
               letterSpacing: '-0.5px',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}>
-              FixTray
-            </div>
+              {say("FixTray")}{' '}</div>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -505,7 +506,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = '#475569'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? say("Expand sidebar") : say("Collapse sidebar")}
           >
             {collapsed ? <FaArrowRight /> : <FaArrowLeft />}
           </button>
@@ -536,7 +537,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
                     justifyContent: collapsed ? 'center' : 'flex-start',
                   }}
                 >
-                  {collapsed && <span style={{ fontSize: 15, flexShrink: 0 }}>{group.icon}</span>}
+                  {collapsed && <span style={{ fontSize: 15, flexShrink: 0 }}>{say(group.icon)}</span>}
                   {!collapsed && (
                     <>
                       <span style={{
@@ -548,7 +549,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
                         flex: 1,
                         textAlign: 'left',
                       }}>
-                        {group.label}
+                        {say(group.label)}
                       </span>
                       <span style={{
                         color: '#334155',
@@ -597,8 +598,8 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
                             }
                           }}
                         >
-                          <span style={{ fontSize: 13, flexShrink: 0, opacity: active ? 1 : 0.65 }}>{item.icon}</span>
-                          <span style={{ flex: 1 }}>{item.label}</span>
+                          <span style={{ fontSize: 13, flexShrink: 0, opacity: active ? 1 : 0.65 }}>{say(item.icon)}</span>
+                          <span style={{ flex: 1 }}>{say(item.label)}</span>
                           {item.badge && item.badge > 0 && (
                             <span style={{
                               background: '#e5332a', color: 'white',
@@ -624,7 +625,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
                           key={idx}
                           href={item.href as Route}
                           onClick={(e) => handleItemClick(e, item.href)}
-                          title={item.label}
+                          title={say(item.label)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -644,7 +645,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
                             if (!active) e.currentTarget.style.background = 'transparent';
                           }}
                         >
-                          {item.icon}
+                          {say(item.icon)}
                         </Link>
                       );
                     })}
@@ -663,8 +664,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
             flexShrink: 0,
           }}>
             <div style={{ fontSize: 10, color: '#1e293b', textAlign: 'center', letterSpacing: '0.08em', fontWeight: 600, textTransform: 'uppercase' }}>
-              FixTray · v1.0
-            </div>
+              {say("FixTray · v1.0")}{' '}</div>
           </div>
         )}
       </aside>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -40,6 +41,7 @@ function customerName(job: RoadsideJob): string {
  * Creating a job stays on the role-specific new-roadside-job form.
  */
 export default function RoadsideJobsQueuePage() {
+  const say = usePhrase();
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [jobs, setJobs] = useState<RoadsideJob[]>([]);
@@ -92,8 +94,7 @@ export default function RoadsideJobsQueuePage() {
   if (isLoading || !user || user.role === 'customer' || user.role === 'admin' || user.role === 'superadmin') {
     return (
       <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#000', color: '#e5e7eb' }}>
-        Loading roadside jobs...
-      </main>
+        {say("Loading roadside jobs...")}{' '}</main>
     );
   }
 
@@ -104,15 +105,13 @@ export default function RoadsideJobsQueuePage() {
     <main style={{ minHeight: '100vh', background: '#000', color: '#e5e7eb', padding: '32px 20px' }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <Link href={homeHref} style={{ color: '#93c5fd', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
-          Back to dashboard
-        </Link>
+          {say("Back to dashboard")}{' '}</Link>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginTop: 16, marginBottom: 24 }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 8px' }}>
               <FaRoad style={{ marginRight: 8 }} />
-              Roadside Jobs
-            </h1>
-            <p style={{ margin: 0, color: '#9aa3b2' }}>Open and recent roadside work orders for this shop.</p>
+              {say("Roadside Jobs")}{' '}</h1>
+            <p style={{ margin: 0, color: '#9aa3b2' }}>{say("Open and recent roadside work orders for this shop.")}</p>
           </div>
           <Link
             href={newHref}
@@ -128,22 +127,19 @@ export default function RoadsideJobsQueuePage() {
               fontWeight: 700,
             }}
           >
-            <FaPlus /> New roadside job
-          </Link>
+            <FaPlus /> {say("New roadside job")}{' '}</Link>
         </div>
 
         {loadingJobs ? (
           <div style={{ padding: 32, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 12, color: '#9aa3b2' }}>
-            Loading roadside jobs...
-          </div>
+            {say("Loading roadside jobs...")}{' '}</div>
         ) : loadError ? (
-          <div style={{ padding: 32, border: '1px solid rgba(239,68,68,0.4)', borderRadius: 12, color: '#fca5a5' }}>{loadError}</div>
+          <div style={{ padding: 32, border: '1px solid rgba(239,68,68,0.4)', borderRadius: 12, color: '#fca5a5' }}>{say(loadError)}</div>
         ) : jobs.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 12 }}>
-            <p style={{ color: '#9aa3b2', marginBottom: 16 }}>No roadside jobs yet.</p>
+            <p style={{ color: '#9aa3b2', marginBottom: 16 }}>{say("No roadside jobs yet.")}</p>
             <Link href={newHref} style={{ color: '#fff', background: '#e5332a', padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700 }}>
-              New roadside job
-            </Link>
+              {say("New roadside job")}{' '}</Link>
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>

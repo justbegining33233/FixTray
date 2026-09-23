@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -17,6 +18,7 @@ interface Shop {
 }
 
 export default function FindShops() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'zip'>('name'); // will be auto-detected only
@@ -179,17 +181,16 @@ export default function FindShops() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Customer Portal</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Find Shops</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Customer Portal")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Find Shops")}</div>
           </div>
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16}}>
-          <span style={{fontSize:14, color:'#9aa3b2'}}>Welcome, {userName}</span>
+          <span style={{fontSize:14, color:'#9aa3b2'}}>{say("Welcome,")}{' '}{say(userName)}</span>
           <button onClick={handleSignOut} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:600}}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
@@ -207,17 +208,16 @@ export default function FindShops() {
             borderRadius:8,
             border:'1px solid rgba(59,130,246,0.3)'
           }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
-        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Find Auto Shops</h1>
+        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>{say("Find Auto Shops")}</h1>
 
         {/* Single Search Bar, auto-detects zip vs name/service */}
         <div style={{marginBottom:32}}>
           <div style={{position:'relative'}}>
             <input
               type="text"
-              placeholder="(Search by shop name or zip code...)"
+              placeholder={say("(Search by shop name or zip code...)")}
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -240,23 +240,23 @@ export default function FindShops() {
         {/* Favorite Shops - Show by default when not searching */}
         {!loading && !searchTerm && favorites.length > 0 && (
           <div style={{marginBottom:32}}>
-            <h2 style={{fontSize:22, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaStar style={{marginRight:4}} /> Your Favorite Shops</h2>
+            <h2 style={{fontSize:22, fontWeight:700, color:'#e5e7eb', marginBottom:16}}><FaStar style={{marginRight:4}} /> {say("Your Favorite Shops")}</h2>
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(350px, 1fr))', gap:24}}>
               {favorites.map(fav => fav.shop && (
                 <div key={fav.shop.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,215,0,0.3)', borderRadius:12, padding:24}}>
                   <div style={{marginBottom:16}}>
-                    <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{fav.shop.shopName}</h3>
-                    <span style={{fontSize:13, color:'#9aa3b2'}}><FaMapMarkerAlt style={{marginRight:4}} /> {fav.shop.zipCode}</span>
-                    <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{fav.shop.address}</div>
+                    <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say(fav.shop.shopName)}</h3>
+                    <span style={{fontSize:13, color:'#9aa3b2'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say(fav.shop.zipCode)}</span>
+                    <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{say(fav.shop.address)}</div>
                     {fav.shop.phone && (
                       <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>
-                        <FaPhone style={{marginRight:4}} /> {fav.shop.phone}
+                        <FaPhone style={{marginRight:4}} /> {say(fav.shop.phone)}
                       </div>
                     )}
                     {fav.shop.services && fav.shop.services.length > 0 && (
                       <div style={{fontSize:13, color:'#e5e7eb', marginBottom:8}}>
                         {fav.shop.services.slice(0,6).map((service: any, idx: number) => (
-                          <span key={idx} style={{marginRight:8}}>{service.serviceName}</span>
+                          <span key={idx} style={{marginRight:8}}>{say(service.serviceName)}</span>
                         ))}
                         {fav.shop.services.length > 6 && (
                           <span style={{color:'#9aa3b2'}}>+{fav.shop.services.length-6} more</span>
@@ -278,8 +278,7 @@ export default function FindShops() {
                       textDecoration:'none',
                       textAlign:'center'
                     }}>
-                      View Details
-                    </Link>
+                      {say("View Details")}{' '}</Link>
                     <Link href={`/customer/appointments/new?shopId=${fav.shop.id}`} style={{
                       flex:1,
                       padding:'12px',
@@ -293,8 +292,7 @@ export default function FindShops() {
                       textDecoration:'none',
                       textAlign:'center'
                     }}>
-                      Book Appointment
-                    </Link>
+                      {say("Book Appointment")}{' '}</Link>
                   </div>
                 </div>
               ))}
@@ -354,7 +352,7 @@ export default function FindShops() {
                           {togglingFavorites.has(shop.id) ? <FaHourglassHalf style={{marginRight:4}} /> : (isFavorite ? <FaStar style={{marginRight:4}} /> : <FaRegStar style={{marginRight:4}} />)}
                         </button>
                         <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>
-                          {shop.name}
+                          {say(shop.name)}
                         </h3>
                       </div>
                       {shop.rating > 0 && (
@@ -373,25 +371,24 @@ export default function FindShops() {
                           padding: searchType === 'zip' && searchTerm && shop.zipCode.startsWith(searchTerm) ? '2px 8px' : 0,
                           borderRadius:4
                         }}>
-                          <FaMapMarkerAlt style={{marginRight:4}} /> {shop.zipCode}
+                          <FaMapMarkerAlt style={{marginRight:4}} /> {say(shop.zipCode)}
                         </span>
                       )}
                       {shop.completedJobs !== undefined && (
                         <span style={{fontSize:13, color:'#22c55e', fontWeight:600}}>
-                          <FaCheck style={{marginRight:4}} /> {shop.completedJobs} jobs completed
-                        </span>
+                          <FaCheck style={{marginRight:4}} /> {say(shop.completedJobs)} {say("jobs completed")}{' '}</span>
                       )}
                     </div>
-                    <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{shop.address}</div>
+                    <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{say(shop.address)}</div>
                     {shop.phone && (
                       <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>
-                        <FaPhone style={{marginRight:4}} /> {shop.phone}
+                        <FaPhone style={{marginRight:4}} /> {say(shop.phone)}
                       </div>
                     )}
                     {shop.services && shop.services.length > 0 && (
                       <div style={{fontSize:13, color:'#e5e7eb', marginBottom:8}}>
                         {shop.services.slice(0,6).map((service, idx) => (
-                          <span key={idx} style={{marginRight:8}}>{service}</span>
+                          <span key={idx} style={{marginRight:8}}>{say(service)}</span>
                         ))}
                         {shop.services.length > 6 && (
                           <span style={{color:'#9aa3b2'}}>+{shop.services.length-6} more</span>
@@ -413,8 +410,7 @@ export default function FindShops() {
                       textDecoration:'none',
                       textAlign:'center'
                     }}>
-                      View Details
-                    </Link>
+                      {say("View Details")}{' '}</Link>
                     <Link href={`/customer/appointments/new?shopId=${shop.id}`} style={{
                       flex:1,
                       padding:'12px',
@@ -428,8 +424,7 @@ export default function FindShops() {
                       textDecoration:'none',
                       textAlign:'center'
                     }}>
-                      Book Appointment
-                    </Link>
+                      {say("Book Appointment")}{' '}</Link>
                   </div>
                 </div>
               );
@@ -441,10 +436,9 @@ export default function FindShops() {
         {!loading && !searchTerm && favorites.length === 0 && (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
             <div style={{fontSize:48, marginBottom:16}}><FaStar style={{marginRight:4}} /></div>
-            <div style={{fontSize:18, marginBottom:8}}>No favorite shops yet</div>
+            <div style={{fontSize:18, marginBottom:8}}>{say("No favorite shops yet")}</div>
             <div style={{fontSize:14}}>
-              Search for shops and mark them as favorites to see them here.
-            </div>
+              {say("Search for shops and mark them as favorites to see them here.")}{' '}</div>
           </div>
         )}
 
@@ -452,7 +446,7 @@ export default function FindShops() {
         {!loading && searchTerm && filteredShops.length === 0 && (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
             <div style={{fontSize:48, marginBottom:16}}><FaSearch style={{marginRight:4}} /></div>
-            <div style={{fontSize:18, marginBottom:8}}>No shops found</div>
+            <div style={{fontSize:18, marginBottom:8}}>{say("No shops found")}</div>
             <div style={{fontSize:14}}>
               {searchType === 'zip'
                 ? `No shops found in zip code "${searchTerm}". Try a different area.`
@@ -474,8 +468,7 @@ export default function FindShops() {
             textDecoration:'none',
             cursor:'pointer'
           }}>
-            Back to Home
-          </Link>
+            {say("Back to Home")}{' '}</Link>
         </div>
       </div>
     </div>

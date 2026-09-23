@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -21,6 +22,7 @@ interface FavoriteEntry {
 }
 
 export default function Favorites() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [userName, setUserName] = useState('');
   const [favorites, setFavorites] = useState<FavoriteEntry[]>([]);
@@ -81,25 +83,24 @@ export default function Favorites() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Customer Portal</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Favorites</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Customer Portal")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Favorites")}</div>
           </div>
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16}}>
-          <span style={{fontSize:14, color:'#9aa3b2'}}>Welcome, {userName}</span>
+          <span style={{fontSize:14, color:'#9aa3b2'}}>{say("Welcome,")}{' '}{say(userName)}</span>
           <button onClick={handleSignOut} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:600}}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
-        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Favorite Shops</h1>
+        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>{say("Favorite Shops")}</h1>
 
         {loading ? (
-          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>Loading favorites...</div>
+          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>{say("Loading favorites...")}</div>
         ) : (
           <>
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(350px, 1fr))', gap:24}}>
@@ -110,19 +111,19 @@ export default function Favorites() {
                 return (
                   <div key={entry.favoriteId} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
                     <div style={{marginBottom:16}}>
-                      <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{shop.shopName}</h3>
-                      <div style={{fontSize:14, color:'#e5332a', fontWeight:600, marginBottom:8}}>{shop.shopType}</div>
+                      <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{say(shop.shopName)}</h3>
+                      <div style={{fontSize:14, color:'#e5332a', fontWeight:600, marginBottom:8}}>{say(shop.shopType)}</div>
                       <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:12}}>
                         <FaMapMarkerAlt style={{color:'#9aa3b2'}} />
-                        <span style={{fontSize:14, color:'#9aa3b2'}}>{address}</span>
+                        <span style={{fontSize:14, color:'#9aa3b2'}}>{say(address)}</span>
                       </div>
                       {shop.phone && (
-                        <div style={{fontSize:14, color:'#9aa3b2', marginBottom:12}}>{shop.phone}</div>
+                        <div style={{fontSize:14, color:'#9aa3b2', marginBottom:12}}>{say(shop.phone)}</div>
                       )}
                       <div style={{display:'flex', flexWrap:'wrap', gap:8, marginBottom:16}}>
                         {shop.services.slice(0, 5).map(svc => (
                           <span key={svc.serviceName} style={{padding:'4px 8px', background:'rgba(229,51,42,0.2)', color:'#ff6b64', borderRadius:6, fontSize:12, fontWeight:600}}>
-                            {svc.serviceName}
+                            {say(svc.serviceName)}
                           </span>
                         ))}
                       </div>
@@ -136,8 +137,7 @@ export default function Favorites() {
                           cursor:'pointer', textDecoration:'none', textAlign:'center',
                         }}
                       >
-                        Book Appointment
-                      </Link>
+                        {say("Book Appointment")}{' '}</Link>
                       <button
                         onClick={() => removeFavorite(entry.favoriteId)}
                         disabled={removing.has(entry.favoriteId)}
@@ -148,8 +148,7 @@ export default function Favorites() {
                           fontWeight:600, cursor:'pointer', opacity: removing.has(entry.favoriteId) ? 0.5 : 1,
                         }}
                       >
-                        <FaTrash /> Remove
-                      </button>
+                        <FaTrash /> {say("Remove")}{' '}</button>
                     </div>
                   </div>
                 );
@@ -158,8 +157,8 @@ export default function Favorites() {
 
             {favorites.length === 0 && (
               <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-                No favorite shops yet.{' '}
-                <Link href="/customer/findshops" style={{color:'#e5332a'}}>Find shops near you</Link>
+                {say("No favorite shops yet.")}{' '}
+                <Link href="/customer/findshops" style={{color:'#e5332a'}}>{say("Find shops near you")}</Link>
               </div>
             )}
           </>
@@ -172,8 +171,7 @@ export default function Favorites() {
             border:'none', borderRadius:8, fontSize:16, fontWeight:600,
             textDecoration:'none', cursor:'pointer'
           }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
       </div>
     </div>

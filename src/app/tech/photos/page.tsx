@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -7,6 +8,7 @@ import { FaArrowLeft, FaCamera, FaTimes } from 'react-icons/fa';
 import { photoUploadMessage } from '@/lib/photoUpload';
 
 export default function TechPhotos() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
   const [photos, setPhotos] = useState<Array<{ id: string; url: string; filename?: string; caption?: string; workOrderId?: string }>>([]);
   const [, setUploading] = useState(false);
@@ -94,7 +96,7 @@ export default function TechPhotos() {
   if (isLoading) {
     return (
       <div style={{minHeight:'100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <div style={{color: '#e5e7eb', fontSize: 18}}>Loading...</div>
+        <div style={{color: '#e5e7eb', fontSize: 18}}>{say("Loading...")}</div>
       </div>
     );
   }
@@ -105,21 +107,21 @@ export default function TechPhotos() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(245,158,11,0.3)', padding:'20px 32px'}}>
         <div style={{maxWidth:1200, margin:'0 auto'}}>
-          <Link href="/tech/all-tools" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}><FaArrowLeft style={{marginRight:4}} /> Back to Tools</Link>
-          <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaCamera style={{marginRight:4}} /> Tech Photos</h1>
-          <div style={{fontSize:14, color:'#9aa3b2'}}>Upload and manage photos taken on jobs.</div>
+          <Link href="/tech/all-tools" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}><FaArrowLeft style={{marginRight:4}} /> {say("Back to Tools")}</Link>
+          <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaCamera style={{marginRight:4}} /> {say("Tech Photos")}</h1>
+          <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Upload and manage photos taken on jobs.")}</div>
         </div>
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18}}>
           <div>
-            <h2 style={{margin:0, color:'#e5e7eb'}}>Photo Gallery</h2>
-            <div style={{fontSize:13, color:'#9aa3b2', marginTop:6}}>Upload photos for work order documentation.</div>
+            <h2 style={{margin:0, color:'#e5e7eb'}}>{say("Photo Gallery")}</h2>
+            <div style={{fontSize:13, color:'#9aa3b2', marginTop:6}}>{say("Upload photos for work order documentation.")}</div>
           </div>
 
           <div style={{display:'flex', gap:8, alignItems:'center'}}>
-            <button onClick={() => setShowUploadModal(true)} style={{background:'#000000', color:'#fff', padding:'8px 12px', borderRadius:8, cursor:'pointer'}}>Upload Photo</button>
+            <button onClick={() => setShowUploadModal(true)} style={{background:'#000000', color:'#fff', padding:'8px 12px', borderRadius:8, cursor:'pointer'}}>{say("Upload Photo")}</button>
 
             {/* Upload modal (popup window) */}
             {showUploadModal && (
@@ -127,8 +129,8 @@ export default function TechPhotos() {
                 <div onClick={(e) => e.stopPropagation()} style={{width:720, maxWidth:'95%', background:'#0b1220', borderRadius:12, padding:20, boxShadow:'0 10px 30px rgba(0,0,0,0.6)'}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
                     <div>
-                      <div style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>Upload Photo</div>
-                      <div style={{fontSize:13, color:'#9aa3b2'}}>Select an image, add a caption and optionally assign to a Work Order.</div>
+                      <div style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>{say("Upload Photo")}</div>
+                      <div style={{fontSize:13, color:'#9aa3b2'}}>{say("Select an image, add a caption and optionally assign to a Work Order.")}</div>
                     </div>
                     <button onClick={closeUpload} style={{background:'transparent', border:'none', color:'#9aa3b2', cursor:'pointer'}}><FaTimes style={{marginRight:4}} /></button>
                   </div>
@@ -138,7 +140,7 @@ export default function TechPhotos() {
                       {modalPreview ? (
                         <img src={modalPreview} alt="preview" style={{width:'100%', height:180, objectFit:'cover'}} />
                       ) : (
-                        <div style={{color:'#6b7280'}}>No image selected</div>
+                        <div style={{color:'#6b7280'}}>{say("No image selected")}</div>
                       )}
                     </div>
 
@@ -151,9 +153,9 @@ export default function TechPhotos() {
                         }} />
                       </label>
 
-                      <input placeholder="Caption (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} style={{padding:8, borderRadius:8, border:'1px solid rgba(255,255,255,0.06)', background:'transparent', color:'#e5e7eb'}} />
+                      <input placeholder={say("Caption (optional)")} value={caption} onChange={(e) => setCaption(e.target.value)} style={{padding:8, borderRadius:8, border:'1px solid rgba(255,255,255,0.06)', background:'transparent', color:'#e5e7eb'}} />
 
-                      <input placeholder="Assign to WO (id)" value={workOrderInput} onChange={(e) => setWorkOrderInput(e.target.value)} style={{padding:8, borderRadius:8, border:'1px solid rgba(255,255,255,0.06)', background:'transparent', color:'#e5e7eb'}} />
+                      <input placeholder={say("Assign to WO (id)")} value={workOrderInput} onChange={(e) => setWorkOrderInput(e.target.value)} style={{padding:8, borderRadius:8, border:'1px solid rgba(255,255,255,0.06)', background:'transparent', color:'#e5e7eb'}} />
 
                       <div style={{display:'flex', gap:8, marginTop:8}}>
                         <button onClick={async () => {
@@ -162,9 +164,9 @@ export default function TechPhotos() {
                           setShowUploadModal(false);
                           setModalFile(null);
                           setModalPreview('');
-                        }} style={{background:'#e5332a', color:'#fff', padding:'8px 12px', borderRadius:8, border:'none'}}>Upload</button>
+                        }} style={{background:'#e5332a', color:'#fff', padding:'8px 12px', borderRadius:8, border:'none'}}>{say("Upload")}</button>
 
-                        <button type="button" onClick={closeUpload} style={{background:'transparent', color:'#9aa3b2', padding:'8px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.04)'}}>Cancel</button>
+                        <button type="button" onClick={closeUpload} style={{background:'transparent', color:'#9aa3b2', padding:'8px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.04)'}}>{say("Cancel")}</button>
                       </div>
                     </div>
                   </div>
@@ -176,7 +178,7 @@ export default function TechPhotos() {
 
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(180px, 1fr))', gap:12}}>
           {photos.length === 0 && (
-            <div style={{padding:36, borderRadius:8, background:'#0b1220', color:'#9aa3b2'}}>No photos yet  -  click "Upload Photo" to add images from your device.</div>
+            <div style={{padding:36, borderRadius:8, background:'#0b1220', color:'#9aa3b2'}}>{say("No photos yet  -  click \"Upload Photo\" to add images from your device.")}</div>
           )}
 
           {photos.map(p => (
@@ -185,16 +187,16 @@ export default function TechPhotos() {
               <div style={{position:'absolute', left:8, bottom:8, right:8, display:'flex', justifyContent:'space-between', gap:8, alignItems:'center'}}>
                 <div style={{background:'rgba(0,0,0,0.6)', color:'#fff', padding:'4px 8px', borderRadius:6, fontSize:12, maxWidth:'55%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.caption || p.filename || ''}</div>
                 <div style={{display:'flex', gap:6}}>
-                  <button onClick={() => { navigator.clipboard?.writeText(p.url); setPhotoMsg({type:'success',text:'Image URL copied'}); }} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>Copy URL</button>
+                  <button onClick={() => { navigator.clipboard?.writeText(p.url); setPhotoMsg({type:'success',text:'Image URL copied'}); }} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>{say("Copy URL")}</button>
                   <button onClick={async () => {
                     setCaptionInput(p.caption || '');
                     setCaptionModal({ id: p.id, current: p.caption || '' });
-                  }} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>Edit</button>
+                  }} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>{say("Edit")}</button>
                   <button onClick={async () => {
                     setAssignInput(p.workOrderId || '');
                     setAssignModal({ id: p.id, url: p.url, caption: p.caption || '', current: p.workOrderId || '' });
-                  }} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>Assign</button>
-                  <button onClick={() => setRemovePhotoId(p.id)} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>Remove</button>
+                  }} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>{say("Assign")}</button>
+                  <button onClick={() => setRemovePhotoId(p.id)} style={{background:'rgba(255,255,255,0.03)', color:'#fff', border:'none', padding:'6px 8px', borderRadius:6, cursor:'pointer'}}>{say("Remove")}</button>
                 </div>
               </div>
             </div>
@@ -206,7 +208,7 @@ export default function TechPhotos() {
       {captionModal && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:99}}>
           <div style={{background:'#1f2937', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, width:360, maxWidth:'90%'}}>
-            <h3 style={{margin:'0 0 14px', fontSize:17, color:'#e5e7eb'}}>Edit Caption</h3>
+            <h3 style={{margin:'0 0 14px', fontSize:17, color:'#e5e7eb'}}>{say("Edit Caption")}</h3>
             <input
               value={captionInput}
               onChange={e => setCaptionInput(e.target.value)}
@@ -220,8 +222,8 @@ export default function TechPhotos() {
                   if (res.ok) { const j = await res.json(); setPhotos(prev => prev.map(x => x.id === captionModal.id ? j.photo : x)); }
                 } catch (err) { console.error(err); }
                 setCaptionModal(null);
-              }} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>Save</button>
-              <button onClick={() => setCaptionModal(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'10px 0', fontSize:14, cursor:'pointer'}}>Cancel</button>
+              }} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>{say("Save")}</button>
+              <button onClick={() => setCaptionModal(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'10px 0', fontSize:14, cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
@@ -231,8 +233,8 @@ export default function TechPhotos() {
       {assignModal && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:99}}>
           <div style={{background:'#1f2937', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, width:360, maxWidth:'90%'}}>
-            <h3 style={{margin:'0 0 14px', fontSize:17, color:'#e5e7eb'}}>Assign to Work Order</h3>
-            <label style={{fontSize:13, color:'#9ca3af', display:'block', marginBottom:6}}>Work Order ID</label>
+            <h3 style={{margin:'0 0 14px', fontSize:17, color:'#e5e7eb'}}>{say("Assign to Work Order")}</h3>
+            <label style={{fontSize:13, color:'#9ca3af', display:'block', marginBottom:6}}>{say("Work Order ID")}</label>
             <input
               value={assignInput}
               onChange={e => setAssignInput(e.target.value)}
@@ -249,8 +251,8 @@ export default function TechPhotos() {
                   if (r.ok) { const j = await r.json(); setPhotos(prev => prev.map(x => x.id === assignModal.id ? j.photo : x)); }
                 } catch (err) { console.error(err); }
                 setAssignModal(null);
-              }} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>Assign</button>
-              <button onClick={() => setAssignModal(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'10px 0', fontSize:14, cursor:'pointer'}}>Cancel</button>
+              }} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>{say("Assign")}</button>
+              <button onClick={() => setAssignModal(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'10px 0', fontSize:14, cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
@@ -258,7 +260,7 @@ export default function TechPhotos() {
 
       {photoMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:photoMsg.type==='success'?'#dcfce7':'#fde8e8',color:photoMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {photoMsg.text}
+          {say(photoMsg.text)}
           <button onClick={()=>setPhotoMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
@@ -266,11 +268,11 @@ export default function TechPhotos() {
       {removePhotoId && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}}>
           <div style={{background:'#1f2937',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:24,width:360,maxWidth:'90%'}}>
-            <h3 style={{margin:'0 0 12px',fontSize:17,color:'#e5e7eb'}}>Remove Photo?</h3>
-            <p style={{color:'#9ca3af',fontSize:14,margin:'0 0 20px'}}>This photo will be permanently deleted.</p>
+            <h3 style={{margin:'0 0 12px',fontSize:17,color:'#e5e7eb'}}>{say("Remove Photo?")}</h3>
+            <p style={{color:'#9ca3af',fontSize:14,margin:'0 0 20px'}}>{say("This photo will be permanently deleted.")}</p>
             <div style={{display:'flex',gap:10}}>
-              <button onClick={doRemovePhoto} style={{flex:1,background:'#e5332a',color:'#fff',border:'none',borderRadius:8,padding:'10px 0',fontSize:14,fontWeight:600,cursor:'pointer'}}>Remove</button>
-              <button onClick={()=>setRemovePhotoId(null)} style={{flex:1,background:'transparent',color:'#9ca3af',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,padding:'10px 0',fontSize:14,cursor:'pointer'}}>Cancel</button>
+              <button onClick={doRemovePhoto} style={{flex:1,background:'#e5332a',color:'#fff',border:'none',borderRadius:8,padding:'10px 0',fontSize:14,fontWeight:600,cursor:'pointer'}}>{say("Remove")}</button>
+              <button onClick={()=>setRemovePhotoId(null)} style={{flex:1,background:'transparent',color:'#9ca3af',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,padding:'10px 0',fontSize:14,cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>

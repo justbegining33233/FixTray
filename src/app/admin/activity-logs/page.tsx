@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -20,6 +21,7 @@ type ActivityLog = {
 };
 
 export default function ActivityLogs() {
+  const say = usePhrase();
   const { user, isLoading: authLoading } = useRequireAuth(['admin', 'superadmin']);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,8 +115,7 @@ export default function ActivityLogs() {
         color: '#e5e7eb',
         fontSize: '18px'
       }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -129,16 +130,14 @@ export default function ActivityLogs() {
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(255,255,255,0.1)', padding:'20px 32px'}}>
         <div style={{maxWidth:1400, margin:'0 auto'}}>
           <Link href="/admin/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-          </Link>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <div>
-              <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>Activity Logs</h1>
-              <p style={{fontSize:14, color:'#9aa3b2'}}>Complete system activity history</p>
+              <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say("Activity Logs")}</h1>
+              <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Complete system activity history")}</p>
             </div>
             <div style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', borderRadius:8, fontSize:14, fontWeight:700}}>
-              {logs.length} Total Logs
-            </div>
+              {say(logs.length)} {say("Total Logs")}{' '}</div>
           </div>
         </div>
       </div>
@@ -147,31 +146,31 @@ export default function ActivityLogs() {
         {/* Filter Controls */}
         <div style={{display:'flex', gap:16, marginBottom:24, flexWrap:'wrap'}}>
           <div>
-            <label style={{display:'block', fontSize:12, color:'#9aa3b2', marginBottom:8, fontWeight:600}}>Filter by Type</label>
+            <label style={{display:'block', fontSize:12, color:'#9aa3b2', marginBottom:8, fontWeight:600}}>{say("Filter by Type")}</label>
             <select 
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
               style={{padding:'10px 16px', background:'rgba(0,0,0,0.3)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', minWidth:150}}
             >
-              <option value="all">All Types</option>
-              <option value="shop">Shops</option>
-              <option value="revenue">Revenue</option>
-              <option value="user">Users</option>
-              <option value="alert">Alerts</option>
+              <option value="all">{say("All Types")}</option>
+              <option value="shop">{say("Shops")}</option>
+              <option value="revenue">{say("Revenue")}</option>
+              <option value="user">{say("Users")}</option>
+              <option value="alert">{say("Alerts")}</option>
             </select>
           </div>
           <div>
-            <label style={{display:'block', fontSize:12, color:'#9aa3b2', marginBottom:8, fontWeight:600}}>Filter by Severity</label>
+            <label style={{display:'block', fontSize:12, color:'#9aa3b2', marginBottom:8, fontWeight:600}}>{say("Filter by Severity")}</label>
             <select 
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value)}
               style={{padding:'10px 16px', background:'rgba(0,0,0,0.3)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', minWidth:150}}
             >
-              <option value="all">All Severity</option>
-              <option value="success">Success</option>
-              <option value="info">Info</option>
-              <option value="warning">Warning</option>
-              <option value="error">Error</option>
+              <option value="all">{say("All Severity")}</option>
+              <option value="success">{say("Success")}</option>
+              <option value="info">{say("Info")}</option>
+              <option value="warning">{say("Warning")}</option>
+              <option value="error">{say("Error")}</option>
             </select>
           </div>
           {(filterType !== 'all' || filterSeverity !== 'all') && (
@@ -182,18 +181,17 @@ export default function ActivityLogs() {
               }}
               style={{padding:'10px 20px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', alignSelf:'flex-end'}}
             >
-              Clear Filters
-            </button>
+              {say("Clear Filters")}{' '}</button>
           )}
         </div>
 
         {loading ? (
-          <div style={{textAlign:'center', padding:80, color:'#9aa3b2', fontSize:16}}>Loading logs...</div>
+          <div style={{textAlign:'center', padding:80, color:'#9aa3b2', fontSize:16}}>{say("Loading logs...")}</div>
         ) : logs.length === 0 ? (
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:80, textAlign:'center'}}>
             <div style={{fontSize:48, marginBottom:16}}><FaClipboardList style={{marginRight:4}} /></div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>No Activity Logs</div>
-            <div style={{fontSize:14, color:'#9aa3b2'}}>No logs match the selected filters</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say("No Activity Logs")}</div>
+            <div style={{fontSize:14, color:'#9aa3b2'}}>{say("No logs match the selected filters")}</div>
           </div>
         ) : (
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, overflow:'hidden'}}>
@@ -216,31 +214,31 @@ export default function ActivityLogs() {
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
                       <div style={{flex:1}}>
                         <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:4}}>
-                          <h3 style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>{log.action}</h3>
+                          <h3 style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>{say(log.action)}</h3>
                           <span style={{padding:'2px 8px', background:`${getSeverityColor(log.severity)}20`, color:getSeverityColor(log.severity), borderRadius:6, fontSize:11, fontWeight:600}}>
                             {getSeverityBadge(log.severity)} {log.severity.toUpperCase()}
                           </span>
                         </div>
-                        <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{log.details}</div>
+                        <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>{say(log.details)}</div>
                         <div style={{display:'flex', gap:16, flexWrap:'wrap'}}>
                           {log.location && (
-                            <div style={{fontSize:12, color:'#6b7280'}}><FaMapMarkerAlt style={{marginRight:4}} /> {log.location}</div>
+                            <div style={{fontSize:12, color:'#6b7280'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say(log.location)}</div>
                           )}
                           {log.email && (
-                            <div style={{fontSize:12, color:'#6b7280'}}><FaEnvelope style={{marginRight:4}} /> {log.email}</div>
+                            <div style={{fontSize:12, color:'#6b7280'}}><FaEnvelope style={{marginRight:4}} /> {say(log.email)}</div>
                           )}
                           {log.amount && (
-                            <div style={{fontSize:12, color:'#22c55e', fontWeight:600}}><FaDollarSign style={{marginRight:4}} /> {log.amount}</div>
+                            <div style={{fontSize:12, color:'#22c55e', fontWeight:600}}><FaDollarSign style={{marginRight:4}} /> {say(log.amount)}</div>
                           )}
                           {log.reason && (
-                            <div style={{fontSize:12, color:'#f59e0b'}}><FaExclamationTriangle style={{marginRight:4}} /> {log.reason}</div>
+                            <div style={{fontSize:12, color:'#f59e0b'}}><FaExclamationTriangle style={{marginRight:4}} /> {say(log.reason)}</div>
                           )}
                         </div>
                       </div>
                       <div style={{textAlign:'right', marginLeft:16}}>
                         <div style={{fontSize:13, color:'#9aa3b2', marginBottom:4}}>{getTimeAgo(log.time)}</div>
                         <div style={{fontSize:11, color:'#6b7280'}}>{new Date(log.time).toLocaleString()}</div>
-                        <div style={{fontSize:11, color:'#6b7280', marginTop:4}}>by {log.user}</div>
+                        <div style={{fontSize:11, color:'#6b7280', marginTop:4}}>by {say(log.user)}</div>
                       </div>
                     </div>
                   </div>
@@ -254,27 +252,27 @@ export default function ActivityLogs() {
         {!loading && logs.length > 0 && (
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16, marginTop:24}}>
             <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
-              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Shop Activities</div>
+              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Shop Activities")}</div>
               <div style={{fontSize:28, fontWeight:700, color:'#e5332a'}}>
-                {logs.filter(l => l.type === 'shop').length}
+                {say(logs.filter(l => l.type === 'shop').length)}
               </div>
             </div>
             <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Revenue Events</div>
+              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Revenue Events")}</div>
               <div style={{fontSize:28, fontWeight:700, color:'#22c55e'}}>
-                {logs.filter(l => l.type === 'revenue').length}
+                {say(logs.filter(l => l.type === 'revenue').length)}
               </div>
             </div>
             <div style={{background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:12, padding:20}}>
-              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>User Activities</div>
+              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("User Activities")}</div>
               <div style={{fontSize:28, fontWeight:700, color:'#8b5cf6'}}>
-                {logs.filter(l => l.type === 'user').length}
+                {say(logs.filter(l => l.type === 'user').length)}
               </div>
             </div>
             <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
-              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>System Alerts</div>
+              <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("System Alerts")}</div>
               <div style={{fontSize:28, fontWeight:700, color:'#f59e0b'}}>
-                {logs.filter(l => l.type === 'alert').length}
+                {say(logs.filter(l => l.type === 'alert').length)}
               </div>
             </div>
           </div>

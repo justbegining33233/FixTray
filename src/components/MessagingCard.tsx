@@ -4,6 +4,7 @@ import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaComments, FaExclamationTriangle, FaShieldAlt, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
 import { useSocket } from '@/lib/socket';
+import { usePhrase } from '@/lib/usePhrase';
 
 // --- Types --------------------------------------------------------------------
 
@@ -65,6 +66,7 @@ const ROLE_FILTERS: { key: TabKey; label: string }[] = [
 // --- Component ----------------------------------------------------------------
 
 export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
+  const say = usePhrase();
   const { on, off } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -273,12 +275,12 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
         <div style={{ padding: 16, background: 'rgba(239,68,68,0.2)', borderBottom: '1px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 22 }}><FaExclamationTriangle style={{marginRight:4}} /></span>
           <div style={{ flex: 1 }}>
-            <p style={{ color: '#fca5a5', fontWeight: 600, margin: 0, fontSize: 14 }}>Session Expired or Missing</p>
-            <p style={{ color: '#f87171', margin: 0, fontSize: 12, marginTop: 2 }}>Please sign out and log back in.</p>
+            <p style={{ color: '#fca5a5', fontWeight: 600, margin: 0, fontSize: 14 }}>{say('Session Expired or Missing')}</p>
+            <p style={{ color: '#f87171', margin: 0, fontSize: 12, marginTop: 2 }}>{say('Please sign out and log back in.')}</p>
           </div>
           <button onClick={() => { localStorage.clear(); window.location.href = '/auth/login'; }}
             style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-            Log Out
+            {say('Log Out')}
           </button>
         </div>
       )}
@@ -286,17 +288,17 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
       {/* Header */}
       <div style={{ padding: 20, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', margin: 0 }}><FaComments style={{marginRight:4}} /> Messages</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', margin: 0 }}><FaComments style={{marginRight:4}} /> {say('Messages')}</h2>
           <button
             onClick={() => { setShowCompose(true); setSelectedConversation(null); setComposeRoleFilter(activeTab); fetchAvailableContacts(); }}
             style={{ padding: '6px 14px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-            + New
+            {say('+ New')}
           </button>
         </div>
 
         {/* Category dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <label style={{ color: '#9aa3b2', fontSize: 12, fontWeight: 600 }}>Category</label>
+          <label style={{ color: '#9aa3b2', fontSize: 12, fontWeight: 600 }}>{say('Category')}</label>
           <select
             value={activeTab}
             onChange={(e) => {
@@ -312,13 +314,13 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               const count = unreadByTab[filter.key] || 0;
               return (
                 <option key={filter.key} value={filter.key}>
-                  {filter.label}{count > 0 ? ` (${count > 99 ? '99+' : count} unread)` : ''}
+                  {say(filter.label)}{count > 0 ? ` (${count > 99 ? '99+' : count} ${say('unread')})` : ''}
                 </option>
               );
             })}
           </select>
           <span style={{ fontSize: 11, color: '#6b7280' }}>
-            {filteredConversations.length} thread{filteredConversations.length === 1 ? '' : 's'}
+            {say(filteredConversations.length)} {say(filteredConversations.length === 1 ? 'thread' : 'threads')}
           </span>
         </div>
       </div>
@@ -331,9 +333,9 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
           {filteredConversations.length === 0 ? (
             <div style={{ padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 13 }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}><FaComments style={{marginRight:4}} /></div>
-              No conversations yet.
+              {say('No conversations yet.')}
               <br />
-              <span style={{ color: '#4b5563' }}>Click <strong style={{ color: '#10b981' }}>+ New</strong> to start one.</span>
+              <span style={{ color: '#4b5563' }}>{say('Click + New to start one.')}</span>
             </div>
           ) : (
             filteredConversations.map((conv) => {
@@ -344,23 +346,23 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               return (
                 <button type="button" key={`${conv.contactRole}_${conv.contactId}`} onClick={() => handleSelectConversation(conv)}
                   style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{icon}</span>
+                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{say(icon)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>
-                        {conv.contactName}
+                        {say(conv.contactName)}
                       </span>
                       {conv.unreadCount > 0 && (
                         <span style={{ background: '#e5332a', color: 'white', borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                          {conv.unreadCount}
+                          {say(conv.unreadCount)}
                         </span>
                       )}
                     </div>
                     <span style={{ fontSize: 10, color, fontWeight: 600, display: 'block', marginBottom: 2 }}>
-                      {ROLE_LABEL[conv.contactRole] ?? conv.contactRole}
+                      {say(ROLE_LABEL[conv.contactRole] ?? conv.contactRole)}
                     </span>
                     <div style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {preview.length > 40 ? preview.slice(0, 40) + '...' : preview || 'Open thread'}
+                      {preview.length > 40 ? preview.slice(0, 40) + '...' : preview || say("Open thread")}
                     </div>
                     <div style={{ fontSize: 9, color: '#4b5563', marginTop: 2 }}>
                       {new Date(conv.lastMessageAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -378,7 +380,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
             /* Compose */
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 16, gap: 12 }}>
               <div>
-                <label style={{ display: 'block', color: '#9aa3b2', fontSize: 12, marginBottom: 6 }}>Recipient type:</label>
+                <label style={{ display: 'block', color: '#9aa3b2', fontSize: 12, marginBottom: 6 }}>{say('Recipient type:')}</label>
                 <select
                   value={composeRoleFilter}
                   onChange={(e) => {
@@ -387,17 +389,16 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                   }}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13, marginBottom: 10 }}>
                   {ROLE_FILTERS.map((filter) => (
-                    <option key={`compose-${filter.key}`} value={filter.key}>{filter.label}</option>
+                    <option key={`compose-${filter.key}`} value={filter.key}>{say(filter.label)}</option>
                   ))}
                 </select>
 
-                <label style={{ display: 'block', color: '#9aa3b2', fontSize: 12, marginBottom: 6 }}>To:</label>
+                <label style={{ display: 'block', color: '#9aa3b2', fontSize: 12, marginBottom: 6 }}>{say('To:')}</label>
                 {contactsLoading ? (
-                  <div style={{ color: '#6b7280', fontSize: 12 }}>Loading contacts...</div>
+                  <div style={{ color: '#6b7280', fontSize: 12 }}>{say('Loading contacts...')}</div>
                 ) : filteredAvailableContacts.length === 0 ? (
                   <div style={{ color: '#f59e0b', fontSize: 13, padding: '10px 12px', background: 'rgba(245,158,11,0.08)', borderRadius: 8 }}>
-                    No contacts in this category yet.
-                  </div>
+                    {say("No contacts in this category yet.")}{' '}</div>
                 ) : (
                   <select
                     value={newRecipient ? `${newRecipient.role}_${newRecipient.id}` : ''}
@@ -410,17 +411,17 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                       setNewRecipient(filteredAvailableContacts.find((c) => c.id === id && c.role === role) ?? null);
                     }}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13 }}>
-                    <option value=''> -  Select recipient  - </option>
+                    <option value=''> {say("-  Select recipient  -")}{' '}</option>
                     {filteredAvailableContacts.map((c) => (
                       <option key={`${c.role}_${c.id}`} value={`${c.role}_${c.id}`}>
-                        {c.name} ({ROLE_LABEL[c.role] ?? c.role}) — {c.contextLabel}
+                        {say(c.name)} ({say(ROLE_LABEL[c.role] ?? c.role)}) — {say(c.contextLabel)}
                       </option>
                     ))}
                   </select>
                 )}
               </div>
               <textarea
-                placeholder='Type your message...'
+                placeholder={say('Type your message...')}
                 value={messageText}
                 maxLength={5000}
                 onChange={(e) => setMessageText(e.target.value)}
@@ -430,12 +431,11 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={handleSendMessage} disabled={loading || !messageText.trim() || !newRecipient}
                   style={{ flex: 1, padding: 10, background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || !messageText.trim() || !newRecipient ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || !messageText.trim() || !newRecipient ? 0.5 : 1 }}>
-                  {loading ? 'Sending...' : 'Send Message'}
+                  {loading ? say('Sending...') : say('Send Message')}
                 </button>
                 <button onClick={() => { setShowCompose(false); setMessageText(''); setNewRecipient(null); setComposeRoleFilter(activeTab); }}
                   style={{ padding: '10px 20px', background: '#6b7280', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               </div>
             </div>
 
@@ -446,9 +446,9 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.15)' }}>
                 <span style={{ fontSize: 18 }}>{ROLE_ICON[selectedConversation.contactRole] ?? <FaUser />}</span>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#e5e7eb' }}>{selectedConversation.contactName}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#e5e7eb' }}>{say(selectedConversation.contactName)}</div>
                   <div style={{ fontSize: 11, color: ROLE_COLOR[selectedConversation.contactRole] ?? '#9ca3af', fontWeight: 600 }}>
-                    {ROLE_LABEL[selectedConversation.contactRole] ?? selectedConversation.contactRole}
+                    {say(ROLE_LABEL[selectedConversation.contactRole] ?? selectedConversation.contactRole)}
                   </div>
                 </div>
               </div>
@@ -456,7 +456,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               {/* Messages */}
               <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {threadMessages.length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>Loading messages...</div>
+                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>{say('Loading messages...')}</div>
                 )}
                 {threadMessages
                   .slice()
@@ -468,10 +468,10 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                         <div style={{ background: isSent ? 'rgba(229,51,42,0.2)' : 'rgba(59,130,246,0.2)', border: `1px solid ${isSent ? 'rgba(229,51,42,0.4)' : 'rgba(59,130,246,0.4)'}`, borderRadius: 8, padding: 12 }}>
                           {!isSent && (
                             <div style={{ fontSize: 10, color: ROLE_COLOR[msg.senderRole] ?? '#9ca3af', fontWeight: 700, marginBottom: 4 }}>
-                              {msg.senderName}
+                              {say(msg.senderName)}
                             </div>
                           )}
-                          <div style={{ fontSize: 13, color: '#e5e7eb' }}>{msg.body}</div>
+                          <div style={{ fontSize: 13, color: '#e5e7eb' }}>{say(msg.body)}</div>
                           <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'right', marginTop: 4 }}>
                             {new Date(msg.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </div>
@@ -495,7 +495,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                 />
                 <button onClick={handleSendMessage} disabled={loading || !messageText.trim()}
                   style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || !messageText.trim() ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || !messageText.trim() ? 0.5 : 1, alignSelf: 'flex-end' }}>
-                  {loading ? '...' : 'Send'}
+                  {loading ? '...' : say("Send")}
                 </button>
               </div>
             </>
@@ -505,7 +505,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#6b7280', gap: 8, padding: 24 }}>
               <span style={{ fontSize: 36 }}><FaComments style={{marginRight:4}} /></span>
               <div style={{ fontSize: 14, color: '#6b7280', textAlign: 'center' }}>
-                Select a conversation<br />or click <strong style={{ color: '#10b981' }}>+ New</strong> to compose.
+                {say('Select a conversation or click + New to compose.')}
               </div>
             </div>
           )}
@@ -513,8 +513,8 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
       </div>
       {msgMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:msgMsg.type==='success'?'#dcfce7':'#fde8e8',color:msgMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {msgMsg.text}
-          <button aria-label="Dismiss" onClick={()=>setMsgMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          {say(msgMsg.text)}
+          <button aria-label={say("Dismiss")} onClick={()=>setMsgMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}
     </div>

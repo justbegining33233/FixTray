@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/stripe/connect?from=integrations|settings|onboarding
- * Creates (or resumes) a Stripe Express account for the shop and returns an
+ * Creates (or resumes) a Stripe connected account for the shop and returns an
  * Account Link URL. Requires the platform STRIPE_SECRET_KEY only.
  * Persists stripeAccountId before the link is returned so refresh can resume.
  */

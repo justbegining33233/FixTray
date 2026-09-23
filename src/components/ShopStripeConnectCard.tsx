@@ -105,7 +105,7 @@ export default function ShopStripeConnectCard({ origin }: { origin: ConnectRetur
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#e5e7eb' }}>Stripe payouts</div>
-            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>Connect Express account</div>
+            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>Stripe Connect account</div>
           </div>
         </div>
         <span

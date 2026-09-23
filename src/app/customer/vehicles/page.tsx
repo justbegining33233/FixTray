@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,6 +20,7 @@ interface Vehicle {
 }
 
 export default function CustomerVehiclesPage() {
+  const say = usePhrase();
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['customer']);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -74,8 +76,7 @@ export default function CustomerVehiclesPage() {
         color: '#e5e7eb',
         fontSize: '18px'
       }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -182,7 +183,7 @@ export default function CustomerVehiclesPage() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#e5e7eb', fontSize: 20 }}>Loading vehicles...</div>
+        <div style={{ color: '#e5e7eb', fontSize: 20 }}>{say("Loading vehicles...")}</div>
       </div>
     );
   }
@@ -193,19 +194,17 @@ export default function CustomerVehiclesPage() {
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <Link href="/customer/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-          </Link>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaTruck style={{marginRight:4}} /> My Vehicles</h1>
-              <p style={{ fontSize: 14, color: '#9aa3b2' }}>Manage your fleet and vehicle information</p>
+              <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaTruck style={{marginRight:4}} /> {say("My Vehicles")}</h1>
+              <p style={{ fontSize: 14, color: '#9aa3b2' }}>{say("Manage your fleet and vehicle information")}</p>
             </div>
             <button
               onClick={() => setShowAddForm(true)}
               style={{ padding: '12px 24px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
             >
-              + Add Vehicle
-            </button>
+              {say("+ Add Vehicle")}{' '}</button>
           </div>
         </div>
       </div>
@@ -216,14 +215,13 @@ export default function CustomerVehiclesPage() {
           {vehicles.length === 0 ? (
             <div style={{ gridColumn: '1 / -1', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 60, textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}><FaTruck style={{marginRight:4}} /></div>
-              <h3 style={{ color: '#e5e7eb', fontSize: 20, marginBottom: 8 }}>No Vehicles Yet</h3>
-              <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>Add your first vehicle to get started</p>
+              <h3 style={{ color: '#e5e7eb', fontSize: 20, marginBottom: 8 }}>{say("No Vehicles Yet")}</h3>
+              <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>{say("Add your first vehicle to get started")}</p>
               <button
                 onClick={() => setShowAddForm(true)}
                 style={{ padding: '12px 24px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
-                Add Vehicle
-              </button>
+                {say("Add Vehicle")}{' '}</button>
             </div>
           ) : (
             vehicles.map((vehicle) => (
@@ -233,7 +231,7 @@ export default function CustomerVehiclesPage() {
                 </div>
                 
                 <h3 style={{ color: '#e5e7eb', fontSize: 20, fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>
-                  {vehicle.year} {vehicle.make} {vehicle.model}
+                  {say(vehicle.year)} {say(vehicle.make)} {say(vehicle.model)}
                 </h3>
                 
                 <div style={{ textAlign: 'center', color: '#9aa3b2', fontSize: 14, marginBottom: 20 }}>
@@ -243,18 +241,18 @@ export default function CustomerVehiclesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
                   {vehicle.vin && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
-                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>VIN:</span>
-                      <span style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 600 }}>{vehicle.vin}</span>
+                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>{say("VIN:")}</span>
+                      <span style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 600 }}>{say(vehicle.vin)}</span>
                     </div>
                   )}
                   {vehicle.licensePlate && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
-                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>License:</span>
-                      <span style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 600 }}>{vehicle.licensePlate}</span>
+                      <span style={{ color: '#9aa3b2', fontSize: 13 }}>{say("License:")}</span>
+                      <span style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 600 }}>{say(vehicle.licensePlate)}</span>
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>
-                    <span style={{ color: '#9aa3b2', fontSize: 13 }}>Added:</span>
+                    <span style={{ color: '#9aa3b2', fontSize: 13 }}>{say("Added:")}</span>
                     <span style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 600 }}>
                       {new Date(vehicle.createdAt).toLocaleDateString()}
                     </span>
@@ -266,14 +264,12 @@ export default function CustomerVehiclesPage() {
                     onClick={() => startEdit(vehicle)}
                     style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    Edit
-                  </button>
+                    {say("Edit")}{' '}</button>
                   <button
                     onClick={() => setDeleteConfirmId(vehicle.id)}
                     style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    Delete
-                  </button>
+                    {say("Delete")}{' '}</button>
                 </div>
               </div>
             ))
@@ -286,12 +282,12 @@ export default function CustomerVehiclesPage() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#2a2a2a', borderRadius: 12, padding: 32, maxWidth: 500, width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ color: '#e5e7eb', fontSize: 24, fontWeight: 700, marginBottom: 24 }}>
-              {editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}
+              {editingVehicle ? say("Edit Vehicle") : say("Add Vehicle")}
             </h2>
 
             <form onSubmit={(e) => { e.preventDefault(); editingVehicle ? handleUpdateVehicle() : handleAddVehicle(); }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label htmlFor="vehicle-type" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Vehicle Type *</label>
+                <label htmlFor="vehicle-type" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Vehicle Type *")}</label>
                 <select
                   id="vehicle-type"
                   name="vehicleType"
@@ -302,13 +298,13 @@ export default function CustomerVehiclesPage() {
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 >
                   {VEHICLE_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{say(option.label)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label htmlFor="vehicle-make" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Make *</label>
+                <label htmlFor="vehicle-make" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Make *")}</label>
                 <input
                   id="vehicle-make"
                   name="make"
@@ -317,13 +313,13 @@ export default function CustomerVehiclesPage() {
                   aria-required="true"
                   value={formData.make}
                   onChange={(e) => setFormData({ ...formData, make: e.target.value })}
-                  placeholder="e.g., Peterbilt, Kenworth, Volvo"
+                  placeholder={say("e.g., Peterbilt, Kenworth, Volvo")}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 />
               </div>
 
               <div>
-                <label htmlFor="vehicle-model" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Model *</label>
+                <label htmlFor="vehicle-model" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Model *")}</label>
                 <input
                   id="vehicle-model"
                   name="model"
@@ -332,13 +328,13 @@ export default function CustomerVehiclesPage() {
                   aria-required="true"
                   value={formData.model}
                   onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                  placeholder="e.g., 579, T680, VNL"
+                  placeholder={say("e.g., 579, T680, VNL")}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 />
               </div>
 
               <div>
-                <label htmlFor="vehicle-year" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>Year (optional)</label>
+                <label htmlFor="vehicle-year" style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("Year (optional)")}</label>
                 <input
                   id="vehicle-year"
                   name="year"
@@ -352,24 +348,24 @@ export default function CustomerVehiclesPage() {
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>VIN (Optional)</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("VIN (Optional)")}</label>
                 <input
                   type="text"
                   value={formData.vin}
                   onChange={(e) => setFormData({ ...formData, vin: e.target.value })}
-                  placeholder="17-character VIN"
+                  placeholder={say("17-character VIN")}
                   maxLength={17}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 />
               </div>
 
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>License Plate (Optional)</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 8, display: 'block' }}>{say("License Plate (Optional)")}</label>
                 <input
                   type="text"
                   value={formData.licensePlate}
                   onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
-                  placeholder="e.g., ABC-1234"
+                  placeholder={say("e.g., ABC-1234")}
                   style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
                 />
               </div>
@@ -379,7 +375,7 @@ export default function CustomerVehiclesPage() {
                   type="submit"
                   style={{ flex: 1, padding: 12, background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
-                  {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
+                  {editingVehicle ? say("Update Vehicle") : say("Add Vehicle")}
                 </button>
                 <button
                   type="button"
@@ -390,8 +386,7 @@ export default function CustomerVehiclesPage() {
                   }}
                   style={{ flex: 1, padding: 12, background: 'rgba(255,255,255,0.1)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               </div>
             </form>
           </div>
@@ -400,7 +395,7 @@ export default function CustomerVehiclesPage() {
 
       {vehicleMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:vehicleMsg.type==='success'?'#dcfce7':'#fde8e8',color:vehicleMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {vehicleMsg.text}
+          {say(vehicleMsg.text)}
           <button onClick={()=>setVehicleMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
@@ -408,11 +403,11 @@ export default function CustomerVehiclesPage() {
       {deleteConfirmId && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
           <div style={{background:'#2a2a2a',border:'1px solid rgba(229,51,42,0.3)',borderRadius:12,padding:32,maxWidth:400,width:'90%'}}>
-            <h3 style={{color:'#e5e7eb',fontSize:18,fontWeight:700,marginBottom:12}}>Delete Vehicle?</h3>
-            <p style={{color:'#9aa3b2',fontSize:14,marginBottom:24}}>Are you sure you want to delete this vehicle? This action cannot be undone.</p>
+            <h3 style={{color:'#e5e7eb',fontSize:18,fontWeight:700,marginBottom:12}}>{say("Delete Vehicle?")}</h3>
+            <p style={{color:'#9aa3b2',fontSize:14,marginBottom:24}}>{say("Are you sure you want to delete this vehicle? This action cannot be undone.")}</p>
             <div style={{display:'flex',gap:12}}>
-              <button onClick={()=>handleDeleteVehicle(deleteConfirmId)} style={{flex:1,padding:'11px 0',background:'#e5332a',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Delete</button>
-              <button onClick={()=>setDeleteConfirmId(null)} style={{flex:1,padding:'11px 0',background:'rgba(255,255,255,0.1)',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+              <button onClick={()=>handleDeleteVehicle(deleteConfirmId)} style={{flex:1,padding:'11px 0',background:'#e5332a',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>{say("Delete")}</button>
+              <button onClick={()=>setDeleteConfirmId(null)} style={{flex:1,padding:'11px 0',background:'rgba(255,255,255,0.1)',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>

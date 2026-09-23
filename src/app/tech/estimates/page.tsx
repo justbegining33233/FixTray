@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -23,6 +24,7 @@ interface TechJob {
 const CLOSED = new Set(['closed', 'cancelled', 'completed']);
 
 export default function TechEstimatesPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [jobs, setJobs] = useState<TechJob[]>([]);
@@ -43,7 +45,7 @@ export default function TechEstimatesPage() {
   }, [user]);
 
   if (isLoading) {
-    return <div style={{ minHeight: '100vh', color: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
+    return <div style={{ minHeight: '100vh', color: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{say("Loading...")}</div>;
   }
   if (!user) return null;
 
@@ -61,17 +63,15 @@ export default function TechEstimatesPage() {
     >
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
-          <FaClipboardList style={{ marginRight: 8 }} /> Estimates
-        </h1>
+          <FaClipboardList style={{ marginRight: 8 }} /> {say("Estimates")}{' '}</h1>
         <p style={{ color: '#9aa3b2', fontSize: 14, margin: 0 }}>
-          Open a job to add parts and labor on the work order, then submit the estimate. The customer accepts and signs before a work authorization exists.
-        </p>
+          {say("Open a job to add parts and labor on the work order, then submit the estimate. The customer accepts and signs before a work authorization exists.")}{' '}</p>
       </div>
 
-      {loading ? <div style={{ color: '#e5e7eb' }}>Loading work orders...</div> : null}
-      {error ? <div style={{ color: '#fca5a5' }}>{error}</div> : null}
+      {loading ? <div style={{ color: '#e5e7eb' }}>{say("Loading work orders...")}</div> : null}
+      {error ? <div style={{ color: '#fca5a5' }}>{say(error)}</div> : null}
       {!loading && !error && jobs.length === 0 ? (
-        <div style={{ color: '#f59e0b' }}>No open work orders. New jobs from the command center show up here.</div>
+        <div style={{ color: '#f59e0b' }}>{say("No open work orders. New jobs from the command center show up here.")}</div>
       ) : null}
 
       <div style={{ display: 'grid', gap: 10 }}>
@@ -92,12 +92,12 @@ export default function TechEstimatesPage() {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                <strong>WO-{job.id.slice(-8).toUpperCase()}</strong>
-                <span style={{ color: '#9aa3b2', fontSize: 13 }}>{job.status}</span>
+                <strong>{say("WO-")}{job.id.slice(-8).toUpperCase()}</strong>
+                <span style={{ color: '#9aa3b2', fontSize: 13 }}>{say(job.status)}</span>
               </div>
-              <div style={{ marginTop: 6 }}>{name}</div>
-              <div style={{ marginTop: 4, color: '#9aa3b2', fontSize: 13 }}>{issueSummary(job.issueDescription) || 'Service'}</div>
-              <div style={{ marginTop: 8, color: '#60a5fa', fontSize: 13, fontWeight: 700 }}>Add parts and labor</div>
+              <div style={{ marginTop: 6 }}>{say(name)}</div>
+              <div style={{ marginTop: 4, color: '#9aa3b2', fontSize: 13 }}>{issueSummary(job.issueDescription) || say("Service")}</div>
+              <div style={{ marginTop: 8, color: '#60a5fa', fontSize: 13, fontWeight: 700 }}>{say("Add parts and labor")}</div>
             </Link>
           );
         })}

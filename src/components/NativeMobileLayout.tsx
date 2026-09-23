@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useRef } from 'react';
 import { FaBars, FaHome, FaClipboardList, FaComments, FaUser, FaCog, FaBell, FaSearch, FaPlus } from 'react-icons/fa';
 import { Capacitor } from '@capacitor/core';
@@ -35,6 +36,7 @@ export default function NativeMobileLayout({
   onNotificationToggle,
   onAddNew,
 }: NativeMobileLayoutProps) {
+  const say = usePhrase();
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState(offlineStorageService.getSyncStatus());
   const [currentPath, setCurrentPath] = useState('/');
@@ -241,8 +243,7 @@ export default function NativeMobileLayout({
           position: 'relative',
           zIndex: 1000,
         }}>
-          You're offline. Some features may be limited.
-          <button
+          {say("You're offline. Some features may be limited.")}{' '}<button
             onClick={() => setShowOfflineBanner(false)}
             style={{
               position: 'absolute',
@@ -304,7 +305,7 @@ export default function NativeMobileLayout({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
-            {userName ? `Hi, ${userName.split(' ')[0]}` : 'FixTray Pro'}
+            {userName ? `Hi, ${userName.split(' ')[0]}` : say("FixTray Pro")}
           </div>
         </div>
 
@@ -443,7 +444,7 @@ export default function NativeMobileLayout({
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              {item.icon}
+              {say(item.icon)}
               {item.badge && item.badge > 0 && (
                 <span style={{
                   position: 'absolute',
@@ -469,7 +470,7 @@ export default function NativeMobileLayout({
               fontWeight: '500',
               textAlign: 'center',
             }}>
-              {item.label}
+              {say(item.label)}
             </span>
             {isActivePath(item.path) && (
               <div style={{
@@ -488,12 +489,7 @@ export default function NativeMobileLayout({
       </div>
 
       {/* Add styles for animations */}
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
+      <style jsx>{say("\n        @keyframes pulse {\n          0%, 100% { opacity: 1; }\n          50% { opacity: 0.5; }\n        }\n      ")}</style>
     </div>
   );
 }

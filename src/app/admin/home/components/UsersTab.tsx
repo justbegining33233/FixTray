@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowRight, FaArrowUp, FaCrown } from 'react-icons/fa';
 
 import React from 'react';
@@ -107,6 +108,7 @@ function MiniLineChart({ data, color, height = 40 }: { data: number[]; color: st
 }
 
 function DonutChart({ segments, size = 100 }: { segments: { value: number; color: string; label: string }[]; size?: number }) {
+  const say = usePhrase();
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
@@ -141,11 +143,10 @@ function DonutChart({ segments, size = 100 }: { segments: { value: number; color
           );
         })}
         <text x="50" y="46" textAnchor="middle" fill="#FAFAFA" fontSize="18" fontWeight="700">
-          {total}
+          {say(total)}
         </text>
         <text x="50" y="60" textAnchor="middle" fill="#71717A" fontSize="9">
-          total users
-        </text>
+          {say("total users")}{' '}</text>
       </svg>
     </div>
   );
@@ -182,6 +183,7 @@ const ROLE_CONFIG: Record<string, { name: string; icon: React.ReactNode; color: 
 };
 
 export function UsersTab({ users, liveMetrics }: UsersTabProps) {
+  const say = usePhrase();
   // Use live metrics from API if available, otherwise calculate from users array
   const totalUsers = liveMetrics?.totalUsers || users.length;
   const totalCustomers = liveMetrics?.totalCustomers || users.filter(u => u.role === 'customer').length;
@@ -261,56 +263,56 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">Total Users</p>
-              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{totalUsers}</p>
+              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">{say("Total Users")}</p>
+              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{say(totalUsers)}</p>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 bg-[#22C55E]/10 rounded-full">
               <svg className="w-3 h-3 text-[#22C55E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
               </svg>
-              <span className="text-xs font-medium text-[#22C55E]">{userGrowth}</span>
+              <span className="text-xs font-medium text-[#22C55E]">{say(userGrowth)}</span>
             </div>
           </div>
           <MiniLineChart data={userGrowthTrend} color="#22C55E" height={50} />
-          <p className="text-[10px] text-[#52525B] mt-2">+{newUsersThisMonthCount} this month - +{newUsersThisWeekCount} this week</p>
+          <p className="text-[10px] text-[#52525B] mt-2">+{say(newUsersThisMonthCount)} {say("this month - +")}{say(newUsersThisWeekCount)} {say("this week")}</p>
         </div>
 
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">Active Users</p>
-              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{activeUsersCount}</p>
+              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">{say("Active Users")}</p>
+              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{say(activeUsersCount)}</p>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 bg-[#e5332a]/10 rounded-full">
               <svg className="w-3 h-3 text-[#e5332a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
               </svg>
-              <span className="text-xs font-medium text-[#e5332a]">{activeRate}</span>
+              <span className="text-xs font-medium text-[#e5332a]">{say(activeRate)}</span>
             </div>
           </div>
           <MiniLineChart data={activeUsersTrend} color="#e5332a" height={50} />
-          <p className="text-[10px] text-[#52525B] mt-2">Weekly active users</p>
+          <p className="text-[10px] text-[#52525B] mt-2">{say("Weekly active users")}</p>
         </div>
 
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">Retention Rate</p>
-              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{engagementMetrics.userRetentionRate}%</p>
-              <p className="text-xs text-[#22C55E] mt-1"><FaArrowUp style={{marginRight:4}} /> Live 30-day rate</p>
+              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">{say("Retention Rate")}</p>
+              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{say(engagementMetrics.userRetentionRate)}%</p>
+              <p className="text-xs text-[#22C55E] mt-1"><FaArrowUp style={{marginRight:4}} /> {say("Live 30-day rate")}</p>
             </div>
             <div className="w-16 h-16 rounded-full border-4 border-[#8B5CF6] flex items-center justify-center">
-              <span className="text-sm font-bold text-[#8B5CF6]">{engagementMetrics.userRetentionRate}%</span>
+              <span className="text-sm font-bold text-[#8B5CF6]">{say(engagementMetrics.userRetentionRate)}%</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[#27272A]">
             <div>
-              <p className="text-[10px] text-[#52525B]">Churn Rate</p>
-              <p className="text-sm font-medium text-[#EF4444]">{engagementMetrics.churnRate}%</p>
+              <p className="text-[10px] text-[#52525B]">{say("Churn Rate")}</p>
+              <p className="text-sm font-medium text-[#EF4444]">{say(engagementMetrics.churnRate)}%</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#52525B]">New This Week</p>
-              <p className="text-sm font-medium text-[#22C55E]">{newUsersThisWeekCount}</p>
+              <p className="text-[10px] text-[#52525B]">{say("New This Week")}</p>
+              <p className="text-sm font-medium text-[#22C55E]">{say(newUsersThisWeekCount)}</p>
             </div>
           </div>
         </div>
@@ -318,22 +320,22 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">Engagement</p>
-              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{engagementMetrics.featureAdoptionRate}%</p>
-              <p className="text-xs text-[#22C55E] mt-1">Feature adoption rate</p>
+              <p className="text-xs text-[#71717A] uppercase tracking-wider font-medium">{say("Engagement")}</p>
+              <p className="text-2xl font-bold text-[#FAFAFA] mt-1">{say(engagementMetrics.featureAdoptionRate)}%</p>
+              <p className="text-xs text-[#22C55E] mt-1">{say("Feature adoption rate")}</p>
             </div>
             <div className="w-16 h-16 rounded-full border-4 border-[#F97316] flex items-center justify-center">
-              <span className="text-sm font-bold text-[#F97316]">{engagementMetrics.featureAdoptionRate}%</span>
+              <span className="text-sm font-bold text-[#F97316]">{say(engagementMetrics.featureAdoptionRate)}%</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[#27272A]">
             <div>
-              <p className="text-[10px] text-[#52525B]">Work Orders</p>
-              <p className="text-sm font-medium text-[#A1A1AA]">{engagementMetrics.totalWorkOrders}</p>
+              <p className="text-[10px] text-[#52525B]">{say("Work Orders")}</p>
+              <p className="text-sm font-medium text-[#A1A1AA]">{say(engagementMetrics.totalWorkOrders)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#52525B]">DAU/MAU</p>
-              <p className="text-sm font-medium text-[#A1A1AA]">{engagementMetrics.dauMauRatio}%</p>
+              <p className="text-[10px] text-[#52525B]">{say("DAU/MAU")}</p>
+              <p className="text-sm font-medium text-[#A1A1AA]">{say(engagementMetrics.dauMauRatio)}%</p>
             </div>
           </div>
         </div>
@@ -345,8 +347,7 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-5 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
-            User Distribution
-          </h3>
+            {say("User Distribution")}{' '}</h3>
           <div className="flex items-center justify-center mb-5">
             <DonutChart 
               segments={roleStats.map(r => ({ value: r.count, color: r.color, label: r.name }))} 
@@ -357,11 +358,11 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
             {roleStats.map((role) => (
               <div key={role.key} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{role.icon}</span>
-                  <span className="text-sm text-[#A1A1AA]">{role.name}</span>
+                  <span className="text-lg">{say(role.icon)}</span>
+                  <span className="text-sm text-[#A1A1AA]">{say(role.name)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-[#FAFAFA]">{role.count}</span>
+                  <span className="text-sm font-medium text-[#FAFAFA]">{say(role.count)}</span>
                   <span className="text-xs text-[#52525B]">
                     ({totalUsers > 0 ? Math.round((role.count / totalUsers) * 100) : 0}%)
                   </span>
@@ -375,31 +376,30 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-5 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#F97316]" />
-            Activity Heatmap
-          </h3>
+            {say("Activity Heatmap")}{' '}</h3>
           <div className="flex items-center justify-center mb-4">
             <ActivityHeatmap data={activityData} />
           </div>
           <div className="flex justify-between text-[9px] text-[#52525B] mb-4">
-            <span>Mon</span>
-            <span>Tue</span>
-            <span>Wed</span>
-            <span>Thu</span>
-            <span>Fri</span>
-            <span>Sat</span>
-            <span>Sun</span>
+            <span>{say("Mon")}</span>
+            <span>{say("Tue")}</span>
+            <span>{say("Wed")}</span>
+            <span>{say("Thu")}</span>
+            <span>{say("Fri")}</span>
+            <span>{say("Sat")}</span>
+            <span>{say("Sun")}</span>
           </div>
           <div className="flex items-center justify-between pt-4 border-t border-[#27272A]">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-[#52525B]">Less</span>
+              <span className="text-[10px] text-[#52525B]">{say("Less")}</span>
               <div className="flex gap-1">
                 {[0.2, 0.4, 0.6, 0.8, 1].map((opacity, i) => (
                   <div key={i} className="w-3 h-3 rounded-sm" style={{ backgroundColor: `rgba(249, 115, 22, ${opacity})` }} />
                 ))}
               </div>
-              <span className="text-[10px] text-[#52525B]">More</span>
+              <span className="text-[10px] text-[#52525B]">{say("More")}</span>
             </div>
-            <span className="text-xs text-[#71717A]">Last 4 weeks</span>
+            <span className="text-xs text-[#71717A]">{say("Last 4 weeks")}</span>
           </div>
         </div>
 
@@ -407,22 +407,21 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-5 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
-            Engagement Funnel
-          </h3>
+            {say("Engagement Funnel")}{' '}</h3>
           <div className="space-y-4">
-            <FunnelStep label="Registered Users" value={totalUsers} percent={100} color="#e5332a" />
-            <FunnelStep label="Onboarded" value={liveMetrics?.onboardedUsers || 0} percent={engagementMetrics.onboardingRate} color="#8B5CF6" />
-            <FunnelStep label="Feature Adoption" value={Math.round(totalUsers * engagementMetrics.featureAdoptionRate / 100)} percent={engagementMetrics.featureAdoptionRate} color="#F97316" />
-            <FunnelStep label="Power Users" value={liveMetrics?.powerUsers || 0} percent={engagementMetrics.powerUserRate} color="#22C55E" />
+            <FunnelStep label={say("Registered Users")} value={totalUsers} percent={100} color="#e5332a" />
+            <FunnelStep label={say("Onboarded")} value={liveMetrics?.onboardedUsers || 0} percent={engagementMetrics.onboardingRate} color="#8B5CF6" />
+            <FunnelStep label={say("Feature Adoption")} value={Math.round(totalUsers * engagementMetrics.featureAdoptionRate / 100)} percent={engagementMetrics.featureAdoptionRate} color="#F97316" />
+            <FunnelStep label={say("Power Users")} value={liveMetrics?.powerUsers || 0} percent={engagementMetrics.powerUserRate} color="#22C55E" />
           </div>
           <div className="mt-5 pt-4 border-t border-[#27272A] grid grid-cols-2 gap-4">
             <div className="text-center p-3 bg-[#27272A]/30 rounded-lg">
-              <p className="text-lg font-bold text-[#22C55E]">{engagementMetrics.powerUserRate}%</p>
-              <p className="text-[10px] text-[#52525B]">Power Users</p>
+              <p className="text-lg font-bold text-[#22C55E]">{say(engagementMetrics.powerUserRate)}%</p>
+              <p className="text-[10px] text-[#52525B]">{say("Power Users")}</p>
             </div>
             <div className="text-center p-3 bg-[#27272A]/30 rounded-lg">
-              <p className="text-lg font-bold text-[#e5332a]">{engagementMetrics.onboardingRate}%</p>
-              <p className="text-[10px] text-[#52525B]">Onboarding</p>
+              <p className="text-lg font-bold text-[#e5332a]">{say(engagementMetrics.onboardingRate)}%</p>
+              <p className="text-[10px] text-[#52525B]">{say("Onboarding")}</p>
             </div>
           </div>
         </div>
@@ -433,39 +432,36 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#e5332a]" />
-            Daily Activity
-          </h3>
+            {say("Daily Activity")}{' '}</h3>
           <div className="grid grid-cols-2 gap-4">
-            <MetricBox label="DAU" value={engagementMetrics.dailyActiveUsers.toString()} color="#e5332a" />
-            <MetricBox label="DAU/MAU" value={`${liveMetrics?.dauMauRatio || 0}%`} color="#22C55E" />
-            <MetricBox label="Avg Value" value={`$${(liveMetrics?.avgCustomerValue || 0).toFixed(0)}`} color="#8B5CF6" />
-            <MetricBox label="Total Orders" value={(liveMetrics?.totalWorkOrders || 0).toLocaleString()} color="#F97316" />
+            <MetricBox label={say("DAU")} value={engagementMetrics.dailyActiveUsers.toString()} color="#e5332a" />
+            <MetricBox label={say("DAU/MAU")} value={`${liveMetrics?.dauMauRatio || 0}%`} color="#22C55E" />
+            <MetricBox label={say("Avg Value")} value={`$${(liveMetrics?.avgCustomerValue || 0).toFixed(0)}`} color="#8B5CF6" />
+            <MetricBox label={say("Total Orders")} value={(liveMetrics?.totalWorkOrders || 0).toLocaleString()} color="#F97316" />
           </div>
         </div>
 
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
-            Weekly Activity
-          </h3>
+            {say("Weekly Activity")}{' '}</h3>
           <div className="grid grid-cols-2 gap-4">
-            <MetricBox label="WAU" value={engagementMetrics.weeklyActiveUsers.toString()} color="#8B5CF6" />
-            <MetricBox label="Feature Usage" value={`${liveMetrics?.featureAdoptionRate || 0}%`} color="#22C55E" />
-            <MetricBox label="Completed" value={(liveMetrics?.completedWorkOrders || 0).toString()} color="#F97316" />
-            <MetricBox label="Reviews" value={(liveMetrics?.totalReviewCount || 0).toString()} color="#e5332a" />
+            <MetricBox label={say("WAU")} value={engagementMetrics.weeklyActiveUsers.toString()} color="#8B5CF6" />
+            <MetricBox label={say("Feature Usage")} value={`${liveMetrics?.featureAdoptionRate || 0}%`} color="#22C55E" />
+            <MetricBox label={say("Completed")} value={(liveMetrics?.completedWorkOrders || 0).toString()} color="#F97316" />
+            <MetricBox label={say("Reviews")} value={(liveMetrics?.totalReviewCount || 0).toString()} color="#e5332a" />
           </div>
         </div>
 
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
-            Monthly Activity
-          </h3>
+            {say("Monthly Activity")}{' '}</h3>
           <div className="grid grid-cols-2 gap-4">
-            <MetricBox label="MAU" value={engagementMetrics.monthlyActiveUsers.toString()} color="#22C55E" />
-            <MetricBox label="Retention" value={liveMetrics?.retentionRate || '0%'} color="#8B5CF6" />
-            <MetricBox label="Churn" value={liveMetrics?.churnRate || '0%'} color="#e5332a" />
-            <MetricBox label="Satisfaction" value={`${(liveMetrics?.customerSatisfaction || 0).toFixed(1)}/5`} color="#F97316" />
+            <MetricBox label={say("MAU")} value={engagementMetrics.monthlyActiveUsers.toString()} color="#22C55E" />
+            <MetricBox label={say("Retention")} value={liveMetrics?.retentionRate || '0%'} color="#8B5CF6" />
+            <MetricBox label={say("Churn")} value={liveMetrics?.churnRate || '0%'} color="#e5332a" />
+            <MetricBox label={say("Satisfaction")} value={`${(liveMetrics?.customerSatisfaction || 0).toFixed(1)}/5`} color="#F97316" />
           </div>
         </div>
       </div>
@@ -475,15 +471,12 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-sm font-semibold text-[#FAFAFA] flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#F97316]" />
-            Recent Registrations
-          </h3>
+            {say("Recent Registrations")}{' '}</h3>
           <div className="flex gap-2">
             <button className="text-xs px-3 py-1.5 bg-[#27272A] hover:bg-[#3F3F46] text-[#A1A1AA] rounded-lg transition-colors">
-              Export
-            </button>
+              {say("Export")}{' '}</button>
             <button className="text-xs px-3 py-1.5 bg-[#22C55E]/10 hover:bg-[#22C55E]/20 text-[#22C55E] rounded-lg transition-colors">
-              + Invite Users
-            </button>
+              {say("+ Invite Users")}{' '}</button>
           </div>
         </div>
 
@@ -494,19 +487,19 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
-            <p className="text-sm text-[#71717A]">No recent registrations</p>
-            <p className="text-xs text-[#52525B] mt-1">New users will appear here</p>
+            <p className="text-sm text-[#71717A]">{say("No recent registrations")}</p>
+            <p className="text-xs text-[#52525B] mt-1">{say("New users will appear here")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#27272A]">
-                  <th className="text-left text-xs text-[#71717A] font-medium pb-3 pr-4">User</th>
-                  <th className="text-left text-xs text-[#71717A] font-medium pb-3 pr-4">Email</th>
-                  <th className="text-center text-xs text-[#71717A] font-medium pb-3 pr-4">Role</th>
-                  <th className="text-center text-xs text-[#71717A] font-medium pb-3 pr-4">Joined</th>
-                  <th className="text-center text-xs text-[#71717A] font-medium pb-3">Status</th>
+                  <th className="text-left text-xs text-[#71717A] font-medium pb-3 pr-4">{say("User")}</th>
+                  <th className="text-left text-xs text-[#71717A] font-medium pb-3 pr-4">{say("Email")}</th>
+                  <th className="text-center text-xs text-[#71717A] font-medium pb-3 pr-4">{say("Role")}</th>
+                  <th className="text-center text-xs text-[#71717A] font-medium pb-3 pr-4">{say("Joined")}</th>
+                  <th className="text-center text-xs text-[#71717A] font-medium pb-3">{say("Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -520,20 +513,20 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
                             className="w-9 h-9 rounded-lg flex items-center justify-center text-lg"
                             style={{ backgroundColor: `${roleConfig.color}15` }}
                           >
-                            {roleConfig.icon}
+                            {say(roleConfig.icon)}
                           </div>
                           <span className="text-sm text-[#FAFAFA] font-medium">
-                            {user.firstName} {user.lastName}
+                            {say(user.firstName)} {say(user.lastName)}
                           </span>
                         </div>
                       </td>
-                      <td className="py-4 pr-4 text-sm text-[#71717A]">{user.email}</td>
+                      <td className="py-4 pr-4 text-sm text-[#71717A]">{say(user.email)}</td>
                       <td className="py-4 pr-4 text-center">
                         <span 
                           className="text-xs px-2 py-1 rounded-full font-medium"
                           style={{ backgroundColor: `${roleConfig.color}15`, color: roleConfig.color }}
                         >
-                          {roleConfig.name}
+                          {say(roleConfig.name)}
                         </span>
                       </td>
                       <td className="py-4 pr-4 text-sm text-[#71717A] text-center">
@@ -557,7 +550,7 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         {newUsersArray.length > 8 && (
           <div className="text-center mt-4 pt-4 border-t border-[#27272A]">
             <button className="text-xs text-[#F97316] hover:text-[#FB923C] font-medium">
-              View all {newUsersArray.length} new users <FaArrowRight style={{marginRight:4}} />
+              {say("View all")}{' '}{say(newUsersArray.length)} {say("new users")}{' '}<FaArrowRight style={{marginRight:4}} />
             </button>
           </div>
         )}
@@ -568,37 +561,35 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-5 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
-            User Health Indicators
-          </h3>
+            {say("User Health Indicators")}{' '}</h3>
           <div className="space-y-4">
-            <HealthBar label="Account Verification" value={liveMetrics?.accountVerificationRate ?? null} color="#22C55E" />
-            <HealthBar label="Profile Completion" value={liveMetrics?.profileCompletionRate || 0} color="#e5332a" />
-            <HealthBar label="Onboarding Completion" value={liveMetrics?.onboardingCompletionRate || 0} color="#8B5CF6" />
-            <HealthBar label="Two-Factor Auth" value={liveMetrics?.twoFactorAuthRate ?? null} color="#F97316" />
+            <HealthBar label={say("Account Verification")} value={liveMetrics?.accountVerificationRate ?? null} color="#22C55E" />
+            <HealthBar label={say("Profile Completion")} value={liveMetrics?.profileCompletionRate || 0} color="#e5332a" />
+            <HealthBar label={say("Onboarding Completion")} value={liveMetrics?.onboardingCompletionRate || 0} color="#8B5CF6" />
+            <HealthBar label={say("Two-Factor Auth")} value={liveMetrics?.twoFactorAuthRate ?? null} color="#F97316" />
           </div>
         </div>
 
         <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 hover:border-[#3F3F46] transition-all duration-200">
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-5 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#e5332a]" />
-            Security Overview
-          </h3>
+            {say("Security Overview")}{' '}</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-[#22C55E]/5 border border-[#22C55E]/20 rounded-xl text-center">
               <p className="text-2xl font-bold text-[#22C55E]">{liveMetrics?.activeSessions || 0}</p>
-              <p className="text-xs text-[#71717A]">Active Sessions</p>
+              <p className="text-xs text-[#71717A]">{say("Active Sessions")}</p>
             </div>
             <div className="p-4 bg-[#F97316]/5 border border-[#F97316]/20 rounded-xl text-center">
               <p className="text-2xl font-bold text-[#F97316]">{formatNullableMetric(liveMetrics?.failedLogins)}</p>
-              <p className="text-xs text-[#71717A]">Failed Logins</p>
+              <p className="text-xs text-[#71717A]">{say("Failed Logins")}</p>
             </div>
             <div className="p-4 bg-[#EF4444]/5 border border-[#EF4444]/20 rounded-xl text-center">
               <p className="text-2xl font-bold text-[#EF4444]">{formatNullableMetric(liveMetrics?.accountLockouts)}</p>
-              <p className="text-xs text-[#71717A]">Account Lockouts</p>
+              <p className="text-xs text-[#71717A]">{say("Account Lockouts")}</p>
             </div>
             <div className="p-4 bg-[#22C55E]/5 border border-[#22C55E]/20 rounded-xl text-center">
               <p className="text-2xl font-bold text-[#22C55E]">{formatNullableMetric(liveMetrics?.securityAlerts)}</p>
-              <p className="text-xs text-[#71717A]">Security Alerts</p>
+              <p className="text-xs text-[#71717A]">{say("Security Alerts")}</p>
             </div>
           </div>
         </div>
@@ -610,13 +601,14 @@ export function UsersTab({ users, liveMetrics }: UsersTabProps) {
 // Helper Components
 
 function FunnelStep({ label, value, percent, color }: { label: string; value: number; percent: number; color: string }) {
+  const say = usePhrase();
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-[#A1A1AA]">{label}</span>
+        <span className="text-xs text-[#A1A1AA]">{say(label)}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-[#FAFAFA]">{value}</span>
-          <span className="text-[10px] text-[#52525B]">({percent}%)</span>
+          <span className="text-xs font-medium text-[#FAFAFA]">{say(value)}</span>
+          <span className="text-[10px] text-[#52525B]">({say(percent)}%)</span>
         </div>
       </div>
       <div className="h-2 rounded-full bg-[#27272A] overflow-hidden">
@@ -627,24 +619,26 @@ function FunnelStep({ label, value, percent, color }: { label: string; value: nu
 }
 
 function MetricBox({ label, value, color }: { label: string; value: string; color: string }) {
+  const say = usePhrase();
   return (
     <div className="p-3 bg-[#27272A]/30 rounded-lg border border-[#3F3F46] text-center">
-      <p className="text-lg font-bold" style={{ color }}>{value}</p>
-      <p className="text-[10px] text-[#52525B]">{label}</p>
+      <p className="text-lg font-bold" style={{ color }}>{say(value)}</p>
+      <p className="text-[10px] text-[#52525B]">{say(label)}</p>
     </div>
   );
 }
 
 function HealthBar({ label, value, color }: { label: string; value: number | null; color: string }) {
+  const say = usePhrase();
   const isUnavailable = value === null;
   const safeValue = value ?? 0;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-[#A1A1AA]">{label}</span>
+        <span className="text-xs text-[#A1A1AA]">{say(label)}</span>
         <span className="text-xs font-medium" style={{ color: isUnavailable ? '#A1A1AA' : color }}>
-          {isUnavailable ? 'Unavailable' : `${safeValue}%`}
+          {isUnavailable ? say("Unavailable") : `${safeValue}%`}
         </span>
       </div>
       <div className="h-2 rounded-full bg-[#27272A] overflow-hidden">

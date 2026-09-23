@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useRef } from 'react';
 import { FaCamera, FaCaretRight, FaClock, FaCoffee, FaMapMarkerAlt, FaSignOutAlt, FaStopwatch, FaUnlock } from 'react-icons/fa';
 
@@ -10,6 +11,7 @@ interface TimeClockProps {
 }
 
 export default function TimeClock({ techId, shopId, techName }: TimeClockProps) {
+  const say = usePhrase();
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [onBreak, setOnBreak] = useState(false);
   const [currentEntry, setCurrentEntry] = useState<any>(null);
@@ -415,9 +417,9 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div>
           <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '4px' }}>
-            {onBreak ? <><FaCoffee style={{marginRight:4}} /> On Break</> : isClockedIn ? <><FaClock style={{marginRight:4}} /> Clocked In</> : <><FaStopwatch style={{marginRight:4}} /> Time Clock</>}
+            {onBreak ? <><FaCoffee style={{marginRight:4}} /> {say("On Break")}</> : isClockedIn ? <><FaClock style={{marginRight:4}} /> {say("Clocked In")}</> : <><FaStopwatch style={{marginRight:4}} /> {say("Time Clock")}</>}
           </div>
-          <div style={{ fontSize: '20px', fontWeight: '600' }}>{techName || 'You'}</div>
+          <div style={{ fontSize: '20px', fontWeight: '600' }}>{techName || say("You")}</div>
         </div>
         <div style={{
           width: '12px',
@@ -438,7 +440,7 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
             fontFamily: 'monospace',
             letterSpacing: '2px',
           }}>
-            {elapsedTime}
+            {say(elapsedTime)}
           </div>
           {onBreak && (
             <div style={{
@@ -448,7 +450,7 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
               color: '#fbbf24',
               fontFamily: 'monospace',
             }}>
-              Break: {breakTime}
+              {say("Break:")}{' '}{say(breakTime)}
             </div>
           )}
         </div>
@@ -472,7 +474,7 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
             transition: 'all 0.2s',
           }}
         >
-          {loading ? 'Processing...' : isClockedIn ? <><FaSignOutAlt style={{marginRight:4}} /> Clock Out</> : <><FaUnlock style={{marginRight:4}} /> Clock In</>}
+          {loading ? say("Processing...") : isClockedIn ? <><FaSignOutAlt style={{marginRight:4}} /> {say("Clock Out")}</> : <><FaUnlock style={{marginRight:4}} /> {say("Clock In")}</>}
         </button>
 
         {isClockedIn && (
@@ -493,30 +495,29 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
               transition: 'all 0.2s',
             }}
           >
-            {loading ? 'Processing...' : onBreak ? <><FaCaretRight style={{marginRight:4}} /> End Break</> : <><FaCoffee style={{marginRight:4}} /> Start Break</>}
+            {loading ? say("Processing...") : onBreak ? <><FaCaretRight style={{marginRight:4}} /> {say("End Break")}</> : <><FaCoffee style={{marginRight:4}} /> {say("Start Break")}</>}
           </button>
         )}
       </div>
 
       {isClockedIn && currentEntry && (
         <div style={{ marginTop: '16px', fontSize: '13px', opacity: 0.9, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '12px' }}>
-          <div>Clocked in: {new Date(currentEntry.clockIn).toLocaleTimeString()}</div>
+          <div>{say("Clocked in:")}{' '}{new Date(currentEntry.clockIn).toLocaleTimeString()}</div>
           {gpsEnabled && location && (
             <div style={{ fontSize: '11px', marginTop: '4px' }}>
-              <FaMapMarkerAlt style={{marginRight:4}} /> Location verified ({location.lat.toFixed(4)}, {location.lon.toFixed(4)})
+              <FaMapMarkerAlt style={{marginRight:4}} /> {say("Location verified (")}{location.lat.toFixed(4)}, {location.lon.toFixed(4)})
             </div>
           )}
           {photoEnabled && (
             <div style={{ fontSize: '11px', marginTop: '4px' }}>
-              <FaCamera style={{marginRight:4}} /> Photo verification enabled
-            </div>
+              <FaCamera style={{marginRight:4}} /> {say("Photo verification enabled")}{' '}</div>
           )}
         </div>
       )}
       {clockMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:clockMsg.type==='success'?'#dcfce7':'#fde8e8',color:clockMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {clockMsg.text}
-          <button aria-label="Dismiss" onClick={()=>setClockMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          {say(clockMsg.text)}
+          <button aria-label={say("Dismiss")} onClick={()=>setClockMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}
     </div>

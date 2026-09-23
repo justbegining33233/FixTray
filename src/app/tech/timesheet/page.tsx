@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowLeft, FaArrowRight, FaClock } from 'react-icons/fa';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -14,6 +15,7 @@ function formatTime(dt?: string | Date | null) {
 }
 
 export default function TechTimesheet() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
   const [entries, setEntries] = useState<any[]>([]);
   const [range, setRange] = useState<'week' | 'month'>('week');
@@ -109,7 +111,7 @@ export default function TechTimesheet() {
   if (isLoading) {
     return (
       <div style={{minHeight:'100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <div style={{color: '#e5e7eb', fontSize: 18}}>Loading...</div>
+        <div style={{color: '#e5e7eb', fontSize: 18}}>{say("Loading...")}</div>
       </div>
     );
   }
@@ -127,18 +129,17 @@ export default function TechTimesheet() {
         <div style={{maxWidth:1200, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div>
             <Link href="/tech/all-tools" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:8, display:'inline-block'}}>
-              <FaArrowLeft style={{marginRight:4}} /> Back to Tools
-            </Link>
-            <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaClock style={{marginRight:4}} /> Time Tracking</h1>
-            <p style={{fontSize:14, color:'#9aa3b2'}}>Track your work hours, breaks, and job time for payroll</p>
+              <FaArrowLeft style={{marginRight:4}} /> {say("Back to Tools")}{' '}</Link>
+            <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaClock style={{marginRight:4}} /> {say("Time Tracking")}</h1>
+            <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Track your work hours, breaks, and job time for payroll")}</p>
           </div>
           <div style={{textAlign:'right'}}>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Range</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Range")}</div>
             <div style={{display:'flex', gap:8}}>
-              <button onClick={() => setRange('week')} style={{padding:'8px 12px', borderRadius:8, background: range==='week'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Week</button>
-              <button onClick={() => setRange('month')} style={{padding:'8px 12px', borderRadius:8, background: range==='month'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>This Month</button>
+              <button onClick={() => setRange('week')} style={{padding:'8px 12px', borderRadius:8, background: range==='week'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>{say("This Week")}</button>
+              <button onClick={() => setRange('month')} style={{padding:'8px 12px', borderRadius:8, background: range==='month'? '#000000':'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb'}}>{say("This Month")}</button>
             </div>
-            <div style={{fontSize:12, color:'#9aa3b2', marginTop:6}}>{periodLabel}</div>
+            <div style={{fontSize:12, color:'#9aa3b2', marginTop:6}}>{say(periodLabel)}</div>
           </div>
         </div>
       </div>
@@ -148,12 +149,12 @@ export default function TechTimesheet() {
           {/* Compact Hour Tracker (read-only) */}
           <div style={{marginBottom:8, padding:12, borderRadius:10, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.04)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <div>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>{clockedIn ? 'Hours this period (including current clock-in)' : 'Hours this period'}</div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>{clockedIn ? say("Hours this period (including current clock-in)") : say("Hours this period")}</div>
               <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{totals.totalHours.toFixed(2)} hrs</div>
-              <div style={{fontSize:12, color: clockedIn ? '#86efac' : '#9aa3b2', marginTop: 4}}>{clockedIn ? 'Clocked in' : 'Not clocked in'}</div>
+              <div style={{fontSize:12, color: clockedIn ? '#86efac' : '#9aa3b2', marginTop: 4}}>{clockedIn ? say("Clocked in") : say("Not clocked in")}</div>
             </div>
             <div style={{textAlign:'right'}}>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>Billable</div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Billable")}</div>
               <div style={{fontSize:16, fontWeight:700, color:'#e5e7eb'}}>{totals.billableHours.toFixed(2)} hrs</div>
             </div>
           </div>
@@ -161,34 +162,34 @@ export default function TechTimesheet() {
         <div>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
             <div>
-              <h3 style={{margin:0, color:'#e5e7eb'}}>Timesheet</h3>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>Pay period: <strong style={{color:'#e5e7eb'}}>{periodLabel}</strong></div>
+              <h3 style={{margin:0, color:'#e5e7eb'}}>{say("Timesheet")}</h3>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Pay period:")}{' '}<strong style={{color:'#e5e7eb'}}>{say(periodLabel)}</strong></div>
             </div>
 
             <div style={{textAlign:'right'}}>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>Entries</div>
-              <div style={{fontWeight:700, color:'#e5e7eb'}}>{entries.length} entries</div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Entries")}</div>
+              <div style={{fontWeight:700, color:'#e5e7eb'}}>{say(entries.length)} entries</div>
             </div>
           </div>
 
           <div style={{background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:12, overflow:'hidden'}}>
             {/* Pay period summary */}
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', borderBottom:'1px solid rgba(255,255,255,0.02)'}}>
-              <div style={{fontSize:13, color:'#9aa3b2'}}>PAY PERIOD  -  <strong style={{color:'#e5e7eb'}}>{periodLabel}</strong></div>
-              <div style={{fontSize:13, color:'#e5e7eb', fontWeight:700}}>TOTAL HOURS  -  {totals.totalHours.toFixed(2)} hrs</div>
+              <div style={{fontSize:13, color:'#9aa3b2'}}>{say("PAY PERIOD  -")}{' '}<strong style={{color:'#e5e7eb'}}>{say(periodLabel)}</strong></div>
+              <div style={{fontSize:13, color:'#e5e7eb', fontWeight:700}}>{say("TOTAL HOURS  -")}{' '}{totals.totalHours.toFixed(2)} hrs</div>
             </div>
 
             {/* Compact pay-period table: Date | Clock In | Clock Out | Hours */}
             <div style={{padding:'8px 12px', borderBottom:'1px solid rgba(255,255,255,0.02)'}}>
               <div style={{display:'grid', gridTemplateColumns:'120px 100px 100px 80px', gap:8, fontSize:13, color:'#9aa3b2', marginBottom:6}}>
-                <div>Date</div>
-                <div>Clock In</div>
-                <div>Clock Out</div>
-                <div style={{textAlign:'right'}}>Hours</div>
+                <div>{say("Date")}</div>
+                <div>{say("Clock In")}</div>
+                <div>{say("Clock Out")}</div>
+                <div style={{textAlign:'right'}}>{say("Hours")}</div>
               </div>
 
               {entries.length === 0 && (
-                <div style={{padding:12, color:'#9aa3b2'}}>No time entries for this period.</div>
+                <div style={{padding:12, color:'#9aa3b2'}}>{say("No time entries for this period.")}</div>
               )}
 
               {entries.map((pe) => {
@@ -200,7 +201,7 @@ export default function TechTimesheet() {
                   <div key={pe.id} style={{display:'grid', gridTemplateColumns:'120px 100px 100px 80px', padding:'8px 12px', borderBottom:'1px solid rgba(255,255,255,0.03)', alignItems:'center', color:'#e5e7eb'}}>
                     <div style={{fontSize:13, color:'#9aa3b2'}}>{ci.toLocaleDateString()}</div>
                     <div style={{fontWeight:600, fontFamily:'monospace'}}>{formatTime(ci)}</div>
-                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : (clockedIn ? 'In progress' : 'Not clocked in')}</div>
+                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : (clockedIn ? say("In progress") : say("Not clocked in"))}</div>
                     <div style={{textAlign:'right', fontWeight:700}}>{hours.toFixed(2)}</div>
                   </div>
                 );
@@ -210,8 +211,8 @@ export default function TechTimesheet() {
 
 
             <div>
-              {loading && <div style={{padding:24, color:'#9aa3b2'}}>Loading...</div>}
-              {!loading && entries.length === 0 && <div style={{padding:24, color:'#9aa3b2'}}>No time entries for this period.</div>}
+              {loading && <div style={{padding:24, color:'#9aa3b2'}}>{say("Loading...")}</div>}
+              {!loading && entries.length === 0 && <div style={{padding:24, color:'#9aa3b2'}}>{say("No time entries for this period.")}</div>}
 
               {/* If there are entries but none qualify for the detailed view, show a brief note */}
 
@@ -226,17 +227,17 @@ export default function TechTimesheet() {
                     {/* WO column */}
                     <div>
                       {isEditing ? (
-                        <input value={editValues.workOrderId || ''} onChange={(ev) => setEditValues({...editValues, workOrderId: ev.target.value})} placeholder="WO id" style={{width:'100%', padding:6, borderRadius:6, border:'1px solid rgba(255,255,255,0.06)'}} />
+                        <input value={editValues.workOrderId || ''} onChange={(ev) => setEditValues({...editValues, workOrderId: ev.target.value})} placeholder={say("WO id")} style={{width:'100%', padding:6, borderRadius:6, border:'1px solid rgba(255,255,255,0.06)'}} />
                       ) : (
                         e.workOrderId ? (
                           <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                            <Link href={`/workorders/${e.workOrderId}`} style={{color:'#e5332a', fontWeight:700, textDecoration:'none'}}>{e.workOrderId}</Link>
-                            <span style={{fontSize:11, background:'#052e16', color:'#bbf7d0', padding:'2px 6px', borderRadius:999}}>Billable</span>
+                            <Link href={`/workorders/${e.workOrderId}`} style={{color:'#e5332a', fontWeight:700, textDecoration:'none'}}>{say(e.workOrderId)}</Link>
+                            <span style={{fontSize:11, background:'#052e16', color:'#bbf7d0', padding:'2px 6px', borderRadius:999}}>{say("Billable")}</span>
                           </div>
                         ) : (
                           <div style={{display:'flex', gap:8, alignItems:'center'}}>
                             <span style={{color:'#9aa3b2'}}> - </span>
-                            <span style={{fontSize:11, background:'rgba(255,255,255,0.03)', color:'#e5e7eb', padding:'2px 6px', borderRadius:999}}>Non-billable</span>
+                            <span style={{fontSize:11, background:'rgba(255,255,255,0.03)', color:'#e5e7eb', padding:'2px 6px', borderRadius:999}}>{say("Non-billable")}</span>
                           </div>
                         )
                       )}
@@ -245,7 +246,7 @@ export default function TechTimesheet() {
                     {/* Notes column */}
                     <div style={{color:'#9aa3b2'}}>
                       {isEditing ? (
-                        <input value={editValues.notes || ''} onChange={(ev) => setEditValues({...editValues, notes: ev.target.value})} placeholder="Notes" style={{width:'100%', padding:6, borderRadius:6, border:'1px solid rgba(255,255,255,0.06)'}} />
+                        <input value={editValues.notes || ''} onChange={(ev) => setEditValues({...editValues, notes: ev.target.value})} placeholder={say("Notes")} style={{width:'100%', padding:6, borderRadius:6, border:'1px solid rgba(255,255,255,0.06)'}} />
                       ) : (
                         e.notes || ' - '
                       )}
@@ -256,11 +257,11 @@ export default function TechTimesheet() {
                       <div style={{minWidth:110, textAlign:'right', display:'flex', gap:8, alignItems:'center', justifyContent:'flex-end'}}>
                         <div style={{fontWeight:700}}>{hours.toFixed(2)}</div>
                         {e.workOrderId ? (
-                          <div style={{fontSize:11, color:'#bbf7d0', background:'#052e16', padding:'2px 6px', borderRadius:999}}>Billable</div>
+                          <div style={{fontSize:11, color:'#bbf7d0', background:'#052e16', padding:'2px 6px', borderRadius:999}}>{say("Billable")}</div>
                         ) : e.isPto ? (
-                          <div style={{fontSize:11, color:'#fde68a', background:'#2b2110', padding:'2px 6px', borderRadius:999}}>PTO</div>
+                          <div style={{fontSize:11, color:'#fde68a', background:'#2b2110', padding:'2px 6px', borderRadius:999}}>{say("PTO")}</div>
                         ) : (
-                          <div style={{fontSize:11, color:'#9aa3b2', background:'rgba(255,255,255,0.03)', padding:'2px 6px', borderRadius:999}}>Non-billable</div>
+                          <div style={{fontSize:11, color:'#9aa3b2', background:'rgba(255,255,255,0.03)', padding:'2px 6px', borderRadius:999}}>{say("Non-billable")}</div>
                         )}
                       </div>
 
@@ -287,15 +288,15 @@ export default function TechTimesheet() {
                               console.error(err);
                               setTimesheetMsg({type:'error',text:'Save failed'});
                             }
-                          }} style={{padding:'6px 8px', borderRadius:6, background:'#10b981', color:'white', border:'none'}}>Save</button>
-                          <button onClick={() => { setEditingId(null); setEditValues({ notes: '', workOrderId: '' }); }} style={{padding:'6px 8px', borderRadius:6, background:'transparent', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.04)'}}>Cancel</button>
+                          }} style={{padding:'6px 8px', borderRadius:6, background:'#10b981', color:'white', border:'none'}}>{say("Save")}</button>
+                          <button onClick={() => { setEditingId(null); setEditValues({ notes: '', workOrderId: '' }); }} style={{padding:'6px 8px', borderRadius:6, background:'transparent', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.04)'}}>{say("Cancel")}</button>
                         </>
                       ) : (
                         <>
-                          <button onClick={() => { setEditingId(e.id); setEditValues({ notes: e.notes || '', workOrderId: e.workOrderId || '' }); }} style={{padding:'0', borderRadius:4, background:'transparent', color:'#e5332a', border:'none', fontSize:13, fontWeight:600, cursor:'pointer'}}>Edit</button>
+                          <button onClick={() => { setEditingId(e.id); setEditValues({ notes: e.notes || '', workOrderId: e.workOrderId || '' }); }} style={{padding:'0', borderRadius:4, background:'transparent', color:'#e5332a', border:'none', fontSize:13, fontWeight:600, cursor:'pointer'}}>{say("Edit")}</button>
 
                           {(user.role === 'manager' || user.role === 'admin') && (
-                            <button onClick={() => setApproveConfirmId(e.id)} style={{padding:'6px 8px', borderRadius:6, background:'#f59e0b', color:'#1f2937', border:'none'}}>Approve</button>
+                            <button onClick={() => setApproveConfirmId(e.id)} style={{padding:'6px 8px', borderRadius:6, background:'#f59e0b', color:'#1f2937', border:'none'}}>{say("Approve")}</button>
                           )}
                         </>
                       )}
@@ -309,20 +310,20 @@ export default function TechTimesheet() {
           {/* Billable hours  -  separate table for WO-linked time */}
           <div style={{marginTop:16, background:'rgba(0,0,0,0.28)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:12, overflow:'hidden'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', borderBottom:'1px solid rgba(255,255,255,0.02)'}}>
-              <div style={{fontSize:13, color:'#9aa3b2'}}>BILLABLE HOURS  -  <strong style={{color:'#e5e7eb'}}>{periodLabel}</strong></div>
+              <div style={{fontSize:13, color:'#9aa3b2'}}>{say("BILLABLE HOURS  -")}{' '}<strong style={{color:'#e5e7eb'}}>{say(periodLabel)}</strong></div>
               <div style={{fontSize:13, color:'#e5e7eb', fontWeight:700}}>{totals.billableHours.toFixed(2)} hrs</div>
             </div>
 
             <div style={{display:'grid', gridTemplateColumns:'120px 100px 100px 1fr', padding:'8px 12px', borderBottom:'1px solid rgba(255,255,255,0.03)', fontSize:13, color:'#9aa3b2'}}>
-              <div>Date</div>
-              <div>Clock In</div>
-              <div>Clock Out</div>
-              <div>WO#</div>
+              <div>{say("Date")}</div>
+              <div>{say("Clock In")}</div>
+              <div>{say("Clock Out")}</div>
+              <div>{say("WO#")}</div>
             </div>
 
             <div>
               {entries.filter(en => en.workOrderId).length === 0 && (
-                <div style={{padding:16, color:'#9aa3b2'}}>No billable time entries for this period.</div>
+                <div style={{padding:16, color:'#9aa3b2'}}>{say("No billable time entries for this period.")}</div>
               )}
 
               {entries.filter(en => en.workOrderId).map((be) => {
@@ -332,8 +333,8 @@ export default function TechTimesheet() {
                   <div key={be.id} style={{display:'grid', gridTemplateColumns:'120px 100px 100px 1fr', padding:'8px 12px', borderBottom:'1px solid rgba(255,255,255,0.03)', alignItems:'center', color:'#e5e7eb'}}>
                     <div style={{fontSize:13, color:'#9aa3b2'}}>{ci.toLocaleDateString()}</div>
                     <div style={{fontWeight:600, fontFamily:'monospace'}}>{formatTime(ci)}</div>
-                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : (clockedIn ? <span style={{color:'#f59e0b'}}>In progress</span> : 'Not clocked in')}</div>
-                    <div><Link href={`/workorders/${be.workOrderId}`} style={{color:'#e5332a', fontWeight:700, textDecoration:'none'}}>{be.workOrderId}</Link></div>
+                    <div style={{fontWeight:600, fontFamily:'monospace'}}>{co ? formatTime(co) : (clockedIn ? <span style={{color:'#f59e0b'}}>{say("In progress")}</span> : say("Not clocked in"))}</div>
+                    <div><Link href={`/workorders/${be.workOrderId}`} style={{color:'#e5332a', fontWeight:700, textDecoration:'none'}}>{say(be.workOrderId)}</Link></div>
                   </div>
                 );
               })}
@@ -345,7 +346,7 @@ export default function TechTimesheet() {
 
       {timesheetMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:timesheetMsg.type==='success'?'#dcfce7':'#fde8e8',color:timesheetMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {timesheetMsg.text}
+          {say(timesheetMsg.text)}
           <button onClick={()=>setTimesheetMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
@@ -353,8 +354,8 @@ export default function TechTimesheet() {
       {approveConfirmId && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
           <div style={{background:'#1f2937',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:32,maxWidth:400,width:'90%'}}>
-            <h3 style={{color:'#e5e7eb',fontSize:18,fontWeight:700,marginBottom:12}}>Approve Entry?</h3>
-            <p style={{color:'#9aa3b2',fontSize:14,marginBottom:24}}>Approve and lock this timesheet entry? This cannot be undone.</p>
+            <h3 style={{color:'#e5e7eb',fontSize:18,fontWeight:700,marginBottom:12}}>{say("Approve Entry?")}</h3>
+            <p style={{color:'#9aa3b2',fontSize:14,marginBottom:24}}>{say("Approve and lock this timesheet entry? This cannot be undone.")}</p>
             <div style={{display:'flex',gap:12}}>
               <button onClick={async () => {
                 try {
@@ -368,8 +369,8 @@ export default function TechTimesheet() {
                   else { const { error } = await res.json(); setTimesheetMsg({type:'error',text:error || 'Failed to approve'}); }
                 } catch (err) { console.error(err); setTimesheetMsg({type:'error',text:'Approve failed'}); }
                 setApproveConfirmId(null);
-              }} style={{flex:1,padding:'11px 0',background:'#f59e0b',color:'#1f2937',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Approve</button>
-              <button onClick={()=>setApproveConfirmId(null)} style={{flex:1,padding:'11px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+              }} style={{flex:1,padding:'11px 0',background:'#f59e0b',color:'#1f2937',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>{say("Approve")}</button>
+              <button onClick={()=>setApproveConfirmId(null)} style={{flex:1,padding:'11px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,fontWeight:600,cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>

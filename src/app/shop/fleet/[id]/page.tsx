@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -23,6 +24,7 @@ interface FleetAccount {
 }
 
 export default function FleetAccountDetailPage() {
+  const say = usePhrase();
   const params = useParams();
   const id = params.id as string;
   const [account, setAccount] = useState<FleetAccount | null>(null);
@@ -46,9 +48,9 @@ export default function FleetAccountDetailPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading account...</div>;
-  if (error) return <div className="text-red-600 py-4">{error}</div>;
-  if (!account) return <div className="text-center py-8">Account not found</div>;
+  if (loading) return <div className="text-center py-8">{say("Loading account...")}</div>;
+  if (error) return <div className="text-red-600 py-4">{say(error)}</div>;
+  if (!account) return <div className="text-center py-8">{say("Account not found")}</div>;
 
   const totalRevenue = account.invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
   const totalPaid = account.invoices.reduce((sum, inv) => sum + inv.amountPaid, 0);
@@ -62,62 +64,60 @@ export default function FleetAccountDetailPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">{account.companyName}</h1>
-          <p className="text-gray-600">Fleet Account • {account.status}</p>
+          <h1 className="text-3xl font-bold">{say(account.companyName)}</h1>
+          <p className="text-gray-600">{say("Fleet Account •")}{' '}{say(account.status)}</p>
         </div>
         <Link
           href={`/shop/fleet/${id}/edit` as any}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Edit Account
-        </Link>
+          {say("Edit Account")}{' '}</Link>
       </div>
 
       {/* Account Details Grid */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="font-semibold text-gray-600 mb-2">Contact</h3>
-          <p className="font-bold">{account.contactName}</p>
-          <p className="text-sm text-gray-600">{account.contactEmail}</p>
+          <h3 className="font-semibold text-gray-600 mb-2">{say("Contact")}</h3>
+          <p className="font-bold">{say(account.contactName)}</p>
+          <p className="text-sm text-gray-600">{say(account.contactEmail)}</p>
           {account.contactPhone && (
-            <p className="text-sm text-gray-600">{account.contactPhone}</p>
+            <p className="text-sm text-gray-600">{say(account.contactPhone)}</p>
           )}
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="font-semibold text-gray-600 mb-2">Terms</h3>
+          <h3 className="font-semibold text-gray-600 mb-2">{say("Terms")}</h3>
           <p className="text-sm">
-            Net {account.netTerms} days
+            {say("Net")}{' '}{say(account.netTerms)} days
           </p>
           <p className="text-sm mt-2">
-            Credit Limit: <span className="font-bold">{formatCurrency(account.creditLimit)}</span>
+            {say("Credit Limit:")}{' '}<span className="font-bold">{formatCurrency(account.creditLimit)}</span>
           </p>
           <p className="text-sm">
-            Available Credit: <span className="font-bold text-blue-600">{formatCurrency(account.creditLimit - usedCredit)}</span>
+            {say("Available Credit:")}{' '}<span className="font-bold text-blue-600">{formatCurrency(account.creditLimit - usedCredit)}</span>
           </p>
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="font-semibold text-gray-600 mb-2">Billing</h3>
+          <h3 className="font-semibold text-gray-600 mb-2">{say("Billing")}</h3>
           <p className="text-sm">
-            Billing Address:
-          </p>
-          <p className="text-sm font-mono">{account.billingAddress || 'Not provided'}</p>
+            {say("Billing Address:")}{' '}</p>
+          <p className="text-sm font-mono">{account.billingAddress || say("Not provided")}</p>
           {account.taxId && (
-            <p className="text-sm mt-2">Tax ID: {account.taxId}</p>
+            <p className="text-sm mt-2">{say("Tax ID:")}{' '}{say(account.taxId)}</p>
           )}
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="font-semibold text-gray-600 mb-2">Revenue</h3>
+          <h3 className="font-semibold text-gray-600 mb-2">{say("Revenue")}</h3>
           <p className="text-sm">
-            Total Revenue: <span className="font-bold text-green-600">{formatCurrency(totalRevenue)}</span>
+            {say("Total Revenue:")}{' '}<span className="font-bold text-green-600">{formatCurrency(totalRevenue)}</span>
           </p>
           <p className="text-sm mt-1">
-            Amount Paid: <span className="font-bold">{formatCurrency(totalPaid)}</span>
+            {say("Amount Paid:")}{' '}<span className="font-bold">{formatCurrency(totalPaid)}</span>
           </p>
           <p className="text-sm mt-1">
-            Unpaid: <span className="font-bold text-orange-600">{formatCurrency(unpaidAmount)}</span>
+            {say("Unpaid:")}{' '}<span className="font-bold text-orange-600">{formatCurrency(unpaidAmount)}</span>
           </p>
         </div>
       </div>
@@ -130,36 +130,35 @@ export default function FleetAccountDetailPage() {
       {/* Invoices Section */}
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Invoices</h2>
+          <h2 className="text-xl font-bold">{say("Invoices")}</h2>
           <Link
             href={`/shop/fleet/${id}/invoices/new` as any}
             className="text-blue-600 hover:underline text-sm"
           >
-            Create Invoice
-          </Link>
+            {say("Create Invoice")}{' '}</Link>
         </div>
 
         {account.invoices.length === 0 ? (
-          <p className="text-gray-500">No invoices yet</p>
+          <p className="text-gray-500">{say("No invoices yet")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="px-4 py-2 text-left">Invoice #</th>
-                  <th className="px-4 py-2 text-left">Amount</th>
-                  <th className="px-4 py-2 text-left">Paid</th>
-                  <th className="px-4 py-2 text-left">Due</th>
-                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-left">{say("Invoice #")}</th>
+                  <th className="px-4 py-2 text-left">{say("Amount")}</th>
+                  <th className="px-4 py-2 text-left">{say("Paid")}</th>
+                  <th className="px-4 py-2 text-left">{say("Due")}</th>
+                  <th className="px-4 py-2 text-left">{say("Status")}</th>
                 </tr>
               </thead>
               <tbody>
                 {account.invoices.map((inv) => (
                   <tr key={inv.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">INV-{inv.id.slice(0, 8)}</td>
+                    <td className="px-4 py-2">{say("INV-")}{inv.id.slice(0, 8)}</td>
                     <td className="px-4 py-2">{formatCurrency(inv.totalAmount)}</td>
                     <td className="px-4 py-2">{formatCurrency(inv.amountPaid)}</td>
-                    <td className="px-4 py-2">{inv.totalAmount - inv.amountPaid > 0 ? formatCurrency(inv.totalAmount - inv.amountPaid) : 'Paid'}</td>
+                    <td className="px-4 py-2">{inv.totalAmount - inv.amountPaid > 0 ? formatCurrency(inv.totalAmount - inv.amountPaid) : say("Paid")}</td>
                     <td className="px-4 py-2">
                       <span
                         className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -183,8 +182,8 @@ export default function FleetAccountDetailPage() {
 
       {account.notes && (
         <div className="bg-white p-6 rounded-lg shadow mt-8">
-          <h3 className="font-bold mb-2">Notes</h3>
-          <p className="text-gray-700">{account.notes}</p>
+          <h3 className="font-bold mb-2">{say("Notes")}</h3>
+          <p className="text-gray-700">{say(account.notes)}</p>
         </div>
       )}
     </div>

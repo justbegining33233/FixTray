@@ -258,7 +258,7 @@ export default function LoginClient() {
       <div className="sos-card">
         <div className="sos-header">
           <div className="sos-brand">
-            <span className="mark">FixTray</span>
+            <span className="mark">{say("FixTray")}</span>
           </div>
         </div>
         <div className="sos-content">
@@ -429,7 +429,7 @@ export default function LoginClient() {
           </div>
         </div>
         <div className="sos-footer">
-          <span className="sos-tagline"> {new Date().getFullYear()} FixTray</span>
+          <span className="sos-tagline"> {new Date().getFullYear()} {say("FixTray")}</span>
           <div className="accent-bar" style={{width:112, borderRadius:6}} />
         </div>
       </div>

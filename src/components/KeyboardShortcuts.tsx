@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { Route } from 'next';
@@ -19,6 +20,7 @@ interface KeyboardShortcutsProps {
 }
 
 export default function KeyboardShortcuts({ shortcuts = [] }: KeyboardShortcutsProps) {
+  const say = usePhrase();
   const router = useRouter();
   const pathname = usePathname();
   const [showHelp, setShowHelp] = useState(false);
@@ -185,8 +187,7 @@ export default function KeyboardShortcuts({ shortcuts = [] }: KeyboardShortcutsP
             color: '#e2e8f0',
             margin: 0,
           }}>
-            Keyboard Shortcuts
-          </h2>
+            {say("Keyboard Shortcuts")}{' '}</h2>
         </div>
 
         <div style={{
@@ -215,7 +216,7 @@ export default function KeyboardShortcuts({ shortcuts = [] }: KeyboardShortcutsP
                   color: '#e2e8f0',
                   fontWeight: 500,
                 }}>
-                  {shortcut.description}
+                  {say(shortcut.description)}
                 </span>
                 <kbd style={{
                   padding: '2px 8px',
@@ -247,14 +248,13 @@ export default function KeyboardShortcuts({ shortcuts = [] }: KeyboardShortcutsP
             margin: 0,
             textAlign: 'center',
           }}>
-            Press <kbd style={{
+            {say("Press")}{' '}<kbd style={{
               padding: '1px 4px',
               background: 'rgba(255,255,255,0.1)',
               borderRadius: 3,
               fontSize: 10,
               margin: '0 2px',
-            }}>Esc</kbd> or click outside to close
-          </p>
+            }}>{say("Esc")}</kbd> {say("or click outside to close")}{' '}</p>
         </div>
       </div>
     </div>

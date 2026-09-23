@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import TopNavBar from '@/components/TopNavBar';
@@ -20,6 +21,7 @@ interface PaymentLink {
 }
 
 export default function PaymentLinksPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [links, setLinks] = useState<PaymentLink[]>([]);
@@ -81,7 +83,7 @@ export default function PaymentLinksPage() {
     navigator.clipboard.writeText(`${window.location.origin}/customer/pay/${tok}`);
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -92,103 +94,99 @@ export default function PaymentLinksPage() {
         <main style={{ flex: 1, padding: '24px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div>
-              <Link href="/shop/admin" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> Admin</Link>
-              <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>Payment Links</h1>
-              <p style={{ color: '#9ca3af', fontSize: 14 }}>Job invoices are created from the work order. A link made here can still be tied to that work order.</p>
+              <Link href="/shop/admin" style={{ color: '#ff6b64', textDecoration: 'none', fontSize: 14 }}><FaArrowLeft style={{marginRight:4}} /> {say("Admin")}</Link>
+              <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginTop: 4 }}>{say("Payment Links")}</h1>
+              <p style={{ color: '#9ca3af', fontSize: 14 }}>{say("Job invoices are created from the work order. A link made here can still be tied to that work order.")}</p>
             </div>
             <button onClick={() => { setShowCreate(true); setCreatedLink(null); }}
               style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600 }}>
-              + New Link
-            </button>
+              {say("+ New Link")}{' '}</button>
           </div>
 
           {/* Just-Created Link */}
           {createdLink && (
             <div style={{ background: '#052e16', border: '1px solid #16a34a', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-              <div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 8 }}><FaLink style={{marginRight:4}} /> Payment Link Created</div>
+              <div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 8 }}><FaLink style={{marginRight:4}} /> {say("Payment Link Created")}</div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ flex: 1, color: '#e5e7eb', fontFamily: 'monospace', fontSize: 13, background: '#000000', padding: 10, borderRadius: 8, wordBreak: 'break-all' }}>
-                  {createdLink}
+                  {say(createdLink)}
                 </div>
                 <button onClick={() => navigator.clipboard.writeText(createdLink)}
                   style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
-                  Copy
-                </button>
+                  {say("Copy")}{' '}</button>
               </div>
-              <div style={{ color: '#9ca3af', fontSize: 12, marginTop: 8 }}>Send this link to your customer via email, SMS, or messaging.</div>
+              <div style={{ color: '#9ca3af', fontSize: 12, marginTop: 8 }}>{say("Send this link to your customer via email, SMS, or messaging.")}</div>
             </div>
           )}
 
           {/* Create Form */}
           {showCreate && (
             <div style={{ background: '#1e293b', borderRadius: 12, padding: 24, border: '1px solid #334155', marginBottom: 24 }}>
-              <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Create Payment Link</h2>
-              {error && <div style={{ color: '#ef4444', marginBottom: 12, fontSize: 14 }}>{error}</div>}
+              <h2 style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginBottom: 16 }}>{say("Create Payment Link")}</h2>
+              {error && <div style={{ color: '#ef4444', marginBottom: 12, fontSize: 14 }}>{say(error)}</div>}
               <div style={{ marginBottom: 16 }}>
-                <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Customer *</label>
-                <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Customer name"
+                <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>{say("Customer *")}</label>
+                <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder={say("Customer name")}
                   style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Work order ID</label>
-                <input value={workOrderId} onChange={e => setWorkOrderId(e.target.value)} placeholder="Paste the work order id so this link belongs to that job"
+                <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>{say("Work order ID")}</label>
+                <input value={workOrderId} onChange={e => setWorkOrderId(e.target.value)} placeholder={say("Paste the work order id so this link belongs to that job")}
                   style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>
-                  <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Amount ($)</label>
+                  <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>{say("Amount ($)")}</label>
                   <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01"
                     style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
                 </div>
                 <div>
-                  <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>Description *</label>
-                  <input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Brake repair invoice"
+                  <label style={{ color: '#9ca3af', fontSize: 13, display: 'block', marginBottom: 4 }}>{say("Description *")}</label>
+                  <input value={description} onChange={e => setDescription(e.target.value)} placeholder={say("e.g. Brake repair invoice")}
                     style={{ width: '100%', background: '#000000', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 8, padding: '10px 12px', fontSize: 14 }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={createLink} disabled={saving || !customerName.trim() || !description.trim() || !amount || parseFloat(amount) < 0.01}
                   style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: saving || !customerName.trim() || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: saving || !customerName.trim() || !description.trim() || !amount || parseFloat(amount) < 0.01 ? 0.5 : 1 }}>
-                  {saving ? 'Creating...' : 'Create Link'}
+                  {saving ? say("Creating...") : say("Create Link")}
                 </button>
                 <button onClick={() => setShowCreate(false)}
                   style={{ background: '#374151', color: '#e5e7eb', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer' }}>
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               </div>
             </div>
           )}
 
           {/* Links List */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>Loading payment links...</div>
+            <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>{say("Loading payment links...")}</div>
           ) : links.length === 0 ? (
             <div style={{ background: '#1e293b', borderRadius: 12, padding: 40, textAlign: 'center', border: '1px solid #334155' }}>
-              <div style={{ color: '#6b7280' }}>No payment links yet. Create one to send to a customer.</div>
+              <div style={{ color: '#6b7280' }}>{say("No payment links yet. Create one to send to a customer.")}</div>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 12 }}>
               {links.map(link => (
                 <div key={link.id} style={{ background: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                   <div>
-                    <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{link.description}</div>
-                    {link.workOrderId && <div style={{ color: '#93c5fd', fontSize: 12, marginTop: 4 }}>Work order {link.workOrderId}</div>}
+                    <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(link.description)}</div>
+                    {link.workOrderId && <div style={{ color: '#93c5fd', fontSize: 12, marginTop: 4 }}>{say("Work order")}{' '}{say(link.workOrderId)}</div>}
                     <div style={{ color: '#22c55e', fontSize: 20, fontWeight: 700 }}>${link.amount.toFixed(2)}</div>
                     <div style={{ color: '#4b5563', fontSize: 12, marginTop: 4 }}>
                       <span style={{
                         padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600,
                         background: link.status === 'paid' ? '#052e16' : link.status === 'pending' ? '#422006' : '#1e293b',
                         color: link.status === 'paid' ? '#22c55e' : link.status === 'pending' ? '#eab308' : '#6b7280',
-                      }}>{link.status}</span>
-                      <span style={{ marginLeft: 8 }}>Created {new Date(link.createdAt).toLocaleDateString()}</span>
-                      <span style={{ marginLeft: 8 }}>Expires {new Date(link.expiresAt).toLocaleDateString()}</span>
+                      }}>{say(link.status)}</span>
+                      <span style={{ marginLeft: 8 }}>{say("Created")}{' '}{new Date(link.createdAt).toLocaleDateString()}</span>
+                      <span style={{ marginLeft: 8 }}>{say("Expires")}{' '}{new Date(link.expiresAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                   {link.status === 'pending' && (
                     <button onClick={() => copyLink(link.token)}
                       style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                      Copy Link
-                    </button>
+                      {say("Copy Link")}{' '}</button>
                   )}
                 </div>
               ))}

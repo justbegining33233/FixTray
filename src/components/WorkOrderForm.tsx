@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -41,6 +42,7 @@ const tireServiceOptions: { value: TireServiceType; label: string }[] = [
 
 
 export default function WorkOrderForm({ initialData, onSubmit, initialServiceLocation }: WorkOrderFormProps) {
+  const say = usePhrase();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formMsg, setFormMsg] = useState<{type:'success'|'error';text:string}|null>(null);
@@ -406,15 +408,13 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       {/* Selected Shop Banner */}
       {selectedShop && userRole === 'customer' && (
         <div style={{marginBottom:24, padding:16, background:'rgba(229,51,42,0.08)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12}}>
-          <div style={{fontSize:14, fontWeight:600, color:'#e5332a', marginBottom:4}}>Requesting Service From:</div>
+          <div style={{fontSize:14, fontWeight:600, color:'#e5332a', marginBottom:4}}>{say("Requesting Service From:")}</div>
           <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{selectedShop.shopName || selectedShop.name}</div>
           <div style={{fontSize:13, color:'#9aa3b2', marginTop:4}}>
-            {selectedShop.location} - {selectedShop.distance} mi away
-          </div>
+            {say(selectedShop.location)} - {say(selectedShop.distance)} {say("mi away")}{' '}</div>
           {availableServices.length > 0 && (
             <div style={{fontSize:12, color:'#e5332a', marginTop:8}}>
-              <FaCheck style={{marginRight:4}} /> Only services offered by this shop are shown below
-            </div>
+              <FaCheck style={{marginRight:4}} /> {say("Only services offered by this shop are shown below")}{' '}</div>
           )}
         </div>
       )}
@@ -423,10 +423,10 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       <div style={{marginBottom:40}}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb'}}>
-            {userRole === 'customer' ? 'Submit Service Request' : 'Work Order Management'}
+            {userRole === 'customer' ? say("Submit Service Request") : say("Work Order Management")}
           </h1>
           <span style={{fontSize:13, fontWeight:600, color:'#9aa3b2', background:'rgba(255,255,255,0.1)', padding:'8px 16px', borderRadius:8}}>
-            Step {step} of {totalSteps}
+            {say("Step")}{' '}{say(step)} of {say(totalSteps)}
           </span>
         </div>
         <div style={{width:'100%', background:'rgba(0,0,0,0.3)', borderRadius:999, height:12}}>
@@ -445,13 +445,13 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       {/* Step 1: Vehicle Type */}
       {step === 1 && (
         <div>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>Vehicle Type</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>{say("Vehicle Type")}</h2>
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16}}>
             {[
-              { value: 'semi-truck', label: 'Semi Truck' },
-              { value: 'trailer', label: 'Trailer' },
-              { value: 'equipment', label: 'Equipment' },
-              { value: 'personal-vehicle', label: 'Personal Vehicle' },
+              { value: 'semi-truck', label: say("Semi Truck") },
+              { value: 'trailer', label: say("Trailer") },
+              { value: 'equipment', label: say("Equipment") },
+              { value: 'personal-vehicle', label: say("Personal Vehicle") },
             ].map(option => (
               <label key={option.value} style={checkboxCardStyle(vehicleType === option.value)}>
                 <input
@@ -462,7 +462,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                   onChange={(e) => setVehicleType(e.target.value as VehicleType)}
                   style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                 />
-                <span style={{marginLeft:12, fontWeight:600, color:'#e5e7eb'}}>{option.label}</span>
+                <span style={{marginLeft:12, fontWeight:600, color:'#e5e7eb'}}>{say(option.label)}</span>
               </label>
             ))}
           </div>
@@ -470,11 +470,11 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
           {/* Service Location Type - Only for Tech/Manager */}
           {(userRole === 'tech' || userRole === 'manager') && (
             <div style={{marginTop:32}}>
-              <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>Service Location</h3>
+              <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>{say("Service Location")}</h3>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:16}}>
                 {[
-                  { value: 'roadside', label: 'Roadside / Mobile Service', description: 'Service performed at customer location' },
-                  { value: 'in-shop', label: 'In-Shop Service', description: 'Customer brings vehicle to shop' },
+                  { value: 'roadside', label: say("Roadside / Mobile Service"), description: say("Service performed at customer location") },
+                  { value: 'in-shop', label: say("In-Shop Service"), description: say("Customer brings vehicle to shop") },
                 ].map(option => (
                   <label key={option.value} style={checkboxCardStyle(serviceLocationType === option.value)}>
                     <input
@@ -486,8 +486,8 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                       style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                     />
                     <div style={{marginLeft:12}}>
-                      <div style={{fontWeight:600, color:'#e5e7eb'}}>{option.label}</div>
-                      <div style={{fontSize:12, color:'#9aa3b2', marginTop:4}}>{option.description}</div>
+                      <div style={{fontWeight:600, color:'#e5e7eb'}}>{say(option.label)}</div>
+                      <div style={{fontSize:12, color:'#9aa3b2', marginTop:4}}>{say(option.description)}</div>
                     </div>
                   </label>
                 ))}
@@ -500,14 +500,13 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       {/* Step 2: Services */}
       {step === 2 && (
         <div>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Service Requirements</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>{say("Service Requirements")}</h2>
           {repairOptions.length === 0 ? (
             <div style={{color:'#f87171', background:'rgba(239,68,68,0.08)', border:'1px solid #f87171', borderRadius:8, padding:24, marginBottom:32, textAlign:'center', fontWeight:600}}>
-              No services are available for this shop. Please contact the shop or select a different shop to continue.
-            </div>
+              {say("No services are available for this shop. Please contact the shop or select a different shop to continue.")}{' '}</div>
           ) : (
             <div style={{marginBottom:40}}>
-              <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>Repairs Needed</h3>
+              <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>{say("Repairs Needed")}</h3>
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16}}>
                 {repairOptions.map(option => (
                   <div key={option.value}>
@@ -519,16 +518,16 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                         style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                       />
                       <div style={{marginLeft:12}}>
-                        <div style={{fontWeight:600, color:'#e5e7eb'}}>{option.label}</div>
+                        <div style={{fontWeight:600, color:'#e5e7eb'}}>{say(option.label)}</div>
                         {userRole === 'customer' && option.value === 'other-repair' && (
-                          <div style={{fontSize:11, color:'#9aa3b2', marginTop:2}}>Describe below</div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginTop:2}}>{say("Describe below")}</div>
                         )}
                       </div>
                     </label>
                     {selectedRepairs.includes(option.value) && option.value === 'other-repair' && (
                       <input
                         type="text"
-                        placeholder="Describe the repair needed"
+                        placeholder={say("Describe the repair needed")}
                         value={repairDetails['other-repair'] || ''}
                         onChange={(e) => setRepairDetails({...repairDetails, 'other-repair': e.target.value})}
                         style={{...inputStyle, marginTop:8}}
@@ -543,18 +542,17 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
           <div>
             {(estimatedCost > 0 || estimatedLaborHours > 0) && (
               <div style={{ marginBottom: 18, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>Auto-calculated from selected services</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>{say("Auto-calculated from selected services")}</div>
                 <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', color: '#e5e7eb', fontSize: 14 }}>
-                  <span>Estimated Labor: <strong>{estimatedLaborHours.toFixed(2)}h</strong></span>
-                  <span>Estimated Parts/Labor Cost: <strong>${estimatedCost.toFixed(2)}</strong></span>
+                  <span>{say("Estimated Labor:")}{' '}<strong>{estimatedLaborHours.toFixed(2)}h</strong></span>
+                  <span>{say("Estimated Parts/Labor Cost:")}{' '}<strong>${estimatedCost.toFixed(2)}</strong></span>
                 </div>
               </div>
             )}
-            <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>Maintenance Services</h3>
+            <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>{say("Maintenance Services")}</h3>
             {maintenanceOptions.length === 0 ? (
               <div style={{color:'#f87171', background:'rgba(239,68,68,0.08)', border:'1px solid #f87171', borderRadius:8, padding:24, marginBottom:32, textAlign:'center', fontWeight:600}}>
-                No maintenance services are available for this shop.
-              </div>
+                {say("No maintenance services are available for this shop.")}{' '}</div>
             ) : (
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16}}>
                 {maintenanceOptions.map(option => (
@@ -567,7 +565,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                         style={{width:20, height:20, accentColor:'#e5332a', marginTop:2}}
                       />
                       <div style={{marginLeft:12}}>
-                        <div style={{fontWeight:600, color:'#e5e7eb'}}>{option.label}</div>
+                        <div style={{fontWeight:600, color:'#e5e7eb'}}>{say(option.label)}</div>
                       </div>
                     </label>
 
@@ -580,7 +578,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                             onChange={(e) => setOilSupplied(e.target.checked)}
                             style={{width:16, height:16, accentColor:'#e5332a'}}
                           />
-                          <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>Will you supply the oil & filter?</span>
+                          <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>{say("Will you supply the oil & filter?")}</span>
                         </label>
                         <label style={{display:'flex', alignItems:'center', marginBottom:12}}>
                           <input
@@ -589,7 +587,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                             onChange={(e) => setTechBringOil(e.target.checked)}
                             style={{width:16, height:16, accentColor:'#e5332a'}}
                           />
-                          <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>Should the tech bring oil & filter?</span>
+                          <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>{say("Should the tech bring oil & filter?")}</span>
                         </label>
                         {['semi-truck', 'trailer'].includes(vehicleType) && (
                           <label style={{display:'flex', alignItems:'center'}}>
@@ -599,7 +597,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                               onChange={(e) => setVehicleGreased(e.target.checked)}
                               style={{width:16, height:16, accentColor:'#e5332a'}}
                             />
-                            <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>Do you want the vehicle greased?</span>
+                            <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>{say("Do you want the vehicle greased?")}</span>
                           </label>
                         )}
                       </div>
@@ -617,7 +615,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                               onChange={(e) => setTireServiceType(e.target.value as TireServiceType)}
                               style={{width:16, height:16, accentColor:'#e5332a'}}
                             />
-                            <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>{tso.label}</span>
+                            <span style={{marginLeft:12, fontSize:14, fontWeight:500, color:'#e5e7eb'}}>{say(tso.label)}</span>
                           </label>
                         ))}
                       </div>
@@ -633,15 +631,14 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       {/* Step 3: Symptoms */}
       {step === (userRole === 'customer' ? 3 : 5) && (
         <div>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>Issue Description</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>{say("Issue Description")}</h2>
           <div style={{marginBottom:24}}>
             <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>
-              Describe the symptoms
-            </label>
+              {say("Describe the symptoms")}{' '}</label>
             <textarea
               value={symptoms}
               onChange={(e) => setSymptoms(e.target.value)}
-              placeholder="What symptoms is the vehicle exhibiting?"
+              placeholder={say("What symptoms is the vehicle exhibiting?")}
               required
               style={{...inputStyle, minHeight:120, resize:'vertical'}}
             />
@@ -649,8 +646,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
 
           <div style={{marginBottom:24}}>
             <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>
-              Upload pictures (optional)
-            </label>
+              {say("Upload pictures (optional)")}{' '}</label>
             <input
               type="file"
               accept="image/*"
@@ -662,14 +658,13 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
               <div style={{marginTop:12, display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))', gap:12}}>
                 {pictures.map((pic, idx) => (
                   <div key={idx} style={{position:'relative', background:'rgba(0,0,0,0.2)', padding:8, borderRadius:8}}>
-                    <div style={{fontSize:12, color:'#e5e7eb', marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{pic.name}</div>
+                    <div style={{fontSize:12, color:'#e5e7eb', marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{say(pic.name)}</div>
                     <button
                       type="button"
                       onClick={() => removePicture(idx)}
                       style={{padding:'4px 8px', background:'#e5332a', color:'white', border:'none', borderRadius:4, cursor:'pointer', fontSize:11}}
                     >
-                      Remove
-                    </button>
+                      {say("Remove")}{' '}</button>
                   </div>
                 ))}
               </div>
@@ -678,12 +673,11 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
 
           <div>
             <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>
-              Additional notes (optional)
-            </label>
+              {say("Additional notes (optional)")}{' '}</label>
             <textarea
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Any other details we should know?"
+              placeholder={say("Any other details we should know?")}
               style={{...inputStyle, minHeight:100, resize:'vertical'}}
             />
           </div>
@@ -693,7 +687,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       {/* Step 4: Vehicle Location */}
       {step === (userRole === 'customer' ? 4 : 8) && (
         <div>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>Vehicle Location</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>{say("Vehicle Location")}</h2>
           
           <div style={{marginBottom:24}}>
             <button
@@ -701,27 +695,25 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
               onClick={handleGetGeolocation}
               style={{padding:'12px 24px', background:'#e5332a', color:'white', border:'none', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600, marginRight:16}}
             >
-              <FaMapMarkerAlt style={{marginRight:4}} /> Use Current Location
-            </button>
+              <FaMapMarkerAlt style={{marginRight:4}} /> {say("Use Current Location")}{' '}</button>
             <button
               type="button"
               onClick={() => setLocationType('address')}
               style={{padding:'12px 24px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600}}
             >
-              Enter Address
-            </button>
+              {say("Enter Address")}{' '}</button>
           </div>
 
           {geoError && (
             <div style={{padding:12, background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, color:'#ff7a59', fontSize:14, marginBottom:16}}>
-              {geoError}
+              {say(geoError)}
             </div>
           )}
 
           {latitude && longitude && (
             <div style={{padding:16, background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:8, marginBottom:16}}>
-              <div style={{fontSize:14, color:'#22c55e', fontWeight:600, marginBottom:4}}><FaCheck style={{marginRight:4}} /> Location captured</div>
-              <div style={{fontSize:12, color:'#9aa3b2'}}>Lat: {latitude.toFixed(6)}, Lng: {longitude.toFixed(6)}</div>
+              <div style={{fontSize:14, color:'#22c55e', fontWeight:600, marginBottom:4}}><FaCheck style={{marginRight:4}} /> {say("Location captured")}</div>
+              <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Lat:")}{' '}{latitude.toFixed(6)}{say(", Lng:")}{' '}{longitude.toFixed(6)}</div>
             </div>
           )}
 
@@ -733,17 +725,17 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                   onChange={(e) => applySavedAddress(e.target.value)}
                   style={inputStyle}
                 >
-                  <option value="">Select a saved address</option>
+                  <option value="">{say("Select a saved address")}</option>
                   {savedAddresses.map((saved) => (
                     <option key={saved.id} value={saved.id}>
-                      {saved.label} - {saved.address}, {saved.city}
+                      {say(saved.label)} - {say(saved.address)}, {say(saved.city)}
                     </option>
                   ))}
                 </select>
               )}
               <input
                 type="text"
-                placeholder="Street Address"
+                placeholder={say("Street Address")}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 style={inputStyle}
@@ -751,14 +743,14 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
               <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:16}}>
                 <input
                   type="text"
-                  placeholder="City"
+                  placeholder={say("City")}
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   style={inputStyle}
                 />
                 <input
                   type="text"
-                  placeholder="State"
+                  placeholder={say("State")}
                   value={state}
                   onChange={(e) => setState(e.target.value)}
                   style={inputStyle}
@@ -766,7 +758,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
               </div>
               <input
                 type="text"
-                placeholder="ZIP Code"
+                placeholder={say("ZIP Code")}
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
                 style={inputStyle}
@@ -779,18 +771,17 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       {/* Step 5: VIN */}
       {step === (userRole === 'customer' ? 5 : 10) && (
         <div>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>VIN Information</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:24}}>{say("VIN Information")}</h2>
           
           <div style={{marginBottom:24}}>
             <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>
-              VIN Number (optional)
-            </label>
+              {say("VIN Number (optional)")}{' '}</label>
             <div style={{display:'flex', gap:8}}>
               <input
                 type="text"
                 value={vin}
                 onChange={(e) => setVin(e.target.value)}
-                placeholder="Enter VIN or scan barcode"
+                placeholder={say("Enter VIN or scan barcode")}
                 maxLength={17}
                 style={{...inputStyle, flex:1}}
               />
@@ -798,22 +789,20 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
                 type="button"
                 onClick={() => setShowVinScanner(true)}
                 style={{padding:'12px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600, whiteSpace:'nowrap'}}
-                title="Scan VIN barcode"
+                title={say("Scan VIN barcode")}
               >
-                <FaCamera style={{marginRight:4}} /> Scan
-              </button>
+                <FaCamera style={{marginRight:4}} /> {say("Scan")}{' '}</button>
             </div>
             {vin && vin.length !== 17 && (
               <div style={{marginTop:8, fontSize:12, color:'#fbbf24'}}>
-                Note: VIN should be 17 characters. Current length: {vin.length}
+                {say("Note: VIN should be 17 characters. Current length:")}{' '}{say(vin.length)}
               </div>
             )}
           </div>
 
           <div>
             <label style={{display:'block', fontSize:14, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>
-              Upload VIN Photo (optional)
-            </label>
+              {say("Upload VIN Photo (optional)")}{' '}</label>
             <input
               type="file"
               accept="image/*"
@@ -822,7 +811,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
             />
             {vinPhoto && (
               <div style={{marginTop:12, padding:12, background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:8}}>
-                <div style={{fontSize:14, color:'#22c55e', fontWeight:600}}><FaCheck style={{marginRight:4}} /> Photo uploaded: {vinPhoto.name}</div>
+                <div style={{fontSize:14, color:'#22c55e', fontWeight:600}}><FaCheck style={{marginRight:4}} /> {say("Photo uploaded:")}{' '}{say(vinPhoto.name)}</div>
               </div>
             )}
           </div>
@@ -837,21 +826,20 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
             onClick={() => setStep(step - 1)}
             style={{padding:'12px 32px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600}}
           >
-            <FaArrowLeft style={{marginRight:4}} /> Previous
-          </button>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Previous")}{' '}</button>
         )}
         <button
           type="submit"
           disabled={loading}
           style={{padding:'12px 32px', background:'#e5332a', color:'white', border:'none', borderRadius:8, cursor: loading ? 'not-allowed' : 'pointer', fontSize:14, fontWeight:600, marginLeft:'auto'}}
         >
-          {step === totalSteps ? (loading ? 'Saving...' : 'Create Work Order') : <><FaArrowRight style={{marginRight:4}} /> Next</>}
+          {step === totalSteps ? (loading ? say("Saving...") : say("Create Work Order")) : <><FaArrowRight style={{marginRight:4}} /> {say("Next")}</>}
         </button>
       </div>
       {formMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:formMsg.type==='success'?'#dcfce7':'#fde8e8',color:formMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {formMsg.text}
-          <button aria-label="Dismiss" onClick={()=>setFormMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          {say(formMsg.text)}
+          <button aria-label={say("Dismiss")} onClick={()=>setFormMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}
 
@@ -860,7 +848,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
         <BarcodeScanner
           onScan={handleVinBarcodeScan}
           onClose={() => setShowVinScanner(false)}
-          label="Scan VIN Barcode"
+          label={say("Scan VIN Barcode")}
         />
       )}
     </form>

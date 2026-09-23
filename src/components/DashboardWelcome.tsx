@@ -1,8 +1,7 @@
+'use client';
+import { usePhrase } from '@/lib/usePhrase';
 // Dashboard Welcome Component
 // Provides role-specific guidance and quick actions to reduce user confusion
-
-'use client';
-
 import { useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -36,6 +35,7 @@ export default function DashboardWelcome({
   userName,
   stats = {}
 }: DashboardWelcomeProps) {
+  const say = usePhrase();
   const { user } = useAuth();
   const [dismissedActions, setDismissedActions] = useState<string[]>([]);
 
@@ -230,10 +230,10 @@ export default function DashboardWelcome({
       <div className="flex items-start justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            {config.greeting}
+            {say(config.greeting)}
           </h1>
           <p className="text-gray-600">
-            {config.subtitle}
+            {say(config.subtitle)}
           </p>
         </div>
         <div className="hidden sm:block">
@@ -251,7 +251,7 @@ export default function DashboardWelcome({
           >
             <div className="flex items-start justify-between mb-3">
               <div className={`p-2 rounded-lg ${action.color.replace('hover:', '')} text-white`}>
-                {action.icon}
+                {say(action.icon)}
               </div>
               <button
                 onClick={(e) => {
@@ -264,13 +264,13 @@ export default function DashboardWelcome({
               </button>
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">
-              {action.title}
+              {say(action.title)}
             </h3>
             <p className="text-sm text-[#94a3b8] mb-3">
-              {action.description}
+              {say(action.description)}
             </p>
             <div className="flex items-center text-sm font-medium text-[#e5332a] group-hover:opacity-80">
-              <span>Get started</span>
+              <span>{say("Get started")}</span>
               <FaArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
@@ -282,48 +282,48 @@ export default function DashboardWelcome({
         <div className="flex items-start space-x-3">
           <FaLightbulb className="w-5 h-5 text-blue-500 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-gray-900 mb-1">Quick Tips</h3>
+            <h3 className="font-semibold text-gray-900 mb-1">{say("Quick Tips")}</h3>
             <ul className="text-sm text-gray-600 space-y-1">
               {userRole === 'customer' && (
                 <>
-                  <li>• Use the navigation menu to quickly access your orders and vehicles</li>
-                  <li>• Check notifications for updates on your service requests</li>
-                  <li>• Add multiple vehicles to streamline future service requests</li>
+                  <li>{say("• Use the navigation menu to quickly access your orders and vehicles")}</li>
+                  <li>{say("• Check notifications for updates on your service requests")}</li>
+                  <li>{say("• Add multiple vehicles to streamline future service requests")}</li>
                 </>
               )}
               {userRole === 'tech' && (
                 <>
-                  <li>• Clock in/out to track your work hours automatically</li>
-                  <li>• Use the map feature to navigate efficiently between jobs</li>
-                  <li>• Update job status to keep customers informed</li>
+                  <li>{say("• Clock in/out to track your work hours automatically")}</li>
+                  <li>{say("• Use the map feature to navigate efficiently between jobs")}</li>
+                  <li>{say("• Update job status to keep customers informed")}</li>
                 </>
               )}
               {userRole === 'manager' && (
                 <>
-                  <li>• Monitor team performance through the dashboard metrics</li>
-                  <li>• Review pending approvals to keep operations running smoothly</li>
-                  <li>• Use reports to identify areas for improvement</li>
+                  <li>{say("• Monitor team performance through the dashboard metrics")}</li>
+                  <li>{say("• Review pending approvals to keep operations running smoothly")}</li>
+                  <li>{say("• Use reports to identify areas for improvement")}</li>
                 </>
               )}
               {userRole === 'admin' && (
                 <>
-                  <li>• Monitor system alerts to ensure platform stability</li>
-                  <li>• Regularly review user accounts and permissions</li>
-                  <li>• Check security logs for any unusual activity</li>
+                  <li>{say("• Monitor system alerts to ensure platform stability")}</li>
+                  <li>{say("• Regularly review user accounts and permissions")}</li>
+                  <li>{say("• Check security logs for any unusual activity")}</li>
                 </>
               )}
               {userRole === 'shop' && (
                 <>
-                  <li>• Respond promptly to customer reviews to build reputation</li>
-                  <li>• Monitor revenue trends to optimize your business</li>
-                  <li>• Keep your shop profile updated with current information</li>
+                  <li>{say("• Respond promptly to customer reviews to build reputation")}</li>
+                  <li>{say("• Monitor revenue trends to optimize your business")}</li>
+                  <li>{say("• Keep your shop profile updated with current information")}</li>
                 </>
               )}
               {userRole === 'superadmin' && (
                 <>
-                  <li>• Monitor shop health across all business instances</li>
-                  <li>• Review deployment status before major updates</li>
-                  <li>• Check enterprise-wide analytics for platform insights</li>
+                  <li>{say("• Monitor shop health across all business instances")}</li>
+                  <li>{say("• Review deployment status before major updates")}</li>
+                  <li>{say("• Check enterprise-wide analytics for platform insights")}</li>
                 </>
               )}
             </ul>

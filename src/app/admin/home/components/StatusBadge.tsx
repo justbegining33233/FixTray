@@ -1,6 +1,6 @@
-// StatusBadge.tsx - small pill status indicator for health signals
 'use client';
-
+import { usePhrase } from '@/lib/usePhrase';
+// StatusBadge.tsx - small pill status indicator for health signals
 import React from 'react';
 
 export type StatusTone = 'success' | 'warning' | 'danger' | 'info';
@@ -20,6 +20,7 @@ interface StatusBadgeProps {
  * Small status badge with colored dot and accessible label.
  */
 export default function StatusBadge({ label, tone = 'info', size = 'md', pulse = false }: StatusBadgeProps) {
+  const say = usePhrase();
   const palette: Record<StatusTone, { dot: string; bg: string; text: string; border: string }> = {
     success: { dot: 'bg-emerald-400', bg: 'bg-emerald-400/10', text: 'text-emerald-100', border: 'border-emerald-400/30' },
     warning: { dot: 'bg-amber-400', bg: 'bg-amber-400/10', text: 'text-amber-100', border: 'border-amber-400/30' },
@@ -34,10 +35,10 @@ export default function StatusBadge({ label, tone = 'info', size = 'md', pulse =
   return (
     <span
       className={`inline-flex items-center gap-2 rounded-full border ${sizing} ${palette[tone].bg} ${palette[tone].text} ${palette[tone].border}`}
-      aria-label={label}
+      aria-label={say(label)}
     >
       <span className={`w-2 h-2 rounded-full ${palette[tone].dot} ${pulse ? 'animate-pulse' : ''}`} aria-hidden />
-      <span className="leading-none">{label}</span>
+      <span className="leading-none">{say(label)}</span>
     </span>
   );
 }

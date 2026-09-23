@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useRef } from 'react';
 import { FaFileSignature, FaCheck, FaTimes, FaPencilAlt } from 'react-icons/fa';
 
@@ -36,6 +37,7 @@ export default function WorkAuthorizationForm({
   signedBy = '',
   signedDate = '',
 }: WorkAuthorizationFormProps) {
+  const say = usePhrase();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -135,9 +137,9 @@ export default function WorkAuthorizationForm({
       <div className="w-full bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border-2 border-green-500 p-6">
         <div className="text-center">
           <FaCheck className="text-4xl text-green-600 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-green-800 mb-2">Authorization Approved</h3>
-          <p className="text-green-700 mb-4">Authorized by: <span className="font-semibold">{signedBy}</span></p>
-          <p className="text-sm text-green-600">Signed: {signedDate}</p>
+          <h3 className="text-lg font-bold text-green-800 mb-2">{say("Authorization Approved")}</h3>
+          <p className="text-green-700 mb-4">{say("Authorized by:")}{' '}<span className="font-semibold">{say(signedBy)}</span></p>
+          <p className="text-sm text-green-600">{say("Signed:")}{' '}{say(signedDate)}</p>
         </div>
       </div>
     );
@@ -150,8 +152,8 @@ export default function WorkAuthorizationForm({
         <div className="flex items-center gap-3 mb-4">
           <FaFileSignature className="text-cyan-400 text-2xl" />
           <div>
-            <h3 className="text-2xl font-bold text-white">Work Authorization</h3>
-            <p className="text-sm text-slate-400">WO-{workOrderId.slice(0, 8)}</p>
+            <h3 className="text-2xl font-bold text-white">{say("Work Authorization")}</h3>
+            <p className="text-sm text-slate-400">{say("WO-")}{workOrderId.slice(0, 8)}</p>
           </div>
         </div>
       </div>
@@ -160,51 +162,50 @@ export default function WorkAuthorizationForm({
         {/* Work Details */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Customer</p>
-            <p className="text-white font-semibold">{customerName}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{say("Customer")}</p>
+            <p className="text-white font-semibold">{say(customerName)}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Vehicle</p>
-            <p className="text-white font-semibold">{vehicleInfo}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{say("Vehicle")}</p>
+            <p className="text-white font-semibold">{say(vehicleInfo)}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Work Description</p>
-            <p className="text-white font-semibold">{workDescription}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{say("Work Description")}</p>
+            <p className="text-white font-semibold">{say(workDescription)}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Estimated Cost</p>
-            <p className="text-cyan-400 font-bold text-lg">{estimatedCost}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{say("Estimated Cost")}</p>
+            <p className="text-cyan-400 font-bold text-lg">{say(estimatedCost)}</p>
           </div>
         </div>
 
         {/* Authorization Agreement */}
         <div className="bg-slate-950/50 border border-slate-700 rounded p-4">
           <p className="text-sm text-slate-300 leading-relaxed">
-            I authorize {customerName} to proceed with the above work as described. I acknowledge that I have reviewed the scope of work and estimated cost, and approve them to be performed on my vehicle.
-          </p>
+            {say("I authorize")}{' '}{say(customerName)} {say("to proceed with the above work as described. I acknowledge that I have reviewed the scope of work and estimated cost, and approve them to be performed on my vehicle.")}{' '}</p>
         </div>
 
         {/* Full Name Input */}
         <div>
-          <label className="text-sm text-slate-400 mb-2 block">Full Name *</label>
+          <label className="text-sm text-slate-400 mb-2 block">{say("Full Name *")}</label>
           <input
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             disabled={readOnly}
-            placeholder="Enter your full name"
+            placeholder={say("Enter your full name")}
             className="w-full px-4 py-2 bg-slate-950 border border-slate-600 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
           />
         </div>
 
         {/* Notes */}
         <div>
-          <label className="text-sm text-slate-400 mb-2 block">Additional Notes (Optional)</label>
+          <label className="text-sm text-slate-400 mb-2 block">{say("Additional Notes (Optional)")}</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={readOnly}
-            placeholder="Any special instructions or notes..."
+            placeholder={say("Any special instructions or notes...")}
             className="w-full px-4 py-2 bg-slate-950 border border-slate-600 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 disabled:opacity-50 h-20 resize-none"
           />
         </div>
@@ -212,14 +213,13 @@ export default function WorkAuthorizationForm({
         {/* Signature Pad */}
         {!readOnly && (
           <div>
-            <label className="text-sm text-slate-400 mb-2 block">Signature *</label>
+            <label className="text-sm text-slate-400 mb-2 block">{say("Signature *")}</label>
             {!showSignaturePad ? (
               <button
                 onClick={() => setShowSignaturePad(true)}
                 className="w-full px-4 py-3 bg-cyan-600/20 border-2 border-dashed border-cyan-500/50 rounded-lg text-cyan-400 font-medium hover:border-cyan-400 transition"
               >
-                <FaPencilAlt className="inline mr-2" /> Click to Sign
-              </button>
+                <FaPencilAlt className="inline mr-2" /> {say("Click to Sign")}{' '}</button>
             ) : (
               <div className="space-y-3">
                 <div className="border-2 border-slate-600 rounded-lg bg-white overflow-hidden">
@@ -239,21 +239,19 @@ export default function WorkAuthorizationForm({
                     onClick={clearSignature}
                     className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded font-medium transition"
                   >
-                    Clear
-                  </button>
+                    {say("Clear")}{' '}</button>
                   <button
                     onClick={() => {
                       setShowSignaturePad(false);
                     }}
                     className="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition"
                   >
-                    Confirm
-                  </button>
+                    {say("Confirm")}{' '}</button>
                 </div>
               </div>
             )}
             {signatureData && (
-              <p className="text-xs text-green-400 mt-2">✓ Signature captured</p>
+              <p className="text-xs text-green-400 mt-2">{say("✓ Signature captured")}</p>
             )}
           </div>
         )}
@@ -273,15 +271,13 @@ export default function WorkAuthorizationForm({
               }}
               className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
             >
-              <FaTimes /> Cancel
-            </button>
+              <FaTimes /> {say("Cancel")}{' '}</button>
             <button
               onClick={handleSubmit}
               disabled={!fullName.trim() || !signatureData}
               className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white rounded-lg font-medium transition flex items-center justify-center gap-2"
             >
-              <FaCheck /> Authorize Work
-            </button>
+              <FaCheck /> {say("Authorize Work")}{' '}</button>
           </div>
         )}
       </div>

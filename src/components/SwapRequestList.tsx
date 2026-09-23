@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ interface SwapRequestListProps {
 }
 
 export function SwapRequestList({ shopId, onApprove, onDeny }: SwapRequestListProps) {
+  const say = usePhrase();
   const [requests, setRequests] = useState<SwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -86,8 +88,8 @@ export function SwapRequestList({ shopId, onApprove, onDeny }: SwapRequestListPr
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading swap requests...</div>;
-  if (error) return <div className="text-red-600 py-4">{error}</div>;
+  if (loading) return <div className="text-center py-8">{say("Loading swap requests...")}</div>;
+  if (error) return <div className="text-red-600 py-4">{say(error)}</div>;
 
   return (
     <div className="space-y-4">
@@ -111,8 +113,7 @@ export function SwapRequestList({ shopId, onApprove, onDeny }: SwapRequestListPr
       {/* Requests List */}
       {requests.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No {filter} swap requests.
-        </div>
+          {say("No")}{' '}{say(filter)} {say("swap requests.")}{' '}</div>
       ) : (
         <div className="space-y-3">
           {requests.map(request => (
@@ -122,31 +123,31 @@ export function SwapRequestList({ shopId, onApprove, onDeny }: SwapRequestListPr
             >
               <div className="grid grid-cols-3 gap-4 mb-3">
                 <div>
-                  <p className="text-sm text-gray-600">Requesting</p>
-                  <p className="font-semibold">{request.requestingTechName}</p>
+                  <p className="text-sm text-gray-600">{say("Requesting")}</p>
+                  <p className="font-semibold">{say(request.requestingTechName)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Wants to swap with</p>
-                  <p className="font-semibold">{request.targetTechName}</p>
+                  <p className="text-sm text-gray-600">{say("Wants to swap with")}</p>
+                  <p className="font-semibold">{say(request.targetTechName)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Shift Date</p>
+                  <p className="text-sm text-gray-600">{say("Shift Date")}</p>
                   <p className="font-semibold">
-                    {request.shift?.date ? formatDate(request.shift.date) : 'N/A'}
+                    {request.shift?.date ? formatDate(request.shift.date) : say("N/A")}
                   </p>
                 </div>
               </div>
 
               {request.shift && (
                 <div className="text-sm text-gray-600 mb-3">
-                  Shift: {request.shift.startTime} - {request.shift.endTime}
+                  {say("Shift:")}{' '}{say(request.shift.startTime)} - {say(request.shift.endTime)}
                 </div>
               )}
 
               {request.reason && (
                 <div className="bg-gray-50 p-2 rounded text-sm mb-3">
-                  <p className="text-gray-600">Reason:</p>
-                  <p>{request.reason}</p>
+                  <p className="text-gray-600">{say("Reason:")}</p>
+                  <p>{say(request.reason)}</p>
                 </div>
               )}
 
@@ -157,14 +158,12 @@ export function SwapRequestList({ shopId, onApprove, onDeny }: SwapRequestListPr
                       onClick={() => handleApprove(request.id)}
                       className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                     >
-                      Approve
-                    </button>
+                      {say("Approve")}{' '}</button>
                     <button
                       onClick={() => handleDeny(request.id)}
                       className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                     >
-                      Deny
-                    </button>
+                      {say("Deny")}{' '}</button>
                   </>
                 ) : (
                   <span className={`px-3 py-2 rounded text-sm font-medium ${

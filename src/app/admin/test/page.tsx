@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowRight, FaBolt, FaClock, FaHourglassHalf, FaSave } from 'react-icons/fa';
 
 import { useState, useEffect, ReactNode } from 'react';
@@ -20,6 +21,7 @@ interface SystemModule {
 }
 
 export default function AdminTestPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin']);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -82,7 +84,7 @@ export default function AdminTestPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-gray-300 text-lg">Loading...</div>
+        <div className="text-gray-300 text-lg">{say("Loading...")}</div>
       </div>
     );
   }
@@ -304,7 +306,7 @@ export default function AdminTestPage() {
                 <div className="w-8 h-8 bg-[#e5332a] rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">F</span>
                 </div>
-                <span className="text-[#F1F5F9] font-semibold">FixTray</span>
+                <span className="text-[#F1F5F9] font-semibold">{say("FixTray")}</span>
               </Link>
             )}
           </div>
@@ -327,7 +329,7 @@ export default function AdminTestPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
                 </svg>
                 {!sidebarCollapsed && (
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className="text-sm font-medium">{say(item.label)}</span>
                 )}
               </Link>
             ))}
@@ -335,7 +337,7 @@ export default function AdminTestPage() {
             {!sidebarCollapsed && (
               <>
                 <div className="pt-4 pb-2 px-3">
-                  <span className="text-[10px] font-semibold text-[#475569] uppercase tracking-wider">Links</span>
+                  <span className="text-[10px] font-semibold text-[#475569] uppercase tracking-wider">{say("Links")}</span>
                 </div>
                 {quickLinks.map((link) => (
                   <Link
@@ -344,10 +346,10 @@ export default function AdminTestPage() {
                     className="flex items-center gap-3 px-3 py-2 rounded-lg text-[#94A3B8] hover:bg-[#1E293B] hover:text-[#E2E8F0] transition-all duration-150 no-underline"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-[#475569]" />
-                    <span className="text-sm">{link.label}</span>
+                    <span className="text-sm">{say(link.label)}</span>
                     {link.badge !== undefined && link.badge > 0 && (
                       <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
-                        {link.badge}
+                        {say(link.badge)}
                       </span>
                     )}
                   </Link>
@@ -365,7 +367,7 @@ export default function AdminTestPage() {
               <svg className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
               </svg>
-              {!sidebarCollapsed && <span className="text-xs">Collapse</span>}
+              {!sidebarCollapsed && <span className="text-xs">{say("Collapse")}</span>}
             </button>
           </div>
         </div>
@@ -379,14 +381,14 @@ export default function AdminTestPage() {
         {/* Top Bar */}
         <header className="h-14 bg-[#000000] border-b border-[#1F2937] flex items-center justify-between px-6 sticky top-0 z-10">
           <div>
-            <h1 className="text-lg font-semibold text-[#F1F5F9]">System Status</h1>
-            <p className="text-xs text-[#64748B]">{systemModules.length} modules - {totalFeatures} features</p>
+            <h1 className="text-lg font-semibold text-[#F1F5F9]">{say("System Status")}</h1>
+            <p className="text-xs text-[#64748B]">{say(systemModules.length)} {say("modules -")}{' '}{say(totalFeatures)} features</p>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-emerald-400 text-xs font-medium">Systems Online</span>
+              <span className="text-emerald-400 text-xs font-medium">{say("Systems Online")}</span>
             </div>
             <button
               onClick={checkSystemHealth}
@@ -395,8 +397,7 @@ export default function AdminTestPage() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Refresh
-            </button>
+              {say("Refresh")}{' '}</button>
           </div>
         </header>
 
@@ -410,15 +411,15 @@ export default function AdminTestPage() {
               {/* Stats Row */}
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                 {[
-                  { label: 'Shops', value: stats.totalShops, color: 'text-[#8B5CF6]' },
-                  { label: 'Pending', value: stats.pendingShops, color: 'text-amber-400' },
-                  { label: 'Users', value: stats.totalUsers, color: 'text-[#e5332a]' },
-                  { label: 'Orders', value: stats.totalWorkOrders, color: 'text-emerald-400' },
-                  { label: 'Approved Shops', value: stats.totalShops, color: 'text-rose-400' },
-                  { label: 'Revenue', value: stats.totalRevenue, color: 'text-emerald-400', isText: true },
+                  { label: say("Shops"), value: stats.totalShops, color: say("text-[#8B5CF6]") },
+                  { label: say("Pending"), value: stats.pendingShops, color: 'text-amber-400' },
+                  { label: say("Users"), value: stats.totalUsers, color: say("text-[#e5332a]") },
+                  { label: say("Orders"), value: stats.totalWorkOrders, color: 'text-emerald-400' },
+                  { label: say("Approved Shops"), value: stats.totalShops, color: 'text-rose-400' },
+                  { label: say("Revenue"), value: stats.totalRevenue, color: 'text-emerald-400', isText: true },
                 ].map((stat, i) => (
                   <div key={i} className="bg-[#000000] border border-[#1F2937] rounded-lg p-3 text-center">
-                    <p className="text-[10px] font-medium text-[#64748B] uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-[10px] font-medium text-[#64748B] uppercase tracking-wider">{say(stat.label)}</p>
                     <p className={`text-lg font-bold ${stat.color} mt-0.5`}>
                       {stat.isText ? stat.value : stat.value.toLocaleString()}
                     </p>
@@ -430,11 +431,11 @@ export default function AdminTestPage() {
               <div className="bg-[#000000] border border-[#1F2937] rounded-xl overflow-hidden">
                 <div className="px-5 py-4 border-b border-[#1F2937] flex items-center justify-between">
                   <div>
-                    <h2 className="text-sm font-semibold text-[#E2E8F0]">System Modules</h2>
-                    <p className="text-[11px] text-[#64748B] mt-0.5">{systemModules.length} modules - {totalFeatures} features</p>
+                    <h2 className="text-sm font-semibold text-[#E2E8F0]">{say("System Modules")}</h2>
+                    <p className="text-[11px] text-[#64748B] mt-0.5">{say(systemModules.length)} {say("modules -")}{' '}{say(totalFeatures)} features</p>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-emerald-400">{operationalFeatures} active</span>
+                    <span className="text-emerald-400">{say(operationalFeatures)} active</span>
                     <span className="text-[#475569]">-</span>
                     <span className="text-[#64748B]">{totalFeatures - operationalFeatures} pending</span>
                   </div>
@@ -455,12 +456,12 @@ export default function AdminTestPage() {
                           onClick={() => setActiveSection(isExpanded ? null : module.name)}
                         >
                           {/* Icon */}
-                          <span className="text-xl w-8 text-center flex-shrink-0">{module.icon}</span>
+                          <span className="text-xl w-8 text-center flex-shrink-0">{say(module.icon)}</span>
                           
                           {/* Name & Description */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-[#E2E8F0]">{module.name}</h3>
-                            <p className="text-[11px] text-[#64748B] truncate">{module.description}</p>
+                            <h3 className="text-sm font-medium text-[#E2E8F0]">{say(module.name)}</h3>
+                            <p className="text-[11px] text-[#64748B] truncate">{say(module.description)}</p>
                           </div>
                           
                           {/* Progress */}
@@ -476,7 +477,7 @@ export default function AdminTestPage() {
                             <span className={`text-xs font-medium w-10 text-right ${
                               percentage === 100 ? 'text-emerald-400' : 'text-[#94A3B8]'
                             }`}>
-                              {operational}/{module.features.length}
+                              {say(operational)}/{say(module.features.length)}
                             </span>
                           </div>
                           
@@ -487,7 +488,7 @@ export default function AdminTestPage() {
                               onClick={(e) => e.stopPropagation()}
                               className="px-2 py-1 text-[#e5332a] hover:bg-[#e5332a]/10 text-xs font-medium rounded transition-colors duration-150 no-underline flex-shrink-0"
                             >
-                              Open <FaArrowRight style={{marginRight:4}} />
+                              {say("Open")}{' '}<FaArrowRight style={{marginRight:4}} />
                             </Link>
                           )}
                           
@@ -510,7 +511,7 @@ export default function AdminTestPage() {
                                     feature.status === 'operational' ? 'bg-emerald-400' :
                                     feature.status === 'degraded' ? 'bg-amber-400' : 'bg-[#475569]'
                                   }`} />
-                                  <span className="text-[11px] text-[#94A3B8] truncate">{feature.name}</span>
+                                  <span className="text-[11px] text-[#94A3B8] truncate">{say(feature.name)}</span>
                                 </div>
                               ))}
                             </div>
@@ -527,12 +528,12 @@ export default function AdminTestPage() {
             <div className="space-y-6">
               {/* System Health Card */}
               <div className="bg-[#000000] border border-[#1F2937] rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-[#E2E8F0] mb-4">System Health</h3>
+                <h3 className="text-sm font-semibold text-[#E2E8F0] mb-4">{say("System Health")}</h3>
                 
                 {/* Overall Progress */}
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-[#64748B]">Overall Status</span>
+                    <span className="text-xs text-[#64748B]">{say("Overall Status")}</span>
                     <span className="text-xs font-medium text-emerald-400">{Math.round((operationalFeatures / totalFeatures) * 100)}%</span>
                   </div>
                   <div className="h-2 bg-[#1E293B] rounded-full overflow-hidden">
@@ -542,17 +543,17 @@ export default function AdminTestPage() {
                     />
                   </div>
                   <div className="flex justify-between mt-2 text-[10px] text-[#64748B]">
-                    <span>{operationalFeatures} active</span>
-                    <span>{totalFeatures} total</span>
+                    <span>{say(operationalFeatures)} active</span>
+                    <span>{say(totalFeatures)} total</span>
                   </div>
                 </div>
                 
                 {/* Services */}
                 <div className="space-y-2">
                   {[
-                    { key: 'api', label: 'API Server', icon: <FaBolt style={{marginRight:4}} /> },
-                    { key: 'database', label: 'Database', icon: <FaSave style={{marginRight:4}} /> },
-                    { key: 'auth', label: 'Auth Service', icon: '' },
+                    { key: 'api', label: say("API Server"), icon: <FaBolt style={{marginRight:4}} /> },
+                    { key: 'database', label: say("Database"), icon: <FaSave style={{marginRight:4}} /> },
+                    { key: 'auth', label: say("Auth Service"), icon: '' },
                   ].map((item) => (
                     <div 
                       key={item.key}
@@ -564,15 +565,15 @@ export default function AdminTestPage() {
                           : 'bg-rose-500/5 border-rose-500/20'
                       }`}
                     >
-                      <span className="text-base">{item.icon}</span>
-                      <span className="text-sm text-[#E2E8F0] flex-1">{item.label}</span>
+                      <span className="text-base">{say(item.icon)}</span>
+                      <span className="text-sm text-[#E2E8F0] flex-1">{say(item.label)}</span>
                       <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
                         systemStatus[item.key] === 'operational' ? 'bg-emerald-500/10 text-emerald-400' :
                         systemStatus[item.key] === 'checking' ? 'bg-[#e5332a]/10 text-[#e5332a]' :
                         'bg-rose-500/10 text-rose-400'
                       }`}>
-                        {systemStatus[item.key] === 'operational' ? 'Online' :
-                         systemStatus[item.key] === 'checking' ? 'Checking' : 'Offline'}
+                        {systemStatus[item.key] === 'operational' ? say("Online") :
+                         systemStatus[item.key] === 'checking' ? say("Checking") : say("Offline")}
                       </span>
                     </div>
                   ))}
@@ -581,27 +582,27 @@ export default function AdminTestPage() {
               
               {/* Quick Actions Card */}
               <div className="bg-[#000000] border border-[#1F2937] rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-[#E2E8F0] mb-4">Quick Actions</h3>
+                <h3 className="text-sm font-semibold text-[#E2E8F0] mb-4">{say("Quick Actions")}</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { href: '/admin/pending-shops', icon: <FaHourglassHalf style={{marginRight:4}} />, label: 'Pending', count: stats.pendingShops },
-                    { href: '/admin/user-management', icon: '', label: 'Users' },
-                    { href: '/admin/platform-analytics', icon: '', label: 'Analytics' },
-                    { href: '/admin/activity-logs', icon: '', label: 'Logs' },
-                    { href: '/admin/security-settings', icon: '', label: 'Security' },
-                    { href: '/admin/system-settings', icon: '', label: 'Settings' },
-                    { href: '/admin/activity-logs', icon: '', label: 'Audit' },
+                    { href: '/admin/pending-shops', icon: <FaHourglassHalf style={{marginRight:4}} />, label: say("Pending"), count: stats.pendingShops },
+                    { href: '/admin/user-management', icon: '', label: say("Users") },
+                    { href: '/admin/platform-analytics', icon: '', label: say("Analytics") },
+                    { href: '/admin/activity-logs', icon: '', label: say("Logs") },
+                    { href: '/admin/security-settings', icon: '', label: say("Security") },
+                    { href: '/admin/system-settings', icon: '', label: say("Settings") },
+                    { href: '/admin/activity-logs', icon: '', label: say("Audit") },
                   ].map((link, i) => (
                     <Link
                       key={i}
                       href={link.href as Route}
                       className="flex items-center gap-2.5 p-2.5 bg-[#1E293B]/30 hover:bg-[#1E293B] border border-[#1F2937] hover:border-[#334155] rounded-lg transition-colors duration-150 relative no-underline"
                     >
-                      <span className="text-base">{link.icon}</span>
-                      <span className="text-[#94A3B8] text-xs font-medium">{link.label}</span>
+                      <span className="text-base">{say(link.icon)}</span>
+                      <span className="text-[#94A3B8] text-xs font-medium">{say(link.label)}</span>
                       {link.count !== undefined && link.count > 0 && (
                         <span className="ml-auto w-4 h-4 bg-amber-500 text-[#000000] text-[9px] font-bold rounded-full flex items-center justify-center">
-                          {link.count}
+                          {say(link.count)}
                         </span>
                       )}
                     </Link>
@@ -611,19 +612,19 @@ export default function AdminTestPage() {
               
               {/* API Info Card */}
               <div className="bg-[#000000] border border-[#1F2937] rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-[#E2E8F0] mb-3">API Coverage</h3>
+                <h3 className="text-sm font-semibold text-[#E2E8F0] mb-3">{say("API Coverage")}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#64748B]">Endpoints</span>
+                    <span className="text-xs text-[#64748B]">{say("Endpoints")}</span>
                     <span className="text-sm font-medium text-[#E2E8F0]">106+</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#64748B]">Modules</span>
-                    <span className="text-sm font-medium text-[#E2E8F0]">{systemModules.length}</span>
+                    <span className="text-xs text-[#64748B]">{say("Modules")}</span>
+                    <span className="text-sm font-medium text-[#E2E8F0]">{say(systemModules.length)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#64748B]">Features</span>
-                    <span className="text-sm font-medium text-[#E2E8F0]">{totalFeatures}</span>
+                    <span className="text-xs text-[#64748B]">{say("Features")}</span>
+                    <span className="text-sm font-medium text-[#E2E8F0]">{say(totalFeatures)}</span>
                   </div>
                 </div>
               </div>
@@ -632,7 +633,7 @@ export default function AdminTestPage() {
           
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-[#1F2937] text-center text-[#64748B] text-xs">
-            <p>FixTray Admin Dashboard -  2026</p>
+            <p>{say("FixTray Admin Dashboard -  2026")}</p>
           </div>
         </main>
       </div>

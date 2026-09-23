@@ -84,7 +84,7 @@ export default function CustomerNavigation({ unreadMessages = 0, activeOrders = 
               <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">F</span>
               </div>
-              <span className="text-xl font-bold text-white">FixTray</span>
+              <span className="text-xl font-bold text-white">{say("FixTray")}</span>
             </Link>
 
             {/* Main Navigation */}
@@ -138,7 +138,7 @@ export default function CustomerNavigation({ unreadMessages = 0, activeOrders = 
                   <div className="w-8 h-8 bg-[rgba(255,255,255,0.1)] rounded-full flex items-center justify-center">
                     <FaUser className="w-4 h-4 text-gray-600" />
                   </div>
-                  <span className="text-sm font-medium text-[#f1f5f9]">{user?.name || 'Customer'}</span>
+                  <span className="text-sm font-medium text-[#f1f5f9]">{user?.name || say("Customer")}</span>
                 </button>
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function CustomerNavigation({ unreadMessages = 0, activeOrders = 
                   </div>
                   {item.badge && (
                     <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                      {item.badge}
+                      {say(item.badge)}
                     </span>
                   )}
                 </Link>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -16,6 +17,7 @@ const INSHOP_BY_ROLE: Record<string, string> = {
 };
 
 export default function WorkOrderInShopRedirect() {
+  const say = usePhrase();
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
@@ -31,8 +33,7 @@ export default function WorkOrderInShopRedirect() {
 
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#000000', color: '#e5e7eb' }}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>In-Shop Work Order Redirect</h1>
-      Redirecting to in-shop work orders...
-    </main>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{say("In-Shop Work Order Redirect")}</h1>
+      {say("Redirecting to in-shop work orders...")}{' '}</main>
   );
 }

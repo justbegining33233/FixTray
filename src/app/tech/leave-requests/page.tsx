@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { LeaveRequestList } from '@/components/LeaveRequestList';
@@ -13,6 +14,7 @@ interface LeaveBalance {
 }
 
 export default function MyLeaveRequestsPage() {
+  const say = usePhrase();
   const [balance, setBalance] = useState<LeaveBalance | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,44 +39,43 @@ export default function MyLeaveRequestsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Leave Requests</h1>
+        <h1 className="text-3xl font-bold">{say("Leave Requests")}</h1>
         <Link
           href="/tech/leave-requests/new"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          + New Request
-        </Link>
+          {say("+ New Request")}{' '}</Link>
       </div>
 
       {/* PTO Balance */}
       {balance && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-gray-600">Vacation Days</p>
-            <p className="text-2xl font-bold text-blue-600">{balance.vacation}</p>
+            <p className="text-sm text-gray-600">{say("Vacation Days")}</p>
+            <p className="text-2xl font-bold text-blue-600">{say(balance.vacation)}</p>
           </div>
           <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-            <p className="text-sm text-gray-600">Sick Days</p>
-            <p className="text-2xl font-bold text-red-600">{balance.sick}</p>
+            <p className="text-sm text-gray-600">{say("Sick Days")}</p>
+            <p className="text-2xl font-bold text-red-600">{say(balance.sick)}</p>
           </div>
           <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <p className="text-sm text-gray-600">Personal Days</p>
-            <p className="text-2xl font-bold text-yellow-600">{balance.personal}</p>
+            <p className="text-sm text-gray-600">{say("Personal Days")}</p>
+            <p className="text-2xl font-bold text-yellow-600">{say(balance.personal)}</p>
           </div>
           <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <p className="text-sm text-gray-600">Bereavement</p>
-            <p className="text-2xl font-bold text-purple-600">{balance.bereavement}</p>
+            <p className="text-sm text-gray-600">{say("Bereavement")}</p>
+            <p className="text-2xl font-bold text-purple-600">{say(balance.bereavement)}</p>
           </div>
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <p className="text-sm text-gray-600">Parental</p>
-            <p className="text-2xl font-bold text-green-600">{balance.parental}</p>
+            <p className="text-sm text-gray-600">{say("Parental")}</p>
+            <p className="text-2xl font-bold text-green-600">{say(balance.parental)}</p>
           </div>
         </div>
       )}
 
       {/* Leave Requests */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-6">My Requests</h2>
+        <h2 className="text-xl font-bold mb-6">{say("My Requests")}</h2>
         <LeaveRequestList role="tech" />
       </div>
     </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -16,6 +17,7 @@ const NEW_WORKORDER_BY_ROLE: Record<string, string> = {
 };
 
 export default function WorkOrderNewRedirect() {
+  const say = usePhrase();
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
@@ -31,8 +33,7 @@ export default function WorkOrderNewRedirect() {
 
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#000000', color: '#e5e7eb' }}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>New Work Order Redirect</h1>
-      Redirecting to create work order...
-    </main>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{say("New Work Order Redirect")}</h1>
+      {say("Redirecting to create work order...")}{' '}</main>
   );
 }

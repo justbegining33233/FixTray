@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { formatDate } from '@/lib/utils';
 
@@ -22,6 +23,7 @@ interface LeaveRequestListProps {
 }
 
 export function LeaveRequestList({ shopId, filter = 'all', role = 'tech' }: LeaveRequestListProps) {
+  const say = usePhrase();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -81,8 +83,8 @@ export function LeaveRequestList({ shopId, filter = 'all', role = 'tech' }: Leav
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading leave requests...</div>;
-  if (error) return <div className="text-red-600 py-4">{error}</div>;
+  if (loading) return <div className="text-center py-8">{say("Loading leave requests...")}</div>;
+  if (error) return <div className="text-red-600 py-4">{say(error)}</div>;
 
   const typeColors: Record<string, string> = {
     vacation: 'bg-blue-100 text-blue-800',
@@ -116,8 +118,7 @@ export function LeaveRequestList({ shopId, filter = 'all', role = 'tech' }: Leav
       {/* Requests List */}
       {requests.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No leave requests to display.
-        </div>
+          {say("No leave requests to display.")}{' '}</div>
       ) : (
         <div className="space-y-3">
           {requests.map(request => (
@@ -128,19 +129,19 @@ export function LeaveRequestList({ shopId, filter = 'all', role = 'tech' }: Leav
               <div className="grid grid-cols-4 gap-4 mb-3">
                 {role === 'manager' && (
                   <div>
-                    <p className="text-sm text-gray-600">Technician</p>
-                    <p className="font-semibold">{request.techName}</p>
+                    <p className="text-sm text-gray-600">{say("Technician")}</p>
+                    <p className="font-semibold">{say(request.techName)}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-gray-600">Dates</p>
+                  <p className="text-sm text-gray-600">{say("Dates")}</p>
                   <p className="font-semibold text-sm">
                     {formatDate(request.startDate)} to{' '}
                     {formatDate(request.endDate)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Type</p>
+                  <p className="text-sm text-gray-600">{say("Type")}</p>
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
                       typeColors[request.type] || 'bg-gray-100 text-gray-800'
@@ -150,7 +151,7 @@ export function LeaveRequestList({ shopId, filter = 'all', role = 'tech' }: Leav
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Status</p>
+                  <p className="text-sm text-gray-600">{say("Status")}</p>
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
                       request.status === 'pending'
@@ -167,8 +168,8 @@ export function LeaveRequestList({ shopId, filter = 'all', role = 'tech' }: Leav
 
               {request.reason && (
                 <div className="bg-gray-50 p-2 rounded text-sm mb-3">
-                  <p className="text-gray-600">Reason:</p>
-                  <p>{request.reason}</p>
+                  <p className="text-gray-600">{say("Reason:")}</p>
+                  <p>{say(request.reason)}</p>
                 </div>
               )}
 
@@ -178,14 +179,12 @@ export function LeaveRequestList({ shopId, filter = 'all', role = 'tech' }: Leav
                     onClick={() => handleApprove(request.id)}
                     className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
                   >
-                    Approve
-                  </button>
+                    {say("Approve")}{' '}</button>
                   <button
                     onClick={() => handleDeny(request.id)}
                     className="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700"
                   >
-                    Deny
-                  </button>
+                    {say("Deny")}{' '}</button>
                 </div>
               )}
             </div>

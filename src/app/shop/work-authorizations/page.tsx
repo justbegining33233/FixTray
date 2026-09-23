@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -17,6 +18,7 @@ interface WorkAuthorization {
 }
 
 export default function WorkAuthorizationsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const [auths, setAuths] = useState<WorkAuthorization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,36 +32,34 @@ export default function WorkAuthorizationsPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
     <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaPencilAlt style={{ marginRight: 4 }} /> Work Authorizations</h1>
+        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaPencilAlt style={{ marginRight: 4 }} /> {say("Work Authorizations")}</h1>
         <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>
-          A work authorization appears here only after the customer accepts the estimate and signs. Submitting a quote does not create one. A denied quote closes with no authorization.
-        </p>
+          {say("A work authorization appears here only after the customer accepts the estimate and signs. Submitting a quote does not create one. A denied quote closes with no authorization.")}{' '}</p>
       </div>
 
       <div style={{ padding: '24px 32px 0', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        {[{ label: 'Signed', value: auths.length, icon: '' }].map((stat) => (
+        {[{ label: say("Signed"), value: auths.length, icon: '' }].map((stat) => (
           <div key={stat.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '16px 24px', minWidth: 120 }}>
-            <div style={{ fontSize: 28, fontWeight: 800, margin: '4px 0' }}>{stat.value}</div>
-            <div style={{ fontSize: 13, color: '#9ca3af' }}>{stat.label}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, margin: '4px 0' }}>{say(stat.value)}</div>
+            <div style={{ fontSize: 13, color: '#9ca3af' }}>{say(stat.label)}</div>
           </div>
         ))}
       </div>
 
       <div style={{ padding: '24px 32px' }}>
-        {loading ? <div style={{ color: '#6b7280' }}>Loading...</div> :
+        {loading ? <div style={{ color: '#6b7280' }}>{say("Loading...")}</div> :
           auths.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 80 }}>
               <div style={{ fontSize: 64 }}><FaPencilAlt /></div>
-              <div style={{ fontSize: 18, fontWeight: 600, margin: '16px 0 8px' }}>No signed authorizations yet</div>
+              <div style={{ fontSize: 18, fontWeight: 600, margin: '16px 0 8px' }}>{say("No signed authorizations yet")}</div>
               <div style={{ color: '#9ca3af', maxWidth: 520, margin: '0 auto' }}>
-                Send the estimate from the work order or Shop Estimates. The customer signs when they accept. There is no separate create step, and a quote waiting on the customer is not a pending authorization.
-              </div>
+                {say("Send the estimate from the work order or Shop Estimates. The customer signs when they accept. There is no separate create step, and a quote waiting on the customer is not a pending authorization.")}{' '}</div>
             </div>
           ) : (
             <div>
@@ -70,7 +70,7 @@ export default function WorkAuthorizationsPage() {
                       <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 15 }}>
                         {auth.workOrderId ? (
                           <Link href={`/workorders/${auth.workOrderId}` as Route} style={{ color: '#e5e7eb' }}>
-                            Work Order #{auth.workOrderId}
+                            {say("Work Order #")}{say(auth.workOrderId)}
                           </Link>
                         ) : `Auth ${auth.id.slice(-6).toUpperCase()}`}
                       </div>
@@ -80,11 +80,11 @@ export default function WorkAuthorizationsPage() {
                       {auth.estimateTotal ? <div style={{ fontSize: 14, fontWeight: 700, color: '#f59e0b' }}>${Number(auth.estimateTotal).toFixed(2)}</div> : null}
                       {auth.signerName ? (
                         <div style={{ fontSize: 13, color: '#22c55e', marginTop: 4 }}>
-                          Signed by {auth.signerName}{auth.signedAt ? ` on ${new Date(auth.signedAt).toLocaleDateString()}` : ''}
+                          {say("Signed by")}{' '}{say(auth.signerName)}{auth.signedAt ? ` on ${new Date(auth.signedAt).toLocaleDateString()}` : ''}
                         </div>
                       ) : null}
                     </div>
-                    <span style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid #22c55e', borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700 }}>Signed</span>
+                    <span style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid #22c55e', borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700 }}>{say("Signed")}</span>
                   </div>
                 </div>
               ))}

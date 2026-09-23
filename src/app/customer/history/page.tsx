@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -19,6 +20,7 @@ interface HistoryItem {
 }
 
 export default function History() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [userName, setUserName] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -138,57 +140,55 @@ export default function History() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Customer Portal</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Service History</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Customer Portal")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Service History")}</div>
           </div>
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16}}>
-          <span style={{fontSize:14, color:'#9aa3b2'}}>Welcome, {userName}</span>
+          <span style={{fontSize:14, color:'#9aa3b2'}}>{say("Welcome,")}{' '}{say(userName)}</span>
           <button onClick={handleSignOut} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:600}}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
-        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Service History</h1>
+        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>{say("Service History")}</h1>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 12 }}>
-            <div style={{ color: '#9aa3b2', fontSize: 12 }}>Completed Services</div>
-            <div style={{ color: '#e5e7eb', fontSize: 22, fontWeight: 700 }}>{filteredHistory.length}</div>
+            <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Completed Services")}</div>
+            <div style={{ color: '#e5e7eb', fontSize: 22, fontWeight: 700 }}>{say(filteredHistory.length)}</div>
           </div>
           <div style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 10, padding: 12 }}>
-            <div style={{ color: '#86efac', fontSize: 12 }}>Total Spend</div>
+            <div style={{ color: '#86efac', fontSize: 12 }}>{say("Total Spend")}</div>
             <div style={{ color: '#dcfce7', fontSize: 22, fontWeight: 700 }}>${totalSpend.toFixed(2)}</div>
           </div>
           <div style={{ background: 'rgba(229,51,42,0.12)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 10, padding: 12 }}>
-            <div style={{ color: '#ffb4ad', fontSize: 12 }}>Average Ticket</div>
+            <div style={{ color: '#ffb4ad', fontSize: 12 }}>{say("Average Ticket")}</div>
             <div style={{ color: '#ffe4e1', fontSize: 22, fontWeight: 700 }}>${averageSpend.toFixed(2)}</div>
           </div>
           <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10, padding: 12 }}>
-            <div style={{ color: '#fcd34d', fontSize: 12 }}>Maintenance Recommendation</div>
+            <div style={{ color: '#fcd34d', fontSize: 12 }}>{say("Maintenance Recommendation")}</div>
             <div style={{ color: '#fef3c7', fontSize: 16, fontWeight: 700 }}>
-              {nextRecommendedDate ? nextRecommendedDate.toLocaleDateString() : 'After first completed service'}
+              {nextRecommendedDate ? nextRecommendedDate.toLocaleDateString() : say("After first completed service")}
             </div>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 10, marginBottom: 20 }}>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search service, shop, or vehicle" style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={say("Search service, shop, or vehicle")} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }}>
-            <option value="all">All Statuses</option>
-            <option value="closed">Closed</option>
-            <option value="completed">Completed</option>
-            <option value="waiting-for-payment">Waiting for Payment</option>
+            <option value="all">{say("All Statuses")}</option>
+            <option value="closed">{say("Closed")}</option>
+            <option value="completed">{say("Completed")}</option>
+            <option value="waiting-for-payment">{say("Waiting for Payment")}</option>
           </select>
           <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
           <button onClick={downloadCsv} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(229,51,42,0.4)', background: 'rgba(229,51,42,0.2)', color: '#ffb4ad', cursor: 'pointer', fontWeight: 700 }}>
-            Export CSV
-          </button>
+            {say("Export CSV")}{' '}</button>
         </div>
 
         <div style={{display:'flex', flexDirection:'column', gap:16}}>
@@ -196,9 +196,9 @@ export default function History() {
             <div key={item.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16}}>
                 <div>
-                  <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{item.service}</h3>
-                  <div style={{fontSize:16, color:'#e5332a', fontWeight:600, marginBottom:4}}>{item.shop}</div>
-                  <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>Timeline: {item.vehicle} - {item.date}</div>
+                  <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{say(item.service)}</h3>
+                  <div style={{fontSize:16, color:'#e5332a', fontWeight:600, marginBottom:4}}>{say(item.shop)}</div>
+                  <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>{say("Timeline:")}{' '}{say(item.vehicle)} - {say(item.date)}</div>
                   <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>${item.cost.toFixed(2)}</div>
                   <div style={{fontSize:16, marginBottom:8}}>{renderStars(item.rating)}</div>
                 </div>
@@ -210,7 +210,7 @@ export default function History() {
                   fontSize:12,
                   fontWeight:600
                 }}>
-                  {item.status}
+                  {say(item.status)}
                 </span>
               </div>
               <div style={{display:'flex', gap:12}}>
@@ -224,8 +224,7 @@ export default function History() {
                   fontWeight:600,
                   cursor:'pointer'
                 }}>
-                  View Details
-                </button>
+                  {say("View Details")}{' '}</button>
                 <button style={{
                   padding:'8px 16px',
                   background:'rgba(245,158,11,0.1)',
@@ -236,8 +235,7 @@ export default function History() {
                   fontWeight:600,
                   cursor:'pointer'
                 }}>
-                  Book Again
-                </button>
+                  {say("Book Again")}{' '}</button>
                 <button style={{
                   padding:'8px 16px',
                   background:'rgba(168,85,247,0.1)',
@@ -248,19 +246,17 @@ export default function History() {
                   fontWeight:600,
                   cursor:'pointer'
                 }}>
-                  Download Invoice
-                </button>
+                  {say("Download Invoice")}{' '}</button>
               </div>
             </div>
           ))}
         </div>
 
         {loading ? (
-          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>Loading service history...</div>
+          <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>{say("Loading service history...")}</div>
         ) : filteredHistory.length === 0 ? (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-            No services match your filters. Try expanding the date range or clearing search.
-          </div>
+            {say("No services match your filters. Try expanding the date range or clearing search.")}{' '}</div>
         ) : null}
 
         {/* Back to Dashboard */}
@@ -276,8 +272,7 @@ export default function History() {
             textDecoration:'none',
             cursor:'pointer'
           }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
       </div>
     </div>

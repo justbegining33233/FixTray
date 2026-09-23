@@ -91,8 +91,8 @@ export default function SuperAdminSettings() {
               <FaArrowLeft className="w-4 h-4 text-zinc-400" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-white">Global Settings</h1>
-              <p className="text-zinc-400 mt-1">Platform-wide configuration</p>
+              <h1 className="text-3xl font-bold text-white">{say("Global Settings")}</h1>
+              <p className="text-zinc-400 mt-1">{say("Platform-wide configuration")}</p>
             </div>
           </div>
           <button
@@ -101,7 +101,7 @@ export default function SuperAdminSettings() {
             className="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl hover:opacity-90 disabled:opacity-50 transition-colors font-medium" style={{background:"#e5332a"}}
           >
             {saved ? <FaCheck className="w-4 h-4" /> : <FaSave className="w-4 h-4" />}
-            {saved ? 'Saved!' : saving ? 'Saving...' : 'Save Changes'}
+            {saved ? say("Saved!") : saving ? say("Saving...") : say("Save Changes")}
           </button>
         </div>
 
@@ -109,11 +109,11 @@ export default function SuperAdminSettings() {
         <div className="rounded-2xl p-6 mb-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
           <div className="flex items-center gap-2 mb-4">
             <FaCog className="w-5 h-5 text-[#ff6b64]" />
-            <h2 className="text-lg font-semibold text-white">General</h2>
+            <h2 className="text-lg font-semibold text-white">{say("General")}</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#94a3b8] mb-1">Platform Name</label>
+              <label className="block text-sm font-medium text-[#94a3b8] mb-1">{say("Platform Name")}</label>
               <input
                 type="text"
                 value={settings.platformName || ''}
@@ -141,13 +141,13 @@ export default function SuperAdminSettings() {
         <div className="rounded-2xl p-6 mb-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
           <div className="flex items-center gap-2 mb-4">
             <FaGlobe className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-lg font-semibold text-white">Access Controls</h2>
+            <h2 className="text-lg font-semibold text-white">{say("Access Controls")}</h2>
           </div>
           <div className="space-y-4">
             <label className="flex items-center justify-between p-3 rounded-xl cursor-pointer" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
               <div>
-                <p className="font-medium text-[#f1f5f9]">Allow New Signups</p>
-                <p className="text-sm text-[#94a3b8]">Let new users register on the platform</p>
+                <p className="font-medium text-[#f1f5f9]">{say("Allow New Signups")}</p>
+                <p className="text-sm text-[#94a3b8]">{say("Let new users register on the platform")}</p>
               </div>
               <input
                 type="checkbox"
@@ -158,8 +158,8 @@ export default function SuperAdminSettings() {
             </label>
             <label className="flex items-center justify-between p-3 rounded-xl cursor-pointer" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
               <div>
-                <p className="font-medium text-[#f1f5f9]">Maintenance Mode</p>
-                <p className="text-sm text-[#94a3b8]">Show maintenance page to all non-admin users</p>
+                <p className="font-medium text-[#f1f5f9]">{say("Maintenance Mode")}</p>
+                <p className="text-sm text-[#94a3b8]">{say("Show maintenance page to all non-admin users")}</p>
               </div>
               <input
                 type="checkbox"
@@ -175,10 +175,10 @@ export default function SuperAdminSettings() {
         <div className="rounded-2xl p-6 mb-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
           <div className="flex items-center gap-2 mb-4">
             <FaCog className="w-5 h-5 text-[#ff6b64]" />
-            <h2 className="text-lg font-semibold text-white">Platform Fee</h2>
+            <h2 className="text-lg font-semibold text-white">{say("Platform Fee")}</h2>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#94a3b8] mb-1">Fee Per Work Order (USD)</label>
+            <label className="block text-sm font-medium text-[#94a3b8] mb-1">{say("Fee Per Work Order (USD)")}</label>
             <div className="flex items-center gap-2">
               <span className="text-[#94a3b8] text-lg">$</span>
               <input
@@ -190,7 +190,7 @@ export default function SuperAdminSettings() {
                 className="w-40 px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-[#e5332a] focus:border-transparent text-[#f1f5f9]" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.14)"}}
               />
             </div>
-            <p className="text-xs text-[#64748b] mt-1">Charged per completed work order across all shops. Changes are saved to the database immediately.</p>
+            <p className="text-xs text-[#64748b] mt-1">{say("Charged per completed work order across all shops. Changes are saved to the database immediately.")}</p>
           </div>
         </div>
 
@@ -198,12 +198,12 @@ export default function SuperAdminSettings() {
         <div className="rounded-2xl p-6 mb-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
           <div className="flex items-center gap-2 mb-4">
             <FaBell className="w-5 h-5 text-[#ff6b64]" />
-            <h2 className="text-lg font-semibold text-white">Notifications</h2>
+            <h2 className="text-lg font-semibold text-white">{say("Notifications")}</h2>
           </div>
           <label className="flex items-center justify-between p-3 rounded-xl cursor-pointer" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
             <div>
-              <p className="font-medium text-[#f1f5f9]">Email Notifications</p>
-              <p className="text-sm text-[#94a3b8]">Send system alerts and reports via email</p>
+              <p className="font-medium text-[#f1f5f9]">{say("Email Notifications")}</p>
+              <p className="text-sm text-[#94a3b8]">{say("Send system alerts and reports via email")}</p>
             </div>
             <input
               type="checkbox"

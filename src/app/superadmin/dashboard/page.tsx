@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -18,6 +19,7 @@ type Stats = {
 };
 
 export default function SuperAdminDashboard() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['superadmin']);
   const [stats, setStats] = useState<Stats>({ totalShops: 0, totalUsers: 0, activeWorkOrders: 0, systemHealth: 'healthy' });
   const [tenants, setTenants] = useState<any[]>([]);
@@ -86,8 +88,8 @@ export default function SuperAdminDashboard() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-20 md:pt-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-          <p className="text-gray-500 mt-1">Platform overview &amp; system monitoring</p>
+          <h1 className="text-3xl font-bold text-gray-900">{say("Super Admin Dashboard")}</h1>
+          <p className="text-gray-500 mt-1">{say("Platform overview &amp; system monitoring")}</p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -96,8 +98,8 @@ export default function SuperAdminDashboard() {
               <div className={`w-10 h-10 ${card.color} rounded-xl flex items-center justify-center mb-3`}>
                 <card.icon className="w-5 h-5 text-white" />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-              <p className="text-sm text-gray-500">{card.label}</p>
+              <p className="text-2xl font-bold text-gray-900">{say(card.value)}</p>
+              <p className="text-sm text-gray-500">{say(card.label)}</p>
             </Link>
           ))}
         </div>
@@ -105,19 +107,19 @@ export default function SuperAdminDashboard() {
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Tenants</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{say("Recent Tenants")}</h2>
               <Link href={"/superadmin/tenants" as Route} className="text-indigo-600 text-sm hover:underline flex items-center gap-1">
-                View all <FaArrowRight className="w-3 h-3" />
+                {say("View all")}{' '}<FaArrowRight className="w-3 h-3" />
               </Link>
             </div>
             {tenants.length === 0 ? (
-              <p className="text-gray-400 text-sm py-8 text-center">No tenants found</p>
+              <p className="text-gray-400 text-sm py-8 text-center">{say("No tenants found")}</p>
             ) : (
               <div className="space-y-3">
                 {tenants.map((t: any) => (
                   <div key={t.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                     <div>
-                      <p className="font-medium text-gray-900">{t.name || t.shopName || 'Unnamed'}</p>
+                      <p className="font-medium text-gray-900">{t.name || t.shopName || say("Unnamed")}</p>
                       <p className="text-sm text-gray-500">{t.ownerName || t.email || ''}</p>
                     </div>
 
@@ -128,16 +130,16 @@ export default function SuperAdminDashboard() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{say("Recent Activity")}</h2>
             {recentActivity.length === 0 ? (
-              <p className="text-gray-400 text-sm py-8 text-center">No activity recorded</p>
+              <p className="text-gray-400 text-sm py-8 text-center">{say("No activity recorded")}</p>
             ) : (
               <div className="space-y-3">
                 {recentActivity.map((a: any, i: number) => (
                   <div key={i} className="flex items-start gap-3 text-sm">
                     <div className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
                     <div>
-                      <p className="text-gray-700">{a.action || a.message || 'Activity'}</p>
+                      <p className="text-gray-700">{a.action || a.message || say("Activity")}</p>
                       <p className="text-gray-400 text-xs">{a.timestamp ? new Date(a.timestamp).toLocaleString() : ''}</p>
                     </div>
                   </div>
@@ -148,15 +150,15 @@ export default function SuperAdminDashboard() {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Access</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{say("Quick Access")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {quickLinks.map(link => (
               <Link key={link.label} href={link.href as Route} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] text-center">
                 <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <link.icon className="w-6 h-6 text-indigo-600" />
                 </div>
-                <p className="font-medium text-gray-900 text-sm">{link.label}</p>
-                <p className="text-xs text-gray-400 mt-1">{link.desc}</p>
+                <p className="font-medium text-gray-900 text-sm">{say(link.label)}</p>
+                <p className="text-xs text-gray-400 mt-1">{say(link.desc)}</p>
               </Link>
             ))}
           </div>

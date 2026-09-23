@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
@@ -49,6 +50,7 @@ interface Vehicle {
 }
 
 export default function NewAppointmentClient() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -337,22 +339,20 @@ export default function NewAppointmentClient() {
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <Link href="/customer/appointments" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
-            <FaArrowLeft style={{ marginRight: 4 }} /> Back to Appointments
-          </Link>
+            <FaArrowLeft style={{ marginRight: 4 }} /> {say("Back to Appointments")}{' '}</Link>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
-            <FaCalendarAlt style={{ marginRight: 4 }} /> Book New Appointment
-          </h1>
-          <p style={{ fontSize: 14, color: '#9aa3b2' }}>Choose shop, visit type, services, and details.</p>
+            <FaCalendarAlt style={{ marginRight: 4 }} /> {say("Book New Appointment")}{' '}</h1>
+          <p style={{ fontSize: 14, color: '#9aa3b2' }}>{say("Choose shop, visit type, services, and details.")}</p>
         </div>
       </div>
 
       <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
           {[
-            { num: 1, label: 'Select Shop' },
-            { num: 2, label: 'Visit Type' },
-            { num: 3, label: 'Choose Service' },
-            { num: 4, label: 'Date & Details' },
+            { num: 1, label: say("Select Shop") },
+            { num: 2, label: say("Visit Type") },
+            { num: 3, label: say("Choose Service") },
+            { num: 4, label: say("Date & Details") },
           ].map((s, i) => (
             <React.Fragment key={s.num}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -372,7 +372,7 @@ export default function NewAppointmentClient() {
                 >
                   {step > s.num ? <FaCheck /> : s.num}
                 </div>
-                <span style={{ color: step >= s.num ? '#e5e7eb' : '#6b7280', fontSize: 13, fontWeight: 600 }}>{s.label}</span>
+                <span style={{ color: step >= s.num ? '#e5e7eb' : '#6b7280', fontSize: 13, fontWeight: 600 }}>{say(s.label)}</span>
               </div>
               {i < 3 && <div style={{ width: 40, height: 2, background: step > s.num ? '#e5332a' : 'rgba(255,255,255,0.1)' }} />}
             </React.Fragment>
@@ -383,12 +383,12 @@ export default function NewAppointmentClient() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         {step === 1 && (
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>Select a Shop</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>{say("Select a Shop")}</h2>
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: 'flex', gap: 12, maxWidth: 620 }}>
                 <input
                   type="text"
-                  placeholder="Enter zip code or shop name..."
+                  placeholder={say("Enter zip code or shop name...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => {
@@ -418,17 +418,16 @@ export default function NewAppointmentClient() {
                     cursor: searchTerm.trim() ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {loadingShops ? '...' : <><FaSearch style={{ marginRight: 4 }} /> Search</>}
+                  {loadingShops ? '...' : <><FaSearch style={{ marginRight: 4 }} /> {say("Search")}</>}
                 </button>
               </div>
             </div>
 
             {!hasSearched ? (
               <div style={{ textAlign: 'center', padding: 60, color: '#9aa3b2' }}>
-                Enter a zip code or shop name to find available shops.
-              </div>
+                {say("Enter a zip code or shop name to find available shops.")}{' '}</div>
             ) : shops.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: '#9aa3b2' }}>No shops found.</div>
+              <div style={{ textAlign: 'center', padding: 40, color: '#9aa3b2' }}>{say("No shops found.")}</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
                 {shops.map((shop) => (
@@ -444,16 +443,16 @@ export default function NewAppointmentClient() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <h3 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb' }}>{shop.name}</h3>
+                      <h3 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb' }}>{say(shop.name)}</h3>
                       {shop.rating > 0 && (
                         <span style={{ padding: '4px 8px', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
                           <FaStar style={{ marginRight: 4 }} /> {shop.rating.toFixed(1)}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 13, color: '#9aa3b2' }}><FaMapMarkerAlt style={{ marginRight: 4 }} /> {shop.address}</div>
-                    <div style={{ fontSize: 13, color: '#9aa3b2', marginTop: 6 }}><FaPhone style={{ marginRight: 4 }} /> {shop.phone}</div>
-                    <div style={{ fontSize: 12, color: '#22c55e', marginTop: 8 }}>{shop.completedJobs} completed jobs</div>
+                    <div style={{ fontSize: 13, color: '#9aa3b2' }}><FaMapMarkerAlt style={{ marginRight: 4 }} /> {say(shop.address)}</div>
+                    <div style={{ fontSize: 13, color: '#9aa3b2', marginTop: 6 }}><FaPhone style={{ marginRight: 4 }} /> {say(shop.phone)}</div>
+                    <div style={{ fontSize: 12, color: '#22c55e', marginTop: 8 }}>{say(shop.completedJobs)} {say("completed jobs")}</div>
                   </div>
                 ))}
               </div>
@@ -463,7 +462,7 @@ export default function NewAppointmentClient() {
 
         {step === 2 && selectedShop && (
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>Choose Visit Type</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>{say("Choose Visit Type")}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
               <button
                 onClick={() => {
@@ -480,8 +479,8 @@ export default function NewAppointmentClient() {
                   cursor: 'pointer',
                 }}
               >
-                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>In Shop</div>
-                <div style={{ color: '#9aa3b2', fontSize: 13 }}>Bring your vehicle to the shop and choose a date/time.</div>
+                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>{say("In Shop")}</div>
+                <div style={{ color: '#9aa3b2', fontSize: 13 }}>{say("Bring your vehicle to the shop and choose a date/time.")}</div>
               </button>
 
               <button
@@ -499,31 +498,30 @@ export default function NewAppointmentClient() {
                   cursor: 'pointer',
                 }}
               >
-                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Road Call</div>
-                <div style={{ color: '#9aa3b2', fontSize: 13 }}>Request mobile service. We will create a road-call work order with this shop.</div>
+                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>{say("Road Call")}</div>
+                <div style={{ color: '#9aa3b2', fontSize: 13 }}>{say("Request mobile service. We will create a road-call work order with this shop.")}</div>
               </button>
             </div>
 
             <div style={{ marginTop: 18 }}>
               <button onClick={() => setStep(1)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#9aa3b2', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
-                <FaArrowLeft style={{ marginRight: 4 }} /> Back
-              </button>
+                <FaArrowLeft style={{ marginRight: 4 }} /> {say("Back")}{' '}</button>
             </div>
           </div>
         )}
 
         {step === 3 && selectedShop && (
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>Choose a Service</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 20 }}>{say("Choose a Service")}</h2>
             {loadingServices ? (
-              <div style={{ color: '#9aa3b2' }}>Loading services...</div>
+              <div style={{ color: '#9aa3b2' }}>{say("Loading services...")}</div>
             ) : services.length === 0 ? (
-              <div style={{ color: '#9aa3b2' }}>This shop has no services configured yet.</div>
+              <div style={{ color: '#9aa3b2' }}>{say("This shop has no services configured yet.")}</div>
             ) : (
               <div style={{ display: 'grid', gap: 14 }}>
                 {Object.entries(groupedServices).map(([category, categoryServices]) => (
                   <div key={category} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-                    <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 10 }}>{category}</div>
+                    <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 10 }}>{say(category)}</div>
                     <div style={{ display: 'grid', gap: 10 }}>
                       {categoryServices.map((service) => (
                         <button
@@ -542,8 +540,8 @@ export default function NewAppointmentClient() {
                             cursor: 'pointer',
                           }}
                         >
-                          <div style={{ fontWeight: 700 }}><FaTools style={{ marginRight: 4 }} /> {service.serviceName}</div>
-                          {service.description && <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>{service.description}</div>}
+                          <div style={{ fontWeight: 700 }}><FaTools style={{ marginRight: 4 }} /> {say(service.serviceName)}</div>
+                          {service.description && <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>{say(service.description)}</div>}
                         </button>
                       ))}
                     </div>
@@ -554,25 +552,24 @@ export default function NewAppointmentClient() {
 
             <div style={{ marginTop: 18 }}>
               <button onClick={() => setStep(2)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#9aa3b2', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
-                <FaArrowLeft style={{ marginRight: 4 }} /> Back
-              </button>
+                <FaArrowLeft style={{ marginRight: 4 }} /> {say("Back")}{' '}</button>
             </div>
           </div>
         )}
 
         {step === 4 && selectedShop && selectedService && visitType && (
           <div style={{ display: 'grid', gap: 18 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 0 }}>Date & Details</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e5e7eb', marginBottom: 0 }}>{say("Date & Details")}</h2>
 
             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 8 }}>Selected shop</div>
-              <div style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 700 }}>{selectedShop.name}</div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 6 }}>{selectedService.serviceName} • {visitType === 'in-shop' ? 'In Shop' : 'Road Call'}</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 8 }}>{say("Selected shop")}</div>
+              <div style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 700 }}>{say(selectedShop.name)}</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 6 }}>{say(selectedService.serviceName)} • {visitType === 'in-shop' ? say("In Shop") : say("Road Call")}</div>
             </div>
 
             {visitType === 'in-shop' && (
               <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}>Choose Date & Time</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}>{say("Choose Date & Time")}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, maxWidth: 480 }}>
                   <input
                     type="date"
@@ -593,7 +590,7 @@ export default function NewAppointmentClient() {
             )}
 
             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}><FaCar style={{ marginRight: 4 }} /> Vehicle Information *</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}><FaCar style={{ marginRight: 4 }} /> {say("Vehicle Information *")}</div>
 
               {vehicles.length > 0 && (
                 <select
@@ -611,7 +608,7 @@ export default function NewAppointmentClient() {
                   }}
                   style={{ width: '100%', maxWidth: 520, marginBottom: 10, padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }}
                 >
-                  <option value="">Select saved vehicle</option>
+                  <option value="">{say("Select saved vehicle")}</option>
                   {vehicles.map((v) => (
                     <option key={v.id} value={v.id}>
                       {[v.year, v.make, v.model].filter(Boolean).join(' ')} {v.licensePlate ? `• ${v.licensePlate}` : ''}
@@ -621,16 +618,16 @@ export default function NewAppointmentClient() {
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, maxWidth: 740 }}>
-                <input required value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} placeholder="Make *" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
-                <input required value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} placeholder="Model *" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
-                <input value={vehicleYear} onChange={(e) => setVehicleYear(e.target.value)} placeholder="Year" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
-                <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} placeholder="License plate" style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
+                <input required value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} placeholder={say("Make *")} style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
+                <input required value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} placeholder={say("Model *")} style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
+                <input value={vehicleYear} onChange={(e) => setVehicleYear(e.target.value)} placeholder={say("Year")} style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
+                <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} placeholder={say("License plate")} style={{ padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb' }} />
               </div>
 
               <textarea
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
-                placeholder="Describe the issue or any additional details..."
+                placeholder={say("Describe the issue or any additional details...")}
                 rows={5}
                 style={{ width: '100%', maxWidth: 740, marginTop: 10, padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', color: '#e5e7eb', resize: 'vertical' }}
               />
@@ -638,7 +635,7 @@ export default function NewAppointmentClient() {
 
             {visitType === 'in-shop' && (
               <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}><FaCamera style={{ marginRight: 4 }} /> Photos / Videos (Optional)</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 10 }}><FaCamera style={{ marginRight: 4 }} /> {say("Photos / Videos (Optional)")}</div>
                 <label
                   style={{
                     display: 'inline-flex',
@@ -653,7 +650,7 @@ export default function NewAppointmentClient() {
                     opacity: uploadingMedia ? 0.7 : 1,
                   }}
                 >
-                  {uploadingMedia ? 'Uploading...' : 'Add photos/videos'}
+                  {uploadingMedia ? say("Uploading...") : say("Add photos/videos")}
                   <input type="file" accept="image/*,video/*" multiple onChange={handleMediaUpload} style={{ display: 'none' }} />
                 </label>
 
@@ -662,14 +659,13 @@ export default function NewAppointmentClient() {
                     {mediaUrls.map((url, index) => (
                       <div key={url + index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 10px' }}>
                         <a href={url} target="_blank" rel="noreferrer" style={{ color: '#93c5fd', textDecoration: 'none', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>
-                          Media {index + 1}
+                          {say("Media")}{' '}{index + 1}
                         </a>
                         <button
                           onClick={() => setMediaUrls((prev) => prev.filter((_, i) => i !== index))}
                           style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 14 }}
                         >
-                          Remove
-                        </button>
+                          {say("Remove")}{' '}</button>
                       </div>
                     ))}
                   </div>
@@ -679,12 +675,11 @@ export default function NewAppointmentClient() {
 
             <div style={{ display: 'flex', gap: 12 }}>
               <button onClick={() => setStep(3)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#9aa3b2', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
-                <FaArrowLeft style={{ marginRight: 4 }} /> Back
-              </button>
+                <FaArrowLeft style={{ marginRight: 4 }} /> {say("Back")}{' '}</button>
               <button
                 onClick={submitAppointment}
                 disabled={submitting || !appointmentGate.ok}
-                title={appointmentGate.reason}
+                title={say(appointmentGate.reason)}
                 style={{
                   background: '#e5332a',
                   border: 'none',
@@ -696,7 +691,7 @@ export default function NewAppointmentClient() {
                   opacity: submitting || !appointmentGate.ok ? 0.5 : 1,
                 }}
               >
-                {submitting ? 'Creating...' : 'Create Appointment'}
+                {submitting ? say("Creating...") : say("Create Appointment")}
               </button>
             </div>
           </div>
@@ -705,8 +700,8 @@ export default function NewAppointmentClient() {
 
       {bookingMsg && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, background: bookingMsg.type === 'success' ? '#dcfce7' : '#fde8e8', color: bookingMsg.type === 'success' ? '#166534' : '#991b1b', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontSize: 14, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-          {bookingMsg.text}
-          <button aria-label="Dismiss" onClick={() => setBookingMsg(null)} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'inherit' }}>
+          {say(bookingMsg.text)}
+          <button aria-label={say("Dismiss")} onClick={() => setBookingMsg(null)} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'inherit' }}>
             x
           </button>
         </div>

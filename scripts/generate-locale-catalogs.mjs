@@ -65,7 +65,7 @@ function collectEnglish(files) {
       let match;
       while ((match = re.exec(src))) {
         const text = (match[1] || match[2] || '').replace(/\\'/g, "'");
-        if (!text || text.length > 180) continue;
+        if (!text || text.length > 400) continue;
         if (text.includes('${')) continue;
         found.add(text);
       }
@@ -210,7 +210,7 @@ async function main() {
     const stillMissing = unique.filter((text) => cache[locale][text] == null);
     console.log(`${locale}: translating ${stillMissing.length} (${missing.length} before seed)`);
     let done = 0;
-    await mapPool(stillMissing, 4, async (text) => {
+    await mapPool(stillMissing, 16, async (text) => {
       let attempt = 0;
       while (attempt < 6) {
         try {

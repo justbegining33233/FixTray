@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -19,6 +20,7 @@ import {
 } from 'recharts';
 
 export default function AnalyticsPage() {
+  const say = usePhrase();
   useRequireAuth(['shop']);
   const router = useRouter();
   const [analytics, setAnalytics] = useState<any>(null);
@@ -70,8 +72,7 @@ export default function AnalyticsPage() {
     return (
       <div style={{ minHeight: "100vh", background: 'transparent', padding: '40px 20px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto', color: '#fff', textAlign: 'center' }}>
-          Loading analytics...
-        </div>
+          {say("Loading analytics...")}{' '}</div>
       </div>
     );
   }
@@ -81,10 +82,10 @@ export default function AnalyticsPage() {
       <div style={{ minHeight: '100vh', background: 'transparent', padding: '40px 20px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto', textAlign: 'center', paddingTop: 80 }}>
           <div style={{ fontSize: 52, marginBottom: 16 }}><FaExclamationTriangle style={{marginRight:4}} /></div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>Unable to Load Analytics</div>
-          <div style={{ color: '#9ca3af', fontSize: 14, marginBottom: 24 }}>{analyticsError}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>{say("Unable to Load Analytics")}</div>
+          <div style={{ color: '#9ca3af', fontSize: 14, marginBottom: 24 }}>{say(analyticsError)}</div>
           <button onClick={() => { setAnalyticsError(''); fetchAnalytics(shopId); }}
-            style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Retry</button>
+            style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{say("Retry")}</button>
         </div>
       </div>
     );
@@ -95,15 +96,15 @@ export default function AnalyticsPage() {
       <div style={{ maxWidth: 1400, margin: '0 auto' }}>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ color: '#fff', fontSize: 32, margin: 0 }}>Analytics Dashboard</h1>
-          <p style={{ color: '#9aa3b2', margin: '8px 0 0 0' }}>Business insights and performance metrics</p>
+          <h1 style={{ color: '#fff', fontSize: 32, margin: 0 }}>{say("Analytics Dashboard")}</h1>
+          <p style={{ color: '#9aa3b2', margin: '8px 0 0 0' }}>{say("Business insights and performance metrics")}</p>
         </div>
 
         {/* Date Range Selector */}
         <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, marginBottom: 32 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
             <div>
-              <label htmlFor="analytics-start" style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>Start Date</label>
+              <label htmlFor="analytics-start" style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>{say("Start Date")}</label>
               <input
                 id="analytics-start"
                 type="date"
@@ -124,7 +125,7 @@ export default function AnalyticsPage() {
               />
             </div>
             <div>
-              <label htmlFor="analytics-end" style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>End Date</label>
+              <label htmlFor="analytics-end" style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>{say("End Date")}</label>
               <input
                 id="analytics-end"
                 type="date"
@@ -157,11 +158,10 @@ export default function AnalyticsPage() {
                 cursor: 'pointer',
               }}
             >
-              Update
-            </button>
+              {say("Update")}{' '}</button>
           </div>
           {rangeNotice && (
-            <div role="status" style={{ marginTop: 12, color: '#fcd34d', fontSize: 13, fontWeight: 600 }}>{rangeNotice}</div>
+            <div role="status" style={{ marginTop: 12, color: '#fcd34d', fontSize: 13, fontWeight: 600 }}>{say(rangeNotice)}</div>
           )}
         </div>
 
@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20, marginBottom: 32 }}>
             <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaDollarSign style={{marginRight:4}} /></div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Total Revenue</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>{say("Total Revenue")}</div>
               <div style={{ color: '#22c55e', fontSize: 28, fontWeight: 700 }}>
                 ${analytics.summary.totalRevenue.toFixed(2)}
               </div>
@@ -178,25 +178,25 @@ export default function AnalyticsPage() {
 
             <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaCheckCircle style={{marginRight:4}} /></div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Completed Jobs</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>{say("Completed Jobs")}</div>
               <div style={{ color: '#e5332a', fontSize: 28, fontWeight: 700 }}>
-                {analytics.summary.completedJobs}
+                {say(analytics.summary.completedJobs)}
               </div>
             </div>
 
             <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaStopwatch style={{marginRight:4}} /></div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Avg Completion Time</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>{say("Avg Completion Time")}</div>
               <div style={{ color: '#a855f7', fontSize: 28, fontWeight: 700 }}>
-                {analytics.summary.avgCompletionTime}h
+                {say(analytics.summary.avgCompletionTime)}h
               </div>
             </div>
 
             <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: 12, padding: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}><FaUsers style={{marginRight:4}} /></div>
-              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>Unique Customers</div>
+              <div style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 4 }}>{say("Unique Customers")}</div>
               <div style={{ color: '#eab308', fontSize: 28, fontWeight: 700 }}>
-                {analytics.summary.uniqueCustomers}
+                {say(analytics.summary.uniqueCustomers)}
               </div>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function AnalyticsPage() {
         {/* Revenue Chart */}
         {analytics?.charts?.revenue && analytics.charts.revenue.length > 0 && (
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
-            <h3 style={{ color: '#e5e7eb', marginBottom: 20 }}>Revenue Over Time</h3>
+            <h3 style={{ color: '#e5e7eb', marginBottom: 20 }}>{say("Revenue Over Time")}</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={analytics.charts.revenue}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -225,7 +225,7 @@ export default function AnalyticsPage() {
         {/* Completion Time Chart */}
         {analytics?.charts?.completion && analytics.charts.completion.length > 0 && (
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
-            <h3 style={{ color: '#e5e7eb', marginBottom: 20 }}>Average Completion Time</h3>
+            <h3 style={{ color: '#e5e7eb', marginBottom: 20 }}>{say("Average Completion Time")}</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={analytics.charts.completion}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -245,7 +245,7 @@ export default function AnalyticsPage() {
         {/* Tech Performance */}
         {analytics?.charts?.techPerformance && analytics.charts.techPerformance.length > 0 && (
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 24 }}>
-            <h3 style={{ color: '#e5e7eb', marginBottom: 20 }}>Tech Performance</h3>
+            <h3 style={{ color: '#e5e7eb', marginBottom: 20 }}>{say("Tech Performance")}</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={analytics.charts.techPerformance}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />

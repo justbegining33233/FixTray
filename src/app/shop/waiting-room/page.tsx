@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -32,13 +33,14 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 const PROMOS = [
   ' Summer Tire Special  -  $15 off any set of 4 tires this month!',
-  <><FaOilCan style={{marginRight:4}} /> Oil change + tire rotation package  -  only $59.99!</>,
-  <><FaStar style={{marginRight:4}} /> Refer a friend and get $25 off your next service</>,
-  <><FaMobileAlt style={{marginRight:4}} /> Text us your VIN for an instant maintenance report</>,
-  <><FaBatteryFull style={{marginRight:4}} /> Free battery test with any service this week</>,
+  <><FaOilCan style={{marginRight:4}} /> {say("Oil change + tire rotation package  -  only $59.99!")}</>,
+  <><FaStar style={{marginRight:4}} /> {say("Refer a friend and get $25 off your next service")}</>,
+  <><FaMobileAlt style={{marginRight:4}} /> {say("Text us your VIN for an instant maintenance report")}</>,
+  <><FaBatteryFull style={{marginRight:4}} /> {say("Free battery test with any service this week")}</>,
 ];
 
 function WaitingRoomContent() {
+  const say = usePhrase();
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const queryShopId = searchParams?.get('shopId') || '';
@@ -99,17 +101,17 @@ function WaitingRoomContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: '"Inter",system-ui,sans-serif', overflow: 'hidden' }}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Waiting Room Status Board</h1>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{say("Waiting Room Status Board")}</h1>
       {/* Header */}
       <div style={{ background: 'rgba(229,51,42,0.9)', padding: '16px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <Link href="/shop/home" style={{ textDecoration: 'none', color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 40, height: 40, background: '#000000', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}><FaWrench style={{marginRight:4}} /></div>
-            <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>FixTray</div>
+            <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.9 }}>{say("FixTray")}</div>
           </Link>
           <div>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px' }}>{data?.shopName || 'Service Status'}</div>
-            <div style={{ fontSize: 14, opacity: 0.85 }}>Live Vehicle Status Board</div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px' }}>{data?.shopName || say("Service Status")}</div>
+            <div style={{ fontSize: 14, opacity: 0.85 }}>{say("Live Vehicle Status Board")}</div>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -122,13 +124,13 @@ function WaitingRoomContent() {
 
       <div style={{ padding: '10px 48px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.35)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 12, color: '#ffb4ad', background: 'rgba(229,51,42,0.18)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 999, padding: '4px 10px' }}>
-          Active Bays: {inProgress.length}
+          {say("Active Bays:")}{' '}{say(inProgress.length)}
         </div>
         <div style={{ fontSize: 12, color: '#fbbf24', background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 999, padding: '4px 10px' }}>
-          Waiting: {waiting.length}
+          {say("Waiting:")}{' '}{say(waiting.length)}
         </div>
         <div style={{ fontSize: 12, color: '#22c55e', background: 'rgba(34,197,94,0.18)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 999, padding: '4px 10px' }}>
-          Ready: {completed.length}
+          {say("Ready:")}{' '}{say(completed.length)}
         </div>
       </div>
 
@@ -140,16 +142,16 @@ function WaitingRoomContent() {
             <div style={{ textAlign: 'center', padding: '80px 20px', maxWidth: 640, margin: '0 auto' }}>
               <div style={{ fontSize: 48 }}><FaExclamationTriangle style={{ color: '#f59e0b' }} /></div>
               <div style={{ fontSize: 22, fontWeight: 800, marginTop: 16 }}>
-                {loadError === 'shopId required' ? 'Waiting room needs a shop' : 'Waiting room could not refresh'}
+                {loadError === "shopId required" ? say("Waiting room needs a shop") : say("Waiting room could not refresh")}
               </div>
               <div style={{ fontSize: 15, color: '#9ca3af', marginTop: 10, lineHeight: 1.5 }}>
-                {loadError === 'shopId required'
-                  ? 'Open this board while signed in as the shop, or add ?shopId= for the lobby display. Pending in-shop appointments from Shop Home show here with no extra check-in.'
+                {loadError === "shopId required"
+                  ? say("Open this board while signed in as the shop, or add ?shopId= for the lobby display. Pending in-shop appointments from Shop Home show here with no extra check-in.")
                   : loadError}
               </div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
-                <Link href="/shop/home" style={{ background: '#e5332a', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Shop Home</Link>
-                <Link href="/auth/login" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Sign In</Link>
+                <Link href="/shop/home" style={{ background: '#e5332a', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>{say("Shop Home")}</Link>
+                <Link href="/auth/login" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>{say("Sign In")}</Link>
               </div>
             </div>
           )}
@@ -157,27 +159,26 @@ function WaitingRoomContent() {
           {loaded && !loadError && orders.length === 0 && (
             <div style={{ textAlign: 'center', padding: '80px 20px', maxWidth: 680, margin: '0 auto' }}>
               <div style={{ fontSize: 60 }}><FaFlagCheckered style={{marginRight:4}} /></div>
-              <div style={{ fontSize: 20, marginTop: 16 }}>No vehicles in the waiting room</div>
+              <div style={{ fontSize: 20, marginTop: 16 }}>{say("No vehicles in the waiting room")}</div>
               <div style={{ fontSize: 15, color: '#9ca3af', marginTop: 10, lineHeight: 1.5 }}>
-                Pending in-shop appointments from Shop Home and the calendar appear here automatically. A separate check-in is not required.
-              </div>
+                {say("Pending in-shop appointments from Shop Home and the calendar appear here automatically. A separate check-in is not required.")}{' '}</div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
-                <Link href="/shop/home" style={{ background: '#e5332a', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Shop Home</Link>
-                <Link href="/shop/calendar" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>Calendar</Link>
+                <Link href="/shop/home" style={{ background: '#e5332a', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>{say("Shop Home")}</Link>
+                <Link href="/shop/calendar" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>{say("Calendar")}</Link>
               </div>
             </div>
           )}
 
           {inProgress.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#ff6b64', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaWrench style={{marginRight:4}} /> Currently Working On</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#ff6b64', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaWrench style={{marginRight:4}} /> {say("Currently Working On")}</div>
               {inProgress.map(o => <StatusCard key={o.id} order={o} />)}
             </div>
           )}
 
           {waiting.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaHourglassHalf style={{marginRight:4}} /> Waiting for Service</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaHourglassHalf style={{marginRight:4}} /> {say("Waiting for Service")}</div>
               {waiting.map(o => <StatusCard key={o.id} order={o} />)}
             </div>
           )}
@@ -186,12 +187,12 @@ function WaitingRoomContent() {
         {/* Ready / Completed column */}
         {completed.length > 0 && (
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#22c55e', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaCheckCircle style={{marginRight:4}} /> Ready for Pickup!</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#22c55e', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}><FaCheckCircle style={{marginRight:4}} /> {say("Ready for Pickup!")}</div>
             {completed.map(o => (
               <div key={o.id} className="animate-pulse" style={{ background: 'rgba(34,197,94,0.15)', border: '2px solid #22c55e', borderRadius: 14, padding: '16px 20px', marginBottom: 10 }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{o.vehicle}</div>
-                <div style={{ fontSize: 28, marginTop: 8 }}><FaCheckCircle style={{marginRight:4}} /> <span style={{ color: '#22c55e', fontWeight: 800 }}>READY!</span></div>
-                {o.message && <div style={{ fontSize: 13, color: '#86efac', marginTop: 8 }}>{o.message}</div>}
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{say(o.vehicle)}</div>
+                <div style={{ fontSize: 28, marginTop: 8 }}><FaCheckCircle style={{marginRight:4}} /> <span style={{ color: '#22c55e', fontWeight: 800 }}>{say("READY!")}</span></div>
+                {o.message && <div style={{ fontSize: 13, color: '#86efac', marginTop: 8 }}>{say(o.message)}</div>}
               </div>
             ))}
           </div>
@@ -200,37 +201,39 @@ function WaitingRoomContent() {
 
       {/* Promo Ticker */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.8)', padding: '14px 48px', display: 'flex', alignItems: 'center', gap: 20 }}>
-        <div style={{ background: '#e5332a', color: '#fff', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>TODAY&apos;S DEALS</div>
+        <div style={{ background: '#e5332a', color: '#fff', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>{say("TODAY&apos;S DEALS")}</div>
         <div style={{ fontSize: 15, color: '#e5e7eb', opacity: 0.9 }}>
           {data?.promos?.[promoIdx] || PROMOS[promoIdx]}
         </div>
-        <div style={{ marginLeft: 'auto', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>Updates every 60s</div>
+        <div style={{ marginLeft: 'auto', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>{say("Updates every 60s")}</div>
       </div>
     </div>
   );
 }
 
 function StatusCard({ order }: { order: WaitingRoomEntry }) {
+  const say = usePhrase();
   const s = STATUS_CONFIG[toWaitingBoardStatus(order.status)] || STATUS_CONFIG.pending;
   return (
     <div style={{ background: s.bg, border: `1px solid ${s.color}30`, borderRadius: 14, padding: '14px 20px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{order.vehicle}</div>
-        {order.tech && <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>Tech: {order.tech}</div>}
-        {order.message && <div style={{ fontSize: 13, color: '#d1d5db', marginTop: 4 }}>{order.message}</div>}
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{say(order.vehicle)}</div>
+        {order.tech && <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>{say("Tech:")}{' '}{say(order.tech)}</div>}
+        {order.message && <div style={{ fontSize: 13, color: '#d1d5db', marginTop: 4 }}>{say(order.message)}</div>}
       </div>
       <div style={{ textAlign: 'right' }}>
-        <div style={{ fontSize: 22 }}>{s.icon}</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: s.color, marginTop: 4 }}>{s.label}</div>
-        {order.estimatedCompletion && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>Est: {new Date(order.estimatedCompletion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
+        <div style={{ fontSize: 22 }}>{say(s.icon)}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: s.color, marginTop: 4 }}>{say(s.label)}</div>
+        {order.estimatedCompletion && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{say("Est:")}{' '}{new Date(order.estimatedCompletion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
       </div>
     </div>
   );
 }
 
 export default function WaitingRoomPage() {
+  const say = usePhrase();
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading waiting room...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading waiting room...")}</div>}>
       <WaitingRoomContent />
     </Suspense>
   );

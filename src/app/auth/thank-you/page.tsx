@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -7,6 +8,7 @@ import type { Route } from 'next';
 import '@/styles/sos-theme.css';
 
 export default function ThankYouPage() {
+  const say = usePhrase();
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
 
@@ -57,18 +59,18 @@ export default function ThankYouPage() {
 
   return (
     <div className="sos-wrap">
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Registration Complete</h1>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{say("Registration Complete")}</h1>
       <div className="sos-card">
         <div className="sos-header">
           <div className="sos-brand">
-            <span className="mark">FixTray</span>
+            <span className="mark">{say("FixTray")}</span>
           </div>
-          <span className="sos-pill">Signed In</span>
+          <span className="sos-pill">{say("Signed In")}</span>
         </div>
         <div className="sos-content">
           <div className="sos-pane" style={{gridColumn:'1 / -1'}}>
-            <div className="sos-title" style={{textAlign:'center'}}>Thank you!</div>
-            <p className="sos-desc" style={{textAlign:'center'}}>Registration successful! Redirecting to dashboard in <span style={{color:'#ff7a59', fontWeight:700}}>{countdown}s</span>...</p>
+            <div className="sos-title" style={{textAlign:'center'}}>{say("Thank you!")}</div>
+            <p className="sos-desc" style={{textAlign:'center'}}>{say("Registration successful! Redirecting to dashboard in")}{' '}<span style={{color:'#ff7a59', fontWeight:700}}>{say(countdown)}s</span>...</p>
             <div className="sos-actions" style={{justifyContent:'center'}}>
               <Link
                 href={(() => {
@@ -83,13 +85,13 @@ export default function ThankYouPage() {
                   }
                 })() as Route}
                 className="btn-primary"
-              >Go to Dashboard</Link>
-              <Link href="/" className="btn-outline">Back to Home</Link>
+              >{say("Go to Dashboard")}</Link>
+              <Link href="/" className="btn-outline">{say("Back to Home")}</Link>
             </div>
           </div>
         </div>
         <div className="sos-footer">
-          <span className="sos-tagline">Run work orders, teams, customers, and multi-shop operations from one platform.</span>
+          <span className="sos-tagline">{say("Run work orders, teams, customers, and multi-shop operations from one platform.")}</span>
           <div className="accent-bar" style={{width:112, borderRadius:6}} />
         </div>
       </div>

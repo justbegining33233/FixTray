@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useCallback } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaArrowLeft, FaArrowRight, FaCaretRight, FaCheck, FaCheckCircle, FaClipboardList, FaClock, FaCog, FaDollarSign, FaExclamationTriangle, FaHourglassHalf, FaRegSquare, FaTimes, FaTimesCircle, FaTrash, FaUsers } from 'react-icons/fa';
@@ -81,6 +82,7 @@ function weekStart(d = new Date()) { const s = new Date(d); s.setDate(d.getDate(
 
 // --- Main Component ----------------------------------------------------------
 export default function PayrollPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const [tab, setTab] = useState<'overview' | 'schedule' | 'timecards' | 'attendance' | 'leave' | 'periods' | 'stubs' | 'settings'>('overview');
 
@@ -190,7 +192,7 @@ export default function PayrollPage() {
   };
   useEffect(() => { if (tab === 'stubs') loadStubs(); }, [tab]);
 
-  if (isLoading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: THEME.pageBg }}><div style={{ fontSize: 18, color: THEME.textMuted }}>Loading...</div></div>;
+  if (isLoading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: THEME.pageBg }}><div style={{ fontSize: 18, color: THEME.textMuted }}>{say("Loading...")}</div></div>;
 
   // --- Computed values ------------------------------------------------------
   const activeEmps = activePayrollEmployees(employees);
@@ -306,7 +308,8 @@ export default function PayrollPage() {
   };
 
   // --- Sub-components -------------------------------------------------------
-  const TabBtn = ({ id, label, badge }: { id: typeof tab; label: string; badge?: number }) => (
+  const TabBtn = ({ id, label, badge }: { id: typeof tab; label: string; badge?: number }) => { const say = usePhrase();
+return ((
     <button
       onClick={() => setTab(id)}
       style={{
@@ -316,56 +319,59 @@ export default function PayrollPage() {
         position: 'relative',
       }}
     >
-      {label}
+      {say(label)}
       {badge ? (
-        <span style={{ position: 'absolute', top: 2, right: 2, background: '#e53e3e', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{badge}</span>
+        <span style={{ position: 'absolute', top: 2, right: 2, background: '#e53e3e', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{say(badge)}</span>
       ) : null}
     </button>
-  );
+  )); };
 
-  const Card = ({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) => (
+  const Card = ({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) => { const say = usePhrase();
+return ((
     <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: '20px 24px', flex: 1, minWidth: 160 }}>
-      <div style={{ fontSize: 13, color: THEME.textMuted, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: color ?? THEME.text }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: THEME.textMuted, marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontSize: 13, color: THEME.textMuted, marginBottom: 4 }}>{say(label)}</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: color ?? THEME.text }}>{say(value)}</div>
+      {sub && <div style={{ fontSize: 12, color: THEME.textMuted, marginTop: 4 }}>{say(sub)}</div>}
     </div>
-  );
+  )); };
 
   const BadgeStatus = ({ status }: { status: string }) => {
+  const say = usePhrase();
     const s = STATUS_BADGE[status] ?? STATUS_BADGE.scheduled;
-    return <span style={{ background: s.bg, color: s.color, borderRadius: 12, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>{s.label}</span>;
+    return <span style={{ background: s.bg, color: s.color, borderRadius: 12, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>{say(s.label)}</span>;
   };
 
   // --- Tab: Overview --------------------------------------------------------
-  const OverviewTab = () => (
+  const OverviewTab = () => { const say = usePhrase();
+return ((
     <div>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-        <Card label="Active Employees" value={loading ? '…' : String(activeEmps.length)} sub={loading ? 'Loading team' : `${employees.filter(e => e.terminatedAt).length} terminated`} />
-        <Card label="Total Payroll (All Time)" value={fmt(totalPayrollThisMonth)} sub="approved/paid periods" color="#e5332a" />
-        <Card label="Late Today" value={String(lateToday)} sub="based on today's schedule" color={lateToday > 0 ? '#d97706' : THEME.text} />
-        <Card label="Absent Today" value={String(absentToday)} sub="no clock-in recorded" color={absentToday > 0 ? '#dc2626' : THEME.text} />
-        <Card label="Pending Leave Requests" value={String(pendingLeave.length)} sub="awaiting approval" color={pendingLeave.length > 0 ? '#7c3aed' : THEME.text} />
-        <Card label="Open Pay Periods" value={String(openPeriods.length)} sub="ready to run" />
+        <Card label={say("Active Employees")} value={loading ? '…' : String(activeEmps.length)} sub={loading ? 'Loading team' : `${employees.filter(e => e.terminatedAt).length} terminated`} />
+        <Card label={say("Total Payroll (All Time)")} value={fmt(totalPayrollThisMonth)} sub="approved/paid periods" color="#e5332a" />
+        <Card label={say("Late Today")} value={String(lateToday)} sub="based on today's schedule" color={lateToday > 0 ? '#d97706' : THEME.text} />
+        <Card label={say("Absent Today")} value={String(absentToday)} sub="no clock-in recorded" color={absentToday > 0 ? '#dc2626' : THEME.text} />
+        <Card label={say("Pending Leave Requests")} value={String(pendingLeave.length)} sub="awaiting approval" color={pendingLeave.length > 0 ? '#7c3aed' : THEME.text} />
+        <Card label={say("Open Pay Periods")} value={String(openPeriods.length)} sub="ready to run" />
       </div>
 
       {/* Alerts section */}
       {(lateToday > 0 || absentToday > 0 || pendingLeave.length > 0) && (
         <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <div style={{ fontWeight: 700, marginBottom: 12, color: '#f59e0b' }}><FaExclamationTriangle style={{marginRight:4}} /> Alerts</div>
+          <div style={{ fontWeight: 700, marginBottom: 12, color: '#f59e0b' }}><FaExclamationTriangle style={{marginRight:4}} /> {say("Alerts")}</div>
           {attendance.filter(a => a.status === 'late').map(a => (
             <div key={a.timeEntryId} style={{ padding: '6px 0', borderBottom: '1px solid rgba(245,158,11,0.25)', fontSize: 14, color: THEME.text }}>
-              <FaClock style={{marginRight:4}} /> <strong>{a.tech?.firstName} {a.tech?.lastName}</strong> arrived <strong>{a.lateMinutes} min late</strong>
+              <FaClock style={{marginRight:4}} /> <strong>{say(a.tech?.firstName)} {say(a.tech?.lastName)}</strong> arrived <strong>{say(a.lateMinutes)} {say("min late")}</strong>
               {a.scheduledStart && ` (scheduled ${a.scheduledStart}`})
             </div>
           ))}
           {attendance.filter(a => a.status === 'absent').map(a => (
             <div key={a.shiftId} style={{ padding: '6px 0', borderBottom: '1px solid rgba(245,158,11,0.25)', fontSize: 14, color: '#f87171' }}>
-              <FaTimesCircle style={{marginRight:4}} /> <strong>{a.tech?.firstName} {a.tech?.lastName}</strong>  -  no clock-in (scheduled {a.scheduledStart})
+              <FaTimesCircle style={{marginRight:4}} /> <strong>{say(a.tech?.firstName)} {say(a.tech?.lastName)}</strong>  {say("-  no clock-in (scheduled")}{' '}{say(a.scheduledStart)})
             </div>
           ))}
           {pendingLeave.slice(0, 3).map(l => (
             <div key={l.id} style={{ padding: '6px 0', fontSize: 14, color: '#fca5a5' }}>
-              <FaClipboardList style={{marginRight:4}} /> <strong>{l.tech.firstName} {l.tech.lastName}</strong> requested {l.leaveType.toUpperCase()}  -  {fmtDate(l.startDate)} to {fmtDate(l.endDate)}
+              <FaClipboardList style={{marginRight:4}} /> <strong>{say(l.tech.firstName)} {say(l.tech.lastName)}</strong> requested {l.leaveType.toUpperCase()}  -  {fmtDate(l.startDate)} to {fmtDate(l.endDate)}
             </div>
           ))}
         </div>
@@ -373,18 +379,17 @@ export default function PayrollPage() {
 
       {!loading && activeEmps.length === 0 && (
         <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 20, marginBottom: 24, color: THEME.textMuted }}>
-          No active employees yet. Payroll lists managers and technicians from Manage Team. Add them there, then refresh this page.
-        </div>
+          {say("No active employees yet. Payroll lists managers and technicians from Manage Team. Add them there, then refresh this page.")}{' '}</div>
       )}
 
       {/* Recent pay periods */}
       <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 20 }}>
-        <div style={{ fontWeight: 700, marginBottom: 16, fontSize: 16, color: THEME.text }}>Recent Pay Periods</div>
+        <div style={{ fontWeight: 700, marginBottom: 16, fontSize: 16, color: THEME.text }}>{say("Recent Pay Periods")}</div>
         {payPeriods.slice(0, 5).map(p => (
           <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${THEME.borderSoft}` }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 14, color: THEME.text }}>{fmtDate(p.startDate)}  -  {fmtDate(p.endDate)}</div>
-              <div style={{ fontSize: 12, color: THEME.textMuted }}>{p.periodType}  {p.employeeCount} employees</div>
+              <div style={{ fontSize: 12, color: THEME.textMuted }}>{say(p.periodType)}  {say(p.employeeCount)} employees</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontWeight: 700, color: THEME.text }}>{fmt(p.totalGross)}</div>
@@ -392,25 +397,26 @@ export default function PayrollPage() {
             </div>
           </div>
         ))}
-        {payPeriods.length === 0 && <div style={{ color: THEME.textMuted, textAlign: 'center', padding: 24 }}>No pay periods yet. Create one to get started.</div>}
+        {payPeriods.length === 0 && <div style={{ color: THEME.textMuted, textAlign: 'center', padding: 24 }}>{say("No pay periods yet. Create one to get started.")}</div>}
       </div>
     </div>
-  );
+  )); };
 
   // --- Tab: Schedule --------------------------------------------------------
-  const ScheduleTab = () => (
+  const ScheduleTab = () => { const say = usePhrase();
+return ((
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() - 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.text, cursor: 'pointer' }}><FaArrowLeft style={{marginRight:4}} /> Prev</button>
+          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() - 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.text, cursor: 'pointer' }}><FaArrowLeft style={{marginRight:4}} /> {say("Prev")}</button>
           <div style={{ fontWeight: 700, fontSize: 16, color: THEME.text }}>
-            Week of {weekOf.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            {say("Week of")}{' '}{weekOf.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
-          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() + 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.text, cursor: 'pointer' }}>Next <FaArrowRight style={{marginRight:4}} /></button>
-          <button onClick={() => setWeekOf(weekStart())} style={{ padding: '6px 14px', border: `1px solid ${THEME.accent}`, borderRadius: 8, background: 'rgba(229,51,42,0.12)', color: THEME.accent, cursor: 'pointer', fontSize: 12 }}>Today</button>
+          <button onClick={() => { const d = new Date(weekOf); d.setDate(d.getDate() + 7); setWeekOf(d); }} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.text, cursor: 'pointer' }}>{say("Next")}{' '}<FaArrowRight style={{marginRight:4}} /></button>
+          <button onClick={() => setWeekOf(weekStart())} style={{ padding: '6px 14px', border: `1px solid ${THEME.accent}`, borderRadius: 8, background: 'rgba(229,51,42,0.12)', color: THEME.accent, cursor: 'pointer', fontSize: 12 }}>{say("Today")}</button>
         </div>
         {user?.role === 'shop' && (
-          <button onClick={() => setShowAddShift(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ Add Shift</button>
+          <button onClick={() => setShowAddShift(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>{say("+ Add Shift")}</button>
         )}
       </div>
 
@@ -419,7 +425,7 @@ export default function PayrollPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
           <thead>
             <tr style={{ background: THEME.surfaceAlt }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text, borderBottom: `2px solid ${THEME.borderSoft}`, minWidth: 150 }}>Employee</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text, borderBottom: `2px solid ${THEME.borderSoft}`, minWidth: 150 }}>{say("Employee")}</th>
               {weekDates.map((d, i) => {
                 const isToday = d.toDateString() === new Date().toDateString();
                 return (
@@ -440,7 +446,7 @@ export default function PayrollPage() {
                       {(emp.firstName || '?')[0]}{(emp.lastName || '?')[0]}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: THEME.text }}>{emp.firstName} {emp.lastName}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: THEME.text }}>{say(emp.firstName)} {say(emp.lastName)}</div>
                       <div style={{ fontSize: 11, color: THEME.textMuted }}>{emp.jobTitle ?? emp.role}</div>
                     </div>
                   </div>
@@ -452,9 +458,9 @@ export default function PayrollPage() {
                     <td key={i} style={{ padding: 6, textAlign: 'center', background: isToday ? 'rgba(229,51,42,0.08)' : undefined, verticalAlign: 'middle' }}>
                       {shift ? (
                         <div style={{ background: shift.status === 'no-show' ? 'rgba(229,51,42,0.2)' : shift.status === 'late' ? 'rgba(245,158,11,0.2)' : 'rgba(229,51,42,0.12)', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, padding: '6px 4px', fontSize: 11, position: 'relative' }}>
-                          <div style={{ fontWeight: 600, color: THEME.text }}>{shift.startTime}-{shift.endTime}</div>
-                          <div style={{ color: THEME.textMuted }}>{shift.shiftType}</div>
-                          {shift.lateMinutes > 0 && <div style={{ color: '#b45309', fontSize: 10 }}><FaClock style={{marginRight:4}} /> {shift.lateMinutes}m late</div>}
+                          <div style={{ fontWeight: 600, color: THEME.text }}>{say(shift.startTime)}-{say(shift.endTime)}</div>
+                          <div style={{ color: THEME.textMuted }}>{say(shift.shiftType)}</div>
+                          {shift.lateMinutes > 0 && <div style={{ color: '#b45309', fontSize: 10 }}><FaClock style={{marginRight:4}} /> {say(shift.lateMinutes)}{say("m late")}</div>}
                           {user?.role === 'shop' && (
                             <button onClick={() => setDeleteConfirmShiftId(shift.id)} style={{ position: 'absolute', top: 2, right: 2, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 12, lineHeight: 1 }}></button>
                           )}
@@ -475,98 +481,99 @@ export default function PayrollPage() {
       {showAddShift && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>Add Shift</div>
+            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>{say("Add Shift")}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Employee</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Employee")}</label>
                 <select value={shiftForm.techId ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, techId: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
-                  <option value="">Select employee...</option>
-                  {activeEmps.map(e => <option key={e.id} value={e.id}>{e.firstName} {e.lastName}</option>)}
+                  <option value="">{say("Select employee...")}</option>
+                  {activeEmps.map(e => <option key={e.id} value={e.id}>{say(e.firstName)} {say(e.lastName)}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Date</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Date")}</label>
                 <input type="date" value={shiftForm.date ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, date: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Start Time</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Start Time")}</label>
                   <input type="time" value={shiftForm.startTime ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, startTime: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>End Time</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("End Time")}</label>
                   <input type="time" value={shiftForm.endTime ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, endTime: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Shift Type</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Shift Type")}</label>
                 <select value={shiftForm.shiftType ?? 'regular'} onChange={e => setShiftForm((f: any) => ({ ...f, shiftType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
-                  <option value="regular">Regular</option>
-                  <option value="overtime">Overtime</option>
-                  <option value="on-call">On-Call</option>
-                  <option value="training">Training</option>
+                  <option value="regular">{say("Regular")}</option>
+                  <option value="overtime">{say("Overtime")}</option>
+                  <option value="on-call">{say("On-Call")}</option>
+                  <option value="training">{say("Training")}</option>
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Position (optional)</label>
-                <input type="text" value={shiftForm.position ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, position: e.target.value }))} placeholder="e.g. Lead Tech" style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Position (optional)")}</label>
+                <input type="text" value={shiftForm.position ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, position: e.target.value }))} placeholder={say("e.g. Lead Tech")} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Notes</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Notes")}</label>
                 <textarea value={shiftForm.notes ?? ''} onChange={e => setShiftForm((f: any) => ({ ...f, notes: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, resize: 'none' }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={addShift} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save Shift</button>
-              <button onClick={() => setShowAddShift(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={addShift} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Save Shift")}</button>
+              <button onClick={() => setShowAddShift(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
+  )); };
 
   // --- Tab: Attendance ------------------------------------------------------
-  const AttendanceTab = () => (
+  const AttendanceTab = () => { const say = usePhrase();
+return ((
     <div>
       {attSummary && (
         <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-          <Card label="Present" value={String(attSummary.present)} color="#16a34a" />
-          <Card label="Late" value={String(attSummary.late)} color="#d97706" />
-          <Card label="Absent" value={String(attSummary.absent)} color="#dc2626" />
-          <Card label="Unscheduled" value={String(attSummary.unscheduled)} color="#7c3aed" />
-          <Card label="Total Shifts" value={String(attSummary.totalShifts)} />
+          <Card label={say("Present")} value={String(attSummary.present)} color="#16a34a" />
+          <Card label={say("Late")} value={String(attSummary.late)} color="#d97706" />
+          <Card label={say("Absent")} value={String(attSummary.absent)} color="#dc2626" />
+          <Card label={say("Unscheduled")} value={String(attSummary.unscheduled)} color="#7c3aed" />
+          <Card label={say("Total Shifts")} value={String(attSummary.totalShifts)} />
         </div>
       )}
       <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: THEME.surfaceAlt, borderBottom: `2px solid ${THEME.borderSoft}` }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Employee</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Date</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Scheduled</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Actual Clock In</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Clock Out</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Hours</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Status</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Approved</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Employee")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Date")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Scheduled")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Actual Clock In")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Clock Out")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("Hours")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>{say("Status")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>{say("Approved")}</th>
             </tr>
           </thead>
           <tbody>
             {attendance.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>No attendance records for this week</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>{say("No attendance records for this week")}</td></tr>
             )}
             {attendance.map((a, i) => (
               <tr key={i} style={{ borderBottom: `1px solid ${THEME.borderSoft}`, background: a.status === 'absent' ? 'rgba(229,51,42,0.14)' : a.status === 'late' ? 'rgba(245,158,11,0.12)' : undefined }}>
-                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{a.tech?.firstName} {a.tech?.lastName}</td>
+                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{say(a.tech?.firstName)} {say(a.tech?.lastName)}</td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.textMuted }}>{fmtDate(a.date)}</td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>{a.scheduledStart ?? ' - '} - {a.scheduledEnd ?? ' - '}</td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>
                   {a.actualClockIn ? new Date(a.actualClockIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ' - '}
-                  {a.lateMinutes > 0 && <span style={{ color: '#b45309', fontSize: 11, marginLeft: 6 }}>+{a.lateMinutes}m</span>}
+                  {a.lateMinutes > 0 && <span style={{ color: '#b45309', fontSize: 11, marginLeft: 6 }}>+{say(a.lateMinutes)}m</span>}
                 </td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>
-                  {a.actualClockOut ? new Date(a.actualClockOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : <span style={{ color: '#9ca3af' }}>Still clocked in</span>}
+                  {a.actualClockOut ? new Date(a.actualClockOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : <span style={{ color: '#9ca3af' }}>{say("Still clocked in")}</span>}
                 </td>
                 <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: THEME.text }}>{fmtHrs(a.hoursWorked)}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}><BadgeStatus status={a.status} /></td>
@@ -577,34 +584,35 @@ export default function PayrollPage() {
         </table>
       </div>
     </div>
-  );
+  )); };
 
   // --- Tab: Leave Requests --------------------------------------------------
-  const LeaveTab = () => (
+  const LeaveTab = () => { const say = usePhrase();
+return ((
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: 18 }}>Leave Requests</div>
-        <button onClick={() => setShowAddLeave(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ New Request</button>
+        <div style={{ fontWeight: 700, fontSize: 18 }}>{say("Leave Requests")}</div>
+        <button onClick={() => setShowAddLeave(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>{say("+ New Request")}</button>
       </div>
 
       {/* Pending */}
       {pendingLeave.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#fca5a5', marginBottom: 12 }}>Pending Approval ({pendingLeave.length})</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#fca5a5', marginBottom: 12 }}>{say("Pending Approval (")}{say(pendingLeave.length)})</div>
           {pendingLeave.map(l => (
             <div key={l.id} style={{ background: 'rgba(229,51,42,0.08)', border: `1px solid ${THEME.border}`, borderRadius: 12, padding: 16, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <div style={{ fontWeight: 700, color: THEME.text }}>{l.tech.firstName} {l.tech.lastName}</div>
+                <div style={{ fontWeight: 700, color: THEME.text }}>{say(l.tech.firstName)} {say(l.tech.lastName)}</div>
                 <div style={{ fontSize: 13, color: THEME.textMuted, marginTop: 4 }}>
                   <span style={{ background: 'rgba(229,51,42,0.2)', color: '#fca5a5', borderRadius: 6, padding: '2px 8px', marginRight: 8, fontSize: 11 }}>{l.leaveType.toUpperCase()}</span>
-                  {fmtDate(l.startDate)}  -  {fmtDate(l.endDate)}  {l.totalHours}h
+                  {fmtDate(l.startDate)}  -  {fmtDate(l.endDate)}  {say(l.totalHours)}h
                 </div>
-                {l.reason && <div style={{ fontSize: 12, color: THEME.textMuted, marginTop: 4 }}>Reason: {l.reason}</div>}
+                {l.reason && <div style={{ fontSize: 12, color: THEME.textMuted, marginTop: 4 }}>{say("Reason:")}{' '}{say(l.reason)}</div>}
               </div>
               {user?.role === 'shop' && (
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => approveLeave(l.id, 'approved')} style={{ padding: '6px 16px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}><FaCheck style={{marginRight:4}} /> Approve</button>
-                  <button onClick={() => setDenyModal({ id: l.id, reason: '' })} style={{ padding: '6px 16px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}><FaTimes style={{marginRight:4}} /> Deny</button>
+                  <button onClick={() => approveLeave(l.id, 'approved')} style={{ padding: '6px 16px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}><FaCheck style={{marginRight:4}} /> {say("Approve")}</button>
+                  <button onClick={() => setDenyModal({ id: l.id, reason: '' })} style={{ padding: '6px 16px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}><FaTimes style={{marginRight:4}} /> {say("Deny")}</button>
                 </div>
               )}
             </div>
@@ -617,25 +625,25 @@ export default function PayrollPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: THEME.surfaceAlt, borderBottom: `2px solid ${THEME.borderSoft}` }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Employee</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Type</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Date Range</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Hours</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Status</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Employee")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Type")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Date Range")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("Hours")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>{say("Status")}</th>
             </tr>
           </thead>
           <tbody>
             {leaveRequests.length === 0 && (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>No leave requests</td></tr>
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>{say("No leave requests")}</td></tr>
             )}
             {leaveRequests.map(l => (
               <tr key={l.id} style={{ borderBottom: `1px solid ${THEME.borderSoft}` }}>
-                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{l.tech.firstName} {l.tech.lastName}</td>
+                <td style={{ padding: '10px 16px', fontWeight: 600, color: THEME.text }}>{say(l.tech.firstName)} {say(l.tech.lastName)}</td>
                 <td style={{ padding: '10px 16px' }}>
                   <span style={{ background: 'rgba(229,51,42,0.2)', color: '#fca5a5', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>{l.leaveType.toUpperCase()}</span>
                 </td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text }}>{fmtDate(l.startDate)}  -  {fmtDate(l.endDate)}</td>
-                <td style={{ padding: '10px 16px', textAlign: 'right', color: THEME.text }}>{l.totalHours}h</td>
+                <td style={{ padding: '10px 16px', textAlign: 'right', color: THEME.text }}>{say(l.totalHours)}h</td>
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                   <span style={{ background: l.status === 'approved' ? 'rgba(34,197,94,0.16)' : l.status === 'denied' ? 'rgba(229,51,42,0.18)' : 'rgba(245,158,11,0.16)', color: l.status === 'approved' ? '#4ade80' : l.status === 'denied' ? '#f87171' : '#fbbf24', borderRadius: 8, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>{l.status.toUpperCase()}</span>
                 </td>
@@ -648,57 +656,58 @@ export default function PayrollPage() {
       {showAddLeave && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 480 }}>
-            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>New Leave Request</div>
+            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>{say("New Leave Request")}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Employee</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Employee")}</label>
                 <select value={leaveForm.techId ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, techId: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
-                  <option value="">Select...</option>
-                  {activeEmps.map(e => <option key={e.id} value={e.id}>{e.firstName} {e.lastName}</option>)}
+                  <option value="">{say("Select...")}</option>
+                  {activeEmps.map(e => <option key={e.id} value={e.id}>{say(e.firstName)} {say(e.lastName)}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Leave Type</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Leave Type")}</label>
                 <select value={leaveForm.leaveType} onChange={e => setLeaveForm((f: any) => ({ ...f, leaveType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
                   {['pto', 'vacation', 'sick', 'personal', 'unpaid', 'bereavement', 'jury'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Start Date</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Start Date")}</label>
                   <input type="date" value={leaveForm.startDate ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, startDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>End Date</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("End Date")}</label>
                   <input type="date" value={leaveForm.endDate ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, endDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Total Hours</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Total Hours")}</label>
                 <input type="number" value={leaveForm.totalHours ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, totalHours: Number(e.target.value) }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Reason</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Reason")}</label>
                 <textarea value={leaveForm.reason ?? ''} onChange={e => setLeaveForm((f: any) => ({ ...f, reason: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, resize: 'none' }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={addLeave} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Submit Request</button>
-              <button onClick={() => setShowAddLeave(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={addLeave} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Submit Request")}</button>
+              <button onClick={() => setShowAddLeave(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
+  )); };
 
   // --- Tab: Pay Periods -----------------------------------------------------
-  const PayPeriodsTab = () => (
+  const PayPeriodsTab = () => { const say = usePhrase();
+return ((
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: 18 }}>Pay Periods</div>
+        <div style={{ fontWeight: 700, fontSize: 18 }}>{say("Pay Periods")}</div>
         {user?.role === 'shop' && (
-          <button onClick={() => setShowAddPeriod(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>+ New Period</button>
+          <button onClick={() => setShowAddPeriod(true)} style={{ padding: '8px 18px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>{say("+ New Period")}</button>
         )}
       </div>
 
@@ -708,20 +717,20 @@ export default function PayrollPage() {
             <div>
               <div style={{ fontWeight: 800, fontSize: 16, color: THEME.text }}>{fmtDate(p.startDate)}  -  {fmtDate(p.endDate)}</div>
               <div style={{ fontSize: 13, color: THEME.textMuted, marginTop: 4 }}>
-                {p.periodType}  Pay date: {p.payDate ? fmtDate(p.payDate) : 'Not set'}  {p.employeeCount} employees
+                {say(p.periodType)}  {say("Pay date:")}{' '}{p.payDate ? fmtDate(p.payDate) : say("Not set")}  {say(p.employeeCount)} employees
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: THEME.textMuted }}>Gross</div>
+                <div style={{ fontSize: 13, color: THEME.textMuted }}>{say("Gross")}</div>
                 <div style={{ fontWeight: 800, fontSize: 20, color: THEME.text }}>{fmt(p.totalGross)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: THEME.textMuted }}>Net</div>
+                <div style={{ fontSize: 13, color: THEME.textMuted }}>{say("Net")}</div>
                 <div style={{ fontWeight: 800, fontSize: 20, color: '#16a34a' }}>{fmt(p.totalNet)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: THEME.textMuted }}>OT</div>
+                <div style={{ fontSize: 13, color: THEME.textMuted }}>{say("OT")}</div>
                 <div style={{ fontWeight: 700, color: '#d97706' }}>{fmt(p.totalOvertimePay)}</div>
               </div>
             </div>
@@ -730,11 +739,11 @@ export default function PayrollPage() {
             <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {(p.status === 'open' || p.status === 'processing') && (
                 <button onClick={() => setRunPayrollConfirmId(p.id)} disabled={runningPayroll} style={{ padding: '8px 18px', background: runningPayroll ? '#9ca3af' : '#e5332a', color: '#fff', border: 'none', borderRadius: 8, cursor: runningPayroll ? 'not-allowed' : 'pointer', fontWeight: 600 }}>
-                  {runningPayroll ? <><FaHourglassHalf style={{marginRight:4}} /> Running...</> : <><FaCaretRight style={{marginRight:4}} /> Run Payroll</>}
+                  {runningPayroll ? <><FaHourglassHalf style={{marginRight:4}} /> {say("Running...")}</> : <><FaCaretRight style={{marginRight:4}} /> {say("Run Payroll")}</>}
                 </button>
               )}
               {p.status === 'processing' && (
-                <button onClick={() => setMarkPaidConfirmId(p.id)} style={{ padding: '8px 18px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}><FaCheck style={{marginRight:4}} /> Mark as Paid</button>
+                <button onClick={() => setMarkPaidConfirmId(p.id)} style={{ padding: '8px 18px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}><FaCheck style={{marginRight:4}} /> {say("Mark as Paid")}</button>
               )}
               <span style={{ display: 'inline-flex', alignItems: 'center', background: p.status === 'paid' ? 'rgba(34,197,94,0.16)' : p.status === 'processing' ? 'rgba(59,130,246,0.16)' : 'rgba(156,163,175,0.16)', color: p.status === 'paid' ? '#4ade80' : p.status === 'processing' ? '#93c5fd' : '#d1d5db', borderRadius: 8, padding: '8px 14px', fontWeight: 600, fontSize: 13 }}>
                 {p.status.toUpperCase()}
@@ -743,52 +752,53 @@ export default function PayrollPage() {
           )}
         </div>
       ))}
-      {payPeriods.length === 0 && <div style={{ textAlign: 'center', color: '#9ca3af', padding: 40 }}>No pay periods yet.</div>}
+      {payPeriods.length === 0 && <div style={{ textAlign: 'center', color: '#9ca3af', padding: 40 }}>{say("No pay periods yet.")}</div>}
 
       {showAddPeriod && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 440 }}>
-            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>New Pay Period</div>
+            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>{say("New Pay Period")}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Period Type</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Period Type")}</label>
                 <select value={periodForm.periodType} onChange={e => setPeriodForm((f: any) => ({ ...f, periodType: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
-                  <option value="weekly">Weekly</option>
-                  <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
-                  <option value="semimonthly">Semi-Monthly (twice/month)</option>
-                  <option value="monthly">Monthly</option>
+                  <option value="weekly">{say("Weekly")}</option>
+                  <option value="biweekly">{say("Bi-Weekly (every 2 weeks)")}</option>
+                  <option value="semimonthly">{say("Semi-Monthly (twice/month)")}</option>
+                  <option value="monthly">{say("Monthly")}</option>
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Start Date</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Start Date")}</label>
                   <input type="date" value={periodForm.startDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, startDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>End Date</label>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("End Date")}</label>
                   <input type="date" value={periodForm.endDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, endDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Pay Date (optional)</label>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say("Pay Date (optional)")}</label>
                 <input type="date" value={periodForm.payDate ?? ''} onChange={e => setPeriodForm((f: any) => ({ ...f, payDate: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={createPeriod} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Create Period</button>
-              <button onClick={() => setShowAddPeriod(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={createPeriod} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Create Period")}</button>
+              <button onClick={() => setShowAddPeriod(false)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
+  )); };
 
   // --- Tab: Pay Stubs -------------------------------------------------------
-  const PayStubsTab = () => (
+  const PayStubsTab = () => { const say = usePhrase();
+return ((
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ fontWeight: 700, fontSize: 18 }}>Pay Stubs</div>
+        <div style={{ fontWeight: 700, fontSize: 18 }}>{say("Pay Stubs")}</div>
         <button
           onClick={exportPayStubsCsv}
           disabled={payStubs.length === 0}
@@ -803,32 +813,31 @@ export default function PayrollPage() {
             cursor: payStubs.length === 0 ? 'not-allowed' : 'pointer',
           }}
         >
-          Export CSV
-        </button>
+          {say("Export CSV")}{' '}</button>
       </div>
       <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: THEME.surfaceAlt, borderBottom: `2px solid ${THEME.borderSoft}` }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Employee</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>Period</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Reg Hrs</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>OT Hrs</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Gross</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Taxes</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>Net</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>YTD Gross</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>Status</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Employee")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: THEME.text }}>{say("Period")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("Reg Hrs")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("OT Hrs")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("Gross")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("Taxes")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("Net")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: THEME.text }}>{say("YTD Gross")}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, color: THEME.text }}>{say("Status")}</th>
             </tr>
           </thead>
           <tbody>
             {payStubs.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>No pay stubs. Run payroll to generate them.</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>{say("No pay stubs. Run payroll to generate them.")}</td></tr>
             )}
             {payStubs.map(s => (
               <tr key={s.id} style={{ borderBottom: `1px solid ${THEME.borderSoft}` }}>
                 <td style={{ padding: '10px 16px' }}>
-                  <div style={{ fontWeight: 600, color: THEME.text }}>{s.tech?.firstName} {s.tech?.lastName}</div>
+                  <div style={{ fontWeight: 600, color: THEME.text }}>{say(s.tech?.firstName)} {say(s.tech?.lastName)}</div>
                   <div style={{ fontSize: 11, color: THEME.textMuted }}>{s.tech?.department ?? ''}  {s.tech?.jobTitle ?? ''}</div>
                 </td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.textMuted }}>
@@ -849,29 +858,30 @@ export default function PayrollPage() {
         </table>
       </div>
     </div>
-  );
+  )); };
 
   // --- Tab: Settings --------------------------------------------------------
-  const SettingsTab = () => (
+  const SettingsTab = () => { const say = usePhrase();
+return ((
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
       {/* Overtime Rules */}
       <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 24 }}>
-        <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 20 }}><FaCog style={{marginRight:4}} /> Overtime Rules</div>
+        <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 20 }}><FaCog style={{marginRight:4}} /> {say("Overtime Rules")}</div>
         {otRule && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
               <input type="checkbox" checked={otRule.weeklyOvertimeEnabled} onChange={e => setOtRule(r => r ? { ...r, weeklyOvertimeEnabled: e.target.checked } : r)} />
-              <span style={{ fontWeight: 600 }}>Weekly Overtime</span>
+              <span style={{ fontWeight: 600 }}>{say("Weekly Overtime")}</span>
             </label>
             {otRule.weeklyOvertimeEnabled && (
               <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
-                    <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>OT Threshold (hrs/wk)</label>
+                    <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>{say("OT Threshold (hrs/wk)")}</label>
                     <input type="number" value={otRule.weeklyOvertimeThreshold} onChange={e => setOtRule(r => r ? { ...r, weeklyOvertimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>OT Multiplier</label>
+                    <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>{say("OT Multiplier")}</label>
                     <input type="number" step="0.1" value={otRule.overtimeMultiplier} onChange={e => setOtRule(r => r ? { ...r, overtimeMultiplier: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                   </div>
                 </div>
@@ -879,36 +889,36 @@ export default function PayrollPage() {
             )}
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
               <input type="checkbox" checked={otRule.dailyOvertimeEnabled} onChange={e => setOtRule(r => r ? { ...r, dailyOvertimeEnabled: e.target.checked } : r)} />
-              <span style={{ fontWeight: 600 }}>Daily Overtime (e.g. California)</span>
+              <span style={{ fontWeight: 600 }}>{say("Daily Overtime (e.g. California)")}</span>
             </label>
             {otRule.dailyOvertimeEnabled && (
               <div style={{ marginLeft: 24 }}>
-                <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>Daily OT Threshold (hrs/day)</label>
+                <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>{say("Daily OT Threshold (hrs/day)")}</label>
                 <input type="number" value={otRule.dailyOvertimeThreshold} onChange={e => setOtRule(r => r ? { ...r, dailyOvertimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
               </div>
             )}
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
               <input type="checkbox" checked={otRule.doubleTimeEnabled} onChange={e => setOtRule(r => r ? { ...r, doubleTimeEnabled: e.target.checked } : r)} />
-              <span style={{ fontWeight: 600 }}>Double Time</span>
+              <span style={{ fontWeight: 600 }}>{say("Double Time")}</span>
             </label>
             {otRule.doubleTimeEnabled && (
               <div style={{ marginLeft: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>Double Time Threshold (hrs)</label>
+                  <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>{say("Double Time Threshold (hrs)")}</label>
                   <input type="number" value={otRule.doubleTimeThreshold} onChange={e => setOtRule(r => r ? { ...r, doubleTimeThreshold: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>Double Time Multiplier</label>
+                  <label style={{ fontSize: 12, color: THEME.textMuted, display: 'block', marginBottom: 4 }}>{say("Double Time Multiplier")}</label>
                   <input type="number" step="0.1" value={otRule.doubleTimeMultiplier} onChange={e => setOtRule(r => r ? { ...r, doubleTimeMultiplier: Number(e.target.value) } : r)} style={{ width: '100%', padding: '6px 10px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 6 }} />
                 </div>
               </div>
             )}
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
               <input type="checkbox" checked={otRule.seventhDayRule} onChange={e => setOtRule(r => r ? { ...r, seventhDayRule: e.target.checked } : r)} />
-              <span style={{ fontWeight: 600 }}>7th Consecutive Day Rule</span>
+              <span style={{ fontWeight: 600 }}>{say("7th Consecutive Day Rule")}</span>
             </label>
             {user?.role === 'shop' && (
-              <button onClick={saveOtRule} style={{ padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save OT Rules</button>
+              <button onClick={saveOtRule} style={{ padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Save OT Rules")}</button>
             )}
           </div>
         )}
@@ -916,18 +926,18 @@ export default function PayrollPage() {
 
       {/* Employee pay settings */}
       <div style={{ background: THEME.surface, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 24 }}>
-        <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 20 }}><FaUsers style={{marginRight:4}} /> Employee Pay Settings</div>
+        <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 20 }}><FaUsers style={{marginRight:4}} /> {say("Employee Pay Settings")}</div>
         {activeEmps.map(emp => (
           <div key={emp.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${THEME.borderSoft}` }}>
             <div>
-              <div style={{ fontWeight: 600, color: THEME.text }}>{emp.firstName} {emp.lastName}</div>
+              <div style={{ fontWeight: 600, color: THEME.text }}>{say(emp.firstName)} {say(emp.lastName)}</div>
               <div style={{ fontSize: 12, color: THEME.textMuted }}>
                 {emp.payType === 'salary' ? `Salary: ${fmt(emp.salary ?? 0)}/yr` : `${fmt(emp.hourlyRate)}/hr`}
                 {emp.department && `  ${emp.department}`}
               </div>
             </div>
             {user?.role === 'shop' && (
-              <button onClick={() => setShowEditEmployee(emp)} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.textMuted, cursor: 'pointer', fontSize: 13 }}>Edit</button>
+              <button onClick={() => setShowEditEmployee(emp)} style={{ padding: '6px 14px', border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, background: THEME.surfaceAlt, color: THEME.textMuted, cursor: 'pointer', fontSize: 13 }}>{say("Edit")}</button>
             )}
           </div>
         ))}
@@ -935,22 +945,22 @@ export default function PayrollPage() {
         {showEditEmployee && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, width: 480, maxHeight: '90vh', overflowY: 'auto' }}>
-              <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 24 }}>Edit: {showEditEmployee.firstName} {showEditEmployee.lastName}</div>
+              <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 24 }}>{say("Edit:")}{' '}{say(showEditEmployee.firstName)} {say(showEditEmployee.lastName)}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
-                  { label: 'Job Title', key: 'jobTitle', type: 'text' },
-                  { label: 'Department', key: 'department', type: 'select', opts: ['service', 'parts', 'admin', 'management'] },
-                  { label: 'Employment Type', key: 'employmentType', type: 'select', opts: ['full-time', 'part-time', 'contractor'] },
-                  { label: 'Pay Type', key: 'payType', type: 'select', opts: ['hourly', 'salary'] },
-                  { label: showEditEmployee.payType === 'salary' ? 'Annual Salary ($)' : 'Hourly Rate ($/hr)', key: showEditEmployee.payType === 'salary' ? 'salary' : 'hourlyRate', type: 'number' },
-                  { label: 'Custom OT Rate (leave blank for auto)', key: 'overtimeRate', type: 'number' },
-                  { label: 'Hire Date', key: 'hireDate', type: 'date' },
+                  { label: say("Job Title"), key: "jobTitle", type: 'text' },
+                  { label: say("Department"), key: 'department', type: 'select', opts: ['service', 'parts', 'admin', 'management'] },
+                  { label: say("Employment Type"), key: "employmentType", type: 'select', opts: ['full-time', 'part-time', 'contractor'] },
+                  { label: say("Pay Type"), key: "payType", type: 'select', opts: ['hourly', 'salary'] },
+                  { label: showEditEmployee.payType === 'salary' ? say("Annual Salary ($)") : say("Hourly Rate ($/hr)"), key: showEditEmployee.payType === 'salary' ? 'salary' : "hourlyRate", type: 'number' },
+                  { label: say("Custom OT Rate (leave blank for auto)"), key: "overtimeRate", type: 'number' },
+                  { label: say("Hire Date"), key: "hireDate", type: 'date' },
                 ].map(({ label, key, type, opts }) => (
                   <div key={key}>
-                    <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{label}</label>
+                    <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{say(label)}</label>
                     {type === 'select' ? (
                       <select value={(showEditEmployee as any)[key] ?? ''} onChange={e => setShowEditEmployee((emp: any) => ({ ...emp, [key]: e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }}>
-                        {opts?.map(o => <option key={o} value={o}>{o}</option>)}
+                        {opts?.map(o => <option key={o} value={o}>{say(o)}</option>)}
                       </select>
                     ) : (
                       <input type={type} value={(showEditEmployee as any)[key] ?? ''} onChange={e => setShowEditEmployee((emp: any) => ({ ...emp, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8 }} />
@@ -959,38 +969,38 @@ export default function PayrollPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                <button onClick={saveEmployee} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Save Changes</button>
-                <button onClick={() => setShowEditEmployee(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={saveEmployee} style={{ flex: 1, padding: '10px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Save Changes")}</button>
+                <button onClick={() => setShowEditEmployee(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
               </div>
             </div>
           </div>
         )}
       </div>
     </div>
-  );
+  )); };
 
   // --- Render ---------------------------------------------------------------
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1400, margin: '0 auto', color: THEME.text, background: THEME.pageBg, borderRadius: 18, border: `1px solid ${THEME.borderSoft}` }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, margin: 0, color: THEME.text }}><FaDollarSign style={{marginRight:4}} /> Payroll Information</h1>
-        <p style={{ color: THEME.textMuted, marginTop: 6 }}>Scheduling  Time Tracking  Attendance  Pay Periods  Pay Stubs  Export</p>
+        <h1 style={{ fontSize: 32, fontWeight: 800, margin: 0, color: THEME.text }}><FaDollarSign style={{marginRight:4}} /> {say("Payroll Information")}</h1>
+        <p style={{ color: THEME.textMuted, marginTop: 6 }}>{say("Scheduling  Time Tracking  Attendance  Pay Periods  Pay Stubs  Export")}</p>
       </div>
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, background: THEME.surfaceAlt, border: `1px solid ${THEME.borderSoft}`, borderRadius: 12, padding: 4, marginBottom: 28, flexWrap: 'wrap' }}>
-        <TabBtn id="overview" label=" Overview" />
-        <TabBtn id="schedule" label=" Schedule" />
-        <TabBtn id="attendance" label=" Attendance" badge={lateToday + absentToday || undefined} />
-        <TabBtn id="leave" label=" Leave" badge={pendingLeave.length || undefined} />
-        <TabBtn id="periods" label=" Pay Periods" badge={openPeriods.length || undefined} />
-        <TabBtn id="stubs" label=" Pay Stubs" />
-        <TabBtn id="settings" label=" Settings" />
+        <TabBtn id="overview" label={say(" Overview")} />
+        <TabBtn id="schedule" label={say(" Schedule")} />
+        <TabBtn id="attendance" label={say(" Attendance")} badge={lateToday + absentToday || undefined} />
+        <TabBtn id="leave" label={say(" Leave")} badge={pendingLeave.length || undefined} />
+        <TabBtn id="periods" label={say(" Pay Periods")} badge={openPeriods.length || undefined} />
+        <TabBtn id="stubs" label={say(" Pay Stubs")} />
+        <TabBtn id="settings" label={say(" Settings")} />
       </div>
 
       {/* Loading indicator */}
-      {loading && <div style={{ background: 'rgba(229,51,42,0.12)', borderRadius: 8, border: `1px solid ${THEME.border}`, padding: '10px 16px', marginBottom: 16, color: '#fca5a5', fontSize: 14 }}>Loading payroll data...</div>}
+      {loading && <div style={{ background: 'rgba(229,51,42,0.12)', borderRadius: 8, border: `1px solid ${THEME.border}`, padding: '10px 16px', marginBottom: 16, color: '#fca5a5', fontSize: 14 }}>{say("Loading payroll data...")}</div>}
 
       {/* Tab content */}
       {tab === 'overview' && <OverviewTab />}
@@ -1004,7 +1014,7 @@ export default function PayrollPage() {
       {/* Error toast */}
       {payrollError && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, background: 'rgba(229,51,42,0.2)', color: '#fca5a5', border: '1px solid rgba(229,51,42,0.45)', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.35)', maxWidth: 400 }}>
-          {payrollError}
+          {say(payrollError)}
           <button onClick={() => setPayrollError('')} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#fca5a5' }}><FaTimes style={{marginRight:4}} /></button>
         </div>
       )}
@@ -1012,7 +1022,7 @@ export default function PayrollPage() {
       {/* Success toast */}
       {payrollMsg && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, background: 'rgba(34,197,94,0.2)', color: '#86efac', border: '1px solid rgba(34,197,94,0.45)', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.35)', maxWidth: 400 }}>
-          {payrollMsg}
+          {say(payrollMsg)}
         </div>
       )}
 
@@ -1021,11 +1031,11 @@ export default function PayrollPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><FaTrash style={{marginRight:4}} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Delete Shift?</h3>
-            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>This will permanently remove the shift from the schedule.</p>
+            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{say("Delete Shift?")}</h3>
+            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>{say("This will permanently remove the shift from the schedule.")}</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setDeleteConfirmShiftId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => deleteShift(deleteConfirmShiftId)} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Delete</button>
+              <button onClick={() => setDeleteConfirmShiftId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
+              <button onClick={() => deleteShift(deleteConfirmShiftId)} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Delete")}</button>
             </div>
           </div>
         </div>
@@ -1036,11 +1046,11 @@ export default function PayrollPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><FaDollarSign style={{marginRight:4}} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Run Payroll?</h3>
-            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>This will generate pay stubs for all active employees in this period.</p>
+            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{say("Run Payroll?")}</h3>
+            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>{say("This will generate pay stubs for all active employees in this period.")}</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setRunPayrollConfirmId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => runPayroll(runPayrollConfirmId)} disabled={runningPayroll} style={{ flex: 1, padding: '10px', background: runningPayroll ? '#9ca3af' : '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: runningPayroll ? 'not-allowed' : 'pointer' }}>{runningPayroll ? 'Processing...' : 'Run Payroll'}</button>
+              <button onClick={() => setRunPayrollConfirmId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
+              <button onClick={() => runPayroll(runPayrollConfirmId)} disabled={runningPayroll} style={{ flex: 1, padding: '10px', background: runningPayroll ? '#9ca3af' : '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: runningPayroll ? 'not-allowed' : 'pointer' }}>{runningPayroll ? say("Processing...") : say("Run Payroll")}</button>
             </div>
           </div>
         </div>
@@ -1051,11 +1061,11 @@ export default function PayrollPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><FaCheckCircle style={{marginRight:4}} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Mark Period as Paid?</h3>
-            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>This action is final and cannot be undone.</p>
+            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{say("Mark Period as Paid?")}</h3>
+            <p style={{ color: THEME.textMuted, marginBottom: 24 }}>{say("This action is final and cannot be undone.")}</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setMarkPaidConfirmId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => markPeriodPaid(markPaidConfirmId)} style={{ flex: 1, padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Confirm Paid</button>
+              <button onClick={() => setMarkPaidConfirmId(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
+              <button onClick={() => markPeriodPaid(markPaidConfirmId)} style={{ flex: 1, padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Confirm Paid")}</button>
             </div>
           </div>
         </div>
@@ -1065,12 +1075,12 @@ export default function PayrollPage() {
       {denyModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: THEME.surface, color: THEME.text, border: `1px solid ${THEME.border}`, borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Deny Leave Request</h3>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, fontSize: 14 }}>Reason for denial (optional)</label>
-            <textarea value={denyModal.reason} onChange={e => setDenyModal(d => d ? { ...d, reason: e.target.value } : d)} rows={3} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, resize: 'vertical', fontFamily: 'inherit', fontSize: 14, boxSizing: 'border-box' }} placeholder="Enter reason..." />
+            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>{say("Deny Leave Request")}</h3>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, fontSize: 14 }}>{say("Reason for denial (optional)")}</label>
+            <textarea value={denyModal.reason} onChange={e => setDenyModal(d => d ? { ...d, reason: e.target.value } : d)} rows={3} style={{ width: '100%', padding: '8px 12px', background: THEME.surfaceAlt, color: THEME.text, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, resize: 'vertical', fontFamily: 'inherit', fontSize: 14, boxSizing: 'border-box' }} placeholder={say("Enter reason...")} />
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-              <button onClick={() => setDenyModal(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => { approveLeave(denyModal.id, 'denied', denyModal.reason); setDenyModal(null); }} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}><FaTimes style={{marginRight:4}} /> Deny</button>
+              <button onClick={() => setDenyModal(null)} style={{ flex: 1, padding: '10px', background: THEME.surfaceAlt, color: THEME.textMuted, border: `1px solid ${THEME.borderSoft}`, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{say("Cancel")}</button>
+              <button onClick={() => { approveLeave(denyModal.id, 'denied', denyModal.reason); setDenyModal(null); }} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}><FaTimes style={{marginRight:4}} /> {say("Deny")}</button>
             </div>
           </div>
         </div>

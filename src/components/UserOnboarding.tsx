@@ -1,8 +1,7 @@
+'use client';
+import { usePhrase } from '@/lib/usePhrase';
 // User Onboarding Component
 // Helps new users understand the application and reduces navigation confusion
-
-'use client';
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -32,6 +31,7 @@ interface UserOnboardingProps {
 }
 
 export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnboardingProps) {
+  const say = usePhrase();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
@@ -284,11 +284,11 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[rgba(255,255,255,0.08)]">
           <div className="flex items-center space-x-3">
-            {currentStepData.icon}
+            {say(currentStepData.icon)}
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{currentStepData.title}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{say(currentStepData.title)}</h2>
               <div className="text-sm text-gray-500">
-                Step {currentStep + 1} of {steps.length}
+                {say("Step")}{' '}{currentStep + 1} of {say(steps.length)}
               </div>
             </div>
           </div>
@@ -302,15 +302,15 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
 
         {/* Content */}
         <div className="p-6">
-          <p className="text-gray-700 mb-6">{currentStepData.description}</p>
+          <p className="text-gray-700 mb-6">{say(currentStepData.description)}</p>
 
           {currentStepData.action && (
             <div className="border rounded-lg p-4 mb-6">
               <div className="flex items-start space-x-3">
                 <FaLightbulb className="w-5 h-5 text-blue-500 mt-0.5" />
                 <div>
-                  <div className="text-sm font-medium text-blue-900">What to do next:</div>
-                  <div className="text-sm text-blue-700">{currentStepData.action}</div>
+                  <div className="text-sm font-medium text-blue-900">{say("What to do next:")}</div>
+                  <div className="text-sm text-blue-700">{say(currentStepData.action)}</div>
                 </div>
               </div>
             </div>
@@ -319,7 +319,7 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
           {/* Progress Bar */}
           <div className="mb-6">
             <div className="flex justify-between text-xs text-gray-500 mb-2">
-              <span>Progress</span>
+              <span>{say("Progress")}</span>
               <span>{Math.round(((currentStep + 1) / steps.length) * 100)}%</span>
             </div>
             <div className="w-full rounded-full h-2" style={{background:'rgba(255,255,255,0.1)'}}>
@@ -339,7 +339,7 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
             className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             <FaChevronLeft className="w-4 h-4" />
-            <span>Previous</span>
+            <span>{say("Previous")}</span>
           </button>
 
           <div className="flex space-x-2">
@@ -347,14 +347,13 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
               onClick={handleSkip}
               className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
-              Skip Tour
-            </button>
+              {say("Skip Tour")}{' '}</button>
             <button
               onClick={nextStep}
               className="flex items-center space-x-2 text-white px-4 py-2 rounded-lg transition-colors"
               style={{background:'#e5332a'}}
             >
-              <span>{currentStep === steps.length - 1 ? 'Get Started' : 'Next'}</span>
+              <span>{currentStep === steps.length - 1 ? say("Get Started") : say("Next")}</span>
               <FaChevronRight className="w-4 h-4" />
             </button>
           </div>

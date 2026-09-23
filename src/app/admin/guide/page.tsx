@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, ReactNode } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -23,6 +24,7 @@ interface FeatureCategory {
 }
 
 export default function AppGuidePage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin']);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -583,7 +585,7 @@ export default function AppGuidePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-stone-300 text-lg">Loading...</div>
+        <div className="text-stone-300 text-lg">{say("Loading...")}</div>
       </div>
     );
   }
@@ -604,13 +606,12 @@ export default function AppGuidePage() {
                 <span className="text-white font-bold">F</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">FixTray Feature Guide</h1>
-                <p className="text-stone-400 text-sm">What you can and can't do</p>
+                <h1 className="text-xl font-bold text-white">{say("FixTray Feature Guide")}</h1>
+                <p className="text-stone-400 text-sm">{say("What you can and can't do")}</p>
               </div>
             </div>
             <Link href="/admin/home" className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-stone-300 text-sm transition-colors">
-              <FaArrowLeft style={{marginRight:4}} /> Back to Admin
-            </Link>
+              <FaArrowLeft style={{marginRight:4}} /> {say("Back to Admin")}{' '}</Link>
           </div>
         </div>
       </header>
@@ -619,24 +620,24 @@ export default function AppGuidePage() {
         {/* Summary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-black/30 rounded-xl p-4 border border-white/10">
-            <p className="text-stone-400 text-sm">Total Features</p>
-            <p className="text-3xl font-bold text-white">{totalFeatures}</p>
+            <p className="text-stone-400 text-sm">{say("Total Features")}</p>
+            <p className="text-3xl font-bold text-white">{say(totalFeatures)}</p>
           </div>
           <div className="bg-emerald-500/10 rounded-xl p-4 border border-emerald-500/30">
-            <p className="text-emerald-400 text-sm">Ready to Use</p>
-            <p className="text-3xl font-bold text-emerald-500">{readyFeatures}</p>
+            <p className="text-emerald-400 text-sm">{say("Ready to Use")}</p>
+            <p className="text-3xl font-bold text-emerald-500">{say(readyFeatures)}</p>
           </div>
           <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/30">
-            <p className="text-amber-400 text-sm">Partial</p>
-            <p className="text-3xl font-bold text-amber-500">{partialFeatures}</p>
+            <p className="text-amber-400 text-sm">{say("Partial")}</p>
+            <p className="text-3xl font-bold text-amber-500">{say(partialFeatures)}</p>
           </div>
           <div className="bg-[#e5332a]/10 rounded-xl p-4 border border-[#e5332a]/30">
-            <p className="text-[#ff6b64] text-sm">Needs Setup</p>
-            <p className="text-3xl font-bold text-[#e5332a]">{setupFeatures}</p>
+            <p className="text-[#ff6b64] text-sm">{say("Needs Setup")}</p>
+            <p className="text-3xl font-bold text-[#e5332a]">{say(setupFeatures)}</p>
           </div>
           <div className="bg-stone-500/10 rounded-xl p-4 border border-stone-500/30">
-            <p className="text-stone-400 text-sm">Not Available</p>
-            <p className="text-3xl font-bold text-stone-400">{notImplemented}</p>
+            <p className="text-stone-400 text-sm">{say("Not Available")}</p>
+            <p className="text-3xl font-bold text-stone-400">{say(notImplemented)}</p>
           </div>
         </div>
 
@@ -646,19 +647,19 @@ export default function AppGuidePage() {
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                <span className="text-gray-300 text-sm">Ready - Works out of the box</span>
+                <span className="text-gray-300 text-sm">{say("Ready - Works out of the box")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                <span className="text-gray-300 text-sm">Partial - Some limitations</span>
+                <span className="text-gray-300 text-sm">{say("Partial - Some limitations")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#e5332a]"></span>
-                <span className="text-gray-300 text-sm">Setup Required - Needs configuration</span>
+                <span className="text-gray-300 text-sm">{say("Setup Required - Needs configuration")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-stone-500"></span>
-                <span className="text-gray-300 text-sm">Not Available - Planned for future</span>
+                <span className="text-gray-300 text-sm">{say("Not Available - Planned for future")}</span>
               </div>
             </div>
             <select
@@ -666,11 +667,11 @@ export default function AppGuidePage() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-4 py-2 bg-black/30 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:border-[#e5332a]/50"
             >
-              <option value="all">Show All</option>
-              <option value="ready">Ready to Use</option>
-              <option value="partial">Partial</option>
-              <option value="setup-required">Needs Setup</option>
-              <option value="not-implemented">Not Available</option>
+              <option value="all">{say("Show All")}</option>
+              <option value="ready">{say("Ready to Use")}</option>
+              <option value="partial">{say("Partial")}</option>
+              <option value="setup-required">{say("Needs Setup")}</option>
+              <option value="not-implemented">{say("Not Available")}</option>
             </select>
           </div>
         </div>
@@ -688,16 +689,16 @@ export default function AppGuidePage() {
                   className="w-full p-5 flex items-center justify-between hover:bg-white/5 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="text-3xl">{category.icon}</span>
+                    <span className="text-3xl">{say(category.icon)}</span>
                     <div className="text-left">
-                      <h2 className="text-lg font-semibold text-white">{category.name}</h2>
-                      <p className="text-gray-400 text-sm">{category.description}</p>
+                      <h2 className="text-lg font-semibold text-white">{say(category.name)}</h2>
+                      <p className="text-gray-400 text-sm">{say(category.description)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-emerald-400 font-semibold">{readyCount}/{category.features.length}</p>
-                      <p className="text-gray-500 text-xs">features ready</p>
+                      <p className="text-emerald-400 font-semibold">{say(readyCount)}/{say(category.features.length)}</p>
+                      <p className="text-gray-500 text-xs">{say("features ready")}</p>
                     </div>
                     <span className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}><FaCaretDown style={{marginRight:4}} /></span>
                   </div>
@@ -712,17 +713,17 @@ export default function AppGuidePage() {
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-1">
                                 <span className={`w-2 h-2 rounded-full ${statusInfo[feature.status].color}`}></span>
-                                <h3 className="text-white font-medium">{feature.name}</h3>
+                                <h3 className="text-white font-medium">{say(feature.name)}</h3>
                                 <span className={`text-xs px-2 py-0.5 rounded-full ${statusInfo[feature.status].bgLight} ${statusInfo[feature.status].textColor}`}>
-                                  {statusInfo[feature.status].label}
+                                  {say(statusInfo[feature.status].label)}
                                 </span>
                               </div>
-                              <p className="text-gray-400 text-sm ml-5">{feature.description}</p>
+                              <p className="text-gray-400 text-sm ml-5">{say(feature.description)}</p>
                               {feature.notes && (
-                                <p className="text-gray-500 text-xs ml-5 mt-1"><FaInfoCircle style={{marginRight:4}} /> {feature.notes}</p>
+                                <p className="text-gray-500 text-xs ml-5 mt-1"><FaInfoCircle style={{marginRight:4}} /> {say(feature.notes)}</p>
                               )}
                               {feature.apiEndpoint && (
-                                <p className="text-gray-600 text-xs ml-5 mt-1 font-mono">API: {feature.apiEndpoint}</p>
+                                <p className="text-gray-600 text-xs ml-5 mt-1 font-mono">{say("API:")}{' '}{say(feature.apiEndpoint)}</p>
                               )}
                             </div>
                             {feature.route && (
@@ -730,7 +731,7 @@ export default function AppGuidePage() {
                                 href={feature.route as Route}
                                 className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 text-xs transition-colors whitespace-nowrap"
                               >
-                                Open <FaArrowRight style={{marginRight:4}} />
+                                {say("Open")}{' '}<FaArrowRight style={{marginRight:4}} />
                               </Link>
                             )}
                           </div>
@@ -746,45 +747,45 @@ export default function AppGuidePage() {
 
         {/* Setup Required Section */}
         <div className="mt-8 bg-[#e5332a]/10 rounded-xl p-6 border border-[#e5332a]/30">
-          <h2 className="text-xl font-bold text-[#ff6b64] mb-4"><FaWrench style={{marginRight:4}} /> Features That Need Setup</h2>
-          <p className="text-gray-300 mb-4">These features are built but require external service configuration:</p>
+          <h2 className="text-xl font-bold text-[#ff6b64] mb-4"><FaWrench style={{marginRight:4}} /> {say("Features That Need Setup")}</h2>
+          <p className="text-gray-300 mb-4">{say("These features are built but require external service configuration:")}</p>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-black/20 rounded-lg p-4">
-              <h3 className="text-white font-semibold mb-2"><FaCreditCard style={{marginRight:4}} /> Stripe Payments</h3>
-              <p className="text-gray-400 text-sm mb-2">For online payment processing</p>
-              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY</code>
+              <h3 className="text-white font-semibold mb-2"><FaCreditCard style={{marginRight:4}} /> {say("Stripe Payments")}</h3>
+              <p className="text-gray-400 text-sm mb-2">{say("For online payment processing")}</p>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">{say("STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY")}</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
-              <h3 className="text-white font-semibold mb-2"><FaEnvelope style={{marginRight:4}} /> Email Service</h3>
-              <p className="text-gray-400 text-sm mb-2">For email notifications (SendGrid, Resend, etc.)</p>
-              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">EMAIL_API_KEY, EMAIL_FROM</code>
+              <h3 className="text-white font-semibold mb-2"><FaEnvelope style={{marginRight:4}} /> {say("Email Service")}</h3>
+              <p className="text-gray-400 text-sm mb-2">{say("For email notifications (SendGrid, Resend, etc.)")}</p>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">{say("EMAIL_API_KEY, EMAIL_FROM")}</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
-              <h3 className="text-white font-semibold mb-2"><FaMobileAlt style={{marginRight:4}} /> SMS (Twilio)</h3>
-              <p className="text-gray-400 text-sm mb-2">For text message notifications</p>
-              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN</code>
+              <h3 className="text-white font-semibold mb-2"><FaMobileAlt style={{marginRight:4}} /> {say("SMS (Twilio)")}</h3>
+              <p className="text-gray-400 text-sm mb-2">{say("For text message notifications")}</p>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">{say("TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN")}</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
-              <h3 className="text-white font-semibold mb-2"><FaBell style={{marginRight:4}} /> Push Notifications</h3>
-              <p className="text-gray-400 text-sm mb-2">For browser push notifications</p>
-              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY</code>
+              <h3 className="text-white font-semibold mb-2"><FaBell style={{marginRight:4}} /> {say("Push Notifications")}</h3>
+              <p className="text-gray-400 text-sm mb-2">{say("For browser push notifications")}</p>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">{say("VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY")}</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
-              <h3 className="text-white font-semibold mb-2"><FaCloud style={{marginRight:4}} /> Cloudinary</h3>
-              <p className="text-gray-400 text-sm mb-2">For cloud image storage</p>
-              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">CLOUDINARY_URL</code>
+              <h3 className="text-white font-semibold mb-2"><FaCloud style={{marginRight:4}} /> {say("Cloudinary")}</h3>
+              <p className="text-gray-400 text-sm mb-2">{say("For cloud image storage")}</p>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">{say("CLOUDINARY_URL")}</code>
             </div>
             <div className="bg-black/20 rounded-lg p-4">
-              <h3 className="text-white font-semibold mb-2"> PostgreSQL</h3>
-              <p className="text-gray-400 text-sm mb-2">For production database</p>
-              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">DATABASE_URL=&lt;your-neon-connection-string&gt;</code>
+              <h3 className="text-white font-semibold mb-2"> {say("PostgreSQL")}</h3>
+              <p className="text-gray-400 text-sm mb-2">{say("For production database")}</p>
+              <code className="text-xs text-[#ff6b64] bg-black/30 px-2 py-1 rounded">{say("DATABASE_URL=&lt;your-neon-connection-string&gt;")}</code>
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="mt-8 text-center text-stone-500 text-sm">
-          <p>FixTray Work Order Management - {totalFeatures} Features - {readyFeatures} Ready to Use</p>
+          <p>{say("FixTray Work Order Management -")}{' '}{say(totalFeatures)} {say("Features -")}{' '}{say(readyFeatures)} {say("Ready to Use")}</p>
         </div>
       </div>
     </div>

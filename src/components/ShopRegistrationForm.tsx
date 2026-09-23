@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -191,6 +192,7 @@ const tireServiceOptions: { value: TireServiceType; label: string }[] = [
 ];
 
 export default function ShopRegistrationForm() {
+  const say = usePhrase();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -400,15 +402,15 @@ export default function ShopRegistrationForm() {
       <div className="sos-card" style={{maxWidth:800}}>
         <div className="sos-header">
           <div className="sos-brand">
-            <span className="mark">FixTray</span>
-            <span className="sub">Shop Registration</span>
+            <span className="mark">{say("FixTray")}</span>
+            <span className="sub">{say("Shop Registration")}</span>
           </div>
-          <div style={{fontSize:13, color:'#9aa3b2'}}>Step {step} of 5</div>
+          <div style={{fontSize:13, color:'#9aa3b2'}}>{say("Step")}{' '}{say(step)} {say("of 5")}</div>
         </div>
 
         {error && (
           <div style={{backgroundColor: '#fee', border: '1px solid #fcc', color: '#c33', padding: '12px', borderRadius: '4px', marginBottom: '16px'}}>
-            {error}
+            {say(error)}
           </div>
         )}
 
@@ -418,12 +420,12 @@ export default function ShopRegistrationForm() {
             {/* Step 1: Basic Information */}
             {step === 1 && (
               <div>
-                <div className="sos-title">Basic Information</div>
-                <p className="sos-desc">Tell us about your shop</p>
+                <div className="sos-title">{say("Basic Information")}</div>
+                <p className="sos-desc">{say("Tell us about your shop")}</p>
 
                 <div style={{marginTop:24, display:'flex', flexDirection:'column', gap:16}}>
                   <div>
-                    <label className="sos-label">Shop Name *</label>
+                    <label className="sos-label">{say("Shop Name *")}</label>
                     <input
                       className="sos-input"
                       value={formData.shopName}
@@ -433,7 +435,7 @@ export default function ShopRegistrationForm() {
                   </div>
 
                   <div>
-                    <label className="sos-label">Owner Name *</label>
+                    <label className="sos-label">{say("Owner Name *")}</label>
                     <input
                       className="sos-input"
                       value={formData.ownerName}
@@ -443,7 +445,7 @@ export default function ShopRegistrationForm() {
                   </div>
 
                   <div>
-                    <label className="sos-label">Email *</label>
+                    <label className="sos-label">{say("Email *")}</label>
                     <input
                       type="email"
                       className="sos-input"
@@ -454,7 +456,7 @@ export default function ShopRegistrationForm() {
                   </div>
 
                   <div>
-                    <label className="sos-label">Phone *</label>
+                    <label className="sos-label">{say("Phone *")}</label>
                     <input
                       type="tel"
                       className="sos-input"
@@ -470,21 +472,21 @@ export default function ShopRegistrationForm() {
             {/* Step 2: Shop Type & Service Location */}
             {step === 2 && (
               <div>
-                <div className="sos-title">Shop Type & Services</div>
-                <p className="sos-desc">Select your primary shop category</p>
+                <div className="sos-title">{say("Shop Type & Services")}</div>
+                <p className="sos-desc">{say("Select your primary shop category")}</p>
 
                 <div style={{marginTop:24}}>
-                  <label className="sos-label">Shop Type *</label>
+                  <label className="sos-label">{say("Shop Type *")}</label>
                   <div style={{display:'flex', flexDirection:'column', gap:12, marginTop:8}}>
                     {[
-                      { value: 'diesel', label: 'Diesel / Heavy-Duty Services' },
-                      { value: 'gas', label: 'Gas / Automotive Services' },
-                      { value: 'small-engine', label: 'Small Engine Services' },
-                      { value: 'heavy-equipment', label: 'Heavy Equipment Services' },
-                      { value: 'resurfacing', label: 'Resurfacing / Machining' },
-                      { value: 'welding', label: 'Welding & Fabrication' },
-                      { value: 'tire', label: 'Tire Shop Services' },
-                      { value: 'mixed', label: 'Mixed / Multi-Category' },
+                      { value: 'diesel', label: say("Diesel / Heavy-Duty Services") },
+                      { value: 'gas', label: say("Gas / Automotive Services") },
+                      { value: 'small-engine', label: say("Small Engine Services") },
+                      { value: 'heavy-equipment', label: say("Heavy Equipment Services") },
+                      { value: 'resurfacing', label: say("Resurfacing / Machining") },
+                      { value: 'welding', label: say("Welding & Fabrication") },
+                      { value: 'tire', label: say("Tire Shop Services") },
+                      { value: 'mixed', label: say("Mixed / Multi-Category") },
                     ].map(option => (
                       <label key={option.value} className="sos-item" style={{cursor:'pointer', padding:16}}>
                         <input
@@ -492,19 +494,19 @@ export default function ShopRegistrationForm() {
                           checked={formData.shopType === option.value}
                           onChange={() => setFormData({...formData, shopType: option.value as ShopType})}
                         />
-                        <span style={{marginLeft:12, fontSize:14}}>{option.label}</span>
+                        <span style={{marginLeft:12, fontSize:14}}>{say(option.label)}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div style={{marginTop:24}}>
-                  <label className="sos-label">Service Location *</label>
+                  <label className="sos-label">{say("Service Location *")}</label>
                   <div style={{display:'flex', flexDirection:'column', gap:12, marginTop:8}}>
                     {[
-                      { value: 'mobile-only', label: 'Mobile/Roadside Only' },
-                      { value: 'shop-only', label: 'Shop Location Only' },
-                      { value: 'both', label: 'Both Mobile & Shop' },
+                      { value: 'mobile-only', label: say("Mobile/Roadside Only") },
+                      { value: 'shop-only', label: say("Shop Location Only") },
+                      { value: 'both', label: say("Both Mobile & Shop") },
                     ].map(option => (
                       <label key={option.value} className="sos-item" style={{cursor:'pointer', padding:16}}>
                         <input
@@ -512,7 +514,7 @@ export default function ShopRegistrationForm() {
                           checked={formData.serviceLocation === option.value}
                           onChange={() => setFormData({...formData, serviceLocation: option.value as ServiceLocation})}
                         />
-                        <span style={{marginLeft:12, fontSize:14}}>{option.label}</span>
+                        <span style={{marginLeft:12, fontSize:14}}>{say(option.label)}</span>
                       </label>
                     ))}
                   </div>
@@ -520,7 +522,7 @@ export default function ShopRegistrationForm() {
 
                 {formData.serviceLocation !== 'shop-only' && (
                   <div style={{marginTop:24}}>
-                    <label className="sos-label">Mobile Service Radius (miles)</label>
+                    <label className="sos-label">{say("Mobile Service Radius (miles)")}</label>
                     <input
                       type="number"
                       className="sos-input"
@@ -536,12 +538,12 @@ export default function ShopRegistrationForm() {
             {/* Step 3: Services Offered */}
             {step === 3 && (
               <div>
-                <div className="sos-title">Services You Offer</div>
-                <p className="sos-desc">Select up to {MAX_SERVICES} services across all categories ({totalSelectedServices} selected)</p>
+                <div className="sos-title">{say("Services You Offer")}</div>
+                <p className="sos-desc">{say("Select up to")}{' '}{say(MAX_SERVICES)} {say("services across all categories (")}{say(totalSelectedServices)} {say("selected)")}</p>
 
                 {showDieselServices && (
                   <div style={{marginTop:24}}>
-                    <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>Diesel / Heavy-Duty Services</div>
+                    <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>{say("Diesel / Heavy-Duty Services")}</div>
                     <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8}}>
                       {dieselServiceOptions.map(service => (
                         <label key={service.value} className="sos-item" style={{cursor:'pointer', padding:12}}>
@@ -551,7 +553,7 @@ export default function ShopRegistrationForm() {
                             onChange={() => handleServiceToggle(service.value, 'diesel')}
                             disabled={!formData.dieselServices.includes(service.value) && !canSelectMoreServices}
                           />
-                          <span style={{marginLeft:8, fontSize:13}}>{service.label}</span>
+                          <span style={{marginLeft:8, fontSize:13}}>{say(service.label)}</span>
                         </label>
                       ))}
                     </div>
@@ -560,7 +562,7 @@ export default function ShopRegistrationForm() {
 
                 {showGasServices && (
                   <div style={{marginTop:32}}>
-                    <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>Gas / Automotive Services</div>
+                    <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>{say("Gas / Automotive Services")}</div>
                     <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8}}>
                       {gasServiceOptions.map(service => (
                         <label key={service.value} className="sos-item" style={{cursor:'pointer', padding:12}}>
@@ -570,7 +572,7 @@ export default function ShopRegistrationForm() {
                             onChange={() => handleServiceToggle(service.value, 'gas')}
                             disabled={!formData.gasServices.includes(service.value) && !canSelectMoreServices}
                           />
-                          <span style={{marginLeft:8, fontSize:13}}>{service.label}</span>
+                          <span style={{marginLeft:8, fontSize:13}}>{say(service.label)}</span>
                         </label>
                       ))}
                     </div>
@@ -578,7 +580,7 @@ export default function ShopRegistrationForm() {
                 )}
 
                 <div style={{marginTop:32}}>
-                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>Small Engine Services</div>
+                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>{say("Small Engine Services")}</div>
                   <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8}}>
                     {smallEngineServiceOptions.map(service => (
                       <label key={service.value} className="sos-item" style={{cursor:'pointer', padding:12}}>
@@ -588,14 +590,14 @@ export default function ShopRegistrationForm() {
                           onChange={() => handleServiceToggle(service.value, 'small-engine')}
                           disabled={!formData.smallEngineServices.includes(service.value) && !canSelectMoreServices}
                         />
-                        <span style={{marginLeft:8, fontSize:13}}>{service.label}</span>
+                        <span style={{marginLeft:8, fontSize:13}}>{say(service.label)}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div style={{marginTop:32}}>
-                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>Heavy Equipment Services</div>
+                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>{say("Heavy Equipment Services")}</div>
                   <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8}}>
                     {heavyEquipmentServiceOptions.map(service => (
                       <label key={service.value} className="sos-item" style={{cursor:'pointer', padding:12}}>
@@ -605,14 +607,14 @@ export default function ShopRegistrationForm() {
                           onChange={() => handleServiceToggle(service.value, 'heavy-equipment')}
                           disabled={!formData.heavyEquipmentServices.includes(service.value) && !canSelectMoreServices}
                         />
-                        <span style={{marginLeft:8, fontSize:13}}>{service.label}</span>
+                        <span style={{marginLeft:8, fontSize:13}}>{say(service.label)}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div style={{marginTop:32}}>
-                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>Resurfacing / Machining Services</div>
+                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>{say("Resurfacing / Machining Services")}</div>
                   <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8}}>
                     {resurfacingServiceOptions.map(service => (
                       <label key={service.value} className="sos-item" style={{cursor:'pointer', padding:12}}>
@@ -622,14 +624,14 @@ export default function ShopRegistrationForm() {
                           onChange={() => handleServiceToggle(service.value, 'resurfacing')}
                           disabled={!formData.resurfacingServices.includes(service.value) && !canSelectMoreServices}
                         />
-                        <span style={{marginLeft:8, fontSize:13}}>{service.label}</span>
+                        <span style={{marginLeft:8, fontSize:13}}>{say(service.label)}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div style={{marginTop:32}}>
-                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>Welding & Fabrication Services</div>
+                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>{say("Welding & Fabrication Services")}</div>
                   <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8}}>
                     {weldingServiceOptions.map(service => (
                       <label key={service.value} className="sos-item" style={{cursor:'pointer', padding:12}}>
@@ -639,14 +641,14 @@ export default function ShopRegistrationForm() {
                           onChange={() => handleServiceToggle(service.value, 'welding')}
                           disabled={!formData.weldingServices.includes(service.value) && !canSelectMoreServices}
                         />
-                        <span style={{marginLeft:8, fontSize:13}}>{service.label}</span>
+                        <span style={{marginLeft:8, fontSize:13}}>{say(service.label)}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div style={{marginTop:32}}>
-                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>Tire Shop Services</div>
+                  <div style={{fontSize:16, fontWeight:700, marginBottom:12}}>{say("Tire Shop Services")}</div>
                   <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8}}>
                     {tireServiceOptions.map(service => (
                       <label key={service.value} className="sos-item" style={{cursor:'pointer', padding:12}}>
@@ -656,7 +658,7 @@ export default function ShopRegistrationForm() {
                           onChange={() => handleServiceToggle(service.value, 'tire')}
                           disabled={!formData.tireServices.includes(service.value) && !canSelectMoreServices}
                         />
-                        <span style={{marginLeft:8, fontSize:13}}>{service.label}</span>
+                        <span style={{marginLeft:8, fontSize:13}}>{say(service.label)}</span>
                       </label>
                     ))}
                   </div>
@@ -667,12 +669,12 @@ export default function ShopRegistrationForm() {
             {/* Step 4: Location & Additional Info */}
             {step === 4 && (
               <div>
-                <div className="sos-title">Location & Business Details</div>
-                <p className="sos-desc">Where is your shop located?</p>
+                <div className="sos-title">{say("Location & Business Details")}</div>
+                <p className="sos-desc">{say("Where is your shop located?")}</p>
 
                 <div style={{marginTop:24, display:'flex', flexDirection:'column', gap:16}}>
                   <div>
-                    <label className="sos-label">Street Address *</label>
+                    <label className="sos-label">{say("Street Address *")}</label>
                     <input
                       className="sos-input"
                       value={formData.address}
@@ -683,7 +685,7 @@ export default function ShopRegistrationForm() {
 
                   <div style={{display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:12}}>
                     <div>
-                      <label className="sos-label">City *</label>
+                      <label className="sos-label">{say("City *")}</label>
                       <input
                         className="sos-input"
                         value={formData.city}
@@ -692,7 +694,7 @@ export default function ShopRegistrationForm() {
                       />
                     </div>
                     <div>
-                      <label className="sos-label">State *</label>
+                      <label className="sos-label">{say("State *")}</label>
                       <input
                         className="sos-input"
                         value={formData.state}
@@ -702,7 +704,7 @@ export default function ShopRegistrationForm() {
                       />
                     </div>
                     <div>
-                      <label className="sos-label">Zip *</label>
+                      <label className="sos-label">{say("Zip *")}</label>
                       <input
                         className="sos-input"
                         value={formData.zipCode}
@@ -713,7 +715,7 @@ export default function ShopRegistrationForm() {
                   </div>
 
                   <div>
-                    <label className="sos-label">Accepted Payment Methods</label>
+                    <label className="sos-label">{say("Accepted Payment Methods")}</label>
                     <div style={{display:'flex', gap:12, marginTop:8, flexWrap:'wrap'}}>
                       {['cash', 'credit-card', 'debit-card', 'check', 'financing'].map(method => (
                         <label key={method} style={{cursor:'pointer', display:'flex', alignItems:'center'}}>
@@ -736,7 +738,7 @@ export default function ShopRegistrationForm() {
                       checked={formData.emergencyService24_7}
                       onChange={e => setFormData({...formData, emergencyService24_7: e.target.checked})}
                     />
-                    <span style={{marginLeft:8, fontSize:14}}>We offer 24/7 emergency service</span>
+                    <span style={{marginLeft:8, fontSize:14}}>{say("We offer 24/7 emergency service")}</span>
                   </label>
                 </div>
               </div>
@@ -745,27 +747,26 @@ export default function ShopRegistrationForm() {
             {/* Step 5: Final Review */}
             {step === 5 && (
               <div>
-                <div className="sos-title">Final Review</div>
-                <p className="sos-desc">Review your setup details before completing registration.</p>
+                <div className="sos-title">{say("Final Review")}</div>
+                <p className="sos-desc">{say("Review your setup details before completing registration.")}</p>
 
                 <div style={{marginTop:24}}>
                   <div style={{padding:16, backgroundColor:'rgba(255,255,255,0.04)', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)'}}>
-                    <div style={{fontSize:14, color:'#f1f5f9', fontWeight:600, marginBottom:8}}>Registration Summary</div>
+                    <div style={{fontSize:14, color:'#f1f5f9', fontWeight:600, marginBottom:8}}>{say("Registration Summary")}</div>
                     <div style={{fontSize:13, color:'#94a3b8', lineHeight:1.7}}>
-                      <div><strong>Shop:</strong> {formData.shopName || 'Not provided'}</div>
-                      <div><strong>Owner:</strong> {formData.ownerName || 'Not provided'}</div>
-                      <div><strong>Primary contact:</strong> {formData.email || 'Not provided'}</div>
-                      <div><strong>Location:</strong> {[formData.city, formData.state].filter(Boolean).join(', ') || 'Not provided'}</div>
-                      <div><strong>Selected services:</strong> {totalSelectedServices}</div>
+                      <div><strong>{say("Shop:")}</strong> {formData.shopName || say("Not provided")}</div>
+                      <div><strong>{say("Owner:")}</strong> {formData.ownerName || say("Not provided")}</div>
+                      <div><strong>{say("Primary contact:")}</strong> {formData.email || say("Not provided")}</div>
+                      <div><strong>{say("Location:")}</strong> {[formData.city, formData.state].filter(Boolean).join(', ') || say("Not provided")}</div>
+                      <div><strong>{say("Selected services:")}</strong> {say(totalSelectedServices)}</div>
                     </div>
                   </div>
                 </div>
 
                 <div style={{marginTop:16, padding:16, backgroundColor:'rgba(255,255,255,0.04)', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)'}}>
-                  <div style={{fontSize:14, fontWeight:600, color:'#f1f5f9', marginBottom:8}}><FaSmile style={{marginRight:4}} /> Ready to Launch</div>
+                  <div style={{fontSize:14, fontWeight:600, color:'#f1f5f9', marginBottom:8}}><FaSmile style={{marginRight:4}} /> {say("Ready to Launch")}</div>
                   <div style={{fontSize:13, color:'#94a3b8'}}>
-                    Complete registration to activate your shop workspace and finish onboarding in the dashboard.
-                  </div>
+                    {say("Complete registration to activate your shop workspace and finish onboarding in the dashboard.")}{' '}</div>
                 </div>
               </div>
             )}
@@ -775,11 +776,10 @@ export default function ShopRegistrationForm() {
             <div style={{display:'flex', gap:12}}>
               {step > 1 && (
                 <button type="button" onClick={() => setStep(step - 1)} className="btn-outline">
-                  <FaArrowLeft style={{marginRight:4}} /> Back
-                </button>
+                  <FaArrowLeft style={{marginRight:4}} /> {say("Back")}{' '}</button>
               )}
               <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Submitting...' : step === 5 ? 'Complete Registration' : <><FaArrowRight style={{marginRight:4}} /> Next</>}
+                {loading ? say("Submitting...") : step === 5 ? say("Complete Registration") : <><FaArrowRight style={{marginRight:4}} /> {say("Next")}</>}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -7,6 +8,7 @@ import { FaBox, FaExclamationTriangle } from 'react-icons/fa';
 import { formatInventoryType, normalizeInventoryType } from '@/lib/inventoryItem';
 
 export default function ShopInventoryPage() {
+  const say = usePhrase();
   useRequireAuth(['shop']);
   const _router = useRouter();
   const [inventory, setInventory] = useState<any[]>([]);
@@ -211,8 +213,7 @@ export default function ShopInventoryPage() {
     return (
       <div style={{ minHeight: '100vh', background: 'transparent', padding: '40px 20px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', color: '#fff', textAlign: 'center' }}>
-          Loading inventory...
-        </div>
+          {say("Loading inventory...")}{' '}</div>
       </div>
     );
   }
@@ -223,22 +224,20 @@ export default function ShopInventoryPage() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
           <div>
-            <h1 style={{ color: '#fff', fontSize: 32, margin: 0 }}>Inventory Management</h1>
-            <p style={{ color: '#9aa3b2', margin: '8px 0 0 0' }}>Track parts and supplies</p>
+            <h1 style={{ color: '#fff', fontSize: 32, margin: 0 }}>{say("Inventory Management")}</h1>
+            <p style={{ color: '#9aa3b2', margin: '8px 0 0 0' }}>{say("Track parts and supplies")}</p>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <button
               onClick={() => downloadReport('stock')}
               style={{ background: 'rgba(229,51,42,0.2)', color: '#ffb4ad', border: '1px solid rgba(229,51,42,0.4)', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
             >
-              Export Stock CSV
-            </button>
+              {say("Export Stock CSV")}{' '}</button>
             <button
               onClick={() => downloadReport('usage')}
               style={{ background: 'rgba(34,197,94,0.2)', color: '#86efac', border: '1px solid rgba(34,197,94,0.4)', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
             >
-              Export Usage CSV
-            </button>
+              {say("Export Usage CSV")}{' '}</button>
             <button
               onClick={() => {
                 resetForm();
@@ -255,28 +254,27 @@ export default function ShopInventoryPage() {
                 cursor: 'pointer',
               }}
             >
-              + Add Item
-            </button>
+              {say("+ Add Item")}{' '}</button>
           </div>
         </div>
 
         {reportSummary && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 20 }}>
             <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 12 }}>
-              <div style={{ color: '#9aa3b2', fontSize: 12 }}>Inventory Items</div>
-              <div style={{ color: '#f8fafc', fontSize: 20, fontWeight: 700 }}>{reportSummary.totalItems}</div>
+              <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Inventory Items")}</div>
+              <div style={{ color: '#f8fafc', fontSize: 20, fontWeight: 700 }}>{say(reportSummary.totalItems)}</div>
             </div>
             <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: 12 }}>
-              <div style={{ color: '#fca5a5', fontSize: 12 }}>Low Stock</div>
-              <div style={{ color: '#fecaca', fontSize: 20, fontWeight: 700 }}>{reportSummary.lowStockItems}</div>
+              <div style={{ color: '#fca5a5', fontSize: 12 }}>{say("Low Stock")}</div>
+              <div style={{ color: '#fecaca', fontSize: 20, fontWeight: 700 }}>{say(reportSummary.lowStockItems)}</div>
             </div>
             <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: 12 }}>
-              <div style={{ color: '#86efac', fontSize: 12 }}>Inventory Value</div>
+              <div style={{ color: '#86efac', fontSize: 12 }}>{say("Inventory Value")}</div>
               <div style={{ color: '#dcfce7', fontSize: 20, fontWeight: 700 }}>${reportSummary.totalInventoryValue.toFixed(2)}</div>
             </div>
             <div style={{ background: 'rgba(229,51,42,0.08)', border: '1px solid rgba(229,51,42,0.25)', borderRadius: 10, padding: 12 }}>
-              <div style={{ color: '#ffb4ad', fontSize: 12 }}>Parts Used</div>
-              <div style={{ color: '#ffe4e1', fontSize: 20, fontWeight: 700 }}>{reportSummary.totalUsageQuantity}</div>
+              <div style={{ color: '#ffb4ad', fontSize: 12 }}>{say("Parts Used")}</div>
+              <div style={{ color: '#ffe4e1', fontSize: 20, fontWeight: 700 }}>{say(reportSummary.totalUsageQuantity)}</div>
             </div>
           </div>
         )}
@@ -295,10 +293,9 @@ export default function ShopInventoryPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 24 }}><FaExclamationTriangle style={{marginRight:4}} /></span>
               <div>
-                <h3 style={{ color: '#ef4444', margin: 0, fontSize: 18 }}>Low Stock Alert</h3>
+                <h3 style={{ color: '#ef4444', margin: 0, fontSize: 18 }}>{say("Low Stock Alert")}</h3>
                 <p style={{ color: '#9aa3b2', margin: '4px 0 0 0' }}>
-                  {lowStockItems.length} item{lowStockItems.length > 1 ? 's' : ''} need reordering
-                </p>
+                  {say(lowStockItems.length)} item{lowStockItems.length > 1 ? 's' : ''} {say("need reordering")}{' '}</p>
               </div>
             </div>
           </div>
@@ -306,12 +303,12 @@ export default function ShopInventoryPage() {
 
         {/* Filter Toggle */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', color: '#9aa3b2', fontSize: 13, marginBottom: 8 }}>Search Inventory</label>
+          <label style={{ display: 'block', color: '#9aa3b2', fontSize: 13, marginBottom: 8 }}>{say("Search Inventory")}</label>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by item name, type, SKU, or supplier"
+            placeholder={say("Search by item name, type, SKU, or supplier")}
             style={{
               width: '100%',
               maxWidth: 520,
@@ -345,7 +342,7 @@ export default function ShopInventoryPage() {
               fontWeight: 600,
             }}
           >
-            {showLowStockOnly ? 'Show All Items' : 'Show Low Stock Only'}
+            {showLowStockOnly ? say("Show All Items") : say("Show Low Stock Only")}
           </button>
         </div>
 
@@ -354,10 +351,10 @@ export default function ShopInventoryPage() {
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 60, textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}><FaBox style={{marginRight:4}} /></div>
             <h3 style={{ color: '#e5e7eb', marginBottom: 8 }}>
-              {inventory.length === 0 ? 'No inventory items' : 'No matching inventory items'}
+              {inventory.length === 0 ? say("No inventory items") : say("No matching inventory items")}
             </h3>
             <p style={{ color: '#9aa3b2' }}>
-              {inventory.length === 0 ? 'Add your first item to get started' : 'Try a different search term'}
+              {inventory.length === 0 ? say("Add your first item to get started") : say("Try a different search term")}
             </p>
           </div>
         ) : (
@@ -365,12 +362,12 @@ export default function ShopInventoryPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
-                  <th style={{ padding: 16, textAlign: 'left', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>Item</th>
-                  <th style={{ padding: 16, textAlign: 'left', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>Type</th>
-                  <th style={{ padding: 16, textAlign: 'right', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>Quantity</th>
-                  <th style={{ padding: 16, textAlign: 'right', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>Price</th>
-                  <th style={{ padding: 16, textAlign: 'left', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>Supplier</th>
-                  <th style={{ padding: 16, textAlign: 'right', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>Actions</th>
+                  <th style={{ padding: 16, textAlign: 'left', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>{say("Item")}</th>
+                  <th style={{ padding: 16, textAlign: 'left', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>{say("Type")}</th>
+                  <th style={{ padding: 16, textAlign: 'right', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>{say("Quantity")}</th>
+                  <th style={{ padding: 16, textAlign: 'right', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>{say("Price")}</th>
+                  <th style={{ padding: 16, textAlign: 'left', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>{say("Supplier")}</th>
+                  <th style={{ padding: 16, textAlign: 'right', color: '#9aa3b2', fontSize: 13, fontWeight: 600, textTransform: 'uppercase' }}>{say("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -380,8 +377,8 @@ export default function ShopInventoryPage() {
                     <tr key={item.id} style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                       <td style={{ padding: 16 }}>
                         <div>
-                          <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{item.name}</div>
-                          {item.sku && <div style={{ color: '#9aa3b2', fontSize: 12 }}>SKU: {item.sku}</div>}
+                          <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(item.name)}</div>
+                          {item.sku && <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("SKU:")}{' '}{say(item.sku)}</div>}
                         </div>
                       </td>
                       <td style={{ padding: 16, color: '#e5e7eb' }}>{formatInventoryType(item.type)}</td>
@@ -389,11 +386,11 @@ export default function ShopInventoryPage() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                           {isLowStock && <span style={{ color: '#ef4444' }}><FaExclamationTriangle style={{marginRight:4}} /></span>}
                           <span style={{ color: isLowStock ? '#ef4444' : '#e5e7eb', fontWeight: 600 }}>
-                            {item.quantity}
+                            {say(item.quantity)}
                           </span>
                           {item.reorderPoint && (
                             <span style={{ color: '#9aa3b2', fontSize: 12 }}>
-                              / {item.reorderPoint}
+                              / {say(item.reorderPoint)}
                             </span>
                           )}
                         </div>
@@ -416,8 +413,7 @@ export default function ShopInventoryPage() {
                               fontSize: 12,
                             }}
                           >
-                            Edit
-                          </button>
+                            {say("Edit")}{' '}</button>
                           <button
                             onClick={() => setDeleteConfirmId(item.id)}
                             style={{
@@ -430,8 +426,7 @@ export default function ShopInventoryPage() {
                               fontSize: 12,
                             }}
                           >
-                            Delete
-                          </button>
+                            {say("Delete")}{' '}</button>
                         </div>
                       </td>
                     </tr>
@@ -476,13 +471,13 @@ export default function ShopInventoryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <h2 style={{ color: '#fff', marginBottom: 24 }}>
-                {editingItem ? 'Edit Item' : 'Add New Item'}
+                {editingItem ? say("Edit Item") : say("Add New Item")}
               </h2>
 
               <form onSubmit={handleSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
                   <div>
-                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Item Name *</label>
+                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("Item Name *")}</label>
                     <input
                       type="text"
                       value={formData.name}
@@ -501,7 +496,7 @@ export default function ShopInventoryPage() {
                   </div>
 
                   <div>
-                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Type *</label>
+                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("Type *")}</label>
                     <select
                       value={normalizeInventoryType(formData.type) || formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -516,11 +511,11 @@ export default function ShopInventoryPage() {
                         fontSize: 15,
                       }}
                     >
-                      <option value="" disabled>Select type</option>
-                      <option value="part">Part</option>
-                      <option value="labor">Labor</option>
+                      <option value="" disabled>{say("Select type")}</option>
+                      <option value="part">{say("Part")}</option>
+                      <option value="labor">{say("Labor")}</option>
                       {formData.type && !normalizeInventoryType(formData.type) && (
-                        <option value={formData.type}>{formData.type}</option>
+                        <option value={formData.type}>{say(formData.type)}</option>
                       )}
                     </select>
                   </div>
@@ -528,7 +523,7 @@ export default function ShopInventoryPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
                   <div>
-                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>SKU</label>
+                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("SKU")}</label>
                     <input
                       type="text"
                       value={formData.sku}
@@ -546,7 +541,7 @@ export default function ShopInventoryPage() {
                   </div>
 
                   <div>
-                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Supplier</label>
+                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("Supplier")}</label>
                     <input
                       type="text"
                       value={formData.supplier}
@@ -566,7 +561,7 @@ export default function ShopInventoryPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
                   <div>
-                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Quantity *</label>
+                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("Quantity *")}</label>
                     <input
                       type="number"
                       value={formData.quantity}
@@ -586,7 +581,7 @@ export default function ShopInventoryPage() {
                   </div>
 
                   <div>
-                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Price ($) *</label>
+                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("Price ($) *")}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -607,7 +602,7 @@ export default function ShopInventoryPage() {
                   </div>
 
                   <div>
-                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Reorder Point</label>
+                    <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("Reorder Point")}</label>
                     <input
                       type="number"
                       value={formData.reorderPoint}
@@ -627,7 +622,7 @@ export default function ShopInventoryPage() {
                 </div>
 
                 <div style={{ marginBottom: 24 }}>
-                  <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>Notes</label>
+                  <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8 }}>{say("Notes")}</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -661,7 +656,7 @@ export default function ShopInventoryPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    {editingItem ? 'Update Item' : 'Add Item'}
+                    {editingItem ? say("Update Item") : say("Add Item")}
                   </button>
                   <button
                     type="button"
@@ -681,8 +676,7 @@ export default function ShopInventoryPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    Cancel
-                  </button>
+                    {say("Cancel")}{' '}</button>
                 </div>
               </form>
             </div>
@@ -693,21 +687,19 @@ export default function ShopInventoryPage() {
         {deleteConfirmId && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ background: '#1e2433', borderRadius: 12, padding: 32, maxWidth: 360, width: '90%', textAlign: 'center' }}>
-              <h3 style={{ color: '#f1f5f9', fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Delete Item?</h3>
-              <p style={{ color: '#9aa3b2', marginBottom: 24 }}>This action cannot be undone.</p>
+              <h3 style={{ color: '#f1f5f9', fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{say("Delete Item?")}</h3>
+              <p style={{ color: '#9aa3b2', marginBottom: 24 }}>{say("This action cannot be undone.")}</p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <button
                   onClick={() => handleDelete(deleteConfirmId)}
                   style={{ background: '#ef4444', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Delete
-                </button>
+                  {say("Delete")}{' '}</button>
                 <button
                   onClick={() => setDeleteConfirmId(null)}
                   style={{ background: '#374151', border: 'none', color: '#9aa3b2', padding: '10px 24px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               </div>
             </div>
           </div>
@@ -718,7 +710,7 @@ export default function ShopInventoryPage() {
           <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#ef4444', color: '#fff', padding: '12px 20px', borderRadius: 8, zIndex: 300, fontWeight: 600 }}
             onClick={() => setSaveError('')}
           >
-            {saveError}
+            {say(saveError)}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { FaCheckCircle, FaDesktop, FaLock, FaUnlock } from 'react-icons/fa';
 
@@ -20,6 +21,7 @@ function authHeaders() {
 }
 
 export default function ShopSecurityPanel() {
+  const say = usePhrase();
   const [enabled, setEnabled] = useState(false);
   const [step, setStep] = useState<Step>('idle');
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -142,64 +144,58 @@ export default function ShopSecurityPanel() {
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>
         <FaLock style={{ marginRight: 8 }} />
-        Security
-      </h2>
+        {say("Security")}{' '}</h2>
       <p style={{ color: '#9aa3b2', marginBottom: 24, lineHeight: 1.5 }}>
-        Two-factor authentication and session review live here so shop navigation does not open admin-only addresses.
-      </p>
+        {say("Two-factor authentication and session review live here so shop navigation does not open admin-only addresses.")}{' '}</p>
 
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <div style={{ color: enabled ? '#86efac' : '#fca5a5', fontWeight: 700, marginBottom: 12 }}>
           {enabled ? <FaCheckCircle style={{ marginRight: 6 }} /> : null}
-          Two-factor authentication is {enabled ? 'on' : 'off'}
+          {say("Two-factor authentication is")}{' '}{enabled ? 'on' : 'off'}
         </div>
-        {statusMsg && <div style={{ color: '#86efac', marginBottom: 12 }}>{statusMsg}</div>}
-        {errorMsg && <div style={{ color: '#fca5a5', marginBottom: 12 }}>{errorMsg}</div>}
+        {statusMsg && <div style={{ color: '#86efac', marginBottom: 12 }}>{say(statusMsg)}</div>}
+        {errorMsg && <div style={{ color: '#fca5a5', marginBottom: 12 }}>{say(errorMsg)}</div>}
 
         {step === 'verify' && qrCode && (
           <div style={{ marginBottom: 16 }}>
-            <p style={{ color: '#e5e7eb', marginBottom: 8 }}>Scan this code, then enter the 6-digit code from your authenticator app.</p>
-            <img src={qrCode} alt="Two-factor QR code" style={{ width: 160, height: 160, borderRadius: 8, background: '#fff' }} />
-            {secret && <p style={{ color: '#9aa3b2', fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>{secret}</p>}
+            <p style={{ color: '#e5e7eb', marginBottom: 8 }}>{say("Scan this code, then enter the 6-digit code from your authenticator app.")}</p>
+            <img src={qrCode} alt={say("Two-factor QR code")} style={{ width: 160, height: 160, borderRadius: 8, background: '#fff' }} />
+            {secret && <p style={{ color: '#9aa3b2', fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>{say(secret)}</p>}
             <input
               inputMode="numeric"
               maxLength={6}
               value={tokenInput}
               onChange={(event) => setTokenInput(event.target.value.replace(/\D/g, ''))}
               placeholder="000000"
-              aria-label="Authenticator code"
+              aria-label={say("Authenticator code")}
               style={{ width: '100%', maxWidth: 220, marginTop: 8, padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <button type="button" onClick={handleVerify} disabled={fetching || tokenInput.length !== 6} style={{ padding: '10px 14px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
-                Activate
-              </button>
+                {say("Activate")}{' '}</button>
               <button type="button" onClick={() => { setStep('idle'); setTokenInput(''); }} style={{ padding: '10px 14px', background: 'transparent', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, cursor: 'pointer' }}>
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
             </div>
           </div>
         )}
 
         {step === 'disable' && (
           <div style={{ marginBottom: 16 }}>
-            <p style={{ color: '#e5e7eb' }}>Enter the current authenticator code to turn two-factor authentication off.</p>
+            <p style={{ color: '#e5e7eb' }}>{say("Enter the current authenticator code to turn two-factor authentication off.")}</p>
             <input
               inputMode="numeric"
               maxLength={6}
               value={tokenInput}
               onChange={(event) => setTokenInput(event.target.value.replace(/\D/g, ''))}
               placeholder="000000"
-              aria-label="Authenticator code to disable"
+              aria-label={say("Authenticator code to disable")}
               style={{ width: '100%', maxWidth: 220, marginTop: 8, padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <button type="button" onClick={handleDisable} disabled={fetching || tokenInput.length !== 6} style={{ padding: '10px 14px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
-                Confirm disable
-              </button>
+                {say("Confirm disable")}{' '}</button>
               <button type="button" onClick={() => { setStep('idle'); setTokenInput(''); }} style={{ padding: '10px 14px', background: 'transparent', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, cursor: 'pointer' }}>
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
             </div>
           </div>
         )}
@@ -207,40 +203,38 @@ export default function ShopSecurityPanel() {
         {step === 'idle' && !enabled && (
           <button type="button" onClick={handleSetup} disabled={fetching} style={{ padding: '12px 16px', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
             <FaLock style={{ marginRight: 6 }} />
-            {fetching ? 'Generating…' : 'Enable two-factor authentication'}
+            {fetching ? say("Generating…") : say("Enable two-factor authentication")}
           </button>
         )}
         {step === 'idle' && enabled && (
           <button type="button" onClick={() => { setStep('disable'); setTokenInput(''); setErrorMsg(null); }} style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.15)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
             <FaUnlock style={{ marginRight: 6 }} />
-            Disable two-factor authentication
-          </button>
+            {say("Disable two-factor authentication")}{' '}</button>
         )}
       </div>
 
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
         <h3 style={{ margin: '0 0 12px', color: '#e5e7eb', fontSize: 16 }}>
           <FaDesktop style={{ marginRight: 8 }} />
-          Active sessions
-        </h3>
+          {say("Active sessions")}{' '}</h3>
         {sessionsLoading ? (
-          <p style={{ color: '#9aa3b2' }}>Loading sessions…</p>
+          <p style={{ color: '#9aa3b2' }}>{say("Loading sessions…")}</p>
         ) : sessions.length === 0 ? (
-          <p style={{ color: '#9aa3b2' }}>No active sessions found.</p>
+          <p style={{ color: '#9aa3b2' }}>{say("No active sessions found.")}</p>
         ) : (
           <div style={{ display: 'grid', gap: 10 }}>
             {sessions.map((session) => (
               <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.25)' }}>
                 <div>
-                  <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{session.isCurrent ? 'This device' : (session.agent || 'Active session')}</div>
+                  <div style={{ color: '#e5e7eb', fontWeight: 600 }}>{session.isCurrent ? say("This device") : (session.agent || say("Active session"))}</div>
                   <div style={{ color: '#9aa3b2', fontSize: 12 }}>
                     {session.ip ? `${session.ip} · ` : ''}
-                    Started {new Date(session.createdAt).toLocaleString()}
+                    {say("Started")}{' '}{new Date(session.createdAt).toLocaleString()}
                   </div>
                 </div>
                 {!session.isCurrent && (
                   <button type="button" onClick={() => revokeSession(session.id)} disabled={revoking === session.id} style={{ padding: '8px 12px', background: 'transparent', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 8, cursor: 'pointer' }}>
-                    {revoking === session.id ? 'Revoking…' : 'Revoke'}
+                    {revoking === session.id ? say("Revoking…") : say("Revoke")}
                   </button>
                 )}
               </div>

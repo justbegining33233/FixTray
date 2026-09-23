@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -30,6 +31,7 @@ interface MessageStats {
 }
 
 export default function AdminMessagingPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [stats, setStats] = useState<MessageStats | null>(null);
@@ -77,7 +79,7 @@ export default function AdminMessagingPage() {
     admin: '#e5332a',
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -90,14 +92,13 @@ export default function AdminMessagingPage() {
           <div style={{ marginBottom: 32 }}>
             <h1 style={{ fontSize: 32, fontWeight: 700, color: '#e5e7eb', margin: '0 0 8px' }}>
               <FaComments style={{ marginRight: 12, verticalAlign: 'middle' }} />
-              Messaging Overview
-            </h1>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>Monitor platform communications</p>
+              {say("Messaging Overview")}{' '}</h1>
+            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>{say("Monitor platform communications")}</p>
           </div>
 
           {error && (
             <div style={{ background: 'rgba(229,51,42,0.15)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 16, marginBottom: 24, color: '#fca5a5' }}>
-              {error}
+              {say(error)}
             </div>
           )}
 
@@ -105,17 +106,17 @@ export default function AdminMessagingPage() {
           {stats && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
               {[
-                { label: 'Conversations', value: stats.totalConversations, icon: <FaComments />, color: '#3b82f6' },
-                { label: 'Unread Messages', value: stats.unreadMessages, icon: <FaEnvelope />, color: '#f59e0b' },
-                { label: 'Active Users', value: stats.activeUsers, icon: <FaUsers />, color: '#22c55e' },
-                { label: 'Messages (24h)', value: stats.messagesSent24h, icon: <FaArrowRight />, color: '#ec4899' },
+                { label: say("Conversations"), value: stats.totalConversations, icon: <FaComments />, color: '#3b82f6' },
+                { label: say("Unread Messages"), value: stats.unreadMessages, icon: <FaEnvelope />, color: '#f59e0b' },
+                { label: say("Active Users"), value: stats.activeUsers, icon: <FaUsers />, color: '#22c55e' },
+                { label: say("Messages (24h)"), value: stats.messagesSent24h, icon: <FaArrowRight />, color: '#ec4899' },
               ].map((stat, i) => (
                 <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <span style={{ color: stat.color, fontSize: 20 }}>{stat.icon}</span>
-                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{stat.label}</div>
+                    <span style={{ color: stat.color, fontSize: 20 }}>{say(stat.icon)}</span>
+                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{say(stat.label)}</div>
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{say(stat.value)}</div>
                 </div>
               ))}
             </div>
@@ -136,17 +137,16 @@ export default function AdminMessagingPage() {
                 fontSize: 13,
               }}
             >
-              {filterUnread ? '✓ Showing Unread Only' : 'Show All Conversations'}
+              {filterUnread ? say("✓ Showing Unread Only") : say("Show All Conversations")}
             </button>
           </div>
 
           {/* Conversations List */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading conversations...</div>
+            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>{say("Loading conversations...")}</div>
           ) : filteredConversations.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
-              No conversations
-            </div>
+              {say("No conversations")}{' '}</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filteredConversations.map(conv => (
@@ -199,20 +199,20 @@ export default function AdminMessagingPage() {
                           fontSize: 11,
                           fontWeight: 600,
                         }}>
-                          {conv.unreadCount} unread
+                          {say(conv.unreadCount)} unread
                         </span>
                       )}
                     </div>
                     <div style={{ color: '#e5e7eb', fontWeight: 600, marginBottom: 4 }}>
-                      {conv.senderName} to {conv.receiverName}
+                      {say(conv.senderName)} to {say(conv.receiverName)}
                     </div>
                     {conv.subject && (
                       <div style={{ color: '#9ca3af', fontSize: 13, marginBottom: 4 }}>
-                        Subject: {conv.subject}
+                        {say("Subject:")}{' '}{say(conv.subject)}
                       </div>
                     )}
                     <div style={{ color: '#9ca3af', fontSize: 12, maxWidth: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {conv.body}
+                      {say(conv.body)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 150 }}>

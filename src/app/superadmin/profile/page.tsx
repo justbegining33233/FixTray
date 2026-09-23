@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -9,6 +10,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 type SuperAdminProfileSection = 'profile' | 'contact' | 'security';
 
 function SuperAdminProfilePageContent() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,8 +84,7 @@ function SuperAdminProfilePageContent() {
   if (isLoading) {
     return (
       <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -93,18 +94,17 @@ function SuperAdminProfilePageContent() {
     <div style={{ minHeight: '100vh', background: '#000000', color: '#e2e8f0' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         <Link href={'/superadmin/analytics' as Route} style={{ color: '#93c5fd', textDecoration: 'none', fontSize: 14 }}>
-          Back to Super Admin Dashboard
-        </Link>
+          {say("Back to Super Admin Dashboard")}{' '}</Link>
 
         <div style={{ marginTop: 14, background: '#000000', border: '1px solid #1f2937', borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>Super Admin Profile</h1>
-              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>Personal profile and account security for your own login.</p>
+              <h1 style={{ margin: 0, fontSize: 30, color: '#f8fafc' }}>{say("Super Admin Profile")}</h1>
+              <p style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>{say("Personal profile and account security for your own login.")}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 999, background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.35)', color: '#c7d2fe', fontSize: 12, fontWeight: 700 }}>
-              <span style={{ width: 24, height: 24, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.25)', color: '#e0e7ff' }}>{initials}</span>
-              {user.name || 'Super Admin'}
+              <span style={{ width: 24, height: 24, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.25)', color: '#e0e7ff' }}>{say(initials)}</span>
+              {user.name || say("Super Admin")}
             </div>
           </div>
 
@@ -112,16 +112,16 @@ function SuperAdminProfilePageContent() {
             <div style={{ minWidth: 0 }}>
               {section === 'profile' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>My Profile</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Only your own account information is available here.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("My Profile")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Only your own account information is available here.")}</p>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Name</div>
-                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{name || 'Not set'}</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Name")}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>{name || say("Not set")}</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ color: '#94a3b8', fontSize: 12 }}>Role</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12 }}>{say("Role")}</div>
                       <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>superadmin</div>
                     </div>
                   </div>
@@ -130,26 +130,26 @@ function SuperAdminProfilePageContent() {
 
               {section === 'contact' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Contact & Settings</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Update your personal profile details.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Contact & Settings")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Update your personal profile details.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 620 }}>
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Full name"
+                      placeholder={say("Full name")}
                       style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }}
                     />
                     <input
                       value={email}
                       disabled
-                      placeholder="Email"
+                      placeholder={say("Email")}
                       style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #1f2937', background: '#0b1220', color: '#94a3b8' }}
                     />
                     <input
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Phone"
+                      placeholder={say("Phone")}
                       style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #334155', background: '#020617', color: '#e2e8f0' }}
                     />
                     <button
@@ -157,7 +157,7 @@ function SuperAdminProfilePageContent() {
                       disabled={saving}
                       style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#4f46e5', color: 'white', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}
                     >
-                      {saving ? 'Saving...' : 'Save Changes'}
+                      {saving ? say("Saving...") : say("Save Changes")}
                     </button>
                   </div>
                 </div>
@@ -165,39 +165,34 @@ function SuperAdminProfilePageContent() {
 
               {section === 'security' && (
                 <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 16 }}>
-                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>Security & Links</h2>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>Open your security and global settings pages.</p>
+                  <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: 22 }}>{say("Security & Links")}</h2>
+                  <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Open your security and global settings pages.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 460 }}>
                     <Link href={'/superadmin/security' as Route} style={{ textDecoration: 'none', color: '#c7d2fe', border: '1px solid #3730a3', borderRadius: 8, padding: '10px 12px', background: 'rgba(55,48,163,0.2)' }}>
-                      Security Settings
-                    </Link>
+                      {say("Security Settings")}{' '}</Link>
                     <Link href={'/superadmin/settings' as Route} style={{ textDecoration: 'none', color: '#c7d2fe', border: '1px solid #3730a3', borderRadius: 8, padding: '10px 12px', background: 'rgba(55,48,163,0.2)' }}>
-                      Global Settings
-                    </Link>
+                      {say("Global Settings")}{' '}</Link>
                   </div>
                 </div>
               )}
 
               {message && (
                 <div style={{ marginTop: 12, fontSize: 13, color: message.toLowerCase().includes('success') ? '#4ade80' : '#fda4af' }}>
-                  {message}
+                  {say(message)}
                 </div>
               )}
             </div>
 
             <div>
               <div style={{ background: '#0b1220', border: '1px solid #1e293b', borderRadius: 12, padding: 12, position: 'sticky', top: 24 }}>
-                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Menu</div>
+                <div style={{ color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{say("Menu")}</div>
                 <button onClick={() => openSection('profile')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'profile' ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent', background: section === 'profile' ? 'rgba(99,102,241,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  My Profile
-                </button>
+                  {say("My Profile")}{' '}</button>
                 <button onClick={() => openSection('contact')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'contact' ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent', background: section === 'contact' ? 'rgba(99,102,241,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer', marginBottom: 8 }}>
-                  Contact & Settings
-                </button>
+                  {say("Contact & Settings")}{' '}</button>
                 <button onClick={() => openSection('security')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: section === 'security' ? '1px solid rgba(99,102,241,0.45)' : '1px solid transparent', background: section === 'security' ? 'rgba(99,102,241,0.14)' : 'transparent', color: '#e2e8f0', cursor: 'pointer' }}>
-                  Security & Links
-                </button>
+                  {say("Security & Links")}{' '}</button>
               </div>
             </div>
           </div>
@@ -208,12 +203,12 @@ function SuperAdminProfilePageContent() {
 }
 
 export default function SuperAdminProfilePage() {
+  const say = usePhrase();
   return (
     <Suspense
       fallback={
         <div style={{ minHeight: '100vh', background: '#000000', color: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          Loading...
-        </div>
+          {say("Loading...")}{' '}</div>
       }
     >
       <SuperAdminProfilePageContent />

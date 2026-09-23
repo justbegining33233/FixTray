@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -10,6 +11,7 @@ import { FaCheckCircle, FaLock, FaUnlock } from 'react-icons/fa';
 type Step = 'idle' | 'setup' | 'verify' | 'disable';
 
 export default function ManagerTwoFactorPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [enabled, setEnabled] = useState(false);
@@ -56,7 +58,7 @@ export default function ManagerTwoFactorPage() {
     setFetching(false);
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -66,38 +68,38 @@ export default function ManagerTwoFactorPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 600, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaLock style={{ marginRight: 8 }} />Two-Factor Authentication</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaLock style={{ marginRight: 8 }} />{say("Two-Factor Authentication")}</h1>
 
-          {statusMsg && <div style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 14 }}><FaCheckCircle style={{ marginRight: 6 }} />{statusMsg}</div>}
-          {errorMsg && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{errorMsg}</div>}
+          {statusMsg && <div style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 14 }}><FaCheckCircle style={{ marginRight: 6 }} />{say(statusMsg)}</div>}
+          {errorMsg && <div style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{say(errorMsg)}</div>}
 
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               {enabled ? <FaCheckCircle style={{ color: '#22c55e', fontSize: 24 }} /> : <FaUnlock style={{ color: '#f59e0b', fontSize: 24 }} />}
-              <span style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600 }}>{enabled ? 'Enabled' : 'Not Enabled'}</span>
+              <span style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600 }}>{enabled ? say("Enabled") : say("Not Enabled")}</span>
             </div>
 
             {step === 'idle' && (
               <button onClick={enabled ? () => setStep('disable') : startSetup} disabled={fetching} style={{ background: enabled ? 'rgba(239,68,68,0.2)' : 'rgba(229,51,42,0.2)', color: enabled ? '#ef4444' : '#e5332a', border: `1px solid ${enabled ? 'rgba(239,68,68,0.3)' : 'rgba(229,51,42,0.3)'}`, borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
-                {enabled ? 'Disable 2FA' : 'Enable 2FA'}
+                {enabled ? say("Disable 2FA") : say("Enable 2FA")}
               </button>
             )}
 
             {step === 'setup' && qrCode && (
               <div>
-                <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 12 }}>Scan this QR code with your authenticator app:</p>
-                <img src={qrCode} alt="QR Code" style={{ width: 200, height: 200, marginBottom: 12 }} />
-                {secret && <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 16 }}>Manual code: <code style={{ color: '#e5e7eb' }}>{secret}</code></p>}
-                <input value={tokenInput} onChange={e => setTokenInput(e.target.value)} placeholder="Enter 6-digit code" maxLength={6} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 16, width: 180, marginRight: 8 }} />
-                <button onClick={verify} disabled={fetching || tokenInput.length < 6} style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600 }}>Verify</button>
+                <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 12 }}>{say("Scan this QR code with your authenticator app:")}</p>
+                <img src={qrCode} alt={say("QR Code")} style={{ width: 200, height: 200, marginBottom: 12 }} />
+                {secret && <p style={{ color: '#6b7280', fontSize: 12, marginBottom: 16 }}>{say("Manual code:")}{' '}<code style={{ color: '#e5e7eb' }}>{say(secret)}</code></p>}
+                <input value={tokenInput} onChange={e => setTokenInput(e.target.value)} placeholder={say("Enter 6-digit code")} maxLength={6} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 16, width: 180, marginRight: 8 }} />
+                <button onClick={verify} disabled={fetching || tokenInput.length < 6} style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600 }}>{say("Verify")}</button>
               </div>
             )}
 
             {step === 'disable' && (
               <div>
-                <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 12 }}>Enter a code from your authenticator app to disable 2FA:</p>
-                <input value={tokenInput} onChange={e => setTokenInput(e.target.value)} placeholder="Enter 6-digit code" maxLength={6} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 16, width: 180, marginRight: 8 }} />
-                <button onClick={disable} disabled={fetching || tokenInput.length < 6} style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600 }}>Disable</button>
+                <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 12 }}>{say("Enter a code from your authenticator app to disable 2FA:")}</p>
+                <input value={tokenInput} onChange={e => setTokenInput(e.target.value)} placeholder={say("Enter 6-digit code")} maxLength={6} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', color: '#e5e7eb', fontSize: 16, width: 180, marginRight: 8 }} />
+                <button onClick={disable} disabled={fetching || tokenInput.length < 6} style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600 }}>{say("Disable")}</button>
               </div>
             )}
           </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -29,6 +30,7 @@ interface StoredEmployee {
 }
 
 export default function ManageTeamPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -79,7 +81,7 @@ export default function ManageTeamPage() {
     loadTeamMembers();
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const loadTeamMembers = async () => {
@@ -295,14 +297,13 @@ export default function ManageTeamPage() {
           <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
             {/* Page Header */}
             <div style={{marginBottom:24}}>
-              <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaUsers style={{marginRight:4}} /> Manage Team</h1>
-              <p style={{fontSize:14, color:'#9aa3b2'}}>Add and manage your shop team members</p>
+              <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaUsers style={{marginRight:4}} /> {say("Manage Team")}</h1>
+              <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Add and manage your shop team members")}</p>
               <button 
                 onClick={openAddModal}
                 style={{marginTop:16, padding:'12px 24px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
-                + Add Team Member
-              </button>
+                {say("+ Add Team Member")}{' '}</button>
             </div>
 
       <div style={{maxWidth:1200, margin:'0 auto'}}>
@@ -311,14 +312,13 @@ export default function ManageTeamPage() {
           {teamMembers.length === 0 ? (
             <div style={{textAlign:'center', padding:40}}>
               <div style={{fontSize:48, marginBottom:16}}><FaUsers style={{marginRight:4}} /></div>
-              <h3 style={{fontSize:20, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>No Team Members Yet</h3>
-              <p style={{color:'#9aa3b2', marginBottom:20}}>Add technicians and managers to your team</p>
+              <h3 style={{fontSize:20, fontWeight:600, color:'#e5e7eb', marginBottom:8}}>{say("No Team Members Yet")}</h3>
+              <p style={{color:'#9aa3b2', marginBottom:20}}>{say("Add technicians and managers to your team")}</p>
               <button 
                 onClick={openAddModal}
                 style={{padding:'12px 24px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
               >
-                + Add First Team Member
-              </button>
+                {say("+ Add First Team Member")}{' '}</button>
             </div>
           ) : (
             <div style={{display:'grid', gap:16}}>
@@ -329,36 +329,36 @@ export default function ManageTeamPage() {
                       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:12}}>
                         <span style={{fontSize:32}}>{member.role === 'tech' ? <FaWrench style={{marginRight:4}} /> : <FaUserTie style={{marginRight:4}} />}</span>
                         <div>
-                          <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{member.name}</h3>
+                          <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{say(member.name)}</h3>
                           <div style={{display:'flex', gap:8}}>
                             <span style={{padding:'4px 12px', background:member.role === 'tech' ? 'rgba(34,197,94,0.2)' : 'rgba(229,51,42,0.2)', color:member.role === 'tech' ? '#22c55e' : '#e5332a', borderRadius:12, fontSize:12, fontWeight:600}}>
-                              {member.role === 'tech' ? 'Technician' : 'Manager'}
+                              {member.role === 'tech' ? say("Technician") : say("Manager")}
                             </span>
                             <span style={{padding:'4px 12px', background: member.status === 'active' ? 'rgba(34,197,94,0.2)' : 'rgba(107,114,128,0.2)', color: member.status === 'active' ? '#22c55e' : '#9ca3af', borderRadius:12, fontSize:12, fontWeight:600}}>
-                              <FaCircle style={{marginRight:4}} /> {member.status === 'active' ? 'Active' : 'Inactive'}
+                              <FaCircle style={{marginRight:4}} /> {member.status === 'active' ? say("Active") : say("Inactive")}
                             </span>
                           </div>
                         </div>
                       </div>
                       <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16}}>
                         <div>
-                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>Employee #</div>
-                          <div style={{fontSize:14, color:'#e5e7eb'}}>{member.employeeNumber || 'Pending'}</div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Employee #")}</div>
+                          <div style={{fontSize:14, color:'#e5e7eb'}}>{member.employeeNumber || say("Pending")}</div>
                         </div>
                         <div>
-                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>Email</div>
-                          <div style={{fontSize:14, color:'#e5e7eb'}}>{member.email}</div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Email")}</div>
+                          <div style={{fontSize:14, color:'#e5e7eb'}}>{say(member.email)}</div>
                         </div>
                         <div>
-                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>Phone</div>
-                          <div style={{fontSize:14, color:'#e5e7eb'}}>{member.phone}</div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Phone")}</div>
+                          <div style={{fontSize:14, color:'#e5e7eb'}}>{say(member.phone)}</div>
                         </div>
                         <div>
-                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>Assigned Jobs</div>
-                          <div style={{fontSize:14, color:'#e5e7eb'}}>{member.assignedJobs}</div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Assigned Jobs")}</div>
+                          <div style={{fontSize:14, color:'#e5e7eb'}}>{say(member.assignedJobs)}</div>
                         </div>
                         <div>
-                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>Joined</div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Joined")}</div>
                           <div style={{fontSize:14, color:'#e5e7eb'}}>{new Date(member.joinedDate).toLocaleDateString()}</div>
                         </div>
                       </div>
@@ -368,14 +368,12 @@ export default function ManageTeamPage() {
                         onClick={() => handleEditMember(member)}
                         style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer'}}
                       >
-                        Edit
-                      </button>
+                        {say("Edit")}{' '}</button>
                       <button 
                         onClick={() => setRemoveConfirmId(member.id)}
                         style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer'}}
                       >
-                        Remove
-                      </button>
+                        {say("Remove")}{' '}</button>
                     </div>
                   </div>
                 </div>
@@ -390,64 +388,60 @@ export default function ManageTeamPage() {
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
           <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
-              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Add Team Member</h2>
+              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>{say("Add Team Member")}</h2>
               <button onClick={() => setShowAddModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
             <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Role *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Role *")}</label>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
                 <button type="button" onClick={() => setNewMember({...newMember, role: 'tech'})} style={{padding:16, background:newMember.role === 'tech' ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${newMember.role === 'tech' ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
                   <div style={{fontSize:24, marginBottom:8}}><FaWrench style={{marginRight:4}} /></div>
-                  Technician
-                </button>
+                  {say("Technician")}{' '}</button>
                 <button type="button" onClick={() => setNewMember({...newMember, role: 'manager'})} style={{padding:16, background:newMember.role === 'manager' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${newMember.role === 'manager' ? '#e5332a' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
                   <div style={{fontSize:24, marginBottom:8}}><FaUserTie style={{marginRight:4}} /></div>
-                  Manager
-                </button>
+                  {say("Manager")}{' '}</button>
               </div>
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Employee # (Auto)</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Employee # (Auto)")}</label>
               <input
                 type="text"
                 value={newMember.employeeNumber}
                 readOnly
-                placeholder="Generating..."
+                placeholder={say("Generating...")}
                 style={{width:'100%', padding:'12px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
               />
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Full Name *</label>
-              <input type="text" value={newMember.name} onChange={(e) => setNewMember({...newMember, name: e.target.value})} placeholder="John Doe" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Full Name *")}</label>
+              <input type="text" value={newMember.name} onChange={(e) => setNewMember({...newMember, name: e.target.value})} placeholder={say("John Doe")} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Email *</label>
-              <input type="email" value={newMember.email} onChange={(e) => setNewMember({...newMember, email: e.target.value})} placeholder="john@example.com" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Email *")}</label>
+              <input type="email" value={newMember.email} onChange={(e) => setNewMember({...newMember, email: e.target.value})} placeholder={say("john@example.com")} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Phone *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Phone *")}</label>
               <input type="tel" value={newMember.phone} onChange={(e) => setNewMember({...newMember, phone: e.target.value})} placeholder="(555) 123-4567" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
             </div>
 
             <div style={{marginBottom:24}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Password *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Password *")}</label>
               <input type="password" value={newMember.password} onChange={(e) => setNewMember({...newMember, password: e.target.value})} placeholder="--------" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
             </div>
 
             <div style={{display:'flex', gap:12}}>
               <button onClick={() => setShowAddModal(false)} style={{flex:1, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
               <button onClick={handleAddMember} style={{flex:1, padding:'12px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
-                Add Member
-              </button>
+                {say("Add Member")}{' '}</button>
             </div>
-            {formError && <div style={{marginTop:12, fontSize:13, color:'#f87171', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8, padding:'10px 14px'}}>{formError}</div>}
+            {formError && <div style={{marginTop:12, fontSize:13, color:'#f87171', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8, padding:'10px 14px'}}>{say(formError)}</div>}
           </div>
         </div>
       )}
@@ -457,47 +451,45 @@ export default function ManageTeamPage() {
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
           <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
-              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>Edit Team Member</h2>
+              <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>{say("Edit Team Member")}</h2>
               <button onClick={() => setShowEditModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
             </div>
 
             <div style={{marginBottom:20}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Role *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Role *")}</label>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
                 <button type="button" onClick={() => setEditingMember({...editingMember, role: 'tech'})} style={{padding:16, background:editingMember.role === 'tech' ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${editingMember.role === 'tech' ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
                   <div style={{fontSize:24, marginBottom:8}}><FaWrench style={{marginRight:4}} /></div>
-                  Technician
-                </button>
+                  {say("Technician")}{' '}</button>
                 <button type="button" onClick={() => setEditingMember({...editingMember, role: 'manager'})} style={{padding:16, background:editingMember.role === 'manager' ? 'rgba(229,51,42,0.2)' : 'rgba(255,255,255,0.05)', border:`2px solid ${editingMember.role === 'manager' ? '#e5332a' : 'rgba(255,255,255,0.1)'}`, borderRadius:8, cursor:'pointer', color:'#e5e7eb', fontSize:14, fontWeight:600}}>
                   <div style={{fontSize:24, marginBottom:8}}><FaUserTie style={{marginRight:4}} /></div>
-                  Manager
-                </button>
+                  {say("Manager")}{' '}</button>
               </div>
             </div>
 
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16}}>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>First Name *</label>
-                <input type="text" value={editingMember.firstName} onChange={(e) => setEditingMember({...editingMember, firstName: e.target.value})} placeholder="John" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("First Name *")}</label>
+                <input type="text" value={editingMember.firstName} onChange={(e) => setEditingMember({...editingMember, firstName: e.target.value})} placeholder={say("John")} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
               </div>
               <div>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Last Name *</label>
-                <input type="text" value={editingMember.lastName} onChange={(e) => setEditingMember({...editingMember, lastName: e.target.value})} placeholder="Doe" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Last Name *")}</label>
+                <input type="text" value={editingMember.lastName} onChange={(e) => setEditingMember({...editingMember, lastName: e.target.value})} placeholder={say("Doe")} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
               </div>
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Email *</label>
-              <input type="email" value={editingMember.email} onChange={(e) => setEditingMember({...editingMember, email: e.target.value})} placeholder="john@example.com" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Email *")}</label>
+              <input type="email" value={editingMember.email} onChange={(e) => setEditingMember({...editingMember, email: e.target.value})} placeholder={say("john@example.com")} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Phone *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Phone *")}</label>
               <input type="tel" value={editingMember.phone} onChange={(e) => setEditingMember({...editingMember, phone: e.target.value})} placeholder="(555) 123-4567" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
             </div>
 
             <div style={{marginBottom:24}}>
-              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Hourly Rate ($) *</label>
+              <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Hourly Rate ($) *")}</label>
               <input 
                 type="number" 
                 step="0.01"
@@ -511,13 +503,11 @@ export default function ManageTeamPage() {
 
             <div style={{display:'flex', gap:12}}>
               <button onClick={() => setShowEditModal(false)} style={{flex:1, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
               <button onClick={handleUpdateMember} style={{flex:1, padding:'12px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
-                Update Member
-              </button>
+                {say("Update Member")}{' '}</button>
             </div>
-            {editError && <div style={{marginTop:12, fontSize:13, color:'#f87171', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8, padding:'10px 14px'}}>{editError}</div>}
+            {editError && <div style={{marginTop:12, fontSize:13, color:'#f87171', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:8, padding:'10px 14px'}}>{say(editError)}</div>}
           </div>
         </div>
       )}
@@ -529,11 +519,11 @@ export default function ManageTeamPage() {
       {removeConfirmId && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1100}}>
           <div style={{background:'#1f2937', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:28, width:380, maxWidth:'90%'}}>
-            <h3 style={{margin:'0 0 12px', fontSize:18, color:'#e5e7eb'}}>Remove Team Member</h3>
-            <p style={{color:'#9ca3af', fontSize:14, marginBottom:20}}>Are you sure you want to remove this team member? This action cannot be undone.</p>
+            <h3 style={{margin:'0 0 12px', fontSize:18, color:'#e5e7eb'}}>{say("Remove Team Member")}</h3>
+            <p style={{color:'#9ca3af', fontSize:14, marginBottom:20}}>{say("Are you sure you want to remove this team member? This action cannot be undone.")}</p>
             <div style={{display:'flex', gap:10}}>
-              <button onClick={() => handleRemoveMember(removeConfirmId)} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'11px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>Remove</button>
-              <button onClick={() => setRemoveConfirmId(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'11px 0', fontSize:14, cursor:'pointer'}}>Cancel</button>
+              <button onClick={() => handleRemoveMember(removeConfirmId)} style={{flex:1, background:'#e5332a', color:'#fff', border:'none', borderRadius:8, padding:'11px 0', fontSize:14, fontWeight:600, cursor:'pointer'}}>{say("Remove")}</button>
+              <button onClick={() => setRemoveConfirmId(null)} style={{flex:1, background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.15)', borderRadius:8, padding:'11px 0', fontSize:14, cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
@@ -542,7 +532,7 @@ export default function ManageTeamPage() {
       {/* Toast notification */}
       {toast && (
         <div style={{position:'fixed', bottom:24, right:24, background: toast.type === 'success' ? '#22c55e' : '#e5332a', color:'#fff', padding:'12px 20px', borderRadius:10, fontSize:14, fontWeight:600, zIndex:2000, boxShadow:'0 4px 20px rgba(0,0,0,0.4)'}}>
-          {toast.msg}
+          {say(toast.msg)}
         </div>
       )}
     </div>

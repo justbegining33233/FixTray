@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -19,6 +20,7 @@ interface Employee {
 }
 
 export default function ManagerPayrollPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -36,7 +38,7 @@ export default function ManagerPayrollPage() {
     load();
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -46,22 +48,22 @@ export default function ManagerPayrollPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>Payroll</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}>{say("Payroll")}</h1>
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : employees.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
               <FaUsers style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p>No employees found.</p>
+              <p>{say("No employees found.")}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {employees.map(e => (
                 <div key={e.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                   <div>
-                    <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16 }}>{e.firstName} {e.lastName}</span>
-                    <span style={{ color: '#9aa3b2', fontSize: 13, marginLeft: 12 }}>{e.role}</span>
-                    <span style={{ marginLeft: 8, background: e.available ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: e.available ? '#22c55e' : '#ef4444', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>{e.available ? 'Active' : 'Inactive'}</span>
+                    <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16 }}>{say(e.firstName)} {say(e.lastName)}</span>
+                    <span style={{ color: '#9aa3b2', fontSize: 13, marginLeft: 12 }}>{say(e.role)}</span>
+                    <span style={{ marginLeft: 8, background: e.available ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: e.available ? '#22c55e' : '#ef4444', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>{e.available ? say("Active") : say("Inactive")}</span>
                   </div>
                   <div style={{ color: '#9aa3b2', fontSize: 14 }}>
                     <FaDollarSign style={{ marginRight: 2 }} />

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation, Position } from '@capacitor/geolocation';
@@ -29,6 +30,7 @@ export default function LocationTracker({
   autoStart = false,
   updateInterval = 30000, // 30 seconds
 }: LocationTrackerProps) {
+  const say = usePhrase();
   const [isTracking, setIsTracking] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [locationHistory, setLocationHistory] = useState<LocationData[]>([]);
@@ -335,8 +337,7 @@ export default function LocationTracker({
             fontSize: '16px',
             fontWeight: '600'
           }}>
-            Location Tracker
-          </h3>
+            {say("Location Tracker")}{' '}</h3>
         </div>
 
         <div style={{
@@ -352,8 +353,7 @@ export default function LocationTracker({
               padding: '4px 8px',
               borderRadius: '4px',
             }}>
-              Permission denied
-            </span>
+              {say("Permission denied")}{' '}</span>
           )}
 
           <button
@@ -373,7 +373,7 @@ export default function LocationTracker({
             }}
           >
             {isTracking ? <FaStop /> : <FaPlay />}
-            {isTracking ? 'Stop' : 'Start'}
+            {isTracking ? say("Stop") : say("Start")}
           </button>
         </div>
       </div>
@@ -392,8 +392,7 @@ export default function LocationTracker({
               marginBottom: '4px',
               fontWeight: '500',
             }}>
-              Current Location
-            </div>
+              {say("Current Location")}{' '}</div>
             <div style={{
               color: '#9ca3af',
               fontSize: '12px',
@@ -406,7 +405,7 @@ export default function LocationTracker({
               fontSize: '11px',
               marginTop: '4px',
             }}>
-              Accuracy: ±{Math.round(currentLocation.accuracy)}m
+              {say("Accuracy: ±")}{Math.round(currentLocation.accuracy)}m
               {currentLocation.speed && ` • Speed: ${Math.round(currentLocation.speed * 3.6)} km/h`}
             </div>
           </div>
@@ -429,8 +428,7 @@ export default function LocationTracker({
             }}>
               <FaClock style={{ color: '#3b82f6', fontSize: '14px', marginBottom: '4px' }} />
               <div style={{ color: '#e5e7eb', fontSize: '12px', fontWeight: '500' }}>
-                Duration
-              </div>
+                {say("Duration")}{' '}</div>
               <div style={{ color: '#9ca3af', fontSize: '11px' }}>
                 {formatDuration(trackingStartTime)}
               </div>
@@ -444,8 +442,7 @@ export default function LocationTracker({
             }}>
               <FaMapMarkerAlt style={{ color: '#10b981', fontSize: '14px', marginBottom: '4px' }} />
               <div style={{ color: '#e5e7eb', fontSize: '12px', fontWeight: '500' }}>
-                Distance
-              </div>
+                {say("Distance")}{' '}</div>
               <div style={{ color: '#9ca3af', fontSize: '11px' }}>
                 {formatDistance(distanceTraveled)}
               </div>
@@ -478,8 +475,7 @@ export default function LocationTracker({
             }}
           >
             <FaShareAlt />
-            Share Location
-          </button>
+            {say("Share Location")}{' '}</button>
         )}
 
         {locationHistory.length > 1 && (
@@ -510,8 +506,7 @@ export default function LocationTracker({
             }}
           >
             <FaMapMarkerAlt />
-            View Route
-          </button>
+            {say("View Route")}{' '}</button>
         )}
       </div>
 
@@ -526,7 +521,7 @@ export default function LocationTracker({
           color: '#fca5a5',
           fontSize: '12px',
         }}>
-          {error}
+          {say(error)}
         </div>
       )}
 
@@ -547,7 +542,7 @@ export default function LocationTracker({
           color: '#9ca3af',
           fontSize: '12px',
         }}>
-          {isTracking ? 'Tracking active' : 'Tracking inactive'}
+          {isTracking ? say("Tracking active") : say("Tracking inactive")}
         </span>
       </div>
     </div>

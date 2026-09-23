@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -15,6 +16,7 @@ interface LeaveRequestFormProps {
 }
 
 export function LeaveRequestForm({ leaveRequestId, initialData }: LeaveRequestFormProps) {
+  const say = usePhrase();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -89,11 +91,11 @@ export function LeaveRequestForm({ leaveRequestId, initialData }: LeaveRequestFo
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded border border-red-200">{error}</div>}
+      {error && <div className="bg-red-50 text-red-700 p-4 rounded border border-red-200">{say(error)}</div>}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{say("Start Date")}</label>
           <input
             type="date"
             name="startDate"
@@ -104,7 +106,7 @@ export function LeaveRequestForm({ leaveRequestId, initialData }: LeaveRequestFo
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{say("End Date")}</label>
           <input
             type="date"
             name="endDate"
@@ -118,8 +120,7 @@ export function LeaveRequestForm({ leaveRequestId, initialData }: LeaveRequestFo
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Leave Type
-        </label>
+          {say("Leave Type")}{' '}</label>
         <select
           name="type"
           value={formData.type}
@@ -127,21 +128,21 @@ export function LeaveRequestForm({ leaveRequestId, initialData }: LeaveRequestFo
           required
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
         >
-          <option value="vacation">Vacation</option>
-          <option value="sick">Sick Leave</option>
-          <option value="personal">Personal Day</option>
-          <option value="bereavement">Bereavement</option>
-          <option value="parental">Parental Leave</option>
+          <option value="vacation">{say("Vacation")}</option>
+          <option value="sick">{say("Sick Leave")}</option>
+          <option value="personal">{say("Personal Day")}</option>
+          <option value="bereavement">{say("Bereavement")}</option>
+          <option value="parental">{say("Parental Leave")}</option>
         </select>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{say("Reason")}</label>
         <textarea
           name="reason"
           value={formData.reason}
           onChange={handleChange}
-          placeholder="Provide details about your leave request..."
+          placeholder={say("Provide details about your leave request...")}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
           rows={3}
         />
@@ -149,12 +150,11 @@ export function LeaveRequestForm({ leaveRequestId, initialData }: LeaveRequestFo
 
       <div className="bg-blue-50 p-4 rounded border border-blue-200">
         <p className="text-sm text-gray-700">
-          <span className="font-semibold">Total Days:</span> {days} day{days !== 1 ? 's' : ''}
+          <span className="font-semibold">{say("Total Days:")}</span> {say(days)} day{days !== 1 ? 's' : ''}
         </p>
         {formData.type === 'vacation' && days > 10 && (
           <p className="text-sm text-red-600 mt-2">
-            ⚠️ Vacation requests cannot exceed 10 consecutive days.
-          </p>
+            {say("⚠️ Vacation requests cannot exceed 10 consecutive days.")}{' '}</p>
         )}
       </div>
 
@@ -164,15 +164,14 @@ export function LeaveRequestForm({ leaveRequestId, initialData }: LeaveRequestFo
           disabled={loading}
           className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? 'Submitting...' : leaveRequestId ? 'Update Request' : 'Submit Request'}
+          {loading ? say("Submitting...") : leaveRequestId ? say("Update Request") : say("Submit Request")}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
           className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
         >
-          Cancel
-        </button>
+          {say("Cancel")}{' '}</button>
       </div>
     </form>
   );

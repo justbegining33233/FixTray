@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -137,6 +138,7 @@ interface LiveRevenueData {
 }
 
 export default function CommandCenterPage() {
+  const say = usePhrase();
   const router = useRouter();
   const { user, isLoading: authLoading } = useRequireAuth(['admin']);
   const [data, setData] = useState<CommandCenterData | null>(null);
@@ -333,7 +335,7 @@ export default function CommandCenterPage() {
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-orange-500 animate-spin"></div>
             <div className="absolute inset-3 rounded-full border-4 border-transparent border-t-orange-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }}></div>
           </div>
-          <p className="text-stone-400 font-medium">Initializing Command Center...</p>
+          <p className="text-stone-400 font-medium">{say("Initializing Command Center...")}</p>
         </div>
       </div>
     );
@@ -342,7 +344,7 @@ export default function CommandCenterPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-stone-400">Redirecting to login...</div>
+        <div className="text-stone-400">{say("Redirecting to login...")}</div>
       </div>
     );
   }
@@ -386,13 +388,13 @@ export default function CommandCenterPage() {
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                    <span className="text-xl">Cmd</span>
+                    <span className="text-xl">{say("Cmd")}</span>
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-stone-900 animate-pulse"></div>
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold">Command Center</h1>
-                  <p className="text-xs text-stone-500">Real-time platform monitoring</p>
+                  <h1 className="text-lg font-semibold">{say("Command Center")}</h1>
+                  <p className="text-xs text-stone-500">{say("Real-time platform monitoring")}</p>
                 </div>
               </div>
             </div>
@@ -401,7 +403,7 @@ export default function CommandCenterPage() {
               {alertCount > 0 && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
                   <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                  <span className="text-sm text-red-400 font-medium">{alertCount} alerts</span>
+                  <span className="text-sm text-red-400 font-medium">{say(alertCount)} alerts</span>
                 </div>
               )}
               <button
@@ -412,7 +414,7 @@ export default function CommandCenterPage() {
                     : 'bg-white/5 text-stone-400 border border-white/10'
                 }`}
               >
-                {autoRefresh ? <><FaCircle style={{marginRight:4}} /> Live</> : <><FaRegCircle style={{marginRight:4}} /> Paused</>}
+                {autoRefresh ? <><FaCircle style={{marginRight:4}} /> {say("Live")}</> : <><FaRegCircle style={{marginRight:4}} /> {say("Paused")}</>}
               </button>
               <button
                 onClick={fetchData}
@@ -425,8 +427,7 @@ export default function CommandCenterPage() {
                 onClick={handleSignOut}
                 className="px-4 py-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-stone-400 hover:text-red-400 text-sm font-medium border border-white/10 hover:border-red-500/20 transition-all"
               >
-                Sign Out
-              </button>
+                {say("Sign Out")}{' '}</button>
             </div>
           </div>
 
@@ -442,8 +443,8 @@ export default function CommandCenterPage() {
                     : 'text-stone-500 hover:text-stone-300 hover:bg-white/5'
                 }`}
               >
-                <span className="opacity-50">{tab.icon}</span>
-                {tab.label}
+                <span className="opacity-50">{say(tab.icon)}</span>
+                {say(tab.label)}
               </button>
             ))}
           </div>
@@ -453,7 +454,7 @@ export default function CommandCenterPage() {
       {error && (
         <div className="relative z-10 max-w-[1920px] mx-auto px-6 pt-6">
           <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400">
-            {error}
+            {say(error)}
           </div>
         </div>
       )}
@@ -465,25 +466,23 @@ export default function CommandCenterPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400">!</span>
-                <span className="font-semibold">Attention Required</span>
+                <span className="font-semibold">{say("Attention Required")}</span>
               </div>
-              <span className="text-xs text-stone-500">Click to resolve</span>
+              <span className="text-xs text-stone-500">{say("Click to resolve")}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {(data?.realTimeOps?.overdueWorkOrders || 0) > 0 && (
                 <span className="px-3 py-1.5 rounded-xl bg-red-500/20 text-red-300 text-sm font-medium border border-red-500/20">
-                  {data?.realTimeOps?.overdueWorkOrders || 0} Overdue Jobs
-                </span>
+                  {data?.realTimeOps?.overdueWorkOrders || 0} {say("Overdue Jobs")}{' '}</span>
               )}
               {pendingApprovalsCount > 0 && (
                 <Link href="/admin/pending-shops" className="px-3 py-1.5 rounded-xl bg-yellow-500/20 text-yellow-300 text-sm font-medium border border-yellow-500/20 hover:bg-yellow-500/30 transition-colors">
-                  {pendingApprovalsCount} Pending Approvals <FaArrowRight style={{marginRight:4}} />
+                  {say(pendingApprovalsCount)} {say("Pending Approvals")}{' '}<FaArrowRight style={{marginRight:4}} />
                 </Link>
               )}
               {(data?.communication?.unreadAdminMessages || 0) > 0 && (
                 <span className="px-3 py-1.5 rounded-xl bg-[#e5332a]/20 text-[#ffb4ad] text-sm font-medium border border-[#e5332a]/20">
-                  {data?.communication?.unreadAdminMessages || 0} Unread Messages
-                </span>
+                  {data?.communication?.unreadAdminMessages || 0} {say("Unread Messages")}{' '}</span>
               )}
             </div>
           </div>
@@ -498,17 +497,15 @@ export default function CommandCenterPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
                 <div className="relative">
                   <div className="flex items-center gap-2 text-emerald-400/70 text-sm mb-2">
-                    <span><FaDollarSign style={{marginRight:4}} /></span> FixTray Fees This Month
-                  </div>
+                    <span><FaDollarSign style={{marginRight:4}} /></span> {say("FixTray Fees This Month")}{' '}</div>
                   <div className="text-5xl font-bold text-emerald-400 mb-2">
                     {formatCurrency(liveFees?.feesThisMonth || 0)}
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     <span className={`flex items-center gap-1 ${(liveFees?.momGrowth || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {(liveFees?.momGrowth || 0) >= 0 ? <FaArrowUp style={{marginRight:4}} /> : <FaArrowDown style={{marginRight:4}} />} {Math.abs(liveFees?.momGrowth || 0)}% MoM
-                    </span>
+                      {(liveFees?.momGrowth || 0) >= 0 ? <FaArrowUp style={{marginRight:4}} /> : <FaArrowDown style={{marginRight:4}} />} {Math.abs(liveFees?.momGrowth || 0)}{say("% MoM")}{' '}</span>
                     <span className="text-stone-500">|</span>
-                    <span className="text-stone-400">{liveFees?.paidWorkOrdersThisMonth || 0} paid work orders</span>
+                    <span className="text-stone-400">{liveFees?.paidWorkOrdersThisMonth || 0} {say("paid work orders")}</span>
                   </div>
                 </div>
               </div>
@@ -517,13 +514,12 @@ export default function CommandCenterPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#e5332a]/100/10 rounded-full blur-3xl"></div>
                 <div className="relative">
                   <div className="flex items-center gap-2 text-[#ff6b64]/70 text-sm mb-2">
-                    <span><FaChartLine style={{marginRight:4}} /></span> Total Fees Collected
-                  </div>
+                    <span><FaChartLine style={{marginRight:4}} /></span> {say("Total Fees Collected")}{' '}</div>
                   <div className="text-5xl font-bold text-[#ff6b64] mb-2">
                     {formatCurrency(liveFees?.totalFees || 0)}
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <span className="text-[#ff6b64]">{formatCurrency(liveFees?.feePerWorkOrder || 0)} per paid work order</span>
+                    <span className="text-[#ff6b64]">{formatCurrency(liveFees?.feePerWorkOrder || 0)} {say("per paid work order")}</span>
                   </div>
                 </div>
               </div>
@@ -532,21 +528,21 @@ export default function CommandCenterPage() {
             {/* Key Business Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
               <MetricCard
-                label="Total Shops"
+                label={say("Total Shops")}
                 value={data?.businessMetrics?.totalShopsCreated || 0}
                 sublabel="registered"
                 color="violet"
                 icon=""
               />
               <MetricCard
-                label="Paid Work Orders"
+                label={say("Paid Work Orders")}
                 value={liveFees?.totalPaidWorkOrders || 0}
                 sublabel="all time"
                 color="emerald"
                 icon=""
               />
               <MetricCard
-                label="Fees Today"
+                label={say("Fees Today")}
                 value={formatCurrency(liveFees?.feesToday || 0)}
                 sublabel="collected"
                 color="cyan"
@@ -554,7 +550,7 @@ export default function CommandCenterPage() {
                 isString
               />
               <MetricCard
-                label="Fees This Week"
+                label={say("Fees This Week")}
                 value={formatCurrency(liveFees?.feesThisWeek || 0)}
                 sublabel="collected"
                 color="green"
@@ -562,7 +558,7 @@ export default function CommandCenterPage() {
                 isString
               />
               <MetricCard
-                label="Fee Per Paid WO"
+                label={say("Fee Per Paid WO")}
                 value={formatCurrency(liveFees?.feePerWorkOrder || 0)}
                 sublabel="flat"
                 color="orange"
@@ -570,7 +566,7 @@ export default function CommandCenterPage() {
                 isString
               />
               <MetricCard
-                label="Customers"
+                label={say("Customers")}
                 value={data?.customers?.total || 0}
                 sublabel="total"
                 color="blue"
@@ -580,7 +576,7 @@ export default function CommandCenterPage() {
 
             {/* Fees by Shop & Shops Status */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <GlassCard title="FixTray Fees by Shop" icon="">
+              <GlassCard title={say("FixTray Fees by Shop")} icon="">
                 <div className="space-y-4">
                   {liveFees?.feesByShop && liveFees.feesByShop
                     .slice(0, 8)
@@ -591,8 +587,8 @@ export default function CommandCenterPage() {
                         <div key={shop.shopName}>
                           <div className="flex justify-between items-center mb-2">
                             <div className="flex items-center gap-2">
-                              <span className="capitalize font-medium">{shop.shopName}</span>
-                              <span className="text-xs text-stone-500 bg-white/5 px-2 py-0.5 rounded-full">{shop.count} paid WOs</span>
+                              <span className="capitalize font-medium">{say(shop.shopName)}</span>
+                              <span className="text-xs text-stone-500 bg-white/5 px-2 py-0.5 rounded-full">{say(shop.count)} {say("paid WOs")}</span>
                             </div>
                             <span className="text-lg font-bold text-emerald-400">{formatCurrency(shop.fees)}</span>
                           </div>
@@ -608,34 +604,34 @@ export default function CommandCenterPage() {
                   {(!liveFees?.feesByShop || liveFees.feesByShop.length === 0) && (
                     <div className="text-center py-8 text-stone-500">
                       <span className="text-4xl mb-2 block opacity-20"><FaChartBar style={{marginRight:4}} /></span>
-                      <span>No paid work orders yet</span>
+                      <span>{say("No paid work orders yet")}</span>
                     </div>
                   )}
                 </div>
               </GlassCard>
 
-              <GlassCard title="Shop Status Breakdown" icon="">
+              <GlassCard title={say("Shop Status Breakdown")} icon="">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
                     <div className="text-4xl font-bold text-emerald-400 mb-1">{data?.businessMetrics?.shopsByStatus?.approved || 0}</div>
-                    <div className="text-sm text-emerald-400/70">Approved</div>
+                    <div className="text-sm text-emerald-400/70">{say("Approved")}</div>
                   </div>
                   <div className="p-5 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center">
                     <div className="text-4xl font-bold text-yellow-400 mb-1">{data?.businessMetrics?.shopsByStatus?.pending || 0}</div>
-                    <div className="text-sm text-yellow-400/70">Pending</div>
+                    <div className="text-sm text-yellow-400/70">{say("Pending")}</div>
                   </div>
                   <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
                     <div className="text-4xl font-bold text-red-400 mb-1">{data?.businessMetrics?.shopsByStatus?.rejected || 0}</div>
-                    <div className="text-sm text-red-400/70">Rejected</div>
+                    <div className="text-sm text-red-400/70">{say("Rejected")}</div>
                   </div>
                   <div className="p-5 rounded-xl bg-stone-500/10 border border-stone-500/20 text-center">
                     <div className="text-4xl font-bold text-stone-400 mb-1">{data?.businessMetrics?.shopsByStatus?.suspended || 0}</div>
-                    <div className="text-sm text-stone-400/70">Suspended</div>
+                    <div className="text-sm text-stone-400/70">{say("Suspended")}</div>
                   </div>
                 </div>
                 <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/5">
                   <div className="flex justify-between items-center">
-                    <span className="text-stone-400">Total Shops Created</span>
+                    <span className="text-stone-400">{say("Total Shops Created")}</span>
                     <span className="text-2xl font-bold">{data?.businessMetrics?.totalShopsCreated || 0}</span>
                   </div>
                 </div>
@@ -643,23 +639,23 @@ export default function CommandCenterPage() {
             </div>
 
             {/* Recent Fee Transactions */}
-            <GlassCard title="Recent Work Order Fee Transactions" icon="" badge={liveFees?.recentTransactions?.length || 0}>
+            <GlassCard title={say("Recent Work Order Fee Transactions")} icon="" badge={liveFees?.recentTransactions?.length || 0}>
               {liveFees?.recentTransactions && liveFees.recentTransactions.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="text-left text-xs text-stone-500 border-b border-white/5">
-                        <th className="pb-3 font-medium">Shop</th>
-                        <th className="pb-3 font-medium">Customer</th>
-                        <th className="pb-3 font-medium">Fee</th>
-                        <th className="pb-3 font-medium">Date</th>
-                        <th className="pb-3 font-medium text-right">Amount Paid</th>
+                        <th className="pb-3 font-medium">{say("Shop")}</th>
+                        <th className="pb-3 font-medium">{say("Customer")}</th>
+                        <th className="pb-3 font-medium">{say("Fee")}</th>
+                        <th className="pb-3 font-medium">{say("Date")}</th>
+                        <th className="pb-3 font-medium text-right">{say("Amount Paid")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {liveFees.recentTransactions.map((tx, i) => (
                         <tr key={i} className="hover:bg-white/5 transition-colors">
-                          <td className="py-3 font-medium">{tx.shopName || 'Unknown Shop'}</td>
+                          <td className="py-3 font-medium">{tx.shopName || say("Unknown Shop")}</td>
                           <td className="py-3 text-stone-400 text-sm">{tx.customerName || '-'}</td>
                           <td className="py-3 text-emerald-400 font-semibold">{formatCurrency(tx.fee)}</td>
                           <td className="py-3 text-stone-400 text-sm">{new Date(tx.date).toLocaleDateString()}</td>
@@ -674,8 +670,8 @@ export default function CommandCenterPage() {
               ) : (
                 <div className="text-center py-12 text-stone-500">
                   <span className="text-5xl mb-3 block opacity-20"></span>
-                  <span className="block mb-2">No paid work-order fee transactions yet</span>
-                  <span className="text-xs text-stone-600">Transactions will appear here when paid work orders are recorded</span>
+                  <span className="block mb-2">{say("No paid work-order fee transactions yet")}</span>
+                  <span className="text-xs text-stone-600">{say("Transactions will appear here when paid work orders are recorded")}</span>
                 </div>
               )}
             </GlassCard>
@@ -683,13 +679,13 @@ export default function CommandCenterPage() {
             {/* Quick Actions for Business */}
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/admin/pending-shops" className="px-4 py-2 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 text-sm font-medium border border-yellow-500/20 transition-all">
-                Review Pending Shops ({pendingApprovalsCount})
+                {say("Review Pending Shops (")}{say(pendingApprovalsCount)})
               </Link>
               <Link href="/admin/revenue" className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-sm font-medium border border-emerald-500/20 transition-all">
-                Revenue Details <FaArrowRight style={{marginRight:4}} />
+                {say("Revenue Details")}{' '}<FaArrowRight style={{marginRight:4}} />
               </Link>
               <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 text-violet-400 text-sm font-medium border border-violet-500/20 transition-all">
-                Open Stripe Dashboard <FaExternalLinkAlt style={{marginRight:4}} />
+                {say("Open Stripe Dashboard")}{' '}<FaExternalLinkAlt style={{marginRight:4}} />
               </a>
             </div>
           </>
@@ -700,7 +696,7 @@ export default function CommandCenterPage() {
             {/* Key Metrics Row */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
               <MetricCard
-                label="Active Now"
+                label={say("Active Now")}
                 value={data?.realTimeOps.clockedInNow || 0}
                 sublabel="employees"
                 color="emerald"
@@ -708,21 +704,21 @@ export default function CommandCenterPage() {
                 pulse
               />
               <MetricCard
-                label="Live Jobs"
+                label={say("Live Jobs")}
                 value={data?.realTimeOps.activeWorkOrders || 0}
                 sublabel="in progress"
                 color="blue"
                 icon="*"
               />
               <MetricCard
-                label="Today's Jobs"
+                label={say("Today's Jobs")}
                 value={data?.realTimeOps.todayWorkOrders || 0}
                 sublabel="created"
                 color="violet"
                 icon="^"
               />
               <MetricCard
-                label="Revenue Today"
+                label={say("Revenue Today")}
                 value={formatCurrency(data?.financials.todayRevenue || 0)}
                 sublabel="collected"
                 color="green"
@@ -730,14 +726,14 @@ export default function CommandCenterPage() {
                 isString
               />
               <MetricCard
-                label="Appointments"
+                label={say("Appointments")}
                 value={data?.realTimeOps.todayAppointments || 0}
                 sublabel="scheduled"
                 color="orange"
                 icon="o"
               />
               <MetricCard
-                label="New Customers"
+                label={say("New Customers")}
                 value={data?.customers.newToday || 0}
                 sublabel="signed up"
                 color="cyan"
@@ -749,7 +745,7 @@ export default function CommandCenterPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               {/* Work Order Pipeline */}
               <div className="lg:col-span-1">
-                <GlassCard title="Work Order Pipeline" icon="">
+                <GlassCard title={say("Work Order Pipeline")} icon="">
                   <div className="space-y-3">
                     {data?.realTimeOps.workOrdersByStatus && Object.entries(data.realTimeOps.workOrdersByStatus).map(([status, count]) => (
                       <StatusBar key={status} status={status} count={count} total={Object.values(data.realTimeOps.workOrdersByStatus).reduce((a, b) => a + b, 0)} />
@@ -760,23 +756,23 @@ export default function CommandCenterPage() {
 
               {/* Fee Summary */}
               <div className="lg:col-span-1">
-                <GlassCard title="FixTray Fee Summary" icon="">
+                <GlassCard title={say("FixTray Fee Summary")} icon="">
                   <div className="space-y-3">
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-                      <span className="text-stone-400 text-sm">Fee per paid work order</span>
+                      <span className="text-stone-400 text-sm">{say("Fee per paid work order")}</span>
                       <span className="text-xl font-bold text-emerald-400">{formatCurrency(liveFees?.feePerWorkOrder || 0)}</span>
                     </div>
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-                      <span className="text-stone-400 text-sm">Paid work orders today</span>
+                      <span className="text-stone-400 text-sm">{say("Paid work orders today")}</span>
                       <span className="text-xl font-bold">{liveFees?.paidWorkOrdersToday || 0}</span>
                     </div>
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-                      <span className="text-stone-400 text-sm">Paid work orders this week</span>
+                      <span className="text-stone-400 text-sm">{say("Paid work orders this week")}</span>
                       <span className="text-xl font-bold">{liveFees?.paidWorkOrdersThisWeek || 0}</span>
                     </div>
                   </div>
                   <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-stone-500 text-sm">Total paid work orders</span>
+                    <span className="text-stone-500 text-sm">{say("Total paid work orders")}</span>
                     <span className="text-xl font-bold text-emerald-400">{liveFees?.totalPaidWorkOrders || 0}</span>
                   </div>
                 </GlassCard>
@@ -784,25 +780,25 @@ export default function CommandCenterPage() {
 
               {/* Financial Quick View */}
               <div className="lg:col-span-1">
-                <GlassCard title="Revenue" icon="$">
+                <GlassCard title={say("Revenue")} icon="$">
                   <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20">
-                      <div className="text-sm text-emerald-400/70 mb-1">Today</div>
+                      <div className="text-sm text-emerald-400/70 mb-1">{say("Today")}</div>
                       <div className="text-3xl font-bold text-emerald-400">{formatCurrency(data?.financials.todayRevenue || 0)}</div>
                     </div>
                     <div className="flex gap-3">
                       <div className="flex-1 p-3 rounded-xl bg-white/5 border border-white/5">
-                        <div className="text-xs text-stone-500 mb-1">This Week</div>
+                        <div className="text-xs text-stone-500 mb-1">{say("This Week")}</div>
                         <div className="text-lg font-semibold">{formatCurrency(data?.financials.weekRevenue || 0)}</div>
                       </div>
                       <div className="flex-1 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                        <div className="text-xs text-yellow-400/70 mb-1">Pending</div>
+                        <div className="text-xs text-yellow-400/70 mb-1">{say("Pending")}</div>
                         <div className="text-lg font-semibold text-yellow-400">{formatCurrency(data?.financials.pendingPayments.amount || 0)}</div>
                       </div>
                     </div>
                   </div>
                   <Link href="/admin/revenue" className="mt-4 flex items-center justify-center gap-2 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-sm text-stone-400 hover:text-white transition-all">
-                    View Details <span><FaArrowRight style={{marginRight:4}} /></span>
+                    {say("View Details")}{' '}<span><FaArrowRight style={{marginRight:4}} /></span>
                   </Link>
                 </GlassCard>
               </div>
@@ -811,7 +807,7 @@ export default function CommandCenterPage() {
             {/* Secondary Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Active Employees */}
-              <GlassCard title="Currently Working" icon="*" badge={data?.realTimeOps.clockedInNow || 0}>
+              <GlassCard title={say("Currently Working")} icon="*" badge={data?.realTimeOps.clockedInNow || 0}>
                 {data?.realTimeOps.clockedInDetails && data.realTimeOps.clockedInDetails.length > 0 ? (
                   <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
                     {data.realTimeOps.clockedInDetails.map((emp, i) => {
@@ -823,14 +819,14 @@ export default function CommandCenterPage() {
                             <span className="text-emerald-400 font-semibold">{name.charAt(0)}</span>
                           </div>
                           <div>
-                            <div className="font-medium">{name}</div>
-                            <div className="text-xs text-stone-500">{emp.shop}</div>
+                            <div className="font-medium">{say(name)}</div>
+                            <div className="text-xs text-stone-500">{say(emp.shop)}</div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm text-stone-400">Since {formatTime(emp.since)}</div>
+                          <div className="text-sm text-stone-400">{say("Since")}{' '}{formatTime(emp.since)}</div>
                           {emp.onBreak && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Break</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">{say("Break")}</span>
                           )}
                         </div>
                       </div>
@@ -840,34 +836,34 @@ export default function CommandCenterPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-stone-500">
                     <span className="text-4xl mb-2 opacity-20"><FaRegCircle style={{marginRight:4}} /></span>
-                    <span>No active employees</span>
+                    <span>{say("No active employees")}</span>
                   </div>
                 )}
               </GlassCard>
 
               {/* Shop Health */}
-              <GlassCard title="Shop Health" icon="">
+              <GlassCard title={say("Shop Health")} icon="">
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="p-4 rounded-xl bg-white/5 border border-white/5">
                     <div className="text-3xl font-bold">{liveShopMetrics?.totalShops ?? data?.businessMetrics?.totalShopsCreated ?? data?.shopHealth.totalApproved ?? 0}</div>
-                    <div className="text-xs text-stone-500">Total Shops</div>
+                    <div className="text-xs text-stone-500">{say("Total Shops")}</div>
                   </div>
                   <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                     <div className="text-3xl font-bold text-emerald-400">{liveShopMetrics?.activeShops ?? data?.shopHealth.activeThisWeek ?? 0}</div>
-                    <div className="text-xs text-emerald-400/70">Active</div>
+                    <div className="text-xs text-emerald-400/70">{say("Active")}</div>
                   </div>
                   <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                    <div className="text-3xl font-bold text-yellow-400">{pendingApprovalsCount}</div>
-                    <div className="text-xs text-yellow-400/70">Pending Approval</div>
+                    <div className="text-3xl font-bold text-yellow-400">{say(pendingApprovalsCount)}</div>
+                    <div className="text-xs text-yellow-400/70">{say("Pending Approval")}</div>
                   </div>
                   <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
                     <div className="text-3xl font-bold text-red-400">{liveShopMetrics?.inactiveShops ?? data?.shopHealth.inactiveShops ?? 0}</div>
-                    <div className="text-xs text-red-400/70">Inactive</div>
+                    <div className="text-xs text-red-400/70">{say("Inactive")}</div>
                   </div>
                 </div>
                 {(liveInactiveShops.length > 0 || (data?.shopHealth.inactiveList && data.shopHealth.inactiveList.length > 0)) && (
                   <div className="pt-3 border-t border-white/5">
-                    <div className="text-xs text-stone-500 mb-2">Inactive shops needing outreach:</div>
+                    <div className="text-xs text-stone-500 mb-2">{say("Inactive shops needing outreach:")}</div>
                     <div className="flex flex-wrap gap-2">
                       {(liveInactiveShops.length > 0 ? liveInactiveShops : (data?.shopHealth.inactiveList || [])).slice(0, 5).map((shop: any, i: number) => (
                         <span key={i} className="px-2 py-1 rounded-lg bg-red-500/10 text-red-400 text-xs">{shop.shopName || shop.name}</span>
@@ -882,7 +878,7 @@ export default function CommandCenterPage() {
 
         {activeTab === 'operations' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <GlassCard title="Work Order Status" icon="">
+            <GlassCard title={say("Work Order Status")} icon="">
               <div className="space-y-4">
                 {data?.realTimeOps.workOrdersByStatus && Object.entries(data.realTimeOps.workOrdersByStatus).map(([status, count]) => (
                   <div key={status} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
@@ -890,17 +886,17 @@ export default function CommandCenterPage() {
                       <StatusDot status={status} />
                       <span className="capitalize font-medium">{status.replace('-', ' ')}</span>
                     </div>
-                    <span className="text-2xl font-bold">{count}</span>
+                    <span className="text-2xl font-bold">{say(count)}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
-                <span className="text-red-400">Overdue Work Orders</span>
+                <span className="text-red-400">{say("Overdue Work Orders")}</span>
                 <span className="text-2xl font-bold text-red-400">{data?.realTimeOps.overdueWorkOrders || 0}</span>
               </div>
             </GlassCard>
 
-            <GlassCard title="Service Types" icon="*">
+            <GlassCard title={say("Service Types")} icon="*">
               <div className="space-y-4">
                 {data?.serviceBreakdown && Object.entries(data.serviceBreakdown).map(([type, count]) => {
                   const total = Object.values(data.serviceBreakdown).reduce((a, b) => a + b, 0);
@@ -908,8 +904,8 @@ export default function CommandCenterPage() {
                   return (
                     <div key={type}>
                       <div className="flex justify-between mb-2">
-                        <span className="capitalize text-stone-300">{type}</span>
-                        <span className="font-semibold">{count}</span>
+                        <span className="capitalize text-stone-300">{say(type)}</span>
+                        <span className="font-semibold">{say(count)}</span>
                       </div>
                       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                         <div 
@@ -923,41 +919,41 @@ export default function CommandCenterPage() {
               </div>
             </GlassCard>
 
-            <GlassCard title="Appointments" icon="o">
+            <GlassCard title={say("Appointments")} icon="o">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-6 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20 text-center">
                   <div className="text-4xl font-bold text-orange-400 mb-1">{data?.realTimeOps.todayAppointments || 0}</div>
-                  <div className="text-sm text-orange-400/70">Scheduled Today</div>
+                  <div className="text-sm text-orange-400/70">{say("Scheduled Today")}</div>
                 </div>
                 <div className="p-6 rounded-xl bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20 text-center">
                   <div className="text-4xl font-bold text-red-400 mb-1">{data?.realTimeOps.noShowsThisWeek || 0}</div>
-                  <div className="text-sm text-red-400/70">No-Shows (Week)</div>
+                  <div className="text-sm text-red-400/70">{say("No-Shows (Week)")}</div>
                 </div>
               </div>
             </GlassCard>
 
-            <GlassCard title="Customer Feedback" icon="">
+            <GlassCard title={say("Customer Feedback")} icon="">
               <div className="flex items-center gap-6 mb-6">
                 <div className="text-center">
                   <div className="text-5xl font-bold text-yellow-400">{data?.reviews.averageRating || 0}</div>
                   <div className="text-yellow-400 mt-1">{Array.from({length: Math.round(data?.reviews.averageRating || 0)}, (_, i) => <FaStar key={i} />)}</div>
                 </div>
                 <div className="flex-1">
-                  <div className="text-stone-500 text-sm">Based on</div>
+                  <div className="text-stone-500 text-sm">{say("Based on")}</div>
                   <div className="text-2xl font-semibold">{data?.reviews.totalReviews || 0} reviews</div>
                 </div>
               </div>
               {data?.reviews.recentBadReviews && data.reviews.recentBadReviews.length > 0 && (
                 <div className="pt-4 border-t border-white/5">
-                  <div className="text-xs text-red-400 mb-3"><FaExclamationTriangle style={{marginRight:4}} /> Recent Low Ratings</div>
+                  <div className="text-xs text-red-400 mb-3"><FaExclamationTriangle style={{marginRight:4}} /> {say("Recent Low Ratings")}</div>
                   <div className="space-y-2">
                     {data.reviews.recentBadReviews.slice(0, 3).map((review: any, i: number) => (
                       <div key={i} className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
                         <div className="flex justify-between mb-1">
                           <span className="text-red-400 text-sm">{Array.from({length: review.rating}, (_, i) => <FaStar key={i} />)}{Array.from({length: 5 - review.rating}, (_, i) => <FaRegStar key={i} />)}</span>
-                          <span className="text-xs text-stone-500">{review.shop}</span>
+                          <span className="text-xs text-stone-500">{say(review.shop)}</span>
                         </div>
-                        {review.comment && <div className="text-xs text-stone-400 truncate">{review.comment}</div>}
+                        {review.comment && <div className="text-xs text-stone-400 truncate">{say(review.comment)}</div>}
                       </div>
                     ))}
                   </div>
@@ -969,69 +965,69 @@ export default function CommandCenterPage() {
 
         {activeTab === 'shops' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <GlassCard title="Shop Overview" icon="">
+            <GlassCard title={say("Shop Overview")} icon="">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-6 rounded-xl bg-white/5 border border-white/5 text-center">
                   <div className="text-4xl font-bold mb-1">{liveShopMetrics?.totalShops ?? data?.businessMetrics?.totalShopsCreated ?? data?.shopHealth.totalApproved ?? 0}</div>
-                  <div className="text-sm text-stone-500">Total Shops</div>
+                  <div className="text-sm text-stone-500">{say("Total Shops")}</div>
                 </div>
                 <div className="p-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
                   <div className="text-4xl font-bold text-emerald-400 mb-1">{liveShopMetrics?.activeShops ?? data?.shopHealth.activeThisWeek ?? 0}</div>
-                  <div className="text-sm text-emerald-400/70">Active</div>
+                  <div className="text-sm text-emerald-400/70">{say("Active")}</div>
                 </div>
                 <div className="p-6 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center">
                   <div className="text-4xl font-bold text-yellow-400 mb-1">{liveShopMetrics?.pendingShops ?? data?.shopHealth.pendingApproval ?? 0}</div>
-                  <div className="text-sm text-yellow-400/70">Pending</div>
+                  <div className="text-sm text-yellow-400/70">{say("Pending")}</div>
                 </div>
                 <div className="p-6 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
                   <div className="text-4xl font-bold text-red-400 mb-1">{liveShopMetrics?.inactiveShops ?? data?.shopHealth.inactiveShops ?? 0}</div>
-                  <div className="text-sm text-red-400/70">Inactive</div>
+                  <div className="text-sm text-red-400/70">{say("Inactive")}</div>
                 </div>
               </div>
             </GlassCard>
 
-            <GlassCard title="Pending Approvals" icon="">
+            <GlassCard title={say("Pending Approvals")} icon="">
               {data?.shopHealth.pendingShops && data.shopHealth.pendingShops.length > 0 ? (
                 <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
                   {data.shopHealth.pendingShops.map((shop: any, i: number) => (
                     <div key={i} className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-medium">{shop.shopName || 'Unnamed Shop'}</div>
-                        <span className="text-xs text-yellow-400">{shop.shopType}</span>
+                        <div className="font-medium">{shop.shopName || say("Unnamed Shop")}</div>
+                        <span className="text-xs text-yellow-400">{say(shop.shopType)}</span>
                       </div>
-                      <div className="text-sm text-stone-500">{shop.ownerName}</div>
-                      <div className="text-xs text-stone-600">{shop.email}</div>
+                      <div className="text-sm text-stone-500">{say(shop.ownerName)}</div>
+                      <div className="text-xs text-stone-600">{say(shop.email)}</div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-stone-500">
                   <span className="text-4xl mb-2 opacity-20"><FaCheck style={{marginRight:4}} /></span>
-                  <span>No pending approvals</span>
+                  <span>{say("No pending approvals")}</span>
                 </div>
               )}
               {(data?.shopHealth?.pendingApproval || 0) > 0 && (
                 <Link href="/admin/pending-shops" className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 font-medium transition-all">
-                  Review Approvals <FaArrowRight style={{marginRight:4}} />
+                  {say("Review Approvals")}{' '}<FaArrowRight style={{marginRight:4}} />
                 </Link>
               )}
             </GlassCard>
 
-            <GlassCard title="Inactive Shops" icon="" className="lg:col-span-2">
+            <GlassCard title={say("Inactive Shops")} icon="" className="lg:col-span-2">
               {liveInactiveShops.length > 0 || (data?.shopHealth.inactiveList && data.shopHealth.inactiveList.length > 0) ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {(liveInactiveShops.length > 0 ? liveInactiveShops : (data?.shopHealth.inactiveList || [])).map((shop: any, i: number) => (
                     <div key={i} className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
                       <div className="font-medium text-red-400">{shop.shopName || shop.name}</div>
-                      <div className="text-xs text-stone-500 mt-1">{shop.email}</div>
-                      <div className="text-xs text-red-400/50 mt-2">No recent activity</div>
+                      <div className="text-xs text-stone-500 mt-1">{say(shop.email)}</div>
+                      <div className="text-xs text-red-400/50 mt-2">{say("No recent activity")}</div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-stone-500">
                   <span className="text-4xl mb-2 opacity-20"><FaCheck style={{marginRight:4}} /></span>
-                  <span>All shops are active</span>
+                  <span>{say("All shops are active")}</span>
                 </div>
               )}
             </GlassCard>
@@ -1040,32 +1036,32 @@ export default function CommandCenterPage() {
 
         {activeTab === 'team' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <GlassCard title="FixTray Staff" icon="">
+            <GlassCard title={say("FixTray Staff")} icon="">
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex justify-between items-center">
-                  <span className="text-stone-400">Total Employees</span>
+                  <span className="text-stone-400">{say("Total Employees")}</span>
                   <span className="text-2xl font-bold">{data?.staffTeam.totalStaff || 0}</span>
                 </div>
                 <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex justify-between items-center">
-                  <span className="text-emerald-400">Active Employees</span>
+                  <span className="text-emerald-400">{say("Active Employees")}</span>
                   <span className="text-2xl font-bold text-emerald-400">{data?.staffTeam.activeStaff || 0}</span>
                 </div>
                 <div className="p-4 rounded-xl bg-[#e5332a]/100/10 border border-[#e5332a]/20 flex justify-between items-center">
-                  <span className="text-[#ff6b64]">Inactive Employees</span>
+                  <span className="text-[#ff6b64]">{say("Inactive Employees")}</span>
                   <span className="text-2xl font-bold text-[#ff6b64]">{data?.staffTeam.inactiveStaff || 0}</span>
                 </div>
                 <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex justify-between items-center">
-                  <span className="text-cyan-400">Live Sessions</span>
+                  <span className="text-cyan-400">{say("Live Sessions")}</span>
                   <span className="text-2xl font-bold text-cyan-400">{data?.staffTeam.staffWithLiveSession || 0}</span>
                 </div>
                 <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 flex justify-between items-center">
-                  <span className="text-violet-400">New This Month</span>
+                  <span className="text-violet-400">{say("New This Month")}</span>
                   <span className="text-2xl font-bold text-violet-400">{data?.staffTeam.newThisMonth || 0}</span>
                 </div>
               </div>
             </GlassCard>
 
-            <GlassCard title="FixTray Employee Directory" icon="*" className="lg:col-span-2" badge={data?.staffTeam.members?.length || 0}>
+            <GlassCard title={say("FixTray Employee Directory")} icon="*" className="lg:col-span-2" badge={data?.staffTeam.members?.length || 0}>
               {data?.staffTeam.members && data.staffTeam.members.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto custom-scrollbar">
                   {data.staffTeam.members.map((emp, i) => (
@@ -1075,18 +1071,18 @@ export default function CommandCenterPage() {
                       </div>
                       <div className="flex-1">
                         <div className="font-medium flex items-center gap-2">
-                          {emp.username}
-                          {emp.isOwner && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">Owner</span>}
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">FixTray Admin</span>
+                          {say(emp.username)}
+                          {emp.isOwner && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">{say("Owner")}</span>}
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">{say("FixTray Admin")}</span>
                         </div>
-                        <div className="text-xs text-stone-500">{emp.email}</div>
+                        <div className="text-xs text-stone-500">{say(emp.email)}</div>
                       </div>
                       <div className="text-right">
                         <div className={`text-xs px-2 py-0.5 rounded-full ${emp.activityStatus === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                          {emp.activityStatus}
+                          {say(emp.activityStatus)}
                         </div>
                         <div className="text-[11px] text-stone-500 mt-1">
-                          {emp.lastLogin ? `Last login ${formatTime(emp.lastLogin)}` : 'No login data'}
+                          {emp.lastLogin ? `Last login ${formatTime(emp.lastLogin)}` : say("No login data")}
                         </div>
                       </div>
                     </div>
@@ -1095,17 +1091,17 @@ export default function CommandCenterPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-stone-500">
                   <span className="text-5xl mb-3 opacity-20"><FaRegCircle style={{marginRight:4}} /></span>
-                  <span>No FixTray employees found</span>
+                  <span>{say("No FixTray employees found")}</span>
                 </div>
               )}
             </GlassCard>
 
-            <GlassCard title="Create FixTray Employee" icon="*" className="lg:col-span-3">
+            <GlassCard title={say("Create FixTray Employee")} icon="*" className="lg:col-span-3">
               {user?.isOwner ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="md:col-span-1">
-                      <label className="text-xs text-stone-400 block mb-1">Username</label>
+                      <label className="text-xs text-stone-400 block mb-1">{say("Username")}</label>
                       <input
                         value={employeeForm.username}
                         onChange={(e) => setEmployeeForm((prev) => ({ ...prev, username: e.target.value }))}
@@ -1114,23 +1110,23 @@ export default function CommandCenterPage() {
                       />
                     </div>
                     <div className="md:col-span-1">
-                      <label className="text-xs text-stone-400 block mb-1">Email</label>
+                      <label className="text-xs text-stone-400 block mb-1">{say("Email")}</label>
                       <input
                         type="email"
                         value={employeeForm.email}
                         onChange={(e) => setEmployeeForm((prev) => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm"
-                        placeholder="employee@fixtray.app"
+                        placeholder={say("employee@fixtray.app")}
                       />
                     </div>
                     <div className="md:col-span-1">
-                      <label className="text-xs text-stone-400 block mb-1">Temporary Password</label>
+                      <label className="text-xs text-stone-400 block mb-1">{say("Temporary Password")}</label>
                       <input
                         type="password"
                         value={employeeForm.password}
                         onChange={(e) => setEmployeeForm((prev) => ({ ...prev, password: e.target.value }))}
                         className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm"
-                        placeholder="Minimum 8 characters"
+                        placeholder={say("Minimum 8 characters")}
                       />
                     </div>
                     <div className="md:col-span-1 flex items-end gap-3">
@@ -1139,26 +1135,24 @@ export default function CommandCenterPage() {
                         disabled={isCreatingEmployee}
                         className="px-4 py-2 rounded-xl bg-[#e5332a]/90 hover:bg-[#e5332a] text-white text-sm font-semibold disabled:opacity-60"
                       >
-                        {isCreatingEmployee ? 'Creating...' : 'Create Employee'}
+                        {isCreatingEmployee ? say("Creating...") : say("Create Employee")}
                       </button>
                     </div>
                   </div>
                   <div className="mt-3 text-xs text-stone-400">
-                    This Team tab is for FixTray internal staff accounts only. New employees are created as FixTray Admin and use the FixTray dashboard.
-                  </div>
+                    {say("This Team tab is for FixTray internal staff accounts only. New employees are created as FixTray Admin and use the FixTray dashboard.")}{' '}</div>
                 </>
               ) : (
                 <div className="text-sm text-stone-400">
-                  Only the FixTray Owner (supadm) can create FixTray Admin employees.
-                </div>
+                  {say("Only the FixTray Owner (supadm) can create FixTray Admin employees.")}{' '}</div>
               )}
               {teamMessage && (
                 <div className={`mt-3 text-sm ${teamMessage.toLowerCase().includes('success') ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {teamMessage}
+                  {say(teamMessage)}
                 </div>
               )}
               <Link href="/admin/user-management" className="mt-4 inline-flex items-center gap-2 text-sm text-cyan-300 hover:text-cyan-200">
-                Open full user management <FaExternalLinkAlt style={{marginRight:4}} />
+                {say("Open full user management")}{' '}<FaExternalLinkAlt style={{marginRight:4}} />
               </Link>
             </GlassCard>
           </div>
@@ -1166,11 +1160,11 @@ export default function CommandCenterPage() {
 
         {/* Footer */}
         <div className="mt-8 flex items-center justify-between text-xs text-stone-600">
-          <div>Last updated: {lastUpdate?.toLocaleString()}</div>
+          <div>{say("Last updated:")}{' '}{lastUpdate?.toLocaleString()}</div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/home" className="hover:text-stone-400 transition-colors">Dashboard</Link>
-            <Link href="/admin/revenue" className="hover:text-stone-400 transition-colors">Revenue</Link>
-            <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="hover:text-stone-400 transition-colors">Stripe</a>
+            <Link href="/admin/home" className="hover:text-stone-400 transition-colors">{say("Dashboard")}</Link>
+            <Link href="/admin/revenue" className="hover:text-stone-400 transition-colors">{say("Revenue")}</Link>
+            <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="hover:text-stone-400 transition-colors">{say("Stripe")}</a>
           </div>
         </div>
       </main>
@@ -1203,6 +1197,7 @@ function MetricCard({ label, value, sublabel, color, icon, pulse, isString }: {
   pulse?: boolean;
   isString?: boolean;
 }) {
+  const say = usePhrase();
   const colors: Record<string, string> = {
     emerald: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20 text-emerald-400',
     blue: 'from-blue-500/20 to-blue-500/5 border-[#e5332a]/20 text-[#ff6b64]',
@@ -1218,11 +1213,11 @@ function MetricCard({ label, value, sublabel, color, icon, pulse, isString }: {
         <div className="absolute top-3 right-3 w-2 h-2 bg-current rounded-full animate-pulse"></div>
       )}
       <div className="text-xs text-stone-400 mb-1 flex items-center gap-1">
-        <span className="opacity-50">{icon}</span>
-        {label}
+        <span className="opacity-50">{say(icon)}</span>
+        {say(label)}
       </div>
-      <div className={`text-2xl font-bold ${isString ? '' : ''}`}>{value}</div>
-      <div className="text-xs text-stone-500">{sublabel}</div>
+      <div className={`text-2xl font-bold ${isString ? '' : ''}`}>{say(value)}</div>
+      <div className="text-xs text-stone-500">{say(sublabel)}</div>
     </div>
   );
 }
@@ -1234,15 +1229,16 @@ function GlassCard({ title, icon, children, badge, className = '' }: {
   badge?: number;
   className?: string;
 }) {
+  const say = usePhrase();
   return (
     <div className={`p-5 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-stone-400">{icon}</span>
-          <h3 className="font-semibold text-stone-200">{title}</h3>
+          <span className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-stone-400">{say(icon)}</span>
+          <h3 className="font-semibold text-stone-200">{say(title)}</h3>
         </div>
         {badge !== undefined && (
-          <span className="px-2 py-1 rounded-lg bg-white/5 text-xs font-medium text-stone-400">{badge}</span>
+          <span className="px-2 py-1 rounded-lg bg-white/5 text-xs font-medium text-stone-400">{say(badge)}</span>
         )}
       </div>
       {children}
@@ -1251,6 +1247,7 @@ function GlassCard({ title, icon, children, badge, className = '' }: {
 }
 
 function StatusBar({ status, count, total }: { status: string; count: number; total: number }) {
+  const say = usePhrase();
   const percentage = total > 0 ? (count / total) * 100 : 0;
   const colors: Record<string, string> = {
     pending: 'bg-yellow-500',
@@ -1264,7 +1261,7 @@ function StatusBar({ status, count, total }: { status: string; count: number; to
     <div>
       <div className="flex justify-between text-sm mb-1">
         <span className="capitalize text-stone-400">{status.replace('-', ' ')}</span>
-        <span className="font-medium">{count}</span>
+        <span className="font-medium">{say(count)}</span>
       </div>
       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
         <div 

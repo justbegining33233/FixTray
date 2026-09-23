@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { unwrapTeam } from '@/lib/workOrderList';
@@ -18,6 +19,7 @@ interface ShiftFormProps {
 }
 
 export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) {
+  const say = usePhrase();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -103,10 +105,10 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded border border-red-200">{error}</div>}
+      {error && <div className="bg-red-50 text-red-700 p-4 rounded border border-red-200">{say(error)}</div>}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{say("Date")}</label>
         <input
           type="date"
           name="date"
@@ -119,7 +121,7 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{say("Start Time")}</label>
           <input
             type="time"
             name="startTime"
@@ -130,7 +132,7 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{say("End Time")}</label>
           <input
             type="time"
             name="endTime"
@@ -143,7 +145,7 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Technician</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{say("Technician")}</label>
         <select
           name="techId"
           value={formData.techId}
@@ -151,10 +153,10 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
           required
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
         >
-          <option value="">Select a technician...</option>
+          <option value="">{say("Select a technician...")}</option>
           {technicianOptions.map(tech => (
             <option key={tech.id} value={tech.id}>
-              {tech.name}
+              {say(tech.name)}
             </option>
           ))}
         </select>
@@ -162,28 +164,28 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
 
       {shiftId && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{say("Status")}</label>
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
           >
-            <option value="scheduled">Scheduled</option>
-            <option value="in-progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="scheduled">{say("Scheduled")}</option>
+            <option value="in-progress">{say("In Progress")}</option>
+            <option value="completed">{say("Completed")}</option>
+            <option value="cancelled">{say("Cancelled")}</option>
           </select>
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{say("Notes")}</label>
         <textarea
           name="notes"
           value={formData.notes}
           onChange={handleChange}
-          placeholder="Add any notes about this shift..."
+          placeholder={say("Add any notes about this shift...")}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
           rows={3}
         />
@@ -195,15 +197,14 @@ export function ShiftForm({ shiftId, initialData, techs = [] }: ShiftFormProps) 
           disabled={loading}
           className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? 'Saving...' : shiftId ? 'Update Shift' : 'Create Shift'}
+          {loading ? say("Saving...") : shiftId ? say("Update Shift") : say("Create Shift")}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
           className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
         >
-          Cancel
-        </button>
+          {say("Cancel")}{' '}</button>
       </div>
     </form>
   );

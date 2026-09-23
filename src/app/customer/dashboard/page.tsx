@@ -420,7 +420,7 @@ export default function CustomerDashboard() {
       {/* Top Navigation */}
       <TopNavBar showMenuButton={false} />
       <div style={{background:'rgba(0,0,0,0.15)', padding:'8px 32px', display:'flex', justifyContent:'flex-end'}}>
-        <div style={{fontSize:12, color:'#b8beca'}}>{tier} - {loyaltyPoints} pts</div>
+        <div style={{fontSize:12, color:'#b8beca'}}>{say(tier)} - {say(loyaltyPoints)} pts</div>
       </div>
 
       <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
@@ -428,15 +428,15 @@ export default function CustomerDashboard() {
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16, marginBottom:32}}>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say('Active Jobs')}</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{customerStats.openOrders}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{say(customerStats.openOrders)}</div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say('Total Vehicles')}</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{stats.vehicleCount}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{say(stats.vehicleCount)}</div>
           </div>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say('Loyalty Points')}</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{loyaltyPoints}</div>
+            <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{say(loyaltyPoints)}</div>
           </div>
         </div>
 
@@ -559,7 +559,7 @@ export default function CustomerDashboard() {
                       {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
@@ -624,7 +624,7 @@ export default function CustomerDashboard() {
                       {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
@@ -688,7 +688,7 @@ export default function CustomerDashboard() {
                       {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>
@@ -752,7 +752,7 @@ export default function CustomerDashboard() {
                       {say(feature.badge)}
                     </div>
                   )}
-                  <div style={{fontSize:48, marginBottom:12}}>{feature.icon}</div>
+                  <div style={{fontSize:48, marginBottom:12}}>{say(feature.icon)}</div>
                   <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(feature.name)}</div>
                   <div style={{fontSize:13, color:'#9aa3b2', marginBottom:12}}>{say(feature.desc)}</div>
                   <div style={{fontSize:12, color:'#6b7280', padding:'8px 12px', background:'rgba(0,0,0,0.3)', borderRadius:8, borderLeft:'3px solid rgba(229,51,42,0.5)', marginBottom:12}}>

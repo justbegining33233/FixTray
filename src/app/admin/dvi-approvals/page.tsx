@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { formatDate, formatDateTime } from '@/lib/utils';
 
@@ -17,6 +18,7 @@ interface DVIApproval {
 }
 
 export default function DVIApprovalsPage() {
+  const say = usePhrase();
   const [approvals, setApprovals] = useState<DVIApproval[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
@@ -89,7 +91,7 @@ export default function DVIApprovalsPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen text-gray-500">Loading approvals...</div>;
+    return <div className="flex items-center justify-center h-screen text-gray-500">{say("Loading approvals...")}</div>;
   }
 
   const stats = {
@@ -101,28 +103,28 @@ export default function DVIApprovalsPage() {
   return (
     <div className="max-w-6xl mx-auto py-12 px-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">DVI Approvals</h1>
+        <h1 className="text-4xl font-bold">{say("DVI Approvals")}</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          {showForm ? 'Cancel' : '+ New Approval'}
+          {showForm ? say("Cancel") : say("+ New Approval")}
         </button>
       </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-yellow-100 rounded-lg p-4">
-          <p className="text-gray-600 text-sm">Pending</p>
-          <p className="text-3xl font-bold text-yellow-700">{stats.pending}</p>
+          <p className="text-gray-600 text-sm">{say("Pending")}</p>
+          <p className="text-3xl font-bold text-yellow-700">{say(stats.pending)}</p>
         </div>
         <div className="bg-green-100 rounded-lg p-4">
-          <p className="text-gray-600 text-sm">Approved</p>
-          <p className="text-3xl font-bold text-green-700">{stats.approved}</p>
+          <p className="text-gray-600 text-sm">{say("Approved")}</p>
+          <p className="text-3xl font-bold text-green-700">{say(stats.approved)}</p>
         </div>
         <div className="bg-red-100 rounded-lg p-4">
-          <p className="text-gray-600 text-sm">Rejected</p>
-          <p className="text-3xl font-bold text-red-700">{stats.rejected}</p>
+          <p className="text-gray-600 text-sm">{say("Rejected")}</p>
+          <p className="text-3xl font-bold text-red-700">{say(stats.rejected)}</p>
         </div>
       </div>
 
@@ -146,7 +148,7 @@ export default function DVIApprovalsPage() {
       {/* Approvals List */}
       <div className="space-y-4">
         {approvals.filter((a) => a.approvalStatus === filter).length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No {filter} approvals</p>
+          <p className="text-gray-500 text-center py-8">{say("No")}{' '}{say(filter)} approvals</p>
         ) : (
           approvals
             .filter((a) => a.approvalStatus === filter)
@@ -164,17 +166,17 @@ export default function DVIApprovalsPage() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold mb-2">
-                      {approval.vehicle?.make} {approval.vehicle?.model}
+                      {say(approval.vehicle?.make)} {say(approval.vehicle?.model)}
                     </h3>
-                    <p className="text-gray-600 mb-4">License: {approval.vehicle?.licensePlate}</p>
+                    <p className="text-gray-600 mb-4">{say("License:")}{' '}{say(approval.vehicle?.licensePlate)}</p>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500">Inspection Date:</span>
+                        <span className="text-gray-500">{say("Inspection Date:")}</span>
                         <p className="font-semibold">{formatDate(new Date(approval.inspectionDate))}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Status:</span>
+                        <span className="text-gray-500">{say("Status:")}</span>
                         <p
                           className={`font-semibold ${
                             approval.approvalStatus === 'pending'
@@ -184,20 +186,20 @@ export default function DVIApprovalsPage() {
                               : 'text-red-600'
                           }`}
                         >
-                          {approval.approvalStatus}
+                          {say(approval.approvalStatus)}
                         </p>
                       </div>
                       {approval.nextInspectionDue && (
                         <div>
-                          <span className="text-gray-500">Next Due:</span>
+                          <span className="text-gray-500">{say("Next Due:")}</span>
                           <p className="font-semibold">{formatDate(new Date(approval.nextInspectionDue))}</p>
                         </div>
                       )}
                       {approval.approvedBy && (
                         <div>
-                          <span className="text-gray-500">Approved By:</span>
+                          <span className="text-gray-500">{say("Approved By:")}</span>
                           <p className="font-semibold">
-                            {approval.approvedBy.firstName} {approval.approvedBy.lastName}
+                            {say(approval.approvedBy.firstName)} {say(approval.approvedBy.lastName)}
                           </p>
                         </div>
                       )}
@@ -205,8 +207,8 @@ export default function DVIApprovalsPage() {
 
                     {approval.notes && (
                       <div className="mt-4">
-                        <span className="text-gray-500 text-sm">Notes:</span>
-                        <p className="text-gray-700">{approval.notes}</p>
+                        <span className="text-gray-500 text-sm">{say("Notes:")}</span>
+                        <p className="text-gray-700">{say(approval.notes)}</p>
                       </div>
                     )}
                   </div>
@@ -217,14 +219,12 @@ export default function DVIApprovalsPage() {
                         onClick={() => handleApprove(approval.id)}
                         className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 whitespace-nowrap"
                       >
-                        Approve
-                      </button>
+                        {say("Approve")}{' '}</button>
                       <button
                         onClick={() => handleReject(approval.id)}
                         className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 whitespace-nowrap"
                       >
-                        Reject
-                      </button>
+                        {say("Reject")}{' '}</button>
                     </div>
                   )}
                 </div>

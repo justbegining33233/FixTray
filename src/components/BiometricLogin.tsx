@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { BiometricAuth, BiometryType, BiometryErrorType } from '@aparajita/capacitor-biometric-auth';
@@ -20,6 +21,7 @@ export default function BiometricLogin({
   enabled = true,
   requireBiometric = false,
 }: BiometricLoginProps) {
+  const say = usePhrase();
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [biometryType, setBiometryType] = useState<BiometryType>(BiometryType.none);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -271,7 +273,7 @@ export default function BiometricLogin({
           fontWeight: '600',
           marginBottom: '8px',
         }}>
-          {isLocked ? 'Authentication Locked' : 'Welcome Back'}
+          {isLocked ? say("Authentication Locked") : say("Welcome Back")}
         </h2>
 
         {/* Subtitle */}
@@ -282,7 +284,7 @@ export default function BiometricLogin({
           lineHeight: '1.4',
         }}>
           {isLocked
-            ? 'Too many failed attempts. Please use password login.'
+            ? say("Too many failed attempts. Please use password login.")
             : `Use ${getBiometryLabel()} to quickly access FixTray`
           }
         </p>
@@ -306,8 +308,7 @@ export default function BiometricLogin({
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
             }} />
-            Authenticating...
-          </div>
+            {say("Authenticating...")}{' '}</div>
         )}
 
         {authAttempts > 0 && !isLocked && (
@@ -316,8 +317,7 @@ export default function BiometricLogin({
             fontSize: '12px',
             marginBottom: '16px',
           }}>
-            Attempt {authAttempts} of 3
-          </div>
+            {say("Attempt")}{' '}{say(authAttempts)} {say("of 3")}{' '}</div>
         )}
 
         {/* Action Buttons */}
@@ -352,12 +352,11 @@ export default function BiometricLogin({
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite',
                   }} />
-                  Authenticating...
-                </>
+                  {say("Authenticating...")}{' '}</>
               ) : (
                 <>
                   {getBiometryIcon()}
-                  Use {getBiometryLabel()}
+                  {say("Use")}{' '}{getBiometryLabel()}
                 </>
               )}
             </button>
@@ -376,7 +375,7 @@ export default function BiometricLogin({
               width: '100%',
             }}
           >
-            {isLocked ? 'Use Password Login' : 'Use Password Instead'}
+            {isLocked ? say("Use Password Login") : say("Use Password Instead")}
           </button>
         </div>
 
@@ -392,7 +391,7 @@ export default function BiometricLogin({
             gap: '6px',
           }}>
             <FaCheckCircle />
-            Authenticated {new Date(lastAuthTime).toLocaleTimeString()}
+            {say("Authenticated")}{' '}{new Date(lastAuthTime).toLocaleTimeString()}
           </div>
         )}
 
@@ -412,22 +411,12 @@ export default function BiometricLogin({
             gap: '6px',
           }}>
             <FaShieldAlt size={12} style={{ marginTop: '2px', flexShrink: 0 }} />
-            Your biometric data is stored securely on your device and never shared with FixTray servers.
-          </div>
+            {say("Your biometric data is stored securely on your device and never shared with FixTray servers.")}{' '}</div>
         </div>
       </div>
 
       {/* Add styles for animations */}
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style jsx>{say("\n        @keyframes pulse {\n          0%, 100% { opacity: 1; }\n          50% { opacity: 0.5; }\n        }\n\n        @keyframes spin {\n          to { transform: rotate(360deg); }\n        }\n      ")}</style>
     </div>
   );
 }

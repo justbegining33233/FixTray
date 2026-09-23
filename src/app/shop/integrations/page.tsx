@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { canConnectIntegration, integrationFieldsComplete } from '@/lib/integrationConnect';
@@ -24,6 +25,7 @@ const PROVIDERS = [
 ];
 
 export default function IntegrationsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const [configs, setConfigs] = useState<IntegrationConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,18 +77,18 @@ export default function IntegrationsPage() {
     load();
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
     <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaPlug style={{marginRight:4}} /> Integrations</h1>
-        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>Connect your shop with accounting, payments, communications, and data services</p>
+        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaPlug style={{marginRight:4}} /> {say("Integrations")}</h1>
+        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>{say("Connect your shop with accounting, payments, communications, and data services")}</p>
       </div>
 
       <div style={{ padding: 32 }}>
-        {loading ? <div style={{ color: '#6b7280' }}>Loading...</div> : (
+        {loading ? <div style={{ color: '#6b7280' }}>{say("Loading...")}</div> : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
             {PROVIDERS.map(prov => {
               const config = configs.find(c => c.provider === prov.key);
@@ -97,32 +99,32 @@ export default function IntegrationsPage() {
                 <div key={prov.key} style={{ background: 'rgba(255,255,255,0.04)', border: `2px solid ${isEnabled ? prov.color + '50' : 'rgba(255,255,255,0.08)'}`, borderRadius: 14, padding: 20, transition: 'border-color 0.2s' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <div style={{ width: 44, height: 44, background: `${prov.color}20`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, border: `1px solid ${prov.color}30` }}>{prov.icon}</div>
+                      <div style={{ width: 44, height: 44, background: `${prov.color}20`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, border: `1px solid ${prov.color}30` }}>{say(prov.icon)}</div>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>{prov.name}</div>
-                        {config?.lastSync && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Last sync: {new Date(config.lastSync).toLocaleDateString()}</div>}
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{say(prov.name)}</div>
+                        {config?.lastSync && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{say("Last sync:")}{' '}{new Date(config.lastSync).toLocaleDateString()}</div>}
                       </div>
                     </div>
                     <button type="button" aria-pressed={isEnabled} aria-label={`${prov.name} ${isEnabled ? 'connected' : 'disabled'}`} onClick={() => toggle(prov.key)}
                       style={{ background: isEnabled ? `${prov.color}25` : 'rgba(107,114,128,0.2)', color: isEnabled ? prov.color : '#9ca3af', border: `1px solid ${isEnabled ? prov.color : '#6b7280'}`, borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                      {isEnabled ? <><FaCircle style={{marginRight:4}} /> Connected</> : <><FaRegCircle style={{marginRight:4}} /> Disabled</>}
+                      {isEnabled ? <><FaCircle style={{marginRight:4}} /> {say("Connected")}</> : <><FaRegCircle style={{marginRight:4}} /> {say("Disabled")}</>}
                     </button>
                   </div>
 
-                  <p style={{ color: '#9ca3af', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>{prov.description}</p>
+                  <p style={{ color: '#9ca3af', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>{say(prov.description)}</p>
 
                   {isEditing ? (
                     <div>
                       {prov.fields.map(f => (
                         <div key={f.k} style={{ marginBottom: 10 }}>
-                          <label htmlFor={`${prov.key}-${f.k}`} style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>{f.label}</label>
-                          <input id={`${prov.key}-${f.k}`} name={f.k} autoComplete="off" required aria-required="true" aria-label={f.label} type={f.type || 'text'} value={formFields[f.k] || ''} onChange={e => setFormFields(p => ({ ...p, [f.k]: e.target.value }))} placeholder={f.type === 'password' ? '--------' : ''}
+                          <label htmlFor={`${prov.key}-${f.k}`} style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>{say(f.label)}</label>
+                          <input id={`${prov.key}-${f.k}`} name={f.k} autoComplete="off" required aria-required="true" aria-label={say(f.label)} type={f.type || 'text'} value={formFields[f.k] || ''} onChange={e => setFormFields(p => ({ ...p, [f.k]: e.target.value }))} placeholder={f.type === 'password' ? '--------' : ''}
                             style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, padding: '8px 12px', color: '#e5e7eb', fontSize: 13, boxSizing: 'border-box' }} />
                         </div>
                       ))}
                       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                        <button type="button" onClick={() => { if (canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields)) save(prov.key, true); }} disabled={saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields)} aria-disabled={saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields)} style={{ flex: 1, background: canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields) ? prov.color : '#374151', color: canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields) ? '#fff' : '#9ca3af', border: 'none', borderRadius: 7, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields) ? 'not-allowed' : 'pointer' }}>{saving ? '...' : 'Save & Connect'}</button>
-                        <button onClick={() => setEditing(null)} style={{ background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+                        <button type="button" onClick={() => { if (canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields)) save(prov.key, true); }} disabled={saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields)} aria-disabled={saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields)} style={{ flex: 1, background: canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields) ? prov.color : '#374151', color: canConnectIntegration(isEnabled) && integrationFieldsComplete(prov.fields, formFields) ? '#fff' : '#9ca3af', border: 'none', borderRadius: 7, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: saving || !canConnectIntegration(isEnabled) || !integrationFieldsComplete(prov.fields, formFields) ? 'not-allowed' : 'pointer' }}>{saving ? '...' : say("Save & Connect")}</button>
+                        <button onClick={() => setEditing(null)} style={{ background: 'transparent', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>{say("Cancel")}</button>
                       </div>
                     </div>
                   ) : (
@@ -131,12 +133,12 @@ export default function IntegrationsPage() {
                       onClick={() => { if (canConnectIntegration(isEnabled)) openEdit(prov.key); }}
                       disabled={!canConnectIntegration(isEnabled)}
                       aria-disabled={!canConnectIntegration(isEnabled)}
-                      aria-label={canConnectIntegration(isEnabled) ? `${config ? 'Configure' : 'Connect'} ${prov.name}` : `${prov.name} is disabled. Enable it before connecting.`}
+                      aria-label={canConnectIntegration(isEnabled) ? `${config ? say("Configure") : say("Connect")} ${prov.name}` : `${prov.name} is disabled. Enable it before connecting.`}
                       style={{ width: '100%', background: canConnectIntegration(isEnabled) ? 'rgba(255,255,255,0.06)' : '#1f2937', color: canConnectIntegration(isEnabled) ? '#e5e7eb' : '#6b7280', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 600, cursor: canConnectIntegration(isEnabled) ? 'pointer' : 'not-allowed' }}
                     >
                       {canConnectIntegration(isEnabled)
-                        ? (config ? <><FaCog style={{marginRight:4}} /> Configure</> : '+ Connect')
-                        : 'Connect unavailable while disabled'}
+                        ? (config ? <><FaCog style={{marginRight:4}} /> {say("Configure")}</> : say("+ Connect"))
+                        : say("Connect unavailable while disabled")}
                     </button>
                   )}
                 </div>

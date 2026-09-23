@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -29,6 +30,7 @@ interface PerformanceStats {
 }
 
 export default function AdminPerformancePage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [techs, setTechs] = useState<TechPerformance[]>([]);
   const [stats, setStats] = useState<PerformanceStats | null>(null);
@@ -79,7 +81,7 @@ export default function AdminPerformancePage() {
     }
   });
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -92,14 +94,13 @@ export default function AdminPerformancePage() {
           <div style={{ marginBottom: 32 }}>
             <h1 style={{ fontSize: 32, fontWeight: 700, color: '#e5e7eb', margin: '0 0 8px' }}>
               <FaChartBar style={{ marginRight: 12, verticalAlign: 'middle' }} />
-              Team Performance Analytics
-            </h1>
-            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>Monitor technician performance metrics</p>
+              {say("Team Performance Analytics")}{' '}</h1>
+            <p style={{ color: '#9ca3af', margin: 0, fontSize: 14 }}>{say("Monitor technician performance metrics")}</p>
           </div>
 
           {error && (
             <div style={{ background: 'rgba(229,51,42,0.15)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 16, marginBottom: 24, color: '#fca5a5' }}>
-              {error}
+              {say(error)}
             </div>
           )}
 
@@ -121,7 +122,7 @@ export default function AdminPerformancePage() {
                   transition: 'all 0.2s',
                 }}
               >
-                {range === 'week' ? 'This Week' : range === 'month' ? 'This Month' : 'Last 90 Days'}
+                {range === 'week' ? say("This Week") : range === 'month' ? say("This Month") : say("Last 90 Days")}
               </button>
             ))}
           </div>
@@ -130,17 +131,17 @@ export default function AdminPerformancePage() {
           {stats && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
               {[
-                { label: 'Top Performer', value: stats.topTech?.name || 'N/A', icon: <FaTrophy />, color: '#fbbf24' },
-                { label: 'Avg Completion', value: `${stats.averageCompletionRate.toFixed(1)}%`, icon: <FaCheckCircle />, color: '#22c55e' },
-                { label: 'Avg Rating', value: `${stats.averageRating.toFixed(1)} ⭐`, icon: <FaArrowUp />, color: '#f59e0b' },
-                { label: 'Jobs This Month', value: stats.totalJobsThisMonth, icon: <FaChartBar />, color: '#3b82f6' },
+                { label: say("Top Performer"), value: stats.topTech?.name || say("N/A"), icon: <FaTrophy />, color: '#fbbf24' },
+                { label: say("Avg Completion"), value: `${stats.averageCompletionRate.toFixed(1)}%`, icon: <FaCheckCircle />, color: '#22c55e' },
+                { label: say("Avg Rating"), value: `${stats.averageRating.toFixed(1)} ⭐`, icon: <FaArrowUp />, color: '#f59e0b' },
+                { label: say("Jobs This Month"), value: stats.totalJobsThisMonth, icon: <FaChartBar />, color: '#3b82f6' },
               ].map((stat, i) => (
                 <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <span style={{ color: stat.color, fontSize: 20 }}>{stat.icon}</span>
-                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{stat.label}</div>
+                    <span style={{ color: stat.color, fontSize: 20 }}>{say(stat.icon)}</span>
+                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{say(stat.label)}</div>
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: stat.color }}>{say(stat.value)}</div>
                 </div>
               ))}
             </div>
@@ -148,7 +149,7 @@ export default function AdminPerformancePage() {
 
           {/* Sort Controls */}
           <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 8 }}>Sort by</label>
+            <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 8 }}>{say("Sort by")}</label>
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as any)}
@@ -161,44 +162,43 @@ export default function AdminPerformancePage() {
                 fontSize: 13,
               }}
             >
-              <option value="revenue">Total Revenue</option>
-              <option value="jobs">Jobs Completed</option>
-              <option value="rating">Customer Rating</option>
-              <option value="score">Overall Score</option>
+              <option value="revenue">{say("Total Revenue")}</option>
+              <option value="jobs">{say("Jobs Completed")}</option>
+              <option value="rating">{say("Customer Rating")}</option>
+              <option value="score">{say("Overall Score")}</option>
             </select>
           </div>
 
           {/* Techs Table */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>Loading performance data...</div>
+            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>{say("Loading performance data...")}</div>
           ) : techs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
-              No performance data available
-            </div>
+              {say("No performance data available")}{' '}</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Technician</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Shop</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Jobs</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Avg Time/Job</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Completion Rate</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Rating</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Revenue</th>
-                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>Score</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Technician")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Shop")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Jobs")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Avg Time/Job")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Completion Rate")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Rating")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Revenue")}</th>
+                    <th style={{ textAlign: 'center', padding: '12px 16px', color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>{say("Score")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedTechs.map((tech, idx) => (
                     <tr key={tech.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <td style={{ padding: '16px', color: '#e5e7eb', fontWeight: 500 }}>
-                        <div>{idx + 1}. {tech.name}</div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{tech.email}</div>
+                        <div>{idx + 1}. {say(tech.name)}</div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{say(tech.email)}</div>
                       </td>
-                      <td style={{ padding: '16px', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{tech.shop}</td>
-                      <td style={{ padding: '16px', textAlign: 'center', color: '#e5e7eb', fontWeight: 600 }}>{tech.jobsCompleted}</td>
+                      <td style={{ padding: '16px', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>{say(tech.shop)}</td>
+                      <td style={{ padding: '16px', textAlign: 'center', color: '#e5e7eb', fontWeight: 600 }}>{say(tech.jobsCompleted)}</td>
                       <td style={{ padding: '16px', textAlign: 'center', color: '#9ca3af' }}>
                         <FaClock style={{ marginRight: 4, verticalAlign: 'middle' }} />
                         {tech.avgTimePerJob.toFixed(1)}h

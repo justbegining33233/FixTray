@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -21,6 +22,7 @@ import TeamTab from './tabs/TeamTab';
 import InventoryTab from './tabs/InventoryTab';
 
 export default function ShopAdminPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const router = useRouter();
@@ -685,8 +687,8 @@ export default function ShopAdminPage() {
                   <FaBuilding />
                 </div>
                 <div>
-                  <h1 style={{ margin: 0, color: '#e5e7eb', fontSize: 28, fontWeight: 800 }}>Shop Admin Command Center</h1>
-                  <div style={{ color: '#9aa3b2', fontSize: 13 }}>In-depth operational and financial analytics for your shop</div>
+                  <h1 style={{ margin: 0, color: '#e5e7eb', fontSize: 28, fontWeight: 800 }}>{say("Shop Admin Command Center")}</h1>
+                  <div style={{ color: '#9aa3b2', fontSize: 13 }}>{say("In-depth operational and financial analytics for your shop")}</div>
                 </div>
               </div>
             </div>
@@ -696,11 +698,11 @@ export default function ShopAdminPage() {
               {statCards.map((card) => (
                 <div key={card.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ color: '#9aa3b2', fontSize: 12, fontWeight: 700 }}>{card.label}</div>
-                    <div style={{ color: card.color, fontSize: 16 }}>{card.icon}</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 12, fontWeight: 700 }}>{say(card.label)}</div>
+                    <div style={{ color: card.color, fontSize: 16 }}>{say(card.icon)}</div>
                   </div>
-                  <div style={{ color: '#e5e7eb', fontSize: 28, fontWeight: 800, lineHeight: 1.15 }}>{card.value}</div>
-                  <div style={{ marginTop: 5, color: '#9aa3b2', fontSize: 12 }}>{card.sub}</div>
+                  <div style={{ color: '#e5e7eb', fontSize: 28, fontWeight: 800, lineHeight: 1.15 }}>{say(card.value)}</div>
+                  <div style={{ marginTop: 5, color: '#9aa3b2', fontSize: 12 }}>{say(card.sub)}</div>
                 </div>
               ))}
             </div>
@@ -708,20 +710,20 @@ export default function ShopAdminPage() {
             {/* Secondary Analytics Row */}
             <div style={{ marginBottom: 18 }}>
               <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 14, padding: 16 }}>
-                <div style={{ color: '#e5e7eb', fontWeight: 700, marginBottom: 10 }}>Weekly Operations Health</div>
-                <div style={{ marginBottom: 8, color: '#9aa3b2', fontSize: 12 }}>Completion Rate</div>
+                <div style={{ color: '#e5e7eb', fontWeight: 700, marginBottom: 10 }}>{say("Weekly Operations Health")}</div>
+                <div style={{ marginBottom: 8, color: '#9aa3b2', fontSize: 12 }}>{say("Completion Rate")}</div>
                 <div style={{ width: '100%', height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
                   <div style={{ width: `${completionRate}%`, height: '100%', background: 'linear-gradient(90deg, #e5332a, #22c55e)' }} />
                 </div>
-                <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700 }}>{completionRate}% ({completedThisWeek}/{totalPipeline || 0})</div>
+                <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700 }}>{say(completionRate)}% ({say(completedThisWeek)}/{totalPipeline || 0})</div>
 
                 {weeklyBudget > 0 && (
                   <>
-                    <div style={{ marginTop: 14, marginBottom: 8, color: '#9aa3b2', fontSize: 12 }}>Payroll Budget Utilization</div>
+                    <div style={{ marginTop: 14, marginBottom: 8, color: '#9aa3b2', fontSize: 12 }}>{say("Payroll Budget Utilization")}</div>
                     <div style={{ width: '100%', height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
                       <div style={{ width: `${payrollUtilization}%`, height: '100%', background: payrollUtilization >= 95 ? 'linear-gradient(90deg, #f59e0b, #e5332a)' : 'linear-gradient(90deg, #22c55e, #e5332a)' }} />
                     </div>
-                    <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700 }}>{payrollUtilization}% (${weeklySpent.toFixed(2)} / ${weeklyBudget.toFixed(2)})</div>
+                    <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 700 }}>{say(payrollUtilization)}% (${weeklySpent.toFixed(2)} / ${weeklyBudget.toFixed(2)})</div>
                   </>
                 )}
               </div>
@@ -730,11 +732,11 @@ export default function ShopAdminPage() {
             {/* Tab Switcher */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 8, marginBottom: 20 }}>
               {[
-                { id: 'overview', label: 'Overview' },
-                { id: 'inventory', label: 'Inventory' },
-                { id: 'team', label: 'Team' },
-                { id: 'payroll', label: 'Payroll' },
-                { id: 'settings', label: 'Settings' },
+                { id: 'overview', label: say("Overview") },
+                { id: 'inventory', label: say("Inventory") },
+                { id: 'team', label: say("Team") },
+                { id: 'payroll', label: say("Payroll") },
+                { id: 'settings', label: say("Settings") },
               ].map((tab) => {
                 const disabled =
                   (tab.id === 'settings' && user?.role === 'manager') ||
@@ -759,7 +761,7 @@ export default function ShopAdminPage() {
                       opacity: disabled ? 0.5 : 1,
                     }}
                   >
-                    {tab.label}
+                    {say(tab.label)}
                   </button>
                 );
               })}
@@ -832,7 +834,7 @@ export default function ShopAdminPage() {
 
       {adminMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:adminMsg.type==='success'?'#dcfce7':'#fde8e8',color:adminMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {adminMsg.text}
+          {say(adminMsg.text)}
           <button onClick={()=>setAdminMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}

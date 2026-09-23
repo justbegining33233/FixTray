@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import TopNavBar from '@/components/TopNavBar';
@@ -28,6 +29,7 @@ interface Shop {
 }
 
 export default function ShopDetailsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const router = useRouter();
   const params = useParams();
@@ -122,8 +124,7 @@ export default function ShopDetailsPage() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
           <div style={{ flex: 1, padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
-            Loading shop details...
-          </div>
+            {say("Loading shop details...")}{' '}</div>
         </div>
       </div>
     );
@@ -137,7 +138,7 @@ export default function ShopDetailsPage() {
           <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton />
           <main style={{ flex: 1, padding: '24px' }}>
             <div style={{ color: '#ef4444', marginBottom: '24px' }}>
-              {error || 'Shop not found'}
+              {error || say("Shop not found")}
             </div>
             <button
               onClick={() => router.back()}
@@ -154,8 +155,7 @@ export default function ShopDetailsPage() {
                 gap: 8,
               }}
             >
-              <FaArrowLeft /> Go Back
-            </button>
+              <FaArrowLeft /> {say("Go Back")}{' '}</button>
           </main>
         </div>
       </div>
@@ -184,7 +184,7 @@ export default function ShopDetailsPage() {
                 <FaArrowLeft />
               </button>
               <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: 0 }}>
-                {shop.name}
+                {say(shop.name)}
               </h1>
             </div>
             <button
@@ -204,7 +204,7 @@ export default function ShopDetailsPage() {
               }}
             >
               {isEditing ? <FaTimes /> : <FaEdit />}
-              {isEditing ? 'Cancel' : 'Edit'}
+              {isEditing ? say("Cancel") : say("Edit")}
             </button>
           </div>
 
@@ -217,7 +217,7 @@ export default function ShopDetailsPage() {
               color: '#fca5a5',
               marginBottom: '24px',
             }}>
-              {error}
+              {say(error)}
             </div>
           )}
 
@@ -232,8 +232,7 @@ export default function ShopDetailsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div>
                 <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px', display: 'block' }}>
-                  Status
-                </label>
+                  {say("Status")}{' '}</label>
                 <select
                   value={shop.status}
                   onChange={(e) => handleStatusChange(e.target.value)}
@@ -248,16 +247,15 @@ export default function ShopDetailsPage() {
                     width: '100%',
                   }}
                 >
-                  <option value="approved">Approved</option>
-                  <option value="pending">Pending</option>
-                  <option value="suspended">Suspended</option>
+                  <option value="approved">{say("Approved")}</option>
+                  <option value="pending">{say("Pending")}</option>
+                  <option value="suspended">{say("Suspended")}</option>
                 </select>
               </div>
 
               <div>
                 <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px', display: 'block' }}>
-                  Activity
-                </label>
+                  {say("Activity")}{' '}</label>
                 <div style={{
                   background: shop.activityStatus === 'active' ? 'rgba(34,197,94,0.15)' : 'rgba(107,114,128,0.15)',
                   color: shop.activityStatus === 'active' ? '#22c55e' : '#9ca3af',
@@ -267,14 +265,13 @@ export default function ShopDetailsPage() {
                   fontWeight: 600,
                   textAlign: 'center',
                 }}>
-                  {shop.activityStatus === 'active' ? '✓ Active' : '⏱ Inactive'}
+                  {shop.activityStatus === 'active' ? say("✓ Active") : say("⏱ Inactive")}
                 </div>
               </div>
 
               <div>
                 <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px', display: 'block' }}>
-                  Rating
-                </label>
+                  {say("Rating")}{' '}</label>
                 <div style={{
                   background: '#1f2937',
                   color: '#fbbf24',
@@ -299,13 +296,11 @@ export default function ShopDetailsPage() {
             marginBottom: '24px',
           }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginTop: 0, marginBottom: '16px' }}>
-              Contact Information
-            </h2>
+              {say("Contact Information")}{' '}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
               <div>
                 <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px', display: 'block' }}>
-                  Email
-                </label>
+                  {say("Email")}{' '}</label>
                 {isEditing ? (
                   <input
                     type="email"
@@ -322,14 +317,13 @@ export default function ShopDetailsPage() {
                     }}
                   />
                 ) : (
-                  <div style={{ color: '#e5e7eb', fontSize: 14 }}>{shop.email}</div>
+                  <div style={{ color: '#e5e7eb', fontSize: 14 }}>{say(shop.email)}</div>
                 )}
               </div>
 
               <div>
                 <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px', display: 'block' }}>
-                  Phone
-                </label>
+                  {say("Phone")}{' '}</label>
                 {isEditing ? (
                   <input
                     type="tel"
@@ -346,14 +340,13 @@ export default function ShopDetailsPage() {
                     }}
                   />
                 ) : (
-                  <div style={{ color: '#e5e7eb', fontSize: 14 }}>{shop.phone}</div>
+                  <div style={{ color: '#e5e7eb', fontSize: 14 }}>{say(shop.phone)}</div>
                 )}
               </div>
 
               <div>
                 <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px', display: 'block' }}>
-                  Location
-                </label>
+                  {say("Location")}{' '}</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -370,7 +363,7 @@ export default function ShopDetailsPage() {
                     }}
                   />
                 ) : (
-                  <div style={{ color: '#e5e7eb', fontSize: 14 }}>{shop.location}</div>
+                  <div style={{ color: '#e5e7eb', fontSize: 14 }}>{say(shop.location)}</div>
                 )}
               </div>
             </div>
@@ -385,44 +378,43 @@ export default function ShopDetailsPage() {
             marginBottom: '24px',
           }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginTop: 0, marginBottom: '16px' }}>
-              Performance Metrics
-            </h2>
+              {say("Performance Metrics")}{' '}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
               <div style={{ background: '#1f2937', padding: '16px', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>Total Jobs</div>
-                <div style={{ color: '#3b82f6', fontSize: 24, fontWeight: 700 }}>{shop.totalJobs}</div>
+                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>{say("Total Jobs")}</div>
+                <div style={{ color: '#3b82f6', fontSize: 24, fontWeight: 700 }}>{say(shop.totalJobs)}</div>
               </div>
 
               <div style={{ background: '#1f2937', padding: '16px', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>Completed</div>
-                <div style={{ color: '#10b981', fontSize: 24, fontWeight: 700 }}>{shop.completedJobs}</div>
+                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>{say("Completed")}</div>
+                <div style={{ color: '#10b981', fontSize: 24, fontWeight: 700 }}>{say(shop.completedJobs)}</div>
               </div>
 
               <div style={{ background: '#1f2937', padding: '16px', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>Completion Rate</div>
+                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>{say("Completion Rate")}</div>
                 <div style={{ color: '#8b5cf6', fontSize: 24, fontWeight: 700 }}>
                   {(shop.completionRate * 100).toFixed(1)}%
                 </div>
               </div>
 
               <div style={{ background: '#1f2937', padding: '16px', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>Total Revenue</div>
+                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>{say("Total Revenue")}</div>
                 <div style={{ color: '#f59e0b', fontSize: 24, fontWeight: 700 }}>
                   ${(shop.totalRevenue / 1000).toFixed(1)}K
                 </div>
               </div>
 
               <div style={{ background: '#1f2937', padding: '16px', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>This Month</div>
+                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>{say("This Month")}</div>
                 <div style={{ color: '#ec4899', fontSize: 24, fontWeight: 700 }}>
                   ${(shop.revenueThisMonth / 1000).toFixed(1)}K
                 </div>
               </div>
 
               <div style={{ background: '#1f2937', padding: '16px', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>Tech Count</div>
+                <div style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, marginBottom: '8px' }}>{say("Tech Count")}</div>
                 <div style={{ color: '#14b8a6', fontSize: 24, fontWeight: 700 }}>
-                  {shop.activeTechs}/{shop.techCount}
+                  {say(shop.activeTechs)}/{say(shop.techCount)}
                 </div>
               </div>
             </div>
@@ -449,7 +441,7 @@ export default function ShopDetailsPage() {
                   opacity: saving ? 0.6 : 1,
                 }}
               >
-                <FaSave /> {saving ? 'Saving...' : 'Save Changes'}
+                <FaSave /> {saving ? say("Saving...") : say("Save Changes")}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
@@ -464,8 +456,7 @@ export default function ShopDetailsPage() {
                   fontWeight: 600,
                 }}
               >
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
             </div>
           )}
         </main>

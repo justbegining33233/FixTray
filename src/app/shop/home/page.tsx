@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,6 +47,7 @@ type QuickAction = {
 };
 
 export default function ShopHome() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const isMobile = useIsMobile();
   const isNative = useIsNative();
@@ -204,13 +206,13 @@ export default function ShopHome() {
   }, [user?.id]); // use stable primitive — avoids re-fetch when checkAuth creates a new user object reference
 
   const quickActions: QuickAction[] = [
-    { label: <><FaStore style={{marginRight:6}}/>New In-Shop Job</>, href: '/workorders/inshop', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
-    { label: <><FaRoad style={{marginRight:6}}/>New Roadside Job</>, href: '/shop/new-roadside-job', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
-    { label: <><FaClipboardList style={{marginRight:6}}/>Estimates</>, href: '/shop/estimates', tint: 'rgba(168,85,247,0.18)', color: '#c084fc', border: 'rgba(168,85,247,0.28)' },
-    { label: <><FaTools style={{marginRight:6}}/>Services</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
-    { label: <><FaIndustry style={{marginRight:6}}/>Vendors & Parts</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
-    { label: <><FaMapMarkerAlt style={{marginRight:6}}/>Locations</>, href: '/shop/locations', tint: 'rgba(20,184,166,0.18)', color: '#14b8a6', border: 'rgba(20,184,166,0.28)' },
-    { label: <><FaSyncAlt style={{marginRight:6}}/>Recurring Orders</>, href: '/shop/recurring-workorders', tint: 'rgba(34,197,94,0.18)', color: '#22c55e', border: 'rgba(34,197,94,0.28)' },
+    { label: <><FaStore style={{marginRight:6}}/>{say("New In-Shop Job")}</>, href: '/workorders/inshop', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
+    { label: <><FaRoad style={{marginRight:6}}/>{say("New Roadside Job")}</>, href: '/shop/new-roadside-job', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
+    { label: <><FaClipboardList style={{marginRight:6}}/>{say("Estimates")}</>, href: '/shop/estimates', tint: 'rgba(168,85,247,0.18)', color: '#c084fc', border: 'rgba(168,85,247,0.28)' },
+    { label: <><FaTools style={{marginRight:6}}/>{say("Services")}</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
+    { label: <><FaIndustry style={{marginRight:6}}/>{say("Vendors & Parts")}</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },
+    { label: <><FaMapMarkerAlt style={{marginRight:6}}/>{say("Locations")}</>, href: '/shop/locations', tint: 'rgba(20,184,166,0.18)', color: '#14b8a6', border: 'rgba(20,184,166,0.28)' },
+    { label: <><FaSyncAlt style={{marginRight:6}}/>{say("Recurring Orders")}</>, href: '/shop/recurring-workorders', tint: 'rgba(34,197,94,0.18)', color: '#22c55e', border: 'rgba(34,197,94,0.28)' },
   ];
   const priorityStyles: Record<string, { bg: string; color: string }> = {
     High: { bg: 'rgba(229,51,42,0.2)', color: '#e5332a' },
@@ -239,8 +241,7 @@ export default function ShopHome() {
         color: '#e5e7eb',
         fontSize: '18px'
       }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   }
 
@@ -291,29 +292,28 @@ export default function ShopHome() {
         {/* Top row: type badge + priority badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ padding: '2px 8px', background: config.badgeBackground, color: config.badgeColor, borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
-            {config.badgeLabel}
+            {say(config.badgeLabel)}
           </span>
           <span style={{ padding: '2px 8px', background: style.bg, color: style.color, borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
-            {order.priority}
+            {say(order.priority)}
           </span>
         </div>
         {order.time && (
-          <span style={{ fontSize: 10, color: '#64748b', textAlign: 'right' }}>{order.time}</span>
+          <span style={{ fontSize: 10, color: '#64748b', textAlign: 'right' }}>{say(order.time)}</span>
         )}
 
         {/* Bottom row: service + customer */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, gridColumn: '1 / -1' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#e5e7eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {order.service}
+            {say(order.service)}
           </span>
-          <span style={{ fontSize: 11, color: '#94a3b8' }}>{order.customer}</span>
+          <span style={{ fontSize: 11, color: '#94a3b8' }}>{say(order.customer)}</span>
           <Link
             href={`/workorders/${order.sourceId || order.id}` as Route}
             onClick={(event) => event.stopPropagation()}
             style={{ fontSize: 11, color: '#e5332a', fontWeight: 700, textDecoration: 'none', marginTop: 2, width: 'fit-content' }}
           >
-            Open details
-          </Link>
+            {say("Open details")}{' '}</Link>
         </div>
       </div>
     );
@@ -490,7 +490,7 @@ export default function ShopHome() {
           className="quick-actions-slider"
           style={{display:'flex', flexWrap:'nowrap', gap:12, alignItems:'center', margin:'0 0 20px 0', overflowX:'auto', paddingBottom:4}}
         >
-          <span style={{fontSize:13, color:'#9aa3b2', fontWeight:700}}>Quick Actions</span>
+          <span style={{fontSize:13, color:'#9aa3b2', fontWeight:700}}>{say("Quick Actions")}</span>
           {quickActions.map(action => {
             if (action.requiresAdmin && !user.isShopAdmin) return null;
             if (action.hideForAdmin && user.isShopAdmin) return null;
@@ -512,7 +512,7 @@ export default function ShopHome() {
                   flexShrink:0
                 }}
               >
-                {action.label}
+                {say(action.label)}
               </Link>
             );
           })}
@@ -522,30 +522,30 @@ export default function ShopHome() {
         <div style={{display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? 10 : 16, marginBottom: isMobile ? 16 : 32}}>
           {/* All shop roles */}
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Open Jobs</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Open Jobs")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{dashboardReady ? shopStats.openJobs : '...'} </div>
           </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Completed Today</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Completed Today")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.completedToday : '...'} </div>
           </div>
           <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Pending Approvals</div>
+            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Pending Approvals")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{dashboardReady ? shopStats.pendingApprovals : '...'} </div>
           </div>
           {/* Admin / owner only */}
           {user.isShopAdmin && (
             <>
               <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Today's Revenue</div>
-                <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.todayRevenue : 'Syncing...'} </div>
+                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Today's Revenue")}</div>
+                <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{dashboardReady ? shopStats.todayRevenue : say("Syncing...")} </div>
               </div>
               <div style={{background:'rgba(168,85,247,0.1)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:12, padding:20}}>
-                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>This Week</div>
-                <div style={{fontSize:32, fontWeight:700, color:'#a855f7'}}>{dashboardReady ? shopStats.weekRevenue : 'Syncing...'} </div>
+                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("This Week")}</div>
+                <div style={{fontSize:32, fontWeight:700, color:'#a855f7'}}>{dashboardReady ? shopStats.weekRevenue : say("Syncing...")} </div>
               </div>
               <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
-                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>Active Techs</div>
+                <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Active Techs")}</div>
                 <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{dashboardReady ? shopStats.activeTechs : '...'} </div>
               </div>
             </>
@@ -557,20 +557,19 @@ export default function ShopHome() {
             <div style={{background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:12, padding:24, minHeight:800}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, gap:12, flexWrap:'wrap'}}>
                 <div>
-                  <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Ops Overview</h2>
+                  <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Ops Overview")}</h2>
                   <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
                     <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.16)', color:'#93c5fd', borderRadius:12, fontSize:11, fontWeight:700}}>
-                      Roadcalls: {pendingRoadcalls.length}
+                      {say("Roadcalls:")}{' '}{say(pendingRoadcalls.length)}
                     </span>
                     <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
-                      In-Shop Appointments: {pendingInShopAppointments.length}
+                      {say("In-Shop Appointments:")}{' '}{say(pendingInShopAppointments.length)}
                     </span>
                     <span style={{padding:'4px 10px', background:'rgba(245,158,11,0.16)', color:'#fbbf24', borderRadius:12, fontSize:11, fontWeight:700}}>
-                      In-Shop Walk-ins: {pendingInShopWalkIns.length}
+                      {say("In-Shop Walk-ins:")}{' '}{say(pendingInShopWalkIns.length)}
                     </span>
                     <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
-                      Bays: {bays.length} configured ({bays.reduce((sum, bay) => sum + bay.jobs.length, 0)} active)
-                    </span>
+                      {say("Bays:")}{' '}{say(bays.length)} {say("configured (")}{bays.reduce((sum, bay) => sum + bay.jobs.length, 0)} {say("active)")}{' '}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -590,8 +589,7 @@ export default function ShopHome() {
                       gap: 6,
                     }}
                   >
-                    <FaCar /> In-Shop Work Order
-                  </Link>
+                    <FaCar /> {say("In-Shop Work Order")}{' '}</Link>
                   <Link
                     href={'/workorders/roadside' as Route}
                     style={{
@@ -608,11 +606,9 @@ export default function ShopHome() {
                       gap: 6,
                     }}
                   >
-                    <FaRoad /> Roadside Work Order
-                  </Link>
+                    <FaRoad /> {say("Roadside Work Order")}{' '}</Link>
                   <span style={{padding:'4px 10px', background:'rgba(34,197,94,0.2)', color:'#22c55e', borderRadius:12, fontSize:11, fontWeight:700}}>
-                    Drag-free handoff
-                  </span>
+                    {say("Drag-free handoff")}{' '}</span>
                 </div>
               </div>
 
@@ -634,19 +630,17 @@ export default function ShopHome() {
                   }}
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-                    <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Pending Queue</div>
+                    <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{say("Pending Queue")}</div>
                     <span style={{fontSize:12, color:'#9aa3b2'}}>{dashboardReady ? `${pendingQueueCount} job${pendingQueueCount !== 1 ? 's' : ''}` : '…'}</span>
                   </div>
                   {dragOverTarget === 'pending' && (
                     <div style={{marginBottom:10, padding:'10px 12px', border:'1px dashed rgba(245,158,11,0.7)', borderRadius:8, background:'rgba(245,158,11,0.12)', color:'#f59e0b', fontSize:12, fontWeight:700}}>
-                      Release to return this work order to pending queue
-                    </div>
+                      {say("Release to return this work order to pending queue")}{' '}</div>
                   )}
                   <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:520, overflowY:'auto', paddingRight:2}}>
                     {dashboardReady && pendingQueueCount === 0 && pendingWorkOrders.length === 0 && (
                       <div style={{color:'#9aa3b2', fontSize:13, padding:12, border:'1px dashed rgba(255,255,255,0.15)', borderRadius:10}}>
-                        No customers waiting  -  nice work.
-                      </div>
+                        {say("No customers waiting  -  nice work.")}{' '}</div>
                     )}
                     {[
                       ...pendingRoadcalls.map(o => ({ order: o, config: { badgeLabel: 'Roadcall', badgeBackground: 'rgba(59,130,246,0.18)', badgeColor: '#93c5fd', defaultDestination: 'roadcall' as const, dispatchFallback: 'Roadcall' } })),
@@ -660,12 +654,11 @@ export default function ShopHome() {
                 {/* Bays Board */}
                 <div style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-                    <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>Service Bays</div>
-                    <span style={{fontSize:12, color:'#9aa3b2'}}>Drag to place on a bay</span>
+                    <div style={{fontSize:15, fontWeight:700, color:'#e5e7eb'}}>{say("Service Bays")}</div>
+                    <span style={{fontSize:12, color:'#9aa3b2'}}>{say("Drag to place on a bay")}</span>
                   </div>
                   <p style={{ margin: '0 0 10px', fontSize: 12, color: '#9aa3b2' }}>
-                    Placing a job on a bay organizes the board. A technician is assigned when they clock in.
-                  </p>
+                    {say("Placing a job on a bay organizes the board. A technician is assigned when they clock in.")}{' '}</p>
 
                   <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10}}>
                     {bays.map((bay) => (
@@ -686,12 +679,12 @@ export default function ShopHome() {
                         }}
                       >
                         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-                          <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13}}>{bay.name}</div>
-                          <span style={{color: bay.jobs.length ? '#22c55e' : '#9aa3b2', fontSize:11}}>{bay.jobs.length} job(s)</span>
+                          <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13}}>{say(bay.name)}</div>
+                          <span style={{color: bay.jobs.length ? '#22c55e' : '#9aa3b2', fontSize:11}}>{say(bay.jobs.length)} {say("job(s)")}</span>
                         </div>
 
                         {bay.jobs.length === 0 ? (
-                          <div style={{fontSize:12, color:'#9aa3b2'}}>Drop a job here to place it</div>
+                          <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Drop a job here to place it")}</div>
                         ) : (
                           <div style={{display:'flex', flexDirection:'column', gap:8}}>
                             {bay.jobs.map((job) => (
@@ -713,21 +706,19 @@ export default function ShopHome() {
                                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.borderColor = 'rgba(229,51,42,0.4)'; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                               >
-                                <div style={{fontSize:12, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{job.service}</div>
-                                <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{job.customer}</div>
+                                <div style={{fontSize:12, fontWeight:700, color:'#e5e7eb', marginBottom:4}}>{say(job.service)}</div>
+                                <div style={{fontSize:11, color:'#9aa3b2', marginBottom:8}}>{say(job.customer)}</div>
                                 <Link
                                   href={`/workorders/${job.sourceId || job.id}` as Route}
                                   onClick={(event) => event.stopPropagation()}
                                   style={{display:'inline-block', fontSize:11, color:'#e5332a', fontWeight:700, textDecoration:'none', marginBottom:8}}
                                 >
-                                  Open details
-                                </Link>
+                                  {say("Open details")}{' '}</Link>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); void handleReturnToPending(bay.id, job.id); }}
                                   style={{width:'100%', padding:'6px 8px', background:'rgba(245,158,11,0.12)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.3)', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer'}}
                                 >
-                                  Return To Queue
-                                </button>
+                                  {say("Return To Queue")}{' '}</button>
                               </div>
                             ))}
                           </div>
@@ -735,8 +726,7 @@ export default function ShopHome() {
 
                         {dragOverTarget === bay.id && (
                           <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(34,197,94,0.75)', borderRadius:8, background:'rgba(34,197,94,0.12)', color:'#22c55e', fontSize:11, fontWeight:700}}>
-                            Release to place on this bay
-                          </div>
+                            {say("Release to place on this bay")}{' '}</div>
                         )}
                       </div>
                     ))}
@@ -756,12 +746,11 @@ export default function ShopHome() {
                         minHeight: 120,
                       }}
                     >
-                      <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13, marginBottom:8}}><FaTruck style={{marginRight:4}} /> Roadcall Queue</div>
-                      <div style={{fontSize:12, color:'#9aa3b2'}}>Drop a job here to place it in the roadcall queue</div>
+                      <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13, marginBottom:8}}><FaTruck style={{marginRight:4}} /> {say("Roadcall Queue")}</div>
+                      <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Drop a job here to place it in the roadcall queue")}</div>
                       {dragOverTarget === 'roadcall' && (
                         <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(59,130,246,0.75)', borderRadius:8, background:'rgba(59,130,246,0.12)', color:'#60a5fa', fontSize:11, fontWeight:700}}>
-                          Release to place in the roadcall queue
-                        </div>
+                          {say("Release to place in the roadcall queue")}{' '}</div>
                       )}
                     </div>
                   </div>

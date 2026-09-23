@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowLeft, FaCheck, FaEdit, FaEnvelope, FaMobileAlt, FaRegCircle, FaSave, FaUserTie, FaWrench } from 'react-icons/fa';
 
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 
 export default function EmployeeProfile() {
+  const say = usePhrase();
   useRequireAuth(['shop']);
   const router = useRouter();
   const params = useParams();
@@ -118,7 +120,7 @@ export default function EmployeeProfile() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#e5e7eb', fontSize: 18 }}>Loading...</div>
+        <div style={{ color: '#e5e7eb', fontSize: 18 }}>{say("Loading...")}</div>
       </div>
     );
   }
@@ -126,14 +128,14 @@ export default function EmployeeProfile() {
   if (!employee) {
     return (
       <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#e5e7eb', fontSize: 18 }}>Employee not found</div>
+        <div style={{ color: '#e5e7eb', fontSize: 18 }}>{say("Employee not found")}</div>
       </div>
     );
   }
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent' }}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Employee Profile</h1>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{say("Employee Profile")}</h1>
       {/* Header */}
       <div style={{
         background: 'rgba(0,0,0,0.3)',
@@ -145,11 +147,10 @@ export default function EmployeeProfile() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <Link href="/shop/admin?tab=team" style={{ fontSize: 24, fontWeight: 900, color: '#e5332a', textDecoration: 'none' }}>
-            SOS
-          </Link>
+            {say("SOS")}{' '}</Link>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>Employee Profile</div>
-            <div style={{ fontSize: 12, color: '#9aa3b2' }}>{employee.firstName} {employee.lastName}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>{say("Employee Profile")}</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2' }}>{say(employee.firstName)} {say(employee.lastName)}</div>
           </div>
         </div>
         <Link href="/shop/admin?tab=team" style={{
@@ -161,8 +162,7 @@ export default function EmployeeProfile() {
           fontSize: 13,
           fontWeight: 600,
         }}>
-          <FaArrowLeft style={{marginRight:4}} /> Back to Team
-        </Link>
+          <FaArrowLeft style={{marginRight:4}} /> {say("Back to Team")}{' '}</Link>
       </div>
 
       {/* Content */}
@@ -186,16 +186,16 @@ export default function EmployeeProfile() {
                   {employee.role === 'manager' ? <FaUserTie style={{marginRight:4}} /> : <FaWrench style={{marginRight:4}} />}
                 </div>
                 <div style={{ color: '#e5e7eb', fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
-                  {employee.firstName} {employee.lastName}
+                  {say(employee.firstName)} {say(employee.lastName)}
                 </div>
                 <div style={{ color: '#9aa3b2', fontSize: 14 }}>
-                  {employee.role === 'manager' ? 'Manager' : 'Technician'}
+                  {employee.role === 'manager' ? say("Manager") : say("Technician")}
                 </div>
               </div>
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 20, display: 'grid', gap: 12 }}>
                 <div>
-                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>Status</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{say("Status")}</div>
                   <div style={{
                     display: 'inline-block',
                     padding: '4px 12px',
@@ -206,24 +206,24 @@ export default function EmployeeProfile() {
                     fontSize: 12,
                     fontWeight: 600,
                   }}>
-                    {employee.available ? <><FaCheck style={{marginRight:4}} /> Available</> : <><FaRegCircle style={{marginRight:4}} /> Unavailable</>}
+                    {employee.available ? <><FaCheck style={{marginRight:4}} /> {say("Available")}</> : <><FaRegCircle style={{marginRight:4}} /> {say("Unavailable")}</>}
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>Employee ID</div>
-                  <div style={{ color: '#e5e7eb', fontSize: 13, fontFamily: 'monospace' }}>{employee.id}</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{say("Employee ID")}</div>
+                  <div style={{ color: '#e5e7eb', fontSize: 13, fontFamily: 'monospace' }}>{say(employee.id)}</div>
                 </div>
 
                 <div>
-                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>Joined Date</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{say("Joined Date")}</div>
                   <div style={{ color: '#e5e7eb', fontSize: 13 }}>
                     {new Date(employee.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>Active Work Orders</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{say("Active Work Orders")}</div>
                   <div style={{ color: '#3b82f6', fontSize: 20, fontWeight: 700 }}>
                     {employee._count?.assignedWorkOrders || 0}
                   </div>
@@ -237,7 +237,7 @@ export default function EmployeeProfile() {
             {/* Contact Information */}
             <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h3 style={{ color: '#e5e7eb', fontSize: 18, margin: 0 }}>Contact Information</h3>
+                <h3 style={{ color: '#e5e7eb', fontSize: 18, margin: 0 }}>{say("Contact Information")}</h3>
                 {!editing && (
                   <button
                     onClick={() => setEditing(true)}
@@ -252,8 +252,7 @@ export default function EmployeeProfile() {
                       fontSize: 13,
                     }}
                   >
-                    <FaEdit style={{marginRight:4}} /> Edit
-                  </button>
+                    <FaEdit style={{marginRight:4}} /> {say("Edit")}{' '}</button>
                 )}
               </div>
 
@@ -261,7 +260,7 @@ export default function EmployeeProfile() {
                 <div style={{ display: 'grid', gap: 16 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <div>
-                      <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>First Name</label>
+                      <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>{say("First Name")}</label>
                       <input
                         type="text"
                         value={formData.firstName}
@@ -277,7 +276,7 @@ export default function EmployeeProfile() {
                       />
                     </div>
                     <div>
-                      <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>Last Name</label>
+                      <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>{say("Last Name")}</label>
                       <input
                         type="text"
                         value={formData.lastName}
@@ -295,7 +294,7 @@ export default function EmployeeProfile() {
                   </div>
 
                   <div>
-                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>Email</label>
+                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>{say("Email")}</label>
                     <input
                       type="email"
                       value={formData.email}
@@ -312,7 +311,7 @@ export default function EmployeeProfile() {
                   </div>
 
                   <div>
-                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>Phone</label>
+                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>{say("Phone")}</label>
                     <input
                       type="tel"
                       value={formData.phone || ''}
@@ -342,7 +341,7 @@ export default function EmployeeProfile() {
                         fontWeight: 600,
                       }}
                     >
-                      {loading ? 'Saving...' : <><FaSave style={{marginRight:4}} /> Save Changes</>}
+                      {loading ? say("Saving...") : <><FaSave style={{marginRight:4}} /> {say("Save Changes")}</>}
                     </button>
                     <button
                       onClick={() => {
@@ -367,8 +366,7 @@ export default function EmployeeProfile() {
                         fontWeight: 600,
                       }}
                     >
-                      Cancel
-                    </button>
+                      {say("Cancel")}{' '}</button>
                   </div>
                 </div>
               ) : (
@@ -376,16 +374,16 @@ export default function EmployeeProfile() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{ fontSize: 18 }}><FaEnvelope style={{marginRight:4}} /></span>
                     <div>
-                      <div style={{ color: '#9aa3b2', fontSize: 11 }}>Email</div>
-                      <div style={{ color: '#e5e7eb', fontSize: 14 }}>{employee.email}</div>
+                      <div style={{ color: '#9aa3b2', fontSize: 11 }}>{say("Email")}</div>
+                      <div style={{ color: '#e5e7eb', fontSize: 14 }}>{say(employee.email)}</div>
                     </div>
                   </div>
                   {employee.phone && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{ fontSize: 18 }}><FaMobileAlt style={{marginRight:4}} /></span>
                       <div>
-                        <div style={{ color: '#9aa3b2', fontSize: 11 }}>Phone</div>
-                        <div style={{ color: '#e5e7eb', fontSize: 14 }}>{employee.phone}</div>
+                        <div style={{ color: '#9aa3b2', fontSize: 11 }}>{say("Phone")}</div>
+                        <div style={{ color: '#e5e7eb', fontSize: 14 }}>{say(employee.phone)}</div>
                       </div>
                     </div>
                   )}
@@ -395,12 +393,12 @@ export default function EmployeeProfile() {
 
             {/* Employment Details */}
             <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 24 }}>
-              <h3 style={{ color: '#e5e7eb', fontSize: 18, marginBottom: 20 }}>Employment Details</h3>
+              <h3 style={{ color: '#e5e7eb', fontSize: 18, marginBottom: 20 }}>{say("Employment Details")}</h3>
               
               {editing ? (
                 <div style={{ display: 'grid', gap: 16 }}>
                   <div>
-                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>Hourly Rate</label>
+                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>{say("Hourly Rate")}</label>
                     <div style={{ position: 'relative' }}>
                       <span style={{ position: 'absolute', left: 12, top: 10, color: '#9aa3b2' }}>$</span>
                       <input
@@ -421,7 +419,7 @@ export default function EmployeeProfile() {
                   </div>
 
                   <div>
-                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>Role</label>
+                    <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>{say("Role")}</label>
                     <select
                       value={formData.role}
                       onChange={(e) => setFormData({ ...formData, role: e.target.value })}
@@ -434,8 +432,8 @@ export default function EmployeeProfile() {
                         color: 'white',
                       }}
                     >
-                      <option value="tech">Technician</option>
-                      <option value="manager">Manager</option>
+                      <option value="tech">{say("Technician")}</option>
+                      <option value="manager">{say("Manager")}</option>
                     </select>
                   </div>
 
@@ -446,23 +444,22 @@ export default function EmployeeProfile() {
                         checked={formData.available}
                         onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
                       />
-                      Available for work assignments
-                    </label>
+                      {say("Available for work assignments")}{' '}</label>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gap: 16 }}>
                   <div>
-                    <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>Hourly Rate</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{say("Hourly Rate")}</div>
                     <div style={{ color: '#22c55e', fontSize: 24, fontWeight: 700 }}>
                       ${employee.hourlyRate ? employee.hourlyRate.toFixed(2) : '0.00'}/hr
                     </div>
                   </div>
 
                   <div>
-                    <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>Position</div>
+                    <div style={{ color: '#9aa3b2', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{say("Position")}</div>
                     <div style={{ color: '#e5e7eb', fontSize: 16 }}>
-                      {employee.role === 'manager' ? <><FaUserTie style={{marginRight:4}} /> Manager</> : <><FaWrench style={{marginRight:4}} /> Technician</>}
+                      {employee.role === 'manager' ? <><FaUserTie style={{marginRight:4}} /> {say("Manager")}</> : <><FaWrench style={{marginRight:4}} /> {say("Technician")}</>}
                     </div>
                   </div>
                 </div>
@@ -474,7 +471,7 @@ export default function EmployeeProfile() {
 
       {employeeMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:employeeMsg.type==='success'?'#dcfce7':'#fde8e8',color:employeeMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {employeeMsg.text}
+          {say(employeeMsg.text)}
           <button onClick={()=>setEmployeeMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>├ù</button>
         </div>
       )}

@@ -1,4 +1,5 @@
 "use client";
+import { usePhrase } from '@/lib/usePhrase';
 import { FaStopwatch } from 'react-icons/fa';
 
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function IdleWarningModal({ secondsLeft, onStay, onLogout }: Props) {
+  const say = usePhrase();
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 99999,
@@ -23,13 +25,11 @@ export default function IdleWarningModal({ secondsLeft, onStay, onLogout }: Prop
       }}>
         <div style={{ fontSize: 42, marginBottom: 12 }}><FaStopwatch style={{marginRight:4}} /></div>
         <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: '0 0 10px' }}>
-          Still there?
-        </h2>
+          {say("Still there?")}{' '}</h2>
         <p style={{ color: '#b8beca', fontSize: 14, margin: '0 0 6px' }}>
-          You&apos;ve been inactive for a while.
-        </p>
+          {say("You&apos;ve been inactive for a while.")}{' '}</p>
         <p style={{ color: '#ff948d', fontSize: 14, margin: '0 0 24px' }}>
-          You&apos;ll be logged out in <strong style={{ color: '#e5332a', fontSize: 18 }}>{secondsLeft}s</strong>
+          {say("You&apos;ll be logged out in")}{' '}<strong style={{ color: '#e5332a', fontSize: 18 }}>{say(secondsLeft)}s</strong>
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button
@@ -40,8 +40,7 @@ export default function IdleWarningModal({ secondsLeft, onStay, onLogout }: Prop
               cursor: 'pointer', fontSize: 14,
             }}
           >
-            Log out
-          </button>
+            {say("Log out")}{' '}</button>
           <button
             onClick={onStay}
             style={{
@@ -50,8 +49,7 @@ export default function IdleWarningModal({ secondsLeft, onStay, onLogout }: Prop
               cursor: 'pointer', fontSize: 14, fontWeight: 600,
             }}
           >
-            Stay logged in
-          </button>
+            {say("Stay logged in")}{' '}</button>
         </div>
       </div>
     </div>

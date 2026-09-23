@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { FaArrowLeft, FaBan, FaCheck, FaSyncAlt } from 'react-icons/fa';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -33,6 +34,7 @@ interface ShopData {
 }
 
 export default function ManageShops() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [shops, setShops] = useState<ShopData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +94,7 @@ export default function ManageShops() {
     }
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const filtered = shops.filter(s => {
@@ -134,34 +136,33 @@ export default function ManageShops() {
 
   return (
     <div style={{minHeight:'100vh', background:'transparent'}}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Manage Shops</h1>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{say("Manage Shops")}</h1>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/admin/home" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/admin/home" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Admin Panel</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Manage Shops</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Admin Panel")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Manage Shops")}</div>
           </div>
         </div>
         <Link href="/admin/home" style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:600}}>
-          <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-        </Link>
+          <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
       </div>
 
       <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
         {/* Stats Row */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(170px, 1fr))', gap:16, marginBottom:32}}>
           {[
-            { label: 'Total Shops', value: counts.all, color: '#e5332a' },
-            { label: 'Active (Using App)', value: counts.activeUsage, color: '#22c55e' },
-            { label: 'Inactive (No Recent Login)', value: counts.inactiveUsage, color: '#94a3b8' },
-            { label: 'Approved Accounts', value: counts.approved, color: '#10b981' },
-            { label: 'Pending', value: counts.pending, color: '#f59e0b' },
-            { label: 'Suspended', value: counts.suspended, color: '#ef4444' },
+            { label: say("Total Shops"), value: counts.all, color: '#e5332a' },
+            { label: say("Active (Using App)"), value: counts.activeUsage, color: '#22c55e' },
+            { label: say("Inactive (No Recent Login)"), value: counts.inactiveUsage, color: '#94a3b8' },
+            { label: say("Approved Accounts"), value: counts.approved, color: '#10b981' },
+            { label: say("Pending"), value: counts.pending, color: '#f59e0b' },
+            { label: say("Suspended"), value: counts.suspended, color: '#ef4444' },
           ].map(stat => (
             <div key={stat.label} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:20, textAlign:'center'}}>
-              <div style={{fontSize:32, fontWeight:800, color:stat.color}}>{stat.value}</div>
-              <div style={{fontSize:13, color:'#9aa3b2', fontWeight:600}}>{stat.label}</div>
+              <div style={{fontSize:32, fontWeight:800, color:stat.color}}>{say(stat.value)}</div>
+              <div style={{fontSize:13, color:'#9aa3b2', fontWeight:600}}>{say(stat.label)}</div>
             </div>
           ))}
         </div>
@@ -170,7 +171,7 @@ export default function ManageShops() {
         <div style={{display:'flex', gap:16, marginBottom:24, flexWrap:'wrap'}}>
           <input
             type="text"
-            placeholder="Search shops, owners, emails..."
+            placeholder={say("Search shops, owners, emails...")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{flex:1, minWidth:250, padding:'10px 16px', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
@@ -190,17 +191,17 @@ export default function ManageShops() {
               background: activityFilter === s ? '#22c55e' : 'rgba(255,255,255,0.1)',
               color: activityFilter === s ? 'white' : '#9aa3b2',
             }}>
-              {s === 'all' ? 'All Usage' : s === 'active' ? `Active Usage (${counts.activeUsage})` : `Inactive Usage (${counts.inactiveUsage})`}
+              {s === 'all' ? say("All Usage") : s === 'active' ? `Active Usage (${counts.activeUsage})` : `Inactive Usage (${counts.inactiveUsage})`}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div style={{textAlign:'center', padding:60, color:'#9aa3b2'}}>Loading shops...</div>
+          <div style={{textAlign:'center', padding:60, color:'#9aa3b2'}}>{say("Loading shops...")}</div>
         ) : (
           <div style={{display:'grid', gap:16}}>
             {filtered.length === 0 ? (
-              <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>No shops found</div>
+              <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>{say("No shops found")}</div>
             ) : filtered.map(shop => (
               <div key={shop.id} style={{
                 background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24,
@@ -209,36 +210,36 @@ export default function ManageShops() {
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:16}}>
                   <div style={{flex:1, minWidth:200}}>
                     <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
-                      <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>{shop.name}</h3>
+                      <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>{say(shop.name)}</h3>
                       <span style={{...statusColor(shop.status), padding:'3px 10px', borderRadius:12, fontSize:11, fontWeight:700, textTransform:'uppercase' as const}}>
-                        account: {shop.status}
+                        account: {say(shop.status)}
                       </span>
                       <span style={{...activityColor(shop.activityStatus), padding:'3px 10px', borderRadius:12, fontSize:11, fontWeight:700, textTransform:'uppercase' as const}}>
                         usage: {shop.activityStatus || 'inactive'}
                       </span>
                     </div>
-                    <div style={{fontSize:13, color:'#9aa3b2'}}>{shop.ownerName}  {shop.email}  {shop.phone}</div>
-                    <div style={{fontSize:13, color:'#6b7280', marginTop:4}}>{shop.location}  {shop.shopType}</div>
+                    <div style={{fontSize:13, color:'#9aa3b2'}}>{say(shop.ownerName)}  {say(shop.email)}  {say(shop.phone)}</div>
+                    <div style={{fontSize:13, color:'#6b7280', marginTop:4}}>{say(shop.location)}  {say(shop.shopType)}</div>
                     <div style={{fontSize:12, color:'#94a3b8', marginTop:6}}>
-                      Last login: {formatLastLogin(shop.lastLogin)}
+                      {say("Last login:")}{' '}{formatLastLogin(shop.lastLogin)}
                     </div>
                   </div>
                   <div style={{display:'flex', gap:24, flexWrap:'wrap'}}>
                     <div style={{textAlign:'center'}}>
-                      <div style={{fontSize:20, fontWeight:700, color:'#e5332a'}}>{shop.totalJobs}</div>
-                      <div style={{fontSize:11, color:'#9aa3b2'}}>Jobs</div>
+                      <div style={{fontSize:20, fontWeight:700, color:'#e5332a'}}>{say(shop.totalJobs)}</div>
+                      <div style={{fontSize:11, color:'#9aa3b2'}}>{say("Jobs")}</div>
                     </div>
                     <div style={{textAlign:'center'}}>
                       <div style={{fontSize:20, fontWeight:700, color:'#22c55e'}}>${shop.totalRevenue.toLocaleString()}</div>
-                      <div style={{fontSize:11, color:'#9aa3b2'}}>Revenue</div>
+                      <div style={{fontSize:11, color:'#9aa3b2'}}>{say("Revenue")}</div>
                     </div>
                     <div style={{textAlign:'center'}}>
-                      <div style={{fontSize:20, fontWeight:700, color:'#f59e0b'}}>{shop.rating > 0 ? `${shop.rating}<FaStar style={{marginRight:4}} />` : 'N/A'}</div>
-                      <div style={{fontSize:11, color:'#9aa3b2'}}>{shop.reviewCount} reviews</div>
+                      <div style={{fontSize:20, fontWeight:700, color:'#f59e0b'}}>{shop.rating > 0 ? `${shop.rating}<FaStar style={{marginRight:4}} />` : say("N/A")}</div>
+                      <div style={{fontSize:11, color:'#9aa3b2'}}>{say(shop.reviewCount)} reviews</div>
                     </div>
                     <div style={{textAlign:'center'}}>
-                      <div style={{fontSize:20, fontWeight:700, color:'#a78bfa'}}>{shop.techCount}</div>
-                      <div style={{fontSize:11, color:'#9aa3b2'}}>Techs</div>
+                      <div style={{fontSize:20, fontWeight:700, color:'#a78bfa'}}>{say(shop.techCount)}</div>
+                      <div style={{fontSize:11, color:'#9aa3b2'}}>{say("Techs")}</div>
                     </div>
                   </div>
                 </div>
@@ -248,31 +249,31 @@ export default function ManageShops() {
                   <div style={{marginTop:20, paddingTop:20, borderTop:'1px solid rgba(255,255,255,0.1)'}} onClick={e => e.stopPropagation()}>
                     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16, marginBottom:20}}>
                       <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Completion Rate</div>
-                        <div style={{fontSize:22, fontWeight:700, color:'#22c55e'}}>{shop.completionRate}%</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Completion Rate")}</div>
+                        <div style={{fontSize:22, fontWeight:700, color:'#22c55e'}}>{say(shop.completionRate)}%</div>
                       </div>
                       <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Revenue This Month</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Revenue This Month")}</div>
                         <div style={{fontSize:22, fontWeight:700, color:'#e5332a'}}>${shop.revenueThisMonth.toLocaleString()}</div>
                       </div>
                       <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Jobs This Month</div>
-                        <div style={{fontSize:22, fontWeight:700, color:'#f59e0b'}}>{shop.jobsThisMonth}</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Jobs This Month")}</div>
+                        <div style={{fontSize:22, fontWeight:700, color:'#f59e0b'}}>{say(shop.jobsThisMonth)}</div>
                       </div>
                       <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Platform Access</div>
-                        <div style={{fontSize:16, fontWeight:700, color:'#a78bfa'}}>Standard</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Platform Access")}</div>
+                        <div style={{fontSize:16, fontWeight:700, color:'#a78bfa'}}>{say("Standard")}</div>
                       </div>
                       <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Active Techs</div>
-                        <div style={{fontSize:22, fontWeight:700, color:'#22c55e'}}>{shop.activeTechs} / {shop.techCount}</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Active Techs")}</div>
+                        <div style={{fontSize:22, fontWeight:700, color:'#22c55e'}}>{say(shop.activeTechs)} / {say(shop.techCount)}</div>
                       </div>
                       <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Joined</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Joined")}</div>
                         <div style={{fontSize:14, fontWeight:600, color:'#e5e7eb'}}>{new Date(shop.createdAt).toLocaleDateString()}</div>
                       </div>
                       <div style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
-                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Latest Login Activity</div>
+                        <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Latest Login Activity")}</div>
                         <div style={{fontSize:14, fontWeight:600, color:'#e5e7eb'}}>{formatLastLogin(shop.lastLogin)}</div>
                       </div>
                     </div>
@@ -281,27 +282,26 @@ export default function ManageShops() {
                       <Link href={`/admin/shop-details/${shop.id}`} style={{
                         padding:'10px 20px', background:'#e5332a', color:'white', borderRadius:8, fontSize:13, fontWeight:600, textDecoration:'none',
                       }}>
-                        View Full Details
-                      </Link>
+                        {say("View Full Details")}{' '}</Link>
                       {shop.status !== 'approved' && (
                         <button onClick={() => handleStatusChange(shop.id, 'approved')} disabled={actionLoading === shop.id} style={{
                           padding:'10px 20px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', opacity: actionLoading === shop.id ? 0.6 : 1,
                         }}>
-                          {actionLoading === shop.id ? 'Updating...' : <><FaCheck style={{marginRight:4}} /> Approve</>}
+                          {actionLoading === shop.id ? say("Updating...") : <><FaCheck style={{marginRight:4}} /> {say("Approve")}</>}
                         </button>
                       )}
                       {shop.status !== 'suspended' && (
                         <button onClick={() => handleStatusChange(shop.id, 'suspended')} disabled={actionLoading === shop.id} style={{
                           padding:'10px 20px', background:'#ef4444', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', opacity: actionLoading === shop.id ? 0.6 : 1,
                         }}>
-                          {actionLoading === shop.id ? 'Updating...' : <><FaBan style={{marginRight:4}} /> Suspend</>}
+                          {actionLoading === shop.id ? say("Updating...") : <><FaBan style={{marginRight:4}} /> {say("Suspend")}</>}
                         </button>
                       )}
                       {shop.status === 'suspended' && (
                         <button onClick={() => handleStatusChange(shop.id, 'pending')} disabled={actionLoading === shop.id} style={{
                           padding:'10px 20px', background:'#f59e0b', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', opacity: actionLoading === shop.id ? 0.6 : 1,
                         }}>
-                          {actionLoading === shop.id ? 'Updating...' : <><FaSyncAlt style={{marginRight:4}} /> Reactivate to Pending</>}
+                          {actionLoading === shop.id ? say("Updating...") : <><FaSyncAlt style={{marginRight:4}} /> {say("Reactivate to Pending")}</>}
                         </button>
                       )}
                     </div>
@@ -315,7 +315,7 @@ export default function ManageShops() {
 
       {msg && (
         <div style={{position:'fixed', bottom:24, right:24, background: msg.type === 'success' ? '#dcfce7' : '#fde8e8', color: msg.type === 'success' ? '#166534' : '#991b1b', borderRadius:10, padding:'12px 20px', zIndex:9999, fontSize:14, fontWeight:600, boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {msg.text}
+          {say(msg.text)}
           <button onClick={() => setMsg(null)} style={{marginLeft:12, background:'none', border:'none', cursor:'pointer', fontSize:16, color:'inherit'}}></button>
         </div>
       )}

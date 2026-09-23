@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect, useCallback } from 'react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
@@ -27,6 +28,7 @@ const priorityStyle: Record<string, { bg: string; color: string }> = {
 };
 
 export default function ManagerApprovalsPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [approvals, setApprovals] = useState<Approval[]>([]);
@@ -62,7 +64,7 @@ export default function ManagerApprovalsPage() {
 
   useEffect(() => { if (user) fetchApprovals(); }, [user, fetchApprovals]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const filtered = filter === 'all' ? approvals : approvals.filter(a => a.status === 'pending_approval' || a.status === 'estimate_sent');
@@ -75,7 +77,7 @@ export default function ManagerApprovalsPage() {
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 24px', flexWrap: 'wrap', gap: 12 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>Pending Approvals</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>{say("Pending Approvals")}</h1>
             <div style={{ display: 'flex', gap: 8 }}>
               {(['pending', 'all'] as const).map(f => (
                 <button key={f} onClick={() => setFilter(f)} style={{
@@ -83,17 +85,17 @@ export default function ManagerApprovalsPage() {
                   background: filter === f ? '#e5332a' : 'rgba(0,0,0,0.3)',
                   color: filter === f ? '#fff' : '#9aa3b2',
                   border: filter === f ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                }}>{f}</button>
+                }}>{say(f)}</button>
               ))}
             </div>
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
               <FaCheckCircle style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p>No pending approvals</p>
+              <p>{say("No pending approvals")}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -103,14 +105,13 @@ export default function ManagerApprovalsPage() {
                   <div key={a.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16 }}>{a.title}</span>
-                        <span style={{ background: ps.bg, color: ps.color, padding: '2px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, textTransform: 'capitalize' }}>{a.priority}</span>
+                        <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16 }}>{say(a.title)}</span>
+                        <span style={{ background: ps.bg, color: ps.color, padding: '2px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, textTransform: 'capitalize' }}>{say(a.priority)}</span>
                       </div>
-                      <p style={{ color: '#9aa3b2', fontSize: 13 }}>{a.customerName} &bull; Est. ${a.estimatedCost.toLocaleString()} &bull; {new Date(a.createdAt).toLocaleDateString()}</p>
+                      <p style={{ color: '#9aa3b2', fontSize: 13 }}>{say(a.customerName)} {say("&bull; Est. $")}{a.estimatedCost.toLocaleString()} {say("&bull;")}{' '}{new Date(a.createdAt).toLocaleDateString()}</p>
                     </div>
                     <Link href={`/workorders/${a.id}` as Route} style={{ background: 'rgba(229,51,42,0.15)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, padding: '6px 14px', fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <FaEye /> View
-                    </Link>
+                      <FaEye /> {say("View")}{' '}</Link>
                   </div>
                 );
               })}

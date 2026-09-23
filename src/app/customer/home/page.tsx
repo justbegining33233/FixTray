@@ -1,10 +1,12 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 
 export default function CustomerHome() {
+  const say = usePhrase();
   const router = useRouter();
 
   useEffect(() => {
@@ -19,8 +21,8 @@ export default function CustomerHome() {
       justifyContent: 'center',
         background: '#000000'
     }}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>Customer Home Redirect</h1>
-      <div style={{ color: '#e5e7eb', fontSize: 18 }}>Redirecting to Customer Dashboard...</div>
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{say("Customer Home Redirect")}</h1>
+      <div style={{ color: '#e5e7eb', fontSize: 18 }}>{say("Redirecting to Customer Dashboard...")}</div>
     </div>
   );
 }

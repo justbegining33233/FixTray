@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
@@ -49,6 +50,7 @@ interface MDMStatus {
 }
 
 export default function EnterpriseMDM() {
+  const say = usePhrase();
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
   const [mdmStatus, setMdmStatus] = useState<MDMStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -317,8 +319,7 @@ export default function EnterpriseMDM() {
         textAlign: 'center',
         color: '#9ca3af',
       }}>
-        Loading MDM status...
-      </div>
+        {say("Loading MDM status...")}{' '}</div>
     );
   }
 
@@ -330,8 +331,7 @@ export default function EnterpriseMDM() {
         color: '#6b7280',
         fontSize: '14px',
       }}>
-        Enterprise MDM features are only available on mobile devices.
-      </div>
+        {say("Enterprise MDM features are only available on mobile devices.")}{' '}</div>
     );
   }
 
@@ -353,8 +353,7 @@ export default function EnterpriseMDM() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FaShieldAlt size={20} color="#e5332a" />
           <h3 style={{ color: '#e5e7eb', fontSize: '16px', fontWeight: '600' }}>
-            Enterprise MDM
-          </h3>
+            {say("Enterprise MDM")}{' '}</h3>
         </div>
         <button
           onClick={() => setShowDetails(!showDetails)}
@@ -367,7 +366,7 @@ export default function EnterpriseMDM() {
             textDecoration: 'underline',
           }}
         >
-          {showDetails ? 'Hide Details' : 'Show Details'}
+          {showDetails ? say("Hide Details") : say("Show Details")}
         </button>
       </div>
 
@@ -388,7 +387,7 @@ export default function EnterpriseMDM() {
         }}>
           {mdmStatus?.isEnrolled ? <FaLock size={14} color="#10b981" /> : <FaUnlock size={14} color="#ef4444" />}
           <span style={{ fontSize: '12px', color: '#e5e7eb' }}>
-            {mdmStatus?.isEnrolled ? 'Enrolled' : 'Not Enrolled'}
+            {mdmStatus?.isEnrolled ? say("Enrolled") : say("Not Enrolled")}
           </span>
         </div>
 
@@ -402,7 +401,7 @@ export default function EnterpriseMDM() {
         }}>
           {mdmStatus?.isCompliant ? <FaShieldAlt size={14} color="#10b981" /> : <FaExclamationTriangle size={14} color="#ef4444" />}
           <span style={{ fontSize: '12px', color: '#e5e7eb' }}>
-            {mdmStatus?.isCompliant ? 'Compliant' : 'Non-Compliant'}
+            {mdmStatus?.isCompliant ? say("Compliant") : say("Non-Compliant")}
           </span>
         </div>
 
@@ -416,7 +415,7 @@ export default function EnterpriseMDM() {
         }}>
           <FaWifi size={14} color={deviceInfo?.networkConnected ? '#10b981' : '#ef4444'} />
           <span style={{ fontSize: '12px', color: '#e5e7eb' }}>
-            {deviceInfo?.networkConnected ? 'Online' : 'Offline'}
+            {deviceInfo?.networkConnected ? say("Online") : say("Offline")}
           </span>
         </div>
 
@@ -443,17 +442,16 @@ export default function EnterpriseMDM() {
           {/* Device Information */}
           <div style={{ marginBottom: '16px' }}>
             <h4 style={{ color: '#e5e7eb', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
-              Device Information
-            </h4>
+              {say("Device Information")}{' '}</h4>
             <div style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.4' }}>
-              <div>Model: {deviceInfo?.model}</div>
-              <div>OS: {deviceInfo?.operatingSystem} {deviceInfo?.osVersion}</div>
-              <div>Manufacturer: {deviceInfo?.manufacturer}</div>
-              <div>Device ID: {deviceInfo?.id?.slice(0, 8)}...</div>
+              <div>{say("Model:")}{' '}{say(deviceInfo?.model)}</div>
+              <div>{say("OS:")}{' '}{say(deviceInfo?.operatingSystem)} {say(deviceInfo?.osVersion)}</div>
+              <div>{say("Manufacturer:")}{' '}{say(deviceInfo?.manufacturer)}</div>
+              <div>{say("Device ID:")}{' '}{deviceInfo?.id?.slice(0, 8)}...</div>
               {deviceInfo?.lastLocation && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <FaMapMarkerAlt size={10} />
-                  Location: {deviceInfo.lastLocation.latitude.toFixed(4)}, {deviceInfo.lastLocation.longitude.toFixed(4)}
+                  {say("Location:")}{' '}{deviceInfo.lastLocation.latitude.toFixed(4)}, {deviceInfo.lastLocation.longitude.toFixed(4)}
                 </div>
               )}
             </div>
@@ -463,15 +461,14 @@ export default function EnterpriseMDM() {
           {mdmStatus?.policiesApplied && (
             <div style={{ marginBottom: '16px' }}>
               <h4 style={{ color: '#e5e7eb', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
-                Security Policies
-              </h4>
+                {say("Security Policies")}{' '}</h4>
               <div style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.4' }}>
-                <div>Biometric Required: {mdmStatus.policiesApplied.requireBiometric ? 'Yes' : 'No'}</div>
-                <div>Screenshots Allowed: {mdmStatus.policiesApplied.allowScreenshots ? 'Yes' : 'No'}</div>
-                <div>Copy/Paste Allowed: {mdmStatus.policiesApplied.allowCopyPaste ? 'Yes' : 'No'}</div>
-                <div>Max Offline Hours: {mdmStatus.policiesApplied.maxOfflineHours}</div>
-                <div>Auto-lock Timeout: {mdmStatus.policiesApplied.autoLockTimeout} min</div>
-                <div>Remote Wipe: {mdmStatus.policiesApplied.remoteWipeEnabled ? 'Enabled' : 'Disabled'}</div>
+                <div>{say("Biometric Required:")}{' '}{mdmStatus.policiesApplied.requireBiometric ? say("Yes") : say("No")}</div>
+                <div>{say("Screenshots Allowed:")}{' '}{mdmStatus.policiesApplied.allowScreenshots ? say("Yes") : say("No")}</div>
+                <div>{say("Copy/Paste Allowed:")}{' '}{mdmStatus.policiesApplied.allowCopyPaste ? say("Yes") : say("No")}</div>
+                <div>{say("Max Offline Hours:")}{' '}{say(mdmStatus.policiesApplied.maxOfflineHours)}</div>
+                <div>{say("Auto-lock Timeout:")}{' '}{say(mdmStatus.policiesApplied.autoLockTimeout)} min</div>
+                <div>{say("Remote Wipe:")}{' '}{mdmStatus.policiesApplied.remoteWipeEnabled ? say("Enabled") : say("Disabled")}</div>
               </div>
             </div>
           )}
@@ -480,11 +477,10 @@ export default function EnterpriseMDM() {
           {mdmStatus?.violations && mdmStatus.violations.length > 0 && (
             <div style={{ marginBottom: '16px' }}>
               <h4 style={{ color: '#ef4444', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
-                Policy Violations
-              </h4>
+                {say("Policy Violations")}{' '}</h4>
               <ul style={{ fontSize: '12px', color: '#ef4444', paddingLeft: '16px' }}>
                 {mdmStatus.violations.map((violation, index) => (
-                  <li key={index}>{violation}</li>
+                  <li key={index}>{say(violation)}</li>
                 ))}
               </ul>
             </div>
@@ -506,8 +502,7 @@ export default function EnterpriseMDM() {
                   cursor: 'pointer',
                 }}
               >
-                Enroll Device
-              </button>
+                {say("Enroll Device")}{' '}</button>
             ) : (
               <>
                 <button
@@ -523,8 +518,7 @@ export default function EnterpriseMDM() {
                     cursor: 'pointer',
                   }}
                 >
-                  Check Compliance
-                </button>
+                  {say("Check Compliance")}{' '}</button>
                 <button
                   onClick={unenrollDevice}
                   style={{
@@ -538,8 +532,7 @@ export default function EnterpriseMDM() {
                     cursor: 'pointer',
                   }}
                 >
-                  Unenroll Device
-                </button>
+                  {say("Unenroll Device")}{' '}</button>
               </>
             )}
 
@@ -557,8 +550,7 @@ export default function EnterpriseMDM() {
                   cursor: 'pointer',
                 }}
               >
-                Perform Remote Wipe
-              </button>
+                {say("Perform Remote Wipe")}{' '}</button>
             )}
           </div>
         </div>
@@ -572,7 +564,7 @@ export default function EnterpriseMDM() {
           color: '#6b7280',
           textAlign: 'center',
         }}>
-          Last checked: {mdmStatus.lastCheckIn.toLocaleString()}
+          {say("Last checked:")}{' '}{mdmStatus.lastCheckIn.toLocaleString()}
         </div>
       )}
     </div>

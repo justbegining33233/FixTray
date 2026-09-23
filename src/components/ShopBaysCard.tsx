@@ -1,5 +1,6 @@
 "use client";
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import { FaStore } from 'react-icons/fa';
@@ -33,6 +34,7 @@ interface ShopBaysCardProps {
 }
 
 export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
+  const say = usePhrase();
   const router = useRouter();
   const [bays, setBays] = useState<Bay[]>([]);
   const [_capacity, setCapacity] = useState<number>(0);
@@ -137,8 +139,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
         padding: 20
       }}>
         <div style={{ textAlign: "center", color: "#9ca3af" }}>
-          Loading bay status...
-        </div>
+          {say("Loading bay status...")}{' '}</div>
       </div>
     );
   }
@@ -153,7 +154,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
         padding: 20
       }}>
         <div style={{ textAlign: "center", color: "#ef4444" }}>
-          {error}
+          {say(error)}
         </div>
       </div>
     );
@@ -175,11 +176,9 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
         alignItems: "center"
       }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: "#e5e7eb", margin: 0 }}>
-          <FaStore style={{marginRight:4}} /> Shop Bays
-        </h2>
+          <FaStore style={{marginRight:4}} /> {say("Shop Bays")}{' '}</h2>
         <span style={{ color: "#9ca3af", fontSize: 12 }}>
-          {bays.filter(b => b.isOccupied).length} bays occupied
-        </span>
+          {say(bays.filter(b => b.isOccupied).length)} {say("bays occupied")}{' '}</span>
       </div>
 
       {/* Bays Grid */}
@@ -222,7 +221,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                   color: "#e5e7eb",
                   margin: 0
                 }}>
-                  Bay {bay.id}
+                  {say("Bay")}{' '}{say(bay.id)}
                 </h3>
                 <div style={{
                   width: 12,
@@ -240,14 +239,13 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                       color: "#9ca3af",
                       marginBottom: 2
                     }}>
-                      Work Order
-                    </div>
+                      {say("Work Order")}{' '}</div>
                     <div style={{
                       fontSize: 14,
                       fontWeight: 600,
                       color: "#e5e7eb"
                     }}>
-                      {bay.workOrder.id}
+                      {say(bay.workOrder.id)}
                     </div>
                   </div>
 
@@ -257,13 +255,12 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                       color: "#9ca3af",
                       marginBottom: 2
                     }}>
-                      Customer
-                    </div>
+                      {say("Customer")}{' '}</div>
                     <div style={{
                       fontSize: 14,
                       color: "#e5e7eb"
                     }}>
-                      {bay.workOrder.customer ? `${bay.workOrder.customer.firstName} ${bay.workOrder.customer.lastName}` : 'Unknown'}
+                      {bay.workOrder.customer ? `${bay.workOrder.customer.firstName} ${bay.workOrder.customer.lastName}` : say("Unknown")}
                     </div>
                   </div>
 
@@ -273,13 +270,12 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                       color: "#9ca3af",
                       marginBottom: 2
                     }}>
-                      Vehicle
-                    </div>
+                      {say("Vehicle")}{' '}</div>
                     <div style={{
                       fontSize: 13,
                       color: "#e5e7eb"
                     }}>
-                      {bay.workOrder.vehicleType}
+                      {say(bay.workOrder.vehicleType)}
                     </div>
                   </div>
 
@@ -289,13 +285,12 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                       color: "#9ca3af",
                       marginBottom: 2
                     }}>
-                      Tech
-                    </div>
+                      {say("Tech")}{' '}</div>
                     <div style={{
                       fontSize: 14,
                       color: "#e5e7eb"
                     }}>
-                      {bay.workOrder.assignedTo ? `${bay.workOrder.assignedTo.firstName} ${bay.workOrder.assignedTo.lastName}` : "Unassigned"}
+                      {bay.workOrder.assignedTo ? `${bay.workOrder.assignedTo.firstName} ${bay.workOrder.assignedTo.lastName}` : say("Unassigned")}
                     </div>
                   </div>
 
@@ -310,14 +305,13 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                         color: "#9ca3af",
                         marginBottom: 2
                       }}>
-                        Status
-                      </div>
+                        {say("Status")}{' '}</div>
                       <div style={{
                         fontSize: 14,
                         fontWeight: 600,
                         color: "#e5e7eb"
                       }}>
-                        {bay.workOrder.status}
+                        {say(bay.workOrder.status)}
                       </div>
                     </div>
 
@@ -330,7 +324,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                       fontSize: 11,
                       fontWeight: 600
                     }}>
-                      {bay.workOrder.status}
+                      {say(bay.workOrder.status)}
                     </div>
                   </div>
                 </div>
@@ -343,8 +337,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
                   color: "#6b7280",
                   fontSize: 14
                 }}>
-                  Available
-                </div>
+                  {say("Available")}{' '}</div>
               )}
             </div>
           ))}
@@ -357,7 +350,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
             color: "#9ca3af",
             fontSize: 12
           }}>
-            Showing first 50 bays - Total: {bays.length} bays
+            {say("Showing first 50 bays - Total:")}{' '}{say(bays.length)} bays
           </div>
         )}
       </div>

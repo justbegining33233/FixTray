@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 
 interface EstimateLineItem {
@@ -18,6 +19,7 @@ interface EstimateBuilderProps {
 }
 
 export default function EstimateBuilder({ workOrderId, onSave, onCancel, initialData }: EstimateBuilderProps) {
+  const say = usePhrase();
   const [lineItems, setLineItems] = useState<EstimateLineItem[]>(
     initialData?.lineItems || [
       { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 },
@@ -84,16 +86,16 @@ export default function EstimateBuilder({ workOrderId, onSave, onCancel, initial
 
   return (
     <div style={{ background: '#1a1a2e', borderRadius: 16, padding: 32, maxWidth: 900, width: '100%' }}>
-      <h2 style={{ color: '#fff', marginBottom: 24, fontSize: 24 }}>Build Estimate</h2>
+      <h2 style={{ color: '#fff', marginBottom: 24, fontSize: 24 }}>{say("Build Estimate")}</h2>
 
       <form onSubmit={handleSubmit}>
         {/* Line Items */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 1fr 1fr auto', gap: 12, marginBottom: 12 }}>
-            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600 }}>Description</div>
-            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>Qty</div>
-            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600, textAlign: 'right' }}>Unit Price</div>
-            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600, textAlign: 'right' }}>Total</div>
+            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600 }}>{say("Description")}</div>
+            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>{say("Qty")}</div>
+            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600, textAlign: 'right' }}>{say("Unit Price")}</div>
+            <div style={{ color: '#9aa3b2', fontSize: 13, fontWeight: 600, textAlign: 'right' }}>{say("Total")}</div>
             <div style={{ width: 40 }}></div>
           </div>
 
@@ -103,7 +105,7 @@ export default function EstimateBuilder({ workOrderId, onSave, onCancel, initial
                 type="text"
                 value={item.description}
                 onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
-                placeholder="Labor, parts, service..."
+                placeholder={say("Labor, parts, service...")}
                 required
                 style={{
                   background: 'rgba(255,255,255,0.05)',
@@ -194,13 +196,12 @@ export default function EstimateBuilder({ workOrderId, onSave, onCancel, initial
               fontWeight: 600,
             }}
           >
-            + Add Line Item
-          </button>
+            {say("+ Add Line Item")}{' '}</button>
         </div>
 
         {/* Tax Rate */}
         <div style={{ marginBottom: 24 }}>
-          <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>Tax Rate (%)</label>
+          <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>{say("Tax Rate (%)")}</label>
           <input
             type="number"
             min="0"
@@ -222,12 +223,12 @@ export default function EstimateBuilder({ workOrderId, onSave, onCancel, initial
 
         {/* Notes */}
         <div style={{ marginBottom: 24 }}>
-          <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>Notes (Optional)</label>
+          <label style={{ color: '#9aa3b2', display: 'block', marginBottom: 8, fontSize: 13 }}>{say("Notes (Optional)")}</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="Additional notes or terms..."
+            placeholder={say("Additional notes or terms...")}
             style={{
               width: '100%',
               background: 'rgba(255,255,255,0.05)',
@@ -245,16 +246,16 @@ export default function EstimateBuilder({ workOrderId, onSave, onCancel, initial
         {/* Totals */}
         <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ color: '#9aa3b2' }}>Subtotal:</span>
+            <span style={{ color: '#9aa3b2' }}>{say("Subtotal:")}</span>
             <span style={{ color: '#e5e7eb', fontWeight: 600 }}>${calculateSubtotal().toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ color: '#9aa3b2' }}>Tax ({taxRate}%):</span>
+            <span style={{ color: '#9aa3b2' }}>{say("Tax (")}{say(taxRate)}%):</span>
             <span style={{ color: '#e5e7eb', fontWeight: 600 }}>${calculateTax().toFixed(2)}</span>
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12, marginTop: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>Total:</span>
+              <span style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>{say("Total:")}</span>
               <span style={{ color: '#22c55e', fontSize: 24, fontWeight: 700 }}>${calculateTotal().toFixed(2)}</span>
             </div>
           </div>
@@ -276,8 +277,7 @@ export default function EstimateBuilder({ workOrderId, onSave, onCancel, initial
               cursor: 'pointer',
             }}
           >
-            Save & Send Estimate
-          </button>
+            {say("Save & Send Estimate")}{' '}</button>
           <button
             type="button"
             onClick={onCancel}
@@ -293,8 +293,7 @@ export default function EstimateBuilder({ workOrderId, onSave, onCancel, initial
               cursor: 'pointer',
             }}
           >
-            Cancel
-          </button>
+            {say("Cancel")}{' '}</button>
         </div>
       </form>
     </div>

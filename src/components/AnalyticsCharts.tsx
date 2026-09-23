@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import {
   LineChart,
   Line,
@@ -151,35 +152,36 @@ interface AnalyticsChartsProps {
 }
 
 export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
+  const say = usePhrase();
   return (
     <div className="space-y-8">
       {/* Revenue Chart */}
       <div className="p-6 rounded-lg" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
-        <h3 className="text-lg font-semibold mb-4">Revenue Trends</h3>
+        <h3 className="text-lg font-semibold mb-4">{say("Revenue Trends")}</h3>
         <RevenueChart data={data.revenue} />
       </div>
 
       {/* Completion Time Chart */}
       <div className="p-6 rounded-lg" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
-        <h3 className="text-lg font-semibold mb-4">Average Completion Time</h3>
+        <h3 className="text-lg font-semibold mb-4">{say("Average Completion Time")}</h3>
         <CompletionTimesChart data={data.completionTimes} />
       </div>
 
       {/* Tech Performance Chart */}
       <div className="p-6 rounded-lg" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
-        <h3 className="text-lg font-semibold mb-4">Tech Performance</h3>
+        <h3 className="text-lg font-semibold mb-4">{say("Tech Performance")}</h3>
         <TechPerformanceChart data={data.techPerformance} />
       </div>
 
       {/* Status Distribution Pie Chart */}
       <div className="p-6 rounded-lg" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
-        <h3 className="text-lg font-semibold mb-4">Work Order Status Distribution</h3>
+        <h3 className="text-lg font-semibold mb-4">{say("Work Order Status Distribution")}</h3>
         <StatusDistributionChart data={data.statusDistribution} />
       </div>
 
       {/* Monthly Trends */}
       <div className="p-6 rounded-lg" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
-        <h3 className="text-lg font-semibold mb-4">Monthly Trends</h3>
+        <h3 className="text-lg font-semibold mb-4">{say("Monthly Trends")}</h3>
         <MonthlyTrendsChart data={data.monthlyTrends} />
       </div>
     </div>

@@ -1,11 +1,13 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function TechTwoFactorAuthPage() {
+  const say = usePhrase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -96,16 +98,16 @@ export default function TechTwoFactorAuthPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#07090d', color: '#e5e7eb', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 460, background: 'rgba(15,23,42,0.82)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: 22 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 10 }}>Employee Verification</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 10 }}>{say("Employee Verification")}</h1>
         <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 18 }}>
           {mode === 'setup'
-            ? 'Your shop requires two-factor authentication. Set it up once, then verify to finish login.'
-            : 'Enter the 6-digit code from your authenticator app to complete sign in.'}
+            ? say("Your shop requires two-factor authentication. Set it up once, then verify to finish login.")
+            : say("Enter the 6-digit code from your authenticator app to complete sign in.")}
         </p>
 
         {error && (
           <div style={{ background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.35)', color: '#fecaca', borderRadius: 8, padding: '9px 12px', marginBottom: 14, fontSize: 13 }}>
-            {error}
+            {say(error)}
           </div>
         )}
 
@@ -115,7 +117,7 @@ export default function TechTwoFactorAuthPage() {
             disabled={loading}
             style={{ width: '100%', padding: '11px 14px', borderRadius: 9, border: 'none', background: '#e5332a', color: '#fff', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
           >
-            {loading ? 'Preparing setup...' : 'Start 2FA Setup'}
+            {loading ? say("Preparing setup...") : say("Start 2FA Setup")}
           </button>
         )}
 
@@ -123,14 +125,14 @@ export default function TechTwoFactorAuthPage() {
           <>
             {secret && (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Authenticator key:</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>{say("Authenticator key:")}</div>
                 <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all' }}>
-                  {secret}
+                  {say(secret)}
                 </div>
               </div>
             )}
 
-            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>6-digit code</label>
+            <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>{say("6-digit code")}</label>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -144,7 +146,7 @@ export default function TechTwoFactorAuthPage() {
               disabled={loading || code.length !== 6}
               style={{ width: '100%', padding: '11px 14px', borderRadius: 9, border: 'none', background: '#e5332a', color: '#fff', fontWeight: 700, cursor: loading || code.length !== 6 ? 'not-allowed' : 'pointer', opacity: loading || code.length !== 6 ? 0.6 : 1 }}
             >
-              {loading ? 'Verifying...' : 'Complete Login'}
+              {loading ? say("Verifying...") : say("Complete Login")}
             </button>
           </>
         )}
@@ -153,8 +155,7 @@ export default function TechTwoFactorAuthPage() {
           onClick={() => router.push('/auth/login' as Route)}
           style={{ marginTop: 12, width: '100%', padding: '10px 14px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#cbd5e1', fontWeight: 600, cursor: 'pointer' }}
         >
-          Back to Login
-        </button>
+          {say("Back to Login")}{' '}</button>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -19,6 +20,7 @@ interface ShopOption {
 }
 
 export default function EnvironmentalFeesPage() {
+  const say = usePhrase();
   const [fees, setFees] = useState<EnvironmentalFee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -105,15 +107,15 @@ export default function EnvironmentalFeesPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  if (loading) return <div className="text-center py-8">{say("Loading...")}</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Environmental Fees</h1>
+        <h1 className="text-3xl font-bold">{say("Environmental Fees")}</h1>
         <div className="flex gap-2 items-center">
           <select
-            aria-label="Shop"
+            aria-label={say("Shop")}
             value={selectedShopId}
             onChange={(event) => {
               setSelectedShopId(event.target.value);
@@ -121,21 +123,20 @@ export default function EnvironmentalFeesPage() {
             }}
             className="border rounded px-3 py-2"
           >
-            <option value="">All shops</option>
+            <option value="">{say("All shops")}</option>
             {shops.map((shop) => (
-              <option key={shop.id} value={shop.id}>{shop.name}</option>
+              <option key={shop.id} value={shop.id}>{say(shop.name)}</option>
             ))}
           </select>
         <button
           onClick={() => setFormOpen(!formOpen)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          + New Fee
-        </button>
+          {say("+ New Fee")}{' '}</button>
         </div>
       </div>
 
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded mb-6">{error}</div>}
+      {error && <div className="bg-red-50 text-red-700 p-4 rounded mb-6">{say(error)}</div>}
 
       {/* Form */}
       {formOpen && (
@@ -143,7 +144,7 @@ export default function EnvironmentalFeesPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Fee Name</label>
+                <label className="block text-sm font-medium mb-1">{say("Fee Name")}</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -153,7 +154,7 @@ export default function EnvironmentalFeesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Amount ($)</label>
+                <label className="block text-sm font-medium mb-1">{say("Amount ($)")}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -166,20 +167,20 @@ export default function EnvironmentalFeesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Unit</label>
+              <label className="block text-sm font-medium mb-1">{say("Unit")}</label>
               <select
                 value={formData.unit}
                 onChange={e => setFormData({ ...formData, unit: e.target.value })}
                 className="w-full px-3 py-2 border rounded"
               >
-                <option value="fixed">Fixed</option>
-                <option value="per-job">Per Job</option>
-                <option value="per-service">Per Service</option>
+                <option value="fixed">{say("Fixed")}</option>
+                <option value="per-job">{say("Per Job")}</option>
+                <option value="per-service">{say("Per Service")}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1">{say("Description")}</label>
               <textarea
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
@@ -190,15 +191,13 @@ export default function EnvironmentalFeesPage() {
 
             <div className="flex gap-2">
               <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Create Fee
-              </button>
+                {say("Create Fee")}{' '}</button>
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
               >
-                Cancel
-              </button>
+                {say("Cancel")}{' '}</button>
             </div>
           </form>
         </div>
@@ -207,31 +206,31 @@ export default function EnvironmentalFeesPage() {
       {/* Fees List */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {fees.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No environmental fees configured.</div>
+          <div className="p-8 text-center text-gray-500">{say("No environmental fees configured.")}</div>
         ) : (
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="text-left px-4 py-2 font-semibold">Name</th>
-                <th className="text-left px-4 py-2 font-semibold">Amount</th>
-                <th className="text-left px-4 py-2 font-semibold">Unit</th>
-                <th className="text-left px-4 py-2 font-semibold">Status</th>
-                <th className="text-right px-4 py-2 font-semibold">Actions</th>
+                <th className="text-left px-4 py-2 font-semibold">{say("Name")}</th>
+                <th className="text-left px-4 py-2 font-semibold">{say("Amount")}</th>
+                <th className="text-left px-4 py-2 font-semibold">{say("Unit")}</th>
+                <th className="text-left px-4 py-2 font-semibold">{say("Status")}</th>
+                <th className="text-right px-4 py-2 font-semibold">{say("Actions")}</th>
               </tr>
             </thead>
             <tbody>
               {fees.map(fee => (
                 <tr key={fee.id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <p className="font-semibold">{fee.name}</p>
-                    {fee.shopName && <p className="text-sm text-gray-500">{fee.shopName}</p>}
-                    {fee.description && <p className="text-sm text-gray-600">{fee.description}</p>}
+                    <p className="font-semibold">{say(fee.name)}</p>
+                    {fee.shopName && <p className="text-sm text-gray-500">{say(fee.shopName)}</p>}
+                    {fee.description && <p className="text-sm text-gray-600">{say(fee.description)}</p>}
                   </td>
                   <td className="px-4 py-3">${Number(fee.feeAmount || 0).toFixed(2)}</td>
-                  <td className="px-4 py-3">{fee.unit}</td>
+                  <td className="px-4 py-3">{say(fee.unit)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${fee.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {fee.active ? 'Active' : 'Inactive'}
+                      {fee.active ? say("Active") : say("Inactive")}
                     </span>
                   </td>
                   <td className="text-right px-4 py-3">
@@ -239,8 +238,7 @@ export default function EnvironmentalFeesPage() {
                       onClick={() => handleDelete(fee.id)}
                       className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
                     >
-                      Delete
-                    </button>
+                      {say("Delete")}{' '}</button>
                   </td>
                 </tr>
               ))}

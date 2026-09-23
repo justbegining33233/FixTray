@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -6,6 +7,7 @@ import Link from 'next/link';
 import { FaCheckCircle } from 'react-icons/fa';
 
 function SuccessContent() {
+  const say = usePhrase();
   const searchParams = useSearchParams();
   const router = useRouter();
   const workOrderId = searchParams?.get('workOrderId');
@@ -45,11 +47,9 @@ function SuccessContent() {
       }}>
         <div style={{fontSize: 64, marginBottom: 16}}><FaCheckCircle style={{marginRight:4}} /></div>
         <h1 style={{fontSize: 28, fontWeight: 700, color: '#22c55e', marginBottom: 8}}>
-          Payment Successful!
-        </h1>
+          {say("Payment Successful!")}{' '}</h1>
         <p style={{color: '#9aa3b2', fontSize: 16, marginBottom: 32}}>
-          Your payment was processed securely. A receipt has been sent to your email.
-        </p>
+          {say("Your payment was processed securely. A receipt has been sent to your email.")}{' '}</p>
         {workOrderId && (
           <>
             <Link
@@ -66,10 +66,9 @@ function SuccessContent() {
                 marginBottom: 12,
               }}
             >
-              View Work Order
-            </Link>
+              {say("View Work Order")}{' '}</Link>
             <p style={{color: '#6b7280', fontSize: 13}}>
-              Redirecting in {countdown}s...
+              {say("Redirecting in")}{' '}{say(countdown)}s...
             </p>
           </>
         )}
@@ -83,8 +82,7 @@ function SuccessContent() {
             textDecoration: 'none',
           }}
         >
-          Go to Dashboard
-        </Link>
+          {say("Go to Dashboard")}{' '}</Link>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaFileAlt } from 'react-icons/fa';
 
 export default function Documents() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [userName, setUserName] = useState('');
   const [documents] = useState<{id: string; type: string; title: string; name: string; shop: string; date: string; size: string; amount?: number}[]>([]);
@@ -38,23 +40,22 @@ export default function Documents() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Customer Portal</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Documents</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Customer Portal")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Documents")}</div>
           </div>
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16}}>
-          <span style={{fontSize:14, color:'#9aa3b2'}}>Welcome, {userName}</span>
+          <span style={{fontSize:14, color:'#9aa3b2'}}>{say("Welcome,")}{' '}{say(userName)}</span>
           <button onClick={handleSignOut} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:600}}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:32}}>
-          <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb'}}>My Documents</h1>
+          <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb'}}>{say("My Documents")}</h1>
           <button style={{
             padding:'12px 24px',
             background:'#e5332a',
@@ -65,8 +66,7 @@ export default function Documents() {
             fontWeight:600,
             cursor:'pointer'
           }}>
-            Upload Document
-          </button>
+            {say("Upload Document")}{' '}</button>
         </div>
 
         <div style={{display:'flex', flexDirection:'column', gap:16}}>
@@ -77,8 +77,8 @@ export default function Documents() {
                   <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
                     <span style={{fontSize:20}}><FaFileAlt style={{marginRight:4}} /></span>
                     <div>
-                      <h3 style={{fontSize:16, fontWeight:700, color:'#e5e7eb', margin:0}}>{document.name}</h3>
-                      <div style={{fontSize:14, color:'#9aa3b2', marginTop:4}}>{document.shop}</div>
+                      <h3 style={{fontSize:16, fontWeight:700, color:'#e5e7eb', margin:0}}>{say(document.name)}</h3>
+                      <div style={{fontSize:14, color:'#9aa3b2', marginTop:4}}>{say(document.shop)}</div>
                     </div>
                   </div>
                   <div style={{display:'flex', alignItems:'center', gap:16}}>
@@ -90,10 +90,10 @@ export default function Documents() {
                       fontSize:12,
                       fontWeight:600
                     }}>
-                      {document.type}
+                      {say(document.type)}
                     </span>
-                    <span style={{fontSize:14, color:'#9aa3b2'}}>{document.date}</span>
-                    <span style={{fontSize:14, color:'#9aa3b2'}}>{document.size}</span>
+                    <span style={{fontSize:14, color:'#9aa3b2'}}>{say(document.date)}</span>
+                    <span style={{fontSize:14, color:'#9aa3b2'}}>{say(document.size)}</span>
                   </div>
                 </div>
                 <div style={{display:'flex', gap:12}}>
@@ -107,8 +107,7 @@ export default function Documents() {
                     fontWeight:600,
                     cursor:'pointer'
                   }}>
-                    View
-                  </button>
+                    {say("View")}{' '}</button>
                   <button style={{
                     padding:'8px 16px',
                     background:'rgba(34,197,94,0.1)',
@@ -119,8 +118,7 @@ export default function Documents() {
                     fontWeight:600,
                     cursor:'pointer'
                   }}>
-                    Download
-                  </button>
+                    {say("Download")}{' '}</button>
                 </div>
               </div>
             </div>
@@ -129,8 +127,7 @@ export default function Documents() {
 
         {documents.length === 0 && (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-            No documents uploaded yet.
-          </div>
+            {say("No documents uploaded yet.")}{' '}</div>
         )}
 
         {/* Back to Dashboard */}
@@ -146,8 +143,7 @@ export default function Documents() {
             textDecoration:'none',
             cursor:'pointer'
           }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
       </div>
     </div>

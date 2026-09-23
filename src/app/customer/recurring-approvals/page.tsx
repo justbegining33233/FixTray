@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -17,6 +18,7 @@ interface Approval {
 }
 
 export default function RecurringApprovals() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,34 +77,32 @@ export default function RecurringApprovals() {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <Link href="/customer/dashboard" style={{ fontSize: 24, fontWeight: 900, color: '#e5332a', textDecoration: 'none' }}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{ fontSize: 24, fontWeight: 900, color: '#e5332a', textDecoration: 'none' }}>{say("FixTray")}</Link>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>Customer Portal</div>
-            <div style={{ fontSize: 12, color: '#9aa3b2' }}>Pending Service Confirmations</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>{say("Customer Portal")}</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Pending Service Confirmations")}</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link href="/customer/dashboard" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>Dashboard</Link>
-          <Link href="/customer/payments" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>Payments</Link>
-          <button onClick={handleSignOut} style={{ padding: '8px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>Sign Out</button>
+          <Link href="/customer/dashboard" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>{say("Dashboard")}</Link>
+          <Link href="/customer/payments" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>{say("Payments")}</Link>
+          <button onClick={handleSignOut} style={{ padding: '8px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>{say("Sign Out")}</button>
         </div>
       </div>
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>
-          <FaBell style={{marginRight:4}} /> Services Awaiting Your Approval
-        </h1>
+          <FaBell style={{marginRight:4}} /> {say("Services Awaiting Your Approval")}{' '}</h1>
         <p style={{ color: '#9aa3b2', fontSize: 14, marginBottom: 32, lineHeight: 1.6 }}>
-          Your shop has scheduled recurring services for you. Review each one  -  <strong style={{ color: '#e5e7eb' }}>no bay is reserved until you confirm.</strong> Skip it if you don&apos;t need it this time.
-        </p>
+          {say("Your shop has scheduled recurring services for you. Review each one  -")}{' '}<strong style={{ color: '#e5e7eb' }}>{say("no bay is reserved until you confirm.")}</strong> {say("Skip it if you don&apos;t need it this time.")}{' '}</p>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: '#9aa3b2' }}>Loading...</div>
+          <div style={{ textAlign: 'center', padding: 60, color: '#9aa3b2' }}>{say("Loading...")}</div>
         ) : pending.length === 0 && resolved.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60, background: 'rgba(0,0,0,0.2)', borderRadius: 16 }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}><FaCheckCircle style={{marginRight:4}} /></div>
-            <div style={{ fontSize: 18, fontWeight: 600, color: '#e5e7eb', marginBottom: 8 }}>All caught up!</div>
-            <div style={{ color: '#9aa3b2', fontSize: 14 }}>No pending service confirmations right now.</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: '#e5e7eb', marginBottom: 8 }}>{say("All caught up!")}</div>
+            <div style={{ color: '#9aa3b2', fontSize: 14 }}>{say("No pending service confirmations right now.")}</div>
           </div>
         ) : (
           <>
@@ -117,19 +117,19 @@ export default function RecurringApprovals() {
                         <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
                           {approval.service.replace(/^\[Recurring\] /, '')}
                         </div>
-                        <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 2 }}><FaStore style={{marginRight:4}} /> {approval.shopName}</div>
+                        <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 2 }}><FaStore style={{marginRight:4}} /> {say(approval.shopName)}</div>
                         {approval.shopAddress && (
-                          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}><FaMapMarkerAlt style={{marginRight:4}} /> {approval.shopAddress}</div>
+                          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}><FaMapMarkerAlt style={{marginRight:4}} /> {say(approval.shopAddress)}</div>
                         )}
-                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}><FaCar style={{marginRight:4}} /> {approval.vehicle}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}><FaCar style={{marginRight:4}} /> {say(approval.vehicle)}</div>
                         {approval.serviceLocation === 'roadside' && (
-                          <div style={{ fontSize: 12, color: '#f59e0b' }}><FaRoad style={{marginRight:4}} /> Roadside service</div>
+                          <div style={{ fontSize: 12, color: '#f59e0b' }}><FaRoad style={{marginRight:4}} /> {say("Roadside service")}</div>
                         )}
-                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>Requested {formatDate(approval.createdAt)}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>{say("Requested")}{' '}{formatDate(approval.createdAt)}</div>
                       </div>
                       {approval.estimatedCost && (
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 11, color: '#9aa3b2' }}>Estimated</div>
+                          <div style={{ fontSize: 11, color: '#9aa3b2' }}>{say("Estimated")}</div>
                           <div style={{ fontSize: 22, fontWeight: 700, color: '#22c55e' }}>${approval.estimatedCost.toFixed(2)}</div>
                         </div>
                       )}
@@ -154,7 +154,7 @@ export default function RecurringApprovals() {
                           transition: 'all 0.2s',
                         }}
                       >
-                        {acting === approval.id ? 'Processing...' : <><FaCheckCircle style={{marginRight:4}} /> Yes, Schedule Me In</>}
+                        {acting === approval.id ? say("Processing...") : <><FaCheckCircle style={{marginRight:4}} /> {say("Yes, Schedule Me In")}</>}
                       </button>
                       <button
                         onClick={() => respond(approval.id, 'skip')}
@@ -173,8 +173,7 @@ export default function RecurringApprovals() {
                           transition: 'all 0.2s',
                         }}
                       >
-                        <FaStepForward style={{marginRight:4}} /> Skip This Time
-                      </button>
+                        <FaStepForward style={{marginRight:4}} /> {say("Skip This Time")}{' '}</button>
                     </div>
                   </div>
                 ))}
@@ -184,13 +183,13 @@ export default function RecurringApprovals() {
             {/* Resolved this session */}
             {resolved.length > 0 && (
               <div>
-                <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Handled this session</div>
+                <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>{say("Handled this session")}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {resolved.map((approval) => (
                     <div key={approval.id} style={{ background: 'rgba(0,0,0,0.2)', border: `1px solid ${done[approval.id] === 'confirmed' ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 12, padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: 14, color: '#9aa3b2' }}>{approval.service.replace(/^\[Recurring\] /, '')}</div>
-                        <div style={{ fontSize: 12, color: '#6b7280' }}>{approval.shopName}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280' }}>{say(approval.shopName)}</div>
                       </div>
                       <span style={{
                         padding: '4px 12px',
@@ -200,7 +199,7 @@ export default function RecurringApprovals() {
                         fontSize: 12,
                         fontWeight: 600,
                       }}>
-                        {done[approval.id] === 'confirmed' ? <><FaCheckCircle style={{marginRight:4}} /> Scheduled</> : <><FaStepForward style={{marginRight:4}} /> Skipped</>}
+                        {done[approval.id] === 'confirmed' ? <><FaCheckCircle style={{marginRight:4}} /> {say("Scheduled")}</> : <><FaStepForward style={{marginRight:4}} /> {say("Skipped")}</>}
                       </span>
                     </div>
                   ))}
@@ -212,14 +211,13 @@ export default function RecurringApprovals() {
 
         <div style={{ marginTop: 32, textAlign: 'center' }}>
           <Link href="/customer/dashboard" style={{ padding: '10px 24px', background: '#e5332a', color: 'white', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
       </div>
 
       {approvalMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:approvalMsg.type==='success'?'#dcfce7':'#fde8e8',color:approvalMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {approvalMsg.text}
+          {say(approvalMsg.text)}
           <button onClick={()=>setApprovalMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}

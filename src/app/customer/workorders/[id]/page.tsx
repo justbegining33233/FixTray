@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -48,6 +49,7 @@ interface WorkOrderDetails {
 }
 
 export default function WorkOrderDetailsPage() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const params = useParams();
   const [userName, setUserName] = useState('');
@@ -140,17 +142,16 @@ export default function WorkOrderDetailsPage() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Customer Portal</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Work Order Details</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Customer Portal")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Work Order Details")}</div>
           </div>
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16}}>
-          <span style={{fontSize:14, color:'#9aa3b2'}}>Welcome, {userName}</span>
+          <span style={{fontSize:14, color:'#9aa3b2'}}>{say("Welcome,")}{' '}{say(userName)}</span>
           <button onClick={handleSignOut} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:600}}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
@@ -164,19 +165,17 @@ export default function WorkOrderDetailsPage() {
             alignItems:'center',
             gap:8
           }}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Tracking
-          </Link>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Tracking")}{' '}</Link>
         </div>
 
         {loading && (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>
-            Loading work order details...
-          </div>
+            {say("Loading work order details...")}{' '}</div>
         )}
 
         {error && (
           <div style={{textAlign:'center', padding:40, color:'#ef4444'}}>
-            {error}
+            {say(error)}
           </div>
         )}
 
@@ -184,7 +183,7 @@ export default function WorkOrderDetailsPage() {
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:32}}>
             <div style={{marginBottom:32}}>
               <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>
-                Work Order #{workOrder.id.slice(-8)}
+                {say("Work Order #")}{workOrder.id.slice(-8)}
               </h1>
               <div style={{
                 display:'inline-block',
@@ -202,54 +201,54 @@ export default function WorkOrderDetailsPage() {
 
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:32}}>
               <div>
-                <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>Service Details</h3>
+                <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>{say("Service Details")}</h3>
                 <div style={{display:'flex', flexDirection:'column', gap:12}}>
                   <div>
-                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Issue Description</div>
-                    <div style={{color:'#e5e7eb'}}>{workOrder.issueDescription}</div>
+                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Issue Description")}</div>
+                    <div style={{color:'#e5e7eb'}}>{say(workOrder.issueDescription)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Service Type</div>
-                    <div style={{color:'#e5e7eb'}}>{workOrder.serviceType}</div>
+                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Service Type")}</div>
+                    <div style={{color:'#e5e7eb'}}>{say(workOrder.serviceType)}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Scheduled Date</div>
+                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Scheduled Date")}</div>
                     <div style={{color:'#e5e7eb'}}>{workOrder.scheduledDate ? new Date(workOrder.scheduledDate).toLocaleString() : (workOrder.dueDate ? new Date(workOrder.dueDate).toLocaleString() : new Date(workOrder.createdAt).toLocaleString())}</div>
                   </div>
                   <div>
-                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Created</div>
+                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Created")}</div>
                     <div style={{color:'#e5e7eb'}}>{new Date(workOrder.createdAt).toLocaleString()}</div>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>Shop & Technician</h3>
+                <h3 style={{fontSize:18, fontWeight:600, color:'#e5e7eb', marginBottom:16}}>{say("Shop & Technician")}</h3>
                 <div style={{display:'flex', flexDirection:'column', gap:12}}>
                   <div>
-                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Shop</div>
-                    <div style={{color:'#e5e7eb', fontWeight:500}}>{workOrder.shop.shopName}</div>
-                    <div style={{fontSize:14, color:'#9aa3b2'}}>{workOrder.shop.address}</div>
-                    <div style={{fontSize:14, color:'#9aa3b2'}}>{workOrder.shop.phone}</div>
+                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Shop")}</div>
+                    <div style={{color:'#e5e7eb', fontWeight:500}}>{say(workOrder.shop.shopName)}</div>
+                    <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.shop.address)}</div>
+                    <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.shop.phone)}</div>
                   </div>
 
                   {workOrder.assignedTo && (
                     <div>
-                      <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Technician</div>
+                      <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Technician")}</div>
                       <div style={{color:'#e5e7eb', fontWeight:500}}>
-                        {workOrder.assignedTo.firstName} {workOrder.assignedTo.lastName}
+                        {say(workOrder.assignedTo.firstName)} {say(workOrder.assignedTo.lastName)}
                       </div>
-                      <div style={{fontSize:14, color:'#9aa3b2'}}>{workOrder.assignedTo.phone}</div>
+                      <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.assignedTo.phone)}</div>
                     </div>
                   )}
 
                   {workOrder.vehicle && (
                     <div>
-                      <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>Vehicle</div>
+                      <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Vehicle")}</div>
                       <div style={{color:'#e5e7eb', fontWeight:500}}>
-                        {workOrder.vehicle.year} {workOrder.vehicle.make} {workOrder.vehicle.model}
+                        {say(workOrder.vehicle.year)} {say(workOrder.vehicle.make)} {say(workOrder.vehicle.model)}
                       </div>
-                      <div style={{fontSize:14, color:'#9aa3b2'}}>{workOrder.vehicle.licensePlate}</div>
+                      <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.vehicle.licensePlate)}</div>
                     </div>
                   )}
                 </div>
@@ -258,15 +257,15 @@ export default function WorkOrderDetailsPage() {
 
             {/* Job Info / Live Tracking - show shop address & appointment for in-shop jobs; show live GPS for roadside */}
             <div style={{marginTop:32, padding:20, background:'rgba(229,51,42,0.04)', border:'1px solid rgba(229,51,42,0.08)', borderRadius:8}}>
-              <h3 style={{fontSize:16, fontWeight:600, color:'#e5332a', marginBottom:12}}>{workOrder.serviceLocation && workOrder.serviceLocation.toLowerCase() !== 'roadside' ? 'Appointment Details' : 'Live Tracking'}</h3>
+              <h3 style={{fontSize:16, fontWeight:600, color:'#e5332a', marginBottom:12}}>{workOrder.serviceLocation && workOrder.serviceLocation.toLowerCase() !== 'roadside' ? say("Appointment Details") : say("Live Tracking")}</h3>
 
               {workOrder.serviceLocation && workOrder.serviceLocation.toLowerCase() !== 'roadside' ? (
                 // IN-SHOP: Always show shop address and appointment time (do not show GPS)
                 <div style={{display:'flex', flexDirection:'column', gap:8}}>
-                  <div style={{fontSize:14, color:'#e5e7eb'}}><FaStore style={{marginRight:4}} /> Shop: <strong>{workOrder.shop.shopName}</strong></div>
-                  <div style={{fontSize:14, color:'#9aa3b2'}}>{workOrder.shop.address}</div>
-                  {workOrder.scheduledDate && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> Appointment: {new Date(workOrder.scheduledDate).toLocaleString()}</div>}
-                  {workOrder.dueDate && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> Due: {new Date(workOrder.dueDate).toLocaleString()}</div>}
+                  <div style={{fontSize:14, color:'#e5e7eb'}}><FaStore style={{marginRight:4}} /> {say("Shop:")}{' '}<strong>{say(workOrder.shop.shopName)}</strong></div>
+                  <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.shop.address)}</div>
+                  {workOrder.scheduledDate && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> {say("Appointment:")}{' '}{new Date(workOrder.scheduledDate).toLocaleString()}</div>}
+                  {workOrder.dueDate && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> {say("Due:")}{' '}{new Date(workOrder.dueDate).toLocaleString()}</div>}
                 </div>
               ) : (
                 // ROADSIDE: show live map and latest tracking data when available
@@ -277,11 +276,11 @@ export default function WorkOrderDetailsPage() {
 
                   {workOrder.tracking ? (
                     <div style={{display:'flex', gap:16, alignItems:'center'}}>
-                      <div style={{fontSize:14, color:'#e5e7eb'}}><FaMapMarkerAlt style={{marginRight:4}} /> Current Location: {workOrder.tracking.latitude.toFixed(4)}, {workOrder.tracking.longitude.toFixed(4)}</div>
-                      {workOrder.tracking.estimatedArrival && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> ETA: {new Date(workOrder.tracking.estimatedArrival).toLocaleTimeString()}</div>}
+                      <div style={{fontSize:14, color:'#e5e7eb'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say("Current Location:")}{' '}{workOrder.tracking.latitude.toFixed(4)}, {workOrder.tracking.longitude.toFixed(4)}</div>
+                      {workOrder.tracking.estimatedArrival && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> {say("ETA:")}{' '}{new Date(workOrder.tracking.estimatedArrival).toLocaleTimeString()}</div>}
                     </div>
                   ) : (
-                    <div style={{fontSize:14, color:'#9aa3b2'}}>Live tracking not available for this job yet.</div>
+                    <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Live tracking not available for this job yet.")}</div>
                   )}
                 </div>
               )}
@@ -297,22 +296,22 @@ export default function WorkOrderDetailsPage() {
                 border:'1px solid rgba(34,197,94,0.25)',
                 borderRadius:12,
               }}>
-                <h3 style={{fontSize:18, fontWeight:700, color:'#22c55e', marginBottom:16}}>Payment Due</h3>
+                <h3 style={{fontSize:18, fontWeight:700, color:'#22c55e', marginBottom:16}}>{say("Payment Due")}</h3>
                 <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:20}}>
                   <div style={{display:'flex', justifyContent:'space-between', fontSize:14, color:'#e5e7eb'}}>
-                    <span>Services &amp; Parts</span>
+                    <span>{say("Services &amp; Parts")}</span>
                     <span>${workOrder.estimate.amount.toFixed(2)}</span>
                   </div>
                   <div style={{display:'flex', justifyContent:'space-between', fontSize:14, color:'#9aa3b2'}}>
-                    <span>FixTray Service Fee</span>
+                    <span>{say("FixTray Service Fee")}</span>
                     <span>${workOrder.estimate.serviceFee.toFixed(2)}</span>
                   </div>
                   <div style={{display:'flex', justifyContent:'space-between', fontSize:18, fontWeight:700, color:'#22c55e', paddingTop:8, borderTop:'1px solid rgba(255,255,255,0.15)'}}>
-                    <span>Total Due</span>
+                    <span>{say("Total Due")}</span>
                     <span>${workOrder.estimate.totalDue.toFixed(2)}</span>
                   </div>
                 </div>
-                {payError && <div style={{color:'#ef4444',fontSize:13,marginBottom:12,padding:'8px 12px',background:'rgba(239,68,68,0.1)',borderRadius:6}}>{payError}</div>}
+                {payError && <div style={{color:'#ef4444',fontSize:13,marginBottom:12,padding:'8px 12px',background:'rgba(239,68,68,0.1)',borderRadius:6}}>{say(payError)}</div>}
                 <button
                   onClick={handlePay}
                   disabled={paying}
@@ -329,11 +328,10 @@ export default function WorkOrderDetailsPage() {
                     letterSpacing:'0.3px',
                   }}
                 >
-                  {paying ? 'Redirecting to Stripe...' : `Pay $${workOrder.estimate.totalDue.toFixed(2)} Securely`}
+                  {paying ? say("Redirecting to Stripe...") : `Pay $${workOrder.estimate.totalDue.toFixed(2)} Securely`}
                 </button>
                 <div style={{textAlign:'center', marginTop:10, fontSize:12, color:'#6b7280'}}>
-                  <FaLock style={{marginRight:4}} /> Powered by Stripe  Apple Pay &amp; Google Pay accepted
-                </div>
+                  <FaLock style={{marginRight:4}} /> {say("Powered by Stripe  Apple Pay &amp; Google Pay accepted")}{' '}</div>
               </div>
             )}
 
@@ -372,8 +370,8 @@ export default function WorkOrderDetailsPage() {
                 textAlign:'center',
               }}>
                 <div style={{fontSize:24, marginBottom:8}}><FaCheckCircle style={{marginRight:4}} /></div>
-                <div style={{color:'#22c55e', fontWeight:700, fontSize:16}}>Payment Complete  -  Thank You!</div>
-                <div style={{color:'#9aa3b2', fontSize:13, marginTop:4}}>Your work order is closed. A receipt was sent to your email.</div>
+                <div style={{color:'#22c55e', fontWeight:700, fontSize:16}}>{say("Payment Complete  -  Thank You!")}</div>
+                <div style={{color:'#9aa3b2', fontSize:13, marginTop:4}}>{say("Your work order is closed. A receipt was sent to your email.")}</div>
               </div>
             )}
 
@@ -390,8 +388,7 @@ export default function WorkOrderDetailsPage() {
                 textDecoration:'none',
                 textAlign:'center'
               }}>
-                Back to Tracking
-              </Link>
+                {say("Back to Tracking")}{' '}</Link>
               {workOrder.assignedTo?.phone && (
                 <a href={`tel:${workOrder.assignedTo.phone}`} style={{
                   flex:1,
@@ -405,8 +402,7 @@ export default function WorkOrderDetailsPage() {
                   textDecoration:'none',
                   textAlign:'center'
                 }}>
-                  Call Technician
-                </a>
+                  {say("Call Technician")}{' '}</a>
               )}
             </div>
           </div>

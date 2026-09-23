@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -120,12 +121,13 @@ function parseIssue(raw: unknown): string {
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 
 function Card({ title, icon, action, children }: { title: string; icon: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
+  const say = usePhrase();
   return (
     <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden' }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: '#e5332a', fontSize: 13 }}>{icon}</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#e5e7eb', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>{title}</span>
-        {action}
+        <span style={{ color: '#e5332a', fontSize: 13 }}>{say(icon)}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#e5e7eb', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>{say(title)}</span>
+        {say(action)}
       </div>
       <div style={{ padding: '14px 16px' }}>{children}</div>
     </div>
@@ -133,11 +135,12 @@ function Card({ title, icon, action, children }: { title: string; icon: React.Re
 }
 
 function Field({ label, value }: { label: string; value?: string | number | null }) {
+  const say = usePhrase();
   if (value == null || value === '') return null;
   return (
     <div>
-      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 13, color: '#e5e7eb' }}>{value}</div>
+      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>{say(label)}</div>
+      <div style={{ fontSize: 13, color: '#e5e7eb' }}>{say(value)}</div>
     </div>
   );
 }
@@ -150,6 +153,7 @@ const inputStyle: React.CSSProperties = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WorkOrderDetailPage() {
+  const say = usePhrase();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params?.id;
@@ -585,16 +589,14 @@ export default function WorkOrderDetailPage() {
   // ─── Loading / error states ──────────────────────────────────────────────
   if (loading) return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9aa3b2' }}>
-      Loading work order…
-    </main>
+      {say("Loading work order…")}{' '}</main>
   );
 
   if (error || !wo) return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', padding: '40px 24px' }}>
       <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#9aa3b2', fontSize: 14, cursor: 'pointer', marginBottom: 24 }}>
-        <FaArrowLeft /> Back
-      </button>
-      <div style={{ color: '#f87171' }}>{error || 'Work order not found.'}</div>
+        <FaArrowLeft /> {say("Back")}{' '}</button>
+      <div style={{ color: '#f87171' }}>{error || say("Work order not found.")}</div>
     </main>
   );
 
@@ -628,22 +630,20 @@ export default function WorkOrderDetailPage() {
       {/* ── Top bar ── */}
       <div style={{ background: '#111111', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e5e7eb', fontSize: 13, fontWeight: 600, borderRadius: 8, padding: '7px 14px', cursor: 'pointer' }}>
-          <FaArrowLeft style={{ fontSize: 11 }} /> Back
-        </button>
+          <FaArrowLeft style={{ fontSize: 11 }} /> {say("Back")}{' '}</button>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em' }}>WO-{shortId}</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em' }}>{say("WO-")}{say(shortId)}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: ss.bg, color: ss.color, borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-            {ss.icon}&nbsp;{wo.status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+            {say(ss.icon)}{say("&nbsp;")}{wo.status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
           </span>
           {wo.serviceLocation === 'road-call' && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-              <FaTruck style={{ fontSize: 11 }} /> Road Call
-            </span>
+              <FaTruck style={{ fontSize: 11 }} /> {say("Road Call")}{' '}</span>
           )}
         </div>
 
         <span style={{ fontSize: 12, color: '#6b7280' }}>
-          Created {new Date(wo.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}{' '}
+          {say("Created")}{' '}{new Date(wo.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}{' '}
           {new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
@@ -653,51 +653,51 @@ export default function WorkOrderDetailPage() {
 
         {/* Info cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-          <Card title="Customer" icon={<FaUser />}>
+          <Card title={say("Customer")} icon={<FaUser />}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Field label="Name"    value={customerName} />
-              <Field label="Company" value={wo.customer?.company} />
-              <Field label="Phone"   value={wo.customer?.phone} />
-              <Field label="Email"   value={wo.customer?.email} />
+              <Field label={say("Name")}    value={customerName} />
+              <Field label={say("Company")} value={wo.customer?.company} />
+              <Field label={say("Phone")}   value={wo.customer?.phone} />
+              <Field label={say("Email")}   value={wo.customer?.email} />
             </div>
           </Card>
-          <Card title="Vehicle" icon={<FaCar />}>
+          <Card title={say("Vehicle")} icon={<FaCar />}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Field label="Type"               value={wo.vehicle?.vehicleType || wo.vehicleType} />
-              <Field label="Year / Make / Model" value={wo.vehicle ? [wo.vehicle.year, wo.vehicle.make, wo.vehicle.model].filter(Boolean).join(' ') || undefined : undefined} />
-              <Field label="VIN"                value={wo.vehicle?.vin} />
-              <Field label="License Plate"      value={wo.vehicle?.licensePlate} />
+              <Field label={say("Type")}               value={wo.vehicle?.vehicleType || wo.vehicleType} />
+              <Field label={say("Year / Make / Model")} value={wo.vehicle ? [wo.vehicle.year, wo.vehicle.make, wo.vehicle.model].filter(Boolean).join(' ') || undefined : undefined} />
+              <Field label={say("VIN")}                value={wo.vehicle?.vin} />
+              <Field label={say("License Plate")}      value={wo.vehicle?.licensePlate} />
             </div>
           </Card>
-          <Card title="Work Order Info" icon={<FaWrench />}>
+          <Card title={say("Work Order Info")} icon={<FaWrench />}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Field label="Service Location" value={locationLabel} />
-              <Field label="Bay"              value={wo.bay != null ? `Bay ${wo.bay}` : null} />
-              <Field label="Assigned Tech"    value={techName ?? 'Unassigned'} />
-              <Field label="Due Date"         value={wo.dueDate ? new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null} />
-              <Field label="Est. Cost"        value={wo.estimatedCost != null ? `$${wo.estimatedCost.toFixed(2)}` : null} />
-              <Field label="Payment Status"   value={wo.paymentStatus?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
+              <Field label={say("Service Location")} value={locationLabel} />
+              <Field label={say("Bay")}              value={wo.bay != null ? `Bay ${wo.bay}` : null} />
+              <Field label={say("Assigned Tech")}    value={techName ?? 'Unassigned'} />
+              <Field label={say("Due Date")}         value={wo.dueDate ? new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null} />
+              <Field label={say("Est. Cost")}        value={wo.estimatedCost != null ? `$${wo.estimatedCost.toFixed(2)}` : null} />
+              <Field label={say("Payment Status")}   value={wo.paymentStatus?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
             </div>
           </Card>
         </div>
 
         {userRole && ['shop', 'manager', 'admin', 'superadmin'].includes(userRole) && (
           <div style={{ marginTop: 16 }}>
-            <Card title="Closeout" icon={<FaDollarSign />}>
+            <Card title={say("Closeout")} icon={<FaDollarSign />}>
               <p style={{ margin: '0 0 12px', fontSize: 13, color: '#9aa3b2', lineHeight: 1.5 }}>
                 {wo.status === 'estimate-submitted'
-                  ? 'Waiting for the customer to accept and sign. Invoice unlocks after that signature.'
+                  ? say("Waiting for the customer to accept and sign. Invoice unlocks after that signature.")
                   : wo.status === 'denied-estimate'
-                    ? 'The customer denied this quote. No work authorization was created. Reissue the estimate to continue.'
+                    ? say("The customer denied this quote. No work authorization was created. Reissue the estimate to continue.")
                     : wo.status === 'completed' || wo.status === 'closed'
-                      ? 'This job is complete.'
+                      ? say("This job is complete.")
                       : wo.paymentStatus === 'paid'
-                        ? 'Payment is recorded. Complete the job when the work is finished.'
+                        ? say("Payment is recorded. Complete the job when the work is finished.")
                         : wo.status === 'waiting-for-payment'
-                          ? 'Payment was requested for this work order. Mark it paid, then complete the job.'
+                          ? say("Payment was requested for this work order. Mark it paid, then complete the job.")
                           : (wo.status === 'in-progress' || wo.status === 'assigned')
-                            ? 'Invoice this work order, mark it paid, then complete the job.'
-                            : 'Invoice unlocks after the customer accepts and signs and the job is in progress.'}
+                            ? say("Invoice this work order, mark it paid, then complete the job.")
+                            : say("Invoice unlocks after the customer accepts and signs and the job is in progress.")}
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
@@ -705,62 +705,61 @@ export default function WorkOrderDetailPage() {
                   disabled={!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)}
                   style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)) ? 0.45 : 1 }}
                 >
-                  {closeoutBusy === 'invoice' ? 'Requesting…' : 'Invoice / Request payment'}
+                  {closeoutBusy === 'invoice' ? say("Requesting…") : say("Invoice / Request payment")}
                 </button>
                 <button
                   onClick={() => handleCloseout('paid')}
                   disabled={!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid'}
                   style={{ background: 'rgba(245,158,11,0.18)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid') ? 0.45 : 1 }}
                 >
-                  {closeoutBusy === 'paid' ? 'Saving…' : 'Mark paid'}
+                  {closeoutBusy === 'paid' ? say("Saving…") : say("Mark paid")}
                 </button>
                 <button
                   onClick={() => handleCloseout('complete')}
                   disabled={!!closeoutBusy || wo.paymentStatus !== 'paid' || wo.status === 'completed' || wo.status === 'closed'}
                   style={{ background: 'rgba(34,197,94,0.18)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || wo.paymentStatus !== 'paid' || wo.status === 'completed' || wo.status === 'closed') ? 0.45 : 1 }}
                 >
-                  {closeoutBusy === 'complete' ? 'Completing…' : 'Complete job'}
+                  {closeoutBusy === 'complete' ? say("Completing…") : say("Complete job")}
                 </button>
               </div>
               {paymentUrl && (
                 <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 10 }}>
-                  <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>Payment link for this work order</div>
+                  <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>{say("Payment link for this work order")}</div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <code style={{ fontSize: 12, color: '#e5e7eb', wordBreak: 'break-all' }}>{paymentUrl}</code>
+                    <code style={{ fontSize: 12, color: '#e5e7eb', wordBreak: 'break-all' }}>{say(paymentUrl)}</code>
                     <button
                       onClick={() => navigator.clipboard.writeText(paymentUrl)}
                       style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
                     >
-                      Copy link
-                    </button>
+                      {say("Copy link")}{' '}</button>
                   </div>
                 </div>
               )}
-              {closeoutMsg && <div style={{ marginTop: 10, fontSize: 13, color: '#e5e7eb' }}>{closeoutMsg}</div>}
+              {closeoutMsg && <div style={{ marginTop: 10, fontSize: 13, color: '#e5e7eb' }}>{say(closeoutMsg)}</div>}
             </Card>
           </div>
         )}
 
         {/* Issue */}
         <div style={{ marginTop: 16 }}>
-          <Card title="Issue Description" icon={<FaExclamationCircle />}>
-            <p style={{ margin: 0, fontSize: 14, color: '#e5e7eb', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{issueText}</p>
+          <Card title={say("Issue Description")} icon={<FaExclamationCircle />}>
+            <p style={{ margin: 0, fontSize: 14, color: '#e5e7eb', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{say(issueText)}</p>
           </Card>
         </div>
 
         {/* ── Repairs & Parts ── */}
         <div id="line-items" style={{ marginTop: 16 }}>
           <Card
-            title="Line Items"
+            title={say("Line Items")}
             icon={<FaBox />}
             action={
               <div style={{ display: 'flex', gap: 6 }}>
                 <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 5, background: saving ? 'transparent' : saveMsg === 'Saved!' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${saveMsg === 'Saved!' ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`, color: saveMsg === 'Saved!' ? '#22c55e' : '#e5e7eb', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
-                  <FaSave style={{ fontSize: 11 }} /> {saving ? 'Saving…' : saveMsg || 'Save'}
+                  <FaSave style={{ fontSize: 11 }} /> {saving ? say("Saving…") : saveMsg || say("Save")}
                 </button>
                 {userRole !== 'customer' && (
                   <button onClick={handleSubmitEstimate} disabled={submittingEst} style={{ display: 'flex', alignItems: 'center', gap: 5, background: submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.15)' : 'rgba(96,165,250,0.12)', border: `1px solid ${submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.3)' : 'rgba(96,165,250,0.3)'}`, color: submitEstMsg === 'Submitted!' ? '#22c55e' : '#60a5fa', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: submittingEst ? 'not-allowed' : 'pointer', opacity: submittingEst ? 0.6 : 1 }}>
-                    <FaEnvelope style={{ fontSize: 11 }} /> {submittingEst ? 'Submitting…' : submitEstMsg || (wo.status === 'denied-estimate' ? 'Reissue Estimate' : 'Submit Estimate')}
+                    <FaEnvelope style={{ fontSize: 11 }} /> {submittingEst ? say("Submitting…") : submitEstMsg || (wo.status === 'denied-estimate' ? say("Reissue Estimate") : say("Submit Estimate"))}
                   </button>
                 )}
               </div>
@@ -770,24 +769,24 @@ export default function WorkOrderDetailPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={thStyle}>Description</th>
-                    <th style={{ ...thStyle, width: 110 }}>Part #</th>
-                    <th style={{ ...thStyle, width: 90 }}>Price</th>
-                    <th style={{ ...thStyle, width: 70 }}>Qty</th>
-                    <th style={{ ...thStyle, width: 90 }}>Ext Price</th>
-                    <th style={{ ...thStyle, width: 70 }}>Type</th>
-                    <th style={{ ...thStyle, width: 60 }}>Status</th>
+                    <th style={thStyle}>{say("Description")}</th>
+                    <th style={{ ...thStyle, width: 110 }}>{say("Part #")}</th>
+                    <th style={{ ...thStyle, width: 90 }}>{say("Price")}</th>
+                    <th style={{ ...thStyle, width: 70 }}>{say("Qty")}</th>
+                    <th style={{ ...thStyle, width: 90 }}>{say("Ext Price")}</th>
+                    <th style={{ ...thStyle, width: 70 }}>{say("Type")}</th>
+                    <th style={{ ...thStyle, width: 60 }}>{say("Status")}</th>
                     <th style={{ ...thStyle, width: 32 }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {lineItems.length === 0 && (
-                    <tr><td colSpan={8} style={{ padding: '20px 6px', textAlign: 'center', fontSize: 13, color: '#6b7280' }}>No line items yet — add one below.</td></tr>
+                    <tr><td colSpan={8} style={{ padding: '20px 6px', textAlign: 'center', fontSize: 13, color: '#6b7280' }}>{say("No line items yet — add one below.")}</td></tr>
                   )}
                   {lineItems.map(li => (
                     <tr key={li._key} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                       <td style={tdStyle}>
-                        <input style={inputStyle} value={li.description} onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, description: e.target.value, status: 'new' } : x))} placeholder="Description" />
+                        <input style={inputStyle} value={li.description} onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, description: e.target.value, status: 'new' } : x))} placeholder={say("Description")} />
                       </td>
                       <td style={tdStyle}>
                         <input style={inputStyle} value={li.partNumber} onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, partNumber: e.target.value, status: 'new' } : x))} placeholder="—" />
@@ -805,20 +804,20 @@ export default function WorkOrderDetailPage() {
                       <td style={{ ...tdStyle, fontSize: 13, color: '#e5e7eb', fontWeight: 600, textAlign: 'right', paddingRight: 8 }}>{fmt(li.price * li.qty)}</td>
                       <td style={tdStyle}>
                         <select style={{ ...inputStyle, padding: '5px 4px' }} value={li.type} onChange={e => setLineItems(prev => prev.map(x => x._key === li._key ? { ...x, type: e.target.value as LineItem['type'], status: 'new' } : x))}>
-                          <option value="part">Part</option>
-                          <option value="labor">Labor</option>
-                          <option value="misc">Misc</option>
+                          <option value="part">{say("Part")}</option>
+                          <option value="labor">{say("Labor")}</option>
+                          <option value="misc">{say("Misc")}</option>
                         </select>
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'center' }}>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: li.status === 'saved' ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.15)', color: li.status === 'saved' ? '#22c55e' : '#f59e0b' }}>
-                          {li.status === 'saved' ? 'Saved' : 'New'}
+                          {li.status === 'saved' ? say("Saved") : say("New")}
                         </span>
                       </td>
                       <td style={tdStyle}>
                         {li.poId && (
                           <button onClick={() => { setEditPoLine(li); setEditPoCost(li.poCost ?? li.price); setEditPoQty(li.qty); }}
-                            style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', cursor: 'pointer', fontSize: 10, padding: '3px 6px', borderRadius: 4, marginRight: 4, fontWeight: 700 }}>PO</button>
+                            style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', cursor: 'pointer', fontSize: 10, padding: '3px 6px', borderRadius: 4, marginRight: 4, fontWeight: 700 }}>{say("PO")}</button>
                         )}
                         <button onClick={() => setLineItems(prev => prev.filter(x => x._key !== li._key))} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 13, padding: '4px' }}><FaTrash /></button>
                       </td>
@@ -831,13 +830,12 @@ export default function WorkOrderDetailPage() {
             {/* Add row + totals */}
             <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
               <button onClick={handleOpenItemModal} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', color: '#9aa3b2', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer' }}>
-                <FaPlus style={{ fontSize: 10 }} /> Add Line Item
-              </button>
+                <FaPlus style={{ fontSize: 10 }} /> {say("Add Line Item")}{' '}</button>
               {grandTotal > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  {lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>Labor {fmt(lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
-                  {lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>Parts {fmt(lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
-                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>Total {fmt(grandTotal)}</span>
+                  {lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Labor")}{' '}{fmt(lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
+                  {lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Parts")}{' '}{fmt(lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
+                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>{say("Total")}{' '}{fmt(grandTotal)}</span>
                 </div>
               )}
             </div>
@@ -847,8 +845,8 @@ export default function WorkOrderDetailPage() {
         {/* Pickup location */}
         {pickupAddr && (
           <div style={{ marginTop: 16 }}>
-            <Card title="Pickup Location" icon={<FaMapMarkerAlt />}>
-              <p style={{ margin: 0, fontSize: 14, color: '#e5e7eb' }}>{pickupAddr}</p>
+            <Card title={say("Pickup Location")} icon={<FaMapMarkerAlt />}>
+              <p style={{ margin: 0, fontSize: 14, color: '#e5e7eb' }}>{say(pickupAddr)}</p>
             </Card>
           </div>
         )}
@@ -860,8 +858,7 @@ export default function WorkOrderDetailPage() {
             <div style={{ maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, paddingRight: 4 }}>
               {messages.length === 0 && (
                 <div style={{ fontSize: 13, color: '#6b7280', padding: '16px 0', textAlign: 'center' }}>
-                  No messages yet. Send the first one below.
-                </div>
+                  {say("No messages yet. Send the first one below.")}{' '}</div>
               )}
               {messages.map(msg => {
                 const isShop = ['shop', 'tech', 'manager'].includes(msg.sender);
@@ -874,7 +871,7 @@ export default function WorkOrderDetailPage() {
                       border: `1px solid ${isShop ? 'rgba(229,51,42,0.3)' : 'rgba(255,255,255,0.1)'}`,
                     }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: isShop ? '#e5332a' : '#60a5fa', marginBottom: 4 }}>{msg.senderName || msg.sender}</div>
-                      {parsed.text && <p style={{ margin: 0, fontSize: 13, color: '#e5e7eb', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{parsed.text}</p>}
+                      {parsed.text && <p style={{ margin: 0, fontSize: 13, color: '#e5e7eb', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{say(parsed.text)}</p>}
                       {parsed.media.map((url, i) => {
                         const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
                         return isVid
@@ -916,7 +913,7 @@ export default function WorkOrderDetailPage() {
               <button
                 onClick={() => mediaInputRef.current?.click()}
                 disabled={uploadingMedia}
-                title="Attach photo or video"
+                title={say("Attach photo or video")}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: uploadingMedia ? '#f59e0b' : '#9aa3b2', cursor: 'pointer', fontSize: 15 }}
               >
                 {uploadingMedia ? '⏳' : <FaPaperclip />}
@@ -925,7 +922,7 @@ export default function WorkOrderDetailPage() {
                 value={msgText}
                 onChange={e => setMsgText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSendMessage(); }}
-                placeholder="Type a message… (Ctrl+Enter to send)"
+                placeholder={say("Type a message… (Ctrl+Enter to send)")}
                 rows={2}
                 style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#e5e7eb', fontSize: 13, padding: '8px 12px', resize: 'vertical', fontFamily: 'inherit' }}
               />
@@ -934,7 +931,7 @@ export default function WorkOrderDetailPage() {
                 disabled={sending || (!msgText.trim() && pendingMedia.length === 0)}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 16px', background: 'rgba(229,51,42,0.18)', border: '1px solid rgba(229,51,42,0.3)', color: '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: ((!msgText.trim() && pendingMedia.length === 0) || sending) ? 0.5 : 1 }}
               >
-                <FaPaperPlane style={{ fontSize: 12 }} /> {sending ? '…' : 'Send'}
+                <FaPaperPlane style={{ fontSize: 12 }} /> {sending ? '…' : say("Send")}
               </button>
             </div>
           </Card>
@@ -942,10 +939,10 @@ export default function WorkOrderDetailPage() {
 
         {/* Timeline */}
         <div style={{ marginTop: 16 }}>
-          <Card title="Timeline" icon={<FaCalendarAlt />}>
+          <Card title={say("Timeline")} icon={<FaCalendarAlt />}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-              <Field label="Created" value={`${new Date(wo.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} ${new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
-              {wo.dueDate && <Field label="Due" value={new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} />}
+              <Field label={say("Created")} value={`${new Date(wo.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} ${new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
+              {wo.dueDate && <Field label={say("Due")} value={new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} />}
             </div>
           </Card>
         </div>
@@ -980,7 +977,7 @@ export default function WorkOrderDetailPage() {
 
             {/* Header */}
             <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#e5e7eb' }}>Add Line Item</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#e5e7eb' }}>{say("Add Line Item")}</span>
               <button onClick={() => setShowItemModal(false)} style={{ background: 'none', border: 'none', color: '#9aa3b2', cursor: 'pointer', fontSize: 16, padding: 4 }}><FaTimes /></button>
             </div>
 
@@ -989,7 +986,7 @@ export default function WorkOrderDetailPage() {
               {(['inventory', 'services', 'pickup', 'custom'] as const).map(tab => (
                 <button key={tab} onClick={() => { setModalTab(tab); setItemSearch(''); }}
                   style={{ flex: 1, padding: '10px 4px', background: 'none', border: 'none', borderBottom: `2px solid ${modalTab === tab ? '#e5332a' : 'transparent'}`, color: modalTab === tab ? '#e5332a' : '#9aa3b2', fontSize: 12, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  {tab === 'pickup' ? 'Part Pickup (PO)' : tab === 'custom' ? 'Custom' : tab}
+                  {tab === 'pickup' ? say("Part Pickup (PO)") : tab === 'custom' ? say("Custom") : tab}
                 </button>
               ))}
             </div>
@@ -997,18 +994,18 @@ export default function WorkOrderDetailPage() {
             {/* Content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
               {modalLoading ? (
-                <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40, fontSize: 13 }}>Loading shop data…</div>
+                <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40, fontSize: 13 }}>{say("Loading shop data…")}</div>
               ) : modalTab === 'inventory' ? (
                 <>
                   <div style={{ position: 'relative', marginBottom: 12 }}>
                     <FaSearch style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: 12, pointerEvents: 'none' }} />
-                    <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder="Search inventory by name or SKU…" autoFocus
+                    <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder={say("Search inventory by name or SKU…")} autoFocus
                       style={{ ...inputStyle, paddingLeft: 30 }} />
                   </div>
                   {inventoryItems
                     .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()) || (it.sku || '').toLowerCase().includes(itemSearch.toLowerCase()))
                     .length === 0
-                    ? <div style={{ textAlign: 'center', color: '#6b7280', padding: '28px 0', fontSize: 13 }}>No inventory items found.</div>
+                    ? <div style={{ textAlign: 'center', color: '#6b7280', padding: '28px 0', fontSize: 13 }}>{say("No inventory items found.")}</div>
                     : inventoryItems
                         .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()) || (it.sku || '').toLowerCase().includes(itemSearch.toLowerCase()))
                         .map(item => (
@@ -1017,9 +1014,9 @@ export default function WorkOrderDetailPage() {
                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(229,51,42,0.08)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}>
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb' }}>{item.name}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb' }}>{say(item.name)}</div>
                               <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
-                                {item.sku ? `SKU: ${item.sku}` : ''}{item.sku ? ' · ' : ''}Qty in stock: {item.quantity}{item.type === 'labor' ? ' · Labor' : ''}
+                                {item.sku ? `SKU: ${item.sku}` : ''}{item.sku ? ' · ' : ''}{say("Qty in stock:")}{' '}{say(item.quantity)}{item.type === 'labor' ? say(" · Labor") : ''}
                               </div>
                             </div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: '#22c55e', whiteSpace: 'nowrap', marginLeft: 12 }}>
@@ -1033,13 +1030,13 @@ export default function WorkOrderDetailPage() {
                 <>
                   <div style={{ position: 'relative', marginBottom: 12 }}>
                     <FaSearch style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: 12, pointerEvents: 'none' }} />
-                    <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder="Search services by name or category…" autoFocus
+                    <input value={itemSearch} onChange={e => setItemSearch(e.target.value)} placeholder={say("Search services by name or category…")} autoFocus
                       style={{ ...inputStyle, paddingLeft: 30 }} />
                   </div>
                   {shopServices
                     .filter(s => !itemSearch || s.serviceName.toLowerCase().includes(itemSearch.toLowerCase()) || s.category.toLowerCase().includes(itemSearch.toLowerCase()))
                     .length === 0
-                    ? <div style={{ textAlign: 'center', color: '#6b7280', padding: '28px 0', fontSize: 13 }}>No services found.</div>
+                    ? <div style={{ textAlign: 'center', color: '#6b7280', padding: '28px 0', fontSize: 13 }}>{say("No services found.")}</div>
                     : shopServices
                         .filter(s => !itemSearch || s.serviceName.toLowerCase().includes(itemSearch.toLowerCase()) || s.category.toLowerCase().includes(itemSearch.toLowerCase()))
                         .map(svc => (
@@ -1048,13 +1045,13 @@ export default function WorkOrderDetailPage() {
                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(229,51,42,0.08)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}>
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb' }}>{svc.serviceName}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb' }}>{say(svc.serviceName)}</div>
                               <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2, textTransform: 'capitalize' }}>
-                                {svc.category}{svc.duration ? ` · ${svc.duration} min` : ''}{svc.description ? ` · ${svc.description}` : ''}
+                                {say(svc.category)}{svc.duration ? ` · ${svc.duration} min` : ''}{svc.description ? ` · ${svc.description}` : ''}
                               </div>
                             </div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: '#22c55e', whiteSpace: 'nowrap', marginLeft: 12 }}>
-                              {svc.price != null ? `$${svc.price.toFixed(2)}` : 'Custom'}
+                              {svc.price != null ? `$${svc.price.toFixed(2)}` : say("Custom")}
                             </div>
                           </div>
                         ))
@@ -1064,27 +1061,26 @@ export default function WorkOrderDetailPage() {
                 /* Part Pickup / PO form */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, fontSize: 12, color: '#f59e0b', lineHeight: 1.5 }}>
-                    A Purchase Order will be created automatically when you add this item. The shop markup of <strong>{(shopMarkup * 100).toFixed(0)}%</strong> is applied to your cost to set the customer price.
-                  </div>
+                    {say("A Purchase Order will be created automatically when you add this item. The shop markup of")}{' '}<strong>{(shopMarkup * 100).toFixed(0)}%</strong> {say("is applied to your cost to set the customer price.")}{' '}</div>
                   {([
-                    { label: 'Vendor / Supplier *', value: poVendor, set: setPoVendor, placeholder: 'e.g. NAPA Auto Parts' },
-                    { label: 'Part Name *', value: poPartName, set: setPoPartName, placeholder: 'e.g. Oil Filter' },
-                    { label: 'Part Number / SKU', value: poSku, set: setPoSku, placeholder: 'Optional' },
+                    { label: say("Vendor / Supplier *"), value: poVendor, set: setPoVendor, placeholder: say("e.g. NAPA Auto Parts") },
+                    { label: say("Part Name *"), value: poPartName, set: setPoPartName, placeholder: say("e.g. Oil Filter") },
+                    { label: say("Part Number / SKU"), value: poSku, set: setPoSku, placeholder: say("Optional") },
                   ] as { label: string; value: string; set: (v: string) => void; placeholder: string }[]).map(({ label, value, set, placeholder }) => (
                     <div key={label}>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{label}</div>
-                      <input value={value} onChange={e => set(e.target.value)} placeholder={placeholder} style={inputStyle} />
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say(label)}</div>
+                      <input value={value} onChange={e => set(e.target.value)} placeholder={say(placeholder)} style={inputStyle} />
                     </div>
                   ))}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Your Cost ($) *</div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Your Cost ($) *")}</div>
                       <input type="number" min={0} step={0.01} value={poCost}
                         onFocus={e => e.target.select()}
                         onChange={e => setPoCost(parseFloat(e.target.value) || 0)} style={{ ...inputStyle, textAlign: 'right' }} />
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Quantity *</div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Quantity *")}</div>
                       <input type="number" min={1} step={1} value={poQty}
                         onFocus={e => e.target.select()}
                         onChange={e => setPoQty(Math.max(1, parseInt(e.target.value) || 1))} style={{ ...inputStyle, textAlign: 'right' }} />
@@ -1093,45 +1089,44 @@ export default function WorkOrderDetailPage() {
                   {poCost > 0 && (
                     <div style={{ padding: '12px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: 11, color: '#6b7280' }}>Unit cost: ${poCost.toFixed(2)} + {(shopMarkup * 100).toFixed(0)}% markup</div>
-                        <div style={{ fontSize: 11, color: '#6b7280' }}>Customer unit price: ${(poCost * (1 + shopMarkup)).toFixed(2)}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280' }}>{say("Unit cost: $")}{poCost.toFixed(2)} + {(shopMarkup * 100).toFixed(0)}{say("% markup")}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280' }}>{say("Customer unit price: $")}{(poCost * (1 + shopMarkup)).toFixed(2)}</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: 11, color: '#9aa3b2', textAlign: 'right' }}>Total (×{poQty})</div>
+                        <div style={{ fontSize: 11, color: '#9aa3b2', textAlign: 'right' }}>{say("Total (×")}{say(poQty)})</div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: '#22c55e' }}>${(poCost * (1 + shopMarkup) * poQty).toFixed(2)}</div>
                       </div>
                     </div>
                   )}
                   <button onClick={handleAddPartPickup} disabled={!poPartName.trim() || !poVendor.trim() || poCost <= 0}
                     style={{ padding: '10px 16px', background: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'rgba(255,255,255,0.04)' : 'rgba(229,51,42,0.18)', border: `1px solid ${(!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'rgba(255,255,255,0.08)' : 'rgba(229,51,42,0.3)'}`, color: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? '#4b5563' : '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'not-allowed' : 'pointer' }}>
-                    Add Part Pickup &amp; Create PO
-                  </button>
+                    {say("Add Part Pickup &amp; Create PO")}{' '}</button>
                 </div>
               ) : (
                 /* Custom line item */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Description *</div>
-                    <input value={customDesc} onChange={e => setCustomDesc(e.target.value)} placeholder="e.g. Diagnostic fee, Shop supplies…" autoFocus style={inputStyle} />
+                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Description *")}</div>
+                    <input value={customDesc} onChange={e => setCustomDesc(e.target.value)} placeholder={say("e.g. Diagnostic fee, Shop supplies…")} autoFocus style={inputStyle} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Type</div>
+                    <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Type")}</div>
                     <select value={customType} onChange={e => setCustomType(e.target.value as 'part' | 'labor' | 'misc')} style={{ ...inputStyle, padding: '8px 10px' }}>
-                      <option value="part">Part</option>
-                      <option value="labor">Labor</option>
-                      <option value="misc">Misc / Fee</option>
+                      <option value="part">{say("Part")}</option>
+                      <option value="labor">{say("Labor")}</option>
+                      <option value="misc">{say("Misc / Fee")}</option>
                     </select>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Unit Price ($)</div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Unit Price ($)")}</div>
                       <input type="number" min={0} step={0.01} value={customPrice}
                         onFocus={e => e.target.select()}
                         onChange={e => setCustomPrice(parseFloat(e.target.value) || 0)}
                         style={{ ...inputStyle, textAlign: 'right' }} />
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Quantity</div>
+                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Quantity")}</div>
                       <input type="number" min={customType === 'labor' ? 0.25 : 1} step={customType === 'labor' ? 0.25 : 1} value={customQty}
                         onFocus={e => e.target.select()}
                         onChange={e => setCustomQty(parseFloat(e.target.value) || 1)}
@@ -1140,14 +1135,13 @@ export default function WorkOrderDetailPage() {
                   </div>
                   {customPrice > 0 && (
                     <div style={{ padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#9aa3b2' }}>Total (×{customQty})</span>
+                      <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Total (×")}{say(customQty)})</span>
                       <span style={{ fontSize: 16, fontWeight: 800, color: '#22c55e' }}>${(customPrice * customQty).toFixed(2)}</span>
                     </div>
                   )}
                   <button onClick={handleAddCustomItem} disabled={!customDesc.trim()}
                     style={{ padding: '10px 16px', background: !customDesc.trim() ? 'rgba(255,255,255,0.04)' : 'rgba(229,51,42,0.18)', border: `1px solid ${!customDesc.trim() ? 'rgba(255,255,255,0.08)' : 'rgba(229,51,42,0.3)'}`, color: !customDesc.trim() ? '#4b5563' : '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: !customDesc.trim() ? 'not-allowed' : 'pointer' }}>
-                    Add Custom Line Item
-                  </button>
+                    {say("Add Custom Line Item")}{' '}</button>
                 </div>
               )}
             </div>
@@ -1160,22 +1154,22 @@ export default function WorkOrderDetailPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setEditPoLine(null)}>
           <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, width: '100%', maxWidth: 420, padding: 20 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#e5e7eb' }}>Edit PO Line Item</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#e5e7eb' }}>{say("Edit PO Line Item")}</span>
               <button onClick={() => setEditPoLine(null)} style={{ background: 'none', border: 'none', color: '#9aa3b2', cursor: 'pointer', fontSize: 16, padding: 4 }}><FaTimes /></button>
             </div>
             <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 16, padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 8 }}>
-              {editPoLine.description}
+              {say(editPoLine.description)}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Your Cost ($)</div>
+                <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Your Cost ($)")}</div>
                 <input type="number" min={0} step={0.01} value={editPoCost}
                   onFocus={e => e.target.select()}
                   onChange={e => setEditPoCost(parseFloat(e.target.value) || 0)}
                   style={{ ...inputStyle, textAlign: 'right' }} />
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Quantity</div>
+                <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{say("Quantity")}</div>
                 <input type="number" min={1} step={1} value={editPoQty}
                   onFocus={e => e.target.select()}
                   onChange={e => setEditPoQty(Math.max(1, parseInt(e.target.value) || 1))}
@@ -1184,11 +1178,11 @@ export default function WorkOrderDetailPage() {
             </div>
             <div style={{ padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280' }}>Unit cost: ${editPoCost.toFixed(2)} + {(shopMarkup * 100).toFixed(0)}% markup</div>
-                <div style={{ fontSize: 11, color: '#6b7280' }}>Customer price: ${(editPoCost * (1 + shopMarkup)).toFixed(2)}/unit</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{say("Unit cost: $")}{editPoCost.toFixed(2)} + {(shopMarkup * 100).toFixed(0)}{say("% markup")}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{say("Customer price: $")}{(editPoCost * (1 + shopMarkup)).toFixed(2)}/unit</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: '#9aa3b2' }}>Total (×{editPoQty})</div>
+                <div style={{ fontSize: 11, color: '#9aa3b2' }}>{say("Total (×")}{say(editPoQty)})</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#22c55e' }}>${(editPoCost * (1 + shopMarkup) * editPoQty).toFixed(2)}</div>
               </div>
             </div>
@@ -1205,8 +1199,7 @@ export default function WorkOrderDetailPage() {
               }
               setEditPoLine(null);
             }} style={{ width: '100%', padding: '10px 16px', background: 'rgba(229,51,42,0.18)', border: '1px solid rgba(229,51,42,0.3)', color: '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-              Apply Price Changes
-            </button>
+              {say("Apply Price Changes")}{' '}</button>
           </div>
         </div>
       )}

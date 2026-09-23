@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -20,6 +21,7 @@ interface TeamMember {
 }
 
 export default function ManagerTeamPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -83,8 +85,7 @@ export default function ManagerTeamPage() {
   if (isLoading)
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
-        Loading...
-      </div>
+        {say("Loading...")}{' '}</div>
     );
   if (!user) return null;
 
@@ -101,11 +102,11 @@ export default function ManagerTeamPage() {
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Team Overview</h1>
-              <p style={{ color: '#94a3b8', marginTop: '4px' }}>View your team's status and assigned work</p>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>{say("Team Overview")}</h1>
+              <p style={{ color: '#94a3b8', marginTop: '4px' }}>{say("View your team's status and assigned work")}</p>
             </div>
             <span style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '6px 14px', color: '#94a3b8', fontSize: '0.85rem' }}>
-              {loadingTeam ? 'Loading members…' : `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}`}
+              {loadingTeam ? say("Loading members…") : `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}`}
             </span>
           </div>
 
@@ -113,7 +114,7 @@ export default function ManagerTeamPage() {
           <div style={{ marginBottom: '20px' }}>
             <input
               type="text"
-              placeholder="Search by name or role..."
+              placeholder={say("Search by name or role...")}
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
@@ -126,11 +127,11 @@ export default function ManagerTeamPage() {
 
           {/* Team grid */}
           {loadingTeam ? (
-            <p style={{ color: '#94a3b8' }}>Loading team...</p>
+            <p style={{ color: '#94a3b8' }}>{say("Loading team...")}</p>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
               <div style={{ fontSize: '3rem', marginBottom: '12px' }}><FaUsers style={{marginRight:4}} /></div>
-              <p style={{ fontSize: '1.1rem' }}>No team members found.</p>
+              <p style={{ fontSize: '1.1rem' }}>{say("No team members found.")}</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
@@ -153,7 +154,7 @@ export default function ManagerTeamPage() {
                       {member.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontWeight: 600, color: '#f1f5f9', fontSize: '1rem' }}>{member.name}</p>
+                      <p style={{ margin: 0, fontWeight: 600, color: '#f1f5f9', fontSize: '1rem' }}>{say(member.name)}</p>
                       <span style={{
                         fontSize: '0.75rem', padding: '2px 8px', borderRadius: '9999px',
                         background: roleColors[member.role]?.bg ?? 'rgba(100,116,139,0.2)',
@@ -171,10 +172,10 @@ export default function ManagerTeamPage() {
                       background: member.status === 'Clocked In' ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.2)',
                       color: member.status === 'Clocked In' ? '#4ade80' : '#94a3b8',
                     }}>
-                      <FaCircle style={{marginRight:4}} /> {member.status}
+                      <FaCircle style={{marginRight:4}} /> {say(member.status)}
                     </span>
                     <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '9999px', background: 'rgba(229,51,42,0.15)', color: '#ff6b64' }}>
-                      <FaFolder style={{marginRight:4}} /> {member.assignedJobs} job{member.assignedJobs !== 1 ? 's' : ''}
+                      <FaFolder style={{marginRight:4}} /> {say(member.assignedJobs)} job{member.assignedJobs !== 1 ? 's' : ''}
                     </span>
                   </div>
 
@@ -182,21 +183,21 @@ export default function ManagerTeamPage() {
                   <div style={{ borderTop: '1px solid #334155', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {member.employeeNumber && (
                       <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>
-                        Employee #: {member.employeeNumber}
+                        {say("Employee #:")}{' '}{say(member.employeeNumber)}
                       </p>
                     )}
                     {member.email && (
                       <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>
-                        <FaEnvelope style={{marginRight:4}} /> {member.email}
+                        <FaEnvelope style={{marginRight:4}} /> {say(member.email)}
                       </p>
                     )}
                     {member.phone && (
                       <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>
-                        <FaPhone style={{marginRight:4}} /> {member.phone}
+                        <FaPhone style={{marginRight:4}} /> {say(member.phone)}
                       </p>
                     )}
                     <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b' }}>
-                      Joined {member.joinedDate}
+                      {say("Joined")}{' '}{say(member.joinedDate)}
                     </p>
                   </div>
                 </div>

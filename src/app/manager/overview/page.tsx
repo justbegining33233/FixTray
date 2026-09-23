@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -17,6 +18,7 @@ interface OverviewStats {
 }
 
 export default function ManagerOverviewPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<OverviewStats | null>(null);
@@ -52,7 +54,7 @@ export default function ManagerOverviewPage() {
     load();
   }, [user]);
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   const cards = stats ? [
@@ -71,16 +73,16 @@ export default function ManagerOverviewPage() {
         <TopNavBar onMenuToggle={() => setSidebarOpen(o => !o)} showMenuButton />
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaChartBar style={{ marginRight: 8 }} />Shop Overview</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaChartBar style={{ marginRight: 8 }} />{say("Shop Overview")}</h1>
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
               {cards.map(c => (
                 <div key={c.label} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
-                  <div style={{ color: c.color, fontSize: 28, marginBottom: 8 }}>{c.icon}</div>
-                  <div style={{ color: '#e5e7eb', fontSize: 32, fontWeight: 700 }}>{c.value}</div>
-                  <div style={{ color: '#9aa3b2', fontSize: 14, marginTop: 4 }}>{c.label}</div>
+                  <div style={{ color: c.color, fontSize: 28, marginBottom: 8 }}>{say(c.icon)}</div>
+                  <div style={{ color: '#e5e7eb', fontSize: 32, fontWeight: 700 }}>{say(c.value)}</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 14, marginTop: 4 }}>{say(c.label)}</div>
                 </div>
               ))}
             </div>

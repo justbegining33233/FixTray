@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useState, useEffect, useRef } from 'react';
 import { FaClock, FaPlay, FaPause, FaStop, FaCheck } from 'react-icons/fa';
 
@@ -32,6 +33,7 @@ export function WorkOrderTimeClock({
   techName,
   onEntryCreated,
 }: WorkOrderTimeClockProps) {
+  const say = usePhrase();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
   const [loading, setLoading] = useState(false);
@@ -243,13 +245,12 @@ export function WorkOrderTimeClock({
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 8 }}>
         <FaClock style={{ color: '#e5332a', fontSize: 18 }} />
         <h3 style={{ margin: 0, color: '#e5e7eb', fontSize: 16, fontWeight: 700 }}>
-          Job Time Tracking
-        </h3>
+          {say("Job Time Tracking")}{' '}</h3>
       </div>
 
       {/* Total time spent */}
       <div style={{ marginBottom: 16, padding: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-        <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>Total Time on This Job</div>
+        <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>{say("Total Time on This Job")}</div>
         <div style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>
           {totalHours.toFixed(2)}h
         </div>
@@ -259,17 +260,16 @@ export function WorkOrderTimeClock({
       {activeEntry ? (
         <div style={{ marginBottom: 16 }}>
           <div style={{ padding: 12, background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>Currently Clocked In</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>{say("Currently Clocked In")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#4ade80', fontFamily: 'monospace' }}>
-              {elapsedTime}
+              {say(elapsedTime)}
             </div>
             <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 6 }}>
-              Started: {new Date(activeEntry.clockIn).toLocaleTimeString()}
+              {say("Started:")}{' '}{new Date(activeEntry.clockIn).toLocaleTimeString()}
             </div>
             {activeEntry.status === 'paused' && (
               <div style={{ fontSize: 12, color: '#f59e0b', marginTop: 4 }}>
-                ⏸ Tracking Paused
-              </div>
+                {say("⏸ Tracking Paused")}{' '}</div>
             )}
           </div>
 
@@ -294,8 +294,7 @@ export function WorkOrderTimeClock({
                   gap: 8,
                 }}
               >
-                <FaPause /> Pause Job
-              </button>
+                <FaPause /> {say("Pause Job")}{' '}</button>
             ) : (
               <button
                 onClick={handleResume}
@@ -316,8 +315,7 @@ export function WorkOrderTimeClock({
                   gap: 8,
                 }}
               >
-                <FaPlay /> Resume Job
-              </button>
+                <FaPlay /> {say("Resume Job")}{' '}</button>
             )}
 
             <button
@@ -339,20 +337,18 @@ export function WorkOrderTimeClock({
                 gap: 8,
               }}
             >
-              <FaStop /> Clock Out
-            </button>
+              <FaStop /> {say("Clock Out")}{' '}</button>
           </div>
         </div>
       ) : (
         <div style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 12, color: '#9aa3b2', marginBottom: 6 }}>
-              Notes (optional)
-            </label>
+              {say("Notes (optional)")}{' '}</label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="e.g., Replaced alternator, diagnosed transmission issue"
+              placeholder={say("e.g., Replaced alternator, diagnosed transmission issue")}
               style={{
                 width: '100%',
                 padding: 10,
@@ -388,8 +384,7 @@ export function WorkOrderTimeClock({
               fontSize: 14,
             }}
           >
-            <FaPlay /> Clock In to Job
-          </button>
+            <FaPlay /> {say("Clock In to Job")}{' '}</button>
         </div>
       )}
 
@@ -405,7 +400,7 @@ export function WorkOrderTimeClock({
             fontSize: 13,
           }}
         >
-          {message.text}
+          {say(message.text)}
         </div>
       )}
 
@@ -413,8 +408,7 @@ export function WorkOrderTimeClock({
       {entries.length > 0 && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ fontSize: 12, color: '#9aa3b2', fontWeight: 600, marginBottom: 10 }}>
-            Job Time History ({entries.length} entries)
-          </div>
+            {say("Job Time History (")}{say(entries.length)} {say("entries)")}{' '}</div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {entries.slice(0, 5).map(entry => (
@@ -431,14 +425,14 @@ export function WorkOrderTimeClock({
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <div>
                     {new Date(entry.clockIn).toLocaleTimeString()} -{' '}
-                    {entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString() : 'Active'}
+                    {entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString() : say("Active")}
                   </div>
                   <div style={{ fontWeight: 700, color: '#22c55e' }}>
                     {entry.hoursSpent?.toFixed(2)}h
                   </div>
                 </div>
                 {entry.notes && (
-                  <div style={{ color: '#9aa3b2', fontSize: 11 }}>Note: {entry.notes}</div>
+                  <div style={{ color: '#9aa3b2', fontSize: 11 }}>{say("Note:")}{' '}{say(entry.notes)}</div>
                 )}
               </div>
             ))}
@@ -446,8 +440,7 @@ export function WorkOrderTimeClock({
 
           {entries.length > 5 && (
             <div style={{ marginTop: 8, fontSize: 11, color: '#9aa3b2', textAlign: 'center' }}>
-              +{entries.length - 5} more entries
-            </div>
+              +{entries.length - 5} {say("more entries")}{' '}</div>
           )}
         </div>
       )}

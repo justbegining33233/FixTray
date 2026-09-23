@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -17,6 +18,7 @@ import {
 import { FaArrowLeft, FaBuilding, FaCalendarAlt, FaCheck, FaExclamationTriangle, FaHourglassHalf, FaPhone, FaStar, FaTimesCircle } from 'react-icons/fa';
 
 export default function ShopDetailsPage() {
+  const say = usePhrase();
   const params = useParams();
   const router = useRouter();
   const { user, isLoading } = useRequireAuth(['admin']);
@@ -123,7 +125,7 @@ export default function ShopDetailsPage() {
       <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}><FaHourglassHalf style={{marginRight:4}} /></div>
-          <div>Loading shop details...</div>
+          <div>{say("Loading shop details...")}</div>
         </div>
       </div>
     );
@@ -134,10 +136,9 @@ export default function ShopDetailsPage() {
       <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}><FaTimesCircle style={{marginRight:4}} /></div>
-          <div style={{ fontSize: 20, marginBottom: 16 }}>{error || 'Shop not found'}</div>
+          <div style={{ fontSize: 20, marginBottom: 16 }}>{error || say("Shop not found")}</div>
           <Link href="/admin/manage-customers" style={{ color: '#3b82f6', textDecoration: 'none' }}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Manage Customers
-          </Link>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Manage Customers")}{' '}</Link>
         </div>
       </div>
     );
@@ -160,17 +161,16 @@ export default function ShopDetailsPage() {
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(34,197,94,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <Link href="/admin/manage-customers" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Manage Customers
-          </Link>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Manage Customers")}{' '}</Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-                <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>{shop.shopName}</h1>
+                <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>{say(shop.shopName)}</h1>
                 <span style={{ padding: '6px 16px', background: `${getStatusColor(shop.status)}20`, color: getStatusColor(shop.status), borderRadius: 8, fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>
-                  {shop.status}
+                  {say(shop.status)}
                 </span>
               </div>
-              <p style={{ fontSize: 14, color: '#9aa3b2' }}>Owner: {shop.ownerName || 'N/A'} - {shop.shopType || 'Auto'} Shop</p>
+              <p style={{ fontSize: 14, color: '#9aa3b2' }}>{say("Owner:")}{' '}{shop.ownerName || say("N/A")} - {shop.shopType || say("Auto")} {say("Shop")}</p>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               {shop.status === 'approved' && (
@@ -179,7 +179,7 @@ export default function ShopDetailsPage() {
                   disabled={actionLoading}
                   style={{ padding: '10px 20px', background: 'rgba(229,51,42,0.2)', color: '#e5332a', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: actionLoading ? 'not-allowed' : 'pointer', opacity: actionLoading ? 0.6 : 1 }}
                 >
-                  {actionLoading ? 'Processing...' : 'Suspend Shop'}
+                  {actionLoading ? say("Processing...") : say("Suspend Shop")}
                 </button>
               )}
               {shop.status === 'suspended' && (
@@ -188,7 +188,7 @@ export default function ShopDetailsPage() {
                   disabled={actionLoading}
                   style={{ padding: '10px 20px', background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: actionLoading ? 'not-allowed' : 'pointer', opacity: actionLoading ? 0.6 : 1 }}
                 >
-                  {actionLoading ? 'Processing...' : 'Reactivate Shop'}
+                  {actionLoading ? say("Processing...") : say("Reactivate Shop")}
                 </button>
               )}
               {shop.status === 'pending' && (
@@ -197,7 +197,7 @@ export default function ShopDetailsPage() {
                   disabled={actionLoading}
                   style={{ padding: '10px 20px', background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: actionLoading ? 'not-allowed' : 'pointer', opacity: actionLoading ? 0.6 : 1 }}
                 >
-                  {actionLoading ? 'Processing...' : 'Approve Shop'}
+                  {actionLoading ? say("Processing...") : say("Approve Shop")}
                 </button>
               )}
             </div>
@@ -210,27 +210,27 @@ export default function ShopDetailsPage() {
         {/* Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Total Work Orders</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>{say("Total Work Orders")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6' }}>{formatShopCount(metrics.totalWorkOrders)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Completed Jobs</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>{say("Completed Jobs")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{formatShopCount(metrics.completedWorkOrders)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Total Revenue</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>{say("Total Revenue")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{formatShopMoney(metrics.totalRevenue)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Technicians</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>{say("Technicians")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#f97316' }}>{formatShopCount(metrics.technicians)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Customers</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>{say("Customers")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#a855f7' }}>{formatShopCount(metrics.customers)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Avg Rating</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>{say("Avg Rating")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24' }}><FaStar style={{marginRight:4}} /> {formatShopRating(metrics.avgRating)}</div>
           </div>
         </div>
@@ -240,22 +240,21 @@ export default function ShopDetailsPage() {
           {/* Contact Information */}
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FaPhone style={{marginRight:4}} /> Contact Information
-            </h3>
+              <FaPhone style={{marginRight:4}} /> {say("Contact Information")}{' '}</h3>
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Email</div>
-                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{shop.email}</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Email")}</div>
+                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{say(shop.email)}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Phone</div>
-                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{shop.phone}</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Phone")}</div>
+                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{say(shop.phone)}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Address</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Address")}</div>
                 <div style={{ fontSize: 14, color: '#e5e7eb' }}>
-                  {shop.address || 'N/A'}<br />
-                  {shop.city}, {shop.state} {shop.zipCode}
+                  {shop.address || say("N/A")}<br />
+                  {say(shop.city)}, {say(shop.state)} {say(shop.zipCode)}
                 </div>
               </div>
             </div>
@@ -264,25 +263,24 @@ export default function ShopDetailsPage() {
           {/* Business Information */}
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FaBuilding style={{marginRight:4}} /> Business Information
-            </h3>
+              <FaBuilding style={{marginRight:4}} /> {say("Business Information")}{' '}</h3>
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Shop Type</div>
-                <div style={{ fontSize: 14, color: '#e5e7eb', textTransform: 'capitalize' }}>{shop.shopType || 'Auto'}</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Shop Type")}</div>
+                <div style={{ fontSize: 14, color: '#e5e7eb', textTransform: 'capitalize' }}>{shop.shopType || say("Auto")}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Business License</div>
-                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{shop.businessLicense || 'Not provided'}</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Business License")}</div>
+                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{shop.businessLicense || say("Not provided")}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Insurance Policy</div>
-                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{shop.insurancePolicy || 'Not provided'}</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Insurance Policy")}</div>
+                <div style={{ fontSize: 14, color: '#e5e7eb' }}>{shop.insurancePolicy || say("Not provided")}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Profile Complete</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Profile Complete")}</div>
                 <div style={{ fontSize: 14, color: shop.profileComplete ? '#22c55e' : '#f59e0b' }}>
-                  {shop.profileComplete ? <><FaCheck style={{marginRight:4}} /> Complete</> : <><FaExclamationTriangle style={{marginRight:4}} /> Incomplete</>}
+                  {shop.profileComplete ? <><FaCheck style={{marginRight:4}} /> {say("Complete")}</> : <><FaExclamationTriangle style={{marginRight:4}} /> {say("Incomplete")}</>}
                 </div>
               </div>
             </div>
@@ -291,16 +289,15 @@ export default function ShopDetailsPage() {
           {/* Account Dates */}
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FaCalendarAlt style={{marginRight:4}} /> Account Timeline
-            </h3>
+              <FaCalendarAlt style={{marginRight:4}} /> {say("Account Timeline")}{' '}</h3>
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Created</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Created")}</div>
                 <div style={{ fontSize: 14, color: '#e5e7eb' }}>{formatShopDateTime(shop.createdAt)}</div>
               </div>
               {shop.approvedAt && (
                 <div>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Approved</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>{say("Approved")}</div>
                   <div style={{ fontSize: 14, color: '#22c55e' }}>{formatShopDateTime(shop.approvedAt)}</div>
                 </div>
               )}
@@ -311,18 +308,18 @@ export default function ShopDetailsPage() {
       {statusConfirm && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
           <div style={{background:'#1e2533',borderRadius:14,padding:32,minWidth:300,maxWidth:420,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
-            <h3 style={{fontSize:18,fontWeight:700,color:'#e5e7eb',marginBottom:12}}>Confirm Action</h3>
-            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:24}}>Are you sure you want to {statusConfirm === 'suspended' ? 'suspend' : 'approve'} this shop?</p>
+            <h3 style={{fontSize:18,fontWeight:700,color:'#e5e7eb',marginBottom:12}}>{say("Confirm Action")}</h3>
+            <p style={{fontSize:14,color:'#9aa3b2',marginBottom:24}}>{say("Are you sure you want to")}{' '}{statusConfirm === 'suspended' ? 'suspend' : 'approve'} {say("this shop?")}</p>
             <div style={{display:'flex',gap:12}}>
-              <button onClick={()=>handleStatusChange(statusConfirm)} disabled={actionLoading} style={{flex:1,padding:'10px 0',background:statusConfirm==='suspended'?'#ef4444':'#22c55e',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>Confirm</button>
-              <button onClick={()=>setStatusConfirm(null)} style={{flex:1,padding:'10px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,cursor:'pointer'}}>Cancel</button>
+              <button onClick={()=>handleStatusChange(statusConfirm)} disabled={actionLoading} style={{flex:1,padding:'10px 0',background:statusConfirm==='suspended'?'#ef4444':'#22c55e',color:'#fff',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer'}}>{say("Confirm")}</button>
+              <button onClick={()=>setStatusConfirm(null)} style={{flex:1,padding:'10px 0',background:'transparent',color:'#9aa3b2',border:'1px solid rgba(255,255,255,0.15)',borderRadius:8,fontSize:14,cursor:'pointer'}}>{say("Cancel")}</button>
             </div>
           </div>
         </div>
       )}
       {shopMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:shopMsg.type==='success'?'#dcfce7':'#fde8e8',color:shopMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {shopMsg.text}
+          {say(shopMsg.text)}
           <button onClick={()=>setShopMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>├ù</button>
         </div>
       )}

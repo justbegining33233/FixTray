@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -60,6 +61,7 @@ function quoteAmount(job: ShopJob): number | null {
 }
 
 function ShopEstimatesContent() {
+  const say = usePhrase();
   useRequireAuth(['shop']);
   const searchParams = useSearchParams();
   const initialWorkOrderId = searchParams?.get('workOrderId') || '';
@@ -224,23 +226,20 @@ function ShopEstimatesContent() {
     >
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
-          <FaClipboardList style={{ marginRight: 8 }} /> Shop Estimates
-        </h1>
+          <FaClipboardList style={{ marginRight: 8 }} /> {say("Shop Estimates")}{' '}</h1>
         <p style={{ fontSize: 14, color: '#9aa3b2', margin: 0 }}>
-          Add parts and labor, then submit. The customer accepts and signs on My Estimates. Submitting a quote does not create a work authorization.
-        </p>
+          {say("Add parts and labor, then submit. The customer accepts and signs on My Estimates. Submitting a quote does not create a work authorization.")}{' '}</p>
       </div>
 
       {loading ? (
-        <div style={{ color: '#e5e7eb', padding: 24 }}>Loading work orders...</div>
+        <div style={{ color: '#e5e7eb', padding: 24 }}>{say("Loading work orders...")}</div>
       ) : (
         <>
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-            <h2 style={{ color: '#e5e7eb', fontSize: 18, margin: '0 0 12px' }}>Open jobs</h2>
+            <h2 style={{ color: '#e5e7eb', fontSize: 18, margin: '0 0 12px' }}>{say("Open jobs")}</h2>
             {jobs.length === 0 ? (
               <p style={{ color: '#f59e0b', margin: 0 }}>
-                No open work orders for this shop. Create an in-shop or roadside job first.
-              </p>
+                {say("No open work orders for this shop. Create an in-shop or roadside job first.")}{' '}</p>
             ) : (
               <div style={{ display: 'grid', gap: 8 }}>
                 {jobs.map((job) => {
@@ -262,15 +261,15 @@ function ShopEstimatesContent() {
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                        <strong>WO-{job.id.slice(0, 8)}</strong>
-                        <span style={{ color: '#9aa3b2', fontSize: 13 }}>{job.status}</span>
+                        <strong>{say("WO-")}{job.id.slice(0, 8)}</strong>
+                        <span style={{ color: '#9aa3b2', fontSize: 13 }}>{say(job.status)}</span>
                       </div>
                       <div style={{ fontSize: 14, marginTop: 4 }}>{customerName(job)}</div>
                       <div style={{ fontSize: 13, color: '#9aa3b2', marginTop: 4 }}>
-                        {issueSummary(job.issueDescription) || 'Service'}
+                        {issueSummary(job.issueDescription) || say("Service")}
                       </div>
                       <div style={{ fontSize: 13, color: amount == null ? '#f59e0b' : '#22c55e', marginTop: 6 }}>
-                        {amount == null ? 'No estimate yet' : `Estimate $${amount.toFixed(2)}`}
+                        {amount == null ? say("No estimate yet") : `Estimate $${amount.toFixed(2)}`}
                       </div>
                     </button>
                   );
@@ -281,39 +280,37 @@ function ShopEstimatesContent() {
 
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 24 }}>
             <h2 style={{ color: '#e5e7eb', fontSize: 20, marginTop: 0 }}>
-              {selected ? `Estimate for ${customerName(selected)}` : 'Select a job to build an estimate'}
+              {selected ? `Estimate for ${customerName(selected)}` : say("Select a job to build an estimate")}
             </h2>
             {selected && (
               <p style={{ color: '#9aa3b2', fontSize: 14 }}>
-                {issueSummary(selected.issueDescription) || 'Service'} ·{' '}
-                <Link href={`/workorders/${selected.id}` as Route} style={{ color: '#e5332a' }}>Open work order</Link>
+                {issueSummary(selected.issueDescription) || say("Service")} ·{' '}
+                <Link href={`/workorders/${selected.id}` as Route} style={{ color: '#e5332a' }}>{say("Open work order")}</Link>
               </p>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ color: '#e5e7eb', fontSize: 16, margin: 0 }}>Line items</h3>
+              <h3 style={{ color: '#e5e7eb', fontSize: 16, margin: 0 }}>{say("Line items")}</h3>
               <button type="button" onClick={addLineItem} disabled={!selectedId} style={{ background: '#22c55e', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', cursor: selectedId ? 'pointer' : 'not-allowed' }}>
-                + Add Item
-              </button>
+                {say("+ Add Item")}{' '}</button>
             </div>
 
             {lineItems.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 28, border: '2px dashed rgba(156,163,175,0.3)', borderRadius: 8 }}>
-                No items yet. Select a job, then add labor or parts.
-              </div>
+                {say("No items yet. Select a job, then add labor or parts.")}{' '}</div>
             ) : (
               <div style={{ display: 'grid', gap: 12 }}>
                 {lineItems.map((item) => (
                   <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '130px 1fr 90px 120px 90px auto', gap: 8, alignItems: 'center' }}>
-                    <select aria-label="Line type" value={item.kind} onChange={(e) => updateLineItem(item.id, 'kind', e.target.value)} style={fieldStyle}>
-                      <option value="labor">Labor</option>
-                      <option value="part">Part</option>
+                    <select aria-label={say("Line type")} value={item.kind} onChange={(e) => updateLineItem(item.id, 'kind', e.target.value)} style={fieldStyle}>
+                      <option value="labor">{say("Labor")}</option>
+                      <option value="part">{say("Part")}</option>
                     </select>
-                    <input aria-label="Description" value={item.description} onChange={(e) => updateLineItem(item.id, 'description', e.target.value)} placeholder="Labor or part description" style={fieldStyle} />
-                    <input aria-label="Quantity" type="number" min="0" step="0.01" value={item.quantity} onChange={(e) => updateLineItem(item.id, 'quantity', e.target.value)} style={fieldStyle} />
-                    <input aria-label="Unit price" type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateLineItem(item.id, 'unitPrice', e.target.value)} style={fieldStyle} />
+                    <input aria-label={say("Description")} value={item.description} onChange={(e) => updateLineItem(item.id, 'description', e.target.value)} placeholder={say("Labor or part description")} style={fieldStyle} />
+                    <input aria-label={say("Quantity")} type="number" min="0" step="0.01" value={item.quantity} onChange={(e) => updateLineItem(item.id, 'quantity', e.target.value)} style={fieldStyle} />
+                    <input aria-label={say("Unit price")} type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateLineItem(item.id, 'unitPrice', e.target.value)} style={fieldStyle} />
                     <div style={{ color: '#22c55e', fontWeight: 700, textAlign: 'right' }}>${item.total.toFixed(2)}</div>
-                    <button type="button" onClick={() => setLineItems((prev) => prev.filter((line) => line.id !== item.id))} style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 8px', cursor: 'pointer' }}>Remove</button>
+                    <button type="button" onClick={() => setLineItems((prev) => prev.filter((line) => line.id !== item.id))} style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 8px', cursor: 'pointer' }}>{say("Remove")}</button>
                   </div>
                 ))}
               </div>
@@ -321,20 +318,18 @@ function ShopEstimatesContent() {
 
             <div style={{ display: 'flex', gap: 16, marginTop: 20, alignItems: 'end' }}>
               <label style={{ color: '#9aa3b2', fontSize: 14 }}>
-                Tax rate (%)
-                <input aria-label="Tax rate" type="number" min="0" step="0.01" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value) || 0)} style={{ ...fieldStyle, display: 'block', width: 100, marginTop: 4 }} />
+                {say("Tax rate (%)")}{' '}<input aria-label={say("Tax rate")} type="number" min="0" step="0.01" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value) || 0)} style={{ ...fieldStyle, display: 'block', width: 100, marginTop: 4 }} />
               </label>
             </div>
 
             <label style={{ display: 'block', color: '#9aa3b2', fontSize: 14, marginTop: 16 }}>
-              Notes
-              <textarea aria-label="Estimate notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ ...fieldStyle, display: 'block', width: '100%', marginTop: 4 }} />
+              {say("Notes")}{' '}<textarea aria-label={say("Estimate notes")} value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ ...fieldStyle, display: 'block', width: '100%', marginTop: 4 }} />
             </label>
 
             <div style={{ marginTop: 16, color: '#e5e7eb' }}>
-              <div>Subtotal: ${subtotal.toFixed(2)}</div>
-              <div>Tax: ${taxAmount.toFixed(2)}</div>
-              <div style={{ color: '#22c55e', fontWeight: 700, fontSize: 18 }}>Total: ${total.toFixed(2)}</div>
+              <div>{say("Subtotal: $")}{subtotal.toFixed(2)}</div>
+              <div>{say("Tax: $")}{taxAmount.toFixed(2)}</div>
+              <div style={{ color: '#22c55e', fontWeight: 700, fontSize: 18 }}>{say("Total: $")}{total.toFixed(2)}</div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
@@ -352,7 +347,7 @@ function ShopEstimatesContent() {
                   cursor: !selectedId || lineItems.length === 0 || submitting ? 'not-allowed' : 'pointer',
                 }}
               >
-                {submitting ? 'Submitting…' : 'Submit Estimate'}
+                {submitting ? say("Submitting…") : say("Submit Estimate")}
               </button>
             </div>
           </div>
@@ -361,7 +356,7 @@ function ShopEstimatesContent() {
 
       {message && (
         <div role="status" style={{ position: 'fixed', bottom: 24, right: 24, background: message.type === 'success' ? '#dcfce7' : '#fde8e8', color: message.type === 'success' ? '#166534' : '#991b1b', borderRadius: 10, padding: '12px 20px', zIndex: 9999, fontWeight: 700 }}>
-          {message.text}
+          {say(message.text)}
         </div>
       )}
     </MobileLayout>
@@ -369,8 +364,9 @@ function ShopEstimatesContent() {
 }
 
 export default function ShopEstimatesPage() {
+  const say = usePhrase();
   return (
-    <Suspense fallback={<div style={{ color: '#e5e7eb', padding: 32 }}>Loading estimates...</div>}>
+    <Suspense fallback={<div style={{ color: '#e5e7eb', padding: 32 }}>{say("Loading estimates...")}</div>}>
       <ShopEstimatesContent />
     </Suspense>
   );

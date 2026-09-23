@@ -780,7 +780,7 @@ export default function MobileShell({
           </button>
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
-              {isHome ? 'FixTray' : (sectionTitle ? say(sectionTitle) : 'FixTray')}
+              {isHome ? say("FixTray") : (sectionTitle ? say(sectionTitle) : say("FixTray"))}
             </div>
             {isHome && (
               <div style={{ fontSize: 9, color: '#718096', marginTop: 1 }}>{say(cfg.roleLabel)}</div>
@@ -797,7 +797,7 @@ export default function MobileShell({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 15, fontWeight: 800,
         }}>
-          {cfg.ico}
+          {say(cfg.ico)}
         </div>
       </div>
 
@@ -828,7 +828,7 @@ export default function MobileShell({
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <span style={{ fontSize: 14 }}>{activeTab.ico}</span>
+              <span style={{ fontSize: 14 }}>{say(activeTab.ico)}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', flex: 1 }}>
                 {say(activeTab.label)}
               </span>
@@ -869,7 +869,7 @@ export default function MobileShell({
                         WebkitTapHighlightColor: 'transparent',
                       }}
                     >
-                      <span style={{ fontSize: 14 }}>{tab.ico}</span>
+                      <span style={{ fontSize: 14 }}>{say(tab.ico)}</span>
                       <span style={{
                         fontSize: 12, fontWeight: active ? 700 : 500,
                         color: active ? accent : '#9ca3af',
@@ -978,7 +978,7 @@ export default function MobileShell({
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
-                  <span style={{ fontSize: 22 }}>{opt.ico}</span>
+                  <span style={{ fontSize: 22 }}>{say(opt.ico)}</span>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{say(opt.title)}</div>
                     <div style={{ fontSize: 10, color: '#718096', marginTop: 1 }}>{say(opt.sub)}</div>
@@ -1057,7 +1057,7 @@ export default function MobileShell({
                 background: accent + '22', border: `1.5px solid ${accent}55`, color: accent,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 20, marginBottom: 8,
-              }}>{cfg.ico}</div>
+              }}>{say(cfg.ico)}</div>
               <div style={{ fontSize: 14, fontWeight: 800 }}>{userName || say(cfg.roleLabel)}</div>
               <div style={{ fontSize: 10, color: '#718096', marginTop: 2 }}>{say(cfg.roleLabel)}</div>
             </div>
@@ -1087,13 +1087,13 @@ export default function MobileShell({
                         WebkitTapHighlightColor: 'transparent',
                       }}
                     >
-                      <span style={{ fontSize: 14, width: 20, textAlign: 'center', flexShrink: 0 }}>{item.ico}</span>
+                      <span style={{ fontSize: 14, width: 20, textAlign: 'center', flexShrink: 0 }}>{say(item.ico)}</span>
                       <span style={{ flex: 1 }}>{say(item.label)}</span>
                       {item.badge != null && (
                         <span style={{
                           background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 800,
                           borderRadius: 8, padding: '1px 5px',
-                        }}>{item.badge}</span>
+                        }}>{say(item.badge)}</span>
                       )}
                     </button>
                   ))}
@@ -1191,9 +1191,9 @@ function TileGrid({ cfg, onTile }: { cfg: RoleConfig; accent?: string; onTile: (
                 borderRadius: 10, fontSize: 9, fontWeight: 800,
                 padding: '1px 6px', minWidth: 16, textAlign: 'center',
                 border: '1.5px solid rgba(0,0,0,0.3)',
-              }}>{tile.badge}</div>
+              }}>{say(tile.badge)}</div>
             )}
-            <div style={{ fontSize: tile.span2 ? 22 : 24, marginBottom: tile.span2 ? 0 : 8 }}>{tile.ico}</div>
+            <div style={{ fontSize: tile.span2 ? 22 : 24, marginBottom: tile.span2 ? 0 : 8 }}>{say(tile.ico)}</div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{say(tile.name)}</div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{say(tile.sub)}</div>
@@ -1237,7 +1237,7 @@ function FooterBtn({
           background: 'currentColor',
         }} />
       )}
-      <span style={{ fontSize: 21, transform: isActive ? 'scale(1.1)' : 'none' }}>{item.ico}</span>
+      <span style={{ fontSize: 21, transform: isActive ? 'scale(1.1)' : 'none' }}>{say(item.ico)}</span>
       <span>{say(item.label)}</span>
       {item.badge != null && Number(item.badge) > 0 && (
         <div style={{
@@ -1247,7 +1247,7 @@ function FooterBtn({
           fontSize: 7, fontWeight: 800,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           border: '1.5px solid #060709',
-        }}>{item.badge}</div>
+        }}>{say(item.badge)}</div>
       )}
     </button>
   );

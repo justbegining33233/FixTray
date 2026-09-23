@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { FaArrowRight, FaCreditCard, FaLink } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
@@ -203,6 +204,7 @@ const CATEGORY_CONFIG: Array<{ id: CategoryId; label: string; note?: string }> =
 const FIXTRAY_AGREEMENT_VERSION = '2026-06-01';
 
 export default function CompleteProfile() {
+  const say = usePhrase();
   const { user, isLoading: _isLoading } = useRequireAuth(['shop']);
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -368,19 +370,17 @@ export default function CompleteProfile() {
     return (
       <div style={{minHeight:'100vh', background: 'transparent'}}>
         <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-          <Link href="/" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
-          <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>Step 2 of 2  -  Connect Payout Account (Optional)</div>
+          <Link href="/" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
+          <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{say("Step 2 of 2  -  Connect Payout Account (Optional)")}</div>
         </div>
         <div style={{maxWidth:600, margin:'0 auto', padding:48}}>
           <div style={{background:'rgba(0,0,0,0.2)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:16, padding:40, textAlign:'center'}}>
             <div style={{fontSize:56, marginBottom:16}}><FaCreditCard /></div>
-            <h2 style={{fontSize:26, fontWeight:800, color:'#e5e7eb', marginBottom:12}}>Connect Your Stripe Account</h2>
+            <h2 style={{fontSize:26, fontWeight:800, color:'#e5e7eb', marginBottom:12}}>{say("Connect Your Stripe Account")}</h2>
             <p style={{color:'#9aa3b2', fontSize:15, marginBottom:8, lineHeight:1.6}}>
-              Connect your Stripe account to receive customer payments directly into your bank account. You can do this later from your settings.
-            </p>
+              {say("Connect your Stripe account to receive customer payments directly into your bank account. You can do this later from your settings.")}{' '}</p>
             <p style={{color:'#9aa3b2', fontSize:14, marginBottom:32, lineHeight:1.6}}>
-              When a customer pays a work order, Stripe sends the full repair amount straight to you. FixTray only collects a separate $5 service fee added on top  -  your money never passes through us.
-            </p>
+              {say("When a customer pays a work order, Stripe sends the full repair amount straight to you. FixTray only collects a separate $5 service fee added on top  -  your money never passes through us.")}{' '}</p>
             <button
               onClick={handleConnectStripe}
               disabled={stripeLoading}
@@ -398,7 +398,7 @@ export default function CompleteProfile() {
                 marginBottom:12,
               }}
             >
-              {stripeLoading ? 'Connecting...' : <><FaLink style={{marginRight:8}} />Connect with Stripe</>}
+              {stripeLoading ? say("Connecting...") : <><FaLink style={{marginRight:8}} />{say("Connect with Stripe")}</>}
             </button>
             <button
               onClick={() => { router.push('/shop/admin' as Route); }}
@@ -416,11 +416,10 @@ export default function CompleteProfile() {
                 marginBottom:16,
               }}
             >
-              Skip for now <FaArrowRight style={{marginRight:4}} />
+              {say("Skip for now")}{' '}<FaArrowRight style={{marginRight:4}} />
             </button>
             <p style={{color:'#6b7280', fontSize:12}}>
-              You'll be taken to Stripe's secure onboarding. Once complete you'll be redirected back to your dashboard.
-            </p>
+              {say("You'll be taken to Stripe's secure onboarding. Once complete you'll be redirected back to your dashboard.")}{' '}</p>
           </div>
         </div>
       </div>
@@ -431,30 +430,28 @@ export default function CompleteProfile() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-        <Link href="/" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
-        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>Step 1 of 2  -  Complete Your Shop Profile</div>
+        <Link href="/" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
+        <div style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{say("Step 1 of 2  -  Complete Your Shop Profile")}</div>
       </div>
 
       <div style={{maxWidth:900, margin:'0 auto', padding:32}}>
         <div style={{background:'rgba(0,0,0,0.2)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:32}}>
           <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>
-            Welcome! Let's Complete Your Shop Profile
-          </h1>
+            {say("Welcome! Let's Complete Your Shop Profile")}{' '}</h1>
           <p style={{color:'#9aa3b2', marginBottom:32}}>
-            Please provide the following information to activate your shop account. Choose one of the seven shop categories below.
-          </p>
+            {say("Please provide the following information to activate your shop account. Choose one of the seven shop categories below.")}{' '}</p>
 
           <form onSubmit={handleSubmit}>
             {/* Business License */}
             <div style={{marginBottom:24}}>
               <label style={{display:'block', color:'#e5e7eb', fontWeight:600, marginBottom:8}}>
-                Business License Number <span style={{color:'#e5332a'}}>*</span>
+                {say("Business License Number")}{' '}<span style={{color:'#e5332a'}}>*</span>
               </label>
               <input
                 type="text"
                 value={formData.businessLicense}
                 onChange={(e) => setFormData({...formData, businessLicense: e.target.value})}
-                placeholder="Enter your business license number"
+                placeholder={say("Enter your business license number")}
                 style={{
                   width:'100%',
                   padding:'12px 16px',
@@ -471,13 +468,13 @@ export default function CompleteProfile() {
             {/* Insurance Policy */}
             <div style={{marginBottom:24}}>
               <label style={{display:'block', color:'#e5e7eb', fontWeight:600, marginBottom:8}}>
-                Insurance Policy Number <span style={{color:'#e5332a'}}>*</span>
+                {say("Insurance Policy Number")}{' '}<span style={{color:'#e5332a'}}>*</span>
               </label>
               <input
                 type="text"
                 value={formData.insurancePolicy}
                 onChange={(e) => setFormData({...formData, insurancePolicy: e.target.value})}
-                placeholder="Enter your insurance policy number"
+                placeholder={say("Enter your insurance policy number")}
                 style={{
                   width:'100%',
                   padding:'12px 16px',
@@ -494,11 +491,10 @@ export default function CompleteProfile() {
             {/* Number of Bays */}
             <div style={{marginBottom:24}}>
               <label style={{display:'block', color:'#e5e7eb', fontWeight:600, marginBottom:8}}>
-                Number of Service Bays <span style={{color:'#e5332a'}}>*</span>
+                {say("Number of Service Bays")}{' '}<span style={{color:'#e5332a'}}>*</span>
               </label>
               <p style={{color:'#9aa3b2', fontSize:13, marginBottom:8}}>
-                How many vehicles can you work on at the same time? This determines bay availability in your shop overview.
-              </p>
+                {say("How many vehicles can you work on at the same time? This determines bay availability in your shop overview.")}{' '}</p>
               <input
                 type="number"
                 min={1}
@@ -523,7 +519,7 @@ export default function CompleteProfile() {
             {/* Shop Type */}
             <div style={{marginBottom:24}}>
               <label style={{display:'block', color:'#e5e7eb', fontWeight:600, marginBottom:8}}>
-                Shop Type <span style={{color:'#e5332a'}}>*</span>
+                {say("Shop Type")}{' '}<span style={{color:'#e5332a'}}>*</span>
               </label>
               <select
                 value={formData.shopType}
@@ -539,14 +535,14 @@ export default function CompleteProfile() {
                   colorScheme:'dark'
                 }}
               >
-                <option value="diesel">Diesel / Heavy-Duty Services</option>
-                <option value="gas">Gas / Automotive Services</option>
-                <option value="small-engine">Small Engine Services</option>
-                <option value="heavy-equipment">Heavy Equipment Services</option>
-                <option value="resurfacing">Resurfacing / Machining</option>
-                <option value="welding">Welding & Fabrication</option>
-                <option value="tire">Tire Shop Services</option>
-                <option value="mixed">Mixed / Multi-Category</option>
+                <option value="diesel">{say("Diesel / Heavy-Duty Services")}</option>
+                <option value="gas">{say("Gas / Automotive Services")}</option>
+                <option value="small-engine">{say("Small Engine Services")}</option>
+                <option value="heavy-equipment">{say("Heavy Equipment Services")}</option>
+                <option value="resurfacing">{say("Resurfacing / Machining")}</option>
+                <option value="welding">{say("Welding & Fabrication")}</option>
+                <option value="tire">{say("Tire Shop Services")}</option>
+                <option value="mixed">{say("Mixed / Multi-Category")}</option>
               </select>
             </div>
 
@@ -568,7 +564,7 @@ export default function CompleteProfile() {
                 return (
                   <div key={cat.id}>
                     <label style={{display:'block', color:'#e5e7eb', fontWeight:600, marginBottom:12}}>
-                      {cat.label} <span style={{color:'#e5332a'}}>*</span>
+                      {say(cat.label)} <span style={{color:'#e5332a'}}>*</span>
                     </label>
                     <div style={{
                       background:'rgba(0,0,0,0.3)',
@@ -587,7 +583,7 @@ export default function CompleteProfile() {
                               onChange={() => handleServiceToggle(service, cat.id)}
                               style={{cursor:'pointer'}}
                             />
-                            <span style={{fontSize:14}}>{service}</span>
+                            <span style={{fontSize:14}}>{say(service)}</span>
                           </label>
                         ))}
                       </div>
@@ -599,14 +595,12 @@ export default function CompleteProfile() {
 
             <div style={{ marginBottom: 24, padding: 16, borderRadius: 10, background: 'rgba(229,51,42,0.10)', border: '1px solid rgba(229,51,42,0.35)' }}>
               <label style={{display:'block', color:'#e5e7eb', fontWeight:600, marginBottom:8}}>
-                FixTray Shop Agreement <span style={{color:'#e5332a'}}>*</span>
+                {say("FixTray Shop Agreement")}{' '}<span style={{color:'#e5332a'}}>*</span>
               </label>
               <p style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 10, lineHeight: 1.6 }}>
-                By signing, you confirm your shop details are accurate, you are authorized to operate this business,
-                and you agree to use FixTray in compliance with applicable laws and customer data requirements.
-              </p>
+                {say("By signing, you confirm your shop details are accurate, you are authorized to operate this business,\n                and you agree to use FixTray in compliance with applicable laws and customer data requirements.")}{' '}</p>
               <p style={{ color: '#9aa3b2', fontSize: 12, marginBottom: 12 }}>
-                Agreement version: {FIXTRAY_AGREEMENT_VERSION}
+                {say("Agreement version:")}{' '}{say(FIXTRAY_AGREEMENT_VERSION)}
               </p>
               <label style={{display:'flex', alignItems:'center', gap:8, color:'#e5e7eb', marginBottom:12, cursor:'pointer'}}>
                 <input
@@ -615,13 +609,12 @@ export default function CompleteProfile() {
                   onChange={(e) => setFormData({...formData, agreementAccepted: e.target.checked})}
                   style={{cursor:'pointer'}}
                 />
-                I have read and accept the FixTray Shop Agreement.
-              </label>
+                {say("I have read and accept the FixTray Shop Agreement.")}{' '}</label>
               <input
                 type="text"
                 value={formData.agreementSignature}
                 onChange={(e) => setFormData({...formData, agreementSignature: e.target.value})}
-                placeholder="Type your full legal name as your digital signature"
+                placeholder={say("Type your full legal name as your digital signature")}
                 style={{
                   width:'100%',
                   padding:'12px 16px',
@@ -651,11 +644,11 @@ export default function CompleteProfile() {
                 fontWeight:700
               }}
             >
-              {submitting ? 'Completing Profile...' : 'Complete Profile & Continue'}
+              {submitting ? say("Completing Profile...") : say("Complete Profile & Continue")}
             </button>
             {submitError && (
               <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '12px 16px', marginTop: 12, color: '#ef4444', fontSize: 14 }}>
-                {submitError}
+                {say(submitError)}
               </div>
             )}
           </form>

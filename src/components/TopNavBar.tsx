@@ -345,7 +345,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         whiteSpace: 'nowrap',
         letterSpacing: '0.02em',
       }}>
-        <span style={{ fontSize: 11 }}>{role.icon}</span>
+        <span style={{ fontSize: 11 }}>{say(role.icon)}</span>
         <span>{say(role.label)}</span>
       </span>
     );
@@ -541,12 +541,12 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           gap: 8,
         }}
         type="button"
-        aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
+        aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : say("Notifications")}
         aria-expanded={showNotifications}
         aria-haspopup="true"
-        title={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'No new notifications'}
+        title={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : say("No new notifications")}
       >
-        <span role="img" aria-label="Notifications">
+        <span role="img" aria-label={say("Notifications")}>
           <FaBell style={{
             marginRight: 4,
             color: unreadCount > 0 ? '#ef4444' : '#e5e7eb'
@@ -658,7 +658,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                         lineHeight: 1.3,
                         opacity: n.read ? 0.8 : 1,
                       }}>
-                        {n.title}
+                        {say(n.title)}
                       </div>
                       <span style={{
                         color: '#9ca3af',
@@ -666,7 +666,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                         whiteSpace: 'nowrap',
                         opacity: n.read ? 0.6 : 0.8,
                       }}>
-                        {n.time}
+                        {say(n.time)}
                       </span>
                     </div>
                     <div style={{
@@ -676,7 +676,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                       marginBottom: 6,
                       opacity: n.read ? 0.7 : 0.9,
                     }}>
-                      {n.body}
+                      {say(n.body)}
                     </div>
                     <div style={{
                       color: '#93c5fd',
@@ -772,7 +772,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           {showMenuButton && (
             <button
               onClick={onMenuToggle}
-              aria-label="Toggle menu"
+              aria-label={say("Toggle menu")}
               style={{
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.10)',
@@ -800,8 +800,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
               letterSpacing: '-0.4px',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}>
-              FixTray
-            </span>
+              {say("FixTray")}{' '}</span>
           </Link>
 
           {shopName && (
@@ -819,7 +818,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
               textOverflow: 'ellipsis',
               maxWidth: 120,
             }}>
-              {shopName}
+              {say(shopName)}
             </div>
           )}
           {activeRole === 'shop' && <ShopSwitcher />}
@@ -868,7 +867,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
               }}>
                 {displayUserName.charAt(0).toUpperCase()}
               </span>
-              <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayUserName}</span>
+              <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{say(displayUserName)}</span>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: liveIndicator ? '#22c55e' : '#475569', display: 'inline-block', flexShrink: 0 }} />
               <span style={{ fontSize: 14 }}><FaCaretDown style={{marginRight:4}} /></span>
             </button>
@@ -905,7 +904,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {displayUserName}
+                        {say(displayUserName)}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                         {getRoleBadge()}
@@ -1070,8 +1069,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       </div>
       {navMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:navMsg.type==='success'?'#dcfce7':'#fde8e8',color:navMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {navMsg.text}
-          <button aria-label="Dismiss" onClick={()=>setNavMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          {say(navMsg.text)}
+          <button aria-label={say("Dismiss")} onClick={()=>setNavMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}
     </nav>

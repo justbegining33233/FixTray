@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -21,6 +22,7 @@ type Deployment = {
 };
 
 export default function SuperAdminDeployments() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [currentVersion, setCurrentVersion] = useState('unknown');
@@ -85,8 +87,8 @@ export default function SuperAdminDeployments() {
             <FaArrowLeft className="w-4 h-4 text-[#94a3b8]" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-white">Deployments</h1>
-            <p className="text-[#94a3b8] mt-1">Release history &amp; deployment status</p>
+            <h1 className="text-3xl font-bold text-white">{say("Deployments")}</h1>
+            <p className="text-[#94a3b8] mt-1">{say("Release history &amp; deployment status")}</p>
           </div>
           <button
             onClick={fetchDeployments}
@@ -95,8 +97,7 @@ export default function SuperAdminDeployments() {
             style={{ background: '#e5332a' }}
           >
             <FaSyncAlt className={`w-3.5 h-3.5 ${dataLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+            {say("Refresh")}{' '}</button>
         </div>
 
         {/* Current Version */}
@@ -106,24 +107,24 @@ export default function SuperAdminDeployments() {
               <FaRocket className="w-7 h-7 text-white" />
             </div>
             <div>
-              <p className="text-sm text-[#ff6b64] font-medium">Current Version</p>
-              <p className="text-2xl font-bold text-white">{currentVersion}</p>
-              <p className="text-sm text-[#94a3b8]">FixTray Work Order Platform</p>
+              <p className="text-sm text-[#ff6b64] font-medium">{say("Current Version")}</p>
+              <p className="text-2xl font-bold text-white">{say(currentVersion)}</p>
+              <p className="text-sm text-[#94a3b8]">{say("FixTray Work Order Platform")}</p>
             </div>
           </div>
         </div>
 
         {error && (
           <div className="rounded-xl p-4 mb-6 text-sm text-red-300 border border-red-500/30 bg-red-500/10">
-            {error}
+            {say(error)}
           </div>
         )}
 
         {/* Deployment History */}
         <div className="rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
-          <h2 className="text-lg font-semibold text-white mb-4">Deployment History</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">{say("Deployment History")}</h2>
           {deployments.length === 0 ? (
-            <p className="text-sm text-[#94a3b8]">No deployment history available yet.</p>
+            <p className="text-sm text-[#94a3b8]">{say("No deployment history available yet.")}</p>
           ) : (
             <div className="space-y-4">
               {deployments.map(dep => {
@@ -136,25 +137,25 @@ export default function SuperAdminDeployments() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-[#f1f5f9]">{dep.version}</span>
+                      <span className="font-semibold text-[#f1f5f9]">{say(dep.version)}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sc.bg} ${sc.color}`}>
-                        {dep.status}
+                        {say(dep.status)}
                       </span>
                       <span className="text-xs text-[#64748b] bg-[rgba(255,255,255,0.06)] px-2 py-0.5 rounded-full">
-                        {dep.environment}
+                        {say(dep.environment)}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-[#94a3b8] mt-1">
-                      <span>by {dep.deployer}</span>
+                      <span>by {say(dep.deployer)}</span>
                       {dep.duration && (
                         <span className="flex items-center gap-1">
-                          <FaClock className="w-3 h-3" /> {dep.duration}
+                          <FaClock className="w-3 h-3" /> {say(dep.duration)}
                         </span>
                       )}
                       <span className="flex items-center gap-1">
                         <FaCalendarAlt className="w-3 h-3" /> {new Date(dep.timestamp).toLocaleDateString()}
                       </span>
-                      {dep.source && <span>{dep.source}</span>}
+                      {dep.source && <span>{say(dep.source)}</span>}
                     </div>
                   </div>
                 </div>

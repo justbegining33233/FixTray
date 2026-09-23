@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, type FormEvent } from 'react';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
@@ -19,6 +20,7 @@ interface WorkOrderTemplate {
 }
 
 export default function ManagerTemplatesPage() {
+  const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [templates, setTemplates] = useState<WorkOrderTemplate[]>([]);
@@ -74,7 +76,7 @@ export default function ManagerTemplatesPage() {
     load();
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>Loading...</div>;
+  if (isLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
   return (
@@ -85,37 +87,37 @@ export default function ManagerTemplatesPage() {
         <main style={{ flex: 1, padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 24px' }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: 0 }}>Work Order Templates</h1>
-            <button type="button" onClick={() => { setShowForm((open) => !open); setFormError(''); }} style={{ padding: '10px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{showForm ? 'Close' : 'Create Template'}</button>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: 0 }}>{say("Work Order Templates")}</h1>
+            <button type="button" onClick={() => { setShowForm((open) => !open); setFormError(''); }} style={{ padding: '10px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{showForm ? say("Close") : say("Create Template")}</button>
           </div>
           {showForm && (
             <form onSubmit={createTemplate} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 20, display: 'grid', gap: 12 }}>
-              <p style={{ margin: 0, color: '#9aa3b2', fontSize: 13 }}>Managers can create templates for this shop. Name and service type are required.</p>
-              <input required aria-label="Template name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Template name" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
+              <p style={{ margin: 0, color: '#9aa3b2', fontSize: 13 }}>{say("Managers can create templates for this shop. Name and service type are required.")}</p>
+              <input required aria-label={say("Template name")} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={say("Template name")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
               {services.length > 0 ? (
-                <select required aria-label="Service type" value={form.serviceType} onChange={(e) => setForm((f) => ({ ...f, serviceType: e.target.value }))} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: '#111', color: '#e5e7eb' }}>
-                  {services.map((name) => <option key={name} value={name}>{name}</option>)}
+                <select required aria-label={say("Service type")} value={form.serviceType} onChange={(e) => setForm((f) => ({ ...f, serviceType: e.target.value }))} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: '#111', color: '#e5e7eb' }}>
+                  {services.map((name) => <option key={name} value={name}>{say(name)}</option>)}
                 </select>
               ) : (
-                <input required aria-label="Service type" value={form.serviceType} onChange={(e) => setForm((f) => ({ ...f, serviceType: e.target.value }))} placeholder="Service type" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
+                <input required aria-label={say("Service type")} value={form.serviceType} onChange={(e) => setForm((f) => ({ ...f, serviceType: e.target.value }))} placeholder={say("Service type")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
               )}
-              <textarea aria-label="Description" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Description" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
-              {formError && <div style={{ color: '#fca5a5', fontSize: 13 }}>{formError}</div>}
-              <button type="submit" disabled={saving} style={{ padding: '10px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Template'}</button>
+              <textarea aria-label={say("Description")} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder={say("Description")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e5e7eb' }} />
+              {formError && <div style={{ color: '#fca5a5', fontSize: 13 }}>{say(formError)}</div>}
+              <button type="submit" disabled={saving} style={{ padding: '10px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{saving ? say("Saving...") : say("Save Template")}</button>
             </form>
           )}
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>Loading...</div>
+            <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : templates.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
               <FaClipboardList style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-              <p>No templates created yet. Use Create Template to add one for this shop.</p>
+              <p>{say("No templates created yet. Use Create Template to add one for this shop.")}</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
               {templates.map(t => (
                 <div key={t.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
-                  <h3 style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16, marginBottom: 8 }}><FaWrench style={{ marginRight: 6, color: '#e5332a' }} />{t.name}</h3>
+                  <h3 style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16, marginBottom: 8 }}><FaWrench style={{ marginRight: 6, color: '#e5332a' }} />{say(t.name)}</h3>
                   <p style={{ color: '#9aa3b2', fontSize: 13, marginBottom: 8 }}>{t.description || t.serviceType}</p>
                   <div style={{ display: 'flex', gap: 16, color: '#6b7280', fontSize: 13 }}>
                     <span><FaDollarSign /> ${t.estimatedCost?.toFixed(2) || '0.00'}</span>

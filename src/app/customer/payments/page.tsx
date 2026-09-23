@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -29,6 +30,7 @@ interface Summary {
 }
 
 export default function Payments() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [summary, setSummary] = useState<Summary>({ totalPaid: 0, totalPending: 0, paidCount: 0, pendingCount: 0 });
@@ -95,45 +97,44 @@ export default function Payments() {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <Link href="/customer/dashboard" style={{ fontSize: 24, fontWeight: 900, color: '#e5332a', textDecoration: 'none' }}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{ fontSize: 24, fontWeight: 900, color: '#e5332a', textDecoration: 'none' }}>{say("FixTray")}</Link>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>Customer Portal</div>
-            <div style={{ fontSize: 12, color: '#9aa3b2' }}>Payments</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>{say("Customer Portal")}</div>
+            <div style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Payments")}</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link href="/customer/dashboard" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>Dashboard</Link>
-          <Link href="/customer/recurring-approvals" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>Pending Services</Link>
+          <Link href="/customer/dashboard" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>{say("Dashboard")}</Link>
+          <Link href="/customer/recurring-approvals" style={{ fontSize: 13, color: '#9aa3b2', textDecoration: 'none' }}>{say("Pending Services")}</Link>
           <button onClick={handleSignOut} style={{ padding: '8px 16px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, color: '#e5e7eb', marginBottom: 32 }}>Payment History</h1>
+        <h1 style={{ fontSize: 32, fontWeight: 700, color: '#e5e7eb', marginBottom: 32 }}>{say("Payment History")}</h1>
 
         {/* Summary Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24, marginBottom: 32 }}>
           <div style={{ background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>Total Paid</div>
+            <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>{say("Total Paid")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#e5332a' }}>${summary.totalPaid.toFixed(2)}</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>{summary.paidCount} transactions</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>{say(summary.paidCount)} transactions</div>
           </div>
           <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>Pending</div>
+            <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>{say("Pending")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#f59e0b' }}>${summary.totalPending.toFixed(2)}</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>{summary.pendingCount} payments due</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>{say(summary.pendingCount)} {say("payments due")}</div>
           </div>
           <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>Total Work Orders</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{payments.length}</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>All time</div>
+            <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>{say("Total Work Orders")}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{say(payments.length)}</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>{say("All time")}</div>
           </div>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: '#9aa3b2' }}>Loading payments...</div>
+          <div style={{ textAlign: 'center', padding: 60, color: '#9aa3b2' }}>{say("Loading payments...")}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {payments.map((payment) => (
@@ -141,15 +142,14 @@ export default function Payments() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}>
-                      {payment.status === 'Paid' ? `$${payment.amountPaid.toFixed(2)} paid` : `$${payment.amount.toFixed(2)} due`}
+                      {payment.status === "Paid" ? `$${payment.amountPaid.toFixed(2)} paid` : `$${payment.amount.toFixed(2)} due`}
                     </div>
-                    <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 4 }}>{payment.service}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{payment.shop}  {payment.vehicle}</div>
+                    <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 4 }}>{say(payment.service)}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{say(payment.shop)}  {say(payment.vehicle)}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{formatDate(payment.date)}</div>
-                    {payment.status === 'Pending' && payment.amount > 0 && (
+                    {payment.status === "Pending" && payment.amount > 0 && (
                       <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                        Service ${payment.serviceCost.toFixed(2)} + FixTray fee $5.00
-                      </div>
+                        {say("Service $")}{payment.serviceCost.toFixed(2)} {say("+ FixTray fee $5.00")}{' '}</div>
                     )}
                   </div>
                   <span style={{
@@ -160,7 +160,7 @@ export default function Payments() {
                     fontSize: 12,
                     fontWeight: 600,
                   }}>
-                    {payment.status}
+                    {say(payment.status)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -175,8 +175,7 @@ export default function Payments() {
                     textDecoration: 'none',
                     cursor: 'pointer',
                   }}>
-                    View Work Order
-                  </Link>
+                    {say("View Work Order")}{' '}</Link>
                   {payment.canPay && (
                     <button
                       onClick={() => handlePay(payment.id)}
@@ -192,7 +191,7 @@ export default function Payments() {
                         cursor: paying === payment.id ? 'not-allowed' : 'pointer',
                       }}
                     >
-                      {paying === payment.id ? 'Redirecting...' : `Pay $${payment.amount.toFixed(2)} Securely`}
+                      {paying === payment.id ? say("Redirecting...") : `Pay $${payment.amount.toFixed(2)} Securely`}
                     </button>
                   )}
                 </div>
@@ -201,8 +200,7 @@ export default function Payments() {
 
             {payments.length === 0 && (
               <div style={{ textAlign: 'center', padding: 40, color: '#9aa3b2' }}>
-                No payment history yet. When your shop completes work and adds an estimate, it will appear here.
-              </div>
+                {say("No payment history yet. When your shop completes work and adds an estimate, it will appear here.")}{' '}</div>
             )}
           </div>
         )}
@@ -212,20 +210,18 @@ export default function Payments() {
             padding: '12px 24px', background: '#e5332a', color: 'white', borderRadius: 8,
             fontSize: 16, fontWeight: 600, textDecoration: 'none',
           }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
 
         <div style={{ marginTop: 24, padding: 16, background: 'rgba(0,0,0,0.2)', borderRadius: 8, textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: '#9aa3b2' }}>
-            <FaLock style={{marginRight:4}} /> Secured by Stripe  PCI DSS Compliant  256-bit SSL Encryption
-          </div>
+            <FaLock style={{marginRight:4}} /> {say("Secured by Stripe  PCI DSS Compliant  256-bit SSL Encryption")}{' '}</div>
         </div>
       </div>
 
       {payError && (
         <div style={{position:'fixed',bottom:24,right:24,background:'#fde8e8',color:'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {payError}
+          {say(payError)}
           <button onClick={()=>setPayError('')} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}

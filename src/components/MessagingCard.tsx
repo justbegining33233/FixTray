@@ -320,7 +320,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
             })}
           </select>
           <span style={{ fontSize: 11, color: '#6b7280' }}>
-            {filteredConversations.length} {say(filteredConversations.length === 1 ? 'thread' : 'threads')}
+            {say(filteredConversations.length)} {say(filteredConversations.length === 1 ? 'thread' : 'threads')}
           </span>
         </div>
       </div>
@@ -346,15 +346,15 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               return (
                 <button type="button" key={`${conv.contactRole}_${conv.contactId}`} onClick={() => handleSelectConversation(conv)}
                   style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{icon}</span>
+                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{say(icon)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: '#e5e7eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>
-                        {conv.contactName}
+                        {say(conv.contactName)}
                       </span>
                       {conv.unreadCount > 0 && (
                         <span style={{ background: '#e5332a', color: 'white', borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                          {conv.unreadCount}
+                          {say(conv.unreadCount)}
                         </span>
                       )}
                     </div>
@@ -362,7 +362,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                       {say(ROLE_LABEL[conv.contactRole] ?? conv.contactRole)}
                     </span>
                     <div style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {preview.length > 40 ? preview.slice(0, 40) + '...' : preview || 'Open thread'}
+                      {preview.length > 40 ? preview.slice(0, 40) + '...' : preview || say("Open thread")}
                     </div>
                     <div style={{ fontSize: 9, color: '#4b5563', marginTop: 2 }}>
                       {new Date(conv.lastMessageAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -398,8 +398,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                   <div style={{ color: '#6b7280', fontSize: 12 }}>{say('Loading contacts...')}</div>
                 ) : filteredAvailableContacts.length === 0 ? (
                   <div style={{ color: '#f59e0b', fontSize: 13, padding: '10px 12px', background: 'rgba(245,158,11,0.08)', borderRadius: 8 }}>
-                    No contacts in this category yet.
-                  </div>
+                    {say("No contacts in this category yet.")}{' '}</div>
                 ) : (
                   <select
                     value={newRecipient ? `${newRecipient.role}_${newRecipient.id}` : ''}
@@ -412,10 +411,10 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                       setNewRecipient(filteredAvailableContacts.find((c) => c.id === id && c.role === role) ?? null);
                     }}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13 }}>
-                    <option value=''> -  Select recipient  - </option>
+                    <option value=''> {say("-  Select recipient  -")}{' '}</option>
                     {filteredAvailableContacts.map((c) => (
                       <option key={`${c.role}_${c.id}`} value={`${c.role}_${c.id}`}>
-                        {c.name} ({say(ROLE_LABEL[c.role] ?? c.role)}) — {say(c.contextLabel)}
+                        {say(c.name)} ({say(ROLE_LABEL[c.role] ?? c.role)}) — {say(c.contextLabel)}
                       </option>
                     ))}
                   </select>
@@ -436,8 +435,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                 </button>
                 <button onClick={() => { setShowCompose(false); setMessageText(''); setNewRecipient(null); setComposeRoleFilter(activeTab); }}
                   style={{ padding: '10px 20px', background: '#6b7280', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               </div>
             </div>
 
@@ -448,7 +446,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.15)' }}>
                 <span style={{ fontSize: 18 }}>{ROLE_ICON[selectedConversation.contactRole] ?? <FaUser />}</span>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#e5e7eb' }}>{selectedConversation.contactName}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#e5e7eb' }}>{say(selectedConversation.contactName)}</div>
                   <div style={{ fontSize: 11, color: ROLE_COLOR[selectedConversation.contactRole] ?? '#9ca3af', fontWeight: 600 }}>
                     {say(ROLE_LABEL[selectedConversation.contactRole] ?? selectedConversation.contactRole)}
                   </div>
@@ -470,10 +468,10 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                         <div style={{ background: isSent ? 'rgba(229,51,42,0.2)' : 'rgba(59,130,246,0.2)', border: `1px solid ${isSent ? 'rgba(229,51,42,0.4)' : 'rgba(59,130,246,0.4)'}`, borderRadius: 8, padding: 12 }}>
                           {!isSent && (
                             <div style={{ fontSize: 10, color: ROLE_COLOR[msg.senderRole] ?? '#9ca3af', fontWeight: 700, marginBottom: 4 }}>
-                              {msg.senderName}
+                              {say(msg.senderName)}
                             </div>
                           )}
-                          <div style={{ fontSize: 13, color: '#e5e7eb' }}>{msg.body}</div>
+                          <div style={{ fontSize: 13, color: '#e5e7eb' }}>{say(msg.body)}</div>
                           <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'right', marginTop: 4 }}>
                             {new Date(msg.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </div>
@@ -497,7 +495,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                 />
                 <button onClick={handleSendMessage} disabled={loading || !messageText.trim()}
                   style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || !messageText.trim() ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || !messageText.trim() ? 0.5 : 1, alignSelf: 'flex-end' }}>
-                  {loading ? '...' : 'Send'}
+                  {loading ? '...' : say("Send")}
                 </button>
               </div>
             </>
@@ -515,8 +513,8 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
       </div>
       {msgMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:msgMsg.type==='success'?'#dcfce7':'#fde8e8',color:msgMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {msgMsg.text}
-          <button aria-label="Dismiss" onClick={()=>setMsgMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
+          {say(msgMsg.text)}
+          <button aria-label={say("Dismiss")} onClick={()=>setMsgMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}
     </div>

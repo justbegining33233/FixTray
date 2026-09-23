@@ -1,6 +1,6 @@
-// SalesFunnel.tsx - visual funnel with drop percentages
 'use client';
-
+import { usePhrase } from '@/lib/usePhrase';
+// SalesFunnel.tsx - visual funnel with drop percentages
 import React from 'react';
 import { FaArrowRight } from 'react-icons/fa';
 import StatusBadge from './StatusBadge';
@@ -17,6 +17,7 @@ interface SalesFunnelProps {
  * Displays a simple vertical funnel with drop-off percentages between stages, with enhanced animations.
  */
 export default function SalesFunnel({ visits, trials, members, customers }: SalesFunnelProps) {
+  const say = usePhrase();
   const stages = [
     { label: 'Website Visits', value: visits, color: 'from-[#e5332a]/60 to-[#ff6b64]/20' },
     { label: 'Trials', value: trials, color: 'from-zinc-500/60 to-zinc-400/20' },
@@ -39,17 +40,17 @@ export default function SalesFunnel({ visits, trials, members, customers }: Sale
 
       <div className="relative z-10 flex items-center justify-between mb-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.08em] text-zinc-400">Sales Funnel</p>
-          <h3 className="text-lg font-semibold text-white">Website <FaArrowRight style={{marginRight:4}} /> Trials {'>'} Members {'>'} Customers</h3>
+          <p className="text-[11px] uppercase tracking-[0.08em] text-zinc-400">{say("Sales Funnel")}</p>
+          <h3 className="text-lg font-semibold text-white">{say("Website")}{' '}<FaArrowRight style={{marginRight:4}} /> {say("Trials")}{' '}{'>'} {say("Members")}{' '}{'>'} {say("Customers")}</h3>
         </div>
-        <StatusBadge label="Live" tone="success" pulse size="sm" />
+        <StatusBadge label={say("Live")} tone="success" pulse size="sm" />
       </div>
 
       <div className="relative z-10 space-y-5">
         {stages.map((stage, index) => (
           <div key={stage.label} className="space-y-2 group/stage hover:scale-105 transition-transform duration-300">
             <div className="flex items-center justify-between text-sm text-slate-200">
-              <span className="font-medium">{stage.label}</span>
+              <span className="font-medium">{say(stage.label)}</span>
               <span className="text-slate-300">{stage.value.toLocaleString()}</span>
             </div>
             <div className="h-3 rounded-full bg-zinc-800 overflow-hidden shadow-inner">
@@ -59,7 +60,7 @@ export default function SalesFunnel({ visits, trials, members, customers }: Sale
               />
             </div>
             {index > 0 && (
-              <p className="text-[11px] text-slate-500 group-hover/stage:text-orange-300 transition-colors">Conversion from previous: {drops[index - 1].toFixed(1)}%</p>
+              <p className="text-[11px] text-slate-500 group-hover/stage:text-orange-300 transition-colors">{say("Conversion from previous:")}{' '}{drops[index - 1].toFixed(1)}%</p>
             )}
           </div>
         ))}

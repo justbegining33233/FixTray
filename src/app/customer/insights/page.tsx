@@ -1,4 +1,5 @@
 'use client';
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
@@ -17,6 +18,7 @@ interface Insight {
 }
 
 export default function Insights() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const router = useRouter();
   const [userName, setUserName] = useState('');
@@ -56,32 +58,31 @@ export default function Insights() {
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'16px 32px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
         <div style={{display:'flex', alignItems:'center', gap:24}}>
-          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>FixTray</Link>
+          <Link href="/customer/dashboard" style={{fontSize:24, fontWeight:900, color:'#e5332a', textDecoration:'none'}}>{say("FixTray")}</Link>
           <div>
-            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>Customer Portal</div>
-            <div style={{fontSize:12, color:'#9aa3b2'}}>Insights</div>
+            <div style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Customer Portal")}</div>
+            <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Insights")}</div>
           </div>
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16}}>
-          <span style={{fontSize:14, color:'#9aa3b2'}}>Welcome, {userName}</span>
+          <span style={{fontSize:14, color:'#9aa3b2'}}>{say("Welcome,")}{' '}{say(userName)}</span>
           <button onClick={handleSignOut} style={{padding:'8px 16px', background:'#e5332a', color:'white', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:600}}>
-            Sign Out
-          </button>
+            {say("Sign Out")}{' '}</button>
         </div>
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
-        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>Service Insights</h1>
+        <h1 style={{fontSize:32, fontWeight:700, color:'#e5e7eb', marginBottom:32}}>{say("Service Insights")}</h1>
 
         {loading && (
-          <div style={{textAlign:'center', padding:60, color:'#9aa3b2'}}>Loading insights...</div>
+          <div style={{textAlign:'center', padding:60, color:'#9aa3b2'}}>{say("Loading insights...")}</div>
         )}
 
         {!loading && insights.length === 0 && (
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:40, textAlign:'center', marginBottom:32}}>
             <div style={{fontSize:48, marginBottom:16}}><FaChartBar style={{marginRight:4}} /></div>
-            <div style={{fontSize:18, color:'#e5e7eb', marginBottom:8}}>No insights yet</div>
-            <div style={{fontSize:14, color:'#9aa3b2'}}>Complete a service to start generating insights.</div>
+            <div style={{fontSize:18, color:'#e5e7eb', marginBottom:8}}>{say("No insights yet")}</div>
+            <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Complete a service to start generating insights.")}</div>
           </div>
         )}
 
@@ -91,13 +92,13 @@ export default function Insights() {
               <div style={{marginBottom:16}}>
                 <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
                   <span style={{fontSize:24}}>{getTrendIcon(insight.trend)}</span>
-                  <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>{insight.metric}</h3>
+                  <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>{say(insight.metric)}</h3>
                 </div>
-                <div style={{fontSize:24, color:insight.color, fontWeight:700, marginBottom:8}}>{insight.value}</div>
+                <div style={{fontSize:24, color:insight.color, fontWeight:700, marginBottom:8}}>{say(insight.value)}</div>
                 <div style={{fontSize:14, color:'#9aa3b2', marginBottom:8}}>
-                  Trend: <span style={{color:insight.color, fontWeight:600}}>{insight.trend}</span>
+                  {say("Trend:")}{' '}<span style={{color:insight.color, fontWeight:600}}>{say(insight.trend)}</span>
                 </div>
-                <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5}}>{insight.description}</div>
+                <div style={{fontSize:14, color:'#e5e7eb', lineHeight:1.5}}>{say(insight.description)}</div>
               </div>
               <button onClick={() => router.push((insight.href || `/customer/insights/${insight.id}`) as Route)} style={{
                 width:'100%',
@@ -110,31 +111,30 @@ export default function Insights() {
                 fontWeight:600,
                 cursor:'pointer'
               }}>
-                Learn More
-              </button>
+                {say("Learn More")}{' '}</button>
             </div>
           ))}
         </div>
 
         {/* Summary Section */}
         <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginTop:32}}>
-          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}>Summary</h2>
+          <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb', marginBottom:16}}>{say("Summary")}</h2>
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:24}}>
             <div style={{textAlign:'center'}}>
               <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>${summary ? summary.totalSpent.toFixed(2) : '0.00'}</div>
-              <div style={{fontSize:14, color:'#9aa3b2'}}>Total Spent</div>
+              <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Total Spent")}</div>
             </div>
             <div style={{textAlign:'center'}}>
               <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{summary ? summary.servicesCompleted : 0}</div>
-              <div style={{fontSize:14, color:'#9aa3b2'}}>Services Completed</div>
+              <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Services Completed")}</div>
             </div>
             <div style={{textAlign:'center'}}>
               <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{summary?.averageRating ? summary.averageRating.toFixed(1) : ' - '}</div>
-              <div style={{fontSize:14, color:'#9aa3b2'}}>Average Rating</div>
+              <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Average Rating")}</div>
             </div>
             <div style={{textAlign:'center'}}>
               <div style={{fontSize:32, fontWeight:700, color:'#a855f7'}}>{summary ? summary.loyaltyPoints : 0}</div>
-              <div style={{fontSize:14, color:'#9aa3b2'}}>Points Earned</div>
+              <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Points Earned")}</div>
             </div>
           </div>
         </div>
@@ -152,8 +152,7 @@ export default function Insights() {
             textDecoration:'none',
             cursor:'pointer'
           }}>
-            Back to Dashboard
-          </Link>
+            {say("Back to Dashboard")}{' '}</Link>
         </div>
       </div>
     </div>

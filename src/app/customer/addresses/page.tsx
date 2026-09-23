@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
@@ -24,6 +25,7 @@ const emptyForm = {
 };
 
 export default function CustomerAddressesPage() {
+  const say = usePhrase();
   useRequireAuth(['customer']);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,58 +107,55 @@ export default function CustomerAddressesPage() {
     <div style={{ minHeight: '100vh', background: 'transparent', padding: '30px 20px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto' }}>
         <Link href="/customer/dashboard" style={{ color: '#ffb4ad', textDecoration: 'none', fontSize: 14 }}>
-          Back to Dashboard
-        </Link>
+          {say("Back to Dashboard")}{' '}</Link>
 
-        <h1 style={{ color: '#e5e7eb', fontSize: 30, marginTop: 12, marginBottom: 6 }}>Saved Addresses</h1>
-        <p style={{ color: '#9aa3b2', marginBottom: 24 }}>Manage pickup/service locations and set a default address for faster work order requests.</p>
+        <h1 style={{ color: '#e5e7eb', fontSize: 30, marginTop: 12, marginBottom: 6 }}>{say("Saved Addresses")}</h1>
+        <p style={{ color: '#9aa3b2', marginBottom: 24 }}>{say("Manage pickup/service locations and set a default address for faster work order requests.")}</p>
 
         <form onSubmit={(e) => { e.preventDefault(); save(); }} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 18, marginBottom: 20 }}>
-          <h2 style={{ color: '#f1f5f9', marginTop: 0, fontSize: 18 }}>{editing ? 'Edit Address' : 'Add Address'}</h2>
+          <h2 style={{ color: '#f1f5f9', marginTop: 0, fontSize: 18 }}>{editing ? say("Edit Address") : say("Add Address")}</h2>
           <div style={{ display: 'grid', gap: 10 }}>
-            <input required aria-label="Label" value={form.label} onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))} placeholder="Label (Home, Office, Yard)" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
-            <input required aria-label="Street address" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Street address" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+            <input required aria-label={say("Label")} value={form.label} onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))} placeholder={say("Label (Home, Office, Yard)")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+            <input required aria-label={say("Street address")} value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder={say("Street address")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10 }}>
-              <input required aria-label="City" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="City" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
-              <input required aria-label="State" value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} placeholder="State" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
-              <input required aria-label="ZIP" value={form.zipCode} onChange={(e) => setForm((f) => ({ ...f, zipCode: e.target.value }))} placeholder="ZIP" style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+              <input required aria-label={say("City")} value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder={say("City")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+              <input required aria-label={say("State")} value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} placeholder={say("State")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
+              <input required aria-label={say("ZIP")} value={form.zipCode} onChange={(e) => setForm((f) => ({ ...f, zipCode: e.target.value }))} placeholder={say("ZIP")} style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#e5e7eb' }} />
             </div>
             <label style={{ color: '#cbd5e1', fontSize: 13 }}>
               <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))} style={{ marginRight: 8 }} />
-              Set as default address
-            </label>
+              {say("Set as default address")}{' '}</label>
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="submit" style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}>
-                {editing ? 'Update Address' : 'Save Address'}
+                {editing ? say("Update Address") : say("Save Address")}
               </button>
               {editing && (
                 <button type="button" onClick={reset} style={{ background: 'rgba(255,255,255,0.1)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
-                  Cancel
-                </button>
+                  {say("Cancel")}{' '}</button>
               )}
             </div>
           </div>
-          {message && <div style={{ marginTop: 10, color: '#fda4af', fontSize: 13 }}>{message}</div>}
+          {message && <div style={{ marginTop: 10, color: '#fda4af', fontSize: 13 }}>{say(message)}</div>}
         </form>
 
         {loading ? (
-          <div style={{ color: '#9aa3b2' }}>Loading addresses...</div>
+          <div style={{ color: '#9aa3b2' }}>{say("Loading addresses...")}</div>
         ) : addresses.length === 0 ? (
-          <div style={{ color: '#9aa3b2' }}>No saved addresses yet.</div>
+          <div style={{ color: '#9aa3b2' }}>{say("No saved addresses yet.")}</div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
             {addresses.map((address) => (
               <div key={address.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ color: '#f8fafc', fontWeight: 700 }}>
-                    {address.label} {address.isDefault ? <span style={{ color: '#22c55e', fontSize: 12 }}>(Default)</span> : null}
+                    {say(address.label)} {address.isDefault ? <span style={{ color: '#22c55e', fontSize: 12 }}>{say("(Default)")}</span> : null}
                   </div>
-                  <div style={{ color: '#cbd5e1', fontSize: 13 }}>{address.address}</div>
-                  <div style={{ color: '#94a3b8', fontSize: 12 }}>{address.city}, {address.state} {address.zipCode}</div>
+                  <div style={{ color: '#cbd5e1', fontSize: 13 }}>{say(address.address)}</div>
+                  <div style={{ color: '#94a3b8', fontSize: 12 }}>{say(address.city)}, {say(address.state)} {say(address.zipCode)}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => startEdit(address)} style={{ background: 'rgba(229,51,42,0.2)', color: '#ffb4ad', border: '1px solid rgba(229,51,42,0.4)', borderRadius: 7, padding: '6px 10px', cursor: 'pointer' }}>Edit</button>
-                  <button onClick={() => remove(address.id)} style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 7, padding: '6px 10px', cursor: 'pointer' }}>Delete</button>
+                  <button onClick={() => startEdit(address)} style={{ background: 'rgba(229,51,42,0.2)', color: '#ffb4ad', border: '1px solid rgba(229,51,42,0.4)', borderRadius: 7, padding: '6px 10px', cursor: 'pointer' }}>{say("Edit")}</button>
+                  <button onClick={() => remove(address.id)} style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 7, padding: '6px 10px', cursor: 'pointer' }}>{say("Delete")}</button>
                 </div>
               </div>
             ))}

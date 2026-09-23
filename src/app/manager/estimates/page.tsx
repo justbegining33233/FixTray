@@ -1,5 +1,6 @@
 'use client';
 
+import { usePhrase } from '@/lib/usePhrase';
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
@@ -31,6 +32,7 @@ interface EstimateData {
 }
 
 function ManagerEstimatesContent() {
+  const say = usePhrase();
   useRequireAuth(['manager']);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -269,7 +271,7 @@ function ManagerEstimatesContent() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#e5e7eb', fontSize: 20 }}>Loading...</div>
+        <div style={{ color: '#e5e7eb', fontSize: 20 }}>{say("Loading...")}</div>
       </div>
     );
   }
@@ -280,20 +282,19 @@ function ManagerEstimatesContent() {
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(229,51,42,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <Link href="/manager/dashboard" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
-            <FaArrowLeft style={{marginRight:4}} /> Back to Dashboard
-          </Link>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaClipboardList style={{marginRight:4}} /> Estimate Builder</h1>
-          <p style={{ color: '#9aa3b2', fontSize: 14, margin: '4px 0 0' }}>Add parts and labor, then submit. The customer must accept and sign. Submitting does not create a work authorization.</p>
+            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 4 }}><FaClipboardList style={{marginRight:4}} /> {say("Estimate Builder")}</h1>
+          <p style={{ color: '#9aa3b2', fontSize: 14, margin: '4px 0 0' }}>{say("Add parts and labor, then submit. The customer must accept and sign. Submitting does not create a work authorization.")}</p>
           <p style={{ fontSize: 14, color: '#9aa3b2' }}>
-            {workOrder ? `Creating estimate for Work Order #${workOrder.id}` : 'Select a work order, then submit a quote'}
+            {workOrder ? `Creating estimate for Work Order #${workOrder.id}` : say("Select a work order, then submit a quote")}
           </p>
         </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-          <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Target Job</h3>
-          <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>Work order / customer</label>
+          <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{say("Target Job")}</h3>
+          <label style={{ color: '#9aa3b2', fontSize: 13, display: 'block', marginBottom: 8 }}>{say("Work order / customer")}</label>
           <select
             value={selectedWorkOrderId}
             onChange={(e) => handleSelectWorkOrder(e.target.value)}
@@ -307,40 +308,39 @@ function ManagerEstimatesContent() {
               fontSize: 14,
             }}
           >
-            <option value="">Select a work order</option>
+            <option value="">{say("Select a work order")}</option>
             {workOrders.map((wo) => (
               <option key={wo.id} value={wo.id}>
-                WO-{String(wo.id).slice(0, 8)} — {wo.customer?.firstName || ''} {wo.customer?.lastName || ''} — {wo.status}
+                {say("WO-")}{String(wo.id).slice(0, 8)} — {wo.customer?.firstName || ''} {wo.customer?.lastName || ''} — {say(wo.status)}
               </option>
             ))}
           </select>
           {workOrders.length === 0 && (
             <p style={{ color: '#f59e0b', fontSize: 13, marginTop: 8 }}>
-              No open work orders found for this shop. Create or open a job first.
-            </p>
+              {say("No open work orders found for this shop. Create or open a job first.")}{' '}</p>
           )}
         </div>
 
         {/* Work Order Info */}
         {workOrder && (
           <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
-            <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Work Order Details</h3>
+            <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{say("Work Order Details")}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
               <div>
-                <div style={{ color: '#9aa3b2', fontSize: 12 }}>Customer</div>
-                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{workOrder.customer?.firstName} {workOrder.customer?.lastName}</div>
+                <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Customer")}</div>
+                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{say(workOrder.customer?.firstName)} {say(workOrder.customer?.lastName)}</div>
               </div>
               <div>
-                <div style={{ color: '#9aa3b2', fontSize: 12 }}>Issue</div>
+                <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Issue")}</div>
                 <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{workOrderTitle(workOrder)}</div>
               </div>
               <div>
-                <div style={{ color: '#9aa3b2', fontSize: 12 }}>Priority</div>
-                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{workOrder.priority}</div>
+                <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Priority")}</div>
+                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{say(workOrder.priority)}</div>
               </div>
               <div>
-                <div style={{ color: '#9aa3b2', fontSize: 12 }}>Status</div>
-                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{workOrder.status}</div>
+                <div style={{ color: '#9aa3b2', fontSize: 12 }}>{say("Status")}</div>
+                <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{say(workOrder.status)}</div>
               </div>
             </div>
           </div>
@@ -348,12 +348,12 @@ function ManagerEstimatesContent() {
 
         {/* Estimate Form */}
         <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 24 }}>
-          <h3 style={{ color: '#e5e7eb', fontSize: 20, fontWeight: 600, marginBottom: 20 }}>Estimate Details</h3>
+          <h3 style={{ color: '#e5e7eb', fontSize: 20, fontWeight: 600, marginBottom: 20 }}>{say("Estimate Details")}</h3>
 
           {/* Line Items */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600 }}>Line Items</h4>
+              <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600 }}>{say("Line Items")}</h4>
               <button
                 onClick={addLineItem}
                 style={{
@@ -366,20 +366,18 @@ function ManagerEstimatesContent() {
                   cursor: 'pointer'
                 }}
               >
-                + Add Item
-              </button>
+                {say("+ Add Item")}{' '}</button>
             </div>
 
             {estimate.lineItems.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40, border: '2px dashed rgba(156,163,175,0.3)', borderRadius: 8 }}>
-                No items added yet. Click "Add Item" to start building your estimate.
-              </div>
+                {say("No items added yet. Click \"Add Item\" to start building your estimate.")}{' '}</div>
             ) : (
               <div style={{ display: 'grid', gap: 12 }}>
                 {estimate.lineItems.map((item, _index) => (
                   <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 90px 110px 90px 40px', gap: 12, alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8 }}>
                     <select
-                      aria-label="Line type"
+                      aria-label={say("Line type")}
                       value={item.kind}
                       onChange={(e) => updateLineItem(item.id, 'kind', e.target.value === 'part' ? 'part' : 'labor')}
                       style={{
@@ -391,12 +389,12 @@ function ManagerEstimatesContent() {
                         fontSize: 14,
                       }}
                     >
-                      <option value="labor">Labor</option>
-                      <option value="part">Part</option>
+                      <option value="labor">{say("Labor")}</option>
+                      <option value="part">{say("Part")}</option>
                     </select>
                     <input
                       type="text"
-                      placeholder="Description"
+                      placeholder={say("Description")}
                       value={item.description}
                       onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                       style={{
@@ -410,7 +408,7 @@ function ManagerEstimatesContent() {
                     />
                     <input
                       type="number"
-                      placeholder="Qty"
+                      placeholder={say("Qty")}
                       value={item.quantity}
                       onChange={(e) => updateLineItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                       min="0"
@@ -427,7 +425,7 @@ function ManagerEstimatesContent() {
                     />
                     <input
                       type="number"
-                      placeholder="Unit Price"
+                      placeholder={say("Unit Price")}
                       value={item.unitPrice}
                       onChange={(e) => updateLineItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
                       min="0"
@@ -467,10 +465,10 @@ function ManagerEstimatesContent() {
 
           {/* Tax Settings */}
           <div style={{ marginBottom: 24 }}>
-            <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Tax Settings</h4>
+            <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{say("Tax Settings")}</h4>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
               <div>
-                <label style={{ color: '#9aa3b2', fontSize: 14, display: 'block', marginBottom: 4 }}>Tax Rate (%)</label>
+                <label style={{ color: '#9aa3b2', fontSize: 14, display: 'block', marginBottom: 4 }}>{say("Tax Rate (%)")}</label>
                 <input
                   type="number"
                   value={estimate.taxRate}
@@ -498,9 +496,9 @@ function ManagerEstimatesContent() {
 
           {/* Notes */}
           <div style={{ marginBottom: 24 }}>
-            <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Notes</h4>
+            <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{say("Notes")}</h4>
             <textarea
-              placeholder="Additional notes for the customer..."
+              placeholder={say("Additional notes for the customer...")}
               value={estimate.notes}
               onChange={(e) => setEstimate(prev => ({ ...prev, notes: e.target.value }))}
               rows={3}
@@ -519,13 +517,13 @@ function ManagerEstimatesContent() {
 
           {/* Summary */}
           <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: 20, marginBottom: 24 }}>
-            <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Estimate Summary</h4>
+            <h4 style={{ color: '#e5e7eb', fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{say("Estimate Summary")}</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, maxWidth: 300 }}>
-              <div style={{ color: '#9aa3b2' }}>Subtotal:</div>
+              <div style={{ color: '#9aa3b2' }}>{say("Subtotal:")}</div>
               <div style={{ color: '#e5e7eb', textAlign: 'right' }}>{formatEstimateMoney(estimate.subtotal)}</div>
-              <div style={{ color: '#9aa3b2' }}>Tax ({estimate.taxRate}%):</div>
+              <div style={{ color: '#9aa3b2' }}>{say("Tax (")}{say(estimate.taxRate)}%):</div>
               <div style={{ color: '#e5e7eb', textAlign: 'right' }}>{formatEstimateMoney(estimate.taxAmount)}</div>
-              <div style={{ color: '#e5e7eb', fontWeight: 600, borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>Total:</div>
+              <div style={{ color: '#e5e7eb', fontWeight: 600, borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>{say("Total:")}</div>
               <div style={{ color: '#22c55e', fontWeight: 600, fontSize: 18, textAlign: 'right', borderTop: '1px solid rgba(156,163,175,0.3)', paddingTop: 8 }}>{formatEstimateMoney(estimate.total)}</div>
             </div>
           </div>
@@ -544,8 +542,7 @@ function ManagerEstimatesContent() {
                 cursor: 'pointer'
               }}
             >
-              Cancel
-            </button>
+              {say("Cancel")}{' '}</button>
             <button
               onClick={submitEstimate}
               disabled={estimate.lineItems.length === 0 || submitting || !selectedWorkOrderId}
@@ -560,14 +557,14 @@ function ManagerEstimatesContent() {
                 fontWeight: 600
               }}
             >
-              {submitting ? 'Submitting…' : 'Submit Estimate'}
+              {submitting ? say("Submitting…") : say("Submit Estimate")}
             </button>
           </div>
         </div>
       </div>
       {estimateMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:estimateMsg.type==='success'?'#dcfce7':'#fde8e8',color:estimateMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
-          {estimateMsg.text}
+          {say(estimateMsg.text)}
           <button onClick={()=>setEstimateMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
         </div>
       )}
@@ -576,8 +573,9 @@ function ManagerEstimatesContent() {
 }
 
 export default function ManagerEstimates() {
+  const say = usePhrase();
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{say("Loading...")}</div>}>
       <ManagerEstimatesContent />
     </Suspense>
   );

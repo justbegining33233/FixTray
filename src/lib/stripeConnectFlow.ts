@@ -7,7 +7,7 @@ import {
   connectFailureMessage,
   connectRefreshUrl,
   connectReturnPath,
-  expressAccountCreateAttempts,
+  connectAccountCreateAttempts,
   expressLinkPlan,
   isMissingStripeAccount,
   isNullableColumnReadError,
@@ -82,11 +82,11 @@ export async function getShopStripeConnectStatus(shopId: string): Promise<ShopCo
   }
 }
 
-async function createExpressAccount(shop: {
+async function createConnectedAccount(shop: {
   id: string;
   email: string | null;
 }): Promise<{ accountId: string; payoutsReady: boolean }> {
-  const attempts = expressAccountCreateAttempts(shop);
+  const attempts = connectAccountCreateAttempts(shop);
   let lastError: unknown;
 
   for (let i = 0; i < attempts.length; i += 1) {
@@ -133,7 +133,7 @@ async function ensureExpressAccount(shop: {
     }
   }
 
-  return createExpressAccount(shop);
+  return createConnectedAccount(shop);
 }
 
 export async function createShopAccountLink(

@@ -71,7 +71,7 @@ export default function ShopNavigation({
     },
     {
       name: 'Jobs',
-      href: '/shop/home',
+      href: '/shop/jobs',
       icon: FaClipboardList,
       badge: pendingJobs > 0 ? pendingJobs : undefined,
       description: 'Service requests'

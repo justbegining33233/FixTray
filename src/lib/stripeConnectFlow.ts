@@ -1,17 +1,21 @@
+import type Stripe from 'stripe';
 import prisma from '@/lib/prisma';
 import stripe from '@/lib/stripe';
 import { shopCanReceiveConnectTransfer } from '@/lib/stripeConnectSplit';
 import {
-  accountLinkType,
   appBaseUrl,
+  connectFailureMessage,
   connectRefreshUrl,
   connectReturnPath,
-  expressAccountCreateParams,
+  expressAccountCreateAttempts,
+  expressLinkPlan,
   isMissingStripeAccount,
+  isNullableColumnReadError,
   isStripeAccountId,
   isStripeAccountLinkUrl,
   publicConnectStatus,
   shopConnectUiState,
+  shouldRetryExpressAccountCreate,
   stripePlatformConfigured,
   type ConnectReturnOrigin,
   type ShopConnectPublicStatus,
@@ -78,6 +82,38 @@ export async function getShopStripeConnectStatus(shopId: string): Promise<ShopCo
   }
 }
 
+async function createExpressAccount(shop: {
+  id: string;
+  email: string | null;
+}): Promise<{ accountId: string; payoutsReady: boolean }> {
+  const attempts = expressAccountCreateAttempts(shop);
+  let lastError: unknown;
+
+  for (let i = 0; i < attempts.length; i += 1) {
+    try {
+      const created = await stripe.accounts.create(attempts[i] as Stripe.AccountCreateParams);
+      if (!isStripeAccountId(created.id)) {
+        throw new StripeConnectHttpError('Stripe did not return a connected account id.', 502);
+      }
+      try {
+        await prisma.shop.update({
+          where: { id: shop.id },
+          data: { stripeAccountId: created.id },
+        });
+      } catch (err) {
+        throw new StripeConnectHttpError(connectFailureMessage(err), 502);
+      }
+      return { accountId: created.id, payoutsReady: shopCanReceiveConnectTransfer(created) };
+    } catch (err) {
+      if (err instanceof StripeConnectHttpError) throw err;
+      lastError = err;
+      if (i === attempts.length - 1 || !shouldRetryExpressAccountCreate(err)) break;
+    }
+  }
+
+  throw new StripeConnectHttpError(connectFailureMessage(lastError), 502);
+}
+
 async function ensureExpressAccount(shop: {
   id: string;
   email: string | null;
@@ -90,21 +126,14 @@ async function ensureExpressAccount(shop: {
       const account = await stripe.accounts.retrieve(accountId);
       return { accountId, payoutsReady: shopCanReceiveConnectTransfer(account) };
     } catch (err) {
-      if (!isMissingStripeAccount(err)) throw err;
+      if (!isMissingStripeAccount(err)) {
+        throw new StripeConnectHttpError(connectFailureMessage(err), 502);
+      }
       accountId = '';
     }
   }
 
-  const created = await stripe.accounts.create(expressAccountCreateParams(shop));
-  if (!isStripeAccountId(created.id)) {
-    throw new StripeConnectHttpError('Stripe did not return a connected account id.', 502);
-  }
-  accountId = created.id;
-  await prisma.shop.update({
-    where: { id: shop.id },
-    data: { stripeAccountId: accountId },
-  });
-  return { accountId, payoutsReady: shopCanReceiveConnectTransfer(created) };
+  return createExpressAccount(shop);
 }
 
 export async function createShopAccountLink(
@@ -116,30 +145,54 @@ export async function createShopAccountLink(
   const appUrl = appBaseUrl();
   const refresh_url = connectRefreshUrl(appUrl, shopId, origin);
   const return_url = connectReturnPath(origin, appUrl, 'return');
-  const primary = accountLinkType(payoutsReady);
-  const secondary = primary === 'account_onboarding' ? 'account_update' : 'account_onboarding';
+  const plan = expressLinkPlan(payoutsReady);
+  let lastError: unknown;
 
-  const create = (type: 'account_onboarding' | 'account_update') =>
-    stripe.accountLinks.create({
-      account: accountId,
-      refresh_url,
-      return_url,
-      type,
-    });
+  for (const step of plan) {
+    try {
+      if (step === 'login') {
+        const login = await stripe.accounts.createLoginLink(accountId);
+        if (isStripeAccountLinkUrl(login.url)) return login.url;
+        lastError = new Error('Stripe returned an unexpected dashboard link.');
+        continue;
+      }
 
+      const link = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url,
+        return_url,
+        type: 'account_onboarding',
+      });
+      if (!isStripeAccountLinkUrl(link.url)) {
+        throw new StripeConnectHttpError('Stripe returned an unexpected onboarding link.', 502);
+      }
+      return link.url;
+    } catch (err) {
+      if (err instanceof StripeConnectHttpError || isMissingStripeAccount(err)) throw err;
+      lastError = err;
+    }
+  }
+
+  throw new StripeConnectHttpError(connectFailureMessage(lastError), 502);
+}
+
+async function loadShopForConnect(shopId: string): Promise<{
+  id: string;
+  email: string | null;
+  stripeAccountId: string | null;
+} | null> {
   try {
-    const link = await create(primary);
-    if (!isStripeAccountLinkUrl(link.url)) {
-      throw new StripeConnectHttpError('Stripe returned an unexpected onboarding link.', 502);
-    }
-    return link.url;
+    return await prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true, email: true, stripeAccountId: true },
+    });
   } catch (err) {
-    if (err instanceof StripeConnectHttpError || isMissingStripeAccount(err)) throw err;
-    const link = await create(secondary);
-    if (!isStripeAccountLinkUrl(link.url)) {
-      throw new StripeConnectHttpError('Stripe returned an unexpected onboarding link.', 502);
-    }
-    return link.url;
+    if (!isNullableColumnReadError(err)) throw err;
+    const shop = await prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true, stripeAccountId: true },
+    });
+    return shop ? { ...shop, email: null } : null;
   }
 }
 
@@ -151,10 +204,7 @@ export async function startShopStripeConnect(
     throw new StripeConnectHttpError('Stripe is not configured for this platform.', 503);
   }
 
-  const shop = await prisma.shop.findUnique({
-    where: { id: shopId },
-    select: { id: true, email: true, stripeAccountId: true },
-  });
+  const shop = await loadShopForConnect(shopId);
   if (!shop) throw new StripeConnectHttpError('Shop not found', 404);
 
   const { accountId, payoutsReady } = await ensureExpressAccount(shop);

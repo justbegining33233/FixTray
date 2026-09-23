@@ -1,9 +1,15 @@
 /**
  * Shop Stripe Connect onboarding helpers.
  *
- * Platform keys (STRIPE_SECRET_KEY) create an Express account and an Account
+ * Platform keys (STRIPE_SECRET_KEY) create a connected account and an Account
  * Link. Shops do not paste their own secret keys. Checkout still refuses a
  * charge until transfers are active — see shopCanReceiveConnectTransfer.
+ *
+ * Express (`type=express`) assigns negative-balance liability to the platform.
+ * Stripe rejects that create until someone reviews "managing losses" at
+ * Settings → Connect → Platform profile, which is the production 502.
+ * Standard accounts leave that liability with Stripe and still onboard
+ * through an Account Link.
  */
 
 export type ConnectReturnOrigin = 'integrations' | 'settings' | 'onboarding';
@@ -178,8 +184,8 @@ export function connectShopEmail(email?: string | null): string | undefined {
   return value;
 }
 
-export type ExpressAccountCreateParams = {
-  type?: 'express';
+export type ConnectAccountCreateParams = {
+  type?: 'express' | 'standard';
   country: 'US';
   email?: string;
   metadata: { shopId: string };
@@ -188,13 +194,50 @@ export type ExpressAccountCreateParams = {
     transfers?: { requested: true };
   };
   controller?: {
-    fees: { payer: 'application' };
-    losses: { payments: 'application' };
-    stripe_dashboard: { type: 'express' };
+    fees: { payer: 'application' | 'account' };
+    losses: { payments: 'application' | 'stripe' };
+    stripe_dashboard: { type: 'express' | 'full' };
   };
 };
 
-export function expressAccountCreateParams(shop: { id: string; email?: string | null }): {
+type ConnectShopIdentity = { id: string; email?: string | null };
+
+function connectAccountIdentity(shop: ConnectShopIdentity): {
+  country: 'US';
+  email?: string;
+  metadata: { shopId: string };
+} {
+  const email = connectShopEmail(shop.email);
+  return {
+    country: 'US',
+    ...(email ? { email } : {}),
+    metadata: { shopId: shop.id },
+  };
+}
+
+/** Standard account: Stripe holds connected-account loss liability, so no platform-profile review is required. */
+export function standardAccountCreateParams(shop: ConnectShopIdentity): {
+  type: 'standard';
+  country: 'US';
+  email?: string;
+  capabilities: {
+    card_payments: { requested: true };
+    transfers: { requested: true };
+  };
+  metadata: { shopId: string };
+} {
+  return {
+    type: 'standard',
+    ...connectAccountIdentity(shop),
+    capabilities: {
+      card_payments: { requested: true },
+      transfers: { requested: true },
+    },
+  };
+}
+
+/** Classic Express shape. Only succeeds after the platform acknowledges loss liability. */
+export function expressAccountCreateParams(shop: ConnectShopIdentity): {
   type: 'express';
   country: 'US';
   email?: string;
@@ -204,44 +247,49 @@ export function expressAccountCreateParams(shop: { id: string; email?: string | 
   };
   metadata: { shopId: string };
 } {
-  const email = connectShopEmail(shop.email);
   return {
     type: 'express',
-    country: 'US',
-    ...(email ? { email } : {}),
+    ...connectAccountIdentity(shop),
     capabilities: {
       card_payments: { requested: true },
       transfers: { requested: true },
     },
-    metadata: { shopId: shop.id },
   };
 }
 
 /**
- * Ordered Express create payloads. The first matches destination charges
- * (card_payments + transfers). Later attempts recover when the platform
- * Express profile only allows transfers, or when this API version wants
- * controller properties instead of type=express.
+ * Ordered connected-account create payloads.
+ * Leading payloads are Standard (losses stay with Stripe) so a shop that is
+ * Not connected can get an Account Link without the platform-profile review.
+ * Later payloads keep Express for platforms that have completed that review
+ * and reject Standard, including transfers-only and controller shapes.
  */
-export function expressAccountCreateAttempts(shop: { id: string; email?: string | null }): ExpressAccountCreateParams[] {
-  const primary = expressAccountCreateParams(shop);
-  const identity = {
-    country: primary.country,
-    ...(primary.email ? { email: primary.email } : {}),
-    metadata: primary.metadata,
-  };
+export function connectAccountCreateAttempts(shop: ConnectShopIdentity): ConnectAccountCreateParams[] {
+  const standard = standardAccountCreateParams(shop);
+  const express = expressAccountCreateParams(shop);
+  const identity = connectAccountIdentity(shop);
   const transfersOnly = { transfers: { requested: true as const } };
-  const controller = {
+  const stripeLiableExpress = {
+    fees: { payer: 'account' as const },
+    losses: { payments: 'stripe' as const },
+    stripe_dashboard: { type: 'express' as const },
+  };
+  const platformLiableExpress = {
     fees: { payer: 'application' as const },
     losses: { payments: 'application' as const },
     stripe_dashboard: { type: 'express' as const },
   };
   return [
-    primary,
+    standard,
+    { ...identity, type: 'standard', capabilities: transfersOnly },
+    { ...identity, type: 'standard' },
+    { ...identity, controller: stripeLiableExpress, capabilities: standard.capabilities },
+    { ...identity, controller: stripeLiableExpress, capabilities: transfersOnly },
+    express,
     { ...identity, type: 'express', capabilities: transfersOnly },
     { ...identity, type: 'express' },
-    { ...identity, controller, capabilities: primary.capabilities },
-    { ...identity, controller, capabilities: transfersOnly },
+    { ...identity, controller: platformLiableExpress, capabilities: express.capabilities },
+    { ...identity, controller: platformLiableExpress, capabilities: transfersOnly },
   ];
 }
 
@@ -255,7 +303,13 @@ export function errorText(err: unknown): string {
   return '';
 }
 
-/** True when another Express create shape might be accepted. Auth and platform-setup errors are not retried. */
+/**
+ * True when another account-create shape might be accepted.
+ * Auth and platform-setup errors are not retried.
+ * The platform-profile "managing losses" error is retried: it rejects every
+ * Express shape that assigns loss liability to the platform, and a later
+ * Standard shape does not.
+ */
 export function shouldRetryExpressAccountCreate(err: unknown): boolean {
   const message = errorText(err).toLowerCase();
   if (!message) return false;
@@ -275,7 +329,14 @@ export function shouldRetryExpressAccountCreate(err: unknown): boolean {
     message.includes('recipient') ||
     message.includes('unknown parameter') ||
     message.includes('account type') ||
-    (message.includes('type') && message.includes('express'))
+    message.includes('unsupported') ||
+    message.includes('not supported') ||
+    message.includes('managing losses') ||
+    message.includes('platform-profile') ||
+    message.includes('platform profile') ||
+    message.includes('responsibilit') ||
+    message.includes('standard') ||
+    message.includes('express')
   );
 }
 
@@ -285,7 +346,7 @@ const STRIPE_SECRET_PATTERN = /\b(?:sk|rk|pk)_(?:live|test)_[A-Za-z0-9]+|\bwhsec
 export function connectFailureMessage(err: unknown): string {
   const raw = errorText(err).replace(STRIPE_SECRET_PATTERN, '[redacted]').replace(/\s+/g, ' ').trim();
   if (!raw) {
-    return 'Stripe could not start Connect. Confirm the platform secret key can create Express accounts, then try again.';
+    return 'Stripe could not start Connect. Confirm the platform secret key can create connected accounts, then try again.';
   }
   if (/signed up for connect/i.test(raw)) {
     return 'Stripe Connect is not enabled on the platform account. Turn on Connect in the Stripe Dashboard, then try again.';

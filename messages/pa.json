@@ -1952,6 +1952,8 @@
     "loading_shop_details": "ਦੁਕਾਨ ਦੇ ਵੇਰਵੇ ਲੋਡ ਕੀਤੇ ਜਾ ਰਹੇ ਹਨ...",
     "shop_not_found": "ਦੁਕਾਨ ਨਹੀਂ ਮਿਲੀ",
     "back_to_manage_customers": "ਗਾਹਕ ਪ੍ਰਬੰਧਨ 'ਤੇ ਵਾਪਸ ਜਾਓ",
+    "back_to_manage_shops": "ਦੁਕਾਨਾਂ ਦੇ ਪ੍ਰਬੰਧਨ 'ਤੇ ਵਾਪਸ ਜਾਓ",
+    "back_to_accepted_shops": "ਸਵੀਕਾਰ ਕੀਤੀਆਂ ਦੁਕਾਨਾਂ 'ਤੇ ਵਾਪਸ ਜਾਓ",
     "auto": "ਆਟੋ",
     "suspend_shop": "ਦੁਕਾਨ ਨੂੰ ਮੁਅੱਤਲ ਕਰੋ",
     "reactivate_shop": "ਦੁਕਾਨ ਨੂੰ ਮੁੜ ਸਰਗਰਮ ਕਰੋ",

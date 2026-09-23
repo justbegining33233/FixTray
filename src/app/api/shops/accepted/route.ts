@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import type { AuthUser } from '@/lib/auth';
+import { acceptedShopContactPayload, canExposeShopContact } from '@/lib/shopContact';
 
 export async function GET(request: NextRequest) {
   // Require authentication — shop discovery is only for logged-in users
@@ -45,6 +46,10 @@ export async function GET(request: NextRequest) {
         }
       }
     });
+
+    // Email is the shop owner address. Only platform admins receive it;
+    // customer discovery stays limited to public shop fields.
+    const exposeContact = canExposeShopContact(auth.role);
 
     // Format response — only expose public-facing fields (NO password, no credentials)
     const formattedShops = approvedShops.map((shop) => {
@@ -103,7 +108,7 @@ export async function GET(request: NextRequest) {
         createdAt: shop.createdAt,
         dieselServices,
         gasServices,
-        // NOTE: email and credentials intentionally omitted
+        ...acceptedShopContactPayload(shop, exposeContact),
       };
     });
 

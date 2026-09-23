@@ -1952,6 +1952,8 @@
     "loading_shop_details": "Đang tải chi tiết cửa hàng...",
     "shop_not_found": "Không tìm thấy cửa hàng",
     "back_to_manage_customers": "Quay lại Quản lý khách hàng",
+    "back_to_manage_shops": "Quay lại Quản lý cửa hàng",
+    "back_to_accepted_shops": "Quay lại Cửa hàng đã chấp nhận",
     "auto": "Tự động",
     "suspend_shop": "Đình chỉ cửa hàng",
     "reactivate_shop": "Kích hoạt lại cửa hàng",

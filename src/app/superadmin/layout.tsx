@@ -6,6 +6,7 @@ import SuperAdminNavigation from '@/components/SuperAdminNavigation';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { superadminMobileIsHome } from '@/lib/ownerShell';
 
 function getTitle(pathname: string): string {
   const seg = pathname.split('/')[2] || '';
@@ -23,7 +24,7 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
     return (
       <MobileShell
         role="admin"
-        isHome={pathname === '/superadmin/analytics'}
+        isHome={superadminMobileIsHome(pathname)}
         sectionTitle={getTitle(pathname)}
         userName={user?.name}
       >

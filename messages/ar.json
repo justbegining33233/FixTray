@@ -1952,6 +1952,8 @@
     "loading_shop_details": "جارٍ تحميل تفاصيل المتجر...",
     "shop_not_found": "لم يتم العثور على المتجر",
     "back_to_manage_customers": "العودة إلى إدارة العملاء",
+    "back_to_manage_shops": "العودة إلى إدارة المتاجر",
+    "back_to_accepted_shops": "العودة إلى المتاجر المقبولة",
     "auto": "آلي",
     "suspend_shop": "تعليق المتجر",
     "reactivate_shop": "إعادة تنشيط المتجر",

@@ -4,6 +4,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { resolveShopContactEmail, shopContactMailto } from '@/lib/shopContact';
 import { FaArrowLeft, FaArrowRight, FaCheck, FaEnvelope, FaMapMarkerAlt, FaMedal, FaPhone, FaStar, FaStore, FaTimes } from 'react-icons/fa';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ type AcceptedShop = {
   address: string;
   phone: string;
   email: string;
+  ownerEmail?: string;
   revenue: string;
   jobs: number;
   rating: number;
@@ -67,6 +69,9 @@ export default function AcceptedShops() {
     setContactShop(shop);
     setShowContactModal(true);
   };
+
+  const contactEmail = resolveShopContactEmail(contactShop?.email, contactShop?.ownerEmail);
+  const contactMailto = shopContactMailto(contactEmail);
 
   const getSortedShops = () => {
     const sorted = [...acceptedShops];
@@ -309,7 +314,7 @@ export default function AcceptedShops() {
                 <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:16}}>
                   <div style={{marginBottom:12}}>
                     <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Email")}</div>
-                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{say(selectedShop.email)}</div>
+                    <div style={{fontSize:16, color:'#e5e7eb', fontWeight:600}}>{resolveShopContactEmail(selectedShop.email, selectedShop.ownerEmail) || say("Not provided")}</div>
                   </div>
                   <div style={{marginBottom:12}}>
                     <div style={{fontSize:11, color:'#6b7280', marginBottom:4}}>{say("Phone")}</div>
@@ -411,12 +416,16 @@ export default function AcceptedShops() {
               <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:16}}>
                 <div style={{display:'flex', alignItems:'center', gap:12}}>
                   <span style={{fontSize:20}}><FaEnvelope style={{marginRight:4}} /></span>
-                  <a 
-                    href={`mailto:${contactShop.email}`}
-                    style={{fontSize:16, fontWeight:600, color:'#e5332a', textDecoration:'none'}}
-                  >
-                    {say(contactShop.email)}
-                  </a>
+                  {contactMailto ? (
+                    <a
+                      href={contactMailto}
+                      style={{fontSize:16, fontWeight:600, color:'#e5332a', textDecoration:'none'}}
+                    >
+                      {contactEmail}
+                    </a>
+                  ) : (
+                    <span style={{fontSize:16, fontWeight:600, color:'#9aa3b2'}}>{say("Not provided")}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -428,11 +437,17 @@ export default function AcceptedShops() {
                 style={{padding:'12px', background:'rgba(34,197,94,0.2)', color:'#22c55e', border:'1px solid rgba(34,197,94,0.3)', borderRadius:8, fontSize:14, fontWeight:600, textAlign:'center', textDecoration:'none', display:'block'}}
               >
                 <FaPhone style={{marginRight:4}} /> {say("Call Now")}{' '}</a>
-              <a 
-                href={`mailto:${contactShop.email}`}
-                style={{padding:'12px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, textAlign:'center', textDecoration:'none', display:'block'}}
-              >
-                <FaEnvelope style={{marginRight:4}} /> {say("Send Email")}{' '}</a>
+              {contactMailto ? (
+                <a
+                  href={contactMailto}
+                  style={{padding:'12px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, textAlign:'center', textDecoration:'none', display:'block'}}
+                >
+                  <FaEnvelope style={{marginRight:4}} /> {say("Send Email")}{' '}</a>
+              ) : (
+                <span style={{padding:'12px', background:'rgba(255,255,255,0.06)', color:'#6b7280', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, fontSize:14, fontWeight:600, textAlign:'center', display:'block'}}>
+                  <FaEnvelope style={{marginRight:4}} /> {say("Not provided")}
+                </span>
+              )}
             </div>
           </div>
         </div>

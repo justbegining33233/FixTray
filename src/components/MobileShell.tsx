@@ -9,6 +9,7 @@ import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { usePhrase } from '@/lib/usePhrase';
+import { OWNER_ADD_SHOP_HREF, OWNER_ADD_USER_HREF } from '@/lib/ownerShell';
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin';
 
@@ -503,8 +504,8 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       { ico: '⚙️', label: 'System', href: '/admin/settings' },
     ],
     newOptions: [
-      { ico: '🏪', title: 'Add Shop', sub: 'Manually register a new shop', href: '/admin/manage-shops' },
-      { ico: '👤', title: 'Add User', sub: 'Create new admin or user', href: '/superadmin/users' },
+      { ico: '🏪', title: 'Add Shop', sub: 'Manually register a new shop', href: OWNER_ADD_SHOP_HREF },
+      { ico: '👤', title: 'Add User', sub: 'Create new admin or user', href: OWNER_ADD_USER_HREF },
     ],
     drawer: [
       {

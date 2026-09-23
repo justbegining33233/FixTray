@@ -1538,6 +1538,8 @@
   "Loading shop details...": "loading_shop_details",
   "Shop not found": "shop_not_found",
   "Back to Manage Customers": "back_to_manage_customers",
+  "Back to Manage Shops": "back_to_manage_shops",
+  "Back to Accepted Shops": "back_to_accepted_shops",
   "Auto": "auto",
   "Processing...": "processing",
   "Suspend Shop": "suspend_shop",

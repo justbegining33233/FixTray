@@ -1952,6 +1952,8 @@
     "loading_shop_details": "دکان کی تفصیلات لوڈ ہو رہی ہیں...",
     "shop_not_found": "دکان نہیں ملی",
     "back_to_manage_customers": "صارفین کا نظم کریں پر واپس جائیں۔",
+    "back_to_manage_shops": "دکانوں کا انتظام پر واپس جائیں",
+    "back_to_accepted_shops": "منظور شدہ دکانوں پر واپس جائیں",
     "auto": "آٹو",
     "suspend_shop": "دکان معطل کریں۔",
     "reactivate_shop": "دکان کو دوبارہ فعال کریں۔",

@@ -1952,6 +1952,8 @@
     "loading_shop_details": "Loading shop details...",
     "shop_not_found": "Shop not found",
     "back_to_manage_customers": "Back to Manage Customers",
+    "back_to_manage_shops": "Back to Manage Shops",
+    "back_to_accepted_shops": "Back to Accepted Shops",
     "auto": "Auto",
     "suspend_shop": "Suspend Shop",
     "reactivate_shop": "Reactivate Shop",

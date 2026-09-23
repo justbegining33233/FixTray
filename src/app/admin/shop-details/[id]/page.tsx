@@ -15,6 +15,7 @@ import {
   shopDetailsMetrics,
   type ShopDetailsView,
 } from '@/lib/shopDetailsView';
+import { shopDetailsBackTarget } from '@/lib/ownerShell';
 import { FaArrowLeft, FaBuilding, FaCalendarAlt, FaCheck, FaExclamationTriangle, FaHourglassHalf, FaPhone, FaStar, FaTimesCircle } from 'react-icons/fa';
 
 export default function ShopDetailsPage() {
@@ -29,8 +30,17 @@ export default function ShopDetailsPage() {
   const [token, setToken] = useState<string | null>(null);
   const [shopMsg, setShopMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const [statusConfirm, setStatusConfirm] = useState<string|null>(null);
+  const [backFrom, setBackFrom] = useState<string | null>(null);
   
   const shopId = params?.id as string;
+  const shopsBack = shopDetailsBackTarget(backFrom);
+  const shopsBackLabel = shopsBack.href === '/admin/accepted-shops'
+    ? say("Back to Accepted Shops")
+    : say("Back to Manage Shops");
+
+  useEffect(() => {
+    setBackFrom(new URLSearchParams(window.location.search).get('from'));
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -137,8 +147,8 @@ export default function ShopDetailsPage() {
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}><FaTimesCircle style={{marginRight:4}} /></div>
           <div style={{ fontSize: 20, marginBottom: 16 }}>{error ? say(error) : say("Shop not found")}</div>
-          <Link href="/admin/manage-customers" style={{ color: '#3b82f6', textDecoration: 'none' }}>
-            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Manage Customers")}{' '}</Link>
+          <Link href={shopsBack.href as Route} style={{ color: '#3b82f6', textDecoration: 'none' }}>
+            <FaArrowLeft style={{marginRight:4}} /> {shopsBackLabel}{' '}</Link>
         </div>
       </div>
     );
@@ -160,8 +170,8 @@ export default function ShopDetailsPage() {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(34,197,94,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          <Link href="/admin/manage-customers" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
-            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Manage Customers")}{' '}</Link>
+          <Link href={shopsBack.href as Route} style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
+            <FaArrowLeft style={{marginRight:4}} /> {shopsBackLabel}{' '}</Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>

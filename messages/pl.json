@@ -1952,6 +1952,8 @@
     "loading_shop_details": "Ładowanie szczegółów sklepu...",
     "shop_not_found": "Nie znaleziono sklepu",
     "back_to_manage_customers": "Wróć do Zarządzanie klientami",
+    "back_to_manage_shops": "Wróć do Zarządzaj sklepami",
+    "back_to_accepted_shops": "Wróć do zaakceptowanych sklepów",
     "auto": "Automatyczny",
     "suspend_shop": "Zawieś sklep",
     "reactivate_shop": "Aktywuj ponownie sklep",

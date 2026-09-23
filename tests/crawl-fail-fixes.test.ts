@@ -1,5 +1,12 @@
 import { describe, it, expect } from '@jest/globals';
-import { shellHrefForRole, SHOP_JOBS_HREF } from '../src/lib/roleNav';
+import {
+  actorRoleForShell,
+  managerShopRedirect,
+  roleDeniedRedirect,
+  roleFromAccessToken,
+  shellHrefForRole,
+  SHOP_JOBS_HREF,
+} from '../src/lib/roleNav';
 import { portalDashboardHref } from '../src/lib/portalHome';
 
 describe('shop jobs nav', () => {
@@ -23,6 +30,33 @@ describe('manager shell destinations', () => {
     expect(shellHrefForRole('/shop/calendar', 'manager')).toBe('/shop/calendar');
     expect(shellHrefForRole('/shop/customer-messages', 'manager')).toBe('/manager/messages');
     expect(shellHrefForRole('/shop/analytics', 'manager')).toBe('/manager/reports');
+    expect(shellHrefForRole('/shop/home', 'Manager')).toBe('/manager/dashboard');
     expect(portalDashboardHref('manager')).toBe('/manager/home');
+  });
+
+  it('sends the four shop-switch targets to manager pages instead of forbidden', () => {
+    expect(managerShopRedirect('/shop/home', 'manager')).toBe('/manager/dashboard');
+    expect(managerShopRedirect('/shop/estimates', 'manager')).toBe('/manager/estimates');
+    expect(managerShopRedirect('/shop/dvi', 'manager')).toBe('/manager/inspections');
+    expect(managerShopRedirect('/shop/work-authorizations', 'manager')).toBe('/manager/work-authorizations');
+    expect(managerShopRedirect('/shop/jobs', 'manager')).toBe('/manager/assignments');
+    expect(roleDeniedRedirect('/shop/home', 'manager')).toBe('/manager/dashboard');
+    expect(roleDeniedRedirect('/shop/estimates', 'manager')).toBe('/manager/estimates');
+    expect(roleDeniedRedirect('/shop/dvi', 'manager')).toBe('/manager/inspections');
+    expect(roleDeniedRedirect('/shop/work-authorizations', 'manager')).toBe('/manager/work-authorizations');
+  });
+
+  it('leaves shop, tech, calendar, and roadside on their own pages', () => {
+    expect(managerShopRedirect('/shop/home', 'shop')).toBeNull();
+    expect(managerShopRedirect('/shop/estimates', 'tech')).toBeNull();
+    expect(managerShopRedirect('/shop/calendar', 'manager')).toBeNull();
+    expect(managerShopRedirect('/shop/new-roadside-job', 'manager')).toBeNull();
+    expect(managerShopRedirect('/shop/new-inshop-job', 'manager')).toBeNull();
+    expect(roleDeniedRedirect('/shop/settings', 'manager')).toBe('/forbidden?from=%2Fshop%2Fsettings');
+    expect(roleDeniedRedirect('/shop/home', 'tech')).toBe('/forbidden?from=%2Fshop%2Fhome');
+    expect(actorRoleForShell({ tokenRole: 'manager', userRole: 'shop', shellRole: 'shop' })).toBe('manager');
+    expect(actorRoleForShell({ userRole: 'shop', shellRole: 'shop' })).toBe('shop');
+    const token = `x.${Buffer.from(JSON.stringify({ role: 'manager' })).toString('base64url')}.y`;
+    expect(roleFromAccessToken(token)).toBe('manager');
   });
 });

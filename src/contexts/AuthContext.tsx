@@ -6,6 +6,7 @@ import type { Route } from 'next';
 import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
 import { actorSatisfiesRoles } from '@/lib/roleAccess';
+import { roleDeniedRedirect } from '@/lib/roleNav';
 
 interface LoginUserData {
   id: string;
@@ -137,6 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         resolvedShopId = resolveShopId(shopId, decodedToken.shopId);
         if (resolvedShopId) localStorage.setItem('shopId', resolvedShopId);
+        if (typeof decodedToken.role === 'string' && decodedToken.role) {
+          role = decodedToken.role;
+          localStorage.setItem('userRole', role);
+        }
 
         // If valid token found, ensure socket is connected for real-time updates
         try {
@@ -307,7 +312,7 @@ export function useRequireAuth(requiredRoles?: string[]) {
       isSuperAdmin: user.isSuperAdmin,
     }, requiredRoles)) {
       const from = typeof window !== 'undefined' ? window.location.pathname : '/';
-      router.replace(`/forbidden?from=${encodeURIComponent(from)}` as Route);
+      router.replace(roleDeniedRedirect(from, user.role) as Route);
     }
   }, [user, isLoading, requiredRoles]); // Remove router from dependencies
 

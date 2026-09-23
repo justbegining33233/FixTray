@@ -8,6 +8,8 @@ import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaB
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { normalizeRole, shellHrefForRole } from '@/lib/roleNav';
 import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
 
 interface MenuItem {
@@ -349,6 +351,8 @@ const superadminGroups: MenuGroup[] = [
 export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, activeHash }: SidebarProps) {
   const say = usePhrase();
   const pathname = usePathname();
+  const { user } = useAuth();
+  const linkRole = normalizeRole(user?.role) || role;
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isCompactDesktop, setIsCompactDesktop] = useState(false);
@@ -361,12 +365,19 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
     role === 'admin' ? adminGroups :
     role === 'superadmin' ? superadminGroups :
     techGroups; // fallback
-  const filteredGroups = role === 'shop'
+  const filteredGroups = (role === 'shop'
     ? groups.map((group) => ({
         ...group,
         items: group.items.filter((item) => !isShopEdgeSensitivePath(item.href)),
       }))
-    : groups;
+    : groups
+  ).map((group) => ({
+    ...group,
+    items: group.items.map((item) => ({
+      ...item,
+      href: shellHrefForRole(item.href, linkRole),
+    })),
+  }));
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(groups.map(g => [g.label, g.defaultOpen ?? false]))

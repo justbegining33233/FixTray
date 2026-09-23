@@ -4,7 +4,9 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { OWNER_ADD_USER_HREF } from '@/lib/ownerShell';
 import { FaArrowLeft, FaBuilding, FaEnvelope, FaHourglassHalf, FaUsers } from 'react-icons/fa';
 
 type User = {
@@ -279,8 +281,15 @@ export default function UserManagement() {
         <div style={{maxWidth:1400, margin:'0 auto'}}>
           <Link href="/admin/home" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:16, display:'inline-block'}}>
             <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
-          <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaUsers style={{marginRight:4}} /> {say("User Management")}</h1>
-          <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Manage all platform users and roles")}</p>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:16, flexWrap:'wrap'}}>
+            <div>
+              <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}><FaUsers style={{marginRight:4}} /> {say("User Management")}</h1>
+              <p style={{fontSize:14, color:'#9aa3b2', margin:0}}>{say("Manage all platform users and roles")}</p>
+            </div>
+            <Link href={OWNER_ADD_USER_HREF as Route} style={{padding:'10px 16px', background:'#e5332a', color:'white', borderRadius:8, textDecoration:'none', fontSize:13, fontWeight:700}}>
+              {say("Add User")}
+            </Link>
+          </div>
         </div>
       </div>
 

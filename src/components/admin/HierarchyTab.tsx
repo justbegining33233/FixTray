@@ -4,6 +4,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
+import { shopDetailsHref } from '@/lib/ownerShell';
 import { FaArrowRight, FaClipboardList, FaDollarSign, FaHardHat, FaStore } from 'react-icons/fa';
 
 interface ShopRow {
@@ -227,7 +228,7 @@ export function HierarchyTab({ shops, liveMetrics }: HierarchyTabProps) {
                       <td className="py-4 pr-4 text-center text-sm text-[#e5332a]">{shop.revenue || '$0'}</td>
                       <td className="py-4 pr-4 text-center text-sm text-[#8B5CF6]">{shop.completionRate ?? 0}%</td>
                       <td className="py-4 text-right">
-                        <Link href={`/admin/manage-shops?id=${shop.id}` as Route} className="text-xs text-[#F97316] hover:text-[#FB923C] font-medium">
+                        <Link href={shopDetailsHref(shop.id, 'manage-shops') as Route} className="text-xs text-[#F97316] hover:text-[#FB923C] font-medium">
                           {say("Manage")}{' '}<FaArrowRight style={{ marginRight: 4 }} />
                         </Link>
                       </td>

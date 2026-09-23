@@ -8,7 +8,9 @@ import {
 import {
   OWNER_ADD_SHOP_HREF,
   OWNER_ADD_USER_HREF,
+  manageShopsIdRedirect,
   shopDetailsBackTarget,
+  shopDetailsHref,
   superadminMobileIsHome,
 } from '../src/lib/ownerShell';
 
@@ -45,7 +47,21 @@ describe('owner shell routes', () => {
 
   it('opens create flows from the New menu', () => {
     expect(OWNER_ADD_SHOP_HREF).toBe('/admin/manage-shops/new');
-    expect(OWNER_ADD_USER_HREF).toBe('/superadmin/users/new');
+    expect(OWNER_ADD_USER_HREF).toBe('/admin/user-management/new');
+  });
+
+  it('opens shop details from a manage-shops id and returns to shops', () => {
+    const shopId = 'cmu39htty0005c3kp808c31h4';
+    expect(manageShopsIdRedirect(null)).toBeNull();
+    expect(manageShopsIdRedirect('  ')).toBeNull();
+    expect(manageShopsIdRedirect(shopId)).toBe(shopDetailsHref(shopId, 'manage-shops'));
+    expect(manageShopsIdRedirect(shopId)).toBe(
+      `/admin/shop-details/${shopId}?from=manage-shops`,
+    );
+    expect(shopDetailsBackTarget('manage-shops')).toEqual({
+      href: '/admin/manage-shops',
+      label: 'Back to Manage Shops',
+    });
   });
 
   it('sends shop details back to shops, not customers', () => {
@@ -59,5 +75,6 @@ describe('owner shell routes', () => {
       label: 'Back to Accepted Shops',
     });
     expect(shopDetailsBackTarget(undefined).href).not.toContain('manage-customers');
+    expect(shopDetailsBackTarget('manage-shops').href).not.toContain('manage-customers');
   });
 });

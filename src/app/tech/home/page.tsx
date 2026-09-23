@@ -13,6 +13,7 @@ import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useIsNative } from '@/context/NativeContext';
+import { isRoadsideLocation } from '@/lib/waitingRoomBoard';
 import { FaArrowRight, FaBook, FaBox, FaCamera, FaCar, FaChartBar, FaCheckCircle, FaCircle, FaClipboardList, FaCog, FaComments, FaExclamationCircle, FaMapMarkerAlt, FaRegCircle, FaSearch, FaStopwatch, FaSyncAlt, FaTools, FaUser, FaWrench } from 'react-icons/fa';
 
 export default function TechHome() {
@@ -27,6 +28,8 @@ export default function TechHome() {
   const [messageUnreadCount, setMessageUnreadCount] = useState(0);
   const [shopProfile, setShopProfile] = useState<any>(null);
   const [shopCoords, setShopCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [shopPinNote, setShopPinNote] = useState<string | null>(null);
+  const [shopAddressLabel, setShopAddressLabel] = useState('');
   const [roadCalls, setRoadCalls] = useState<any[]>([]);
   const [partsVendors, setPartsVendors] = useState<{ vendor: string; address?: string; poId?: string }[]>([]);
   const [homeMsg, setHomeMsg] = useState<{type:'success'|'error';text:string}|null>(null);
@@ -58,47 +61,53 @@ export default function TechHome() {
         const shop = data?.shop ?? data;
         console.log('[Tech Home] Shop profile loaded:', { shopName: shop?.shopName, address: shop?.address });
         setShopProfile(shop);
-        // Use lat/lng if present, otherwise geocode address
-        if (shop?.latitude && shop?.longitude) {
-          setShopCoords({ latitude: shop.latitude, longitude: shop.longitude });
-        } else if (shop?.address) {
-          console.log('[Tech Home] Geocoding shop address:', shop.address, shop.city, shop.state, shop.zipCode);
-          geocodeAddress(shop.address, shop.city, shop.state, shop.zipCode);
-        } else {
-          console.warn('[Tech Home] No address found for shop, using fallback location');
-          setShopCoords({ latitude: 39.9526, longitude: -75.1652 });
-        }
+        await loadShopPin(shop);
       } else {
         // Read response body for helpful debugging info
         let bodyText = '';
         try { bodyText = await response.text(); } catch { bodyText = '<no body>'; }
         console.error(`Shop profile lookup failed: status:${response.status} body:${bodyText}`);
         setShopProfile(undefined);
+        await loadShopPin(null);
       }
     } catch (error) {
       console.error('Error fetching shop profile:', error);
       setShopProfile(undefined);
+      await loadShopPin(null);
     }
   };
 
-  // Geocode address to lat/lng using OpenStreetMap Nominatim
-  const geocodeAddress = async (address: string, city?: string, state?: string, zip?: string) => {
+  const loadShopPin = async (shop: any) => {
+    const profileAddress = [shop?.address, shop?.city, shop?.state, shop?.zipCode].filter(Boolean).join(', ');
     try {
-      const query = encodeURIComponent([address, city, state, zip].filter(Boolean).join(', '));
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-      const data = await res.json();
-      if (data && data.length > 0) {
-        setShopCoords({ latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) });
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/tech/tracking?shopId=current', {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error('tracking failed');
+      const data = await response.json();
+      const pin = data?.shop;
+      const address = pin?.address || profileAddress;
+      setShopAddressLabel(address);
+      if (pin?.latitude != null && pin?.longitude != null) {
+        setShopCoords({ latitude: pin.latitude, longitude: pin.longitude });
+        setShopPinNote(null);
+        return;
+      }
+      setShopCoords(null);
+      if (pin?.status === 'missing-address' || !address) {
+        setShopPinNote('Shop address is not set. Add a street, city, state, and ZIP in shop settings. No placeholder pin is shown.');
       } else {
-        // If no results, use a default center location (Philadelphia area)
-        console.warn('Geocoding returned no results for:', [address, city, state, zip].filter(Boolean).join(', '));
-        setShopCoords({ latitude: 39.9526, longitude: -75.1652 });
+        setShopPinNote(`Shop address is on file (${address}) but could not be placed on the map. No placeholder pin is shown.`);
       }
     } catch (error) {
-      console.error('Geocoding failed:', error);
-      // Use fallback location if geocoding fails
-      setShopCoords({ latitude: 39.9526, longitude: -75.1652 });
+      console.error('Shop pin lookup failed:', error);
+      setShopCoords(null);
+      setShopAddressLabel(profileAddress);
+      setShopPinNote(profileAddress
+        ? `Shop address is on file (${profileAddress}) but the map could not place it. No placeholder pin is shown.`
+        : 'Shop address is not set. No placeholder pin is shown.');
     }
   };
 
@@ -664,7 +673,7 @@ export default function TechHome() {
                     <div style={{flex: isMobile ? 'none' : 5, padding: isMobile ? 8 : 16, display:'flex', flexDirection:'column', minHeight: isMobile ? 200 : 'auto'}}>
                       <div style={{flex:1, borderRadius:8, overflow:'hidden', display:'flex'}}>
                         <div style={{flex:1}}>
-                          <TechLiveMap workOrderId="shop-location" initialLocation={shopCoords} techName={shopProfile?.shopName || 'Shop'} />
+                          <TechLiveMap workOrderId="shop-location" initialLocation={shopCoords} techName={[shopProfile?.shopName || 'Shop', shopAddressLabel].filter(Boolean).join(' — ')} />
                         </div>
                       </div>
                     </div>
@@ -707,7 +716,7 @@ export default function TechHome() {
                               const res = await fetch(`/api/workorders?shopId=${shopId}&status=assigned,in-progress`, { headers: { Authorization: `Bearer ${token}` } });
                               if (!res.ok) { setHomeMsg({type:'error',text:'Failed to fetch road calls'}); return; }
                               const data = await res.json();
-                              const wos = data.workOrders || [];
+                              const wos = (data.workOrders || []).filter((wo: any) => isRoadsideLocation(wo.serviceLocation));
                               setRoadCalls(wos);
                               const markers: any[] = wos.map((wo: any) => wo.location).filter((l: any) => l && l.latitude !== undefined && l.longitude !== undefined).map((l: any) => ({ latitude: l.latitude, longitude: l.longitude, title: 'Road Call' }));
                               window.dispatchEvent(new CustomEvent('map:add_markers', { detail: { type: 'roadcall', markers } }));
@@ -755,7 +764,9 @@ export default function TechHome() {
                               const poRes = await fetch(`/api/purchase-orders?shopId=${user.shopId}`, { headers: { Authorization: `Bearer ${token}` } });
 
                               if (!poRes.ok) {
-                                window.dispatchEvent(new CustomEvent('map:add_markers', { detail: { type: 'parts', markers: [{ latitude: shopCoords?.latitude, longitude: shopCoords?.longitude, title: 'Parts - Shop' }] } }));
+                                if (shopCoords) {
+                                  window.dispatchEvent(new CustomEvent('map:add_markers', { detail: { type: 'parts', markers: [{ latitude: shopCoords.latitude, longitude: shopCoords.longitude, title: 'Parts - Shop' }] } }));
+                                }
                                 setPartsVendors([{ vendor: shopProfile?.shopName || 'Shop', address: shopProfile?.address }]);
                                 btn.dataset.showing = '1'; btn.textContent = 'Hide';
                                 return;
@@ -815,8 +826,8 @@ export default function TechHome() {
                                 }
                               }
 
-                              if (markers.length === 0) {
-                                markers.push({ latitude: shopCoords?.latitude, longitude: shopCoords?.longitude, title: 'Parts - Shop' });
+                              if (markers.length === 0 && shopCoords) {
+                                markers.push({ latitude: shopCoords.latitude, longitude: shopCoords.longitude, title: 'Parts - Shop' });
                                 vendorList.push({ vendor: shopProfile?.shopName || 'Shop', address: shopProfile?.address || undefined });
                               }
 
@@ -876,7 +887,9 @@ export default function TechHome() {
                     </div>
                   </div>
                 ) : (
-                  <div style={{color:'#9aa3b2', textAlign:'center', marginTop:40}}>{say("Loading map...")}</div>
+                  <div data-testid="tech-shop-pin-status" style={{color:'#9aa3b2', textAlign:'center', marginTop:40, padding:'0 16px 24px'}}>
+                    {shopPinNote || say("Loading map...")}
+                  </div>
                 )}
               </div>
             </div>

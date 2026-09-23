@@ -1,11 +1,23 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { configureLeafletIcons } from '@/lib/leafletIcons';
 
 interface Location { latitude: number; longitude: number; estimatedArrival?: string }
 
+function finitePoint(location?: Location | null): { latitude: number; longitude: number } | null {
+  const latitude = location?.latitude;
+  const longitude = location?.longitude;
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') return null;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { latitude, longitude };
+}
+
 export default function TechLiveMap({ workOrderId, initialLocation, techName }: { workOrderId: string; initialLocation?: Location | null; techName?: string }) {
+  const [hasFix, setHasFix] = useState(() => finitePoint(initialLocation) != null);
+  useEffect(() => {
+    if (finitePoint(initialLocation)) setHasFix(true);
+  }, [initialLocation?.latitude, initialLocation?.longitude]);
   const mapRef = useRef<any | null>(null);
   const markerRef = useRef<any | null>(null); // used for work-order/shop marker (shop stays fixed)
   const userMarkerRef = useRef<any | null>(null); // separate marker for sharing tech/user location
@@ -63,8 +75,10 @@ export default function TechLiveMap({ workOrderId, initialLocation, techName }: 
       if (!L) return;
       configureLeafletIcons(L);
 
-      const lat = initialLocation?.latitude ?? 39.9526;
-      const lng = initialLocation?.longitude ?? -75.1652;
+      const point = finitePoint(initialLocation);
+      if (!point) return;
+      const lat = point.latitude;
+      const lng = point.longitude;
 
       const el = document.getElementById(`tech-map-${workOrderId}`);
       if (!el) return;
@@ -152,6 +166,8 @@ export default function TechLiveMap({ workOrderId, initialLocation, techName }: 
 
         const lat = loc.latitude;
         const lng = loc.longitude;
+        if (typeof lat !== 'number' || typeof lng !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        setHasFix(true);
 
         const L = LRef.current;
         if (!L) return;
@@ -362,8 +378,13 @@ export default function TechLiveMap({ workOrderId, initialLocation, techName }: 
   }, [workOrderId, initialLocation?.latitude, initialLocation?.longitude, techName]);
 
   return (
-    <div style={{height:'100%', display:'flex'}}>
-      <div id={`tech-map-${workOrderId}`} style={{flex:1, width:'100%', borderRadius:8, overflow:'hidden'}} />
+    <div style={{height:'100%', display:'flex', position:'relative', minHeight: hasFix ? undefined : 180}}>
+      {!hasFix && (
+        <div data-testid="map-awaiting-location" style={{position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', color:'#9aa3b2', zIndex:2, textAlign:'center', padding:16}}>
+          Location is not available yet. No pin is shown.
+        </div>
+      )}
+      <div id={`tech-map-${workOrderId}`} style={{flex:1, width:'100%', borderRadius:8, overflow:'hidden', minHeight: hasFix ? undefined : 180}} />
     </div>
   );
 }

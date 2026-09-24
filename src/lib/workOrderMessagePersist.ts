@@ -1,3 +1,5 @@
+import { isChatImageUrl } from './messageAttachment';
+
 /** Persist a work-order chat line, including the copy the shop inbox reads. */
 
 export type ThreadKey = { sender: string; body: string };
@@ -18,6 +20,8 @@ export type DirectMessageInsert = {
   shopId: string;
   subject: string;
   body: string;
+  attachmentUrl?: string | null;
+  attachmentType?: string | null;
 };
 
 const STAFF = new Set(['shop', 'tech', 'manager']);
@@ -109,11 +113,19 @@ export function workOrderDirectMessage(input: {
   senderId: string;
   senderName: string;
   body: string;
+  attachmentUrl?: string | null;
+  attachmentType?: string | null;
 }): DirectMessageInsert | null {
   if (!input.shopId) return null;
   const body = input.body.trim();
-  if (!body) return null;
+  const attachmentUrl = input.attachmentUrl && isChatImageUrl(input.attachmentUrl)
+    ? input.attachmentUrl.trim()
+    : null;
+  if (!body && !attachmentUrl) return null;
   const subject = workOrderMessageSubject(input.workOrderId);
+  const attachment = attachmentUrl
+    ? { attachmentUrl, attachmentType: input.attachmentType || 'image' }
+    : {};
   if (STAFF.has(input.senderRole)) {
     if (!input.customerId) return null;
     return {
@@ -126,6 +138,7 @@ export function workOrderDirectMessage(input: {
       shopId: input.shopId,
       subject,
       body,
+      ...attachment,
     };
   }
   if (input.senderRole === 'customer') {
@@ -139,6 +152,7 @@ export function workOrderDirectMessage(input: {
       shopId: input.shopId,
       subject,
       body,
+      ...attachment,
     };
   }
   return null;

@@ -7,8 +7,9 @@ import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle, FaPaperPlane }
 import SignatureCapture from '@/components/SignatureCapture';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
+import ChatMessageBody from '@/components/ChatMessageBody';
 
-interface WOMessage { id: string; sender: string; senderName: string; body: string; createdAt: string }
+interface WOMessage { id: string; sender: string; senderName: string; body: string; createdAt: string; attachmentUrl?: string | null }
 interface WOPhoto   { id: string; url: string; type: string; caption?: string; uploadedAt: string }
 interface WODetail  { messages: WOMessage[]; photos: WOPhoto[] }
 
@@ -469,15 +470,6 @@ export default function Estimates() {
     finally { setSendingMsg(null); }
   };
 
-  // Parse message body — supports embedded media JSON {t:"text", m:["url"]}
-  function parseMessageBody(body: string): { text: string; media: string[] } {
-    try {
-      const p = JSON.parse(body);
-      if (p && typeof p.t === 'string' && Array.isArray(p.m)) return { text: p.t, media: p.m as string[] };
-    } catch { /* plain text */ }
-    return { text: body, media: [] };
-  }
-
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       {/* Header */}
@@ -741,7 +733,6 @@ export default function Estimates() {
                                 ? <div style={{fontSize:12, color:'#6b7280', padding:'8px 0', textAlign:'center'}}>{say("No messages yet — send the first one below.")}</div>
                                 : expandedDetail[estimate.id].messages.map(msg => {
                                     const isShop = ['shop','tech','manager'].includes(msg.sender);
-                                    const parsed = parseMessageBody(msg.body);
                                     return (
                                       <div key={msg.id} style={{display:'flex', flexDirection:'column', alignItems: isShop ? 'flex-start' : 'flex-end'}}>
                                         <div style={{
@@ -751,13 +742,7 @@ export default function Estimates() {
                                           border: `1px solid ${isShop ? 'rgba(96,165,250,0.2)' : 'rgba(229,51,42,0.2)'}`,
                                         }}>
                                           <div style={{fontSize:11, fontWeight:700, color: isShop ? '#60a5fa' : '#e5332a', marginBottom:3}}>{msg.senderName || msg.sender}</div>
-                                          {parsed.text && <p style={{margin:0, fontSize:12, color:'#e5e7eb', whiteSpace:'pre-wrap', lineHeight:1.5}}>{say(parsed.text)}</p>}
-                                          {parsed.media.map((url, i) => {
-                                            const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
-                                            return isVid
-                                              ? <video key={i} src={url} controls style={{maxWidth:'100%', borderRadius:4, marginTop:4, display:'block'}} />
-                                              : <img key={i} src={url} alt="" onClick={() => window.open(url, '_blank')} style={{maxWidth:'100%', borderRadius:4, marginTop:4, display:'block', cursor:'pointer'}} />;
-                                          })}
+                                          <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 12, color: '#e5e7eb', lineHeight: 1.5 }} />
                                         </div>
                                         <div style={{fontSize:10, color:'#6b7280', marginTop:2, paddingInline:4}}>
                                           {new Date(msg.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}{' '}
@@ -1139,7 +1124,6 @@ export default function Estimates() {
                                     ? <div style={{fontSize:12, color:'#6b7280', padding:'8px 0', textAlign:'center'}}>{say("No messages yet — send one below.")}</div>
                                     : expandedDetail[estimate.id].messages.map(msg => {
                                         const isShop = ['shop','tech','manager'].includes(msg.sender);
-                                        const parsed = parseMessageBody(msg.body);
                                         return (
                                           <div key={msg.id} style={{display:'flex', flexDirection:'column', alignItems: isShop ? 'flex-start' : 'flex-end'}}>
                                             <div style={{
@@ -1149,13 +1133,7 @@ export default function Estimates() {
                                               border: `1px solid ${isShop ? 'rgba(96,165,250,0.2)' : 'rgba(229,51,42,0.2)'}`,
                                             }}>
                                               <div style={{fontSize:11,fontWeight:700,color:isShop?'#60a5fa':'#e5332a',marginBottom:3}}>{msg.senderName||msg.sender}</div>
-                                              {parsed.text && <p style={{margin:0,fontSize:12,color:'#e5e7eb',whiteSpace:'pre-wrap',lineHeight:1.5}}>{say(parsed.text)}</p>}
-                                              {parsed.media.map((url, i) => {
-                                                const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
-                                                return isVid
-                                                  ? <video key={i} src={url} controls style={{maxWidth:'100%',borderRadius:4,marginTop:4,display:'block'}} />
-                                                  : <img key={i} src={url} alt="" onClick={()=>window.open(url,'_blank')} style={{maxWidth:'100%',borderRadius:4,marginTop:4,display:'block',cursor:'pointer'}} />;
-                                              })}
+                                              <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 12, color: '#e5e7eb', lineHeight: 1.5 }} />
                                             </div>
                                             <div style={{fontSize:10,color:'#6b7280',marginTop:2,paddingInline:4}}>
                                               {new Date(msg.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}{' '}

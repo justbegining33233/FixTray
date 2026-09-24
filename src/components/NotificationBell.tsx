@@ -24,6 +24,35 @@ type BellItem = {
   kind: 'customer' | 'message' | 'workorder';
 };
 
+type PendingWorkOrder = {
+  id: string;
+  createdAt?: string | Date | null;
+  serviceType?: unknown;
+  issueDescription?: unknown;
+  customerName?: string;
+  customer?: { firstName?: string | null; lastName?: string | null };
+  vehicleType?: string | null;
+  vehicleMake?: string | null;
+  vehicleModel?: string | null;
+  vehicleYear?: string | number | null;
+};
+
+function pendingWorkOrders(data: unknown): PendingWorkOrder[] {
+  const rows = Array.isArray(data)
+    ? data
+    : data && typeof data === 'object' && Array.isArray((data as { workOrders?: unknown }).workOrders)
+      ? (data as { workOrders: unknown[] }).workOrders
+      : [];
+  const orders: PendingWorkOrder[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const record = row as PendingWorkOrder;
+    if (typeof record.id !== 'string' || !record.id) continue;
+    orders.push(record);
+  }
+  return orders;
+}
+
 function messagesLink(role: string): string {
   switch (role) {
     case 'tech': return '/tech/messages';
@@ -80,7 +109,7 @@ export default function NotificationBell() {
         return;
       }
 
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       const [messageRes, seen] = await Promise.all([
         fetch('/api/messages', { credentials: 'include', headers }),
         syncSeenWorkOrderIds(),
@@ -102,8 +131,8 @@ export default function NotificationBell() {
       if (showsSyntheticWorkOrderAlerts(userRole)) {
         const woRes = await fetch('/api/workorders?status=pending&limit=5', { credentials: 'include', headers });
         if (woRes.ok) {
-          const woData = await woRes.json();
-          const workOrders = Array.isArray(woData) ? woData : woData.workOrders || [];
+          const woData: unknown = await woRes.json();
+          const workOrders = pendingWorkOrders(woData);
           workOrderItems = recentAlertWorkOrders(workOrders)
             .filter((wo) => !seen.has(`wo-${wo.id}`))
             .map((wo) => {
@@ -117,11 +146,16 @@ export default function NotificationBell() {
                 vehicle: wo.vehicleType || wo.vehicleMake || [wo.vehicleYear, wo.vehicleMake, wo.vehicleModel].filter(Boolean).join(' '),
                 kind: 'created',
               });
+              const createdAt = typeof wo.createdAt === 'string'
+                ? wo.createdAt
+                : wo.createdAt instanceof Date
+                  ? wo.createdAt.toISOString()
+                  : new Date().toISOString();
               return {
                 id: `wo-${wo.id}`,
                 title: copy.title,
                 message: copy.body,
-                createdAt: wo.createdAt,
+                createdAt,
                 read: false,
                 workOrderId: wo.id,
                 kind: 'workorder' as const,

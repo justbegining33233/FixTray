@@ -39,13 +39,16 @@ export async function PUT(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json().catch(() => ({}));
-  const incoming = Array.isArray(body?.ids) ? body.ids : [];
-  const workOrderIds = Array.from(new Set(
-    incoming
-      .filter((id: unknown): id is string => typeof id === 'string')
-      .map((id: string) => storedWorkOrderId(id))
-      .filter((id: string | null): id is string => Boolean(id)),
-  )).slice(0, MAX_IDS);
+  const incoming: unknown[] = Array.isArray(body?.ids) ? body.ids : [];
+  const workOrderIds: string[] = [];
+  const seenIds = new Set<string>();
+  for (const raw of incoming) {
+    if (workOrderIds.length >= MAX_IDS || typeof raw !== 'string') continue;
+    const stored = storedWorkOrderId(raw);
+    if (!stored || seenIds.has(stored)) continue;
+    seenIds.add(stored);
+    workOrderIds.push(stored);
+  }
 
   if (workOrderIds.length === 0) {
     return NextResponse.json({ success: true, saved: 0 });

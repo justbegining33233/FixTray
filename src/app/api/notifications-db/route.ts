@@ -35,25 +35,32 @@ export async function PATCH(request: NextRequest) {
   
   try {
     const { searchParams } = new URL(request.url);
-    const notificationId = searchParams.get('id');
-    const action = searchParams.get('action');
+    let body: { notificationId?: string; id?: string; action?: string } = {};
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      body = await request.json().catch(() => ({}));
+    }
+    const notificationId = searchParams.get('id') || body.notificationId || body.id;
+    const action = searchParams.get('action') || body.action;
     
     if (action === 'markAllRead') {
       await prisma.notification.updateMany({
-        where: { customerId: auth.id },
-        data: { read: true },
+        where: { customerId: auth.id, read: false },
+        data: { read: true, readAt: new Date() },
       });
       return NextResponse.json({ success: true });
     }
     
     if (notificationId) {
-      await prisma.notification.update({
+      const updated = await prisma.notification.updateMany({
         where: {
           id: notificationId,
           customerId: auth.id,
         },
-        data: { read: true },
+        data: { read: true, readAt: new Date() },
       });
+      if (updated.count === 0) {
+        return NextResponse.json({ success: false }, { status: 404 });
+      }
       return NextResponse.json({ success: true });
     }
     

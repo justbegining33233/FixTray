@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import {
+  counterpartyForViewer,
+  isUnreadForViewer,
+  markReadReceiverIds,
+  participantOrClauses,
+  threadAccessWhere,
+  type MessageViewer,
+} from '@/lib/directMessageAccess';
 
 // GET - Fetch messages/conversations for the logged-in user
 export async function GET(request: NextRequest) {
@@ -22,13 +30,11 @@ export async function GET(request: NextRequest) {
 
     const userId = decoded.id;
     const userRole = decoded.role;
+    const viewer: MessageViewer = { id: userId, role: userRole, shopId: decoded.shopId };
 
-    // Build query to get messages where user is sender OR receiver
+    // Own threads, plus the shop mailbox for managers and techs.
     const where: any = {
-      OR: [
-        { senderId: userId, senderRole: userRole },
-        { receiverId: userId, receiverRole: userRole },
-      ],
+      OR: participantOrClauses(viewer),
     };
 
     // Filter by contact role if specified (only applied when contactId is NOT given)
@@ -45,18 +51,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by specific contact if specified
     if (contactId) {
-      // SECURITY: Verify user has permission to view this conversation
-      // Only allow if user is part of the conversation
-      const contactConditions: any[] = [
-        { senderId: userId, senderRole: userRole, receiverId: contactId },
-        { receiverId: userId, receiverRole: userRole, senderId: contactId },
-      ];
-      // If a specific contact role was also supplied, further narrow the thread
-      if (contactRole) {
-        contactConditions[0].receiverRole = contactRole;
-        contactConditions[1].senderRole = contactRole;
-      }
-      where.AND = [{ OR: contactConditions }];
+      where.AND = [threadAccessWhere(viewer, contactId, contactRole)];
     }
 
     const messages = await prisma.directMessage.findMany({
@@ -72,11 +67,12 @@ export async function GET(request: NextRequest) {
     const missingShopIds = new Set<string>();
     
     messages.forEach((msg) => {
-      // Determine the "other party"; for customers, normalize by shopId to keep a single thread per shop
-      const isRecipient = msg.receiverId === userId;
-      let otherId = isRecipient ? msg.senderId : msg.receiverId;
-      let otherRole = isRecipient ? msg.senderRole : msg.receiverRole;
-      let otherName = isRecipient ? msg.senderName : msg.receiverName;
+      // Shop staff see customer↔shop mailbox messages as a thread with the customer.
+      const mailboxParty = counterpartyForViewer(msg, viewer);
+      const isRecipient = msg.receiverId === userId && msg.receiverRole === userRole;
+      let otherId = mailboxParty?.otherId ?? (isRecipient ? msg.senderId : msg.receiverId);
+      let otherRole = mailboxParty?.otherRole ?? (isRecipient ? msg.senderRole : msg.receiverRole);
+      let otherName = mailboxParty?.otherName ?? (isRecipient ? msg.senderName : msg.receiverName);
 
       // For customers: only collapse messages that are explicitly to/from the 'shop' role into a
       // single shop-level thread.  Direct messages to a specific tech or manager are kept as
@@ -110,8 +106,7 @@ export async function GET(request: NextRequest) {
       const conv = conversations.get(conversationKey);
       conv.messages.push(msg);
       
-      // Count unread messages (where current user is receiver and message is unread)
-      if (msg.receiverId === userId && !msg.isRead) {
+      if (isUnreadForViewer(msg, viewer)) {
         conv.unreadCount++;
       }
     });
@@ -415,14 +410,15 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { messageIds, contactId, contactRole } = body;
 
-    const userId = decoded.id;
+    const viewer: MessageViewer = { id: decoded.id, role: decoded.role, shopId: decoded.shopId };
+    const receiverIds = markReadReceiverIds(viewer);
 
-    // Mark specific messages as read
+    // Mark specific messages as read. Shop staff can clear the shop mailbox too.
     if (messageIds && Array.isArray(messageIds)) {
       await prisma.directMessage.updateMany({
         where: {
           id: { in: messageIds },
-          receiverId: userId, // Only mark messages where current user is receiver
+          receiverId: { in: receiverIds },
         },
         data: {
           isRead: true,
@@ -434,7 +430,7 @@ export async function PUT(request: NextRequest) {
     else if (contactId && contactRole) {
       await prisma.directMessage.updateMany({
         where: {
-          receiverId: userId,
+          receiverId: { in: receiverIds },
           senderId: contactId,
           senderRole: contactRole,
           isRead: false,

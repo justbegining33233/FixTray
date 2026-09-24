@@ -57,6 +57,16 @@ export async function GET(
             estimatedArrival: true,
           }
         },
+        messages: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            sender: true,
+            senderName: true,
+            body: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -89,6 +99,14 @@ export async function GET(
       assignedTo: workOrder.assignedTo,
       vehicle: workOrder.vehicle,
       tracking: workOrder.tracking || null,
+      messages: (workOrder.messages || []).map((message) => ({
+        id: message.id,
+        sender: message.sender,
+        senderName: message.senderName,
+        body: message.body,
+        createdAt: message.createdAt.toISOString(),
+        timestamp: message.createdAt.toISOString(),
+      })),
       estimate: (estimate || quoteAmount > 0) ? {
         amount: bill.subtotal,
         serviceFee: bill.serviceFee,

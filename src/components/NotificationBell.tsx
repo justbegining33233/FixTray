@@ -34,9 +34,14 @@ export default function NotificationBell() {
   const fetchNotifications = useCallback(async () => {
     if (!customerId) return;
     try {
-      const res = await fetch(`/api/notifications?customerId=${customerId}`, { credentials: 'include' });
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/notifications?customerId=${customerId}`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json();
-      setNotifications(data);
+      const rows = Array.isArray(data) ? data : [];
+      setNotifications(rows.filter((item: Notification) => !item.read));
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
@@ -50,52 +55,73 @@ export default function NotificationBell() {
     }
   }, [customerId, fetchNotifications]);
 
+  const authHeaders = () => {
+    const csrf = document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1];
+    const token = localStorage.getItem('token');
+    return {
+      ...(csrf ? { 'x-csrf-token': csrf } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   const markAsRead = async (id: string) => {
+    const previous = notifications;
+    setNotifications(prev => prev.filter(n => n.id !== id));
     try {
-      const csrf = document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1];
-      await fetch(`/api/notifications?customerId=${customerId}&id=${id}`, {
+      const res = await fetch(`/api/notifications?customerId=${customerId}&id=${id}`, {
         method: 'PATCH',
         credentials: 'include',
-        headers: { 'x-csrf-token': csrf || '' },
+        headers: authHeaders(),
       });
-      fetchNotifications();
+      if (!res.ok) setNotifications(previous);
     } catch (error) {
       console.error('Failed to mark as read:', error);
+      setNotifications(previous);
     }
   };
 
   const markAllRead = async () => {
+    const previous = notifications;
+    setNotifications([]);
     try {
-      const csrf = document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1];
-      await fetch(`/api/notifications?customerId=${customerId}&action=markAllRead`, {
+      const res = await fetch(`/api/notifications?customerId=${customerId}&action=markAllRead`, {
         method: 'PATCH',
         credentials: 'include',
-        headers: { 'x-csrf-token': csrf || '' },
+        headers: authHeaders(),
       });
-      fetchNotifications();
-      setShowDropdown(false);
+      if (!res.ok) setNotifications(previous);
+      else setShowDropdown(false);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
+      setNotifications(previous);
     }
   };
 
   const deleteNotif = async (id: string) => {
+    const previous = notifications;
+    setNotifications(prev => prev.filter(n => n.id !== id));
     try {
-      const csrf = document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('csrf_token='))?.split('=')[1];
-      await fetch(`/api/notifications?customerId=${customerId}&id=${id}`, {
+      const res = await fetch(`/api/notifications?customerId=${customerId}&id=${id}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: { 'x-csrf-token': csrf || '' },
+        headers: authHeaders(),
       });
-      fetchNotifications();
+      if (!res.ok) setNotifications(previous);
     } catch (error) {
       console.error('Failed to delete notification:', error);
+      setNotifications(previous);
     }
   };
 
   const handleNotifClick = (notif: Notification) => {
-    if (!notif.read) markAsRead(notif.id);
+    void markAsRead(notif.id);
     setShowDropdown(false);
+    if (notif.workOrderId) {
+      const role = userRole || 'customer';
+      const path = role === 'customer' ? `/customer/workorders/${notif.workOrderId}` : `/workorders/${notif.workOrderId}`;
+      router.push(path as Route);
+      return;
+    }
     router.push(getMessagesLink() as Route);
   };
 

@@ -58,7 +58,7 @@ export default function WorkOrderDetailsPage() {
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState('');
-  const [messages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
 
   const workOrderId = params?.id as string;
 
@@ -85,6 +85,7 @@ export default function WorkOrderDetailsPage() {
       if (response.ok) {
         const data = await response.json();
         setWorkOrder(data);
+        setMessages(Array.isArray(data.messages) ? data.messages : []);
       } else {
         setError('Failed to load work order details');
       }

@@ -446,15 +446,24 @@ export default function Estimates() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ body: text }),
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.message?.id) {
         setExpandedDetail(prev => ({
           ...prev,
-          [woId]: { ...prev[woId], messages: [...(prev[woId]?.messages || []), data.message] },
+          [woId]: {
+            ...prev[woId],
+            messages: (prev[woId]?.messages || []).some((message) => message.id === data.message.id)
+              ? prev[woId].messages
+              : [...(prev[woId]?.messages || []), data.message],
+          },
         }));
         setMsgTexts(prev => ({ ...prev, [woId]: '' }));
+      } else {
+        setEstimateMsg({ type: 'error', text: data.error || 'Message was not saved. Your draft is still here.' });
       }
-    } catch { /* ignore */ }
+    } catch {
+      setEstimateMsg({ type: 'error', text: 'Message was not saved. Your draft is still here.' });
+    }
     finally { setSendingMsg(null); }
   };
 

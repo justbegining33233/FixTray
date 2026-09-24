@@ -3,6 +3,7 @@
 import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import { mergeThreadMessages, toThreadMessage, type ThreadMessage } from '@/lib/messageThread';
+import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 
 const NO_MESSAGES: ThreadMessage[] = [];
 
@@ -60,6 +61,7 @@ export default function CustomerMessaging({
         } else {
           setMessages((current) => mergeThreadMessages(saved, current));
           setError('');
+          void markWorkOrderThreadSeen(workOrderId);
         }
       } catch {
         if (!cancelled) setError('Could not load messages.');

@@ -6,6 +6,7 @@ import {
   messageIsOwn,
   participantOrClauses,
   threadAccessWhere,
+  unreadWhere,
 } from '../src/lib/directMessageAccess';
 import { mergeThreadMessages, toThreadMessage } from '../src/lib/messageThread';
 import {
@@ -21,6 +22,8 @@ import {
   hasWorkOrderFieldUpdates,
   legacyMessagesToStore,
   workOrderDirectMessage,
+  workOrderMessageSubject,
+  workOrderSeenWhere,
 } from '../src/lib/workOrderMessagePersist';
 
 describe('shop mailbox message visibility', () => {
@@ -47,6 +50,15 @@ describe('shop mailbox message visibility', () => {
     ]));
     expect(markReadReceiverIds(manager)).toEqual(['mgr-1', 'shop-1']);
     expect(threadAccessWhere(manager, 'cust-1', 'customer').OR.length).toBeGreaterThan(1);
+    expect(unreadWhere(manager)).toEqual({
+      OR: [
+        { receiverId: 'mgr-1', receiverRole: 'manager', isRead: false },
+        { receiverId: 'shop-1', receiverRole: 'shop', isRead: false },
+      ],
+    });
+    expect(unreadWhere({ id: 'cust-1', role: 'customer' })).toEqual({
+      OR: [{ receiverId: 'cust-1', receiverRole: 'customer', isRead: false }],
+    });
   });
 
   it('stops counting a shop-mailbox message after it is read', () => {
@@ -115,6 +127,37 @@ describe('work order chat persistence', () => {
       body: 'AUDIT msg-persist 20260924-a',
       subject: 'WO-L89V2XSJ',
     });
+    expect(workOrderMessageSubject('cuid1234L89V2XSJ')).toBe('WO-L89V2XSJ');
+  });
+
+  it('marks only this work-order subject seen for the person who opened the chat', () => {
+    const workOrder = { id: 'cuid1234L89V2XSJ', customerId: 'cust-1', shopId: 'shop-1' };
+    expect(workOrderSeenWhere({
+      viewer: { id: 'mgr-1', role: 'manager', shopId: 'shop-1' },
+      workOrder,
+    })).toMatchObject({
+      subject: 'WO-L89V2XSJ',
+      receiverId: 'shop-1',
+      receiverRole: 'shop',
+      senderId: 'cust-1',
+      senderRole: 'customer',
+    });
+    expect(workOrderSeenWhere({
+      viewer: { id: 'cust-1', role: 'customer' },
+      workOrder,
+    })).toMatchObject({
+      subject: 'WO-L89V2XSJ',
+      receiverId: 'cust-1',
+      senderRole: 'shop',
+    });
+    expect(workOrderSeenWhere({
+      viewer: { id: 'other', role: 'customer' },
+      workOrder,
+    })).toBeNull();
+    expect(workOrderSeenWhere({
+      viewer: { id: 'admin-1', role: 'admin' },
+      workOrder,
+    })).toBeNull();
   });
 });
 

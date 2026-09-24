@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
-import { workOrderDirectMessage } from '@/lib/workOrderMessagePersist';
+import { workOrderDirectMessage, workOrderSeenWhere } from '@/lib/workOrderMessagePersist';
 
 export async function POST(
   request: NextRequest,
@@ -95,5 +95,40 @@ export async function POST(
       workOrderId
     });
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+  }
+}
+
+/** Mark the mirrored inbox rows for this work-order chat as seen. */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    const workOrderId = (await params).id;
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: workOrderId },
+      select: { id: true, customerId: true, shopId: true },
+    });
+    if (!wo) return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+
+    const where = workOrderSeenWhere({
+      viewer: { id: auth.id, role: auth.role, shopId: auth.shopId },
+      workOrder: wo,
+    });
+    if (!where) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+
+    const updated = await prisma.directMessage.updateMany({
+      where,
+      data: { isRead: true, readAt: new Date() },
+    });
+    return NextResponse.json({ success: true, updated: updated.count });
+  } catch (error) {
+    logger.error('Error marking work order thread seen', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json({ error: 'Failed to mark messages read' }, { status: 500 });
   }
 }

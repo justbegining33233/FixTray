@@ -13,6 +13,7 @@ import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 import { rememberDismissedWorkOrderIds, workOrderNotificationId } from '@/lib/notificationInbox';
+import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -247,6 +248,7 @@ export default function WorkOrderDetailPage() {
         setWo(w);
         setLineItems(parseLineItems(w));
         setMessages(w.messages ?? []);
+        void markWorkOrderThreadSeen(w.id || id);
         const liveFee = data?.fixtrayServiceFee ?? w.fixtrayServiceFee;
         if (typeof liveFee === 'number' && Number.isFinite(liveFee)) {
           setPlatformFee(liveFee);

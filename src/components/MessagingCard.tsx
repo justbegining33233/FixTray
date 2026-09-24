@@ -117,7 +117,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   // Poll the active thread every 30s as fallback; socket events trigger immediate refresh
   useEffect(() => {
     if (!selectedConversation) return;
-    const interval = setInterval(() => fetchThread(selectedConversation), 30000);
+    const interval = setInterval(() => fetchThread(selectedConversation, { background: true }), 30000);
     return () => clearInterval(interval);
      
   }, [selectedConversation?.contactId, selectedConversation?.contactRole]);
@@ -136,7 +136,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
     const handleNewMessage = () => {
       fetchMessages();
       if (selectedConversationRef.current) {
-        fetchThread(selectedConversationRef.current);
+        fetchThread(selectedConversationRef.current, { background: true });
       }
     };
     on('new-message', handleNewMessage);
@@ -173,11 +173,14 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   };
 
   // Fetch the COMPLETE message history for a specific conversation (no limit)
-  const fetchThread = async (conv: Conversation) => {
-    setThreadState('loading');
+  const fetchThread = async (conv: Conversation, options?: { background?: boolean }) => {
+    if (!options?.background) setThreadState('loading');
     try {
       const token = localStorage.getItem('token');
-      if (!token) { setThreadState('error'); return; }
+      if (!token) {
+        if (!options?.background) setThreadState('error');
+        return;
+      }
       const params = new URLSearchParams({ contactId: conv.contactId, role: conv.contactRole });
       const res = await fetch(`/api/messages?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
@@ -186,13 +189,17 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
         const convData = rows.find(
           (c: Conversation) => c.contactId === conv.contactId && c.contactRole === conv.contactRole,
         ) || rows.find((c: Conversation) => c.contactId === conv.contactId);
-        setThreadMessages(convData?.messages ?? (Array.isArray(conv.messages) ? conv.messages : []));
-        setSelectedConversation((current) => current || conv);
+        if (convData) {
+          setThreadMessages(convData.messages ?? []);
+          setSelectedConversation((current) => current || conv);
+        }
         setThreadState('ready');
-      } else {
+      } else if (!options?.background) {
         setThreadState('error');
       }
-    } catch { setThreadState('error'); }
+    } catch {
+      if (!options?.background) setThreadState('error');
+    }
   };
 
   const fetchAvailableContacts = async () => {

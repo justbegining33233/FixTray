@@ -71,6 +71,18 @@ export function threadAccessWhere(viewer: MessageViewer, contactId: string, cont
   return { OR: or };
 }
 
+/** Prisma filter matching isUnreadForViewer, including the shop mailbox. */
+export function unreadWhere(viewer: MessageViewer): { OR: Array<Record<string, unknown>> } {
+  const or: Array<Record<string, unknown>> = [
+    { receiverId: viewer.id, receiverRole: viewer.role, isRead: false },
+  ];
+  const shopId = mailboxShopId(viewer);
+  if (shopId && shopId !== viewer.id) {
+    or.push({ receiverId: shopId, receiverRole: 'shop', isRead: false });
+  }
+  return { OR: or };
+}
+
 export function isUnreadForViewer(message: DirectMessageParty, viewer: MessageViewer): boolean {
   if (message.isRead) return false;
   if (message.receiverId === viewer.id && message.receiverRole === viewer.role) return true;

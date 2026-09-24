@@ -124,13 +124,20 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
     return contacts.filter((c) => c.role === composeRoleFilter);
   }, [availableContacts, composeRoleFilter, initialShopId]);
 
-  // Auto-select the conversation matching initialShopId on first data load
+  // Auto-select the conversation matching initialShopId on first data load.
+  // Opening it the same way a click does, including mark-read.
   useEffect(() => {
     if (initialShopId && conversations.length > 0 && !selected) {
       const match = conversations.find(
         (c) => c.shopId === initialShopId || c.contactId === initialShopId,
       );
-      if (match) setSelected(match);
+      if (match) {
+        selectedRef.current = match;
+        setSelected(match);
+        setThreadMessages(match.messages ?? []);
+        void markAsRead(match);
+        void fetchThread(match);
+      }
     }
   }, [conversations, initialShopId, selected]);
 
@@ -157,7 +164,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
   // Poll the active thread every 5 s for live updates
   useEffect(() => {
     if (!selected) return;
-    const interval = setInterval(() => fetchThread(selected), 5000);
+    const interval = setInterval(() => fetchThread(selected, { background: true }), 5000);
     return () => clearInterval(interval);
      
   }, [selected?.contactId, selected?.contactRole]);
@@ -185,11 +192,14 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
   };
 
   // Fetch the COMPLETE message history for a specific conversation (no limit)
-  const fetchThread = async (conv: Conversation) => {
-    setThreadState("loading");
+  const fetchThread = async (conv: Conversation, options?: { background?: boolean }) => {
+    if (!options?.background) setThreadState("loading");
     try {
       const token = localStorage.getItem("token");
-      if (!token) { setThreadState("error"); return; }
+      if (!token) {
+        if (!options?.background) setThreadState("error");
+        return;
+      }
       const params = new URLSearchParams({ contactId: conv.contactId, role: conv.contactRole });
       const res = await fetch(`/api/messages?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
@@ -197,12 +207,14 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
         const convData = (data.conversations || []).find(
           (c: Conversation) => c.contactId === conv.contactId && c.contactRole === conv.contactRole,
         );
-        setThreadMessages(convData?.messages ?? []);
+        if (convData) setThreadMessages(convData.messages ?? []);
         setThreadState("ready");
-      } else {
+      } else if (!options?.background) {
         setThreadState("error");
       }
-    } catch { setThreadState("error"); }
+    } catch {
+      if (!options?.background) setThreadState("error");
+    }
   };
 
   const fetchAvailableContacts = async () => {

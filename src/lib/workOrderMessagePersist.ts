@@ -22,6 +22,47 @@ export type DirectMessageInsert = {
 
 const STAFF = new Set(['shop', 'tech', 'manager']);
 
+/** Inbox subject for the mirrored work-order thread. */
+export function workOrderMessageSubject(workOrderId: string): string {
+  return `WO-${workOrderId.slice(-8).toUpperCase()}`;
+}
+
+/**
+ * Rows to mark read when this viewer is looking at the work-order chat.
+ * Scoped to that work order's subject so other inbox threads stay unread.
+ * Returns null when this viewer should not clear the shop or customer mailbox.
+ */
+export function workOrderSeenWhere(input: {
+  viewer: { id: string; role: string; shopId?: string | null };
+  workOrder: { id: string; customerId: string; shopId: string };
+}): Record<string, unknown> | null {
+  const subject = workOrderMessageSubject(input.workOrder.id);
+  const { viewer, workOrder } = input;
+  if (viewer.role === 'customer') {
+    if (viewer.id !== workOrder.customerId) return null;
+    return {
+      subject,
+      receiverId: workOrder.customerId,
+      receiverRole: 'customer',
+      senderId: workOrder.shopId,
+      senderRole: 'shop',
+      isRead: false,
+    };
+  }
+  const staffShop = viewer.role === 'shop'
+    ? viewer.id
+    : (viewer.role === 'manager' || viewer.role === 'tech' ? viewer.shopId : null);
+  if (!staffShop || staffShop !== workOrder.shopId) return null;
+  return {
+    subject,
+    receiverId: workOrder.shopId,
+    receiverRole: 'shop',
+    senderId: workOrder.customerId,
+    senderRole: 'customer',
+    isRead: false,
+  };
+}
+
 /**
  * The live customer chat PUT `{ messages: [...] }` and the strict work-order
  * schema rejects that key, so the row never landed. Pull those lines out and
@@ -72,7 +113,7 @@ export function workOrderDirectMessage(input: {
   if (!input.shopId) return null;
   const body = input.body.trim();
   if (!body) return null;
-  const subject = `WO-${input.workOrderId.slice(-8).toUpperCase()}`;
+  const subject = workOrderMessageSubject(input.workOrderId);
   if (STAFF.has(input.senderRole)) {
     if (!input.customerId) return null;
     return {

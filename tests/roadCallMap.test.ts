@@ -1,5 +1,5 @@
 import { addressesToGeocode, buildRoadCallMap, formatAddressParts, isTrackableRoadCall, shopAddressFromRecord } from '../src/lib/roadCallMap';
-import { clearGeocodeCache, geocodeAddress } from '../src/lib/geocodeAddress';
+import { clearGeocodeCache, geocodeAddress, geocodeAddresses, stripUnitDesignators } from '../src/lib/geocodeAddress';
 
 const shop = { id: 'shop-1', name: 'Jose Diesel', address: '' };
 
@@ -197,14 +197,29 @@ describe('road-call tech and job markers', () => {
 });
 
 describe('nominatim geocoder', () => {
+  const sheridan = '1309 Coffeen Avenue STE 1200, Sheridan, Wyoming 82801';
+  const sheridanStreet = '1309 Coffeen Avenue, Sheridan, Wyoming 82801';
+
   afterEach(() => clearGeocodeCache());
 
-  it('returns null instead of a fallback coordinate when search is empty', async () => {
-    const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch;
-    await expect(geocodeAddress('Nowhere Known, ZZ', fetchImpl)).resolves.toBeNull();
+  it('strips suite, unit, apartment, and hash tokens without touching a state ZIP', () => {
+    expect(stripUnitDesignators(sheridan)).toBe(sheridanStreet);
+    expect(stripUnitDesignators('123 Main St, Ste. 5, Austin, TX 78701')).toBe('123 Main St, Austin, TX 78701');
+    expect(stripUnitDesignators('456 Oak Ave Apt. 4B, Denver, CO 80202')).toBe('456 Oak Ave, Denver, CO 80202');
+    expect(stripUnitDesignators('789 Pine Rd, Unit #12, Miami, FL 33101')).toBe('789 Pine Rd, Miami, FL 33101');
+    expect(stripUnitDesignators('10 Elm St #1200, Boise, ID 83702')).toBe('10 Elm St, Boise, ID 83702');
+    expect(stripUnitDesignators('100 West Street, Sheridan, WY 82801')).toBe('100 West Street, Sheridan, WY 82801');
+    expect(stripUnitDesignators('200 Ocean Dr, Miami, FL 33101')).toBe('200 Ocean Dr, Miami, FL 33101');
   });
 
-  it('reads the first nominatim hit', async () => {
+  it('returns null instead of a fallback coordinate when every variant misses', async () => {
+    const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch;
+    await expect(geocodeAddress('Nowhere Known, ZZ', fetchImpl)).resolves.toBeNull();
+    await expect(geocodeAddress(sheridan, fetchImpl)).resolves.toBeNull();
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
+  it('reads the first nominatim hit and does not retry a clean address', async () => {
     const fetchImpl = jest.fn(async () => ({
       ok: true,
       json: async () => [{ lat: '30.2672', lon: '-97.7431' }],
@@ -213,5 +228,30 @@ describe('nominatim geocoder', () => {
       latitude: 30.2672,
       longitude: -97.7431,
     });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('pins the Sheridan shop address by retrying without the suite', async () => {
+    const fetchImpl = jest.fn(async (url: string | URL | Request) => {
+      const query = decodeURIComponent(String(url).split('q=')[1] || '');
+      if (query.includes('STE')) return { ok: true, json: async () => [] };
+      return { ok: true, json: async () => [{ lat: '44.7841500', lon: '-106.9410171' }] };
+    }) as unknown as typeof fetch;
+
+    const geocodes = await geocodeAddresses([sheridan], { fetchImpl });
+    expect(geocodes[sheridan]).toEqual({ latitude: 44.78415, longitude: -106.9410171 });
+
+    const map = buildRoadCallMap({
+      shop: { id: 'shop-sheridan', name: 'Audit Shop', address: sheridan },
+      jobs: [],
+      geocodes,
+    });
+    expect(map.shop.address).toBe(sheridan);
+    expect(map.shop.status).toBe('pinned');
+    expect(map.shop.latitude).toBeCloseTo(44.78415, 4);
+    expect(map.shop.longitude).toBeCloseTo(-106.94102, 4);
+
+    const calls = (fetchImpl as unknown as jest.Mock).mock.calls.map((call) => decodeURIComponent(String(call[0]).split('q=')[1]));
+    expect(calls).toEqual([sheridan, sheridanStreet]);
   });
 });

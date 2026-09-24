@@ -13,7 +13,10 @@ import {
   parseMessageNotificationId,
   preferenceAllows,
   readDismissedWorkOrderIds,
+  recentAlertWorkOrders,
   rememberDismissedWorkOrderIds,
+  showsSyntheticWorkOrderAlerts,
+  storedWorkOrderId,
   visibleInboxItems,
   workOrderNotificationId,
 } from '../src/lib/notificationInbox';
@@ -217,5 +220,24 @@ describe('notification inbox clear-on-seen', () => {
     expect(saved.has('wo-1')).toBe(true);
     expect(saved.has('msg-customer-1')).toBe(false);
     expect(readDismissedWorkOrderIds(storage).has('wo-1')).toBe(true);
+  });
+
+  it('gives tech the same recent work-order alerts as shop and manager', () => {
+    expect(showsSyntheticWorkOrderAlerts('tech')).toBe(true);
+    expect(showsSyntheticWorkOrderAlerts('shop')).toBe(true);
+    expect(showsSyntheticWorkOrderAlerts('manager')).toBe(true);
+    expect(showsSyntheticWorkOrderAlerts('admin')).toBe(false);
+    expect(showsSyntheticWorkOrderAlerts('customer')).toBe(false);
+    const now = Date.parse('2026-09-24T12:00:00.000Z');
+    const recent = recentAlertWorkOrders([
+      { id: 'old', createdAt: '2026-09-22T12:00:00.000Z' },
+      { id: 'a', createdAt: '2026-09-24T11:00:00.000Z' },
+      { id: 'b', createdAt: '2026-09-24T10:00:00.000Z' },
+      { id: 'c', createdAt: '2026-09-24T09:00:00.000Z' },
+      { id: 'd', createdAt: '2026-09-24T08:00:00.000Z' },
+    ], now);
+    expect(recent.map((order) => order.id)).toEqual(['a', 'b', 'c']);
+    expect(storedWorkOrderId('wo-cuid1234L89V2XSJ')).toBe('cuid1234L89V2XSJ');
+    expect(storedWorkOrderId('not safe')).toBeNull();
   });
 });

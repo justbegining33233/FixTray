@@ -12,7 +12,8 @@ import {
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
-import { rememberDismissedWorkOrderIds, workOrderNotificationId } from '@/lib/notificationInbox';
+import { workOrderNotificationId } from '@/lib/notificationInbox';
+import { saveSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
 import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -229,7 +230,7 @@ export default function WorkOrderDetailPage() {
   useEffect(() => {
     if (!id) return;
     if (typeof window !== 'undefined') {
-      rememberDismissedWorkOrderIds(window.localStorage, [workOrderNotificationId(id)]);
+      saveSeenWorkOrderIds([workOrderNotificationId(id)]);
     }
     let role: string | null = null;
     let uid2: string | null = null;

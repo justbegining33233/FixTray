@@ -1743,6 +1743,20 @@ model PlatformConfig {
   @@map("platform_config")
 }
 
+/// Work-order bell items a user has already opened. Per user so another device stays clear.
+model SeenWorkOrderAlert {
+  id          String   @id @default(cuid())
+  userId      String
+  userRole    String
+  shopId      String?
+  workOrderId String
+  seenAt      DateTime @default(now())
+
+  @@unique([userId, workOrderId])
+  @@index([userId, seenAt])
+  @@map("seen_work_order_alerts")
+}
+
 model LoginAttempt {
   id            String    @id @default(cuid())
   userId        String

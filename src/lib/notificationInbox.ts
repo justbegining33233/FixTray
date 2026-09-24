@@ -12,6 +12,42 @@ export function workOrderNotificationId(workOrderId: string): string {
   return workOrderId.startsWith('wo-') ? workOrderId : `wo-${workOrderId}`;
 }
 
+/** Shop, manager, and tech share the same pending-work-order bell items. */
+export function showsSyntheticWorkOrderAlerts(role: string): boolean {
+  return role === 'shop' || role === 'manager' || role === 'tech';
+}
+
+export function isWithinHours(
+  createdAt: string | Date | null | undefined,
+  hours: number,
+  now = Date.now(),
+): boolean {
+  if (!createdAt) return false;
+  const created = new Date(createdAt).getTime();
+  if (!Number.isFinite(created)) return false;
+  const ageHours = (now - created) / (1000 * 60 * 60);
+  return ageHours >= 0 && ageHours < hours;
+}
+
+export function recentAlertWorkOrders<T extends { createdAt?: string | Date | null }>(
+  orders: T[],
+  now = Date.now(),
+): T[] {
+  return orders.filter((order) => isWithinHours(order.createdAt, 24, now)).slice(0, 3);
+}
+
+/** `wo-` id used in the bell. Null when the raw id is empty or unsafe to store. */
+export function canonicalWorkOrderAlertId(id: string): string | null {
+  const raw = id.startsWith('wo-') ? id.slice(3) : id;
+  if (!raw || raw.length > 80 || !/^[A-Za-z0-9_-]+$/.test(raw)) return null;
+  return `wo-${raw}`;
+}
+
+export function storedWorkOrderId(alertId: string): string | null {
+  const canonical = canonicalWorkOrderAlertId(alertId);
+  return canonical ? canonical.slice(3) : null;
+}
+
 export function parseMessageNotificationId(id: string): { contactRole: string; contactId: string } | null {
   if (!id.startsWith('msg-')) return null;
   const rest = id.slice(4);

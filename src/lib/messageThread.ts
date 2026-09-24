@@ -1,3 +1,5 @@
+import { chatMessageContent } from './messageAttachment';
+
 /** Reconcile a work-order thread with what the server actually stored. */
 
 export type ThreadMessage = {
@@ -6,6 +8,8 @@ export type ThreadMessage = {
   senderName?: string;
   body: string;
   timestamp: Date;
+  attachmentUrl?: string;
+  attachmentType?: string;
 };
 
 export function toThreadMessage(raw: {
@@ -15,17 +19,26 @@ export function toThreadMessage(raw: {
   body?: string;
   createdAt?: string | Date | null;
   timestamp?: string | Date | null;
+  attachmentUrl?: string | null;
+  attachmentType?: string | null;
 }): ThreadMessage | null {
-  if (!raw?.id || !raw.body) return null;
+  if (!raw?.id) return null;
+  const content = chatMessageContent(raw);
+  if (!content.text && content.media.length === 0) return null;
   const stamp = raw.timestamp || raw.createdAt || new Date();
   const timestamp = new Date(stamp);
   if (Number.isNaN(timestamp.getTime())) return null;
+  const attachmentUrl = typeof raw.attachmentUrl === 'string' && raw.attachmentUrl
+    ? raw.attachmentUrl
+    : content.media.find((item) => item.kind === 'image')?.url;
   return {
     id: String(raw.id),
     sender: String(raw.sender || 'customer'),
     senderName: raw.senderName || undefined,
-    body: String(raw.body),
+    body: String(raw.body || ''),
     timestamp,
+    attachmentUrl,
+    attachmentType: raw.attachmentType || (attachmentUrl ? 'image' : undefined),
   };
 }
 

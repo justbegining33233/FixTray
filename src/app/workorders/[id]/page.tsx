@@ -15,10 +15,12 @@ import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeB
 import { workOrderNotificationId } from '@/lib/notificationInbox';
 import { saveSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
 import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
+import ChatMessageBody from '@/components/ChatMessageBody';
+import { uploadChatImage } from '@/lib/uploadChatImage';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type WOMessage = { id: string; sender: string; senderName: string; body: string; createdAt: string };
+type WOMessage = { id: string; sender: string; senderName: string; body: string; createdAt: string; attachmentUrl?: string | null; attachmentType?: string | null };
 type Vehicle   = { id: string; vehicleType: string; make?: string; model?: string; year?: number; vin?: string; licensePlate?: string };
 
 type LineItem = { _key: string; type: 'labor' | 'part' | 'misc'; description: string; partNumber: string; price: number; qty: number; status: 'new' | 'saved'; poId?: string; poCost?: number; };
@@ -310,15 +312,6 @@ export default function WorkOrderDetailPage() {
     return () => clearInterval(iv);
   }, [clockEntry]);
 
-  // ── Parse message body (supports embedded media JSON) ─────────────────────
-  function parseMessageBody(body: string): { text: string; media: string[] } {
-    try {
-      const p = JSON.parse(body);
-      if (p && typeof p.t === 'string' && Array.isArray(p.m)) return { text: p.t, media: p.m as string[] };
-    } catch { /* plain text */ }
-    return { text: body, media: [] };
-  }
-
   // ── Computed totals ────────────────────────────────────────────────────────
   const grandTotal = lineItems.reduce((s, li) => s + li.price * li.qty, 0);
 
@@ -438,13 +431,13 @@ export default function WorkOrderDetailPage() {
     setSending(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const bodyVal = pendingMedia.length > 0
-        ? JSON.stringify({ t: msgText.trim(), m: pendingMedia })
-        : msgText.trim();
       const res = await fetch(`/api/workorders/${id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ body: bodyVal }),
+        body: JSON.stringify({
+          body: msgText.trim(),
+          attachmentUrls: pendingMedia,
+        }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -470,21 +463,17 @@ export default function WorkOrderDetailPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingMedia(true);
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    setMsgError('');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('folder', 'workorder-messages');
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
-      });
-      if (res.ok) {
-        const { url } = await res.json();
-        setPendingMedia(prev => [...prev, url]);
+      const result = await uploadChatImage(file);
+      if ('error' in result) {
+        setMsgError(result.error);
+      } else {
+        setPendingMedia(prev => prev.includes(result.url) ? prev : [...prev, result.url]);
       }
-    } catch { /* ignore */ }
+    } catch {
+      setMsgError('Upload failed. Your draft is still here.');
+    }
     finally {
       setUploadingMedia(false);
       if (mediaInputRef.current) mediaInputRef.current.value = '';
@@ -934,7 +923,6 @@ export default function WorkOrderDetailPage() {
               )}
               {messages.map(msg => {
                 const isShop = ['shop', 'tech', 'manager'].includes(msg.sender);
-                const parsed = parseMessageBody(msg.body);
                 return (
                   <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isShop ? 'flex-end' : 'flex-start' }}>
                     <div style={{
@@ -943,13 +931,7 @@ export default function WorkOrderDetailPage() {
                       border: `1px solid ${isShop ? 'rgba(229,51,42,0.3)' : 'rgba(255,255,255,0.1)'}`,
                     }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: isShop ? '#e5332a' : '#60a5fa', marginBottom: 4 }}>{msg.senderName || msg.sender}</div>
-                      {parsed.text && <p style={{ margin: 0, fontSize: 13, color: '#e5e7eb', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{say(parsed.text)}</p>}
-                      {parsed.media.map((url, i) => {
-                        const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
-                        return isVid
-                          ? <video key={i} src={url} controls style={{ maxWidth: '100%', borderRadius: 6, marginTop: parsed.text ? 6 : 0, display: 'block' }} />
-                          : <img key={i} src={url} alt="attachment" onClick={() => window.open(url, '_blank')} style={{ maxWidth: '100%', borderRadius: 6, marginTop: parsed.text ? 6 : 0, display: 'block', cursor: 'pointer' }} />;
-                      })}
+                      <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 13, color: '#e5e7eb', lineHeight: 1.5 }} />
                     </div>
                     <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2, paddingInline: 4 }}>
                       {new Date(msg.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}{' '}
@@ -980,12 +962,12 @@ export default function WorkOrderDetailPage() {
             )}
 
             {/* Compose */}
-            <input ref={mediaInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={handleMediaUpload} />
+            <input ref={mediaInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }} onChange={handleMediaUpload} />
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={() => mediaInputRef.current?.click()}
                 disabled={uploadingMedia}
-                title={say("Attach photo or video")}
+                title={say("Attach image")}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: uploadingMedia ? '#f59e0b' : '#9aa3b2', cursor: 'pointer', fontSize: 15 }}
               >
                 {uploadingMedia ? '⏳' : <FaPaperclip />}

@@ -6,6 +6,9 @@ import { FaComments, FaExclamationTriangle, FaShieldAlt, FaStore, FaUser, FaUser
 import { useSocket } from '@/lib/socket';
 import { usePhrase } from '@/lib/usePhrase';
 import { messageIsOwn } from '@/lib/directMessageAccess';
+import { chatMessageContent, messageListPreview } from '@/lib/messageAttachment';
+import ChatMessageBody from '@/components/ChatMessageBody';
+import { ChatImageAttachButton, PendingChatImage } from '@/components/ChatImageAttach';
 
 // --- Types --------------------------------------------------------------------
 
@@ -19,6 +22,8 @@ interface Message {
   receiverName: string;
   subject?: string;
   body: string;
+  attachmentUrl?: string | null;
+  attachmentType?: string | null;
   isRead: boolean;
   createdAt: string;
 }
@@ -75,6 +80,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   const [threadMessages, setThreadMessages] = useState<Message[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [messageText, setMessageText] = useState('');
+  const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [threadState, setThreadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [authError, setAuthError] = useState(false);
@@ -239,6 +245,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
     setSelectedConversation(conv);
     setThreadMessages(Array.isArray(conv.messages) ? conv.messages : []);
     setShowCompose(false);
+    setPendingUrl(null);
     markAsRead(conv);
     fetchThread(conv);
   };
@@ -250,8 +257,10 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
         ? { contactId: selectedConversation.contactId, contactRole: selectedConversation.contactRole, contactName: selectedConversation.contactName }
         : null;
 
-    if (!messageText.trim() || !target) return;
+    if ((!messageText.trim() && !pendingUrl) || !target) return;
     setLoading(true);
+    const draft = messageText.trim();
+    const draftImage = pendingUrl;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('/api/messages', {
@@ -261,12 +270,20 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
           receiverId: target.contactId,
           receiverRole: target.contactRole,
           receiverName: target.contactName,
-          messageBody: messageText.trim(),
+          messageBody: draft,
+          attachmentUrl: draftImage,
         }),
       });
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.message?.id) {
+        setMsgMsg({ type: 'error', text: data.error || 'Message was not saved. Your draft is still here.' });
+        return;
+      }
+      setThreadMessages((current) => current.some((row) => row.id === data.message.id) ? current : [...current, data.message]);
+      {
         const sentTo = target;
         setMessageText('');
+        setPendingUrl(null);
         if (showCompose) {
           setShowCompose(false);
           setNewRecipient(null);
@@ -274,7 +291,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
             contactId: sentTo.contactId,
             contactRole: sentTo.contactRole,
             contactName: sentTo.contactName,
-            lastMessage: messageText.trim(),
+            lastMessage: messageListPreview(draft, draftImage),
             lastMessageAt: new Date().toISOString(),
             unreadCount: 0,
             messages: [],
@@ -286,11 +303,8 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
           await fetchThread(selectedConversation);
         }
         await fetchMessages();
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setMsgMsg({type:'error',text:err.error || 'Failed to send message'});
       }
-    } catch { setMsgMsg({type:'error',text:'Error sending message'}); }
+    } catch { setMsgMsg({type:'error',text:'Message was not saved. Your draft is still here.'}); }
     finally { setLoading(false); }
   };
 
@@ -319,7 +333,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', margin: 0 }}><FaComments style={{marginRight:4}} /> {say('Messages')}</h2>
           <button
-            onClick={() => { setShowCompose(true); setSelectedConversation(null); setComposeRoleFilter(activeTab); fetchAvailableContacts(); }}
+            onClick={() => { setShowCompose(true); setSelectedConversation(null); setPendingUrl(null); setComposeRoleFilter(activeTab); fetchAvailableContacts(); }}
             style={{ padding: '6px 14px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             {say('+ New')}
           </button>
@@ -372,6 +386,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               const color = ROLE_COLOR[conv.contactRole] ?? '#9ca3af';
               const isActive = selectedConversation?.contactId === conv.contactId && selectedConversation?.contactRole === conv.contactRole;
               const preview = typeof conv.lastMessage === 'string' ? conv.lastMessage : '';
+              const previewImage = chatMessageContent(conv.messages?.[0] || {}).media.find((item) => item.kind === 'image')?.url;
               return (
                 <button type="button" key={`${conv.contactRole}_${conv.contactId}`} onClick={() => handleSelectConversation(conv)}
                   style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -390,8 +405,13 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                     <span style={{ fontSize: 10, color, fontWeight: 600, display: 'block', marginBottom: 2 }}>
                       {say(ROLE_LABEL[conv.contactRole] ?? conv.contactRole)}
                     </span>
-                    <div style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {preview.length > 40 ? preview.slice(0, 40) + '...' : preview || say("Open thread")}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {previewImage && (
+                        <img src={previewImage} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                      )}
+                      <div style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {preview.length > 40 ? preview.slice(0, 40) + '...' : preview || say("Open thread")}
+                      </div>
                     </div>
                     <div style={{ fontSize: 9, color: '#4b5563', marginTop: 2 }}>
                       {new Date(conv.lastMessageAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -449,20 +469,29 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                   </select>
                 )}
               </div>
-              <textarea
-                placeholder={say('Type your message...')}
-                value={messageText}
-                maxLength={5000}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSendMessage(); }}
-                style={{ flex: 1, padding: 12, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13, resize: 'none', minHeight: 100 }}
-              />
+              {pendingUrl && <PendingChatImage url={pendingUrl} onRemove={() => setPendingUrl(null)} />}
+              <div style={{ display: 'flex', gap: 8, flex: 1, minHeight: 100 }}>
+                <ChatImageAttachButton
+                  disabled={loading}
+                  onUploaded={(url) => { setPendingUrl(url); setMsgMsg(null); }}
+                  onError={(message) => setMsgMsg({ type: 'error', text: message })}
+                  style={{ alignSelf: 'flex-end', height: 40 }}
+                />
+                <textarea
+                  placeholder={say('Type your message...')}
+                  value={messageText}
+                  maxLength={5000}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSendMessage(); }}
+                  style={{ flex: 1, padding: 12, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13, resize: 'none', minHeight: 100 }}
+                />
+              </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={handleSendMessage} disabled={loading || !messageText.trim() || !newRecipient}
-                  style={{ flex: 1, padding: 10, background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || !messageText.trim() || !newRecipient ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || !messageText.trim() || !newRecipient ? 0.5 : 1 }}>
+                <button onClick={handleSendMessage} disabled={loading || (!messageText.trim() && !pendingUrl) || !newRecipient}
+                  style={{ flex: 1, padding: 10, background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || (!messageText.trim() && !pendingUrl) || !newRecipient ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || (!messageText.trim() && !pendingUrl) || !newRecipient ? 0.5 : 1 }}>
                   {loading ? say('Sending...') : say('Send Message')}
                 </button>
-                <button onClick={() => { setShowCompose(false); setMessageText(''); setNewRecipient(null); setComposeRoleFilter(activeTab); }}
+                <button onClick={() => { setShowCompose(false); setMessageText(''); setPendingUrl(null); setNewRecipient(null); setComposeRoleFilter(activeTab); }}
                   style={{ padding: '10px 20px', background: '#6b7280', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
                   {say("Cancel")}{' '}</button>
               </div>
@@ -506,7 +535,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                               {say(msg.senderName)}
                             </div>
                           )}
-                          <div style={{ fontSize: 13, color: '#e5e7eb' }}>{say(msg.body)}</div>
+                          <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 13, color: '#e5e7eb' }} />
                           <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'right', marginTop: 4 }}>
                             {new Date(msg.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </div>
@@ -519,7 +548,15 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               </div>
 
               {/* Reply */}
-              <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: 8 }}>
+              <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                {pendingUrl && <PendingChatImage url={pendingUrl} onRemove={() => setPendingUrl(null)} />}
+                <div style={{ display: 'flex', gap: 8 }}>
+                <ChatImageAttachButton
+                  disabled={loading}
+                  onUploaded={(url) => { setPendingUrl(url); setMsgMsg(null); }}
+                  onError={(message) => setMsgMsg({ type: 'error', text: message })}
+                  style={{ alignSelf: 'flex-end', height: 40 }}
+                />
                 <textarea
                   placeholder={`Reply to ${selectedConversation.contactName}...`}
                   value={messageText}
@@ -528,10 +565,11 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                   style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: 13, resize: 'none', minHeight: 60 }}
                 />
-                <button onClick={handleSendMessage} disabled={loading || !messageText.trim()}
-                  style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || !messageText.trim() ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || !messageText.trim() ? 0.5 : 1, alignSelf: 'flex-end' }}>
+                <button onClick={handleSendMessage} disabled={loading || (!messageText.trim() && !pendingUrl)}
+                  style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: loading || (!messageText.trim() && !pendingUrl) ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, opacity: loading || (!messageText.trim() && !pendingUrl) ? 0.5 : 1, alignSelf: 'flex-end' }}>
                   {loading ? '...' : say("Send")}
                 </button>
+                </div>
               </div>
             </>
 

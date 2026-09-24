@@ -8,6 +8,12 @@ import {
   threadAccessWhere,
   unreadWhere,
 } from '../src/lib/directMessageAccess';
+import {
+  chatMessageContent,
+  isChatImageUrl,
+  messageListPreview,
+  resolveChatAttachment,
+} from '../src/lib/messageAttachment';
 import { mergeThreadMessages, toThreadMessage } from '../src/lib/messageThread';
 import {
   parseMessageNotificationId,
@@ -89,6 +95,65 @@ describe('work order thread reconcile', () => {
     const merged = mergeThreadMessages([], [saved!]);
     expect(mergeThreadMessages(merged, [saved!])).toHaveLength(1);
     expect(toThreadMessage({ sender: 'customer', body: 'no id' })).toBeNull();
+    const image = 'https://res.cloudinary.com/demo/image/upload/v1/sample.png';
+    const photo = toThreadMessage({
+      id: 'msg-photo',
+      sender: 'shop',
+      body: '',
+      attachmentUrl: image,
+      attachmentType: 'image',
+      createdAt: '2026-09-24T16:00:00.000Z',
+    });
+    expect(photo?.attachmentUrl).toBe(image);
+    expect(photo?.body).toBe('');
+    expect(mergeThreadMessages([], [photo!])).toHaveLength(1);
+  });
+});
+
+describe('chat image attachments', () => {
+  const image = 'https://res.cloudinary.com/demo/image/upload/v1/leak.webp';
+
+  it('accepts a Cloudinary image with an optional caption', () => {
+    expect(isChatImageUrl(image)).toBe(true);
+    expect(isChatImageUrl('http://res.cloudinary.com/demo/image/upload/v1/leak.webp')).toBe(false);
+    expect(isChatImageUrl('https://example.com/leak.webp')).toBe(false);
+    expect(isChatImageUrl('https://notcloudinary.com/image/upload/leak.webp')).toBe(false);
+    expect(resolveChatAttachment({ body: 'See this', attachmentUrl: image })).toEqual({
+      ok: true,
+      value: { body: 'See this', attachmentUrl: image, attachmentType: 'image' },
+    });
+    expect(resolveChatAttachment({ body: '', attachmentUrl: image }).ok).toBe(true);
+    expect(resolveChatAttachment({ body: '   ', attachmentUrl: null })).toEqual({
+      ok: false,
+      error: 'Message body is required',
+    });
+    expect(resolveChatAttachment({ body: 'nope', attachmentUrl: 'https://example.com/a.jpg' })).toEqual({
+      ok: false,
+      error: 'Only HTTPS Cloudinary image URLs are allowed',
+    });
+  });
+
+  it('keeps several pictures and still points the inbox at the first image', () => {
+    const second = 'https://res.cloudinary.com/demo/image/upload/v1/other.gif';
+    const resolved = resolveChatAttachment({ body: 'Two angles', attachmentUrls: [image, second] });
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.value.attachmentUrl).toBe(image);
+    expect(chatMessageContent(resolved.value).text).toBe('Two angles');
+    expect(chatMessageContent(resolved.value).media.map((item) => item.url)).toEqual([image, second]);
+    expect(messageListPreview(resolved.value.body, resolved.value.attachmentUrl)).toBe('Two angles');
+    expect(messageListPreview('', image)).toBe('Photo');
+  });
+
+  it('still draws an older shop message that stored the picture inside the body', () => {
+    const legacy = JSON.stringify({ t: 'Before the repair', m: [image] });
+    const content = chatMessageContent({ body: legacy });
+    expect(content).toEqual({ text: 'Before the repair', media: [{ url: image, kind: 'image' }] });
+    const normalized = resolveChatAttachment({ body: legacy });
+    expect(normalized).toEqual({
+      ok: true,
+      value: { body: 'Before the repair', attachmentUrl: image, attachmentType: 'image' },
+    });
   });
 });
 
@@ -131,6 +196,52 @@ describe('work order chat persistence', () => {
       subject: 'WO-L89V2XSJ',
     });
     expect(workOrderMessageSubject('cuid1234L89V2XSJ')).toBe('WO-L89V2XSJ');
+  });
+
+  it('mirrors a picture into the shop inbox with the caption', () => {
+    const image = 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg';
+    const mirror = workOrderDirectMessage({
+      workOrderId: 'cuid1234L89V2XSJ',
+      shopId: 'shop-1',
+      shopName: 'Audit Test Shop',
+      customerId: 'cust-1',
+      customerName: 'FixTray Audit',
+      senderRole: 'shop',
+      senderId: 'shop-1',
+      senderName: 'Audit Test Shop',
+      body: 'Here is the leak',
+      attachmentUrl: image,
+      attachmentType: 'image',
+    });
+    expect(mirror).toMatchObject({
+      senderRole: 'shop',
+      receiverRole: 'customer',
+      receiverId: 'cust-1',
+      body: 'Here is the leak',
+      attachmentUrl: image,
+      attachmentType: 'image',
+      subject: 'WO-L89V2XSJ',
+    });
+    expect(workOrderDirectMessage({
+      workOrderId: 'cuid1234L89V2XSJ',
+      shopId: 'shop-1',
+      customerId: 'cust-1',
+      senderRole: 'customer',
+      senderId: 'cust-1',
+      senderName: 'FixTray Audit',
+      body: '',
+      attachmentUrl: image,
+    })).toMatchObject({ body: '', attachmentUrl: image, receiverRole: 'shop' });
+    expect(workOrderDirectMessage({
+      workOrderId: 'cuid1234L89V2XSJ',
+      shopId: 'shop-1',
+      customerId: 'cust-1',
+      senderRole: 'customer',
+      senderId: 'cust-1',
+      senderName: 'FixTray Audit',
+      body: '',
+      attachmentUrl: 'https://example.com/leak.jpg',
+    })).toBeNull();
   });
 
   it('marks only this work-order subject seen for the person who opened the chat', () => {

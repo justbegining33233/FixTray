@@ -9,6 +9,7 @@ import {
   threadAccessWhere,
   type MessageViewer,
 } from '@/lib/directMessageAccess';
+import { messageListPreview, resolveChatAttachment } from '@/lib/messageAttachment';
 
 // GET - Fetch messages/conversations for the logged-in user
 export async function GET(request: NextRequest) {
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
           contactId: otherId,
           contactRole: otherRole,
           contactName: otherName,
-          lastMessage: msg.body,
+          lastMessage: messageListPreview(msg.body, msg.attachmentUrl),
           lastMessageAt: msg.createdAt,
           unreadCount: 0,
           messages: [],
@@ -178,10 +179,11 @@ export async function POST(request: NextRequest) {
       subject,
       messageBody,
       threadId,
+      attachmentUrl,
     } = body;
 
     const VALID_ROLES = ['customer', 'shop', 'manager', 'tech', 'admin', 'superadmin'];
-    if (!receiverId || !receiverRole || !receiverName || !messageBody) {
+    if (!receiverId || !receiverRole || !receiverName) {
       return NextResponse.json(
         { error: 'Missing required fields: receiverId, receiverRole, receiverName, messageBody' },
         { status: 400 }
@@ -190,13 +192,11 @@ export async function POST(request: NextRequest) {
     if (!VALID_ROLES.includes(receiverRole)) {
       return NextResponse.json({ error: 'Invalid receiverRole' }, { status: 400 });
     }
-    const trimmedBody = String(messageBody).trim();
-    if (!trimmedBody) {
-      return NextResponse.json({ error: 'Message body cannot be empty' }, { status: 400 });
+    const resolved = resolveChatAttachment({ body: messageBody, attachmentUrl });
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: 400 });
     }
-    if (trimmedBody.length > 5000) {
-      return NextResponse.json({ error: 'Message body exceeds 5000 character limit' }, { status: 400 });
-    }
+    const trimmedBody = resolved.value.body;
 
     const senderId = decoded.id;
     const senderRole = decoded.role;
@@ -381,6 +381,8 @@ export async function POST(request: NextRequest) {
           receiverName: t.name,
           subject: subject || null,
           body: trimmedBody,
+          attachmentUrl: resolved.value.attachmentUrl,
+          attachmentType: resolved.value.attachmentType,
           shopId,
           threadId: threadId || null,
         },

@@ -348,13 +348,15 @@ model StatusHistory {
 }
 
 model Message {
-  id          String    @id @default(cuid())
-  workOrderId String
-  sender      String
-  senderName  String
-  body        String
-  createdAt   DateTime  @default(now())
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  workOrderId    String
+  sender         String
+  senderName     String
+  body           String
+  attachmentUrl  String?
+  attachmentType String?
+  createdAt      DateTime  @default(now())
+  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@index([workOrderId])
   @@map("messages")
@@ -666,10 +668,12 @@ model DirectMessage {
   receiverId   String
   receiverRole String
   receiverName String
-  shopId       String?
-  subject      String?
-  body         String
-  isRead       Boolean   @default(false)
+  shopId         String?
+  subject        String?
+  body           String
+  attachmentUrl  String?
+  attachmentType String?
+  isRead         Boolean   @default(false)
   readAt       DateTime?
   threadId     String?
   createdAt    DateTime  @default(now())

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
+import { resolveChatAttachment } from '@/lib/messageAttachment';
 import { workOrderDirectMessage, workOrderSeenWhere } from '@/lib/workOrderMessagePersist';
 
 export async function POST(
@@ -15,14 +16,15 @@ export async function POST(
   try {
     workOrderId = (await params).id;
     const body = await request.json();
-    const messageBody: string = String(body?.body || '').trim();
-
-    if (!messageBody) {
-      return NextResponse.json({ error: 'Message body is required' }, { status: 400 });
+    const resolved = resolveChatAttachment({
+      body: body?.body,
+      attachmentUrl: body?.attachmentUrl,
+      attachmentUrls: body?.attachmentUrls,
+    });
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: 400 });
     }
-    if (messageBody.length > 5000) {
-      return NextResponse.json({ error: 'Message exceeds 5000 characters' }, { status: 400 });
-    }
+    const { body: messageBody, attachmentUrl, attachmentType } = resolved.value;
 
     const wo = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
@@ -60,7 +62,14 @@ export async function POST(
 
     // Save the work-order row first. A shop-inbox mirror must not roll the chat line back.
     const message = await prisma.message.create({
-      data: { workOrderId, sender: auth.role, senderName, body: messageBody },
+      data: {
+        workOrderId,
+        sender: auth.role,
+        senderName,
+        body: messageBody,
+        attachmentUrl,
+        attachmentType,
+      },
     });
 
     const customerName = wo.customer
@@ -76,6 +85,8 @@ export async function POST(
       senderId: auth.id,
       senderName: auth.role === 'customer' ? customerName : senderName,
       body: messageBody,
+      attachmentUrl,
+      attachmentType,
     });
     if (mirror) {
       try {

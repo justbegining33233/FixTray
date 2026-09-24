@@ -225,28 +225,90 @@ function LocationTab({ location, techName }: { location: { lat: number, lng: num
 
 function MessagesTab({ techName }: { techName: string }) {
   const say = usePhrase();
-  const [messages, setMessages] = useState<{sender:string;message:string;time:string;type:string}[]>([]);
+  const [messages, setMessages] = useState<{id:string;sender:string;message:string;time:string;type:string}[]>([]);
+  const [replyTo, setReplyTo] = useState<{ id: string; role: string; name: string } | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [sendError, setSendError] = useState('');
 
-  const handleSend = async () => {
-    if (!newMessage.trim()) return;
-    setSending(true);
+  const loadMessages = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoadError('Sign in again to load messages.');
+      return;
+    }
     try {
       const res = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
-        body: JSON.stringify({ content: newMessage.trim(), recipientType: 'shop' }),
+      });
+      if (!res.ok) {
+        setLoadError('Could not load messages.');
+        return;
+      }
+      const data = await res.json();
+      const conversations = Array.isArray(data?.conversations) ? data.conversations : [];
+      const userId = localStorage.getItem('userId');
+      const rows = conversations.flatMap((conv: any) =>
+        (Array.isArray(conv.messages) ? conv.messages : []).map((msg: any) => ({
+          id: String(msg.id),
+          sender: msg.senderName || conv.contactName || 'Contact',
+          message: String(msg.body || ''),
+          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: msg.senderId === userId ? 'sent' : 'received',
+          createdAt: msg.createdAt,
+        })),
+      ).sort((a: { createdAt: string }, b: { createdAt: string }) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      setMessages(rows);
+      const latest = conversations[0];
+      if (latest?.contactId && latest?.contactRole) {
+        setReplyTo({ id: latest.contactId, role: latest.contactRole, name: latest.contactName || 'Contact' });
+      }
+      setLoadError('');
+    } catch {
+      setLoadError('Could not load messages.');
+    }
+  };
+
+  useEffect(() => {
+    loadMessages();
+  }, []);
+
+  const handleSend = async () => {
+    const text = newMessage.trim();
+    if (!text) return;
+    if (!replyTo) {
+      setSendError('No thread to reply to yet. Open Messages to start one. Your draft is still here.');
+      return;
+    }
+    setSending(true);
+    setSendError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          receiverId: replyTo.id,
+          receiverRole: replyTo.role,
+          receiverName: replyTo.name,
+          messageBody: text,
+        }),
       });
       if (res.ok) {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        setMessages(prev => [...prev, { sender: techName || 'You', message: newMessage.trim(), time: timeStr, type: 'sent' }]);
         setNewMessage('');
+        await loadMessages();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setSendError(err.error || 'Message was not saved. Your draft is still here.');
       }
-    } catch (err) {
-      console.error('Failed to send message:', err);
+    } catch {
+      setSendError('Message was not saved. Your draft is still here.');
     } finally {
       setSending(false);
     }
@@ -259,14 +321,17 @@ function MessagesTab({ techName }: { techName: string }) {
   return (
     <div>
       <div className="sos-title">{say("Messages")}</div>
-      <p className="sos-desc">{say("Chat with customers and managers")}</p>
+      <p className="sos-desc">{say("Chat with customers and managers")}{techName ? ` · ${techName}` : ''}</p>
       
       <div className="sos-list" style={{marginTop:24}}>
-        {messages.length === 0 && (
+        {loadError && (
+          <div style={{textAlign:'center', padding:40, color:'#fca5a5'}}>{say(loadError)}</div>
+        )}
+        {!loadError && messages.length === 0 && (
           <div style={{textAlign:'center', padding:40, color:'#9aa3b2'}}>{say("No messages yet")}</div>
         )}
-        {messages.map((msg, i) => (
-          <div key={i} className="sos-item" style={{
+        {messages.map((msg) => (
+          <div key={msg.id} className="sos-item" style={{
             flexDirection:'column',
             alignItems: msg.type === 'sent' ? 'flex-end' : 'flex-start',
             background: msg.type === 'sent' ? 'rgba(229,51,42,0.14)' : '#454545',
@@ -292,6 +357,7 @@ function MessagesTab({ techName }: { techName: string }) {
           {sending ? '...' : say("Send")}
         </button>
       </div>
+      {sendError && <div style={{marginTop:8, fontSize:12, color:'#fca5a5'}}>{say(sendError)}</div>}
     </div>
   );
 }

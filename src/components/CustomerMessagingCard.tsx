@@ -72,6 +72,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
   const [threadMessages, setThreadMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [threadState, setThreadState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [authError, setAuthError] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const [custMsgMsg, setCustMsgMsg] = useState<{type:'success'|'error';text:string}|null>(null);
@@ -123,13 +124,20 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
     return contacts.filter((c) => c.role === composeRoleFilter);
   }, [availableContacts, composeRoleFilter, initialShopId]);
 
-  // Auto-select the conversation matching initialShopId on first data load
+  // Auto-select the conversation matching initialShopId on first data load.
+  // Opening it the same way a click does, including mark-read.
   useEffect(() => {
     if (initialShopId && conversations.length > 0 && !selected) {
       const match = conversations.find(
         (c) => c.shopId === initialShopId || c.contactId === initialShopId,
       );
-      if (match) setSelected(match);
+      if (match) {
+        selectedRef.current = match;
+        setSelected(match);
+        setThreadMessages(match.messages ?? []);
+        void markAsRead(match);
+        void fetchThread(match);
+      }
     }
   }, [conversations, initialShopId, selected]);
 
@@ -156,7 +164,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
   // Poll the active thread every 5 s for live updates
   useEffect(() => {
     if (!selected) return;
-    const interval = setInterval(() => fetchThread(selected), 5000);
+    const interval = setInterval(() => fetchThread(selected, { background: true }), 5000);
     return () => clearInterval(interval);
      
   }, [selected?.contactId, selected?.contactRole]);
@@ -184,10 +192,14 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
   };
 
   // Fetch the COMPLETE message history for a specific conversation (no limit)
-  const fetchThread = async (conv: Conversation) => {
+  const fetchThread = async (conv: Conversation, options?: { background?: boolean }) => {
+    if (!options?.background) setThreadState("loading");
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        if (!options?.background) setThreadState("error");
+        return;
+      }
       const params = new URLSearchParams({ contactId: conv.contactId, role: conv.contactRole });
       const res = await fetch(`/api/messages?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
@@ -195,9 +207,14 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
         const convData = (data.conversations || []).find(
           (c: Conversation) => c.contactId === conv.contactId && c.contactRole === conv.contactRole,
         );
-        setThreadMessages(convData?.messages ?? []);
+        if (convData) setThreadMessages(convData.messages ?? []);
+        setThreadState("ready");
+      } else if (!options?.background) {
+        setThreadState("error");
       }
-    } catch { /* silent */ }
+    } catch {
+      if (!options?.background) setThreadState("error");
+    }
   };
 
   const fetchAvailableContacts = async () => {
@@ -257,10 +274,26 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
         }),
       });
       if (res.ok) {
+        const draft = messageText.trim();
         setMessageText("");
-        if (showCompose) { setShowCompose(false); setNewRecipient(null); }
-        // Reload full thread so the sent message appears
-        if (selected) await fetchThread(selected);
+        if (showCompose && target) {
+          setShowCompose(false);
+          setNewRecipient(null);
+          const opened: Conversation = {
+            contactId: target.contactId,
+            contactRole: target.contactRole,
+            contactName: target.contactName,
+            lastMessage: draft,
+            lastMessageAt: new Date().toISOString(),
+            unreadCount: 0,
+            messages: [],
+          };
+          selectedRef.current = opened;
+          setSelected(opened);
+          await fetchThread(opened);
+        } else if (selected) {
+          await fetchThread(selected);
+        }
         await fetchMessages();
       } else {
         const err = await res.json().catch(() => ({}));
@@ -454,7 +487,13 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
               {/* Messages */}
               <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                 {threadMessages.length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>{say("Loading messages...")}</div>
+                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>
+                    {threadState === "error"
+                      ? say("Could not load messages. The thread is still here.")
+                      : threadState === "loading"
+                        ? say("Loading messages...")
+                        : say("No messages yet.")}
+                  </div>
                 )}
                 {threadMessages
                   .slice()

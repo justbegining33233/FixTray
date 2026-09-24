@@ -11,6 +11,7 @@ import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
+import { hasWorkOrderFieldUpdates, legacyMessagesToStore, workOrderDirectMessage } from '@/lib/workOrderMessagePersist';
 
 export async function GET(
   request: NextRequest,
@@ -112,8 +113,11 @@ export async function PUT(
   try {
     id = (await params).id;
     const requestData = await request.json();
+    const legacyMessages = requestData?.messages;
+    if (requestData && typeof requestData === 'object') delete requestData.messages;
     
-    // Validate input data
+    // Validate input data. Chat lines are stored separately; the strict
+    // work-order schema does not accept a `messages` blob.
     const validation = validateRequest(workOrderUpdateSchema, requestData);
     if (!validation.success) {
       return NextResponse.json(
@@ -143,6 +147,55 @@ export async function PUT(
     
     if (!canUpdate) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const existingThread = await prisma.message.findMany({
+      where: { workOrderId: id },
+      select: { sender: true, body: true },
+    });
+    const chatLines = legacyMessagesToStore(existingThread, legacyMessages, auth.role);
+    if (chatLines.length > 0) {
+      const customerName = current.customer
+        ? `${current.customer.firstName || ''} ${current.customer.lastName || ''}`.trim()
+        : 'Customer';
+      for (const line of chatLines) {
+        await prisma.message.create({
+          data: {
+            workOrderId: id,
+            sender: line.sender,
+            senderName: line.senderName,
+            body: line.body,
+          },
+        });
+        const mirror = workOrderDirectMessage({
+          workOrderId: id,
+          shopId: current.shopId,
+          shopName: current.shop?.shopName,
+          customerId: current.customerId,
+          customerName,
+          senderRole: auth.role,
+          senderId: auth.id,
+          senderName: auth.role === 'customer' ? (customerName || line.senderName) : line.senderName,
+          body: line.body,
+        });
+        if (!mirror) continue;
+        try {
+          await prisma.directMessage.create({ data: mirror });
+        } catch (mirrorError) {
+          logger.error('Work order chat line saved but shop inbox mirror failed', {
+            error: mirrorError instanceof Error ? mirrorError.message : String(mirrorError),
+            workOrderId: id,
+          });
+        }
+      }
+    }
+
+    if (!hasWorkOrderFieldUpdates(data)) {
+      const messages = await prisma.message.findMany({
+        where: { workOrderId: id },
+        orderBy: { createdAt: 'asc' },
+      });
+      return NextResponse.json({ ...current, messages });
     }
 
     const platformFeeUsd = await getPlatformServiceFeeUsd();

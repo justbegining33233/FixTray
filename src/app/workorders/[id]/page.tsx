@@ -12,6 +12,9 @@ import {
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
+import { workOrderNotificationId } from '@/lib/notificationInbox';
+import { saveSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
+import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -184,6 +187,7 @@ export default function WorkOrderDetailPage() {
   const [messages,   setMessages]     = useState<WOMessage[]>([]);
   const [msgText,    setMsgText]      = useState('');
   const [sending,    setSending]      = useState(false);
+  const [msgError,   setMsgError]     = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Media attachments in messages
@@ -225,6 +229,9 @@ export default function WorkOrderDetailPage() {
   // Load work order + read userRole/userId/shopId from localStorage
   useEffect(() => {
     if (!id) return;
+    if (typeof window !== 'undefined') {
+      saveSeenWorkOrderIds([workOrderNotificationId(id)]);
+    }
     let role: string | null = null;
     let uid2: string | null = null;
     if (typeof window !== 'undefined') {
@@ -242,6 +249,7 @@ export default function WorkOrderDetailPage() {
         setWo(w);
         setLineItems(parseLineItems(w));
         setMessages(w.messages ?? []);
+        void markWorkOrderThreadSeen(w.id || id);
         const liveFee = data?.fixtrayServiceFee ?? w.fixtrayServiceFee;
         if (typeof liveFee === 'number' && Number.isFinite(liveFee)) {
           setPlatformFee(liveFee);
@@ -440,10 +448,20 @@ export default function WorkOrderDetailPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setMessages(prev => [...prev, data.message]);
+        if (!data.message?.id) {
+          setMsgError('Message was not saved. Your draft is still here.');
+          return;
+        }
+        setMessages(prev => prev.some(m => m.id === data.message.id) ? prev : [...prev, data.message]);
         setMsgText('');
         setPendingMedia([]);
+        setMsgError('');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setMsgError(err.error || 'Message was not saved. Your draft is still here.');
       }
+    } catch {
+      setMsgError('Message was not saved. Your draft is still here.');
     } finally { setSending(false); }
   };
 
@@ -988,6 +1006,9 @@ export default function WorkOrderDetailPage() {
                 <FaPaperPlane style={{ fontSize: 12 }} /> {sending ? '…' : say("Send")}
               </button>
             </div>
+            {msgError && (
+              <div style={{ marginTop: 8, fontSize: 12, color: '#fca5a5' }}>{say(msgError)}</div>
+            )}
           </Card>
         </div>
 

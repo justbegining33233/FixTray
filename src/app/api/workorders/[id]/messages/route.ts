@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
+import { workOrderDirectMessage, workOrderSeenWhere } from '@/lib/workOrderMessagePersist';
 
 export async function POST(
   request: NextRequest,
@@ -57,55 +58,35 @@ export async function POST(
       if (tech) senderName = `${tech.firstName} ${tech.lastName}`.trim();
     }
 
-    // Use transaction to ensure both messages are created together or both fail
-    const message = await prisma.$transaction(async (tx) => {
-      // 1. Create work-order-specific message (shows in WO thread)
-      const msg = await tx.message.create({
-        data: { workOrderId, sender: auth.role, senderName, body: messageBody },
-      });
+    // Save the work-order row first. A shop-inbox mirror must not roll the chat line back.
+    const message = await prisma.message.create({
+      data: { workOrderId, sender: auth.role, senderName, body: messageBody },
+    });
 
-      // 2. Mirror to DirectMessage so it appears in the messages page
-      const woShortId = `WO-${workOrderId.slice(-8).toUpperCase()}`;
-      const shopId = wo.shopId;
-
-      type UserRole = 'admin' | 'superadmin' | 'shop' | 'tech' | 'manager' | 'customer';
-
-      if (['shop', 'tech', 'manager'].includes(auth.role) && wo.customer) {
-        const shopSenderId = auth.role === 'shop' ? auth.id : (auth.shopId || shopId);
-        await tx.directMessage.create({
-          data: {
-            senderId:     shopSenderId,
-            senderRole:   'shop' as UserRole,
-            senderName:   wo.shop?.shopName || senderName,
-            receiverId:   wo.customerId,
-            receiverRole: 'customer' as UserRole,
-            receiverName: `${wo.customer.firstName} ${wo.customer.lastName}`.trim(),
-            shopId,
-            subject:      woShortId,
-            body:         messageBody,
-          },
-        });
-      } else if (auth.role === 'customer') {
-        const customerName = wo.customer
-          ? `${wo.customer.firstName} ${wo.customer.lastName}`.trim()
-          : 'Customer';
-        await tx.directMessage.create({
-          data: {
-            senderId:     auth.id,
-            senderRole:   'customer' as UserRole,
-            senderName:   customerName,
-            receiverId:   shopId,
-            receiverRole: 'shop' as UserRole,
-            receiverName: wo.shop?.shopName || 'Shop',
-            shopId,
-            subject:      woShortId,
-            body:         messageBody,
-          },
+    const customerName = wo.customer
+      ? `${wo.customer.firstName} ${wo.customer.lastName}`.trim()
+      : 'Customer';
+    const mirror = workOrderDirectMessage({
+      workOrderId,
+      shopId: wo.shopId,
+      shopName: wo.shop?.shopName,
+      customerId: wo.customerId,
+      customerName,
+      senderRole: auth.role,
+      senderId: auth.id,
+      senderName: auth.role === 'customer' ? customerName : senderName,
+      body: messageBody,
+    });
+    if (mirror) {
+      try {
+        await prisma.directMessage.create({ data: mirror });
+      } catch (mirrorError) {
+        logger.error('Work order message saved but shop inbox mirror failed', {
+          error: mirrorError instanceof Error ? mirrorError.message : String(mirrorError),
+          workOrderId,
         });
       }
-
-      return msg;
-    });
+    }
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
@@ -114,5 +95,40 @@ export async function POST(
       workOrderId
     });
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+  }
+}
+
+/** Mark the mirrored inbox rows for this work-order chat as seen. */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    const workOrderId = (await params).id;
+    const wo = await prisma.workOrder.findUnique({
+      where: { id: workOrderId },
+      select: { id: true, customerId: true, shopId: true },
+    });
+    if (!wo) return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+
+    const where = workOrderSeenWhere({
+      viewer: { id: auth.id, role: auth.role, shopId: auth.shopId },
+      workOrder: wo,
+    });
+    if (!where) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+
+    const updated = await prisma.directMessage.updateMany({
+      where,
+      data: { isRead: true, readAt: new Date() },
+    });
+    return NextResponse.json({ success: true, updated: updated.count });
+  } catch (error) {
+    logger.error('Error marking work order thread seen', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json({ error: 'Failed to mark messages read' }, { status: 500 });
   }
 }

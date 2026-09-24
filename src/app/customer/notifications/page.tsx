@@ -33,25 +33,47 @@ export default function CustomerNotificationsPage() {
       if (res.ok) {
         const data = await res.json();
         const rows = Array.isArray(data) ? data : [];
-        setNotifications(rows.map((row: Notification & { message?: string }) => ({
-          ...row,
-          body: row.body || row.message || '',
-        })));
+        setNotifications(rows
+          .filter((row: Notification) => !row.read)
+          .map((row: Notification & { message?: string }) => ({
+            ...row,
+            body: row.body || row.message || '',
+          })));
       }
     } catch {}
     finally { setLoading(false); }
   };
 
   const markAsRead = async (id: string) => {
+    const previous = notifications;
+    setNotifications(prev => prev.filter(n => n.id !== id));
     try {
       const token = localStorage.getItem('token');
-      await fetch('/api/notifications-db', {
+      const res = await fetch('/api/notifications-db', {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationId: id }),
       });
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    } catch {}
+      if (!res.ok) setNotifications(previous);
+    } catch {
+      setNotifications(previous);
+    }
+  };
+
+  const markAllRead = async () => {
+    const previous = notifications;
+    setNotifications([]);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/notifications-db', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markAllRead' }),
+      });
+      if (!res.ok) setNotifications(previous);
+    } catch {
+      setNotifications(previous);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -68,6 +90,14 @@ export default function CustomerNotificationsPage() {
             <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 700 }}>{say("Notifications")}</h1>
             {unreadCount > 0 && <p style={{ color: '#ff6b64', fontSize: 14 }}>{say(unreadCount)} unread</p>}
           </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              style={{ background: 'transparent', border: '1px solid #334155', color: '#93c5fd', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontSize: 13 }}
+            >
+              {say("Clear all")}
+            </button>
+          )}
         </div>
 
         {loading ? (

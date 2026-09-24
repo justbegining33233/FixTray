@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { unreadWhere } from '@/lib/directMessageAccess';
 
 // GET /api/messages/unread-count
 // Returns the number of unread direct messages for the authenticated user.
@@ -18,11 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const count = await prisma.directMessage.count({
-      where: {
-        receiverId: decoded.id,
-        receiverRole: decoded.role,
-        isRead: false,
-      },
+      where: unreadWhere({ id: decoded.id, role: decoded.role, shopId: decoded.shopId }),
     });
 
     return NextResponse.json({ count });

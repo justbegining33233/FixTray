@@ -6,6 +6,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle, FaPaperPlane } from 'react-icons/fa';
 import SignatureCapture from '@/components/SignatureCapture';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
+import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 
 interface WOMessage { id: string; sender: string; senderName: string; body: string; createdAt: string }
 interface WOPhoto   { id: string; url: string; type: string; caption?: string; uploadedAt: string }
@@ -429,6 +430,7 @@ export default function Estimates() {
             photos: Array.isArray(w.workPhotos) ? w.workPhotos : [],
           },
         }));
+        void markWorkOrderThreadSeen(woId);
       }
     } catch { /* ignore */ }
     finally { setDetailLoading(null); }
@@ -446,15 +448,24 @@ export default function Estimates() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ body: text }),
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.message?.id) {
         setExpandedDetail(prev => ({
           ...prev,
-          [woId]: { ...prev[woId], messages: [...(prev[woId]?.messages || []), data.message] },
+          [woId]: {
+            ...prev[woId],
+            messages: (prev[woId]?.messages || []).some((message) => message.id === data.message.id)
+              ? prev[woId].messages
+              : [...(prev[woId]?.messages || []), data.message],
+          },
         }));
         setMsgTexts(prev => ({ ...prev, [woId]: '' }));
+      } else {
+        setEstimateMsg({ type: 'error', text: data.error || 'Message was not saved. Your draft is still here.' });
       }
-    } catch { /* ignore */ }
+    } catch {
+      setEstimateMsg({ type: 'error', text: 'Message was not saved. Your draft is still here.' });
+    }
     finally { setSendingMsg(null); }
   };
 
@@ -1212,7 +1223,7 @@ export default function Estimates() {
       {estimateMsg && (
         <div style={{position:'fixed',bottom:24,right:24,background:estimateMsg.type==='success'?'#dcfce7':'#fde8e8',color:estimateMsg.type==='success'?'#166534':'#991b1b',borderRadius:10,padding:'12px 20px',zIndex:9999,fontSize:14,fontWeight:600,boxShadow:'0 4px 12px rgba(0,0,0,0.3)'}}>
           {say(estimateMsg.text)}
-          <button onClick={()=>setEstimateMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}></button>
+          <button aria-label={say("Dismiss")} onClick={()=>setEstimateMsg(null)} style={{marginLeft:12,background:'none',border:'none',cursor:'pointer',fontSize:16,color:'inherit'}}>×</button>
         </div>
       )}
     </div>

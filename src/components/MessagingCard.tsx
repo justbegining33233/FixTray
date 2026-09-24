@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaComments, FaExclamationTriangle, FaShieldAlt, FaStore, FaUser, FaUserTie, FaWrench } from 'react-icons/fa';
 import { useSocket } from '@/lib/socket';
 import { usePhrase } from '@/lib/usePhrase';
+import { messageIsOwn } from '@/lib/directMessageAccess';
 
 // --- Types --------------------------------------------------------------------
 
@@ -75,6 +76,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [threadState, setThreadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [authError, setAuthError] = useState(false);
   const [msgMsg, setMsgMsg] = useState<{type:'success'|'error';text:string}|null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -115,7 +117,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   // Poll the active thread every 30s as fallback; socket events trigger immediate refresh
   useEffect(() => {
     if (!selectedConversation) return;
-    const interval = setInterval(() => fetchThread(selectedConversation), 30000);
+    const interval = setInterval(() => fetchThread(selectedConversation, { background: true }), 30000);
     return () => clearInterval(interval);
      
   }, [selectedConversation?.contactId, selectedConversation?.contactRole]);
@@ -134,7 +136,7 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
     const handleNewMessage = () => {
       fetchMessages();
       if (selectedConversationRef.current) {
-        fetchThread(selectedConversationRef.current);
+        fetchThread(selectedConversationRef.current, { background: true });
       }
     };
     on('new-message', handleNewMessage);
@@ -171,10 +173,14 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
   };
 
   // Fetch the COMPLETE message history for a specific conversation (no limit)
-  const fetchThread = async (conv: Conversation) => {
+  const fetchThread = async (conv: Conversation, options?: { background?: boolean }) => {
+    if (!options?.background) setThreadState('loading');
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        if (!options?.background) setThreadState('error');
+        return;
+      }
       const params = new URLSearchParams({ contactId: conv.contactId, role: conv.contactRole });
       const res = await fetch(`/api/messages?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
@@ -183,10 +189,17 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
         const convData = rows.find(
           (c: Conversation) => c.contactId === conv.contactId && c.contactRole === conv.contactRole,
         ) || rows.find((c: Conversation) => c.contactId === conv.contactId);
-        setThreadMessages(convData?.messages ?? (Array.isArray(conv.messages) ? conv.messages : []));
-        setSelectedConversation((current) => current || conv);
+        if (convData) {
+          setThreadMessages(convData.messages ?? []);
+          setSelectedConversation((current) => current || conv);
+        }
+        setThreadState('ready');
+      } else if (!options?.background) {
+        setThreadState('error');
       }
-    } catch { /* silent */ }
+    } catch {
+      if (!options?.background) setThreadState('error');
+    }
   };
 
   const fetchAvailableContacts = async () => {
@@ -252,10 +265,26 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
         }),
       });
       if (res.ok) {
+        const sentTo = target;
         setMessageText('');
-        if (showCompose) { setShowCompose(false); setNewRecipient(null); }
-        // After sending, reload the full thread so the new message appears
-        if (selectedConversation) await fetchThread(selectedConversation);
+        if (showCompose) {
+          setShowCompose(false);
+          setNewRecipient(null);
+          const opened: Conversation = {
+            contactId: sentTo.contactId,
+            contactRole: sentTo.contactRole,
+            contactName: sentTo.contactName,
+            lastMessage: messageText.trim(),
+            lastMessageAt: new Date().toISOString(),
+            unreadCount: 0,
+            messages: [],
+          };
+          selectedConversationRef.current = opened;
+          setSelectedConversation(opened);
+          await fetchThread(opened);
+        } else if (selectedConversation) {
+          await fetchThread(selectedConversation);
+        }
         await fetchMessages();
       } else {
         const err = await res.json().catch(() => ({}));
@@ -456,13 +485,19 @@ export default function MessagingCard({ userId, shopId }: MessagingCardProps) {
               {/* Messages */}
               <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {threadMessages.length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>{say('Loading messages...')}</div>
+                  <div style={{ textAlign: 'center', color: '#4b5563', fontSize: 12, padding: 12 }}>
+                    {threadState === 'error'
+                      ? say('Could not load messages. The thread is still here.')
+                      : threadState === 'loading'
+                        ? say('Loading messages...')
+                        : say('No messages yet.')}
+                  </div>
                 )}
                 {threadMessages
                   .slice()
                   .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                   .map((msg) => {
-                    const isSent = msg.senderId === userId;
+                    const isSent = messageIsOwn(msg, { id: userId, shopId });
                     return (
                       <div key={msg.id} style={{ alignSelf: isSent ? 'flex-end' : 'flex-start', maxWidth: '70%' }}>
                         <div style={{ background: isSent ? 'rgba(229,51,42,0.2)' : 'rgba(59,130,246,0.2)', border: `1px solid ${isSent ? 'rgba(229,51,42,0.4)' : 'rgba(59,130,246,0.4)'}`, borderRadius: 8, padding: 12 }}>

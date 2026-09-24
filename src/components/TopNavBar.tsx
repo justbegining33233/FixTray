@@ -14,6 +14,14 @@ import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { usePhrase } from '@/lib/usePhrase';
 import { workOrderNotificationCopy } from '@/lib/notificationCopy';
+import {
+  parseMessageNotificationId,
+  readDismissedWorkOrderIds,
+  recentAlertWorkOrders,
+  showsSyntheticWorkOrderAlerts,
+  visibleInboxItems,
+} from '@/lib/notificationInbox';
+import { saveSeenWorkOrderIds, syncSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
 import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
 import { roleUsesShopAdminApis } from '@/lib/customerSession';
@@ -51,6 +59,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     system: true,
   });
   const lastUnreadRef = useRef(0);
+  const pendingAckRef = useRef<Set<string>>(new Set());
+  const [dismissedWorkOrders, setDismissedWorkOrders] = useState<Set<string>>(new Set());
 
   const pathRole = pathname.split('/')[1] || '';
   const activeRole = userRole || pathRole;
@@ -108,6 +118,8 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     if (resolvedUserId && (resolvedRole === 'tech' || resolvedRole === 'manager')) {
       checkClockInStatus(resolvedUserId);
     }
+
+    setDismissedWorkOrders(readDismissedWorkOrderIds(window.localStorage));
 
     // Load notification preferences from localStorage
     const savedPrefs = localStorage.getItem('notificationPrefs');
@@ -194,9 +206,12 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           icon: '💬',
         }));
 
-      // Add work order notifications for shop owners/managers
+      // Shop, manager, and tech share pending work-order alerts.
+      // Read the role here so the poll is not stuck on the first render's role.
+      const storedRole = typeof window !== 'undefined' ? (localStorage.getItem('userRole') || '') : '';
+      const bellRole = storedRole || activeRole;
       let workOrderNotifications: any[] = [];
-      if (activeRole === 'shop' || activeRole === 'manager') {
+      if (showsSyntheticWorkOrderAlerts(bellRole)) {
         try {
           const woResponse = await fetch('/api/workorders?status=pending&limit=5', {
             headers: { Authorization: `Bearer ${token}` },
@@ -204,13 +219,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           if (woResponse.ok) {
             const woData = await woResponse.json();
             const workOrders = Array.isArray(woData) ? woData : woData.workOrders || [];
-            workOrderNotifications = workOrders
-              .filter((wo: any) => {
-                const createdAt = new Date(wo.createdAt);
-                const hoursAgo = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-                return hoursAgo < 24; // Only show work orders from last 24 hours
-              })
-              .slice(0, 3)
+            workOrderNotifications = recentAlertWorkOrders(workOrders)
               .map((wo: any) => {
                 const customerName = wo.customerName
                   || [wo.customer?.firstName, wo.customer?.lastName].filter(Boolean).join(' ');
@@ -247,7 +256,13 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         // For example: maintenance notices, feature updates, etc.
       ];
 
-      setNotifications([...messageNotifications, ...workOrderNotifications, ...systemNotifications]);
+      const incoming = [...messageNotifications, ...workOrderNotifications, ...systemNotifications];
+      const dismissed = await syncSeenWorkOrderIds();
+      setDismissedWorkOrders(dismissed);
+      for (const id of Array.from(pendingAckRef.current)) {
+        if (!incoming.some((item) => item.id === id)) pendingAckRef.current.delete(id);
+      }
+      setNotifications(incoming.filter((item) => !pendingAckRef.current.has(item.id) && !dismissed.has(item.id)));
     } catch {
     }
   };
@@ -430,8 +445,51 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     }
   };
 
+  const acknowledgeNotifications = async (items: Array<{ id: string; type?: string }>) => {
+    if (items.length === 0) return;
+    const ids = new Set(items.map((item) => item.id));
+    ids.forEach((id) => pendingAckRef.current.add(id));
+    const workOrderIds = items.filter((item) => item.type === 'workorders').map((item) => item.id);
+    if (workOrderIds.length > 0 && typeof window !== 'undefined') {
+      setDismissedWorkOrders(saveSeenWorkOrderIds(workOrderIds));
+    }
+    setNotifications((prev) => prev.filter((item) => !ids.has(item.id)));
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    await Promise.all(items.map(async (item) => {
+      if (item.type !== 'messages') {
+        pendingAckRef.current.delete(item.id);
+        return;
+      }
+      const parsed = parseMessageNotificationId(item.id);
+      if (!parsed || !token) {
+        pendingAckRef.current.delete(item.id);
+        return;
+      }
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ contactId: parsed.contactId, contactRole: parsed.contactRole }),
+        });
+        if (!res.ok) pendingAckRef.current.delete(item.id);
+      } catch {
+        pendingAckRef.current.delete(item.id);
+      }
+    }));
+  };
+
   const handleNotificationClick = (n: { id: string; type?: string }) => {
-    markAsRead(n.id);
+    if ((n.type === 'workorders' || n.id.startsWith('wo-')) && typeof window !== 'undefined') {
+      const seenId = n.id.startsWith('wo-') ? n.id : `wo-${n.id}`;
+      const next = saveSeenWorkOrderIds([seenId]);
+      setDismissedWorkOrders(next);
+      setNotifications((prev) => prev.filter((item) => item.id !== seenId));
+    }
+    void acknowledgeNotifications([n]);
     setShowNotifications(false);
 
     // Handle different notification types
@@ -462,21 +520,18 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   };
 
   const filteredNotifications = notificationsEnabled
-    ? notifications.filter((n) => {
-        if (!n.type) return true;
-        return notificationPrefs[n.type as 'messages' | 'workOrders' | 'system'] !== false;
+    ? visibleInboxItems(notifications, {
+        prefs: notificationPrefs,
+        dismissedWorkOrderIds: dismissedWorkOrders,
+        pendingIds: pendingAckRef.current,
       })
     : [];
 
-  const unreadCount = filteredNotifications.filter(n => !n.read).length;
+  const unreadCount = filteredNotifications.length;
   const displayUserName = userName || shopName || 'User';
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    void acknowledgeNotifications(filteredNotifications);
   };
 
   const updateNotificationPrefs = (type: string, enabled: boolean) => {

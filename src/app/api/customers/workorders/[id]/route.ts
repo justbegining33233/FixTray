@@ -99,7 +99,7 @@ export async function GET(
       assignedTo: workOrder.assignedTo,
       vehicle: workOrder.vehicle,
       tracking: workOrder.tracking || null,
-      messages: (workOrder.messages || []).map((message) => ({
+      messages: (workOrder.messages || []).map((message: { id: string; sender: string; senderName: string; body: string; createdAt: Date }) => ({
         id: message.id,
         sender: message.sender,
         senderName: message.senderName,

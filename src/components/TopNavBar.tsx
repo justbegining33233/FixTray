@@ -204,9 +204,12 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
           icon: '💬',
         }));
 
-      // Add work order notifications for shop owners/managers
+      // Add work order notifications for shop owners/managers.
+      // Read the role here so the poll is not stuck on the first render's role.
+      const storedRole = typeof window !== 'undefined' ? (localStorage.getItem('userRole') || '') : '';
+      const bellRole = storedRole || activeRole;
       let workOrderNotifications: any[] = [];
-      if (activeRole === 'shop' || activeRole === 'manager') {
+      if (bellRole === 'shop' || bellRole === 'manager') {
         try {
           const woResponse = await fetch('/api/workorders?status=pending&limit=5', {
             headers: { Authorization: `Bearer ${token}` },
@@ -258,10 +261,12 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       ];
 
       const incoming = [...messageNotifications, ...workOrderNotifications, ...systemNotifications];
+      const dismissed = readDismissedWorkOrderIds(typeof window === 'undefined' ? null : window.localStorage);
+      setDismissedWorkOrders(dismissed);
       for (const id of Array.from(pendingAckRef.current)) {
         if (!incoming.some((item) => item.id === id)) pendingAckRef.current.delete(id);
       }
-      setNotifications(incoming.filter((item) => !pendingAckRef.current.has(item.id)));
+      setNotifications(incoming.filter((item) => !pendingAckRef.current.has(item.id) && !dismissed.has(item.id)));
     } catch {
     }
   };
@@ -482,6 +487,12 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   };
 
   const handleNotificationClick = (n: { id: string; type?: string }) => {
+    if ((n.type === 'workorders' || n.id.startsWith('wo-')) && typeof window !== 'undefined') {
+      const seenId = n.id.startsWith('wo-') ? n.id : `wo-${n.id}`;
+      const next = rememberDismissedWorkOrderIds(window.localStorage, [seenId]);
+      setDismissedWorkOrders(next);
+      setNotifications((prev) => prev.filter((item) => item.id !== seenId));
+    }
     void acknowledgeNotifications([n]);
     setShowNotifications(false);
 

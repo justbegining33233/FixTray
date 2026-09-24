@@ -8,6 +8,10 @@ export type InboxPrefs = {
   system?: boolean;
 };
 
+export function workOrderNotificationId(workOrderId: string): string {
+  return workOrderId.startsWith('wo-') ? workOrderId : `wo-${workOrderId}`;
+}
+
 export function parseMessageNotificationId(id: string): { contactRole: string; contactId: string } | null {
   if (!id.startsWith('msg-')) return null;
   const rest = id.slice(4);

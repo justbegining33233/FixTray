@@ -12,6 +12,7 @@ import {
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
+import { rememberDismissedWorkOrderIds, workOrderNotificationId } from '@/lib/notificationInbox';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -226,6 +227,9 @@ export default function WorkOrderDetailPage() {
   // Load work order + read userRole/userId/shopId from localStorage
   useEffect(() => {
     if (!id) return;
+    if (typeof window !== 'undefined') {
+      rememberDismissedWorkOrderIds(window.localStorage, [workOrderNotificationId(id)]);
+    }
     let role: string | null = null;
     let uid2: string | null = null;
     if (typeof window !== 'undefined') {

@@ -31,9 +31,16 @@ export type RouteActor = {
 
 /**
  * Page gates that list `superadmin` also admit the platform owner and the
- * superadmin flag. Admin login stores role `admin` even when the token is the
- * owner (isOwner) or a superadmin, which otherwise 403s `/superadmin/tenants`.
- * The flag does not elevate shop, tech, or customer roles.
+ * superadmin flag. Admin login stores role `admin` in the client even when the
+ * token is the owner (isOwner) or a superadmin, which otherwise 403s
+ * `/superadmin/tenants`. The flag does not elevate shop, tech, customer, or
+ * manager roles.
+ *
+ * Page gates that list `admin` also admit role `superadmin`. Admin login and
+ * token refresh issue JWTs with role `superadmin`, and the client session role
+ * is overwritten from that token. A gate of only `admin` then 403s the owner
+ * on `/admin/pending-shops` and `/admin/user-management`. This matches
+ * `requireRole()`, which adds `superadmin` whenever `admin` is required.
  */
 export function actorSatisfiesRoles(
   actor: RouteActor | null | undefined,
@@ -42,6 +49,7 @@ export function actorSatisfiesRoles(
   if (!requiredRoles || requiredRoles.length === 0) return true;
   if (!actor) return false;
   if (actor.role && requiredRoles.includes(actor.role)) return true;
+  if (actor.role === 'superadmin' && requiredRoles.includes('admin')) return true;
   if (!requiredRoles.includes('superadmin')) return false;
   const platformOperator = actor.role === 'admin' || actor.role === 'superadmin';
   if (!platformOperator) return false;

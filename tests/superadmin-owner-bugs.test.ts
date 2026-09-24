@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { describe, expect, it } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { generateAccessToken } from '../src/lib/auth';
@@ -119,5 +120,71 @@ describe('SA-002 owner access to /superadmin/tenants', () => {
     expect(adminGate).not.toBeNull();
     expect(customerGate?.headers.get('x-middleware-rewrite') || '').toContain('/forbidden');
     expect(adminGate?.headers.get('x-middleware-rewrite') || '').toContain('/forbidden');
+  });
+});
+
+describe('owner access to pending shops and user management', () => {
+  const owner = { role: 'superadmin', isOwner: true, isSuperAdmin: false };
+  const adminPages = ['/admin/pending-shops', '/admin/user-management'] as const;
+
+  it('lets a superadmin role through an admin page gate without elevating other roles', () => {
+    expect(actorSatisfiesRoles(owner, ['admin'])).toBe(true);
+    expect(actorSatisfiesRoles({ role: 'superadmin' }, ['admin'])).toBe(true);
+    expect(actorSatisfiesRoles({ role: 'admin', isOwner: true }, ['admin'])).toBe(true);
+    expect(actorSatisfiesRoles({ role: 'admin' }, ['admin', 'superadmin'])).toBe(true);
+    expect(actorSatisfiesRoles({ role: 'shop' }, ['admin'])).toBe(false);
+    expect(actorSatisfiesRoles({ role: 'tech' }, ['admin'])).toBe(false);
+    expect(actorSatisfiesRoles({ role: 'customer', isOwner: true }, ['admin'])).toBe(false);
+    expect(actorSatisfiesRoles({ role: 'manager', isSuperAdmin: true }, ['admin'])).toBe(false);
+    expect(actorSatisfiesRoles({ role: 'admin' }, ['superadmin'])).toBe(false);
+
+    for (const path of adminPages) {
+      expect(isRouteAllowed(path, owner)).toBe(true);
+      expect(isRouteAllowed(path, { role: 'shop' })).toBe(false);
+      expect(isRouteAllowed(path, { role: 'customer' })).toBe(false);
+      expect(isRouteAllowed(path, { role: 'tech' })).toBe(false);
+      expect(isRouteAllowed(path, { role: 'manager' })).toBe(false);
+    }
+  });
+
+  it('does not rewrite the owner to /forbidden on the admin list pages', async () => {
+    const token = generateAccessToken({
+      id: 'owner-1',
+      username: 'supadm1006',
+      role: 'superadmin',
+      isOwner: true,
+      isSuperAdmin: false,
+    });
+
+    for (const path of adminPages) {
+      const gate = await gateCrossRole(new NextRequest(`http://localhost${path}`, {
+        headers: { cookie: `sos_auth=${token}` },
+      }));
+      expect(gate).toBeNull();
+    }
+  });
+
+  it('still forbids shop, tech, customer, and manager on those pages', async () => {
+    const roles = ['shop', 'tech', 'customer', 'manager'] as const;
+    for (const role of roles) {
+      const token = generateAccessToken({ id: `${role}-1`, role, isOwner: true, isSuperAdmin: true });
+      for (const path of adminPages) {
+        const gate = await gateCrossRole(new NextRequest(`http://localhost${path}`, {
+          headers: { cookie: `sos_auth=${token}` },
+        }));
+        expect(gate).not.toBeNull();
+        expect(gate?.headers.get('x-middleware-rewrite') || '').toContain('/forbidden');
+        expect(gate?.headers.get('x-middleware-rewrite') || '').toContain(encodeURIComponent(path));
+      }
+    }
+  });
+
+  it('lists admin and superadmin on the page guards that 403d the owner', () => {
+    const pending = readFileSync('src/app/admin/pending-shops/page.tsx', 'utf8');
+    const users = readFileSync('src/app/admin/user-management/page.tsx', 'utf8');
+    const addUser = readFileSync('src/app/admin/user-management/new/page.tsx', 'utf8');
+    expect(pending).toContain("useRequireAuth(['admin', 'superadmin'])");
+    expect(users).toContain("useRequireAuth(['admin', 'superadmin'])");
+    expect(addUser).toContain("useRequireAuth(['admin', 'superadmin'])");
   });
 });

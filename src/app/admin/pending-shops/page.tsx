@@ -24,7 +24,7 @@ type PendingShop = {
 
 export default function PendingShops() {
   const say = usePhrase();
-  const { user, isLoading } = useRequireAuth(['admin']);
+  const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [mounted, setMounted] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [previousPendingCount, setPreviousPendingCount] = useState(0);

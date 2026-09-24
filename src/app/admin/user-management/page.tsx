@@ -33,7 +33,7 @@ type User = {
 
 export default function UserManagement() {
   const say = usePhrase();
-  const { user, isLoading } = useRequireAuth(['admin']);
+  const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [users, setUsers] = useState<User[]>([]);
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');

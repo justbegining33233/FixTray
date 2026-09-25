@@ -600,13 +600,17 @@ tbody td {
   [data-mobile-shell-body] [style*='grid-template-columns: 200px 1fr'],
   [data-mobile-shell-body] [style*='grid-template-columns:200px 1fr'],
   [data-mobile-shell-body] [style*='minmax(0,1fr) 260px'],
-  [data-mobile-shell-body] [style*='minmax(0, 1fr) 260px'] {
+  [data-mobile-shell-body] [style*='minmax(0, 1fr) 260px'],
+  [data-mobile-shell-body] [style*='minmax(0px, 1fr) 260px'],
+  [data-mobile-shell-body] [style*='minmax(0px,1fr) 260px'] {
     grid-template-columns: 1fr !important;
   }
 
   /* Profile menus are the last column. Stack them above the form. */
   [data-mobile-shell-body] [style*='minmax(0,1fr) 260px'] > :last-child,
-  [data-mobile-shell-body] [style*='minmax(0, 1fr) 260px'] > :last-child {
+  [data-mobile-shell-body] [style*='minmax(0, 1fr) 260px'] > :last-child,
+  [data-mobile-shell-body] [style*='minmax(0px, 1fr) 260px'] > :last-child,
+  [data-mobile-shell-body] [style*='minmax(0px,1fr) 260px'] > :last-child {
     order: -1;
   }
 

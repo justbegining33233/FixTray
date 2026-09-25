@@ -71,11 +71,11 @@ describe('FW-MGR schedule team payload', () => {
 
 describe('FW-SHOP forbidden cluster', () => {
   it('sends dead shop admin links to a working page', () => {
-    expect(shopRestrictedDestination('/shop/settings/two-factor')).toBe('/shop/settings?tab=security');
-    expect(shopRestrictedDestination('/shop/settings/sessions')).toBe('/shop/settings?tab=security');
-    expect(shopRestrictedDestination('/shop/settings/api-keys')).toBe('/shop/integrations');
-    expect(shopRestrictedDestination('/shop/settings/webhooks')).toBe('/shop/integrations');
+    expect(shopRestrictedDestination('/shop/settings/two-factor')).toBeNull();
+    expect(shopRestrictedDestination('/shop/settings/sessions')).toBeNull();
+    expect(shopRestrictedDestination('/shop/settings/api-keys')).toBeNull();
+    expect(shopRestrictedDestination('/shop/settings/webhooks')).toBeNull();
     expect(shopRestrictedDestination('/shop/admin/logs')).toBe('/shop/admin');
-    expect(shopRestrictedDestination('/shop/admin/health')).toBe('/shop/home');
+    expect(shopRestrictedDestination('/shop/admin/health')).toBeNull();
   });
 });

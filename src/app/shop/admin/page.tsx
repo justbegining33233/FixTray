@@ -8,6 +8,7 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { fetchShopAgreementAccepted } from '@/lib/fixtrayAgreement';
 import {
   FaBox,
   FaBuilding,
@@ -132,6 +133,11 @@ export default function ShopAdminPage() {
 
   useEffect(() => {
     if (isLoading) return;
+    let cancelled = false;
+    let interval: ReturnType<typeof setInterval> | undefined;
+    let budgetInterval: ReturnType<typeof setInterval> | undefined;
+
+    (async () => {
     const isManager = user?.role === 'manager';
     if (user && !user.isShopAdmin && !isManager) {
       router.replace('/shop/home' as Route);
@@ -142,7 +148,6 @@ export default function ShopAdminPage() {
     const id = localStorage.getItem('shopId');
     const name = localStorage.getItem('userName');
     const profileComplete = localStorage.getItem('shopProfileComplete') === 'true';
-    const agreementAccepted = localStorage.getItem('fixtrayAgreementAccepted') === 'true';
 
     // Only shop owners need isShopAdmin flag; managers bypass this check
     if (admin !== 'true' && !isManager) {
@@ -156,10 +161,15 @@ export default function ShopAdminPage() {
       return;
     }
 
-    if (!agreementAccepted && !isManager) {
-      router.push('/shop/settings?tab=general' as Route);
-      return;
+    if (!isManager && localStorage.getItem('fixtrayAgreementAccepted') !== 'true') {
+      const accepted = await fetchShopAgreementAccepted();
+      if (cancelled) return;
+      if (accepted === false) {
+        router.push('/shop/settings?tab=general' as Route);
+        return;
+      }
     }
+    if (cancelled) return;
 
     const resolvedShopId = user?.shopId || user?.id || id || '';
     setShopId(resolvedShopId);
@@ -185,19 +195,25 @@ export default function ShopAdminPage() {
     fetchPayrollData(id || '', startDate.toISOString(), endDate.toISOString());
     
     // Refresh live data every 5 seconds (stats, messages, team)
-    const interval = setInterval(() => {
+    interval = setInterval(() => {
       fetchShopStats(id || '');
       fetchShopMessages(id || '');
       fetchTeamData(id || '');
     }, 5000);
     // Refresh budget and payroll every 30 seconds
-    const budgetInterval = setInterval(() => {
+    budgetInterval = setInterval(() => {
       fetchBudgetData(id || '');
       const currentEnd = new Date();
       const currentStart = new Date(currentEnd.getTime() - 14 * 24 * 60 * 60 * 1000);
       fetchPayrollData(id || '', currentStart.toISOString(), currentEnd.toISOString());
     }, 30000);
-    return () => { clearInterval(interval); clearInterval(budgetInterval); };
+    })();
+
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+      if (budgetInterval) clearInterval(budgetInterval);
+    };
   }, [router, user, isLoading]);
 
   const fetchShopStats = async (id: string) => {

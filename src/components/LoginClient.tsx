@@ -175,6 +175,9 @@ export default function LoginClient() {
             const profileComplete = !!shopAccount.profileComplete;
             if (!profileComplete && typeof window !== 'undefined') localStorage.removeItem('shopProfileComplete');
             login({ token: shopAccount.accessToken, role: 'shop', name: shopAccount.shopName, id: shopAccount.id, shopId: shopAccount.id, isShopAdmin: true, shopProfileComplete: profileComplete });
+            if (shopAccount.agreementAccepted && typeof window !== 'undefined') {
+              localStorage.setItem('fixtrayAgreementAccepted', 'true');
+            }
             setLoading(false);
             const nextRoute = profileComplete ? '/shop/home' : '/shop/complete-profile';
             navigateAfterLogin(getPostLoginRoute(nextRoute, ['/shop/', '/workorders/']));

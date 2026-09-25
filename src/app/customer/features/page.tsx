@@ -21,7 +21,7 @@ export default function CustomerBookingFeatures() {
           <p style={{ fontSize: 16, color: '#cbd5e1', maxWidth: 720 }}>
             {say("Offer a frictionless way for customers to request work orders, pick time windows, and get instant confirmations. All bookings sync to your shop schedule so your team stays in lockstep.")}{' '}</p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Link href={"/customer/signup" as Route} style={ctaStyle('#38bdf8')}>
+            <Link href={"/register/customer" as Route} style={ctaStyle('#38bdf8')}>
               {say("Start accepting bookings")}{' '}</Link>
             <Link href={"/customer/dashboard" as Route} style={ctaStyle('#e5e7eb', true)}>
               {say("View customer portal")}{' '}</Link>
@@ -75,7 +75,7 @@ export default function CustomerBookingFeatures() {
         <div style={{ textAlign: 'center', padding: 24, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: 12 }}>
           <h2 style={{ margin: '0 0 8px', fontSize: 24 }}>{say("Ready to open your booking portal?")}</h2>
           <p style={{ margin: '0 0 16px', color: '#cbd5e1' }}>{say("Enable self-serve appointments and keep every job on schedule.")}</p>
-          <Link href={"/customer/signup" as Route} style={ctaStyle('#0ea5e9')}>
+          <Link href={"/register/customer" as Route} style={ctaStyle('#0ea5e9')}>
             {say("Enable customer bookings")}{' '}</Link>
         </div>
       </div>

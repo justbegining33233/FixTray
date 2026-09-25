@@ -2,6 +2,9 @@
   "name": "fixtray",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "dev:socket": "node socket-server.js",

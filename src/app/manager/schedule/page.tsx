@@ -84,9 +84,9 @@ export default function ManagerSchedulePage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 24px', flexWrap: 'wrap', gap: 12 }}>
             <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>{say("Team Schedule")}</h1>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>{say("&larr; Prev")}</button>
+              <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>← {say("Prev")}</button>
               <button onClick={() => setWeekOffset(0)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>{say("Today")}</button>
-              <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>{say("Next &rarr;")}</button>
+              <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 14 }}>{say("Next")} →</button>
               <button onClick={() => setShowSwapModal(true)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(6,182,212,0.2)', color: '#06b6d4', border: '1px solid rgba(6,182,212,0.5)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}><FaSync /> {say("Swap Requests")}</button>
             </div>
           </div>
@@ -94,9 +94,10 @@ export default function ManagerSchedulePage() {
           {loading ? (
             <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40 }}>{say("Loading...")}</div>
           ) : (
-            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', overflowX: 'auto', maxWidth: '100%' }}>
+              <div style={{ minWidth: 680 }}>
               {/* Header row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px repeat(7, 1fr)', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '110px repeat(7, 80px)', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}>
                 <div style={{ padding: '12px 16px', color: '#6b7280', fontSize: 13, fontWeight: 500 }}>{say("Technician")}</div>
                 {weekDates.map((d, i) => (
                   <div key={i} style={{ padding: '12px 8px', textAlign: 'center' }}>
@@ -112,7 +113,7 @@ export default function ManagerSchedulePage() {
                 </div>
               ) : (
                 schedules.map(s => (
-                  <div key={s.id} style={{ display: 'grid', gridTemplateColumns: '180px repeat(7, 1fr)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={s.id} style={{ display: 'grid', gridTemplateColumns: '110px repeat(7, 80px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
                       <FaUser style={{ color: '#6b7280', fontSize: 14 }} />
                       <span style={{ color: '#e5e7eb', fontSize: 14 }}>{say(s.techName)}</span>
@@ -131,6 +132,7 @@ export default function ManagerSchedulePage() {
                   </div>
                 ))
               )}
+              </div>
             </div>
           )}
         </main>

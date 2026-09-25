@@ -1,17 +1,29 @@
 "use client";
 
+import { useLayoutEffect } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
 import dynamic from 'next/dynamic';
 import Link from "next/link";
 import Image from "next/image";
+import {
+  decodeIntroClaims,
+  installedShellBootstrapScript,
+  installedShellLaunchPath,
+  isInstalledShellClient,
+  readIntroSession,
+} from '@/lib/nativeIntro';
 
-const MarketingShell = dynamic(() => import("@/components/MarketingShell"), {
-  loading: () => { const say = usePhrase();
-return ((
+function MarketingShellFallback() {
+  const say = usePhrase();
+  return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-white text-xl">{say("Loading FixTray...")}</div>
     </div>
-  )); },
+  );
+}
+
+const MarketingShell = dynamic(() => import("@/components/MarketingShell"), {
+  loading: MarketingShellFallback,
 });
 
 const primaryBtn: React.CSSProperties = {
@@ -150,7 +162,14 @@ const carouselSlides = [
 
 export default function Home() {
   const say = usePhrase();
+  useLayoutEffect(() => {
+    if (!isInstalledShellClient()) return;
+    const home = installedShellLaunchPath(readIntroSession(window.localStorage, decodeIntroClaims));
+    window.location.replace(home);
+  }, []);
   return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: installedShellBootstrapScript() }} />
     <MarketingShell>
       <section
         className="mx-auto flex min-h-[74vh] max-w-5xl flex-col items-center justify-center px-6 pb-16 pt-24 text-center"
@@ -336,6 +355,7 @@ export default function Home() {
         }
       `}</style>
     </MarketingShell>
+    </>
   );
 }
 

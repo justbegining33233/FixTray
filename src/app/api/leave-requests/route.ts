@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import logger from '@/lib/logger';
 import { z } from 'zod';
+import { getLeaveBalance } from '@/lib/leaveService';
 
 const leaveRequestSchema = z.object({
   techId: z.string().min(1, 'Tech required'),
@@ -22,6 +23,33 @@ export async function GET(request: NextRequest) {
     const shopId = searchParams.get('shopId');
     const status = searchParams.get('status');
     const techId = searchParams.get('techId');
+
+    if (searchParams.get('action') === 'balance') {
+      const requestedId = techId || (auth.role === 'tech' ? auth.id : '');
+      if (!requestedId) {
+        return NextResponse.json({ error: 'techId required' }, { status: 400 });
+      }
+      if (auth.role === 'tech' && requestedId !== auth.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      try {
+        const balance = await getLeaveBalance(requestedId);
+        return NextResponse.json({
+          vacation: balance.available,
+          sick: balance.byType.sick || 0,
+          personal: balance.byType.personal || 0,
+          bereavement: balance.byType.bereavement || 0,
+          parental: balance.byType.parental || 0,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('Tech not found')) {
+          return NextResponse.json({ error: 'Tech not found' }, { status: 404 });
+        }
+        logger.error('Failed to fetch leave balance', { error: message });
+        return NextResponse.json({ error: 'Failed to fetch leave balance' }, { status: 500 });
+      }
+    }
 
     if (!shopId) {
       return NextResponse.json(

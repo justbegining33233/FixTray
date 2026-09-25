@@ -20,7 +20,7 @@ function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
-export default function ShopSecurityPanel() {
+export default function ShopSecurityPanel({ focus = 'all' }: { focus?: 'all' | 'sessions' | 'twoFactor' }) {
   const say = usePhrase();
   const [enabled, setEnabled] = useState(false);
   const [step, setStep] = useState<Step>('idle');
@@ -144,10 +144,15 @@ export default function ShopSecurityPanel() {
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>
         <FaLock style={{ marginRight: 8 }} />
-        {say("Security")}{' '}</h2>
+        {focus === 'sessions' ? say("Sessions") : focus === 'twoFactor' ? say("Two-Factor Auth") : say("Security")}{' '}</h2>
       <p style={{ color: '#9aa3b2', marginBottom: 24, lineHeight: 1.5 }}>
-        {say("Two-factor authentication and session review live here so shop navigation does not open admin-only addresses.")}{' '}</p>
+        {focus === 'sessions'
+          ? say("Review devices that are signed in to this shop.")
+          : focus === 'twoFactor'
+            ? say("Turn on an authenticator code for this shop login.")
+            : say("Two-factor authentication and session review live here so shop navigation does not open admin-only addresses.")}{' '}</p>
 
+      {(focus === 'all' || focus === 'twoFactor') && (
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <div style={{ color: enabled ? '#86efac' : '#fca5a5', fontWeight: 700, marginBottom: 12 }}>
           {enabled ? <FaCheckCircle style={{ marginRight: 6 }} /> : null}
@@ -212,7 +217,9 @@ export default function ShopSecurityPanel() {
             {say("Disable two-factor authentication")}{' '}</button>
         )}
       </div>
+      )}
 
+      {(focus === 'all' || focus === 'sessions') && (
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
         <h3 style={{ margin: '0 0 12px', color: '#e5e7eb', fontSize: 16 }}>
           <FaDesktop style={{ marginRight: 8 }} />
@@ -242,6 +249,7 @@ export default function ShopSecurityPanel() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

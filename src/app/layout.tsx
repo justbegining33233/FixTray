@@ -12,6 +12,7 @@ import { NativeProvider } from '@/context/NativeContext';
 import NativeStatusBar from '@/components/NativeStatusBar';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
+import { installedShellBootstrapScript } from '@/lib/nativeIntro';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -81,6 +82,9 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: installedShellBootstrapScript() }} />
+      </head>
       <body className={`${inter.variable} ${plusJakartaSans.variable}`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ErrorBoundary>

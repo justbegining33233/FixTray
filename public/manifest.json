@@ -3,11 +3,12 @@
   "name": "FixTray - Work Order Management",
   "short_name": "FixTray",
   "description": "Streamlined work order management for roadside and in-shop services",
-  "start_url": "/",
+  "start_url": "/auth/login",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#020608",
   "theme_color": "#e5332a",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "display_override": ["standalone", "minimal-ui"],
   "categories": ["business", "productivity"],
   "lang": "en-US",
@@ -99,14 +100,6 @@
       "description": "View your dashboard",
       "url": "/shop/home",
       "icons": [{ "src": "/icons/fixtray-ft-192.png", "sizes": "192x192", "type": "image/png" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow"
     }
   ]
 }

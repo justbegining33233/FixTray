@@ -52,7 +52,7 @@ export function addSecurityHeaders(response: NextResponse | Response): NextRespo
   // Control which browser APIs can be used
   const permissionsPolicies = [
     'accelerometer=()',
-    'camera=()',
+    'camera=(self)',
     'geolocation=()',
     'gyroscope=()',
     'magnetometer=()',

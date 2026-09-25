@@ -49,14 +49,8 @@ export default function PendingShops() {
     
     fetchPendingShops();
     
-    // Request notification permission
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
-          setNotificationPermission(permission);
-        });
-      }
     }
   }, [mounted, isLoading, user]);
 
@@ -261,8 +255,22 @@ export default function PendingShops() {
               <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say("Pending Shop Approvals")}</h1>
               <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Review and approve new shop applications")}</p>
             </div>
-            <div style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', borderRadius:8, fontSize:14, fontWeight:700}}>
-              {say(pendingShops.length)} {say("Pending")}{' '}</div>
+            <div style={{display:'flex', flexWrap:'wrap', gap:8, alignItems:'center'}}>
+              {notificationPermission === 'default' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!('Notification' in window)) return;
+                    Notification.requestPermission().then((permission) => setNotificationPermission(permission));
+                  }}
+                  style={{padding:'8px 16px', background:'#e5332a', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer'}}
+                >
+                  {say("Enable alerts")}
+                </button>
+              )}
+              <div style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', borderRadius:8, fontSize:14, fontWeight:700}}>
+                {say(pendingShops.length)} {say("Pending")}{' '}</div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,0 +1,94 @@
+:root {
+  color-scheme: dark;
+  --bg: #020608;
+  --card: rgba(255, 255, 255, 0.04);
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --accent: #e5332a;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  min-height: 100%;
+}
+body { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #020608;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.brand { color: var(--accent); font-weight: 800; font-size: 17px; }
+.bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.banner {
+  margin-top: 8px;
+  background: #3b2a08;
+  color: #fde68a;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.banner.ok { background: #052e16; color: #86efac; }
+.banner.bad { background: #450a0a; color: #fecaca; }
+button, input, select, textarea {
+  font: inherit;
+  color: var(--text);
+}
+button {
+  background: var(--accent);
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+}
+main { padding: 16px; max-width: 720px; margin: 0 auto; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.muted { color: var(--muted); font-size: 13px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pending { color: var(--warn); font-size: 12px; font-weight: 700; }
+h1, h2 { font-size: 18px; margin: 0 0 8px; }
+label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+input, select, textarea {
+  width: 100%;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+textarea { min-height: 72px; }
+.disabled-note {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+ul { list-style: none; padding: 0; margin: 8px 0; }
+li { padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+img.shot { width: 100%; border-radius: 12px; margin-top: 8px; background: #fff; }

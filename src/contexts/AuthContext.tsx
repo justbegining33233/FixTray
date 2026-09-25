@@ -237,6 +237,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('isSuperAdmin');
     localStorage.removeItem('isOwner');
     localStorage.removeItem('token');
+    window.dispatchEvent(new Event('fixtray-logout'));
+    try { indexedDB.deleteDatabase('fixtray-tech-offline'); } catch { /* ignore */ }
 
     try {
       const { default: socketClient } = await import('@/lib/socket-client');

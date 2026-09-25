@@ -342,6 +342,7 @@ const techNav: MobileRoleNav = {
       link('DVI Form', '/tech/dvi', 'search'),
       link('DTC Lookup', '/tech/dtc-lookup', 'file'),
       link('Diagnostics', '/tech/diagnostics', 'search'),
+      link('Offline jobs', '/tech-offline/', 'clipboard'),
       link('Photos', '/tech/photos', 'camera'),
       link('Location', '/tech/share-location', 'pin'),
       link('Inventory', '/tech/inventory', 'inventory'),

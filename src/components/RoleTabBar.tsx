@@ -108,6 +108,10 @@ export default function RoleTabBar({
   }, [nav.more, query, user?.isOwner]);
 
   const go = (href: string) => {
+    if (href.startsWith('/tech-offline')) {
+      window.location.assign(href);
+      return;
+    }
     if (Capacitor.isNativePlatform()) {
       void nativeMobileService.triggerHapticFeedback();
     }
@@ -133,6 +137,8 @@ export default function RoleTabBar({
     localStorage.removeItem('shopId');
     localStorage.removeItem('userId');
     localStorage.removeItem('isSuperAdmin');
+    window.dispatchEvent(new Event('fixtray-logout'));
+    try { indexedDB.deleteDatabase('fixtray-tech-offline'); } catch { /* cached jobs are cleared on sign-out */ }
     window.location.href = '/auth/login';
   };
 

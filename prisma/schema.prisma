@@ -490,6 +490,7 @@ model TimeEntry {
   location      String?
   clockInPhoto  String?
   clockOutPhoto String?
+  clientMutationId String?  @unique
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   tech          Tech       @relation(fields: [techId], references: [id], onDelete: Cascade)
@@ -1482,16 +1483,33 @@ model ShopMonthlyReport {
 }
 
 model Photo {
-  id          String   @id @default(cuid())
-  url         String
-  filename    String?
-  caption     String?
-  workOrderId String?
-  uploadedBy  String?
-  createdAt   DateTime @default(now())
+  id               String   @id @default(cuid())
+  url              String
+  filename         String?
+  caption          String?
+  workOrderId      String?
+  uploadedBy       String?
+  clientMutationId String?  @unique
+  createdAt        DateTime @default(now())
 
   @@index([workOrderId])
   @@map("photos")
+}
+
+/// One row per offline mutation. A replay with the same key returns this result
+/// and does not create another line, photo, or time entry.
+model SyncReceipt {
+  id             String   @id
+  idempotencyKey String   @unique
+  techId         String
+  workOrderId    String?
+  kind           String
+  status         String
+  result         Json?
+  createdAt      DateTime @default(now())
+
+  @@index([techId])
+  @@map("sync_receipts")
 }
 
 model PortalChatMessage {

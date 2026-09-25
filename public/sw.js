@@ -1,13 +1,18 @@
 /* eslint-disable */
 // FixTray Service Worker — offline caching + background sync
-const CACHE_NAME = 'fixtray-v3';
+const CACHE_NAME = 'fixtray-v4';
 const API_CACHE   = 'fixtray-api-v3';
 
-// Only pre-cache the offline fallback page — NOT app HTML pages.
-// HTML pages must always load from the network so clients get the
-// latest JS/CSS after every deployment without a hard refresh.
+// Precache the static tech workspace. Next HTML stays network-first so
+// deploys are not stuck behind an old shell. When the network is gone,
+// navigation falls back to this workspace.
+const OFFLINE_SHELL = '/tech-offline/index.html';
 const PRECACHE_URLS = [
   '/offline',
+  OFFLINE_SHELL,
+  '/tech-offline/app.js',
+  '/tech-offline/app.css',
+  '/tech-offline/engine.js',
 ];
 
 // ─── Install: pre-cache offline page only ────────────────────────────────────
@@ -69,14 +74,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests (HTML pages): NEVER serve from cache.
-  // Always go to the network so clients get the latest HTML/JS after a deploy.
-  // Only fall back to the /offline page when there is genuinely no connection.
+  // Static tech workspace: cache-first so a cold start with no signal still opens.
+  if (url.pathname.startsWith('/tech-offline/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => undefined);
+        }
+        return response;
+      }))
+    );
+    return;
+  }
+
+  // Navigation: network first so deploys land immediately.
+  // Offline, serve the tech workspace (or the last cached document).
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() =>
-        caches.match('/offline').then(
-          (cached) => cached || new Response('Offline', { status: 503 })
+        caches.match(OFFLINE_SHELL).then(
+          (shell) => shell || caches.match('/offline').then(
+            (cached) => cached || new Response('Offline', { status: 503 })
+          )
         )
       )
     );
@@ -109,8 +129,12 @@ self.addEventListener('fetch', (event) => {
 
 // ─── Background Sync: flush queued mutations when back online ─────────────────
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'fixtray-mutation-queue') {
-    event.waitUntil(flushMutationQueue());
+  if (event.tag === 'fixtray-tech-offline' || event.tag === 'fixtray-mutation-queue') {
+    event.waitUntil((async () => {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      clients.forEach((client) => client.postMessage({ type: 'FIXTRAY_SYNC' }));
+      if (event.tag === 'fixtray-mutation-queue') await flushMutationQueue();
+    })());
   }
 });
 

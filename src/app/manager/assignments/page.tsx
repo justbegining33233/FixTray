@@ -7,7 +7,6 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCheck, FaClock, FaUsers } from 'react-icons/fa';
 import { OPEN_WORK_ORDER_STATUSES, isAwaitingClockIn, unwrapTechs, unwrapWorkOrders } from '@/lib/workOrderList';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { MobilePageFrame } from '@/components/MobileShell';
 import { ManagerQueuePhone } from '@/components/mobile/ManagerPhone';
 
 interface WorkOrder {
@@ -116,11 +115,7 @@ export default function AssignmentsPage() {
   const clockedIn = workOrders.filter((wo) => !isAwaitingClockIn(wo));
 
   if (isMobile) {
-    return (
-      <MobilePageFrame role="manager" userName={user.name}>
-        <ManagerQueuePhone awaiting={awaitingClockIn} clocked={clockedIn} techs={techs} />
-      </MobilePageFrame>
-    );
+    return <ManagerQueuePhone awaiting={awaitingClockIn} clocked={clockedIn} techs={techs} />;
   }
 
   return (

@@ -179,7 +179,7 @@ export function CustomerEstimatesPhone({
             <>
               <div className="pm-sub" style={{ fontSize: 10.5, marginTop: 6 }}>{say('Accept or deny requires your signature. A verbal go-ahead is not a work authorization.')}</div>
               <input className="pm-input" style={{ marginTop: 8 }} placeholder={say('Full legal name')} value={signerName} onChange={(event) => onSignerName(event.target.value)} />
-              <div style={{ marginTop: 8 }}>
+              <div className="pm-sign" style={{ marginTop: 8 }}>
                 <SignatureCapture onChange={onSignature} />
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>

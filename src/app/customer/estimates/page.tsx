@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { MobilePageFrame } from '@/components/MobileShell';
 import { CustomerEstimatesPhone } from '@/components/mobile/CustomerPhone';
 import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle, FaPaperPlane } from 'react-icons/fa';
 import SignatureCapture from '@/components/SignatureCapture';
@@ -477,17 +476,15 @@ export default function Estimates() {
 
   if (isMobile) {
     return (
-      <MobilePageFrame role="customer" userName={userName}>
-        <CustomerEstimatesPhone
-          estimates={estimates}
-          signerName={signerName}
-          onSignerName={setSignerName}
-          onSignature={setSignatureData}
-          onDecide={(id, response) => { void submitDecision(id, response); }}
-          busyId={loading}
-          message={estimateMsg?.text || null}
-        />
-      </MobilePageFrame>
+      <CustomerEstimatesPhone
+        estimates={estimates}
+        signerName={signerName}
+        onSignerName={setSignerName}
+        onSignature={setSignatureData}
+        onDecide={(id, response) => { void submitDecision(id, response); }}
+        busyId={loading}
+        message={estimateMsg?.text || null}
+      />
     );
   }
 

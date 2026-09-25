@@ -34,7 +34,6 @@ return (<div className="h-64 flex items-center justify-center text-gray-400">{sa
 import { FaArrowLeft, FaChartBar } from 'react-icons/fa';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { MobilePageFrame } from '@/components/MobileShell';
 import { AdminAnalyticsPhone } from '@/components/mobile/AdminPhone';
 
 interface AnalyticsData {
@@ -100,11 +99,7 @@ export default function PlatformAnalytics() {
   if (!user) return null;
 
   if (isMobile) {
-    return (
-      <MobilePageFrame role="admin" userName={user.name}>
-        <AdminAnalyticsPhone data={data} loading={dataLoading} />
-      </MobilePageFrame>
-    );
+    return <AdminAnalyticsPhone data={data} loading={dataLoading} />;
   }
 
   return (

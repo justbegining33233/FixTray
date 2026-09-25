@@ -11,7 +11,6 @@ import { filterTechJobs, techJobsHref } from '@/lib/techJobs';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { MobilePageFrame } from '@/components/MobileShell';
 import { TechJobsPhone } from '@/components/mobile/TechPhone';
 
 function TechJobsList() {
@@ -42,11 +41,7 @@ function TechJobsList() {
   const mine = filterTechJobs(orders, user.id, view);
 
   if (isMobile) {
-    return (
-      <MobilePageFrame role={user.role === 'manager' ? 'manager' : 'tech'} userName={user.name}>
-        <TechJobsPhone view={view} orders={loading ? [] : mine} />
-      </MobilePageFrame>
-    );
+    return <TechJobsPhone view={view} orders={loading ? [] : mine} />;
   }
 
   return (

@@ -5,20 +5,20 @@ const isLocalDev = process.env.CAPACITOR_LOCAL === 'true';
 const config: CapacitorConfig = {
   appId: 'com.fixtray.app',
   appName: 'FixTray Pro',
-  // webDir is required by Capacitor but unused when server.url is set.
-  // It must point to an existing folder — capacitor-fallback contains a
-  // minimal offline splash that shows while the remote app loads.
+  // webDir is unused while server.url is set. The logo intro is a native
+  // overlay (android res/raw and the iOS bundle), not a page on the website.
   webDir: 'capacitor-fallback',
   server: isLocalDev
     ? {
         // For local dev: point to your dev machine's IP
         // Run: CAPACITOR_LOCAL=true npx cap copy android
-        url: 'http://10.0.2.2:3000/auth/login',
+        url: 'http://10.0.2.2:3000/auth/login?from=intro',
         cleartext: true,
       }
     : {
-        // Production: load the live site
-        url: 'https://fixtray.app/auth/login',
+        // Production stays on fixtray.app so Capacitor plugins keep working.
+        // from=intro lets a valid session continue to that role's dashboard.
+        url: 'https://fixtray.app/auth/login?from=intro',
         cleartext: false,
       },
   android: {
@@ -81,9 +81,11 @@ const config: CapacitorConfig = {
     // Splash screen
     SplashScreen: {
       launchAutoHide: true,
-      launchShowDuration: 2000,
-      backgroundColor: '#020608',
-      showSpinner: true,
+      // Brief F+T splash. The activity then holds the same white mark
+      // and plays the bundled intro on top of the WebView.
+      launchShowDuration: 400,
+      backgroundColor: '#FFFFFF',
+      showSpinner: false,
       spinnerColor: '#E5332A',
       androidSpinnerStyle: 'large',
       iosSpinnerStyle: 'small',

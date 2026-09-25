@@ -1,16 +1,31 @@
 package com.fixtray.app;
 
+import android.content.res.AssetFileDescriptor;
+import android.graphics.Color;
+import android.graphics.SurfaceTexture;
+import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.Surface;
+import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
+    private boolean introVisible = false;
+    private FrameLayout introLayer;
+    private TextureView introTexture;
+    private MediaPlayer introPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +61,10 @@ public class MainActivity extends BridgeActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                if (introVisible) {
+                    dismissIntro();
+                    return;
+                }
                 WebView wv = getBridge().getWebView();
                 if (wv != null && wv.canGoBack()) {
                     wv.goBack();
@@ -61,7 +80,176 @@ public class MainActivity extends BridgeActivity {
         getBridge().addWebViewListener(new WebViewListener() {
             @Override
             public void onPageLoaded(WebView webView) {
-                injectViewportCSS(webView);
+                String url = webView.getUrl();
+                if (url != null && url.contains("fixtray.app")) {
+                    injectViewportCSS(webView);
+                }
+                if (!introVisible) paintSystemBars(false);
+            }
+        });
+
+        showIntro();
+    }
+
+    @Override
+    public void onDestroy() {
+        dismissIntro();
+        super.onDestroy();
+    }
+
+    /** Bundled logo intro on white. Tap, the end, or a load error reveals login. */
+    private void showIntro() {
+        WebView webView = getBridge().getWebView();
+        if (webView == null || !(webView.getParent() instanceof ViewGroup)) return;
+
+        introVisible = true;
+        paintSystemBars(true);
+
+        View.OnClickListener skip = v -> dismissIntro();
+        introLayer = new FrameLayout(this);
+        introLayer.setBackgroundColor(Color.WHITE);
+        introLayer.setOnClickListener(skip);
+
+        ImageView mark = new ImageView(this);
+        mark.setImageResource(R.drawable.splash);
+        mark.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        mark.setBackgroundColor(Color.WHITE);
+        mark.setOnClickListener(skip);
+        introLayer.addView(mark, new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            Gravity.CENTER));
+
+        introTexture = new TextureView(this);
+        introTexture.setOpaque(false);
+        introTexture.setOnClickListener(skip);
+        introLayer.addView(introTexture, new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            Gravity.CENTER));
+
+        ((ViewGroup) webView.getParent()).addView(introLayer, new ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT));
+
+        introLayer.postDelayed(() -> {
+            if (!introVisible) return;
+            try {
+                if (introPlayer != null && introPlayer.isPlaying()) return;
+                int duration = introPlayer != null ? introPlayer.getDuration() : 0;
+                int position = introPlayer != null ? introPlayer.getCurrentPosition() : 0;
+                if (duration > 0 && position > 200 && position < duration - 150) return;
+            } catch (Exception ignored) {}
+            dismissIntro();
+        }, 8000);
+
+        introTexture.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            @Override
+            public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+                startIntroPlayer(surface, mark);
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {}
+
+            @Override
+            public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+                releaseIntroPlayer();
+                return true;
+            }
+
+            @Override
+            public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
+        });
+    }
+
+    private void startIntroPlayer(SurfaceTexture surface, ImageView mark) {
+        if (!introVisible) return;
+        try {
+            MediaPlayer player = new MediaPlayer();
+            introPlayer = player;
+            AssetFileDescriptor afd = getResources().openRawResourceFd(R.raw.intro);
+            if (afd == null) {
+                dismissIntro();
+                return;
+            }
+            player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            afd.close();
+            player.setSurface(new Surface(surface));
+            player.setVolume(0f, 0f);
+            player.setOnPreparedListener(mp -> {
+                if (!introVisible) return;
+                fitIntroVideo(mp.getVideoWidth(), mp.getVideoHeight());
+                mp.start();
+            });
+            player.setOnInfoListener((mp, what, extra) -> {
+                if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
+                    mark.setVisibility(View.GONE);
+                }
+                return false;
+            });
+            player.setOnCompletionListener(mp -> dismissIntro());
+            player.setOnErrorListener((mp, what, extra) -> {
+                dismissIntro();
+                return true;
+            });
+            player.prepareAsync();
+        } catch (Exception ignored) {
+            dismissIntro();
+        }
+    }
+
+    private void fitIntroVideo(int videoWidth, int videoHeight) {
+        if (introLayer == null || introTexture == null || videoWidth <= 0 || videoHeight <= 0) return;
+        int pw = introLayer.getWidth();
+        int ph = introLayer.getHeight();
+        if (pw <= 0 || ph <= 0) {
+            introLayer.post(() -> fitIntroVideo(videoWidth, videoHeight));
+            return;
+        }
+        float scale = Math.min(pw / (float) videoWidth, ph / (float) videoHeight);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+            Math.max(1, Math.round(videoWidth * scale)),
+            Math.max(1, Math.round(videoHeight * scale)),
+            Gravity.CENTER);
+        introTexture.setLayoutParams(lp);
+    }
+
+    private void dismissIntro() {
+        if (!introVisible && introLayer == null) return;
+        introVisible = false;
+        releaseIntroPlayer();
+        if (introLayer != null) {
+            if (introLayer.getParent() instanceof ViewGroup) {
+                ((ViewGroup) introLayer.getParent()).removeView(introLayer);
+            }
+            introLayer = null;
+        }
+        introTexture = null;
+        paintSystemBars(false);
+    }
+
+    private void releaseIntroPlayer() {
+        MediaPlayer player = introPlayer;
+        introPlayer = null;
+        if (player == null) return;
+        try {
+            player.setOnCompletionListener(null);
+            player.setOnErrorListener(null);
+            player.setOnPreparedListener(null);
+            player.release();
+        } catch (Exception ignored) {}
+    }
+
+    private void paintSystemBars(boolean light) {
+        runOnUiThread(() -> {
+            int color = light ? 0xFFFFFFFF : 0xFF020608;
+            getWindow().setStatusBarColor(color);
+            getWindow().setNavigationBarColor(color);
+            WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+            if (controller != null) {
+                controller.setAppearanceLightStatusBars(light);
+                controller.setAppearanceLightNavigationBars(light);
             }
         });
     }

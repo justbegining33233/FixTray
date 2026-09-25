@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { WorkOrderFormData, VehicleType, RepairType, MaintenanceType, TireServiceType } from '@/types/workorder';
 import { FaArrowLeft, FaArrowRight, FaCheck, FaMapMarkerAlt, FaCamera } from 'react-icons/fa';
+import { Capacitor } from '@capacitor/core';
+import { captureNativePhotoFile } from '@/lib/nativePhoto';
 import BarcodeScanner from './BarcodeScanner';
 
 interface WorkOrderFormProps {
@@ -202,6 +204,10 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
   
   const [symptoms, setSymptoms] = useState(initialData?.issueDescription?.symptoms || '');
   const [pictures, setPictures] = useState<File[]>([]);
+  const [nativeCamera, setNativeCamera] = useState(false);
+  useEffect(() => {
+    setNativeCamera(Capacitor.isNativePlatform());
+  }, []);
   const [additionalNotes, setAdditionalNotes] = useState(initialData?.issueDescription?.additionalNotes || '');
   
   const [locationType, setLocationType] = useState<'geolocation' | 'address' | 'not-provided'>('not-provided');
@@ -654,6 +660,22 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
               onChange={handlePictureUpload}
               style={{...inputStyle, padding:12}}
             />
+            {nativeCamera && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const file = await captureNativePhotoFile();
+                    if (file) setPictures((current) => [...current, file]);
+                  } catch {
+                    // A dismissed camera leaves the file input available.
+                  }
+                }}
+                style={{...inputStyle, marginTop: 8, cursor: 'pointer'}}
+              >
+                <FaCamera style={{marginRight:4}} /> {say("Take photo")}
+              </button>
+            )}
             {pictures.length > 0 && (
               <div style={{marginTop:12, display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))', gap:12}}>
                 {pictures.map((pic, idx) => (

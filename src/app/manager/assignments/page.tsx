@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCheck, FaClock, FaUsers } from 'react-icons/fa';
 import { OPEN_WORK_ORDER_STATUSES, isAwaitingClockIn, unwrapTechs, unwrapWorkOrders } from '@/lib/workOrderList';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { ManagerQueuePhone } from '@/components/mobile/ManagerPhone';
 
 interface WorkOrder {
   id: string;
@@ -30,6 +32,7 @@ interface Tech {
 export default function AssignmentsPage() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
+  const isMobile = useIsMobile();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [techs, setTechs] = useState<Tech[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +113,10 @@ export default function AssignmentsPage() {
 
   const awaitingClockIn = workOrders.filter((wo) => isAwaitingClockIn(wo));
   const clockedIn = workOrders.filter((wo) => !isAwaitingClockIn(wo));
+
+  if (isMobile) {
+    return <ManagerQueuePhone awaiting={awaitingClockIn} clocked={clockedIn} techs={techs} />;
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: 'transparent' }}>

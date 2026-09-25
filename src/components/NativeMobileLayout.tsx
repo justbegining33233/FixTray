@@ -6,10 +6,13 @@ import { FaBars, FaHome, FaClipboardList, FaComments, FaUser, FaCog, FaBell, FaS
 import { Capacitor } from '@capacitor/core';
 import { nativeMobileService } from '@/lib/nativeMobileService';
 import { offlineStorageService } from '@/lib/offlineStorageService';
+import { useAuth } from '@/contexts/AuthContext';
+import RoleTabBar from '@/components/RoleTabBar';
+import { mobileNavForActor, type ShellRole } from '@/lib/mobileRoleNav';
 
 interface NativeMobileLayoutProps {
   children: React.ReactNode;
-  userRole: 'customer' | 'shop' | 'tech' | 'manager';
+  userRole: ShellRole;
   userName?: string;
   unreadNotifications?: number;
   onMenuToggle?: () => void;
@@ -37,6 +40,12 @@ export default function NativeMobileLayout({
   onAddNew,
 }: NativeMobileLayoutProps) {
   const say = usePhrase();
+  const { user } = useAuth();
+  const roleNav = mobileNavForActor(userRole, {
+    role: user?.role ?? userRole,
+    isSuperAdmin: user?.isSuperAdmin,
+    isOwner: user?.isOwner,
+  });
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState(offlineStorageService.getSyncStatus());
   const [currentPath, setCurrentPath] = useState('/');
@@ -305,7 +314,7 @@ export default function NativeMobileLayout({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
-            {userName ? `Hi, ${userName.split(' ')[0]}` : say("FixTray Pro")}
+            <span style={{ color: 'var(--accent, #e5332a)', fontWeight: 800, fontFamily: 'var(--font)' }}>{say('FixTray')}</span>
           </div>
         </div>
 
@@ -403,90 +412,7 @@ export default function NativeMobileLayout({
         {children}
       </div>
 
-      {/* Bottom Navigation */}
-      <div style={{
-        background: 'rgba(0,0,0,0.9)',
-        backdropFilter: 'blur(10px)',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        padding: '8px 0',
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
-      }}>
-        {bottomNavItems.map((item, index) => (
-          <button
-            key={index}
-            onClick={() => handleNavClick(item)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: isActivePath(item.path) ? '#e5332a' : '#9ca3af',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '4px',
-              minWidth: '60px',
-              position: 'relative',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <div style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              {say(item.icon)}
-              {item.badge && item.badge > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  background: '#ef4444',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: '16px',
-                  height: '16px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  {item.badge > 99 ? '99+' : item.badge}
-                </span>
-              )}
-            </div>
-            <span style={{
-              fontSize: '10px',
-              fontWeight: '500',
-              textAlign: 'center',
-            }}>
-              {say(item.label)}
-            </span>
-            {isActivePath(item.path) && (
-              <div style={{
-                position: 'absolute',
-                bottom: '-2px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '20px',
-                height: '2px',
-                background: '#e5332a',
-                borderRadius: '1px',
-              }} />
-            )}
-          </button>
-        ))}
-      </div>
+      {roleNav && <RoleTabBar nav={roleNav} />}
 
       {/* Add styles for animations */}
       <style jsx>{`

@@ -7,9 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { useIsNative } from '@/context/NativeContext';
-import MobileShell from '@/components/MobileShell';
+import { MobilePageFrame } from '@/components/MobileShell';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { DashboardTab } from '@/app/admin/home/components/DashboardTabClean';
 import { UsersTab } from '@/app/admin/home/components/UsersTab';
@@ -17,6 +15,8 @@ import { HierarchyTab } from '@/components/admin/HierarchyTab';
 import { useAdminData } from '@/hooks/useAdminData';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { ownerShopHeadline } from '@/lib/shopCensus';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { AdminOverviewPhone } from '@/components/mobile/AdminPhone';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,10 +25,9 @@ function AdminHomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
-  const isMobile = useIsMobile();
-  const isNative = useIsNative();
   const isSuperAdmin = user?.isSuperAdmin;
   const isOwnerProfile = Boolean(user?.isOwner);
+  const isMobile = useIsMobile();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,11 +118,6 @@ function AdminHomeContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mobile / native: show tile-grid shell immediately, before auth loading guard
-  if (isNative || isMobile) {
-    return <MobileShell role="admin" isHome userName={user?.name} />;
-  }
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#000000] flex items-center justify-center">
@@ -211,7 +205,37 @@ function AdminHomeContent() {
     }
   };
 
+  if (isMobile && activeSection === 'dashboard') {
+    const db = infraHealth.dbConnected === null ? '—' : infraHealth.dbConnected ? 'Up' : 'Down';
+    return (
+      <MobilePageFrame role="admin" isHome userName={user?.name}>
+        <AdminOverviewPhone
+          isOwner={isOwnerProfile}
+          pendingApprovals={pendingApprovalsCount}
+          totalShops={totalShopsCount}
+          customers={customersCount}
+          approvedShops={approvedShopsCount}
+          monthlyRevenue={platformStats.monthlyRevenue}
+          revenueGrowth={liveMetrics.revenueGrowth || liveMetrics.monthOverMonthGrowth}
+          revenueTrend={liveMetrics.revenueTrend || []}
+          funnel={{
+            visits: liveMetrics.websiteVisits || liveMetrics.totalShopsEver || 0,
+            trials: liveMetrics.trialsCount || liveMetrics.trialSignups || 0,
+            members: liveMetrics.membersCount || liveMetrics.activeTrials || 0,
+            customers: liveMetrics.convertedCustomersCount || liveMetrics.convertedCustomers || 0,
+          }}
+          pulse={{
+            api: infraHealth.apiLatencyMs === null ? '—' : `${infraHealth.apiLatencyMs}ms`,
+            db,
+            active: String(platformStats.activeUsers ?? 0),
+          }}
+        />
+      </MobilePageFrame>
+    );
+  }
+
   return (
+    <MobilePageFrame role="admin" isHome userName={user?.name}>
     <div className="min-h-screen bg-[#000000] text-slate-100">
       <div className="relative z-10">
         {searchOpen && (
@@ -268,7 +292,7 @@ function AdminHomeContent() {
       )}
 
       <div className="max-w-7xl mx-auto px-5 py-8 space-y-6">
-        <header className="rounded-2xl bg-[#000000] border border-[#1f2937] p-5 shadow-xl shadow-black/40">
+        <header data-desktop-chrome="true" className="rounded-2xl bg-[#000000] border border-[#1f2937] p-5 shadow-xl shadow-black/40">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#f97316] to-[#ea580c] text-white flex items-center justify-center font-semibold text-lg">F</div>
@@ -366,7 +390,7 @@ function AdminHomeContent() {
 
         <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
           {/* Left rail */}
-          <section className="space-y-4">
+          <section data-desktop-chrome="true" className="space-y-4">
             <div className="rounded-2xl bg-[#000000] border border-[#1f2937] p-4 shadow-lg shadow-black/30">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">{say("Status")}</p>
@@ -423,15 +447,18 @@ function AdminHomeContent() {
           {/* Main canvas */}
           <section className="space-y-4">
             <div className="rounded-2xl bg-[#000000] border border-[#1f2937] p-5 shadow-xl shadow-black/40">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="mb-4 overflow-x-auto rounded-full border border-white/10 bg-white/5" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div role="tablist" className="flex w-max min-w-full flex-nowrap items-stretch">
                 {navigationItems.map((item) => (
                   <button
                     key={item.id}
+                    role="tab"
+                    aria-selected={activeSection === item.id}
                     onClick={() => handleSectionSelect(item.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-full border text-sm transition-all ${
+                    className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 text-sm transition-all ${
                       activeSection === item.id
-                        ? 'bg-white text-[#000000] border-white shadow-lg'
-                        : 'bg-white/5 text-slate-200 border-white/10 hover:bg-white/10'
+                        ? 'bg-white text-[#000000]'
+                        : 'bg-transparent text-slate-200 hover:bg-white/10'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -445,6 +472,7 @@ function AdminHomeContent() {
                     )}
                   </button>
                 ))}
+                </div>
               </div>
 
               <div className="rounded-2xl border border-[#1f2937] bg-[#0b1220] p-4 md:p-6 shadow-inner shadow-black/30">
@@ -481,6 +509,7 @@ function AdminHomeContent() {
       </div>
       </div>
     </div>
+    </MobilePageFrame>
   );
 }
 

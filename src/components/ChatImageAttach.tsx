@@ -5,6 +5,7 @@ import { FaPaperclip, FaTimes } from 'react-icons/fa';
 import { isChatImageUrl } from '@/lib/messageAttachment';
 import { usePhrase } from '@/lib/usePhrase';
 import { uploadChatImage } from '@/lib/uploadChatImage';
+import { captureNativePhotoFile } from '@/lib/nativePhoto';
 
 export function PendingChatImage({ url, onRemove }: { url: string; onRemove: () => void }) {
   const say = usePhrase();
@@ -63,7 +64,23 @@ export function ChatImageAttachButton({
         aria-label={say('Attach image')}
         title={say('Attach image')}
         disabled={disabled || uploading}
-        onClick={() => inputRef.current?.click()}
+        onClick={async () => {
+          if (disabled || uploading) return;
+          try {
+            const nativeFile = await captureNativePhotoFile();
+            if (nativeFile) {
+              setUploading(true);
+              const result = await uploadChatImage(nativeFile);
+              setUploading(false);
+              if ('error' in result) onError(result.error);
+              else onUploaded(result.url);
+              return;
+            }
+          } catch {
+            // Camera cancelled or unavailable — fall back to the file picker.
+          }
+          inputRef.current?.click();
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',

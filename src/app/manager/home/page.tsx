@@ -10,16 +10,15 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import MobileShell from '@/components/MobileShell';
+import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { useIsNative } from '@/context/NativeContext';
 import { managerAlertHref } from '@/lib/managerAlerts';
+import { ManagerDashboardPhone } from '@/components/mobile/ManagerPhone';
 
 export default function ManagerHome() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['manager']);
   const isMobile = useIsMobile();
-  const isNative = useIsNative();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
@@ -246,11 +245,21 @@ export default function ManagerHome() {
     }
   };
 
-  if (isNative || isMobile) {
-    return <MobileShell role="manager" isHome userName={userName} />;
+  if (isMobile) {
+    return (
+      <MobilePageFrame role="manager" isHome userName={userName || user?.name}>
+        <ManagerDashboardPhone
+          alerts={urgentAlerts}
+          stats={workOrderStats}
+          team={teamPerformance}
+          finance={financialSummary}
+        />
+      </MobilePageFrame>
+    );
   }
 
   return (
+    <MobilePageFrame role="manager" isHome userName={userName}>
     <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navigation */}
       <TopNavBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} showMenuButton={true} />
@@ -587,6 +596,7 @@ export default function ManagerHome() {
         </div>
       )}
     </div>
+    </MobilePageFrame>
   );
 }
 

@@ -12,6 +12,9 @@ import OilSlickCanvas from '@/components/OilSlickCanvas';
 import { useTranslations } from 'next-intl';
 import { usePhrase } from '@/lib/usePhrase';
 import { loginProbeOrder, type LoginProbe } from '@/lib/customerSession';
+import { decodeToken } from '@/lib/auth-client';
+import { introHandoffPath, readIntroSession } from '@/lib/nativeIntro';
+import { Capacitor } from '@capacitor/core';
 
 const MIN_USERNAME_LENGTH = 3;
 const MIN_PASSWORD_LENGTH = 8;
@@ -22,6 +25,8 @@ export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
+  const fromIntro = searchParams?.get('from') === 'intro';
+  const [introHold, setIntroHold] = useState(false);
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
 
@@ -30,6 +35,33 @@ export default function LoginClient() {
   useEffect(() => {
     setLoginForm({ username: '', password: '' });
   }, []);
+
+  useEffect(() => {
+    if (!fromIntro) return;
+    const stripIntroFlag = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('from');
+      const query = url.searchParams.toString();
+      window.history.replaceState(null, '', url.pathname + (query ? `?${query}` : ''));
+    };
+    // Browsers keep the normal login page. Only the Capacitor shell continues a session.
+    if (!Capacitor.isNativePlatform()) {
+      stripIntroFlag();
+      return;
+    }
+    setIntroHold(true);
+    const home = introHandoffPath(readIntroSession(window.localStorage, (token) => {
+      const claims = decodeToken(token);
+      if (!claims) return null;
+      return { role: claims.role, exp: claims.exp };
+    }));
+    if (home) {
+      window.location.replace(home);
+      return;
+    }
+    stripIntroFlag();
+    setIntroHold(false);
+  }, [fromIntro]);
   const [accountType, setAccountType] = useState<'customer' | 'shop' | null>(null);
   const [signupForm, setSignupForm] = useState({ fullName: '', username: '', email: '', password: '', confirmPassword: '', agreeToTerms: false });
   const [shopSignupForm, setShopSignupForm] = useState({ shopName: '', ownerName: '', address: '', city: '', state: '', zip: '', phone: '', email: '', username: '', password: '', confirmPassword: '', agreeToTerms: false });
@@ -273,6 +305,10 @@ export default function LoginClient() {
   };
 
   const toggleReset = () => setShowReset(s => !s);
+
+  if (introHold) {
+    return <div style={{ position: 'fixed', inset: 0, background: '#020608' }} />;
+  }
 
   return (
     <div className="sos-wrap" style={{ background: '#09090b' }}>

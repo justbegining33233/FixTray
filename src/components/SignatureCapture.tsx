@@ -5,27 +5,33 @@ import { useEffect, useRef, useState } from 'react';
 
 interface SignatureCaptureProps {
   onChange: (signatureData: string | null) => void;
+  tone?: 'light' | 'dark';
 }
 
-export default function SignatureCapture({ onChange }: SignatureCaptureProps) {
+function paintPad(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, tone: 'light' | 'dark') {
+  ctx.fillStyle = tone === 'dark' ? '#0b1220' : '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = tone === 'dark' ? '#e2e8f0' : '#111827';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+
+export default function SignatureCapture({ onChange, tone = 'light' }: SignatureCaptureProps) {
   const say = usePhrase();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const stroked = useRef(false);
   const [hasStroke, setHasStroke] = useState(false);
+  const dark = tone === 'dark';
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#111827';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-  }, []);
+    paintPad(ctx, canvas, tone);
+  }, [tone]);
 
   const pointFrom = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
@@ -72,24 +78,29 @@ export default function SignatureCapture({ onChange }: SignatureCaptureProps) {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#111827';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
+    paintPad(ctx, canvas, tone);
     stroked.current = false;
     setHasStroke(false);
     onChange(null);
   };
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <canvas
         ref={canvasRef}
         width={640}
-        height={180}
+        height={dark ? 120 : 180}
         aria-label={say("Signature")}
-        style={{ width: '100%', height: 140, background: '#fff', borderRadius: 8, touchAction: 'none', display: 'block', cursor: 'crosshair' }}
+        style={{
+          width: '100%',
+          height: dark ? 72 : 140,
+          background: dark ? '#0b1220' : '#fff',
+          borderRadius: dark ? 10 : 8,
+          border: dark ? '1px dashed rgba(255,255,255,0.22)' : 'none',
+          touchAction: 'none',
+          display: 'block',
+          cursor: 'crosshair',
+        }}
         onMouseDown={start}
         onMouseMove={move}
         onMouseUp={end}
@@ -98,8 +109,11 @@ export default function SignatureCapture({ onChange }: SignatureCaptureProps) {
         onTouchMove={move}
         onTouchEnd={end}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: 12, color: '#9aa3b2' }}>{hasStroke ? say("Signature captured") : say("Sign in the box")}</span>
+      {dark && !hasStroke ? <span className="pm-sign-hint">{say('Sign here')}</span> : null}
+      <div style={{ display: 'flex', justifyContent: dark ? 'flex-end' : 'space-between', marginTop: 6 }}>
+        {dark ? null : (
+          <span style={{ fontSize: 12, color: '#9aa3b2' }}>{hasStroke ? say("Signature captured") : say("Sign in the box")}</span>
+        )}
         <button type="button" onClick={clear} style={{ background: 'transparent', color: '#9aa3b2', border: 'none', cursor: 'pointer', fontSize: 12 }}>
           {say("Clear")}{' '}</button>
       </div>

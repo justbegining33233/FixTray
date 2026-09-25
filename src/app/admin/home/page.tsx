@@ -219,9 +219,9 @@ function AdminHomeContent() {
           revenueTrend={liveMetrics.revenueTrend || []}
           funnel={{
             visits: liveMetrics.websiteVisits || liveMetrics.totalShopsEver || 0,
-            trials: liveMetrics.trialsCount || liveMetrics.trialSignups || 0,
-            members: liveMetrics.membersCount || liveMetrics.activeTrials || 0,
-            customers: liveMetrics.convertedCustomersCount || liveMetrics.convertedCustomers || 0,
+            pending: platformStats.pendingShops || 0,
+            shops: platformStats.totalShops || 0,
+            customers: platformStats.activeUsers || 0,
           }}
           pulse={{
             api: infraHealth.apiLatencyMs === null ? '—' : `${infraHealth.apiLatencyMs}ms`,

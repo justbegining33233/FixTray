@@ -5575,5 +5575,8 @@
   "All synced": "all_synced",
   "Payments, approvals, estimates, and pay changes need a connection.": "payments_approvals_estimates_and_pay_changes_need_a_connection",
   "Sync now": "sync_now",
-  "Offline jobs": "offline_jobs"
+  "Offline jobs": "offline_jobs",
+  "Pending shops": "pending_shops_2",
+  "Active users": "active_users_3",
+  "Owners can run more than one shop with shared oversight.": "owners_can_run_more_than_one_shop_with_shared_oversight"
 }

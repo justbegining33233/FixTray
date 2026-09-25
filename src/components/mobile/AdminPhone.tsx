@@ -54,18 +54,18 @@ export function AdminOverviewPhone({
   monthlyRevenue: string;
   revenueGrowth: string;
   revenueTrend: number[];
-  funnel: { visits: number; trials: number; members: number; customers: number };
+  funnel: { visits: number; pending: number; shops: number; customers: number };
   pulse: { api: string; db: string; active: string };
 }) {
   const say = usePhrase();
   const trend = revenueTrend.length ? revenueTrend : [0];
-  const maxFunnel = Math.max(funnel.visits, funnel.trials, funnel.members, funnel.customers, 1);
+  const maxFunnel = Math.max(funnel.visits, funnel.pending, funnel.shops, funnel.customers, 1);
   const growthOk = revenueGrowth && revenueGrowth !== 'Unavailable';
   const bars: Array<[string, number]> = [
     [say('Website Visits'), funnel.visits],
-    [say('Trials'), funnel.trials],
-    [say('Members'), funnel.members],
-    [say('Customers'), funnel.customers],
+    [say('Pending shops'), funnel.pending],
+    [say('Shops'), funnel.shops],
+    [say('Active users'), funnel.customers],
   ];
   const colors = ['#e5332a', '#ff6b5e', '#ff948d', '#22c55e'];
   return (

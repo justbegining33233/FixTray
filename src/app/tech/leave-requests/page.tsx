@@ -25,7 +25,11 @@ export default function MyLeaveRequestsPage() {
   const loadBalance = async () => {
     try {
       const techId = localStorage.getItem('userId');
-      const response = await fetch(`/api/leave-requests?action=balance&techId=${techId}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/leave-requests?action=balance&techId=${encodeURIComponent(techId || '')}`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!response.ok) throw new Error('Failed to load balance');
       const data = await response.json();
       setBalance(data);
@@ -74,8 +78,8 @@ export default function MyLeaveRequestsPage() {
       )}
 
       {/* Leave Requests */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-6">{say("My Requests")}</h2>
+      <div className="rounded-lg border border-[#1e293b] bg-[#0b1220] p-6 text-[#e5e7eb]">
+        <h2 className="text-xl font-bold mb-6 text-[#e5e7eb]">{say("My Requests")}</h2>
         <LeaveRequestList role="tech" />
       </div>
     </div>

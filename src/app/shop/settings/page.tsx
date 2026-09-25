@@ -10,6 +10,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FIXTRAY_SHOP_PARTICIPATION_AGREEMENT } from '@/lib/fixtrayShopParticipationAgreement';
+import { enablePushNotifications } from '@/lib/nativeMobileService';
 
 type CategoryId = 'diesel' | 'gas' | 'small-engine' | 'heavy-equipment' | 'resurfacing' | 'welding' | 'tire';
 
@@ -440,6 +441,7 @@ function ShopSettingsPageContent() {
   };
 
   const handleEnablePush = async () => {
+    await enablePushNotifications().catch(() => {});
     if (typeof window === 'undefined' || !('Notification' in window)) {
       setPushStatus('Push notifications are not supported in this browser.');
       return;
@@ -685,7 +687,7 @@ function ShopSettingsPageContent() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       {/* Header */}
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(229,51,42,0.3)', padding:'20px 32px'}}>
-        <div style={{maxWidth:1200, margin:'0 auto', display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+        <div style={{maxWidth:1200, margin:'0 auto', display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12}}>
           <div>
             <Link href="/shop/admin#overview" style={{color:'#e5332a', textDecoration:'none', fontSize:14, fontWeight:600, marginBottom:8, display:'inline-block'}}>
               <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>

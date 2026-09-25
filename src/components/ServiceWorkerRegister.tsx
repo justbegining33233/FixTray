@@ -1,8 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
+const DISMISS_KEY = 'fixtrayInstallDismissed';
 
 export default function ServiceWorkerRegister() {
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       // In development, remove existing service workers/caches to avoid stale chunks.
@@ -21,16 +31,10 @@ export default function ServiceWorkerRegister() {
           });
         }
       } else {
-        // updateViaCache:'none' forces the browser to always fetch the latest sw.js
-        // from the network, bypassing HTTP cache, so every new deployment is picked
-        // up immediately without a hard refresh.
         navigator.serviceWorker
           .register('/sw.js', { updateViaCache: 'none' })
           .catch(() => {});
 
-        // When a new service worker takes control (skipWaiting + clients.claim),
-        // reload automatically so clients get the latest HTML/JS without ever
-        // needing Ctrl+Shift+R.
         let reloading = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (!reloading) {
@@ -39,33 +43,23 @@ export default function ServiceWorkerRegister() {
           }
         });
       }
-
-      // Request notification permission for mobile
-      if (process.env.NODE_ENV === 'production' && 'Notification' in window && 'serviceWorker' in navigator) {
-        Notification.requestPermission().then((permission) => {
-          if (permission === 'granted') {
-          }
-        });
-      }
     }
 
-    // Handle PWA install prompt
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let deferredPrompt: any;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const native = Capacitor.isNativePlatform();
+    const dismissed = sessionStorage.getItem(DISMISS_KEY) === '1';
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
+    const onPrompt = (event: Event) => {
+      if (native || standalone || dismissed) return;
+      event.preventDefault();
+      setInstallEvent(event as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => setInstallEvent(null);
 
-      // Show install button or banner
-    });
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
 
-    // Listen for app installed
-    window.addEventListener('appinstalled', () => {
-      deferredPrompt = null;
-    });
-
-    // Handle mobile viewport height issues
     const setVH = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -76,10 +70,57 @@ export default function ServiceWorkerRegister() {
     window.addEventListener('orientationchange', setVH);
 
     return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
       window.removeEventListener('resize', setVH);
       window.removeEventListener('orientationchange', setVH);
     };
   }, []);
 
-  return null;
+  if (!installEvent) return null;
+
+  return (
+    <div
+      role="region"
+      aria-label="Install FixTray"
+      style={{
+        position: 'fixed',
+        left: 12,
+        right: 12,
+        bottom: 'calc(88px + env(safe-area-inset-bottom))',
+        zIndex: 80,
+        background: '#020608',
+        color: '#e5e7eb',
+        border: '1px solid #e5332a',
+        borderRadius: 12,
+        padding: '12px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+      }}
+    >
+      <span style={{ flex: 1, fontWeight: 700 }}>Install FixTray</span>
+      <button
+        type="button"
+        onClick={async () => {
+          await installEvent.prompt();
+          setInstallEvent(null);
+        }}
+        style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}
+      >
+        Install
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          sessionStorage.setItem(DISMISS_KEY, '1');
+          setInstallEvent(null);
+        }}
+        style={{ background: 'transparent', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}
+      >
+        Not now
+      </button>
+    </div>
+  );
 }

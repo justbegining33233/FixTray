@@ -12,6 +12,7 @@ import { useIsNative } from '@/context/NativeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft } from 'react-icons/fa';
 import { managerShopRedirect, normalizeRole } from '@/lib/roleNav';
+import { fetchShopAgreementAccepted } from '@/lib/fixtrayAgreement';
 
 /** Derive a human-readable section title from the pathname */
 function getTitle(pathname: string): string {
@@ -48,13 +49,18 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
     if (!user) return;
     // Managers are sent to manager-owned pages, not the shop agreement gate.
     if (actorRole === 'manager') return;
+    if (typeof window !== 'undefined' && localStorage.getItem('fixtrayAgreementAccepted') === 'true') return;
 
-    const agreementAccepted =
-      typeof window !== 'undefined' && localStorage.getItem('fixtrayAgreementAccepted') === 'true';
-
-    if (!agreementAccepted) {
-      router.replace('/shop/settings?tab=general');
-    }
+    let cancelled = false;
+    (async () => {
+      const accepted = await fetchShopAgreementAccepted();
+      if (cancelled) return;
+      // Unknown (failed fetch) must not hijack Orders and the rest of the shop.
+      if (accepted === false) router.replace('/shop/settings?tab=general');
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, router, user, actorRole]);
 
   if (managerDest) {
@@ -70,7 +76,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   if ((isNative || isMobile) && pathname !== '/shop/home') {
     return (
       <MobileShell
-        role="shop"
+        role={actorRole === 'manager' ? 'manager' : 'shop'}
         isHome={false}
         sectionTitle={getTitle(pathname)}
         userName={user?.name}

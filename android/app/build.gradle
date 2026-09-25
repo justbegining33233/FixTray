@@ -1,5 +1,18 @@
 apply plugin: 'com.android.application'
 
+def fixtrayProp = { String name ->
+    def fromEnv = System.getenv(name)
+    if (fromEnv != null && fromEnv.toString().trim()) return fromEnv.toString()
+    def fromGradle = project.findProperty(name)
+    return fromGradle != null ? fromGradle.toString() : ''
+}
+
+def uploadStoreFile = fixtrayProp('FIXTRAY_UPLOAD_STORE_FILE')
+def uploadStorePassword = fixtrayProp('FIXTRAY_UPLOAD_STORE_PASSWORD')
+def uploadKeyAlias = fixtrayProp('FIXTRAY_UPLOAD_KEY_ALIAS')
+def uploadKeyPassword = fixtrayProp('FIXTRAY_UPLOAD_KEY_PASSWORD')
+def fixtrayReleaseSigning = uploadStoreFile && uploadStorePassword && uploadKeyAlias && uploadKeyPassword
+
 android {
     namespace = "com.fixtray.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +20,8 @@ android {
         applicationId "com.fixtray.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,10 +31,23 @@ android {
             noCompress 'mp4'
         }
     }
+    if (fixtrayReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile file(uploadStoreFile)
+                storePassword uploadStorePassword
+                keyAlias uploadKeyAlias
+                keyPassword uploadKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (fixtrayReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

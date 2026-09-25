@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
   // Permissions-Policy (formerly Feature-Policy)
   const permissionsPolicies = [
     'accelerometer=()',
-    'camera=()',
+    'camera=(self)',
     'geolocation=(self)',
     'gyroscope=()',
     'magnetometer=()',

@@ -6,6 +6,7 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaComments, FaUsers, FaEnvelope, FaClock, FaArrowRight } from 'react-icons/fa';
+import { messageListPreview } from '@/lib/messageAttachment';
 
 interface Conversation {
   id: string;
@@ -212,7 +213,7 @@ export default function AdminMessagingPage() {
                       </div>
                     )}
                     <div style={{ color: '#9ca3af', fontSize: 12, maxWidth: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {say(conv.body)}
+                      {say(messageListPreview(conv.body))}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 150 }}>

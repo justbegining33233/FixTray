@@ -12,6 +12,11 @@ import { CapacitorBarcodeScanner, CapacitorBarcodeScannerTypeHintALLOption, type
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { Motion, MotionEventResult } from '@capacitor/motion';
 
+/** True only when the native build includes Firebase (google-services.json). */
+export function nativeFirebasePushConfigured(): boolean {
+  return process.env.NEXT_PUBLIC_FIREBASE_CONFIGURED === 'true';
+}
+
 export interface PhotoData {
   webPath: string;
   base64Data: string;
@@ -56,6 +61,7 @@ class NativeMobileService {
   private networkStatus: any = null;
   private locationWatchId: string | null = null;
   private motionWatchId: PluginListenerHandle | null = null;
+  private pushListenersReady = false;
 
   // Event callbacks
   onLocationUpdate?: (location: LocationData) => void;
@@ -81,11 +87,8 @@ class NativeMobileService {
         this.onNetworkChange?.(status);
       });
 
-      // Initialize push notifications
-      await this.initializePushNotifications();
-
-      // Initialize local notifications
-      await this.initializeLocalNotifications();
+      // Push registration waits for a user action and a Firebase build.
+      // Calling register() on launch crashes Android when google-services.json is absent.
 
     } catch (error) {
       console.error('Failed to initialize native services:', error);
@@ -250,43 +253,34 @@ class NativeMobileService {
 
   // ===== PUSH NOTIFICATION SERVICES =====
 
-  private async initializePushNotifications(): Promise<void> {
-    if (!this.isNative) return;
-
+  /**
+   * Register remote push only after a user gesture, and only when the Android
+   * build was configured with Firebase. Without google-services.json, register()
+   * crashes the WebView once notification permission is granted.
+   */
+  async enablePushNotifications(): Promise<void> {
+    if (!this.isNative || !nativeFirebasePushConfigured()) return;
     try {
-      // Request permission
       const permission = await PushNotifications.requestPermissions();
-      if (permission.receive !== 'granted') {
-        console.warn('Push notification permission denied');
-        return;
+      if (permission.receive !== 'granted') return;
+      if (!this.pushListenersReady) {
+        this.pushListenersReady = true;
+        await PushNotifications.addListener('registration', (token) => {
+          this.sendPushTokenToServer(token.value);
+        });
+        await PushNotifications.addListener('registrationError', (error) => {
+          console.error('Push registration failed:', error);
+        });
+        await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+          this.onPushNotification?.(notification);
+        });
+        await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+          this.handlePushAction(action);
+        });
       }
-
-      // Register for push notifications
       await PushNotifications.register();
-
-      // Add listeners
-      PushNotifications.addListener('registration', (token) => {
-        console.log('Push registration success, token:', token.value);
-        // Send token to server for push notifications
-        this.sendPushTokenToServer(token.value);
-      });
-
-      PushNotifications.addListener('registrationError', (error) => {
-        console.error('Push registration failed:', error);
-      });
-
-      PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        console.log('Push notification received:', notification);
-        this.onPushNotification?.(notification);
-      });
-
-      PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-        console.log('Push notification action performed:', action);
-        this.handlePushAction(action);
-      });
-
     } catch (error) {
-      console.error('Failed to initialize push notifications:', error);
+      console.error('Push registration skipped:', error);
     }
   }
 
@@ -353,6 +347,7 @@ class NativeMobileService {
     if (!this.isNative) return;
 
     try {
+      await this.initializeLocalNotifications();
       await LocalNotifications.schedule({
         notifications: [{
           id: parseInt(notification.id),
@@ -548,4 +543,9 @@ class NativeMobileService {
 
 // Export singleton instance
 export const nativeMobileService = new NativeMobileService();
+
+export async function enablePushNotifications(): Promise<void> {
+  await nativeMobileService.enablePushNotifications();
+}
+
 export default nativeMobileService;

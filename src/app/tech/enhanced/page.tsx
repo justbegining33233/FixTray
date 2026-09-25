@@ -81,7 +81,7 @@ function TechPortalEnhancedContent() {
   return (
     <div className="sos-wrap">
       <div className="sos-card" style={{maxWidth:1400}}>
-        <div className="sos-header">
+        <div className="sos-header" data-desktop-chrome>
           <div className="sos-brand">
             <span className="mark">{say("FixTray")}</span>
             <span className="sub">{say("Tech Portal -")}{' '}{say(techName)}</span>
@@ -101,7 +101,7 @@ function TechPortalEnhancedContent() {
           </div>
         </div>
 
-        <div className="sos-content" style={{gridTemplateColumns:'200px 1fr'}}>
+        <div className="sos-content">
           <div className="sos-pane" style={{padding:'20px 12px', borderRight:'1px solid #5a5a5a'}}>
             <div style={{display:'flex', flexDirection:'column', gap:4}}>
               {features.map(feature => (
@@ -182,7 +182,7 @@ function AssignmentsTab({ workOrders, onRefresh }: { workOrders: WorkOrder[], on
               <div style={{fontSize:12, color:'#9aa3b2', marginBottom:12}}>
                 {say("Customer:")}{' '}{wo.createdBy || say("Unknown")}
               </div>
-              <div style={{display:'flex', gap:8, width:'100%'}}>
+              <div style={{display:'flex', flexWrap:'wrap', gap:8, width:'100%'}}>
                 <button className="btn-primary" onClick={() => completeJob(wo.id)} style={{flex:1}}>
                   {say("Mark Complete")}{' '}</button>
                 <Link href={`/workorders/${wo.id}`} className="btn-outline" style={{flex:1, textAlign:'center'}}>

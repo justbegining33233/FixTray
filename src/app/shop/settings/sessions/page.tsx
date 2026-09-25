@@ -1,7 +1,11 @@
 'use client';
 
-import ShopRestrictedRedirect from '@/components/ShopRestrictedRedirect';
+import ShopSecurityPanel from '@/components/ShopSecurityPanel';
 
 export default function SessionsPage() {
-  return <ShopRestrictedRedirect fallback="/shop/settings?tab=security" />;
+  return (
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
+      <ShopSecurityPanel focus="sessions" />
+    </div>
+  );
 }

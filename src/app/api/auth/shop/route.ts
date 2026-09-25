@@ -6,6 +6,7 @@ import { checkAccountLockout, recordFailedLoginAttempt, clearLoginAttempts } fro
 import { logActivity } from '@/lib/activityLogger';
 import logger from '@/lib/logger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
+import { agreementFromNotificationPrefs, fixtrayAgreementAccepted } from '@/lib/fixtrayAgreement';
 
 export async function POST(request: NextRequest) {
   try {
@@ -116,6 +117,19 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    let agreementAccepted = false;
+    try {
+      const shopSettings = await prisma.shopSettings.findUnique({
+        where: { shopId: shop.id },
+        select: { notificationPreferences: true },
+      });
+      agreementAccepted = fixtrayAgreementAccepted(
+        agreementFromNotificationPrefs(shopSettings?.notificationPreferences),
+      );
+    } catch {
+      agreementAccepted = false;
+    }
+
     const response = NextResponse.json({
       id: shop.id,
       username: shop.username,
@@ -123,6 +137,7 @@ export async function POST(request: NextRequest) {
       email: shop.email,
       phone: shop.phone,
       profileComplete: shop.profileComplete,
+      agreementAccepted,
       status: shop.status,
       accessToken,
     }, { status: 200 });

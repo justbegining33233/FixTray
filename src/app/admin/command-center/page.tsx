@@ -378,15 +378,15 @@ export default function CommandCenterPage() {
       {/* Header */}
       <header className="relative z-10 border-b border-white/5 backdrop-blur-xl bg-black/60">
         <div className="max-w-[1920px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-6 min-w-0">
               <Link href="/admin/home" className="group flex items-center gap-2 text-stone-400 hover:text-white transition-all">
                 <span className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors"><FaArrowLeft style={{marginRight:4}} /></span>
               </Link>
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                    <span className="text-xl">{say("Cmd")}</span>
+                    <span className="text-[11px] font-extrabold leading-none">{say("Cmd")}</span>
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-stone-900 animate-pulse"></div>
                 </div>
@@ -397,7 +397,7 @@ export default function CommandCenterPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {alertCount > 0 && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
                   <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>

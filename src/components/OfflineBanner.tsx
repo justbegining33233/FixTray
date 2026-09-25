@@ -10,6 +10,8 @@ type OfflineDetail = {
   syncing?: boolean;
   needsReauth?: boolean;
   label?: string;
+  lastSyncedAt?: string;
+  failed?: number;
 };
 
 export default function OfflineBanner() {
@@ -35,7 +37,7 @@ export default function OfflineBanner() {
   }, []);
 
   const pending = detail.pending || 0;
-  const techOffline = pending > 0 || !!detail.syncing || !!detail.needsReauth || (detail.conflicts || 0) > 0;
+  const techOffline = pending > 0 || !!detail.syncing || !!detail.needsReauth || (detail.conflicts || 0) > 0 || (detail.failed || 0) > 0;
   if (!offline && !techOffline) return null;
 
   const syncNow = () => {
@@ -43,7 +45,9 @@ export default function OfflineBanner() {
     engine?.syncNow?.();
   };
 
+  const syncedAt = detail.lastSyncedAt ? new Date(detail.lastSyncedAt).toLocaleString() : '';
   let message = say('You are offline. Some features may be unavailable.');
+  if (offline) message = say('Offline — last synced') + ' ' + (syncedAt || say('not yet'));
   if (detail.needsReauth) message = say('Sign in to finish syncing. Your offline work is saved.');
   else if (detail.syncing) message = say('Syncing…');
   else if (offline && pending) message = say('You are offline.') + ' ' + pending + ' ' + say('pending upload.');
@@ -71,7 +75,7 @@ export default function OfflineBanner() {
       flexWrap: 'wrap',
     }}>
       <span>{message}</span>
-      {offline && <span>{say('Payments and sending estimates need a connection.')}</span>}
+      {offline && <span>{say('Payments, approvals, estimates, and pay changes need a connection.')}</span>}
       {techOffline && (
         <button type="button" onClick={syncNow} style={{ border: 0, borderRadius: 8, padding: '4px 8px', fontWeight: 700, cursor: 'pointer' }}>
           {say('Sync now')}

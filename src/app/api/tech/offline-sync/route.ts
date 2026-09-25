@@ -9,8 +9,8 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
-  if (auth.role !== 'tech' && auth.role !== 'manager') {
-    return NextResponse.json({ error: 'Technicians only' }, { status: 403 });
+  if (!['tech', 'manager', 'shop', 'customer', 'superadmin', 'admin'].includes(auth.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {

@@ -121,6 +121,9 @@ export default function RoleTabBar({
   };
 
   const signOut = async () => {
+    const { guardOfflineLogout } = await import('@/lib/offlineLogoutClient');
+    const proceed = await guardOfflineLogout();
+    if (!proceed) return;
     try {
       const csrfToken = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || '';
       await fetch('/api/auth/logout', {
@@ -129,7 +132,7 @@ export default function RoleTabBar({
         headers: { 'x-csrf-token': csrfToken },
       }).catch(() => {});
     } catch {
-      // Client cleanup still runs.
+      // Client cleanup still runs when sign-out continues.
     }
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
@@ -138,7 +141,6 @@ export default function RoleTabBar({
     localStorage.removeItem('userId');
     localStorage.removeItem('isSuperAdmin');
     window.dispatchEvent(new Event('fixtray-logout'));
-    try { indexedDB.deleteDatabase('fixtray-tech-offline'); } catch { /* cached jobs are cleared on sign-out */ }
     window.location.href = '/auth/login';
   };
 

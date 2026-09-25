@@ -14,6 +14,7 @@ export const TERMINAL_STATUSES = new Set([
 /** Statuses a tech may set from the field. Payments and closing the ticket stay online. */
 export const TECH_OFFLINE_STATUSES = new Set([
   'assigned',
+  'en-route',
   'in-progress',
   'waiting-estimate',
   'completed',

@@ -5,21 +5,18 @@ import logger from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
-/** Tech and manager prep download. Same payload as /api/offline/bundle for those roles. */
+/** Role-scoped cache. Payments, secrets, and other users' records are omitted. */
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
-  if (auth.role !== 'tech' && auth.role !== 'manager') {
-    return NextResponse.json({ error: 'Technicians only' }, { status: 403 });
-  }
   try {
     const bundle = await loadOfflineBundle(auth);
-    if (!bundle) return NextResponse.json({ error: 'Tech not found' }, { status: 404 });
-    return NextResponse.json({ ...bundle, techId: auth.id });
+    if (!bundle) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    return NextResponse.json(bundle);
   } catch (error) {
     logger.error('Offline bundle failed', {
       error: error instanceof Error ? error.message : String(error),
     });
-    return NextResponse.json({ error: 'Failed to download jobs' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to download offline data' }, { status: 500 });
   }
 }

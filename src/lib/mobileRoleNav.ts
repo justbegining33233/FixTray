@@ -121,6 +121,7 @@ const superadminNav: MobileRoleNav = {
   ],
   more: [
     section('Operations', [
+      link('Offline', '/tech-offline/', 'clipboard'),
       link('Command Center', '/admin/command-center', 'clipboard'),
       link('Dashboard', '/admin/dashboard', 'home'),
       link('Pending Shops', '/admin/pending-shops', 'clock'),
@@ -195,6 +196,7 @@ const shopNav: MobileRoleNav = {
   ],
   more: [
     section('Work', [
+      link('Offline', '/tech-offline/', 'clipboard'),
       link('New In-Shop Job', '/shop/new-inshop-job', 'wrench'),
       link('New Roadside Job', '/shop/new-roadside-job', 'pin'),
       link('In-Shop Work Order', '/workorders/inshop', 'orders'),
@@ -285,6 +287,7 @@ const managerNav: MobileRoleNav = {
   ],
   more: [
     section('Jobs', [
+      link('Offline', '/tech-offline/', 'clipboard'),
       link('Job Queue', '/manager/assignments', 'clipboard'),
       link('Dashboard', '/manager/dashboard', 'home'),
       link('Overview', '/manager/overview', 'chart'),
@@ -388,6 +391,7 @@ const customerNav: MobileRoleNav = {
   ],
   more: [
     section('Services', [
+      link('Offline', '/tech-offline/', 'clipboard'),
       link('Find Shops', '/customer/findshops', 'search'),
       link('Work Orders', '/customer/workorders', 'orders'),
       link('My Estimates', '/customer/estimates', 'file'),

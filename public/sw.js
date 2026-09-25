@@ -1,6 +1,6 @@
 /* eslint-disable */
 // FixTray Service Worker — offline caching + background sync
-const CACHE_NAME = 'fixtray-v4';
+const CACHE_NAME = 'fixtray-v5';
 const API_CACHE   = 'fixtray-api-v3';
 
 // Precache the static tech workspace. Next HTML stays network-first so

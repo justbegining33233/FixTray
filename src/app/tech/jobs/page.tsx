@@ -69,17 +69,25 @@ function TechJobsList() {
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
             {mine.map((order) => (
-              <Link key={order.id} href={`/workorders/${order.id}` as any} style={{ display: 'block', textDecoration: 'none', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-                <div style={{ color: '#e5e7eb', fontWeight: 700 }}>
-                  {say("WO-")}{String(order.id).slice(-8).toUpperCase()} · {order.issueDescription?.symptoms || order.issueDescription || order.serviceType || say("Service")}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 8, background: workOrderStatusTone(order.status).bg, color: workOrderStatusTone(order.status).color, fontSize: 12, fontWeight: 700 }}>
-                    {say(workOrderStatusLabel(order.status))}
-                  </span>
-                  {order.customer ? <span style={{ color: '#9aa3b2', fontSize: 13 }}>{`${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim()}</span> : null}
-                </div>
-              </Link>
+              <div key={order.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
+                <Link href={`/workorders/${order.id}` as any} style={{ display: 'block', textDecoration: 'none' }}>
+                  <div style={{ color: '#e5e7eb', fontWeight: 700 }}>
+                    {say("WO-")}{String(order.id).slice(-8).toUpperCase()} · {order.issueDescription?.symptoms || order.issueDescription || order.serviceType || say("Service")}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 8, background: workOrderStatusTone(order.status).bg, color: workOrderStatusTone(order.status).color, fontSize: 12, fontWeight: 700 }}>
+                      {say(workOrderStatusLabel(order.status))}
+                    </span>
+                    {order.customer ? <span style={{ color: '#9aa3b2', fontSize: 13 }}>{`${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim()}</span> : null}
+                  </div>
+                </Link>
+                {view === 'active' ? (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id, status: 'en-route', baseStatus: order.status || 'assigned' } }))} style={{ background: '#e5332a', color: '#fff', border: 0, borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}>{say("Start / En route")}</button>
+                    <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id } }))} style={{ background: 'transparent', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}>{say("Download for offline")}</button>
+                  </div>
+                ) : null}
+              </div>
             ))}
           </div>
         )}

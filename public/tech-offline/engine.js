@@ -1,12 +1,17 @@
-/* Tech offline workspace. Shared by the static shell and the online app bridge. */
+/* Offline workspace shared by every role. Durable IndexedDB outbox. */
 (function () {
   var DB_NAME = 'fixtray-tech-offline';
-  var DB_VERSION = 1;
+  var DB_VERSION = 2;
   var listeners = [];
   var syncing = false;
   var needsReauth = false;
   var bridgeStarted = false;
   var lastError = '';
+  var lowStorage = false;
+  var encrypted = false;
+  var lastTap = null;
+  var gpsTimer = null;
+  var lastGps = null;
 
   function openDb() {
     return new Promise(function (resolve, reject) {
@@ -17,6 +22,7 @@
         if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
         if (!db.objectStoreNames.contains('outbox')) db.createObjectStore('outbox', { keyPath: 'idempotencyKey' });
         if (!db.objectStoreNames.contains('blobs')) db.createObjectStore('blobs', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('syncLog')) db.createObjectStore('syncLog', { keyPath: 'id' });
       };
       req.onsuccess = function () { resolve(req.result); };
       req.onerror = function () { reject(req.error); };
@@ -38,6 +44,11 @@
     });
   }
 
+  function isQuota(error) {
+    var name = error && (error.name || '');
+    return name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED';
+  }
+
   async function all(storeName) {
     var db = await openDb();
     var tx = db.transaction(storeName, 'readonly');
@@ -47,11 +58,21 @@
   }
 
   async function put(storeName, value) {
-    var db = await openDb();
-    var tx = db.transaction(storeName, 'readwrite');
-    tx.objectStore(storeName).put(value);
-    await txDone(tx);
-    db.close();
+    try {
+      var db = await openDb();
+      var tx = db.transaction(storeName, 'readwrite');
+      tx.objectStore(storeName).put(value);
+      await txDone(tx);
+      db.close();
+      lowStorage = false;
+    } catch (error) {
+      if (isQuota(error)) {
+        lowStorage = true;
+        lastError = 'This phone is low on storage. Free some space, then sync. Saved work was not deleted.';
+        await refreshSnapshot();
+      }
+      throw error;
+    }
   }
 
   async function del(storeName, key) {
@@ -75,60 +96,84 @@
     return ('offline-' + id).slice(0, 80);
   }
 
-  function token() {
-    try { return localStorage.getItem('token') || ''; } catch (e) { return ''; }
+  function storageGet(name) {
+    try { return localStorage.getItem(name) || ''; } catch (e) { return ''; }
   }
 
-  function role() {
-    try { return localStorage.getItem('userRole') || ''; } catch (e) { return ''; }
+  function token() { return storageGet('token'); }
+  function role() { return storageGet('userRole'); }
+  function userId() { return storageGet('userId'); }
+  function mine(row) {
+    if (!row || !row.userId || !userId()) return true;
+    return row.userId === userId();
   }
 
-  function isTech() {
-    return role() === 'tech' || role() === 'manager';
+  async function secureCall(method, payload) {
+    try {
+      var cap = window.Capacitor;
+      var plugin = cap && cap.Plugins && cap.Plugins.SecureStoragePlugin;
+      if (!plugin || !plugin[method]) return null;
+      return await plugin[method](payload);
+    } catch (e) { return null; }
   }
 
   async function rememberToken() {
     var value = token();
     if (!value) return;
-    try {
-      var cap = window.Capacitor;
-      if (cap && cap.isPluginAvailable && cap.isPluginAvailable('SecureStoragePlugin') && cap.Plugins && cap.Plugins.SecureStoragePlugin) {
-        await cap.Plugins.SecureStoragePlugin.set({ key: 'fixtray_offline_token', value: value });
-      }
-    } catch (e) { /* secure storage is optional */ }
+    var saved = await secureCall('set', { key: 'fixtray_offline_token', value: value });
+    encrypted = !!saved;
+    if (!saved) return;
+    var existing = await secureCall('get', { key: 'fixtray_offline_key' });
+    var raw = existing && (existing.value || existing);
+    if (!raw || typeof raw !== 'string') {
+      var bytes = crypto.getRandomValues(new Uint8Array(32));
+      var text = btoa(String.fromCharCode.apply(null, bytes));
+      await secureCall('set', { key: 'fixtray_offline_key', value: text });
+    }
   }
 
   async function clearSecureToken() {
-    try {
-      var cap = window.Capacitor;
-      if (cap && cap.isPluginAvailable && cap.isPluginAvailable('SecureStoragePlugin') && cap.Plugins && cap.Plugins.SecureStoragePlugin) {
-        await cap.Plugins.SecureStoragePlugin.remove({ key: 'fixtray_offline_token' });
-      }
-    } catch (e) { /* ignore */ }
+    await secureCall('remove', { key: 'fixtray_offline_token' });
   }
 
   function emit() {
-    var snap = snapshotSync;
     listeners.forEach(function (fn) { try { fn(); } catch (e) {} });
     try {
-      window.dispatchEvent(new CustomEvent('fixtray-offline-status', { detail: snap }));
+      window.dispatchEvent(new CustomEvent('fixtray-offline-status', { detail: snapshotSync }));
     } catch (e) {}
   }
 
-  var snapshotSync = { offline: false, pending: 0, conflicts: 0, syncing: false, needsReauth: false, label: 'All synced' };
+  var snapshotSync = { offline: false, pending: 0, conflicts: 0, failed: 0, syncing: false, needsReauth: false, label: 'All synced' };
 
   async function refreshSnapshot() {
-    var outbox = await all('outbox');
+    var outbox = (await all('outbox')).filter(mine);
     var pending = outbox.filter(function (item) { return item.state === 'pending'; }).length;
     var conflicts = outbox.filter(function (item) { return item.state === 'conflict' || item.state === 'held'; }).length;
+    var failed = outbox.filter(function (item) { return item.state === 'failed'; }).length;
     var offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    var bundle = null;
+    try { bundle = await getMeta('bundle'); } catch (e) { bundle = null; }
     var label = 'All synced';
     if (needsReauth) label = 'Sign in to finish syncing';
     else if (syncing) label = 'Syncing…';
+    else if (failed) label = failed + ' failed';
     else if (offline && pending) label = pending + ' pending upload';
     else if (pending) label = pending + ' pending';
     else if (conflicts) label = conflicts + ' need review';
-    snapshotSync = { offline: offline, pending: pending, conflicts: conflicts, syncing: syncing, needsReauth: needsReauth, label: label, lastError: lastError };
+    snapshotSync = {
+      offline: offline,
+      pending: pending,
+      conflicts: conflicts,
+      failed: failed,
+      syncing: syncing,
+      needsReauth: needsReauth,
+      label: label,
+      lastError: lastError,
+      lowStorage: lowStorage,
+      encrypted: encrypted,
+      lastSyncedAt: bundle && bundle.fetchedAt ? bundle.fetchedAt : '',
+      role: role(),
+    };
     emit();
     return snapshotSync;
   }
@@ -138,8 +183,11 @@
   }
 
   async function prefetch() {
-    if (!isTech() || !token() || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
-    var response = await fetch('/api/tech/offline-bundle', { headers: { Authorization: 'Bearer ' + token() } });
+    if (!token() || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
+    var response = await fetch('/api/offline/bundle', { headers: { Authorization: 'Bearer ' + token() } });
+    if (response.status === 404) {
+      response = await fetch('/api/tech/offline-bundle', { headers: { Authorization: 'Bearer ' + token() } });
+    }
     if (response.status === 401) { needsReauth = true; await refreshSnapshot(); return; }
     if (!response.ok) return;
     needsReauth = false;
@@ -147,11 +195,17 @@
     var db = await openDb();
     var tx = db.transaction(['jobs', 'meta'], 'readwrite');
     var jobs = tx.objectStore('jobs');
-    (data.workOrders || []).forEach(function (job) { jobs.put(job); });
+    (data.workOrders || []).forEach(function (job) {
+      job.userId = userId();
+      jobs.put(job);
+    });
     tx.objectStore('meta').put({ key: 'bundle', value: {
-      techId: data.techId,
+      userId: data.userId || userId(),
+      role: data.role || role(),
       laborRate: data.laborRate || 0,
+      laborRates: data.laborRates || [],
       catalog: data.catalog || [],
+      shops: data.shops || [],
       clock: data.clock || null,
       fetchedAt: data.fetchedAt,
       techName: data.techName || '',
@@ -159,36 +213,120 @@
     await txDone(tx);
     db.close();
     await rememberToken();
+    await cacheMaps(data.workOrders || []);
     await refreshSnapshot();
   }
 
+  async function cacheMaps(jobs) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    for (var i = 0; i < jobs.length; i += 1) {
+      var job = jobs[i];
+      if (!job || !job.latitude || !job.longitude) continue;
+      if (job.mapPack && Array.isArray(job.mapPack.roads)) continue;
+      try {
+        var response = await fetch('/api/offline/map-pack?lat=' + encodeURIComponent(job.latitude) + '&lng=' + encodeURIComponent(job.longitude), {
+          headers: { Authorization: 'Bearer ' + token() },
+        });
+        var pack = response.ok ? await response.json() : { roads: [], warning: 'Street map did not finish downloading.' };
+        job.mapPack = {
+          roads: pack.roads || [],
+          attribution: pack.attribution || '© OpenStreetMap contributors',
+          warning: pack.warning || '',
+          savedAt: new Date().toISOString(),
+        };
+        if (job.prep && pack.warning) job.prep.warning = pack.warning;
+        job.userId = userId();
+        await put('jobs', job);
+      } catch (e) {
+        if (job.prep) job.prep.warning = 'Street map did not finish downloading. The job pin and your location still work.';
+        job.downloadFailed = !job.prep || job.prep.ready !== true;
+        job.userId = userId();
+        try { await put('jobs', job); } catch (err) { /* keep the job already stored */ }
+      }
+    }
+  }
+
+  async function downloadJob(workOrderId) {
+    var jobs = await all('jobs');
+    var job = jobs.filter(function (row) { return row.id === workOrderId; })[0];
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      if (job) {
+        job.downloadFailed = !(job.prep && job.prep.ready);
+        if (job.downloadFailed) job.prep = Object.assign({}, job.prep, { warning: 'Download did not finish. Connect and tap Download for offline.' });
+        await put('jobs', job);
+      }
+      await refreshSnapshot();
+      return job;
+    }
+    await prefetch();
+    jobs = await all('jobs');
+    job = jobs.filter(function (row) { return row.id === workOrderId; })[0];
+    if (job) {
+      job.mapPack = null;
+      await cacheMaps([job]);
+    }
+    return job;
+  }
+
+  function happenedAt(item) {
+    var device = item && item.payload && item.payload.deviceAt;
+    var time = device ? Date.parse(device) : NaN;
+    return Number.isFinite(time) ? time : item.createdAt || 0;
+  }
+
   async function enqueue(partial) {
+    var signature = partial.kind + '|' + (partial.workOrderId || '') + '|' + JSON.stringify(partial.payload || {});
+    var now = Date.now();
+    if (partial.kind !== 'photo' && partial.kind !== 'gps' && lastTap && lastTap.signature === signature && now - lastTap.at < 800) {
+      return lastTap.item;
+    }
+    var payload = Object.assign({}, partial.payload || {});
+    if (!payload.deviceAt) payload.deviceAt = new Date().toISOString();
     var item = {
       idempotencyKey: partial.idempotencyKey || key(),
       clientId: partial.clientId || key(),
       kind: partial.kind,
       workOrderId: partial.workOrderId || null,
-      payload: partial.payload || {},
-      createdAt: Date.now(),
+      payload: payload,
+      createdAt: Date.parse(payload.deviceAt) || now,
       attempts: 0,
       nextAttemptAt: 0,
       state: 'pending',
       message: '',
       url: partial.url || '',
+      userId: userId(),
     };
     await put('outbox', item);
+    lastTap = { signature: signature, at: now, item: item };
+    await logSync(item, 'pending', 'Saved on this device');
     await refreshSnapshot();
-    if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
-      syncNow();
-    } else {
-      registerBackgroundSync();
-    }
+    if (typeof navigator !== 'undefined' && navigator.onLine !== false) syncNow();
+    else registerBackgroundSync();
     return item;
   }
 
+  async function logSync(item, status, message) {
+    try {
+      await put('syncLog', {
+        id: key(),
+        at: new Date().toISOString(),
+        kind: item.kind,
+        status: status,
+        message: message || '',
+        idempotencyKey: item.idempotencyKey,
+        userId: userId(),
+      });
+      var rows = (await all('syncLog')).filter(mine).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
+      while (rows.length > 50) {
+        await del('syncLog', rows[0].id);
+        rows.shift();
+      }
+    } catch (e) { /* the outbox is the source of truth */ }
+  }
+
   async function viewJobs() {
-    var jobs = await all('jobs');
-    var outbox = await all('outbox');
+    var jobs = (await all('jobs')).filter(mine);
+    var outbox = (await all('outbox')).filter(mine);
     return jobs.map(function (job) { return decorate(job, outbox); }).sort(function (a, b) {
       return String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
     });
@@ -199,28 +337,36 @@
     copy.techLabor = Array.isArray(copy.techLabor) ? copy.techLabor : [];
     copy.partsUsed = Array.isArray(copy.partsUsed) ? copy.partsUsed : [];
     copy.workPhotos = Array.isArray(copy.workPhotos) ? copy.workPhotos : [];
+    copy.messages = Array.isArray(copy.messages) ? copy.messages : [];
+    copy.gps = [];
     var completion = copy.completion && typeof copy.completion === 'object' ? copy.completion : {};
     completion.offlineNotes = Array.isArray(completion.offlineNotes) ? completion.offlineNotes : [];
     copy.completion = completion;
     copy.pendingCount = 0;
     outbox.filter(function (item) { return item.workOrderId === job.id; }).forEach(function (item) {
-      if (item.state === 'pending' || item.state === 'conflict' || item.state === 'held') copy.pendingCount += 1;
+      if (item.state === 'pending' || item.state === 'conflict' || item.state === 'held' || item.state === 'failed') copy.pendingCount += 1;
       var clientId = item.clientId;
+      var tag = { clientId: clientId, pending: true, state: item.state, message: item.message || '' };
       if (item.kind === 'labor' && !copy.techLabor.some(function (row) { return row.clientId === clientId; })) {
-        copy.techLabor.push(Object.assign({ clientId: clientId, pending: true, state: item.state }, item.payload));
+        copy.techLabor.push(Object.assign(tag, item.payload));
       }
       if (item.kind === 'part' && !copy.partsUsed.some(function (row) { return row.clientId === clientId; })) {
-        copy.partsUsed.push(Object.assign({ clientId: clientId, pending: true, state: item.state, name: item.payload.name }, item.payload));
+        copy.partsUsed.push(Object.assign(tag, item.payload, { name: item.payload.name }));
       }
       if (item.kind === 'note' && !completion.offlineNotes.some(function (row) { return row.clientId === clientId; })) {
-        completion.offlineNotes.push({ clientId: clientId, body: item.payload.body, pending: true, state: item.state });
+        completion.offlineNotes.push(Object.assign(tag, { body: item.payload.body }));
       }
-      if (item.kind === 'photo' && !copy.workPhotos.some(function (row) { return row.clientId === clientId; })) {
-        copy.workPhotos.push({ clientId: clientId, url: item.url || '', pending: true, state: item.state, caption: item.payload.caption || '' });
+      if ((item.kind === 'photo' || (item.kind === 'message' && item.payload && item.payload.hasPhoto)) && !copy.workPhotos.some(function (row) { return row.clientId === clientId; })) {
+        copy.workPhotos.push(Object.assign(tag, { url: item.url || '', caption: item.payload.caption || '' }));
       }
-      if (item.kind === 'status' && item.state === 'pending') copy.pendingStatus = item.payload.status;
+      if (item.kind === 'message' && !copy.messages.some(function (row) { return row.clientId === clientId; })) {
+        copy.messages.push(Object.assign(tag, { body: item.payload.body || '', senderName: 'You' }));
+      }
+      if (item.kind === 'gps') copy.gps.push(Object.assign(tag, item.payload));
+      if (item.kind === 'status' && (item.state === 'pending' || item.state === 'failed')) copy.pendingStatus = item.payload.status;
       if (item.message) copy.syncMessage = item.message;
     });
+    copy.gps.sort(function (a, b) { return String(a.deviceAt || '').localeCompare(String(b.deviceAt || '')); });
     return copy;
   }
 
@@ -232,10 +378,10 @@
     lastError = '';
     await refreshSnapshot();
     try {
-      var outbox = (await all('outbox')).sort(function (a, b) { return a.createdAt - b.createdAt; });
+      var outbox = (await all('outbox')).filter(mine).filter(function (item) { return item.state !== 'conflict' && item.state !== 'held' && item.state !== 'failed'; });
+      outbox.sort(function (a, b) { return happenedAt(a) - happenedAt(b); });
       for (var i = 0; i < outbox.length; i += 1) {
         var item = outbox[i];
-        if (item.state === 'conflict' || item.state === 'held') continue;
         if (item.nextAttemptAt && item.nextAttemptAt > Date.now()) break;
         var stop = await sendOne(item);
         if (stop) break;
@@ -250,6 +396,10 @@
 
   async function sendOne(item) {
     try {
+      if ((item.kind === 'photo' || item.kind === 'message') && !item.url && item.payload && item.payload.hasPhoto) {
+        item.url = await uploadPhoto(item);
+        await put('outbox', item);
+      }
       if (item.kind === 'photo' && !item.url) {
         item.url = await uploadPhoto(item);
         await put('outbox', item);
@@ -262,55 +412,67 @@
       if (response.status === 401) {
         needsReauth = true;
         lastError = 'Sign in to finish syncing. Nothing was deleted.';
+        await logSync(item, 'reauth', lastError);
         return true;
       }
       if (!response.ok) {
-        bump(item, 'Sync will retry.');
-        await put('outbox', item);
-        return true;
+        return failOrBackoff(item, 'Sync will retry.');
       }
       var data = await response.json();
       var row = (data.results || [])[0] || { status: 'rejected', message: 'Empty sync response.' };
       if (row.status === 'applied' || row.status === 'duplicate') {
         await del('outbox', item.idempotencyKey);
-        if (item.kind === 'photo') await del('blobs', item.clientId);
+        if (item.kind === 'photo' || (item.payload && item.payload.hasPhoto)) await del('blobs', item.clientId);
+        await logSync(item, row.status, row.message || 'Uploaded');
         return false;
       }
       if (row.status === 'conflict') {
         item.state = 'conflict';
         item.message = row.message || 'Needs review';
         await put('outbox', item);
+        await logSync(item, 'conflict', item.message);
         return false;
       }
       if (row.message && row.message.indexOf('retried') !== -1) {
-        bump(item, row.message);
-        await put('outbox', item);
-        return true;
+        return failOrBackoff(item, row.message);
       }
-      item.state = 'held';
+      item.state = 'failed';
       item.message = row.message || 'Saved on this device.';
       await put('outbox', item);
+      await logSync(item, 'failed', item.message);
       return false;
     } catch (error) {
-      bump(item, 'Offline. Will upload when service returns.');
-      await put('outbox', item);
-      lastError = item.message;
-      return true;
+      if (needsReauth) return true;
+      return failOrBackoff(item, 'Offline. Will upload when service returns.');
     }
   }
 
-  function bump(item, message) {
+  async function failOrBackoff(item, message) {
     item.attempts = (item.attempts || 0) + 1;
+    item.message = message;
+    if (item.attempts >= 5) {
+      item.state = 'failed';
+      await put('outbox', item);
+      await logSync(item, 'failed', message);
+      lastError = message;
+      return false;
+    }
     var delay = Math.min(30000 * Math.pow(2, item.attempts - 1), 5 * 60 * 1000);
     item.nextAttemptAt = Date.now() + delay;
-    item.message = message;
     item.state = 'pending';
+    await put('outbox', item);
+    await logSync(item, 'retry', message);
+    lastError = message;
+    return true;
   }
 
   function toOp(item) {
     var op = { idempotencyKey: item.idempotencyKey, kind: item.kind, clientId: item.clientId, workOrderId: item.workOrderId };
     var payload = item.payload || {};
-    Object.keys(payload).forEach(function (name) { op[name] = payload[name]; });
+    Object.keys(payload).forEach(function (name) {
+      if (name === 'hasPhoto') return;
+      op[name] = payload[name];
+    });
     if (item.url) op.url = item.url;
     return op;
   }
@@ -320,11 +482,12 @@
     var tx = db.transaction('blobs', 'readonly');
     var row = await reqDone(tx.objectStore('blobs').get(item.clientId));
     db.close();
-    if (!row || !row.blob) throw new Error('Photo file is missing.');
+    var fileBlob = row && (row.upload || row.blob);
+    if (!fileBlob) throw new Error('Photo file is missing.');
     var body = new FormData();
-    var file = row.blob instanceof File ? row.blob : new File([row.blob], 'job-photo.jpg', { type: row.blob.type || 'image/jpeg' });
+    var file = fileBlob instanceof File ? fileBlob : new File([fileBlob], 'job-photo.jpg', { type: fileBlob.type || 'image/jpeg' });
     body.append('file', file);
-    body.append('folder', 'work-orders');
+    body.append('folder', item.kind === 'message' ? 'messages' : 'work-orders');
     body.append('idempotencyKey', (item.idempotencyKey + ':upload').slice(0, 80));
     var response = await fetch('/api/upload', {
       method: 'POST',
@@ -338,6 +501,22 @@
     return data.url;
   }
 
+  async function compressPhoto(file) {
+    try {
+      if (!file || !window.createImageBitmap) return null;
+      var bitmap = await createImageBitmap(file);
+      var scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.72); });
+      return blob;
+    } catch (e) { return null; }
+  }
+
   function registerBackgroundSync() {
     if (!navigator.serviceWorker || !('SyncManager' in window)) return;
     navigator.serviceWorker.ready.then(function (reg) {
@@ -345,21 +524,100 @@
     }).catch(function () {});
   }
 
-  async function clearAll() {
+  async function clearSynced() {
+    var owner = userId();
+    var stores = ['jobs', 'outbox', 'blobs', 'syncLog'];
+    for (var s = 0; s < stores.length; s += 1) {
+      var rows = await all(stores[s]);
+      for (var i = 0; i < rows.length; i += 1) {
+        var row = rows[i];
+        var rowUser = row.userId || '';
+        if (!owner || !rowUser || rowUser === owner) {
+          await del(stores[s], row.id || row.idempotencyKey);
+        }
+      }
+    }
     await clearSecureToken();
-    await new Promise(function (resolve) {
-      var req = indexedDB.deleteDatabase(DB_NAME);
-      req.onsuccess = function () { resolve(); };
-      req.onerror = function () { resolve(); };
-      req.onblocked = function () { resolve(); };
-    });
+    encrypted = false;
     needsReauth = false;
     await refreshSnapshot();
   }
 
+  async function logoutCheck() {
+    var outbox = (await all('outbox')).filter(mine);
+    var pending = outbox.filter(function (item) { return item.state !== 'applied'; }).length;
+    if (!pending) return { pending: 0, warn: false, clearCache: true, message: '' };
+    var noun = pending === 1 ? 'item has' : 'items have';
+    return {
+      pending: pending,
+      warn: true,
+      clearCache: false,
+      message: 'You have ' + pending + ' ' + noun + ' not uploaded. They stay on this phone until you sign back in and sync. Signing out will not delete them.',
+    };
+  }
+
+  function movedMeters(a, b) {
+    var radius = 6371000;
+    var dLat = (b.latitude - a.latitude) * Math.PI / 180;
+    var dLon = (b.longitude - a.longitude) * Math.PI / 180;
+    var lat1 = a.latitude * Math.PI / 180;
+    var lat2 = b.latitude * Math.PI / 180;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * radius * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+
+  function sampleGps() {
+    if (role() !== 'tech' && role() !== 'manager') return;
+    if (!navigator.geolocation) return;
+    viewJobs().then(function (jobs) {
+      var active = jobs.filter(function (job) {
+        var status = job.pendingStatus || job.status;
+        return status === 'en-route' || status === 'in-progress' || status === 'assigned';
+      })[0];
+      if (!active) return;
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        var now = Date.now();
+        var next = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, at: now };
+        if (lastGps && (now - lastGps.at < 60000 || movedMeters(lastGps, next) < 30)) return;
+        lastGps = next;
+        enqueue({
+          kind: 'gps',
+          workOrderId: active.id,
+          payload: {
+            latitude: next.latitude,
+            longitude: next.longitude,
+            accuracy: pos.coords.accuracy,
+            deviceAt: new Date(pos.timestamp || now).toISOString(),
+          },
+        });
+      }, function () {}, { enableHighAccuracy: false, maximumAge: 20000, timeout: 8000 });
+    }).catch(function () {});
+  }
+
+  function startGps() {
+    if (gpsTimer || (role() !== 'tech' && role() !== 'manager')) return;
+    gpsTimer = setInterval(sampleGps, 60000);
+  }
+
+  async function syncLog() {
+    return (await all('syncLog')).filter(mine).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+  }
+
+  async function retryFailed(idempotencyKey) {
+    var rows = await all('outbox');
+    var item = rows.filter(function (row) { return row.idempotencyKey === idempotencyKey; })[0];
+    if (!item) return snapshotSync;
+    item.state = 'pending';
+    item.attempts = 0;
+    item.nextAttemptAt = 0;
+    await put('outbox', item);
+    await logSync(item, 'retry', 'Retry requested');
+    return syncNow();
+  }
+
   var api = {
     startBridge: function () {
-      if (bridgeStarted || !isTech()) return;
+      if (bridgeStarted) return;
       bridgeStarted = true;
       window.addEventListener('online', function () { prefetch().then(syncNow); });
       window.addEventListener('offline', function () { refreshSnapshot(); });
@@ -371,11 +629,15 @@
           if (event.data && event.data.type === 'FIXTRAY_SYNC') syncNow();
         });
       }
-      window.addEventListener('fixtray-logout', function () { clearAll(); });
+      window.addEventListener('fixtray-prep-download', function (event) {
+        var detail = event.detail || {};
+        if (detail.workOrderId) downloadJob(detail.workOrderId);
+      });
       prefetch().then(syncNow);
       setInterval(function () {
-        if (navigator.onLine) prefetch().then(syncNow);
+        if (navigator.onLine) prefetch();
       }, 120000);
+      startGps();
       refreshSnapshot();
     },
     startApp: function () {
@@ -387,16 +649,21 @@
     refresh: refreshSnapshot,
     jobs: viewJobs,
     bundle: function () { return getMeta('bundle'); },
-    outbox: function () { return all('outbox'); },
+    outbox: function () { return all('outbox').then(function (rows) { return rows.filter(mine); }); },
+    syncLog: syncLog,
     prefetch: prefetch,
+    downloadJob: downloadJob,
     syncNow: syncNow,
-    clearAll: clearAll,
+    retryFailed: retryFailed,
+    logoutCheck: logoutCheck,
+    clearSynced: clearSynced,
+    clearAll: clearSynced,
     photoBlob: async function (clientId) {
       var db = await openDb();
       var tx = db.transaction('blobs', 'readonly');
       var row = await reqDone(tx.objectStore('blobs').get(clientId));
       db.close();
-      return row ? row.blob : null;
+      return row ? (row.blob || row.upload) : null;
     },
     setStatus: function (workOrderId, baseStatus, status) {
       return enqueue({ kind: 'status', workOrderId: workOrderId, payload: { baseStatus: baseStatus, status: status } });
@@ -418,10 +685,31 @@
     addNote: function (workOrderId, body) {
       return enqueue({ kind: 'note', workOrderId: workOrderId, payload: { body: body } });
     },
+    addMessage: async function (workOrderId, body, file) {
+      var clientId = key();
+      if (file) {
+        var upload = await compressPhoto(file);
+        await put('blobs', { id: clientId, blob: file, upload: upload || file, userId: userId() });
+      }
+      return enqueue({
+        kind: 'message',
+        workOrderId: workOrderId,
+        clientId: clientId,
+        payload: { body: body || '', hasPhoto: !!file, senderName: storageGet('userName') || role() },
+      });
+    },
     addPhoto: async function (workOrderId, file, caption) {
       var clientId = key();
-      await put('blobs', { id: clientId, blob: file });
-      return enqueue({ kind: 'photo', workOrderId: workOrderId, clientId: clientId, payload: { caption: caption || '' } });
+      var upload = await compressPhoto(file);
+      await put('blobs', { id: clientId, blob: file, upload: upload || file, userId: userId() });
+      return enqueue({ kind: 'photo', workOrderId: workOrderId, clientId: clientId, payload: { caption: caption || '', hasPhoto: true } });
+    },
+    addGps: function (workOrderId, latitude, longitude, deviceAt) {
+      return enqueue({
+        kind: 'gps',
+        workOrderId: workOrderId,
+        payload: { latitude: Number(latitude), longitude: Number(longitude), deviceAt: deviceAt || new Date().toISOString() },
+      });
     },
     clockIn: function (workOrderId, notes) {
       return enqueue({

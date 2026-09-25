@@ -355,6 +355,7 @@ model Message {
   body           String
   attachmentUrl  String?
   attachmentType String?
+  clientMutationId String? @unique
   createdAt      DateTime  @default(now())
   workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
@@ -768,7 +769,9 @@ model CustomerMessage {
   appointmentId String?
   from          String
   content       String
+  attachmentUrl String?
   read          Boolean      @default(false)
+  clientMutationId String?   @unique
   sentAt        DateTime     @default(now())
   appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -1506,10 +1509,31 @@ model SyncReceipt {
   kind           String
   status         String
   result         Json?
+  deviceAt       DateTime?
   createdAt      DateTime @default(now())
 
   @@index([techId])
   @@map("sync_receipts")
+}
+
+/// GPS breadcrumbs recorded on the device, including while offline.
+/// deviceAt is when the phone measured the point. createdAt is when the server stored it.
+model TechLocationPing {
+  id               String   @id @default(cuid())
+  techId           String
+  workOrderId      String?
+  latitude         Float
+  longitude        Float
+  accuracy         Float?
+  deviceAt         DateTime
+  receivedAt       DateTime @default(now())
+  clockAdjusted    Boolean  @default(false)
+  clientMutationId String   @unique
+  createdAt        DateTime @default(now())
+
+  @@index([techId, deviceAt])
+  @@index([workOrderId])
+  @@map("tech_location_pings")
 }
 
 model PortalChatMessage {

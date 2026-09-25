@@ -5,8 +5,10 @@ import { applyTechOfflineOp, type OfflineDb } from '../src/lib/techOfflineApply'
 type Order = {
   id: string;
   shopId: string;
+  customerId?: string | null;
   assignedTechId: string | null;
   status: string;
+  paymentStatus?: string | null;
   techLabor: unknown;
   partsUsed: unknown;
   workPhotos: unknown;
@@ -126,7 +128,7 @@ describe('tech offline apply', () => {
     expect(db.photos.size).toBe(2);
   });
 
-  it('keeps a labor line when the status change conflicts with a closed job', async () => {
+  it('rejects a late edit on a closed job and keeps the status unchanged', async () => {
     const db = memoryDb(job('closed'));
     const status = await applyTechOfflineOp(db, auth, {
       idempotencyKey: 'offline-status-111',
@@ -145,9 +147,62 @@ describe('tech offline apply', () => {
       rate: 90,
     });
     expect(status.status).toBe('conflict');
-    expect(labor.status).toBe('applied');
+    expect(labor.status).toBe('conflict');
+    expect(labor.message).toMatch(/Late edits are not applied/);
     expect(db.orders.get('wo-1')!.status).toBe('closed');
-    expect(db.orders.get('wo-1')!.techLabor).toHaveLength(1);
+    expect(db.orders.get('wo-1')!.techLabor).toHaveLength(0);
+  });
+
+  it('rejects labor from a customer and a paid ticket', async () => {
+    const open = memoryDb({ ...job(), customerId: 'cust-1' });
+    const denied = await applyTechOfflineOp(open, { id: 'cust-1', role: 'customer' }, {
+      idempotencyKey: 'offline-labor-cust1',
+      kind: 'labor',
+      workOrderId: 'wo-1',
+      clientId: 'offline-labor-cust1',
+      description: 'Customer cannot add labor',
+      hours: 1,
+      rate: 1,
+    });
+    expect(denied.status).toBe('rejected');
+    expect(open.orders.get('wo-1')!.techLabor).toHaveLength(0);
+
+    const paid = memoryDb({ ...job(), paymentStatus: 'paid' });
+    const late = await applyTechOfflineOp(paid, auth, {
+      idempotencyKey: 'offline-labor-paid1',
+      kind: 'labor',
+      workOrderId: 'wo-1',
+      clientId: 'offline-labor-paid1',
+      description: 'After payment',
+      hours: 1,
+      rate: 1,
+    });
+    expect(late.status).toBe('conflict');
+    expect(paid.orders.get('wo-1')!.techLabor).toHaveLength(0);
+  });
+
+  it('stores GPS points in device-time order and ignores a replay', async () => {
+    const db = memoryDb(job());
+    const pings: { deviceAt: Date; clientMutationId: string }[] = [];
+    db.locationPing = {
+      findUnique: async ({ where }: { where: { clientMutationId: string } }) => pings.find((row) => row.clientMutationId === where.clientMutationId) || null,
+      create: async ({ data }: { data: { deviceAt: Date; clientMutationId: string } }) => {
+        pings.push(data);
+        return data;
+      },
+    };
+    const op = {
+      idempotencyKey: 'offline-gps-batch1',
+      kind: 'gps',
+      workOrderId: 'wo-1',
+      points: [
+        { clientId: 'offline-gps-later1', latitude: 30.2, longitude: -97.2, deviceAt: '2026-09-25T18:00:00.000Z' },
+        { clientId: 'offline-gps-early1', latitude: 30.1, longitude: -97.1, deviceAt: '2026-09-25T17:00:00.000Z' },
+      ],
+    };
+    expect((await applyTechOfflineOp(db, auth, op)).status).toBe('applied');
+    expect((await applyTechOfflineOp(db, auth, op)).status).toBe('duplicate');
+    expect(pings.map((row) => row.clientMutationId)).toEqual(['offline-gps-early1', 'offline-gps-later1']);
   });
 
   it('does not create a second clock entry when the same clock-in is replayed', async () => {

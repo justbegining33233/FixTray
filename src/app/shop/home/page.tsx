@@ -32,6 +32,7 @@ interface Job {
   time: string;
   tech: string;
   status: string;
+  workStatus?: string;
   bay?: number | null;
 }
 
@@ -92,6 +93,7 @@ export default function ShopHome() {
         ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName?.charAt(0) ?? ''}.`
         : 'Unassigned',
       status: statusLabel,
+      workStatus: typeof wo.status === 'string' ? wo.status : statusLabel,
       serviceLocation: (() => {
         const raw = String(wo.serviceLocation || '').toLowerCase();
         if (raw === 'road-call' || raw === 'roadside') return 'road-call';

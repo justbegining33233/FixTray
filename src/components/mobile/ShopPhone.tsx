@@ -17,6 +17,7 @@ type Job = {
   customer: string;
   vehicle: string;
   status: string;
+  workStatus?: string;
 };
 
 type Bay = { id: string; name: string; jobs: Job[] };
@@ -97,7 +98,7 @@ export function ShopOpsPhone({
                   {job ? (
                     <>
                       <div style={{ fontSize: 11.5, fontWeight: 700, margin: '4px 0' }}>{job.vehicle || say('Job')}</div>
-                      <span className={`pm-badge ${toneClass(job.status)}`} style={{ fontSize: 9, padding: '2px 6px' }}>{say(workOrderStatusLabel(job.status))}</span>
+                      <span className={`pm-badge ${toneClass(job.workStatus || job.status)}`} style={{ fontSize: 9, padding: '2px 6px' }}>{say(workOrderStatusLabel(job.workStatus || job.status))}</span>
                     </>
                   ) : (
                     <div style={{ fontSize: 10, color: '#475569', marginTop: 6 }}>{say('No job in this bay')}</div>

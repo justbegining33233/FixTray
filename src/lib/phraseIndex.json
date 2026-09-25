@@ -5564,5 +5564,16 @@
   "Start / En route": "start_en_route",
   "Download for offline": "download_for_offline",
   "No line items yet.": "no_line_items_yet",
-  "Sign here": "sign_here"
+  "Sign here": "sign_here",
+  "Offline — last synced": "offline_last_synced",
+  "not yet": "not_yet",
+  "Sign in to finish syncing. Your offline work is saved.": "sign_in_to_finish_syncing_your_offline_work_is_saved",
+  "Syncing…": "syncing_2",
+  "You are offline.": "you_are_offline",
+  "pending upload.": "pending_upload",
+  "Some offline items need review. Nothing was discarded.": "some_offline_items_need_review_nothing_was_discarded",
+  "All synced": "all_synced",
+  "Payments, approvals, estimates, and pay changes need a connection.": "payments_approvals_estimates_and_pay_changes_need_a_connection",
+  "Sync now": "sync_now",
+  "Offline jobs": "offline_jobs"
 }

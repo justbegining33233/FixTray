@@ -108,6 +108,10 @@ export default function RoleTabBar({
   }, [nav.more, query, user?.isOwner]);
 
   const go = (href: string) => {
+    if (href.startsWith('/tech-offline')) {
+      window.location.assign(href);
+      return;
+    }
     if (Capacitor.isNativePlatform()) {
       void nativeMobileService.triggerHapticFeedback();
     }
@@ -117,6 +121,9 @@ export default function RoleTabBar({
   };
 
   const signOut = async () => {
+    const { guardOfflineLogout } = await import('@/lib/offlineLogoutClient');
+    const proceed = await guardOfflineLogout();
+    if (!proceed) return;
     try {
       const csrfToken = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || '';
       await fetch('/api/auth/logout', {
@@ -125,7 +132,7 @@ export default function RoleTabBar({
         headers: { 'x-csrf-token': csrfToken },
       }).catch(() => {});
     } catch {
-      // Client cleanup still runs.
+      // Client cleanup still runs when sign-out continues.
     }
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
@@ -133,6 +140,7 @@ export default function RoleTabBar({
     localStorage.removeItem('shopId');
     localStorage.removeItem('userId');
     localStorage.removeItem('isSuperAdmin');
+    window.dispatchEvent(new Event('fixtray-logout'));
     window.location.href = '/auth/login';
   };
 

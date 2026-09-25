@@ -7,6 +7,7 @@ import OfflineBanner from '@/components/OfflineBanner';
 import FloatingSignOut from '@/components/FloatingSignOut';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
+import TechOfflineBridge from '@/components/TechOfflineBridge';
 import { NativeProvider } from '@/context/NativeContext';
 import NativeStatusBar from '@/components/NativeStatusBar';
 import { NextIntlClientProvider } from 'next-intl';
@@ -88,6 +89,7 @@ export default async function RootLayout({
                 <NativeStatusBar />
                 {children}
                 <OfflineBanner />
+                <TechOfflineBridge />
                 <FloatingSignOut />
                 <ServiceWorkerRegister />
               </ClientAuthProvider>

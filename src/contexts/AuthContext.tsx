@@ -228,6 +228,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Ensure we're on the client side before accessing localStorage
     if (typeof window === 'undefined') return;
 
+    const { guardOfflineLogout } = await import('@/lib/offlineLogoutClient');
+    const proceed = await guardOfflineLogout();
+    if (!proceed) return;
+
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     localStorage.removeItem('userId');
@@ -237,6 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('isSuperAdmin');
     localStorage.removeItem('isOwner');
     localStorage.removeItem('token');
+    window.dispatchEvent(new Event('fixtray-logout'));
 
     try {
       const { default: socketClient } = await import('@/lib/socket-client');

@@ -73,7 +73,9 @@ describe('mobile role tabs', () => {
   ] as const)('covers every static %s page from tabs + More', (roleId, dirs) => {
     const hrefs = allMobileNavHrefs(MOBILE_ROLE_NAVS[roleId]).map(hrefPath);
     const pages = dirs.flatMap(staticPages);
-    const missing = pages.filter((page) => !pageCoveredByNav(page, hrefs));
+    // Shop subscription plans are discontinued. Leave the page for the removal PR.
+    const discontinued = new Set(['/shop/subscribe']);
+    const missing = pages.filter((page) => !discontinued.has(page) && !pageCoveredByNav(page, hrefs));
     expect(missing).toEqual([]);
   });
 });

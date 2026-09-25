@@ -8,6 +8,7 @@ import FloatingSignOut from '@/components/FloatingSignOut';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import { NativeProvider } from '@/context/NativeContext';
+import NativeStatusBar from '@/components/NativeStatusBar';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
@@ -84,6 +85,7 @@ export default async function RootLayout({
           <ErrorBoundary>
             <NativeProvider isNative={isNative} platform={nativeHeader ?? null} isMobileUA={isMobileUA}>
               <ClientAuthProvider>
+                <NativeStatusBar />
                 {children}
                 <OfflineBanner />
                 <FloatingSignOut />

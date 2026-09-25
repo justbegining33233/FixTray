@@ -1,19 +1,35 @@
 'use client';
 
-import { useState, useEffect, useRef, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode, type CSSProperties } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { Route } from 'next';
 import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { exclusiveActiveIndex } from '@/lib/exclusiveTab';
 import { normalizeRole, readClientActorRole, shellHrefForRole } from '@/lib/roleNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { usePhrase } from '@/lib/usePhrase';
 import { OWNER_ADD_SHOP_HREF, OWNER_ADD_USER_HREF } from '@/lib/ownerShell';
+import { mobileNavForActor } from '@/lib/mobileRoleNav';
+import RoleTabBar from '@/components/RoleTabBar';
+import { FaBell, FaSearch } from 'react-icons/fa';
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin';
+
+const headerIconButton: CSSProperties = {
+  width: 32,
+  height: 32,
+  borderRadius: 8,
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  color: '#f1f5f9',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  padding: 0,
+};
 
 interface Tile {
   ico: string;
@@ -626,6 +642,28 @@ interface MobileShellProps {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
+export function MobilePageFrame({
+  role,
+  userName,
+  isHome = false,
+  children,
+}: {
+  role: ShellRole;
+  userName?: string;
+  /** Home dashboards hide the back button. Desktop still renders children only. */
+  isHome?: boolean;
+  children: ReactNode;
+}) {
+  const isMobile = useIsMobile();
+  const isNative = useIsNative();
+  if (!isNative && !isMobile) return <>{children}</>;
+  return (
+    <MobileShell role={role} isHome={isHome} userName={userName}>
+      {children}
+    </MobileShell>
+  );
+}
+
 export default function MobileShell({
   role,
   userName,
@@ -645,7 +683,7 @@ export default function MobileShell({
   const [drawerMounted, setDrawerMounted] = useState(false);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [newMenuMounted, setNewMenuMounted] = useState(false);
-  const [tabsCollapsed, setTabsCollapsed] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(false);
   const drawerCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const newMenuCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drawerTouchStartXRef = useRef<number | null>(null);
@@ -667,7 +705,6 @@ export default function MobileShell({
     if (newMenuCloseTimerRef.current) clearTimeout(newMenuCloseTimerRef.current);
     drawerCloseTimerRef.current = setTimeout(() => setDrawerMounted(false), 180);
     newMenuCloseTimerRef.current = setTimeout(() => setNewMenuMounted(false), 180);
-    setTabsCollapsed(true);
   }, [pathname]);
 
   useEffect(() => {
@@ -689,12 +726,15 @@ export default function MobileShell({
     const prevBodyOverflow = body.style.overflow;
     const prevBodyHeight = body.style.height;
     const prevBodyOverscroll = body.style.overscrollBehavior;
+    const prevBodyPaddingTop = body.style.paddingTop;
 
     html.style.overflow = 'hidden';
     html.style.height = '100%';
     body.style.overflow = 'hidden';
     body.style.height = '100%';
     body.style.overscrollBehavior = 'none';
+    // The shell header owns the status-bar inset. Body padding would double it.
+    body.style.paddingTop = '0px';
 
     return () => {
       html.style.overflow = prevHtmlOverflow;
@@ -702,8 +742,30 @@ export default function MobileShell({
       body.style.overflow = prevBodyOverflow;
       body.style.height = prevBodyHeight;
       body.style.overscrollBehavior = prevBodyOverscroll;
+      body.style.paddingTop = prevBodyPaddingTop;
     };
   }, [isNative, isMobile]);
+
+  useEffect(() => {
+    if (!isNative && !isMobile) return;
+    const labelTables = () => {
+      const root = document.querySelector('[data-mobile-shell-body]');
+      if (!root) return;
+      root.querySelectorAll('table').forEach((table) => {
+        const headers = Array.from(table.querySelectorAll('thead th')).map((cell) => (cell.textContent || '').replace(/\s+/g, ' ').trim());
+        table.querySelectorAll('tbody tr').forEach((row) => {
+          Array.from(row.children).forEach((cell, index) => {
+            if (cell instanceof HTMLElement && headers[index] && !cell.dataset.label) {
+              cell.dataset.label = headers[index];
+            }
+          });
+        });
+      });
+    };
+    labelTables();
+    const timer = window.setTimeout(labelTables, 500);
+    return () => window.clearTimeout(timer);
+  }, [pathname, isNative, isMobile]);
 
   // Render shell in native app (server-detected) or mobile browser (client-detected).
   if (!isNative && !isMobile) return <>{children}</>;
@@ -711,6 +773,15 @@ export default function MobileShell({
   const actorRole = normalizeRole(user?.role) || role;
   const cfg = roleConfigForActor(ROLES[role], actorRole);
   const accent = cfg.accentColor;
+  const nav = mobileNavForActor(role, { role: user?.role, isSuperAdmin: user?.isSuperAdmin });
+  const brandHref = nav?.homeHref ?? homePathByRole[role];
+  const initials = (userName || user?.name || nav?.roleLabel || 'FT')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   const isActivePath = (href: string) =>
     href === pathname || (href !== '/' && (pathname ?? '').startsWith(href + '/'));
@@ -778,10 +849,10 @@ export default function MobileShell({
       position: 'relative',
       minHeight: '100dvh',
       width: '100%',
-      background: 'linear-gradient(160deg,#060709 0%,#0b0d14 100%)',
+      background: '#020608',
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
-      fontFamily: '"Segoe UI", system-ui, -apple-system, sans-serif',
+      fontFamily: 'var(--font)',
       zIndex: 0,
       color: '#e2e8f0',
     }}>
@@ -789,249 +860,108 @@ export default function MobileShell({
       {/* ─── APP HEADER ─────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: 'calc(env(safe-area-inset-top, 0px) + 6px) 14px 8px',
-        background: 'rgba(6,7,9,0.95)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 6px) 12px 8px',
+        background: '#020608',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
         flexShrink: 0,
         zIndex: 10,
+        gap: 8,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Wrench (drawer) on home; back arrow on sections */}
-          <button
-            onClick={() => isHome ? openDrawer() : handleHeaderBack()}
-            style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 17, cursor: 'pointer', color: '#fff',
-              flexShrink: 0,
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            {isHome ? '🔧' : '←'}
-          </button>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
-              {isHome ? say("FixTray") : (sectionTitle ? say(sectionTitle) : say("FixTray"))}
-            </div>
-            {isHome && (
-              <div style={{ fontSize: 9, color: '#718096', marginTop: 1 }}>{say(cfg.roleLabel)}</div>
-            )}
-          </div>
-        </div>
-
-        {/* Avatar */}
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          background: accent + '22',
-          border: `1.5px solid ${accent}55`,
-          color: accent,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 15, fontWeight: 800,
-        }}>
-          {say(cfg.ico)}
-        </div>
-      </div>
-
-      {/* ─── COLLAPSIBLE SECTION TAB BAR (sub-pages only) ──────── */}
-      {!isHome && (() => {
-        const activeGroup = cfg.tabGroups.find(g =>
-          g.match.some(m => (pathname ?? '').startsWith(m))
-        );
-        if (!activeGroup) return null;
-        const activeIndex = exclusiveActiveIndex(activeGroup.tabs, pathname ?? '');
-        const activeTab = activeGroup.tabs[activeIndex] ?? activeGroup.tabs[0];
-        return (
-          <div style={{
-            background: 'rgba(6,7,9,0.95)',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            flexShrink: 0,
-          }}>
-            {/* Collapsed bar — always visible */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          {!isHome && (
             <button
-              onClick={() => setTabsCollapsed(c => !c)}
+              type="button"
+              onClick={handleHeaderBack}
+              aria-label={say('Back')}
               style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                width: '100%', padding: '8px 14px',
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                borderLeft: `3px solid ${accent}`,
-                textAlign: 'left',
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
+                width: 32, height: 32, borderRadius: 8,
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#f1f5f9', cursor: 'pointer', flexShrink: 0,
               }}
             >
-              <span style={{ fontSize: 14 }}>{say(activeTab.ico)}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', flex: 1 }}>
-                {say(activeTab.label)}
-              </span>
-              <span style={{ fontSize: 10, color: '#718096', marginRight: 4 }}>{say('Switch View')}</span>
-              <span style={{
-                fontSize: 11, color: accent,
-                transform: tabsCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-                transition: 'transform 0.2s',
-                display: 'inline-block',
-              }}>▲</span>
+              ←
             </button>
-
-            {/* Expanded tab pills */}
-            {!tabsCollapsed && (
-              <div style={{
-                display: 'flex', overflowX: 'auto', overflowY: 'hidden',
-                gap: 6, padding: '6px 10px 8px',
-                scrollbarWidth: 'none',
-              }}>
-                {activeGroup.tabs.map((tab, index) => {
-                  const active = index === activeIndex;
-                  return (
-                    <button
-                      key={tab.href}
-                      onClick={() => { go(tab.href); setTabsCollapsed(true); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '6px 14px', borderRadius: 20, flexShrink: 0,
-                        border: active
-                          ? `1.5px solid ${accent}88`
-                          : '1px solid rgba(255,255,255,0.08)',
-                        background: active
-                          ? accent + '22'
-                          : 'rgba(255,255,255,0.04)',
-                        cursor: 'pointer',
-                        transition: 'background 0.15s',
-                        touchAction: 'manipulation',
-                        WebkitTapHighlightColor: 'transparent',
-                      }}
-                    >
-                      <span style={{ fontSize: 14 }}>{say(tab.ico)}</span>
-                      <span style={{
-                        fontSize: 12, fontWeight: active ? 700 : 500,
-                        color: active ? accent : '#9ca3af',
-                        whiteSpace: 'nowrap',
-                      }}>{say(tab.label)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })()}
+          )}
+          <button
+            type="button"
+            onClick={() => go(brandHref)}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+              fontSize: 17, fontWeight: 800, color: 'var(--accent, #e5332a)',
+              letterSpacing: '-0.4px', fontFamily: 'var(--font)',
+            }}
+          >
+            {say('FixTray')}
+          </button>
+          <span style={{
+            padding: '3px 8px',
+            background: 'rgba(255,255,255,0.05)',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--text-muted, #94a3b8)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: 120,
+          }}>
+            {say(nav?.roleLabel || cfg.roleLabel)}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <button
+            type="button"
+            aria-label={say('Search')}
+            onClick={() => setMoreOpen(true)}
+            style={headerIconButton}
+          >
+            <FaSearch size={14} />
+          </button>
+          {nav?.messagesHref && (
+            <button
+              type="button"
+              aria-label={say('Messages')}
+              onClick={() => go(nav.messagesHref)}
+              style={headerIconButton}
+            >
+              <FaBell size={14} />
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label={say('More')}
+            onClick={() => setMoreOpen(true)}
+            style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'var(--accent, #e5332a)',
+              border: 'none', color: '#fff',
+              fontSize: 11, fontWeight: 800, cursor: 'pointer',
+            }}
+          >
+            {initials}
+          </button>
+        </div>
+      </div>
 
       {/* ─── CONTENT AREA ────────────────────────────────────────── */}
       <div data-mobile-shell-body style={{
         flex: 1,
+        minWidth: 0,
+        maxWidth: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
         overscrollBehaviorY: 'contain',
         paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
       }}>
-        {isHome ? <TileGrid cfg={cfg} accent={accent} onTile={go} /> : children}
+        {isHome && !children ? <TileGrid cfg={cfg} accent={accent} onTile={go} /> : children}
       </div>
 
-      {/* ─── FOOTER NAV ──────────────────────────────────────────── */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'rgba(6,7,9,0.97)',
-        backdropFilter: 'blur(24px)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        padding: '6px 4px calc(10px + env(safe-area-inset-bottom, 0px))',
-        display: 'flex', alignItems: 'flex-end',
-        zIndex: 40,
-      }}>
-        {/* Item 1 */}
-        <FooterBtn item={cfg.footer[0]} isActive={isActivePath(cfg.footer[0].href)} onClick={() => go(cfg.footer[0].href)} />
-        {/* Item 2 */}
-        <FooterBtn
-          item={{ ...cfg.footer[1], badge: cfg.footer[1].label === 'Chat' ? (unreadMessages || undefined) : cfg.footer[1].badge }}
-          isActive={isActivePath(cfg.footer[1].href)}
-          onClick={() => go(cfg.footer[1].href)}
-        />
-        {/* CENTER FAB */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-          <button
-            onClick={toggleNewMenu}
-            style={{
-              width: 54, height: 54, borderRadius: '50%',
-              background: accent,
-              border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 28, color: '#fff',
-              marginTop: -22,
-              boxShadow: `0 4px 20px ${accent}88`,
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              transform: newMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)',
-              touchAction: 'manipulation',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >＋</button>
-          <span style={{ fontSize: 9, fontWeight: 600, color: '#4a5568', marginTop: 3 }}>{say('New')}</span>
-
-          {/* New submenu */}
-          {newMenuMounted && (
-            <div style={{
-              position: 'absolute', bottom: '110%', left: '50%',
-              transform: 'translateX(-50%)',
-              background: '#13161f',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 18, padding: 12, width: 210,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
-              zIndex: 100,
-              opacity: newMenuOpen ? 1 : 0,
-              marginBottom: newMenuOpen ? 0 : -8,
-              transition: 'opacity 0.18s ease, margin-bottom 0.18s ease',
-              pointerEvents: newMenuOpen ? 'auto' : 'none',
-            }}
-            onTouchStart={(e) => {
-              newMenuTouchStartYRef.current = e.touches[0]?.clientY ?? null;
-            }}
-            onTouchEnd={(e) => {
-              const startY = newMenuTouchStartYRef.current;
-              const endY = e.changedTouches[0]?.clientY ?? startY;
-              if (startY != null && endY != null && endY - startY > 36) {
-                closeNewMenu();
-              }
-              newMenuTouchStartYRef.current = null;
-            }}>
-              <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a5568', textAlign: 'center', marginBottom: 10 }}>
-                {say('Create New')}
-              </div>
-              {cfg.newOptions.map((opt) => (
-                <button
-                  key={opt.href}
-                  onClick={() => { setNewMenuOpen(false); go(opt.href); }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 12, padding: '12px 14px',
-                    marginBottom: 7, width: '100%', cursor: 'pointer',
-                    color: '#e2e8f0', textAlign: 'left',
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                >
-                  <span style={{ fontSize: 22 }}>{say(opt.ico)}</span>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>{say(opt.title)}</div>
-                    <div style={{ fontSize: 10, color: '#718096', marginTop: 1 }}>{say(opt.sub)}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Item 3 */}
-        <FooterBtn
-          item={{ ...cfg.footer[2], badge: cfg.footer[2].label === 'Chat' ? (unreadMessages || undefined) : cfg.footer[2].badge }}
-          isActive={isActivePath(cfg.footer[2].href)}
-          onClick={() => go(cfg.footer[2].href)}
-        />
-        {/* Item 4 */}
-        <FooterBtn item={cfg.footer[3]} isActive={isActivePath(cfg.footer[3].href)} onClick={() => go(cfg.footer[3].href)} />
-      </div>
+      {nav && (
+        <RoleTabBar nav={nav} moreOpen={moreOpen} onMoreOpenChange={setMoreOpen} />
+      )}
 
       {/* ─── DIM overlay (new menu) ───────────────────────────────── */}
       {newMenuMounted && (

@@ -800,7 +800,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   const liveIndicator = true;
 
   return (
-    <nav style={{
+    <nav data-desktop-chrome="true" style={{
       position: 'sticky',
       top: 0,
       zIndex: 1000,

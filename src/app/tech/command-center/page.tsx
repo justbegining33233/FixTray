@@ -9,10 +9,7 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import MobileLayout from '@/components/MobileLayout';
-import MobileShell from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { useIsNative } from '@/context/NativeContext';
 import { FaArrowRight, FaCar, FaClipboardList, FaExclamationCircle, FaRoad, FaTools } from 'react-icons/fa';
 
 interface Job {
@@ -34,8 +31,6 @@ interface Job {
 export default function TechCommandCenter() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
-  const isMobile = useIsMobile();
-  const isNative = useIsNative();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState({
@@ -250,10 +245,6 @@ export default function TechCommandCenter() {
       </div>
     );
   };
-
-  if (isNative || isMobile) {
-    return <MobileShell role="tech" userName={user?.name} />;
-  }
 
   if (isLoading) {
     return (

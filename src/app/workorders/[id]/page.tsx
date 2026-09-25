@@ -17,6 +17,7 @@ import { saveSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
 import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 import ChatMessageBody from '@/components/ChatMessageBody';
 import { uploadChatImage } from '@/lib/uploadChatImage';
+import { captureNativePhotoFile } from '@/lib/nativePhoto';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -965,7 +966,24 @@ export default function WorkOrderDetailPage() {
             <input ref={mediaInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }} onChange={handleMediaUpload} />
             <div style={{ display: 'flex', gap: 8 }}>
               <button
-                onClick={() => mediaInputRef.current?.click()}
+                onClick={async () => {
+                  if (uploadingMedia) return;
+                  try {
+                    const nativeFile = await captureNativePhotoFile();
+                    if (nativeFile) {
+                      setUploadingMedia(true);
+                      setMsgError('');
+                      const result = await uploadChatImage(nativeFile);
+                      if ('error' in result) setMsgError(result.error);
+                      else setPendingMedia(prev => prev.includes(result.url) ? prev : [...prev, result.url]);
+                      setUploadingMedia(false);
+                      return;
+                    }
+                  } catch {
+                    setUploadingMedia(false);
+                  }
+                  mediaInputRef.current?.click();
+                }}
                 disabled={uploadingMedia}
                 title={say("Attach image")}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: uploadingMedia ? '#f59e0b' : '#9aa3b2', cursor: 'pointer', fontSize: 15 }}

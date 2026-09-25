@@ -7,9 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { useIsNative } from '@/context/NativeContext';
-import MobileShell from '@/components/MobileShell';
+import { MobilePageFrame } from '@/components/MobileShell';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { DashboardTab } from '@/app/admin/home/components/DashboardTabClean';
 import { UsersTab } from '@/app/admin/home/components/UsersTab';
@@ -25,8 +23,6 @@ function AdminHomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
-  const isMobile = useIsMobile();
-  const isNative = useIsNative();
   const isSuperAdmin = user?.isSuperAdmin;
   const isOwnerProfile = Boolean(user?.isOwner);
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -119,11 +115,6 @@ function AdminHomeContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mobile / native: show tile-grid shell immediately, before auth loading guard
-  if (isNative || isMobile) {
-    return <MobileShell role="admin" isHome userName={user?.name} />;
-  }
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#000000] flex items-center justify-center">
@@ -212,6 +203,7 @@ function AdminHomeContent() {
   };
 
   return (
+    <MobilePageFrame role="admin" isHome userName={user?.name}>
     <div className="min-h-screen bg-[#000000] text-slate-100">
       <div className="relative z-10">
         {searchOpen && (
@@ -268,7 +260,7 @@ function AdminHomeContent() {
       )}
 
       <div className="max-w-7xl mx-auto px-5 py-8 space-y-6">
-        <header className="rounded-2xl bg-[#000000] border border-[#1f2937] p-5 shadow-xl shadow-black/40">
+        <header data-desktop-chrome="true" className="rounded-2xl bg-[#000000] border border-[#1f2937] p-5 shadow-xl shadow-black/40">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#f97316] to-[#ea580c] text-white flex items-center justify-center font-semibold text-lg">F</div>
@@ -366,7 +358,7 @@ function AdminHomeContent() {
 
         <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
           {/* Left rail */}
-          <section className="space-y-4">
+          <section data-desktop-chrome="true" className="space-y-4">
             <div className="rounded-2xl bg-[#000000] border border-[#1f2937] p-4 shadow-lg shadow-black/30">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">{say("Status")}</p>
@@ -481,6 +473,7 @@ function AdminHomeContent() {
       </div>
       </div>
     </div>
+    </MobilePageFrame>
   );
 }
 

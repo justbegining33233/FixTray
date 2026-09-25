@@ -454,6 +454,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
       {/* Mobile backdrop */}
       {isMobile && isOpen && onClose && (
         <div
+          data-desktop-chrome="true"
           onClick={onClose}
           style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -462,7 +463,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
         />
       )}
 
-      <aside style={{
+      <aside data-desktop-chrome="true" style={{
         width: collapsed ? collapsedWidth : expandedWidth,
         minWidth: collapsed ? collapsedWidth : expandedWidth,
         height: '100vh',

@@ -405,10 +405,10 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
   return (
     <div style={{
       padding: '24px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      borderRadius: '12px',
-      color: 'white',
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+      background: '#020608',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: '16px',
+      color: '#f1f5f9',
     }}>
       {/* Hidden camera elements */}
       <video ref={videoRef} style={{ display: 'none' }} />
@@ -465,7 +465,7 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
             padding: '16px',
             borderRadius: '8px',
             border: 'none',
-            background: isClockedIn ? '#ef4444' : '#22c55e',
+            background: isClockedIn ? '#e5332a' : '#22c55e',
             color: 'white',
             fontSize: '16px',
             fontWeight: '600',

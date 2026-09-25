@@ -17,7 +17,10 @@ import {
   Cell,
 } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['#e5332a', '#22c55e', '#f59e0b', '#a855f7', '#f1f5f9'];
+const AXIS = '#94a3b8';
+const GRID = 'rgba(255,255,255,0.08)';
+const TIP = { background: '#020608', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#f1f5f9' };
 
 interface RevenueChartProps {
   data: { month: string; amount: number }[];
@@ -27,15 +30,15 @@ export function RevenueChart({ data }: RevenueChartProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="month" />
-        <YAxis />
-        <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+        <XAxis dataKey="month" stroke={AXIS} />
+        <YAxis stroke={AXIS} />
+        <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} contentStyle={TIP} />
         <Legend />
         <Line
           type="monotone"
           dataKey="amount"
-          stroke="#8884d8"
+          stroke="#e5332a"
           strokeWidth={2}
         />
       </LineChart>
@@ -51,11 +54,11 @@ export function CompletionTimesChart({ data }: CompletionTimesChartProps) {
   return (
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="time" />
-        <YAxis />
-        <Tooltip formatter={(value) => [`${value}`, 'Jobs']} />
-        <Bar dataKey="count" fill="#82ca9d" />
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+        <XAxis dataKey="time" stroke={AXIS} />
+        <YAxis stroke={AXIS} />
+        <Tooltip formatter={(value) => [`${value}`, 'Jobs']} contentStyle={TIP} />
+        <Bar dataKey="count" fill="#22c55e" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -69,12 +72,12 @@ export function TechPerformanceChart({ data }: TechPerformanceChartProps) {
   return (
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+        <XAxis dataKey="name" stroke={AXIS} />
+        <YAxis stroke={AXIS} />
+        <Tooltip contentStyle={TIP} />
         <Legend />
-        <Bar dataKey="jobs" fill="#8884d8" name="Jobs Completed" />
+        <Bar dataKey="jobs" fill="#e5332a" name="Jobs Completed" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -95,7 +98,7 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
           labelLine={false}
           label={({ percent, payload }: { percent?: number; payload?: { status?: string } }) => `${payload?.status ?? ''} ${percent ? (percent * 100).toFixed(0) : 0}%`}
           outerRadius={80}
-          fill="#8884d8"
+          fill="#e5332a"
           dataKey="count"
         >
           {data.map((entry, index) => (
@@ -116,22 +119,22 @@ export function MonthlyTrendsChart({ data }: MonthlyTrendsChartProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="month" />
-        <YAxis />
-        <Tooltip />
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+        <XAxis dataKey="month" stroke={AXIS} />
+        <YAxis stroke={AXIS} />
+        <Tooltip contentStyle={TIP} />
         <Legend />
         <Line
           type="monotone"
           dataKey="jobs"
-          stroke="#8884d8"
+          stroke="#e5332a"
           strokeWidth={2}
           name="Jobs Completed"
         />
         <Line
           type="monotone"
           dataKey="revenue"
-          stroke="#82ca9d"
+          stroke="#22c55e"
           strokeWidth={2}
           name="Revenue"
         />

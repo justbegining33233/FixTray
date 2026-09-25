@@ -5,7 +5,7 @@
   "description": "Streamlined work order management for roadside and in-shop services",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#080e1c",
+  "background_color": "#020608",
   "theme_color": "#e5332a",
   "orientation": "portrait-primary",
   "display_override": ["standalone", "minimal-ui"],
@@ -73,13 +73,13 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/fixtray-ft-192.png",
+      "src": "/icons/fixtray-ft-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/fixtray-ft-512.png",
+      "src": "/icons/fixtray-ft-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

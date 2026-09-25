@@ -9,10 +9,9 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import MobileLayout from '@/components/MobileLayout';
-import MobileShell from '@/components/MobileShell';
+import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { useIsNative } from '@/context/NativeContext';
 import { isRoadsideLocation } from '@/lib/waitingRoomBoard';
 import { FaArrowRight, FaBook, FaBox, FaCamera, FaCar, FaChartBar, FaCheckCircle, FaCircle, FaClipboardList, FaCog, FaComments, FaExclamationCircle, FaMapMarkerAlt, FaRegCircle, FaSearch, FaStopwatch, FaSyncAlt, FaTools, FaUser, FaWrench } from 'react-icons/fa';
 
@@ -20,7 +19,6 @@ export default function TechHome() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech']);
   const isMobile = useIsMobile();
-  const isNative = useIsNative();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [todayJobs, setTodayJobs] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('job-creation');
@@ -226,12 +224,6 @@ export default function TechHome() {
   }, [user]);
 
 
-  //  Mobile / native: show the tile-grid shell immediately 
-  // Must come before isLoading so mobile users never see the desktop flash.
-  if (isNative || isMobile) {
-    return <MobileShell role="tech" isHome userName={user?.name} />;
-  }
-
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -281,6 +273,7 @@ export default function TechHome() {
   ];
 
   return (
+    <MobilePageFrame role="tech" isHome userName={user?.name}>
     <MobileLayout
       role="tech"
       showSidebar={true}
@@ -317,7 +310,7 @@ export default function TechHome() {
           <div>
             {/* Tab Navigation for Tools */}
             <div style={{marginTop:0, marginBottom:24}}>
-              <div role="tablist" aria-label={say("Technician tools")} style={{display:'flex', gap:8, borderBottom:'2px solid rgba(255,255,255,0.1)', paddingBottom:2, overflowX:'auto', marginBottom:24}}>
+              <div role="tablist" aria-label={say("Technician tools")} style={{display:'flex', gap:8, borderBottom:'2px solid rgba(255,255,255,0.1)', paddingBottom:2, overflowX:'auto', marginBottom:24, maxWidth:'100%', width:'100%'}}>
                 <button
                   type="button"
                   role="tab"
@@ -903,6 +896,7 @@ export default function TechHome() {
         </div>
       )}
     </MobileLayout>
+    </MobilePageFrame>
   );
 }
 

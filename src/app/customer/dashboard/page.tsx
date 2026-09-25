@@ -7,9 +7,7 @@ import RealTimeWorkOrders from '../../../components/RealTimeWorkOrders';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import '../../../styles/sos-theme.css';
 import { FaBolt, FaChartBar, FaHeart, FaSearch, FaSyncAlt, FaUser } from 'react-icons/fa';
-import MobileShell from '../../../components/MobileShell';
-import { useIsMobile } from '../../../hooks/useIsMobile';
-import { useIsNative } from '../../../context/NativeContext';
+import { MobilePageFrame } from '../../../components/MobileShell';
 import { summarizeAppointments } from '@/lib/appointmentValidation';
 import { unwrapVehicles, unwrapWorkOrders } from '@/lib/workOrderList';
 import { isCompletedWorkOrder, summarizeWorkOrders, type WorkOrderSummary } from '@/lib/workOrderMetrics';
@@ -400,22 +398,18 @@ export default function CustomerDashboard() {
     },
   ];
 
-  const isMobile = useIsMobile();
-  const isNative = useIsNative();
-
-  if (isNative || isMobile) {
-    return <MobileShell role="customer" isHome userName={userName} />;
-  }
-
   if (!statsReady) {
     return (
+      <MobilePageFrame role="customer" isHome userName={userName}>
       <div style={{minHeight:'100vh', background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', color:'#e5e7eb', fontSize:18}}>
         {say('Syncing your live dashboard data...')}
       </div>
+      </MobilePageFrame>
     );
   }
 
   return (
+    <MobilePageFrame role="customer" isHome userName={userName}>
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       {/* Top Navigation */}
       <TopNavBar showMenuButton={false} />
@@ -784,6 +778,7 @@ export default function CustomerDashboard() {
         )}
       </div>
     </div>
+    </MobilePageFrame>
   );
 }
 

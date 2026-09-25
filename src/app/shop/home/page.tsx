@@ -12,10 +12,9 @@ import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import RealTimeWorkOrders from '@/components/RealTimeWorkOrders';
 import MobileLayout from '@/components/MobileLayout';
-import MobileShell from '@/components/MobileShell';
+import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { useIsNative } from '@/context/NativeContext';
 import { ACTIVE_WORK_ORDER_STATUSES } from '@/lib/workOrderMetrics';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 
@@ -50,7 +49,6 @@ export default function ShopHome() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['shop']);
   const isMobile = useIsMobile();
-  const isNative = useIsNative();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [shopStats, setShopStats] = useState({
@@ -220,18 +218,9 @@ export default function ShopHome() {
     Low: { bg: 'rgba(229,51,42,0.18)', color: '#e5332a' }
   };
 
-  //  Mobile / native: show the tile-grid shell immediately 
-  // This check MUST come before the isLoading guard so that:
-  //  1. The server renders MobileShell (not a Loading spinner) for mobile UAs,
-  //     giving mobile users the correct view from byte 1.
-  //  2. The client never flashes the desktop layout while auth is resolving.
-  // The MobileShell itself handles the case where user is still loading.
-  if (isNative || isMobile) {
-    return <MobileShell role="shop" isHome userName={user?.name} />;
-  }
-
   if (isLoading) {
     return (
+      <MobilePageFrame role="shop" isHome userName={user?.name}>
       <div style={{
         minHeight: '100vh',
         background: 'transparent',
@@ -242,6 +231,7 @@ export default function ShopHome() {
         fontSize: '18px'
       }}>
         {say("Loading...")}{' '}</div>
+      </MobilePageFrame>
     );
   }
 
@@ -474,6 +464,7 @@ export default function ShopHome() {
   // (Mobile check was moved before the isLoading guard above)
 
   return (
+    <MobilePageFrame role="shop" isHome userName={user?.name}>
     <MobileLayout
       role="shop"
       showSidebar={true}
@@ -488,7 +479,7 @@ export default function ShopHome() {
       <div style={{maxWidth:1400, margin:'0 auto', padding: sidebarOpen ? '0 32px 32px 32px' : '0 32px 32px 32px'}}>
         <div
           className="quick-actions-slider"
-          style={{display:'flex', flexWrap:'nowrap', gap:12, alignItems:'center', margin:'0 0 20px 0', overflowX:'auto', paddingBottom:4}}
+          style={{display:'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap:12, alignItems:'center', margin:'0 0 20px 0', overflowX: isMobile ? 'hidden' : 'auto', paddingBottom:4}}
         >
           <span style={{fontSize:13, color:'#9aa3b2', fontWeight:700}}>{say("Quick Actions")}</span>
           {quickActions.map(action => {
@@ -791,6 +782,7 @@ export default function ShopHome() {
         }
       `}</style>
     </MobileLayout>
+    </MobilePageFrame>
   );
 }
 

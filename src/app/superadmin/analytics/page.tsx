@@ -124,7 +124,7 @@ export default function SuperAdminAnalytics() {
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="10" />
                   <circle
                     cx="50" cy="50" r="40" fill="none"
-                    stroke="#6366f1" strokeWidth="10" strokeLinecap="round"
+                    stroke="#e5332a" strokeWidth="10" strokeLinecap="round"
                     strokeDasharray={`${analytics.avgCompletionRate * 2.51} 251`}
                   />
                 </svg>

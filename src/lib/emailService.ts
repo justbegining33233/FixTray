@@ -475,49 +475,6 @@ export async function sendPaymentConfirmationEmail(toEmail: string, workOrderId:
 }
 
 /**
- * Notify a shop owner that their trial period is ending in ~3 days.
- */
-export async function sendTrialEndingEmail(
-  shopEmail: string,
-  shopName: string,
-  trialEndDate: Date
-): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
-  const settingsUrl = `${appUrl}/shop/settings`;
-  const formattedDate = trialEndDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  return sendEmail({
-    to: shopEmail,
-    subject: `Your FixTray Trial Ends ${formattedDate} — Add a Payment Method`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#1a1a2e;color:#e5e7eb;border-radius:12px;overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#e5332a,#c0392b);padding:32px;text-align:center;">
-          <div style="font-size:36px;font-weight:900;color:white;letter-spacing:-1px;">FixTray</div>
-          <div style="color:rgba(255,255,255,0.85);font-size:14px;margin-top:6px;">Trial Ending Soon</div>
-        </div>
-        <div style="padding:32px;">
-          <h2 style="color:#e5e7eb;margin:0 0 12px;">Hi ${shopName},</h2>
-          <p style="color:#9aa3b2;line-height:1.6;margin-bottom:24px;">
-            Your free trial ends on <strong style="color:#f59e0b;">${formattedDate}</strong>.
-            To keep your shop running on FixTray without interruption, please make sure you have a valid payment method on file.
-          </p>
-          <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:20px;margin-bottom:28px;">
-            <div style="font-size:16px;font-weight:700;color:#f59e0b;margin-bottom:6px;">⏳ Trial ends: ${formattedDate}</div>
-            <div style="color:#9aa3b2;font-size:14px;">After your trial, paid access will begin automatically.</div>
-          </div>
-          <a href="${settingsUrl}" style="display:block;background:#e5332a;color:white;padding:14px;text-align:center;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:16px;">
-            Manage Billing
-          </a>
-          <p style="color:#6b7280;font-size:12px;text-align:center;line-height:1.6;">
-            Questions? Reply to this email or contact support.<br/>
-            <a href="${appUrl}" style="color:#e5332a;">fixtray.app</a>
-          </p>
-        </div>
-      </div>
-    `,
-  });
-}
-
-/**
  * Send an email verification link to a newly registered customer.
  * The raw token is embedded in the link; the DB stores only its SHA-256 hash.
  */

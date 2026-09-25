@@ -10,8 +10,8 @@ const tokens = {
 
 const routes = {
   public: [
-    '/', '/offline', '/pricing', '/features', '/contact', '/security', '/reports', '/about',
-    '/payment/cancel', '/payment/success', '/register/success', '/register/customer', '/register/canceled',
+    '/', '/offline', '/features', '/contact', '/security', '/reports', '/about',
+    '/payment/cancel', '/payment/success', '/register/customer',
     '/auth/login', '/auth/register/shop', '/auth/register/shop/client', '/auth/reset',
     '/auth/thank-you', '/auth/pending-approval',
     '/workorders/list', '/workorders/new', '/workorders/inshop',
@@ -29,7 +29,7 @@ const routes = {
     '/shop/recurring-workorders', '/shop/referrals', '/shop/reports', '/shop/reviews',
     '/shop/services', '/shop/settings', '/shop/settings/api-keys', '/shop/settings/permissions',
     '/shop/settings/schedule', '/shop/settings/sessions', '/shop/settings/two-factor',
-    '/shop/settings/webhooks', '/shop/subscribe', '/shop/tax-settings', '/shop/templates',
+    '/shop/settings/webhooks', '/shop/tax-settings', '/shop/templates',
     '/shop/timeclock', '/shop/vendors', '/shop/waiting-room', '/shop/work-authorizations',
   ],
   tech: [
@@ -62,7 +62,7 @@ const routes = {
     '/admin/login', '/admin/manage-customers', '/admin/manage-shops', '/admin/manage-tenants',
     '/admin/messages', '/admin/pending-shops', '/admin/platform-analytics', '/admin/profile',
     '/admin/revenue', '/admin/security-settings', '/admin/sessions', '/admin/settings',
-    '/admin/subscriptions', '/admin/system-settings', '/admin/test', '/admin/user-management',
+    '/admin/system-settings', '/admin/test', '/admin/user-management',
   ],
   superadmin: [
     '/superadmin/analytics', '/superadmin/dashboard', '/superadmin/deployments',

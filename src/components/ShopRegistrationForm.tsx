@@ -221,7 +221,6 @@ export default function ShopRegistrationForm() {
     mobileServiceRadius: 50,
     emergencyService24_7: false,
     acceptedPaymentMethods: ['cash', 'credit-card'],
-    couponCode: '',
   });
 
   const totalSelectedServices =
@@ -373,14 +372,7 @@ export default function ShopRegistrationForm() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        if (data.checkoutUrl) {
-          // Redirect to hosted onboarding flow when enabled on the backend
-          window.location.href = data.checkoutUrl;
-        } else {
-          // Fallback: Stripe wasn't configured  -  go to thank-you page
-          router.push('/auth/thank-you' as Route);
-        }
+        router.push('/auth/thank-you' as Route);
       } else {
         const errorData = await res.json();
         setError(errorData.error || 'Registration failed');

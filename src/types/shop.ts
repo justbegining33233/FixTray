@@ -264,5 +264,4 @@ export interface ShopFormData {
   mobileServiceRadius?: number;
   emergencyService24_7: boolean;
   acceptedPaymentMethods: ('cash' | 'credit-card' | 'debit-card' | 'check' | 'financing')[];
-  couponCode?: string;
 }

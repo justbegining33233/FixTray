@@ -138,13 +138,7 @@ interface LiveMetrics {
   avgRating: string;
   reviewsCount: number;
   websiteVisits: number;
-  trialsCount: number;
-  membersCount: number;
-  convertedCustomersCount: number;
   totalShopsEver: number;
-  trialSignups: number;
-  activeTrials: number;
-  convertedCustomers: number;
   conversionRate: string;
   weeklyConversionTrend: { label: string; value: number }[];
 }
@@ -222,7 +216,6 @@ export function useAdminData() {
     monthlyRevenue: 'Unavailable',
   });
 
-  const [planDistribution, setPlanDistribution] = useState<Record<string, number>>({});
   const [weeklyOverview, setWeeklyOverview] = useState<WeeklyOverview>({
     weekStart: '',
     weekEnd: '',
@@ -244,13 +237,7 @@ export function useAdminData() {
     avgRating: '0.0',
     reviewsCount: 0,
     websiteVisits: 0,
-    trialsCount: 0,
-    membersCount: 0,
-    convertedCustomersCount: 0,
     totalShopsEver: 0,
-    trialSignups: 0,
-    activeTrials: 0,
-    convertedCustomers: 0,
     conversionRate: 'Unavailable',
     weeklyConversionTrend: [],
   });
@@ -372,7 +359,6 @@ export function useAdminData() {
         });
 
         if (statsData.recentActivity) setRecentActivity(statsData.recentActivity);
-        if (statsData.planDistribution) setPlanDistribution(statsData.planDistribution);
         if (statsData.weeklyOverview) setWeeklyOverview(statsData.weeklyOverview);
         if (statsData.threeMonthAverages) setThreeMonthAverages(statsData.threeMonthAverages);
         if (statsData.liveMetrics) setLiveMetrics(statsData.liveMetrics);
@@ -498,7 +484,6 @@ export function useAdminData() {
     pendingShops,
     approvedShops,
     recentActivity,
-    planDistribution,
     weeklyOverview,
     threeMonthAverages,
     liveMetrics,

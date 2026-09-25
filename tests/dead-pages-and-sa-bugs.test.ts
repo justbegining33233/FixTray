@@ -24,6 +24,10 @@ describe('dead marketing and admin aliases', () => {
     expect(bySource['/blog']).toBe('/features');
     expect(bySource['/demo']).toBe('/contact');
     expect(bySource['/register/shop']).toBe('/auth/register/shop');
+    expect(bySource['/pricing']).toBe('/features');
+    expect(bySource['/register/success']).toBe('/auth/thank-you');
+    expect(bySource['/register/canceled']).toBe('/auth/thank-you');
+    expect(bySource['/admin/subscriptions']).toBe('/admin/home');
   });
 });
 

@@ -84,8 +84,8 @@ const nextConfig: NextConfig = {
       { source: '/payment-success',           destination: '/payment/success',       permanent: false },
       { source: '/payment-cancel',            destination: '/payment/cancel',        permanent: false },
       { source: '/register-customer',         destination: '/register/customer',     permanent: false },
-      { source: '/register-success',          destination: '/register/success',      permanent: false },
-      { source: '/register-canceled',         destination: '/register/canceled',     permanent: false },
+      { source: '/register-success',          destination: '/auth/thank-you',        permanent: false },
+      { source: '/register-canceled',         destination: '/auth/thank-you',        permanent: false },
       { source: '/auth/register-shop',        destination: '/auth/login',            permanent: false },
       { source: '/auth/register-shop-client', destination: '/auth/login',            permanent: false },
       // Manager flat-path aliases

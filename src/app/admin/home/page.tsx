@@ -40,7 +40,6 @@ function AdminHomeContent() {
     pendingShops,
     approvedShops,
     recentActivity,
-    planDistribution,
     weeklyOverview,
     threeMonthAverages,
     liveMetrics,
@@ -195,13 +194,13 @@ function AdminHomeContent() {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <DashboardTab platformStats={platformStats} pendingShops={pendingShops} approvedShops={approvedShops} shopsLiveMetrics={shopsLiveMetrics} recentActivity={recentActivity} planDistribution={planDistribution} weeklyOverview={weeklyOverview} threeMonthAverages={threeMonthAverages} liveMetrics={liveMetrics} infraHealth={infraHealth} />;
+        return <DashboardTab platformStats={platformStats} pendingShops={pendingShops} approvedShops={approvedShops} shopsLiveMetrics={shopsLiveMetrics} recentActivity={recentActivity} weeklyOverview={weeklyOverview} threeMonthAverages={threeMonthAverages} liveMetrics={liveMetrics} infraHealth={infraHealth} />;
       case 'users':
         return <UsersTab users={allUsers} liveMetrics={usersLiveMetrics} />;
       case 'hierarchy':
         return <HierarchyTab shops={approvedShops} liveMetrics={shopsLiveMetrics} />;
       default:
-        return <DashboardTab platformStats={platformStats} pendingShops={pendingShops} approvedShops={approvedShops} shopsLiveMetrics={shopsLiveMetrics} recentActivity={recentActivity} planDistribution={planDistribution} weeklyOverview={weeklyOverview} threeMonthAverages={threeMonthAverages} liveMetrics={liveMetrics} infraHealth={infraHealth} />;
+        return <DashboardTab platformStats={platformStats} pendingShops={pendingShops} approvedShops={approvedShops} shopsLiveMetrics={shopsLiveMetrics} recentActivity={recentActivity} weeklyOverview={weeklyOverview} threeMonthAverages={threeMonthAverages} liveMetrics={liveMetrics} infraHealth={infraHealth} />;
     }
   };
 

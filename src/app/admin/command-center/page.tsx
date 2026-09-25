@@ -109,8 +109,6 @@ interface CommandCenterData {
     }>;
   };
   businessMetrics: {
-    mrr: number;
-    arr: number;
     totalShopsCreated: number;
     shopsByStatus: Record<string, number>;
   };

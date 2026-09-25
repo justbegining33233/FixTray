@@ -133,7 +133,7 @@ describe('VIS-103 guessed shop routes', () => {
   it('redirects billing and messages guesses to real pages', () => {
     expect(GUESSED_SHOP_REDIRECTS).toEqual(expect.arrayContaining([
       { source: '/shop/messages', destination: '/shop/customer-messages', permanent: false },
-      { source: '/shop/settings/billing', destination: '/shop/subscribe', permanent: false },
+      { source: '/shop/settings/billing', destination: '/shop/settings', permanent: false },
     ]));
   });
 });

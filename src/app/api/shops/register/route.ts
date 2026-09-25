@@ -29,7 +29,6 @@ export async function POST(request: Request) {
       mobileServiceRadius: z.number().optional(),
       emergencyService24_7: z.boolean().optional(),
       acceptedPaymentMethods: z.array(z.string()).optional(),
-      couponCode: z.string().optional(),
     });
     const data = schema.parse(body);
 
@@ -73,7 +72,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       shopId: newShop.id,
-      checkoutUrl: null,
       message: 'Shop registration submitted. Awaiting admin approval.',
     });
   } catch (error) {

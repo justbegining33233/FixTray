@@ -8,29 +8,29 @@ import StatusBadge from './StatusBadge';
 interface SalesFunnelProps {
   /** Stage counts */
   visits: number;
-  trials: number;
-  members: number;
+  pending: number;
+  shops: number;
   customers: number;
 }
 
 /**
  * Displays a simple vertical funnel with drop-off percentages between stages, with enhanced animations.
  */
-export default function SalesFunnel({ visits, trials, members, customers }: SalesFunnelProps) {
+export default function SalesFunnel({ visits, pending, shops, customers }: SalesFunnelProps) {
   const say = usePhrase();
   const stages = [
     { label: 'Website Visits', value: visits, color: 'from-[#e5332a]/60 to-[#ff6b64]/20' },
-    { label: 'Trials', value: trials, color: 'from-zinc-500/60 to-zinc-400/20' },
-    { label: 'Members', value: members, color: 'from-[#e5332a]/60 to-[#ff6b64]/20' },
-    { label: 'Customers', value: customers, color: 'from-emerald-500/60 to-emerald-400/20' },
+    { label: 'Pending shops', value: pending, color: 'from-zinc-500/60 to-zinc-400/20' },
+    { label: 'Shops', value: shops, color: 'from-[#e5332a]/60 to-[#ff6b64]/20' },
+    { label: 'Active users', value: customers, color: 'from-emerald-500/60 to-emerald-400/20' },
   ];
 
   const pct = (num: number, den: number) => (den > 0 ? Math.max(Math.min((num / den) * 100, 100), 0) : num > 0 ? 100 : 0);
 
   const drops = [
-    pct(trials, visits),
-    pct(members, trials),
-    pct(customers, members),
+    pct(pending, visits),
+    pct(shops, pending),
+    pct(customers, shops),
   ];
 
   return (
@@ -41,7 +41,7 @@ export default function SalesFunnel({ visits, trials, members, customers }: Sale
       <div className="relative z-10 flex items-center justify-between mb-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.08em] text-zinc-400">{say("Sales Funnel")}</p>
-          <h3 className="text-lg font-semibold text-white">{say("Website")}{' '}<FaArrowRight style={{marginRight:4}} /> {say("Trials")}{' '}{'>'} {say("Members")}{' '}{'>'} {say("Customers")}</h3>
+          <h3 className="text-lg font-semibold text-white">{say("Website")}{' '}<FaArrowRight style={{marginRight:4}} /> {say("Pending shops")}{' '}{'>'} {say("Shops")}{' '}{'>'} {say("Active users")}</h3>
         </div>
         <StatusBadge label={say("Live")} tone="success" pulse size="sm" />
       </div>

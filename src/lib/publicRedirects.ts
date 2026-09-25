@@ -8,4 +8,8 @@ export const PUBLIC_AND_ADMIN_REDIRECTS: Array<{ source: string; destination: st
   { source: '/blog', destination: '/features', permanent: false },
   { source: '/demo', destination: '/contact', permanent: false },
   { source: '/register/shop', destination: '/auth/register/shop', permanent: false },
+  { source: '/pricing', destination: '/features', permanent: false },
+  { source: '/register/success', destination: '/auth/thank-you', permanent: false },
+  { source: '/register/canceled', destination: '/auth/thank-you', permanent: false },
+  { source: '/admin/subscriptions', destination: '/admin/home', permanent: false },
 ];

@@ -511,7 +511,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       { ico: '🏪', name: 'Manage Shops', sub: 'All shops', href: '/admin/manage-shops', color: '#0f1e3a', span2: true },
       { ico: '⏳', name: 'Pending Shops', sub: 'Awaiting review', href: '/admin/pending-shops', color: '#2e1a0a' },
       { ico: '👥', name: 'Users', sub: 'All accounts', href: '/superadmin/users', color: '#0f2214' },
-      { ico: '💰', name: 'Revenue', sub: 'Platform MRR', href: '/admin/revenue', color: '#0a1e2e' },
+      { ico: '💰', name: 'Revenue', sub: 'Shop fees', href: '/admin/revenue', color: '#0a1e2e' },
       { ico: '📊', name: 'Analytics', sub: 'Platform-wide', href: '/superadmin/analytics', color: '#1a0f2e' },
       { ico: '🔐', name: 'Security', sub: 'Logs & threats', href: '/superadmin/security', color: '#0f0f2e' },
       { ico: '📧', name: 'Email Templates', sub: 'System emails', href: '/admin/email-templates', color: '#2e0f0f' },

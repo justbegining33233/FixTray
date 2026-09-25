@@ -13,13 +13,17 @@ import {
   readIntroSession,
 } from '@/lib/nativeIntro';
 
-const MarketingShell = dynamic(() => import("@/components/MarketingShell"), {
-  loading: () => { const say = usePhrase();
-return ((
+function MarketingShellFallback() {
+  const say = usePhrase();
+  return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-white text-xl">{say("Loading FixTray...")}</div>
     </div>
-  )); },
+  );
+}
+
+const MarketingShell = dynamic(() => import("@/components/MarketingShell"), {
+  loading: MarketingShellFallback,
 });
 
 const primaryBtn: React.CSSProperties = {

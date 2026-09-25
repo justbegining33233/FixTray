@@ -124,7 +124,7 @@ export function Donut({
   const total = safe.reduce((sum, part) => sum + part[0], 0) || 1;
   let offset = 0;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img">
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" style={{ display: 'block', overflow: 'hidden' }}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={thickness} />
       {safe.map(([value, color], index) => {
         const len = (c * value) / total;

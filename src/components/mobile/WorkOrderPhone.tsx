@@ -85,7 +85,7 @@ export function WorkOrderPhone({
       <div className="pm-card" style={{ padding: '4px 12px 10px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 }}>
           <h3>{say('Line Items')}</h3>
-          <button type="button" className="pm-btn pm-btn-ghost" style={{ padding: '4px 10px', fontSize: 11 }} onClick={onAddItem}>
+          <button type="button" className="pm-btn pm-btn-ghost pm-btn-sm" onClick={onAddItem}>
             <FaPlus size={10} /> {say('Add Line Item')}
           </button>
         </div>

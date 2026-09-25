@@ -133,7 +133,7 @@ export function ManagerQueuePhone({
                 <div className="t">{order.vehicleType || say('Vehicle')}</div>
                 <div className="s">{shortWorkOrderLabel(order.id)} · {customer} · {say('Type')}: {kind}</div>
               </div>
-              <Link href={`/workorders/${order.id}` as Route} className="pm-btn pm-btn-ghost" style={{ padding: '5px 9px', fontSize: 11 }}>{say('Open details')}</Link>
+              <Link href={`/workorders/${order.id}` as Route} className="pm-btn pm-btn-ghost pm-btn-sm">{say('Open details')}</Link>
             </div>
           );
         })}

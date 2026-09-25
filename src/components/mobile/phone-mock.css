@@ -118,6 +118,9 @@
   text-decoration: none;
   cursor: pointer;
   font-family: inherit;
+  white-space: nowrap;
+  line-height: 1.15;
+  min-width: 0;
 }
 .pm-btn-primary { background: #e5332a; color: #fff; border: 1px solid rgba(0, 0, 0, 0.2); box-shadow: 0 2px 8px rgba(229, 51, 42, 0.3); }
 .pm-btn-secondary { background: rgba(255, 255, 255, 0.07); color: #f1f5f9; border: 1px solid rgba(255, 255, 255, 0.14); font-weight: 600; }
@@ -148,11 +151,15 @@
 .pm-kv { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 5px 0; color: #94a3b8; }
 .pm-kv b { color: #f1f5f9; font-weight: 600; }
 .pm-seg { display: flex; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 3px; gap: 3px; }
-.pm-seg button {
-  flex: 1; text-align: center; font-size: 11.5px; font-weight: 600; color: #94a3b8;
-  padding: 6px 4px; border-radius: 9px; background: transparent; border: 1px solid transparent; cursor: pointer; font-family: inherit;
+.pm-seg button,
+.pm-seg a {
+  flex: 1; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8;
+  padding: 6px 3px; border-radius: 9px; background: transparent; border: 1px solid transparent;
+  cursor: pointer; font-family: inherit; white-space: nowrap; line-height: 1.1;
+  text-decoration: none; min-width: 0; letter-spacing: -0.01em;
 }
-.pm-seg button.on { background: rgba(229, 51, 42, 0.15); color: #ff6b64; border-color: rgba(229, 51, 42, 0.3); }
+.pm-seg button.on,
+.pm-seg a.on { background: rgba(229, 51, 42, 0.15); color: #ff6b64; border-color: rgba(229, 51, 42, 0.3); }
 .pm-alert {
   border-radius: 12px; padding: 11px 12px;
   background: linear-gradient(90deg, rgba(229, 51, 42, 0.14), rgba(245, 158, 11, 0.06));
@@ -172,7 +179,46 @@
 }
 .pm-bay.on { border-color: rgba(229, 51, 42, 0.35); background: rgba(229, 51, 42, 0.06); }
 .pm-empty { font-size: 12px; color: #475569; padding: 8px 0; }
-.pm-sign canvas { height: 72px !important; }
+.pm-chart-card {
+  padding: 12px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+}
+.pm-chart-card h3 { width: 100%; flex: 0 0 auto; }
+.pm-donut {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 10px;
+  padding: 4px 0 2px;
+  min-height: 104px;
+}
+.pm-donut svg {
+  width: 96px;
+  height: 96px;
+  max-width: 96px;
+  flex: 0 0 96px;
+  display: block;
+  overflow: hidden;
+}
+.pm-sign { position: relative; }
+.pm-sign canvas {
+  height: 72px !important;
+  background: #0b1220 !important;
+  border: 1px dashed rgba(255, 255, 255, 0.22) !important;
+  border-radius: 10px !important;
+}
+.pm-sign-hint {
+  position: absolute;
+  right: 8px;
+  top: 50px;
+  font-size: 9.5px;
+  color: #64748b;
+  pointer-events: none;
+}
 .pm-input {
   width: 100%; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px; padding: 10px 12px; font-size: 12.5px; color: #f1f5f9; font-family: inherit;
@@ -184,3 +230,51 @@
 .pm-steps div { flex: 1; min-width: 0; }
 .pm-steps span { display: block; font-size: 8.5px; color: #475569; margin-top: 4px; white-space: nowrap; overflow: hidden; }
 .pm-steps .on span { color: #94a3b8; }
+
+/* globals.css forces 16px on buttons under 768px. Keep mockup sizes. */
+.pm button,
+.pm a.pm-btn {
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  line-height: 1.15 !important;
+}
+.pm button.pm-btn-ghost,
+.pm a.pm-btn-ghost {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+.pm button.pm-btn-md,
+.pm a.pm-btn-md {
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+}
+.pm button.pm-btn-sm,
+.pm a.pm-btn-sm {
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+}
+.pm button.pm-btn-ghost.pm-btn-sm,
+.pm a.pm-btn-ghost.pm-btn-sm {
+  font-weight: 500 !important;
+}
+.pm .pm-seg button,
+.pm .pm-seg a {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 6px 3px !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  line-height: 1.1 !important;
+}
+.pm input,
+.pm select,
+.pm textarea {
+  font-size: 12.5px !important;
+}
+.pm .pm-sign button {
+  font-size: 11px !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}

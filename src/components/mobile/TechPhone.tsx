@@ -97,7 +97,7 @@ export function TechHomePhone({
       <div className="pm-card" style={{ padding: 12 }}>
         <h3>
           {say('Road Call')}
-          <Link href={'/tech/new-roadside-job' as Route} className="pm-btn pm-btn-primary" style={{ padding: '5px 10px', fontSize: 11 }}>{say('Create Road Call')}</Link>
+          <Link href={'/tech/new-roadside-job' as Route} className="pm-btn pm-btn-primary pm-btn-sm">{say('Create Road Call')}</Link>
         </h3>
         <div style={{ marginTop: 10, height: 118, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', background: '#0b1220', position: 'relative' }}>
           {shopCoords ? (
@@ -158,14 +158,14 @@ export function TechJobsPhone({
             <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
               <span className="pm-badge pm-b-ghost">{place}</span>
               <span style={{ flex: 1 }} />
-              <Link href={`/workorders/${order.id}` as Route} className="pm-btn pm-btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>{say('View')}</Link>
+              <Link href={`/workorders/${order.id}` as Route} className="pm-btn pm-btn-secondary pm-btn-md">{say('View')}</Link>
               {inProgress ? (
-                <Link href={'/tech/photos' as Route} className="pm-btn pm-btn-primary" style={{ padding: '6px 12px', fontSize: 12 }}>{say('Photos')}</Link>
+                <Link href={'/tech/photos' as Route} className="pm-btn pm-btn-primary pm-btn-md">{say('Photos')}</Link>
               ) : null}
               {showOffline && view === 'active' ? (
                 <>
-                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id, status: 'en-route', baseStatus: order.status || 'assigned' } }))} className="pm-btn pm-btn-primary" style={{ padding: '6px 12px', fontSize: 12 }}>{say('Start / En route')}</button>
-                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id } }))} className="pm-btn pm-btn-ghost" style={{ padding: '6px 12px', fontSize: 12 }}>{say('Download for offline')}</button>
+                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id, status: 'en-route', baseStatus: order.status || 'assigned' } }))} className="pm-btn pm-btn-primary pm-btn-md">{say('Start / En route')}</button>
+                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id } }))} className="pm-btn pm-btn-ghost pm-btn-md">{say('Download for offline')}</button>
                 </>
               ) : null}
             </div>

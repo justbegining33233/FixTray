@@ -7,15 +7,32 @@ import { BarChart, Donut, Legend, LineChart } from '@/components/mobile/charts';
 import { count, money } from '@/components/mobile/format';
 import '@/components/mobile/phone-mock.css';
 
-const STATUS_COLORS: Record<string, string> = {
-  completed: '#22c55e',
-  closed: '#22c55e',
-  'in-progress': '#e5332a',
-  assigned: '#e5332a',
-  pending: '#f59e0b',
-  'waiting-for-payment': '#a855f7',
-  'estimate-submitted': '#60a5fa',
-};
+const SLICE_GREEN = '#22c55e';
+const SLICE_RED = '#e5332a';
+const SLICE_AMBER = '#f59e0b';
+const SLICE_PURPLE = '#a855f7';
+
+/** API titles statuses ("In Progress"). Bucket them onto the four legend colors. */
+function statusSliceColor(status: string): string {
+  const key = status.toLowerCase().replace(/[\s_]+/g, '-');
+  if (key === 'closed' || key === 'completed' || key === 'paid') return SLICE_GREEN;
+  if (key === 'in-progress' || key === 'assigned' || key === 'en-route') return SLICE_RED;
+  if (key === 'waiting-for-payment') return SLICE_PURPLE;
+  return SLICE_AMBER;
+}
+
+function statusSlices(rows: { status: string; count: number }[]): Array<[number, string]> {
+  const order = [SLICE_GREEN, SLICE_RED, SLICE_AMBER, SLICE_PURPLE];
+  const totals = new Map(order.map((color) => [color, 0]));
+  for (const row of rows) {
+    if (row.count <= 0) continue;
+    const color = statusSliceColor(row.status);
+    totals.set(color, (totals.get(color) || 0) + row.count);
+  }
+  return order
+    .filter((color) => (totals.get(color) || 0) > 0)
+    .map((color) => [totals.get(color) || 0, color] as [number, string]);
+}
 
 export function AdminOverviewPhone({
   isOwner,
@@ -141,9 +158,7 @@ export function AdminAnalyticsPhone({
   const show = (n: number) => (loading ? '…' : count(n));
   const rate = data.totalWorkOrders > 0 ? Math.round((data.completedWorkOrders / data.totalWorkOrders) * 100) : 0;
   const revenue = data.revenue.length ? data.revenue : [];
-  const statusParts = data.statusDistribution
-    .filter((row) => row.count > 0)
-    .map((row) => [row.count, STATUS_COLORS[row.status] || '#94a3b8'] as [number, string]);
+  const statusParts = statusSlices(data.statusDistribution);
   return (
     <div className="pm">
       <div>
@@ -171,13 +186,17 @@ export function AdminAnalyticsPhone({
         <LineChart values={revenue.map((row) => row.amount)} labels={revenue.map((row) => row.month)} height={92} />
       </div>
       <div className="pm-g2">
-        <div className="pm-card" style={{ padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h3 style={{ alignSelf: 'flex-start', fontSize: 12.5 }}>{say('Completion Rate')}</h3>
-          <Donut parts={[[rate, '#22c55e'], [Math.max(100 - rate, 0), 'rgba(255,255,255,0.07)']]} center={`${rate}%`} sub={say('completed')} />
+        <div className="pm-card pm-chart-card">
+          <h3 style={{ fontSize: 12.5 }}>{say('Completion Rate')}</h3>
+          <div className="pm-donut">
+            <Donut parts={[[rate, '#22c55e'], [Math.max(100 - rate, 0), 'rgba(255,255,255,0.07)']]} center={`${rate}%`} sub={say('completed')} />
+          </div>
         </div>
-        <div className="pm-card" style={{ padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h3 style={{ alignSelf: 'flex-start', fontSize: 12.5 }}>{say('Status Distribution')}</h3>
-          {statusParts.length === 0 ? <div className="pm-empty">{say('No jobs yet.')}</div> : <Donut parts={statusParts} thickness={26} />}
+        <div className="pm-card pm-chart-card">
+          <h3 style={{ fontSize: 12.5 }}>{say('Status Distribution')}</h3>
+          <div className="pm-donut">
+            {statusParts.length === 0 ? <div className="pm-empty">{say('No jobs yet.')}</div> : <Donut parts={statusParts} thickness={26} />}
+          </div>
         </div>
       </div>
       <Legend items={[

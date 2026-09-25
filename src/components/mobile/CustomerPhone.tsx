@@ -180,7 +180,7 @@ export function CustomerEstimatesPhone({
               <div className="pm-sub" style={{ fontSize: 10.5, marginTop: 6 }}>{say('Accept or deny requires your signature. A verbal go-ahead is not a work authorization.')}</div>
               <input className="pm-input" style={{ marginTop: 8 }} placeholder={say('Full legal name')} value={signerName} onChange={(event) => onSignerName(event.target.value)} />
               <div className="pm-sign" style={{ marginTop: 8 }}>
-                <SignatureCapture onChange={onSignature} />
+                <SignatureCapture onChange={onSignature} tone="dark" />
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button type="button" className="pm-btn pm-btn-primary" style={{ flex: 1.4 }} disabled={busyId === featured.id} onClick={() => onDecide(featured.id, 'accepted')}>

@@ -787,10 +787,10 @@ tbody td {
    cannot match arbitrary inline styles reliably, we instead hide
    any <a> or <button> that contains an svg (react-icon) AND sits
    inside the first 80px of a page's first container div.        */
-[data-mobile-shell-body] > div > div:first-child a[href*="/home"],
-[data-mobile-shell-body] > div > div:first-child a[href*="/dashboard"],
-[data-mobile-shell-body] > div > div:first-child a[href*="/admin/home"],
-[data-mobile-shell-body] > div > div:first-child a[href*="/superadmin"] {
+[data-mobile-shell-body] > div > div:first-child a[href*="/home"]:not(.pm-back),
+[data-mobile-shell-body] > div > div:first-child a[href*="/dashboard"]:not(.pm-back),
+[data-mobile-shell-body] > div > div:first-child a[href*="/admin/home"]:not(.pm-back),
+[data-mobile-shell-body] > div > div:first-child a[href*="/superadmin"]:not(.pm-back) {
   /* keep visible but demote  the MobileShell header already provides back */
   display: none !important;
 }

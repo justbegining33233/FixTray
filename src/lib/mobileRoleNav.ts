@@ -257,7 +257,6 @@ const shopNav: MobileRoleNav = {
       link('Integrations', '/shop/integrations', 'tools'),
       link('Automations', '/shop/automations', 'tools'),
       link('Branding', '/shop/branding', 'settings'),
-      link('Subscribe', '/shop/subscribe', 'card'),
       link('Tax Settings', '/shop/tax-settings', 'dollar'),
       link('Shop Settings', '/shop/settings', 'settings'),
       link('Permissions', '/shop/settings/permissions', 'settings'),

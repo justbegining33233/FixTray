@@ -13,7 +13,15 @@
       <button type="button" id="brand" class="brand">FixTray</button>
       <span id="role-chip" class="role-chip">Offline</span>
     </div>
-    <div id="header-avatar" class="avatar" aria-hidden="true">FT</div>
+    <div class="header-right">
+      <a id="header-search" class="icon-btn" href="/tech/home" aria-label="Search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      </a>
+      <a id="header-bell" class="icon-btn" href="/tech/messages" aria-label="Messages">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg>
+      </a>
+      <div id="header-avatar" class="avatar" aria-hidden="true">FT</div>
+    </div>
   </header>
   <div class="chrome">
     <button type="button" id="banner" class="banner">Checking connection…</button>
@@ -23,8 +31,12 @@
     </div>
   </div>
   <main id="app"></main>
-  <nav class="tabbar">
-    <a id="back-to-app" href="/tech/home">Back to app</a>
+  <nav class="tabbar" id="tabbar" aria-label="Technician">
+    <a data-tab="home" href="/tech/home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Home</span></a>
+    <a data-tab="jobs" class="on" href="/tech-offline/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 11l2 2 4-4"/></svg><span>My Jobs</span></a>
+    <a data-tab="clock" href="/tech/timeclock"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Clock</span></a>
+    <a data-tab="messages" href="/tech/messages"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Messages</span></a>
+    <a data-tab="more" href="/tech/home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>More</span></a>
   </nav>
   <script src="/tech-offline/engine.js"></script>
   <script src="/tech-offline/app.js"></script>

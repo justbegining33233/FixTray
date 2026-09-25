@@ -102,12 +102,25 @@
       var initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0); }).join('').toUpperCase();
       avatar.textContent = initials || 'FT';
     }
-    var link = document.getElementById('back-to-app');
-    if (!link) return;
     var online = typeof navigator === 'undefined' || navigator.onLine !== false;
-    link.href = online ? homeHref() : '#';
-    link.classList.toggle('is-disabled', !online);
-    link.setAttribute('aria-disabled', online ? 'false' : 'true');
+    var home = homeHref();
+    var role = actorRole();
+    var clock = role === 'shop' ? '/shop/timeclock' : role === 'manager' ? '/manager/timeclock' : '/tech/timeclock';
+    var messages = role === 'shop' ? '/shop/customer-messages' : role === 'manager' ? '/manager/messages' : role === 'customer' ? '/customer/messages' : '/tech/messages';
+    var tabs = { home: home, jobs: '/tech-offline/', clock: clock, messages: messages, more: home };
+    document.querySelectorAll('#tabbar a').forEach(function (link) {
+      var key = link.getAttribute('data-tab');
+      var stay = key === 'jobs';
+      link.href = stay ? '/tech-offline/' : (online ? (tabs[key] || home) : '#');
+      link.classList.toggle('is-disabled', !online && !stay);
+      link.setAttribute('aria-disabled', !online && !stay ? 'true' : 'false');
+    });
+    ['header-search', 'header-bell'].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (!node) return;
+      node.href = online ? (id === 'header-bell' ? messages : home) : '#';
+      node.classList.toggle('is-disabled', !online);
+    });
   }
 
   function drawMap(canvas, job) {
@@ -507,7 +520,16 @@
     painting = false;
     render();
   };
-  document.getElementById('back-to-app').addEventListener('click', function (event) {
+  document.getElementById('tabbar').addEventListener('click', function (event) {
+    var link = event.target.closest('a');
+    if (!link) return;
+    if (link.getAttribute('data-tab') === 'jobs') return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) event.preventDefault();
+  });
+  document.getElementById('header-search').addEventListener('click', function (event) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) event.preventDefault();
+  });
+  document.getElementById('header-bell').addEventListener('click', function (event) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) event.preventDefault();
   });
   window.addEventListener('online', function () { paintHeader(!!selected); });

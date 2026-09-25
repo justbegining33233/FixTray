@@ -41,7 +41,7 @@ function TechJobsList() {
   const mine = filterTechJobs(orders, user.id, view);
 
   if (isMobile) {
-    return <TechJobsPhone view={view} orders={loading ? [] : mine} />;
+    return <TechJobsPhone view={view} orders={loading ? [] : mine} showOffline />;
   }
 
   return (

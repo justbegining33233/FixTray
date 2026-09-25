@@ -91,15 +91,21 @@ export default function RoleTabBar({
 
   const tabIndex = activePrimaryTabIndex(nav, pathname);
   const filtered = useMemo(() => {
+    const ownerOnly = (item: MobileLink) => item.label === 'Owner Tools' || item.href.startsWith('/admin/owner');
+    const source = user?.isOwner
+      ? nav.more
+      : nav.more
+          .map((group) => ({ ...group, items: group.items.filter((item) => !ownerOnly(item)) }))
+          .filter((group) => group.items.length > 0);
     const needle = query.trim().toLowerCase();
-    if (!needle) return nav.more;
-    return nav.more
+    if (!needle) return source;
+    return source
       .map((group) => ({
         ...group,
         items: group.items.filter((item) => item.label.toLowerCase().includes(needle) || item.href.toLowerCase().includes(needle)),
       }))
       .filter((group) => group.items.length > 0);
-  }, [nav.more, query]);
+  }, [nav.more, query, user?.isOwner]);
 
   const go = (href: string) => {
     if (Capacitor.isNativePlatform()) {

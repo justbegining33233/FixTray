@@ -20,6 +20,9 @@ import { uploadChatImage } from '@/lib/uploadChatImage';
 import { captureNativePhotoFile } from '@/lib/nativePhoto';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobilePageFrame } from '@/components/MobileShell';
+import { WorkOrderPhone } from '@/components/mobile/WorkOrderPhone';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -165,6 +168,7 @@ const inputStyle: React.CSSProperties = {
 
 export default function WorkOrderDetailPage() {
   const say = usePhrase();
+  const isMobile = useIsMobile();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params?.id;
@@ -654,6 +658,29 @@ export default function WorkOrderDetailPage() {
   // Table header style
   const thStyle: React.CSSProperties = { fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', padding: '4px 6px', textAlign: 'left' };
   const tdStyle: React.CSSProperties = { padding: '4px 4px', verticalAlign: 'middle' };
+
+  if (isMobile) {
+    const shellRole = userRole === 'tech' ? 'tech' : userRole === 'manager' ? 'manager' : userRole === 'customer' ? 'customer' : 'shop';
+    const frameRole = userRole === 'admin' || userRole === 'superadmin' ? 'admin' : shellRole;
+    return (
+      <MobilePageFrame role={frameRole}>
+        <WorkOrderPhone
+          wo={wo}
+          lineItems={lineItems}
+          messages={messages}
+          grandTotal={grandTotal}
+          canClose={Boolean(userRole && ['shop', 'manager', 'admin', 'superadmin'].includes(userRole))}
+          onInvoice={() => { void handleCloseout('invoice'); }}
+          onPaid={() => { void handleCloseout('paid'); }}
+          onAddItem={() => { void handleOpenItemModal(); }}
+          invoiceDisabled={!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)}
+          paidDisabled={!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid'}
+          invoiceLabel={closeoutBusy === 'invoice' ? say('Requesting…') : say('Invoice / Request payment')}
+          paidLabel={closeoutBusy === 'paid' ? say('Saving…') : say('Mark paid')}
+        />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e5e7eb' }}>

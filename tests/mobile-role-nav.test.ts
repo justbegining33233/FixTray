@@ -56,6 +56,14 @@ describe('mobile role tabs', () => {
     expect(mobileNavForActor('shop', { role: 'customer' })?.id).toBe('shop');
   });
 
+  it('shows Owner Tools only for the platform owner', () => {
+    const labels = (isOwner: boolean) =>
+      mobileNavForActor('admin', { role: 'superadmin', isOwner })?.more.flatMap((group) => group.items.map((item) => item.label)) || [];
+    expect(labels(false)).not.toContain('Owner Tools');
+    expect(labels(true)).toContain('Owner Tools');
+    expect(MOBILE_ROLE_NAVS.superadmin.more.flatMap((group) => group.items.map((item) => item.label))).toContain('Owner Tools');
+  });
+
   it.each([
     ['superadmin', ['admin', 'superadmin']],
     ['shop', ['shop']],

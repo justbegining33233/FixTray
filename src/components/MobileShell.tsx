@@ -684,6 +684,7 @@ export default function MobileShell({
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [newMenuMounted, setNewMenuMounted] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [shopChip, setShopChip] = useState('');
   const drawerCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const newMenuCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drawerTouchStartXRef = useRef<number | null>(null);
@@ -767,13 +768,29 @@ export default function MobileShell({
     return () => window.clearTimeout(timer);
   }, [pathname, isNative, isMobile]);
 
+  useEffect(() => {
+    if (!isNative && !isMobile) return;
+    if (!user?.shopId) return;
+    if (role !== 'shop' && role !== 'manager' && role !== 'tech') return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    let alive = true;
+    fetch(`/api/shops/${user.shopId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const name = data?.shop?.name || data?.shop?.shopName;
+        if (alive && name) setShopChip(String(name));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [user?.shopId, role, isNative, isMobile]);
+
   // Render shell in native app (server-detected) or mobile browser (client-detected).
   if (!isNative && !isMobile) return <>{children}</>;
 
   const actorRole = normalizeRole(user?.role) || role;
   const cfg = roleConfigForActor(ROLES[role], actorRole);
   const accent = cfg.accentColor;
-  const nav = mobileNavForActor(role, { role: user?.role, isSuperAdmin: user?.isSuperAdmin });
+  const nav = mobileNavForActor(role, { role: user?.role, isSuperAdmin: user?.isSuperAdmin, isOwner: user?.isOwner });
   const brandHref = nav?.homeHref ?? homePathByRole[role];
   const initials = (userName || user?.name || nav?.roleLabel || 'FT')
     .split(/\s+/)
@@ -907,7 +924,11 @@ export default function MobileShell({
             textOverflow: 'ellipsis',
             maxWidth: 120,
           }}>
-            {say(nav?.roleLabel || cfg.roleLabel)}
+            {say((role === 'shop' || role === 'manager' || role === 'tech') && shopChip
+              ? shopChip
+              : role === 'admin' && user?.isOwner
+                ? 'Owner'
+                : (nav?.roleLabel || cfg.roleLabel))}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>

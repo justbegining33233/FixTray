@@ -10,10 +10,14 @@ import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { filterTechJobs, techJobsHref } from '@/lib/techJobs';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobilePageFrame } from '@/components/MobileShell';
+import { TechJobsPhone } from '@/components/mobile/TechPhone';
 
 function TechJobsList() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['tech', 'manager']);
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const view = searchParams?.get('view') === 'history' ? 'history' : 'active';
   const [orders, setOrders] = useState<any[]>([]);
@@ -36,6 +40,14 @@ function TechJobsList() {
   if (!user) return null;
 
   const mine = filterTechJobs(orders, user.id, view);
+
+  if (isMobile) {
+    return (
+      <MobilePageFrame role={user.role === 'manager' ? 'manager' : 'tech'} userName={user.name}>
+        <TechJobsPhone view={view} orders={loading ? [] : mine} />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', padding: 24 }}>

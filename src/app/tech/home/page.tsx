@@ -13,6 +13,7 @@ import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { isRoadsideLocation } from '@/lib/waitingRoomBoard';
+import { TechHomePhone } from '@/components/mobile/TechPhone';
 import { FaArrowRight, FaBook, FaBox, FaCamera, FaCar, FaChartBar, FaCheckCircle, FaCircle, FaClipboardList, FaCog, FaComments, FaExclamationCircle, FaMapMarkerAlt, FaRegCircle, FaSearch, FaStopwatch, FaSyncAlt, FaTools, FaUser, FaWrench } from 'react-icons/fa';
 
 export default function TechHome() {
@@ -271,6 +272,26 @@ export default function TechHome() {
     { title: 'Time Tracking', description: 'Clock in/out and track billable hours', icon: <FaStopwatch style={{marginRight:4}} />, link: '/tech/timesheet' },
     { title: 'Customer Portal', description: 'Access customer vehicle history', icon: <FaUser style={{marginRight:4}} />, link: '/tech/customers' },
   ];
+
+  if (isMobile) {
+    return (
+      <MobilePageFrame role="tech" isHome userName={user?.name}>
+        <TechHomePhone
+          name={user.name}
+          userId={user.id}
+          openJobs={todayJobs.length}
+          completedToday={shopStats.completedToday}
+          partsOrdered={shopStats.partsOrdered}
+          revenue={shopStats.revenue}
+          ready={shopStatsReady || !user.shopId}
+          shopName={shopProfile?.shopName || shopProfile?.name || ''}
+          shopCoords={shopCoords}
+          shopNote={shopPinNote}
+          roadCalls={roadCalls}
+        />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <MobilePageFrame role="tech" isHome userName={user?.name}>

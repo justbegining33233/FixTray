@@ -17,6 +17,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { ACTIVE_WORK_ORDER_STATUSES } from '@/lib/workOrderMetrics';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { ShopOpsPhone } from '@/components/mobile/ShopPhone';
 
 interface Job {
   id: string;
@@ -461,7 +462,26 @@ export default function ShopHome() {
     }
   };
 
-  // (Mobile check was moved before the isLoading guard above)
+  if (isMobile) {
+    return (
+      <MobilePageFrame role="shop" isHome userName={user?.name}>
+        <ShopOpsPhone
+          openJobs={shopStats.openJobs}
+          completedToday={shopStats.completedToday}
+          pendingApprovals={shopStats.pendingApprovals}
+          todayRevenue={shopStats.todayRevenue}
+          weekRevenue={shopStats.weekRevenue}
+          activeTechs={shopStats.activeTechs}
+          roadcalls={pendingRoadcalls.length}
+          appointments={pendingInShopAppointments.length}
+          walkIns={pendingInShopWalkIns.length + pendingOther.length}
+          bays={bays}
+          queue={pendingWorkOrders}
+          queueCount={pendingQueueCount}
+        />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <MobilePageFrame role="shop" isHome userName={user?.name}>

@@ -24,6 +24,7 @@ export default function MobileNav({ role }: MobileNavProps) {
   const nav = mobileNavForActor(role, {
     role: user?.role,
     isSuperAdmin: user?.isSuperAdmin,
+    isOwner: user?.isOwner,
   });
   if (!nav) return null;
   return <RoleTabBar nav={nav} />;

@@ -13,6 +13,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { managerAlertHref } from '@/lib/managerAlerts';
+import { ManagerDashboardPhone } from '@/components/mobile/ManagerPhone';
 
 export default function ManagerHome() {
   const say = usePhrase();
@@ -243,6 +244,19 @@ export default function ManagerHome() {
       setManagerMsg({type:'error',text:'Error submitting request'});
     }
   };
+
+  if (isMobile) {
+    return (
+      <MobilePageFrame role="manager" isHome userName={userName || user?.name}>
+        <ManagerDashboardPhone
+          alerts={urgentAlerts}
+          stats={workOrderStats}
+          team={teamPerformance}
+          finance={financialSummary}
+        />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <MobilePageFrame role="manager" isHome userName={userName}>

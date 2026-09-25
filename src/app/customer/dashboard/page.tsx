@@ -13,10 +13,13 @@ import { unwrapVehicles, unwrapWorkOrders } from '@/lib/workOrderList';
 import { isCompletedWorkOrder, summarizeWorkOrders, type WorkOrderSummary } from '@/lib/workOrderMetrics';
 import { usePhrase } from '@/lib/usePhrase';
 import { loyaltyPointsFromRewards } from '@/lib/rewardPayload';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { CustomerDashPhone } from '@/components/mobile/CustomerPhone';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
   const say = usePhrase();
+  const isMobile = useIsMobile();
   const isMountedRef = useRef(true);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
@@ -65,6 +68,7 @@ export default function CustomerDashboard() {
     appointments: 0
   });
   const [statsReady, setStatsReady] = useState(false);
+  const [liveOrders, setLiveOrders] = useState<any[]>([]);
 
   const fetchStats = useCallback(async () => {
     if (typeof window === 'undefined') return;
@@ -109,6 +113,7 @@ export default function CustomerDashboard() {
       // Fetch work orders — headline counts come from the shared metrics payload
       const workordersData = await safeFetchJson('/api/workorders?limit=20&includeMetrics=1');
       const allWorkOrders = unwrapWorkOrders(workordersData);
+      setLiveOrders(allWorkOrders);
       const metrics = workordersData?.metrics as Partial<WorkOrderSummary> | undefined;
       const orderSummary = summarizeWorkOrders(allWorkOrders);
       const completed = allWorkOrders.filter((w: any) => isCompletedWorkOrder(w));
@@ -397,6 +402,22 @@ export default function CustomerDashboard() {
       getData: () => []
     },
   ];
+
+  if (isMobile) {
+    const open = liveOrders.filter((order) => !isCompletedWorkOrder(order));
+    return (
+      <MobilePageFrame role="customer" isHome userName={userName}>
+        <CustomerDashPhone
+          name={userName}
+          activeJobs={customerStats.openOrders}
+          vehicles={stats.vehicleCount}
+          points={loyaltyPoints}
+          active={open[0] || null}
+          recent={liveOrders.slice(0, 4)}
+        />
+      </MobilePageFrame>
+    );
+  }
 
   if (!statsReady) {
     return (

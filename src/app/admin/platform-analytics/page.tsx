@@ -33,6 +33,9 @@ return (<div className="h-64 flex items-center justify-center text-gray-400">{sa
 });
 import { FaArrowLeft, FaChartBar } from 'react-icons/fa';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobilePageFrame } from '@/components/MobileShell';
+import { AdminAnalyticsPhone } from '@/components/mobile/AdminPhone';
 
 interface AnalyticsData {
   totalWorkOrders: number;
@@ -64,6 +67,7 @@ const EMPTY_ANALYTICS_DATA: AnalyticsData = {
 export default function PlatformAnalytics() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
+  const isMobile = useIsMobile();
   const [data, setData] = useState<AnalyticsData>(EMPTY_ANALYTICS_DATA);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -94,6 +98,14 @@ export default function PlatformAnalytics() {
   }
 
   if (!user) return null;
+
+  if (isMobile) {
+    return (
+      <MobilePageFrame role="admin" userName={user.name}>
+        <AdminAnalyticsPhone data={data} loading={dataLoading} />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>

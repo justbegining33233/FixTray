@@ -63,7 +63,21 @@ export interface MobileRoleNav {
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin' | 'superadmin';
 
-type Actor = { role?: string | null; isSuperAdmin?: boolean | null } | null | undefined;
+type Actor = { role?: string | null; isSuperAdmin?: boolean | null; isOwner?: boolean | null } | null | undefined;
+
+/** Owner tools stay in the catalog so the page is reachable, but only the platform owner sees them. */
+export function withoutOwnerOnlyLinks(nav: MobileRoleNav, isOwner: boolean): MobileRoleNav {
+  if (isOwner) return nav;
+  return {
+    ...nav,
+    more: nav.more
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => item.label !== 'Owner Tools' && !item.href.startsWith('/admin/owner')),
+      }))
+      .filter((group) => group.items.length > 0),
+  };
+}
 
 function link(label: string, href: string, icon: MobileIconName = 'grid'): MobileLink {
   return { label, href, icon };
@@ -432,7 +446,7 @@ export function shellRoleForActor(actor: Actor): ShellRole | null {
 export function mobileNavForActor(shellRole: ShellRole, actor: Actor): MobileRoleNav | null {
   if (shellRole === 'admin' || shellRole === 'superadmin') {
     if (!isSuperAdminActor(actor)) return null;
-    return MOBILE_ROLE_NAVS.superadmin;
+    return withoutOwnerOnlyLinks(MOBILE_ROLE_NAVS.superadmin, actor?.isOwner === true);
   }
   return MOBILE_ROLE_NAVS[shellRole] ?? null;
 }

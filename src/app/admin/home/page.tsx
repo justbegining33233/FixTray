@@ -15,6 +15,8 @@ import { HierarchyTab } from '@/components/admin/HierarchyTab';
 import { useAdminData } from '@/hooks/useAdminData';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { ownerShopHeadline } from '@/lib/shopCensus';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { AdminOverviewPhone } from '@/components/mobile/AdminPhone';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +27,7 @@ function AdminHomeContent() {
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const isSuperAdmin = user?.isSuperAdmin;
   const isOwnerProfile = Boolean(user?.isOwner);
+  const isMobile = useIsMobile();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -201,6 +204,35 @@ function AdminHomeContent() {
         return <DashboardTab platformStats={platformStats} pendingShops={pendingShops} approvedShops={approvedShops} shopsLiveMetrics={shopsLiveMetrics} recentActivity={recentActivity} planDistribution={planDistribution} weeklyOverview={weeklyOverview} threeMonthAverages={threeMonthAverages} liveMetrics={liveMetrics} infraHealth={infraHealth} />;
     }
   };
+
+  if (isMobile && activeSection === 'dashboard') {
+    const db = infraHealth.dbConnected === null ? '—' : infraHealth.dbConnected ? 'Up' : 'Down';
+    return (
+      <MobilePageFrame role="admin" isHome userName={user?.name}>
+        <AdminOverviewPhone
+          isOwner={isOwnerProfile}
+          pendingApprovals={pendingApprovalsCount}
+          totalShops={totalShopsCount}
+          customers={customersCount}
+          approvedShops={approvedShopsCount}
+          monthlyRevenue={platformStats.monthlyRevenue}
+          revenueGrowth={liveMetrics.revenueGrowth || liveMetrics.monthOverMonthGrowth}
+          revenueTrend={liveMetrics.revenueTrend || []}
+          funnel={{
+            visits: liveMetrics.websiteVisits || liveMetrics.totalShopsEver || 0,
+            trials: liveMetrics.trialsCount || liveMetrics.trialSignups || 0,
+            members: liveMetrics.membersCount || liveMetrics.activeTrials || 0,
+            customers: liveMetrics.convertedCustomersCount || liveMetrics.convertedCustomers || 0,
+          }}
+          pulse={{
+            api: infraHealth.apiLatencyMs === null ? '—' : `${infraHealth.apiLatencyMs}ms`,
+            db,
+            active: String(platformStats.activeUsers ?? 0),
+          }}
+        />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <MobilePageFrame role="admin" isHome userName={user?.name}>

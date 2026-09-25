@@ -3,6 +3,9 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobilePageFrame } from '@/components/MobileShell';
+import { CustomerEstimatesPhone } from '@/components/mobile/CustomerPhone';
 import { FaCalendarAlt, FaCheckCircle, FaComments, FaTimesCircle, FaPaperPlane } from 'react-icons/fa';
 import SignatureCapture from '@/components/SignatureCapture';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
@@ -64,6 +67,7 @@ function EstimatePrice({ estimate, color }: { estimate: Estimate; color: string 
 export default function Estimates() {
   const say = usePhrase();
   useRequireAuth(['customer']);
+  const isMobile = useIsMobile();
   const [userName, setUserName] = useState('');
   const [activeTab, setActiveTab] = useState('my-estimates');
   const [estimates, setEstimates] = useState<Estimate[]>([]);
@@ -311,8 +315,9 @@ export default function Estimates() {
     setEstimateMsg(null);
   };
 
-  const submitDecision = async (estimateId: string) => {
-    if (!decision || decision.id !== estimateId) return;
+  const submitDecision = async (estimateId: string, responseOverride?: 'accepted' | 'denied') => {
+    const choice = responseOverride || (decision?.id === estimateId ? decision.response : undefined);
+    if (!choice) return;
     if (signerName.trim().length < 2) {
       setEstimateMsg({ type: 'error', text: 'Enter your full name to sign.' });
       return;
@@ -337,20 +342,20 @@ export default function Estimates() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          response: decision.response,
+          response: choice,
           signerName: signerName.trim(),
           signatureData,
         }),
       });
 
       if (response.ok) {
-        const nextStatus = decision.response === 'accepted' ? 'accepted' as const : 'denied' as const;
+        const nextStatus = choice === 'accepted' ? 'accepted' as const : 'denied' as const;
         setEstimates(prev => prev.map(est =>
           est.id === estimateId ? { ...est, status: nextStatus } : est
         ));
         setEstimateMsg({
           type: 'success',
-          text: decision.response === 'accepted'
+          text: choice === 'accepted'
             ? 'Estimate accepted and signed. The shop has a work authorization and can begin.'
             : 'Estimate denied and signed. The quote is closed and no work authorization was created.',
         });
@@ -469,6 +474,22 @@ export default function Estimates() {
     }
     finally { setSendingMsg(null); }
   };
+
+  if (isMobile) {
+    return (
+      <MobilePageFrame role="customer" userName={userName}>
+        <CustomerEstimatesPhone
+          estimates={estimates}
+          signerName={signerName}
+          onSignerName={setSignerName}
+          onSignature={setSignatureData}
+          onDecide={(id, response) => { void submitDecision(id, response); }}
+          busyId={loading}
+          message={estimateMsg?.text || null}
+        />
+      </MobilePageFrame>
+    );
+  }
 
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>

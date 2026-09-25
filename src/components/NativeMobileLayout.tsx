@@ -44,6 +44,7 @@ export default function NativeMobileLayout({
   const roleNav = mobileNavForActor(userRole, {
     role: user?.role ?? userRole,
     isSuperAdmin: user?.isSuperAdmin,
+    isOwner: user?.isOwner,
   });
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState(offlineStorageService.getSyncStatus());

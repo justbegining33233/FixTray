@@ -65,6 +65,7 @@ describe('VIS-003 legacy shop routes', () => {
     expect(LEGACY_SHOP_REDIRECTS).toEqual(expect.arrayContaining([
       { source: '/shop/board', destination: '/shop/home', permanent: false },
       { source: '/shop/appointments', destination: '/shop/calendar', permanent: false },
+      { source: '/shop/subscribe', destination: '/shop/home', permanent: false },
     ]));
   });
 });

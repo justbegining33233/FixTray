@@ -23,9 +23,7 @@ export default function FeaturesPage() {
           {say("FixTray covers the full operating loop: work orders, dispatch, customer communication, team workflow, inventory, payroll, analytics, and multi-shop growth.")}{' '}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/auth/login" className="rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30">
-            {say("Start free")}{' '}</Link>
-          <Link href="/pricing" className="rounded-full border border-white/10 bg-black px-6 py-3 text-sm font-semibold text-slate-200">
-            {say("View pricing")}{' '}</Link>
+            {say("Get started")}{' '}</Link>
         </div>
       </section>
 
@@ -37,7 +35,7 @@ export default function FeaturesPage() {
             { title: say("Customer communication"), detail: say("Send approvals, updates, documents, and messages from the same workflow.") },
             { title: say("Mobile tech suite"), detail: say("Run time tracking, photos, inspections, and field updates from technician-ready screens.") },
             { title: say("Operational finance"), detail: say("Handle inventory, payroll, budget tracking, and reporting without separate back-office tooling.") },
-            { title: say("Multi-shop visibility"), detail: say("Professional and above can operate multiple shops with shared owner-level oversight.") }
+            { title: say("Multi-shop visibility"), detail: say("Owners can run more than one shop with shared oversight.") }
           ].map((item) => (
             <div key={item.title} className="rounded-3xl p-6 text-center" style={glassCardStyle}>
               <p className="text-lg font-semibold text-white">{say(item.title)}</p>

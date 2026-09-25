@@ -153,7 +153,6 @@ export async function GET(request: NextRequest) {
       stripeLinks: {
         dashboard: 'https://dashboard.stripe.com',
         payments: 'https://dashboard.stripe.com/payments',
-        billing: 'https://dashboard.stripe.com/billing/overview',
         payouts: 'https://dashboard.stripe.com/payouts',
         balances: 'https://dashboard.stripe.com/balance/overview',
       },

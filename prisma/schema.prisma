@@ -810,8 +810,10 @@ model PushSubscription {
 
 model PaymentHistory {
   id                    String    @id @default(cuid())
+  /// Leftover from shop subscriptions. Unused. Do not drop until a manual Neon cleanup.
   subscriptionId        String?
   stripeInvoiceId       String?   @unique
+  /// Leftover from shop subscriptions. Unused. Do not drop until a manual Neon cleanup.
   stripeSubscriptionId  String?
   stripePaymentIntentId String?
   amount                Float
@@ -1559,6 +1561,7 @@ model Tenant {
   city            String?
   state           String?
   zip             String?
+  /// Leftover shop-plan columns. Unused by the app. Do not drop until a manual Neon cleanup.
   plan            String    @default("free")
   planStatus      String    @default("active")
   planStartDate   DateTime  @default(now())

@@ -215,13 +215,6 @@ export async function GET(request: NextRequest) {
       ? Math.round(((totalJobsThisMonth - totalJobsLastMonth) / totalJobsLastMonth) * 100)
       : totalJobsThisMonth > 0 ? 100 : 0;
 
-    const accountBreakdown = {
-      active: 0,
-      trialing: 0,
-      cancelled: 0,
-      none: shops.length,
-    };
-
     // Top performing shops (by revenue)
     const topShops = [...formattedShops]
       .filter(s => s.status === 'approved')
@@ -278,7 +271,6 @@ export async function GET(request: NextRequest) {
         totalJobsThisMonth,
         totalJobsLastMonth,
         jobsGrowth: `${jobsGrowth >= 0 ? '+' : ''}${jobsGrowth}%`,
-        accountBreakdown,
         topShops,
         recentActivity,
         shopTrend,

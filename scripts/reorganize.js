@@ -74,9 +74,6 @@ const mapping = {
     'quick-e2e.js',
     'test-prisma-connect.js',
   ],
-  'stripe': [
-    'setup-stripe.js',
-  ],
 };
 
 let moved = 0;

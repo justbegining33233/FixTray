@@ -105,7 +105,6 @@ node scripts/audit-codebase.js all       # Run all audits
 | `quick-e2e.js` | Quick end-to-end smoke test |
 | `test-prisma-connect.js` | Test Prisma database connection |
 
-### Stripe (`scripts/stripe/`)
-| Script | Purpose |
-|--------|---------|
-| `setup-stripe.js` | Set up Stripe products and prices |
+### Stripe
+
+Shop subscription product setup was removed. Stripe Connect and work-order payments do not use a setup script.

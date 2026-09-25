@@ -103,7 +103,7 @@ const operations = [
   "Inventory stock, low-stock logic, purchase orders, and vendor workflows",
   "Payroll schedules, attendance, overtime, pay periods, and paystubs",
   "Recurring work orders and recurring approval handling",
-  "Stripe checkout, portal, links, and webhook processing",
+  "Stripe Connect, payment links, and webhook processing",
   "Reviews, referrals, campaigns, and customer insights",
 ];
 

@@ -365,8 +365,6 @@ export async function GET(request: NextRequest) {
         recentTransactions: canViewPlatformFinancials ? recentFeeTransactions : [],
       },
       businessMetrics: {
-        mrr: canViewPlatformFinancials ? feesThisMonth : 0,
-        arr: canViewPlatformFinancials ? feesThisMonth * 12 : 0,
         totalShopsCreated,
         shopsByStatus: shopsByStatus.reduce((acc, s) => {
           acc[s.status] = s._count.id;

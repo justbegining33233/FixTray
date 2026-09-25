@@ -465,13 +465,11 @@ export default function AppGuidePage() {
     {
       name: 'Stripe Connect & Advanced Payments',
       icon: '',
-      description: 'Stripe Connect onboarding, customer portal, payment links, and webhooks',
+      description: 'Stripe Connect onboarding, work-order checkout, payment links, and webhooks',
       features: [
         { name: 'Stripe Connect Onboarding', description: 'Onboard shops to accept payments via Stripe Connect', status: 'setup-required', apiEndpoint: '/api/stripe/connect', notes: 'Requires STRIPE_SECRET_KEY in Vercel env vars (already set)' },
         { name: 'Stripe Connect Callback', description: 'Handle OAuth callback after shop connects Stripe', status: 'setup-required', apiEndpoint: '/api/stripe/connect/callback' },
         { name: 'Stripe Connect Refresh', description: 'Refresh Stripe Connect auth link', status: 'setup-required', apiEndpoint: '/api/stripe/connect/refresh' },
-        { name: 'Stripe Customer Portal', description: 'Let shops manage payment methods via Stripe-hosted portal', status: 'setup-required', apiEndpoint: '/api/stripe/portal' },
-        { name: 'Stripe Checkout Session', description: 'Create Stripe checkout for one-time or account charges', status: 'setup-required', apiEndpoint: '/api/stripe/checkout' },
         { name: 'Stripe Webhook Handler', description: 'Process Stripe events (payment intents and account updates)', status: 'setup-required', apiEndpoint: '/api/stripe/webhook', notes: 'Set STRIPE_WEBHOOK_SECRET in Vercel' },
         { name: 'Payment Links', description: 'Generate shareable payment links for invoices', status: 'ready', apiEndpoint: '/api/payment-links' },
         { name: 'Online Checkout Flow', description: 'Web checkout for customers paying invoices', status: 'setup-required', apiEndpoint: '/api/payment/checkout' },

@@ -9,10 +9,10 @@ const tokens = {
 
 const pages = {
   public: [
-    '/', '/about', '/contact', '/features', '/pricing', '/security', '/offline',
+    '/', '/about', '/contact', '/features', '/security', '/offline',
     '/auth/login', '/auth/register/shop', '/auth/register/shop/client', '/auth/reset',
     '/auth/pending-approval', '/auth/thank-you',
-    '/register/customer', '/register/success', '/register/canceled',
+    '/register/customer',
     '/payment/success', '/payment/cancel',
   ],
   shop: [

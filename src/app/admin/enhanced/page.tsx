@@ -297,7 +297,7 @@ function FinancialsTab({ workOrders }: { workOrders: WorkOrder[] }) {
   const say = usePhrase();
   const completedOrders = workOrders.filter(w => w.status === 'closed');
   const totalRevenue = completedOrders.reduce((sum, w) => sum + (w.estimate?.amount || 0), 0);
-  const platformFees = 0; // No platform fees in subscription model
+  const platformFees = 0; // Stub view. Live shop-fee totals are on /admin/revenue.
   const netRevenue = totalRevenue;
 
   return (

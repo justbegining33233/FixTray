@@ -41,13 +41,7 @@ interface LiveMetrics {
   avgRating: string;
   reviewsCount: number;
   websiteVisits: number;
-  trialsCount: number;
-  membersCount: number;
-  convertedCustomersCount: number;
   totalShopsEver: number;
-  trialSignups: number;
-  activeTrials: number;
-  convertedCustomers: number;
   conversionRate: string;
   monthOverMonthGrowth: string;
   weeklyConversionTrend: { label: string; value: number }[];
@@ -79,7 +73,6 @@ interface DashboardTabProps {
     pendingShops: number;
   } | null;
   recentActivity: any[];
-  planDistribution: Record<string, number>;
   weeklyOverview: WeeklyOverview;
   threeMonthAverages: ThreeMonthAverages;
   liveMetrics: LiveMetrics;
@@ -137,9 +130,9 @@ export function DashboardTab({
 
   const funnelData = {
     visits: liveMetrics.websiteVisits || liveMetrics.totalShopsEver || 0,
-    trials: liveMetrics.trialsCount || liveMetrics.trialSignups || 0,
-    members: liveMetrics.membersCount || liveMetrics.activeTrials || 0,
-    customers: liveMetrics.convertedCustomersCount || liveMetrics.convertedCustomers || 0
+    pending: platformStats.pendingShops || 0,
+    shops: platformStats.totalShops || 0,
+    customers: platformStats.activeUsers || 0,
   };
 
   const heartbeatLabel =
@@ -266,8 +259,8 @@ export function DashboardTab({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SalesFunnel
           visits={funnelData.visits}
-          trials={funnelData.trials}
-          members={funnelData.members}
+          pending={funnelData.pending}
+          shops={funnelData.shops}
           customers={funnelData.customers}
         />
         <SystemHealth metrics={healthMetrics} />

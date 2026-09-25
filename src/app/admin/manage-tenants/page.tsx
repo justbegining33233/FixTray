@@ -37,17 +37,10 @@ type LiveMetrics = {
   totalCustomers: number;
   newCustomersThisMonth: number;
   customerGrowth: string;
-  mrr: number;
-  arr: number;
-  arpu: number;
-  ltv: number;
-  churnRate: string;
-  retentionRate: string;
   totalWorkOrderRevenue: number;
   totalJobs: number;
   totalJobsThisMonth: number;
   jobsGrowth: string;
-  planDistribution: Record<string, number>;
   healthDistribution: {
     excellent: number;
     good: number;

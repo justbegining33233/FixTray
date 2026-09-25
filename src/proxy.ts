@@ -143,6 +143,10 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  // Installed Android/iOS shell opening the marketing URL. Browser tabs fall through.
+  const shellEntry = await installedShellEntryRedirect(request);
+  if (shellEntry) return shellEntry;
+
   //  Native-app detection 
   // Build a modified headers object that includes x-fixtray-native so
   // layout.tsx can read it server-side and render the correct shell from byte 1.
@@ -212,9 +216,35 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
   return NextResponse.rewrite(forbidden);
 }
 
+/**
+ * Native cookie or app user-agent on `/` goes to login, or ROLE_HOME when sos_auth verifies.
+ * Shop uses /shop/admin here because the profile-complete flag lives in localStorage, not the JWT.
+ * Standalone display-mode is invisible on the server; the landing page handles that in the browser.
+ */
+export async function installedShellEntryRedirect(request: NextRequest): Promise<NextResponse | null> {
+  if (request.nextUrl.pathname !== '/') return null;
+
+  const nativeCookie = request.cookies.get('x-fixtray-native')?.value;
+  const ua = request.headers.get('user-agent') ?? '';
+  const installedNative = Boolean(nativeCookie)
+    || ua.includes('FixTray-Android-App')
+    || ua.includes('FixTray-iOS-App');
+  if (!installedNative) return null;
+
+  const token = request.cookies.get('sos_auth')?.value;
+  let destination = '/auth/login';
+  if (token) {
+    const payload = await verifyJwt(token);
+    const role = typeof payload?.role === 'string' ? payload.role : '';
+    if (role && ROLE_HOME[role]) destination = ROLE_HOME[role];
+  }
+  return NextResponse.redirect(new URL(destination, request.url));
+}
+
 // Only run on page routes, not on API calls, static files, etc.
 export const config = {
   matcher: [
+    '/',
     '/api/:path*',
     '/admin/:path*',
     '/superadmin/:path*',

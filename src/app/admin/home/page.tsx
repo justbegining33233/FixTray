@@ -415,15 +415,18 @@ function AdminHomeContent() {
           {/* Main canvas */}
           <section className="space-y-4">
             <div className="rounded-2xl bg-[#000000] border border-[#1f2937] p-5 shadow-xl shadow-black/40">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="mb-4 overflow-x-auto rounded-full border border-white/10 bg-white/5" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div role="tablist" className="flex w-max min-w-full flex-nowrap items-stretch">
                 {navigationItems.map((item) => (
                   <button
                     key={item.id}
+                    role="tab"
+                    aria-selected={activeSection === item.id}
                     onClick={() => handleSectionSelect(item.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-full border text-sm transition-all ${
+                    className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 text-sm transition-all ${
                       activeSection === item.id
-                        ? 'bg-white text-[#000000] border-white shadow-lg'
-                        : 'bg-white/5 text-slate-200 border-white/10 hover:bg-white/10'
+                        ? 'bg-white text-[#000000]'
+                        : 'bg-transparent text-slate-200 hover:bg-white/10'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -437,6 +440,7 @@ function AdminHomeContent() {
                     )}
                   </button>
                 ))}
+                </div>
               </div>
 
               <div className="rounded-2xl border border-[#1f2937] bg-[#0b1220] p-4 md:p-6 shadow-inner shadow-black/30">

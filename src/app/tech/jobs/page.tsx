@@ -8,6 +8,7 @@ import { Suspense } from 'react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { filterTechJobs, techJobsHref } from '@/lib/techJobs';
+import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 
 function TechJobsList() {
@@ -65,8 +66,11 @@ function TechJobsList() {
                 <div style={{ color: '#e5e7eb', fontWeight: 700 }}>
                   {say("WO-")}{String(order.id).slice(-8).toUpperCase()} · {order.issueDescription?.symptoms || order.issueDescription || order.serviceType || say("Service")}
                 </div>
-                <div style={{ color: '#9aa3b2', fontSize: 13, marginTop: 4 }}>
-                  {say(order.status)}{order.customer ? ` · ${order.customer.firstName || ''} ${order.customer.lastName || ''}` : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 8, background: workOrderStatusTone(order.status).bg, color: workOrderStatusTone(order.status).color, fontSize: 12, fontWeight: 700 }}>
+                    {say(workOrderStatusLabel(order.status))}
+                  </span>
+                  {order.customer ? <span style={{ color: '#9aa3b2', fontSize: 13 }}>{`${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim()}</span> : null}
                 </div>
               </Link>
             ))}

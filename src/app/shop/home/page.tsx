@@ -479,9 +479,11 @@ export default function ShopHome() {
       <div style={{maxWidth:1400, margin:'0 auto', padding: sidebarOpen ? '0 32px 32px 32px' : '0 32px 32px 32px'}}>
         <div
           className="quick-actions-slider"
-          style={{display:'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap:12, alignItems:'center', margin:'0 0 20px 0', overflowX: isMobile ? 'hidden' : 'auto', paddingBottom:4}}
+          style={isMobile
+            ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, margin: '0 0 20px 0' }
+            : { display: 'flex', flexWrap: 'nowrap', gap: 12, alignItems: 'center', margin: '0 0 20px 0', overflowX: 'auto', paddingBottom: 4 }}
         >
-          <span style={{fontSize:13, color:'#9aa3b2', fontWeight:700}}>{say("Quick Actions")}</span>
+          <span style={{ fontSize: 13, color: '#9aa3b2', fontWeight: 700, ...(isMobile ? { gridColumn: '1 / -1' } : {}) }}>{say("Quick Actions")}</span>
           {quickActions.map(action => {
             if (action.requiresAdmin && !user.isShopAdmin) return null;
             if (action.hideForAdmin && user.isShopAdmin) return null;
@@ -491,7 +493,7 @@ export default function ShopHome() {
                 key={action.href}
                 href={action.href as Route}
                 style={{
-                  padding:'10px 14px',
+                  padding:'10px 12px',
                   background:action.tint,
                   color:action.color,
                   border:`1px solid ${action.border}`,
@@ -499,8 +501,15 @@ export default function ShopHome() {
                   fontSize:13,
                   fontWeight:700,
                   textDecoration:'none',
-                  whiteSpace:'nowrap',
-                  flexShrink:0
+                  whiteSpace: isMobile ? 'normal' : 'nowrap',
+                  flexShrink: isMobile ? undefined : 0,
+                  width: isMobile ? '100%' : undefined,
+                  minHeight: isMobile ? 44 : undefined,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  boxSizing: 'border-box',
                 }}
               >
                 {say(action.label)}

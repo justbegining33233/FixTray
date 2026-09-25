@@ -18,6 +18,8 @@ import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 import ChatMessageBody from '@/components/ChatMessageBody';
 import { uploadChatImage } from '@/lib/uploadChatImage';
 import { captureNativePhotoFile } from '@/lib/nativePhoto';
+import { shortWorkOrderLabel } from '@/lib/notificationCopy';
+import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -628,7 +630,9 @@ export default function WorkOrderDetailPage() {
   );
 
   const ss           = statusStyle(wo.status);
-  const shortId      = wo.id.slice(-8).toUpperCase();
+  const statusTone   = workOrderStatusTone(wo.status);
+  const statusLabel  = workOrderStatusLabel(wo.status);
+  const shortId      = shortWorkOrderLabel(wo.id);
   const customerName = wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}`.trim() : 'Unknown';
   const techName     = wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}`.trim() : null;
 
@@ -655,24 +659,32 @@ export default function WorkOrderDetailPage() {
     <main style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e5e7eb' }}>
 
       {/* ── Top bar ── */}
-      <div style={{ background: '#111111', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+      <style>{`
+        .wo-topbar { background:#111111; border-bottom:1px solid rgba(255,255,255,0.07); padding:12px 16px; display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+        .wo-topbar-main { display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0; width:100%; }
+        .wo-number { font-size:18px; font-weight:800; color:#f8fafc; letter-spacing:-0.02em; white-space:nowrap; }
+        .wo-created { font-size:12px; color:#6b7280; }
+        @media (min-width: 768px) {
+          .wo-topbar { flex-direction:row; align-items:center; gap:14px; padding:12px 24px; }
+          .wo-topbar-main { flex-direction:row; align-items:center; flex-wrap:wrap; gap:10px; flex:1; }
+        }
+      `}</style>
+      <div className="wo-topbar">
         <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e5e7eb', fontSize: 13, fontWeight: 600, borderRadius: 8, padding: '7px 14px', cursor: 'pointer' }}>
-          <FaArrowLeft style={{ fontSize: 11 }} /> {say("Back")}{' '}</button>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 18, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em' }}>{say("WO-")}{say(shortId)}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: ss.bg, color: ss.color, borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-            {say(ss.icon)}{say("&nbsp;")}{wo.status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+          <FaArrowLeft style={{ fontSize: 11 }} /> {say("Back")}</button>
+        <div className="wo-topbar-main">
+          <span className="wo-number">{say(shortId)}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: statusTone.bg, color: statusTone.color, borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
+            {ss.icon}{say(statusLabel)}
           </span>
           {wo.serviceLocation === 'road-call' && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-              <FaTruck style={{ fontSize: 11 }} /> {say("Road Call")}{' '}</span>
+              <FaTruck style={{ fontSize: 11 }} /> {say("Road Call")}</span>
           )}
+          <span className="wo-created">
+            {say("Created")} {new Date(wo.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </span>
         </div>
-
-        <span style={{ fontSize: 12, color: '#6b7280' }}>
-          {say("Created")}{' '}{new Date(wo.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}{' '}
-          {new Date(wo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span>
       </div>
 
       {/* ── Body ── */}

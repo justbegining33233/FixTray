@@ -142,11 +142,12 @@ export default function ShopHome() {
         // Financial summary (today + week revenue)
         if (finRes.ok) {
           const data = await finRes.json();
+          const summary = data.summary || data;
           const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
           setShopStats(prev => ({
             ...prev,
-            todayRevenue: fmt(data.todayRevenue || 0),
-            weekRevenue: fmt(data.weeklyRevenue || 0),
+            todayRevenue: fmt(Number(summary.todayRevenue) || 0),
+            weekRevenue: fmt(Number(summary.weeklyRevenue) || 0),
           }));
         }
 

@@ -1,6 +1,6 @@
 /* eslint-disable */
 // FixTray Service Worker — offline caching + background sync
-const CACHE_NAME = 'fixtray-v5';
+const CACHE_NAME = 'fixtray-v6';
 const API_CACHE   = 'fixtray-api-v3';
 
 // Precache the static tech workspace. Next HTML stays network-first so
@@ -13,6 +13,8 @@ const PRECACHE_URLS = [
   '/tech-offline/app.js',
   '/tech-offline/app.css',
   '/tech-offline/engine.js',
+  '/tech-offline/fonts/inter-latin.woff2',
+  '/tech-offline/fonts/plus-jakarta-latin.woff2',
 ];
 
 // ─── Install: pre-cache offline page only ────────────────────────────────────

@@ -18,6 +18,98 @@
     return '<span class="pending">Pending upload</span>';
   }
 
+  var showExactSync = false;
+  var CAMERA = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4V8z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  var STATUS_LABELS = {
+    pending: 'Pending',
+    assigned: 'Assigned',
+    'in-progress': 'In Progress',
+    'en-route': 'En Route',
+    'waiting-estimate': 'Waiting Estimate',
+    'estimate-submitted': 'Estimate Submitted',
+    'waiting-for-payment': 'Waiting for Payment',
+    completed: 'Completed',
+    closed: 'Closed',
+    cancelled: 'Cancelled',
+    canceled: 'Cancelled',
+    'denied-estimate': 'Denied Estimate',
+    paid: 'Paid',
+  };
+
+  function statusLabel(status) {
+    return STATUS_LABELS[status] || String(status || '').replace(/-/g, ' ');
+  }
+
+  function relativeFrom(time) {
+    var delta = Date.now() - time.getTime();
+    if (!Number.isFinite(delta) || delta < 0) delta = 0;
+    if (delta < 45000) return 'just now';
+    var mins = Math.round(delta / 60000);
+    if (mins < 60) return mins + ' min ago';
+    var hours = Math.round(delta / 3600000);
+    if (hours < 24) return hours + ' hr ago';
+    return Math.round(delta / 86400000) + ' days ago';
+  }
+
+  function syncPhrase(snap) {
+    if (!snap || !snap.lastSyncedAt) return 'Last synced not yet';
+    var time = new Date(snap.lastSyncedAt);
+    if (Number.isNaN(time.getTime())) return 'Last synced not yet';
+    if (showExactSync) return 'Last synced ' + time.toLocaleString();
+    return 'Last synced ' + relativeFrom(time);
+  }
+
+  function homeHref() {
+    var current = actorRole();
+    if (current === 'shop') return '/shop/home';
+    if (current === 'manager') return '/manager/home';
+    if (current === 'customer') return '/customer/dashboard';
+    if (current === 'tech') return '/tech/home';
+    return '/admin/home';
+  }
+
+  function roleLabel() {
+    var labels = { shop: 'Shop Owner', manager: 'Manager', customer: 'Customer', tech: 'Technician', superadmin: 'Super Admin', admin: 'Super Admin' };
+    return labels[actorRole()] || 'Offline';
+  }
+
+  function isNative() {
+    var cap = window.Capacitor;
+    return !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+  }
+
+  async function captureNativePhotoFile() {
+    if (!isNative()) return null;
+    var Camera = window.Capacitor.Plugins && window.Capacitor.Plugins.Camera;
+    if (!Camera || !Camera.getPhoto) return null;
+    var image = await Camera.getPhoto({ quality: 85, allowEditing: false, resultType: 'base64', source: 'CAMERA', saveToGallery: false });
+    if (!image || !image.base64String) return null;
+    var binary = atob(image.base64String);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return new File([bytes], 'photo_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+  }
+
+  function paintHeader(inJob) {
+    var back = document.getElementById('header-back');
+    if (back) back.hidden = !inJob;
+    var chip = document.getElementById('role-chip');
+    if (chip) chip.textContent = roleLabel();
+    var avatar = document.getElementById('header-avatar');
+    if (avatar) {
+      var name = '';
+      try { name = localStorage.getItem('userName') || ''; } catch (e) { name = ''; }
+      var initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0); }).join('').toUpperCase();
+      avatar.textContent = initials || 'FT';
+    }
+    var link = document.getElementById('back-to-app');
+    if (!link) return;
+    var online = typeof navigator === 'undefined' || navigator.onLine !== false;
+    link.href = online ? homeHref() : '#';
+    link.classList.toggle('is-disabled', !online);
+    link.setAttribute('aria-disabled', online ? 'false' : 'true');
+  }
+
   function drawMap(canvas, job) {
     if (!canvas || !canvas.getContext) return;
     var ctx = canvas.getContext('2d');
@@ -98,9 +190,7 @@
   }
 
   function syncedWhen(snap) {
-    if (!snap || !snap.lastSyncedAt) return 'not yet';
-    var time = new Date(snap.lastSyncedAt);
-    return Number.isNaN(time.getTime()) ? 'not yet' : time.toLocaleString();
+    return syncPhrase(snap).replace(/^Last synced /, '');
   }
 
   function prepBadge(job) {
@@ -117,19 +207,20 @@
   function paintChrome() {
     var snap = api.snapshot();
     syncLabel.textContent = snap.label;
+    paintHeader(!!selected);
     banner.className = 'banner' + (snap.needsReauth ? ' bad' : snap.offline || snap.pending || snap.failed ? '' : ' ok');
     if (snap.needsReauth) {
       banner.textContent = 'Sign in to finish syncing. Your offline work is still on this device.';
     } else if (snap.offline) {
-      banner.textContent = 'Offline — last synced ' + syncedWhen(snap) + '. Saved work stays on this phone and uploads when service returns.';
+      banner.textContent = 'Offline — ' + syncPhrase(snap) + '. Saved work stays on this phone and uploads when service returns.';
     } else if (snap.syncing) {
       banner.textContent = 'Syncing…';
     } else if (snap.pending) {
-      banner.textContent = snap.pending + ' pending upload.';
+      banner.textContent = snap.pending + ' pending upload. ' + syncPhrase(snap) + '.';
     } else if (snap.conflicts) {
       banner.textContent = 'Some items need review. Nothing was discarded.';
     } else {
-      banner.textContent = 'All synced';
+      banner.textContent = 'All synced. ' + syncPhrase(snap) + '.';
     }
   }
 
@@ -150,7 +241,7 @@
     var bundle = await api.bundle();
     var snap = api.snapshot();
     var shops = bundle && bundle.shops ? bundle.shops : [];
-    var intro = '<p class="muted">Offline — last synced ' + esc(syncedWhen(snap)) + '</p>';
+    var intro = '<p class="muted">' + esc(syncPhrase(snap)) + '</p>';
     if (!jobs.length && !shops.length) {
       root.innerHTML = intro + '<div class="card"><h1>Nothing saved on this phone yet</h1><p class="muted">Open FixTray once with service so your data can download. Then you can open it with no signal.</p></div>';
       painting = false;
@@ -165,7 +256,7 @@
       return '<button class="card" data-id="' + esc(job.id) + '" style="display:block;width:100%;text-align:left;background:rgba(255,255,255,0.04)">'
         + '<strong>' + esc(who || 'Job') + '</strong>'
         + '<div class="muted">' + esc(vehicle) + '</div>'
-        + '<div class="muted">' + esc(job.pendingStatus || job.status) + (job.pendingCount ? ' · ' + job.pendingCount + ' pending upload' : '') + '</div>'
+        + '<div class="muted">' + esc(statusLabel(job.pendingStatus || job.status)) + (job.pendingCount ? ' · ' + job.pendingCount + ' pending upload' : '') + '</div>'
         + prepBadge(job)
         + '</button>';
     }).join('') + '<div id="sync-log"></div>';
@@ -218,7 +309,7 @@
       ? '<label>Status</label><select id="status">'
         + ['assigned', 'en-route', 'in-progress', 'waiting-estimate', 'completed'].map(function (status) {
           var current = job.pendingStatus || job.status;
-          return '<option value="' + status + '"' + (current === status ? ' selected' : '') + '>' + status + '</option>';
+          return '<option value="' + status + '"' + (current === status ? ' selected' : '') + '>' + esc(statusLabel(status)) + '</option>';
         }).join('')
         + '</select><div class="row" style="margin-top:8px"><button type="button" id="save-status">Update status</button><button type="button" class="ghost" id="start-enroute">Start / En route</button></div>'
       : '';
@@ -266,10 +357,10 @@
       + '<div class="card"><h2>Messages</h2><ul>' + messages.map(function (message) {
         return '<li>' + esc(message.body || 'Photo') + ' ' + pendingTag(message) + '</li>';
       }).join('') + '</ul><label>Message</label><textarea id="message"></textarea>'
-      + '<label>Photo</label><input id="message-photo" type="file" accept="image/*" />'
+      + '<div class="photo-actions"><label class="photo-btn" id="take-message-photo" for="message-photo">' + CAMERA + ' Add photo</label><input id="message-photo" class="file-input" type="file" accept="image/*" /></div>'
       + '<div class="row" style="margin-top:8px"><button type="button" id="add-message">Send message</button></div></div>'
-      + '<div class="card"><h2>Photos</h2><div id="photos"></div>'
-      + '<label>Take or choose a photo</label><input id="photo" type="file" accept="image/*" capture="environment" />'
+      + '<div class="card"><h2>Photos</h2><div id="photos" class="photo-grid"></div>'
+      + '<div class="photo-actions"><label class="photo-btn" id="take-photo" for="photo">' + CAMERA + ' Take photo</label><input id="photo" class="file-input" type="file" accept="image/*" capture="environment" /><span id="photo-name" class="muted"></span></div>'
       + '<div class="row" style="margin-top:8px"><button type="button" id="add-photo">Save photo</button></div></div>'
       + clockBlock
       + '<div class="disabled-note">Payments, Stripe, shop approvals, user management, sending or signing estimates, and pay or fee changes need a connection.</div>';
@@ -338,32 +429,89 @@
     arm('clock-out', function () {
       return api.clockOut(sessionStorage.getItem('fixtray-clock-client') || '', '');
     });
+    var photoInput = document.getElementById('photo');
+    var photoName = document.getElementById('photo-name');
+    if (photoInput && photoName) {
+      photoInput.onchange = function () {
+        var chosen = photoInput.files && photoInput.files[0];
+        photoName.textContent = chosen ? chosen.name : '';
+      };
+    }
+    var takePhoto = document.getElementById('take-photo');
+    if (takePhoto) {
+      takePhoto.addEventListener('click', function (event) {
+        if (!isNative()) return;
+        event.preventDefault();
+        captureNativePhotoFile().then(function (file) {
+          if (!file) return null;
+          return api.addPhoto(job.id, file, '');
+        }).then(function () { painting = false; render(); });
+      });
+    }
+    var takeMessage = document.getElementById('take-message-photo');
+    if (takeMessage) {
+      takeMessage.addEventListener('click', function (event) {
+        if (!isNative()) return;
+        event.preventDefault();
+        captureNativePhotoFile().then(function (file) {
+          if (!file) return;
+          var holder = document.getElementById('message-photo');
+          if (!holder || typeof DataTransfer === 'undefined') return;
+          var transfer = new DataTransfer();
+          transfer.items.add(file);
+          holder.files = transfer.files;
+        });
+      });
+    }
     var photoHost = document.getElementById('photos');
     for (var i = 0; i < photos.length; i += 1) {
       var shot = photos[i];
       var figure = document.createElement('div');
-      figure.innerHTML = pendingTag(shot);
+      figure.className = 'thumb';
+      var badge = document.createElement('div');
+      badge.className = 'thumb-badge';
+      badge.innerHTML = pendingTag(shot);
       if (shot.url) {
         var img = document.createElement('img');
-        img.className = 'shot';
-        img.alt = '';
+        img.alt = 'Work photo';
         img.src = shot.url;
         figure.appendChild(img);
       } else if (shot.clientId) {
-        api.photoBlob(shot.clientId).then(function (blob) {
-          if (!blob) return;
-          var local = document.createElement('img');
-          local.className = 'shot';
-          local.alt = '';
-          local.src = URL.createObjectURL(blob);
-          figure.appendChild(local);
-        });
+        (function (frame, clientId) {
+          api.photoBlob(clientId).then(function (blob) {
+            if (!blob) return;
+            var local = document.createElement('img');
+            local.alt = 'Work photo';
+            local.src = URL.createObjectURL(blob);
+            frame.insertBefore(local, frame.firstChild);
+          });
+        })(figure, shot.clientId);
       }
+      if (badge.innerHTML) figure.appendChild(badge);
       photoHost.appendChild(figure);
     }
   }
 
   document.getElementById('sync-now').onclick = function () { api.syncNow().then(function () { painting = false; render(); }); };
+  document.getElementById('banner').onclick = function () {
+    showExactSync = !showExactSync;
+    paintChrome();
+  };
+  document.getElementById('header-back').onclick = function () {
+    selected = null;
+    painting = false;
+    render();
+  };
+  document.getElementById('brand').onclick = function () {
+    selected = null;
+    painting = false;
+    render();
+  };
+  document.getElementById('back-to-app').addEventListener('click', function (event) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) event.preventDefault();
+  });
+  window.addEventListener('online', function () { paintHeader(!!selected); });
+  window.addEventListener('offline', function () { paintHeader(!!selected); });
   api.onChange(function () { painting = false; render(); });
   api.startApp();
   render();

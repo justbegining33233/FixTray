@@ -7,15 +7,25 @@
   <link rel="stylesheet" href="/tech-offline/app.css" />
 </head>
 <body>
-  <header>
-    <div class="brand">FixTray</div>
-    <div id="banner" class="banner">Checking connection…</div>
+  <header class="app-header">
+    <div class="header-left">
+      <button type="button" id="header-back" class="icon-btn" hidden aria-label="Back">←</button>
+      <button type="button" id="brand" class="brand">FixTray</button>
+      <span id="role-chip" class="role-chip">Offline</span>
+    </div>
+    <div id="header-avatar" class="avatar" aria-hidden="true">FT</div>
+  </header>
+  <div class="chrome">
+    <button type="button" id="banner" class="banner">Checking connection…</button>
     <div class="bar">
       <strong id="sync-label">All synced</strong>
       <button type="button" id="sync-now">Sync now</button>
     </div>
-  </header>
+  </div>
   <main id="app"></main>
+  <nav class="tabbar">
+    <a id="back-to-app" href="/tech/home">Back to app</a>
+  </nav>
   <script src="/tech-offline/engine.js"></script>
   <script src="/tech-offline/app.js"></script>
 </body>

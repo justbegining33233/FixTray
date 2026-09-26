@@ -1,4 +1,5 @@
 (function () {
+  if (window.fixtrayLeavePlatformOwner) window.fixtrayLeavePlatformOwner();
   var root = document.getElementById('app');
   var banner = document.getElementById('banner');
   var syncLabel = document.getElementById('sync-label');

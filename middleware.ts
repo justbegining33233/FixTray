@@ -6,11 +6,13 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { gateCrossRole } from './src/proxy';
+import { gateCrossRole, requestHeadersWithNativePlatform } from './src/proxy';
 
 export async function middleware(request: NextRequest) {
   const gated = await gateCrossRole(request);
-  const response = gated ?? NextResponse.next();
+  const response = gated ?? NextResponse.next({
+    request: { headers: requestHeadersWithNativePlatform(request) },
+  });
   
   // Add security headers
   const headers = new Headers(response.headers);

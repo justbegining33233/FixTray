@@ -862,9 +862,11 @@ export default function MobileShell({
   // Render
   // ------------------------------------------------------------------
   return (
-    <div style={{
+    <div data-mobile-shell-root style={{
       position: 'relative',
-      minHeight: '100dvh',
+      // Exactly one screen tall (globals.css adds the 100vh fallback). The
+      // content area below is the only scroll container; html/body are locked.
+      height: '100dvh',
       width: '100%',
       background: '#020608',
       display: 'flex', flexDirection: 'column',
@@ -969,6 +971,8 @@ export default function MobileShell({
       {/* ─── CONTENT AREA ────────────────────────────────────────── */}
       <div data-mobile-shell-body style={{
         flex: 1,
+        // Without this the flex child grows to its content and never scrolls.
+        minHeight: 0,
         minWidth: 0,
         maxWidth: '100%',
         overflowY: 'auto',

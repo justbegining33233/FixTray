@@ -8,6 +8,7 @@ import {
   mobileNavForActor,
   pageCoveredByNav,
 } from '../src/lib/mobileRoleNav';
+import { SHOP_LEVEL_ADMIN_PATHS, isShopScopedPath } from '../src/lib/platformOwnerScope';
 
 const APP = path.join(process.cwd(), 'src/app');
 
@@ -75,7 +76,31 @@ describe('mobile role tabs', () => {
     const pages = dirs.flatMap(staticPages);
     // Shop subscription plans are discontinued. Leave the page for the removal PR.
     const discontinued = new Set(['/shop/subscribe']);
-    const missing = pages.filter((page) => !discontinued.has(page) && !pageCoveredByNav(page, hrefs));
+    // Shop-operational pages under /admin redirect the platform owner home, so they stay out of its menu.
+    const shopLevelAdmin = (page: string) => roleId === 'superadmin'
+      && SHOP_LEVEL_ADMIN_PATHS.some((prefix) => page === prefix || page.startsWith(`${prefix}/`));
+    const missing = pages.filter((page) => !discontinued.has(page) && !shopLevelAdmin(page) && !pageCoveredByNav(page, hrefs));
     expect(missing).toEqual([]);
+  });
+
+  it('lists only platform pages for the platform owner', () => {
+    const nav = mobileNavForActor('admin', { role: 'superadmin', isSuperAdmin: true, isOwner: true });
+    const hrefs = nav ? allMobileNavHrefs(nav) : [];
+    expect(hrefs.length).toBeGreaterThan(0);
+    expect(hrefs.filter((href) => isShopScopedPath(href))).toEqual([]);
+    const labels = nav?.more.flatMap((group) => group.items.map((item) => item.label)) ?? [];
+    for (const shopLabel of ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance']) {
+      expect(labels).not.toContain(shopLabel);
+    }
+    expect(labels).toEqual(expect.arrayContaining(['Pending Shops', 'Shops', 'User Management', 'Platform Settings', 'Revenue & Payouts', 'Health Check', 'Activity Logs', 'Messaging']));
+  });
+
+  it('leaves shop, manager, tech, and customer menus unchanged', () => {
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.shop)).toContain('/tech-offline/');
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.manager).length).toBeGreaterThan(0);
+    expect(mobileNavForActor('shop', { role: 'shop' })).toBe(MOBILE_ROLE_NAVS.shop);
+    expect(mobileNavForActor('tech', { role: 'tech' })).toBe(MOBILE_ROLE_NAVS.tech);
+    expect(mobileNavForActor('customer', { role: 'customer' })).toBe(MOBILE_ROLE_NAVS.customer);
+    expect(mobileNavForActor('manager', { role: 'manager' })).toBe(MOBILE_ROLE_NAVS.manager);
   });
 });

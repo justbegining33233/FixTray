@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaArrowRight, FaBell, FaCar, FaCaretDown, FaClock, FaCloud, FaCreditCard, FaCrown, FaEnvelope, FaHardHat, FaInfoCircle, FaMicroscope, FaMobileAlt, FaPencilAlt, FaUserTie, FaWrench } from 'react-icons/fa';
+import { isShopScopedPath } from '@/lib/platformOwnerScope';
 
 interface Feature {
   name: string;
@@ -724,7 +725,12 @@ export default function AppGuidePage() {
                                 <p className="text-gray-600 text-xs ml-5 mt-1 font-mono">{say("API:")}{' '}{say(feature.apiEndpoint)}</p>
                               )}
                             </div>
-                            {feature.route && (
+                            {feature.route && isShopScopedPath(feature.route) && (
+                              <span className="px-3 py-1.5 border border-white/10 rounded-lg text-gray-500 text-xs font-mono whitespace-nowrap">
+                                {feature.route}
+                              </span>
+                            )}
+                            {feature.route && !isShopScopedPath(feature.route) && (
                               <Link
                                 href={feature.route as Route}
                                 className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 text-xs transition-colors whitespace-nowrap"

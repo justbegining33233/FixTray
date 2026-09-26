@@ -2,10 +2,12 @@
  * Phone tab bars for every FixTray role.
  * Primary tabs match the approved mobile draft. More lists every other
  * static page for that role so nothing on the website is unreachable.
- * Super Admin tabs are returned only for a superadmin actor.
+ * Super Admin tabs are returned only for a superadmin actor, and they list
+ * platform pages only (see platformOwnerScope).
  */
 
 import { normalizeRole } from '@/lib/roleNav';
+import { isShopScopedHref } from '@/lib/platformOwnerScope';
 
 export type MobileIconName =
   | 'home'
@@ -79,6 +81,17 @@ export function withoutOwnerOnlyLinks(nav: MobileRoleNav, isOwner: boolean): Mob
   };
 }
 
+/** Platform owner menus never list shop-operational pages. */
+export function withoutShopLinks(nav: MobileRoleNav): MobileRoleNav {
+  return {
+    ...nav,
+    tabs: nav.tabs.filter((tab) => !isShopScopedHref(tab.href)),
+    more: nav.more
+      .map((group) => ({ ...group, items: group.items.filter((item) => !isShopScopedHref(item.href)) }))
+      .filter((group) => group.items.length > 0),
+  };
+}
+
 function link(label: string, href: string, icon: MobileIconName = 'grid'): MobileLink {
   return { label, href, icon };
 }
@@ -120,8 +133,7 @@ const superadminNav: MobileRoleNav = {
     },
   ],
   more: [
-    section('Operations', [
-      link('Offline', '/tech-offline/', 'clipboard'),
+    section('Shops', [
       link('Command Center', '/admin/command-center', 'clipboard'),
       link('Dashboard', '/admin/home', 'home'),
       link('Pending Shops', '/admin/pending-shops', 'clock'),
@@ -129,10 +141,6 @@ const superadminNav: MobileRoleNav = {
       link('Shops', '/admin/shops', 'wrench'),
       link('Manage Shops', '/admin/manage-shops', 'wrench'),
       link('Add Shop', '/admin/manage-shops/new', 'wrench'),
-      link('DVI Approvals', '/admin/dvi-approvals', 'clipboard'),
-      link('Compliance', '/admin/compliance-dashboard', 'search'),
-      link('Inventory', '/admin/inventory', 'inventory'),
-      link('Environmental Fees', '/admin/environmental-fees', 'dollar'),
     ]),
     section('People & Insight', [
       link('Manage Customers', '/admin/manage-customers', 'user'),
@@ -151,7 +159,6 @@ const superadminNav: MobileRoleNav = {
       link('Messages', '/admin/messages', 'messages'),
       link('Messaging', '/admin/messaging', 'messages'),
       link('Email Templates', '/admin/email-templates', 'file'),
-      link('Campaigns', '/admin/campaigns', 'bell'),
     ]),
     section('System', [
       link('Security', '/admin/security', 'settings'),
@@ -164,7 +171,6 @@ const superadminNav: MobileRoleNav = {
       link('Platform Settings', '/superadmin/settings', 'settings'),
       link('Admin Tools', '/admin/admin-tools', 'tools'),
       link('Backup & Restore', '/admin/backup-restore', 'inventory'),
-      link('Performance', '/admin/performance', 'chart'),
       link('Health Check', '/admin/test', 'search'),
       link('Documentation', '/admin/guide', 'file'),
       link('Enhanced Tools', '/admin/enhanced', 'tools'),
@@ -450,7 +456,7 @@ export function shellRoleForActor(actor: Actor): ShellRole | null {
 export function mobileNavForActor(shellRole: ShellRole, actor: Actor): MobileRoleNav | null {
   if (shellRole === 'admin' || shellRole === 'superadmin') {
     if (!isSuperAdminActor(actor)) return null;
-    return withoutOwnerOnlyLinks(MOBILE_ROLE_NAVS.superadmin, actor?.isOwner === true);
+    return withoutShopLinks(withoutOwnerOnlyLinks(MOBILE_ROLE_NAVS.superadmin, actor?.isOwner === true));
   }
   return MOBILE_ROLE_NAVS[shellRole] ?? null;
 }

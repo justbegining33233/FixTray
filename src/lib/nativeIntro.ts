@@ -58,6 +58,19 @@ export type InstalledShellSignals = {
   navigatorStandalone?: boolean;
 };
 
+/** The Capacitor app (user-agent or native cookie). A normal phone or desktop browser is false. */
+export function isAppWebView(env: { userAgent?: string; cookie?: string } = {}): boolean {
+  const ua = env.userAgent ?? '';
+  const cookie = env.cookie ?? '';
+  if (ua.includes('FixTray-Android-App') || ua.includes('FixTray-iOS-App')) return true;
+  return /(?:^|;\s*)x-fixtray-native=/.test(cookie);
+}
+
+export function isAppWebViewClient(): boolean {
+  if (typeof window === 'undefined') return false;
+  return isAppWebView({ userAgent: navigator.userAgent, cookie: document.cookie });
+}
+
 /** App WebView or an installed home-screen icon. Ordinary browser tabs are false. */
 export function isInstalledShellClient(env: InstalledShellSignals = readInstalledShellEnv()): boolean {
   if (env.capacitorNative) return true;

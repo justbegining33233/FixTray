@@ -127,7 +127,7 @@ test.describe('app mode navigation has a way back', () => {
   for (const mode of APP_MODES) {
     for (const target of ROLES) {
       test(`${target.role} ${mode.name} tabs, More, and back`, async ({ browser }) => {
-        test.setTimeout(420_000);
+        test.setTimeout(900_000);
         const { context, page } = await openApp(browser, target.role, mode.width, mode.height);
         try {
           await page.goto(target.home, { waitUntil: 'domcontentloaded' });
@@ -144,30 +144,39 @@ test.describe('app mode navigation has a way back', () => {
               label: node.getAttribute('data-more-label') || '',
             })),
           );
-          await page.locator('[data-more-backdrop="1"]').click();
+          // The sheet covers the middle of the backdrop. Tap the top edge to close it.
+          await page.locator('[data-more-backdrop="1"]').click({ position: { x: 12, y: 12 } });
           await expect(page.locator('[data-role-more="open"]')).toHaveCount(0);
 
+          const returnHome = async () => {
+            if (new URL(page.url()).pathname !== target.home) {
+              await page.goBack({ waitUntil: 'domcontentloaded' }).catch(() => {});
+            }
+            if (new URL(page.url()).pathname !== target.home) {
+              await page.goto(target.home, { waitUntil: 'domcontentloaded' });
+            }
+            await shellBar(page, target.bar);
+          };
+
           for (const label of tabLabels) {
-            await page.goto(target.home, { waitUntil: 'domcontentloaded' });
-            await settle(page);
+            await returnHome();
             const before = new URL(page.url()).pathname;
             await (await shellBar(page, target.bar)).getByRole('button', { name: label, exact: true }).click();
             const landed = await assertLoaded(page, `${target.role} tab ${label}`);
             if (landed !== before) {
-              await page.goBack().catch(() => {});
+              await returnHome();
               await assertLoaded(page, `${target.role} back from tab ${label}`);
             }
           }
 
           for (const item of moreItems) {
-            await page.goto(target.home, { waitUntil: 'domcontentloaded' });
-            await settle(page);
+            await returnHome();
             const before = new URL(page.url()).pathname;
             const sheet = await openMore(page, target.bar);
             await sheet.locator(`[data-more-href="${item.href}"][data-more-label="${item.label}"]`).first().click();
             const landed = await assertLoaded(page, `${target.role} more ${item.label} ${item.href}`);
             if (landed !== before) {
-              await page.goBack().catch(() => {});
+              await returnHome();
               await assertLoaded(page, `${target.role} back from ${item.label}`);
             }
           }

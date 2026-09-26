@@ -31,7 +31,7 @@ interface StoredEmployee {
 
 export default function ManageTeamPage() {
   const say = usePhrase();
-  const { user, isLoading } = useRequireAuth(['shop', 'manager', 'admin']);
+  const { user, isLoading } = useRequireAuth(['shop']);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
@@ -389,7 +389,7 @@ export default function ManageTeamPage() {
           <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>{say("Add Team Member")}</h2>
-              <button onClick={() => setShowAddModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
+              <button type="button" aria-label={say("Cancel")} onClick={() => setShowAddModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:4, lineHeight:1}}>×</button>
             </div>
 
             <div style={{marginBottom:20}}>
@@ -452,7 +452,7 @@ export default function ManageTeamPage() {
           <div style={{background:'#000000', border:'1px solid rgba(255,255,255,0.2)', borderRadius:16, padding:32, maxWidth:500, width:'90%'}}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <h2 style={{fontSize:24, fontWeight:700, color:'#e5e7eb'}}>{say("Edit Team Member")}</h2>
-              <button onClick={() => setShowEditModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:0}}></button>
+              <button type="button" aria-label={say("Cancel")} onClick={() => setShowEditModal(false)} style={{background:'transparent', border:'none', color:'#9aa3b2', fontSize:24, cursor:'pointer', padding:4, lineHeight:1}}>×</button>
             </div>
 
             <div style={{marginBottom:20}}>

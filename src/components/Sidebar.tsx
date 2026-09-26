@@ -4,13 +4,14 @@ import { usePhrase } from '@/lib/usePhrase';
 // Use react-icons for all icons
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaChartLine, FaClipboardList, FaClock, FaCog, FaCogs, FaComments, FaCreditCard, FaDatabase, FaDesktop, FaEdit, FaEnvelope, FaGift, FaHome, FaIndustry, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPercent, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaServer, FaShieldAlt, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaChartLine, FaClipboardList, FaClock, FaCog, FaCogs, FaComments, FaCreditCard, FaDatabase, FaDesktop, FaEdit, FaEnvelope, FaGift, FaHome, FaIndustry, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaServer, FaShieldAlt, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { normalizeRole, shellHrefForRole } from '@/lib/roleNav';
 import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
+import { isPlatformActor, isShopScopedHref } from '@/lib/platformOwnerScope';
 
 interface MenuItem {
   icon: ReactNode;
@@ -253,24 +254,11 @@ const adminGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'Work Orders & Operations',
-    icon: <FaClipboardList />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaClipboardList />, label: 'DVI Approvals', href: '/admin/dvi-approvals' },
-      { icon: <FaSearch />, label: 'Inspections', href: '/admin/compliance-dashboard' },
-      { icon: <FaBoxes />, label: 'Inventory', href: '/admin/inventory' },
-      { icon: <FaLeaf />, label: 'Environmental Fees', href: '/admin/environmental-fees' },
-    ],
-  },
-  {
     label: 'Communications',
     icon: <FaBullhorn />,
     defaultOpen: false,
     items: [
       { icon: <FaEnvelope />, label: 'Email Templates', href: '/admin/email-templates' },
-      { icon: <FaBullhorn />, label: 'Campaigns', href: '/admin/campaigns' },
-      // Reminders page deleted - model not in schema
     ],
   },
   {
@@ -281,7 +269,6 @@ const adminGroups: MenuGroup[] = [
       { icon: <FaChartLine />, label: 'Analytics', href: '/admin/platform-analytics' },
       { icon: <FaChartBar />, label: 'Revenue', href: '/admin/revenue' },
       { icon: <FaReceipt />, label: 'Financial Reports', href: '/admin/financial-reports' },
-      { icon: <FaPercent />, label: 'Coupons', href: '/admin/coupons' },
     ],
   },
   {
@@ -303,7 +290,6 @@ const adminGroups: MenuGroup[] = [
       { icon: <FaCog />, label: 'Settings', href: '/admin/settings' },
       { icon: <FaTools />, label: 'Admin Tools', href: '/admin/admin-tools' },
       { icon: <FaDatabase />, label: 'Backup/Restore', href: '/admin/backup-restore' },
-      { icon: <FaChartLine />, label: 'Performance', href: '/admin/performance' },
     ],
   },
 ];
@@ -355,6 +341,11 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
   const pathname = usePathname();
   const { user } = useAuth();
   const linkRole = normalizeRole(user?.role) || role;
+  const platformActor = isPlatformActor({
+    role: user?.role || (role === 'admin' || role === 'superadmin' ? role : undefined),
+    isOwner: user?.isOwner,
+    isSuperAdmin: user?.isSuperAdmin,
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isCompactDesktop, setIsCompactDesktop] = useState(false);
@@ -375,11 +366,14 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
     : groups
   ).map((group) => ({
     ...group,
-    items: group.items.map((item) => ({
-      ...item,
-      href: shellHrefForRole(item.href, linkRole),
-    })),
-  }));
+    items: group.items
+      .filter((item) => item.href !== '/admin/coupons')
+      .filter((item) => !(platformActor && isShopScopedHref(item.href)))
+      .map((item) => ({
+        ...item,
+        href: shellHrefForRole(item.href, linkRole),
+      })),
+  })).filter((group) => group.items.length > 0);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(groups.map(g => [g.label, g.defaultOpen ?? false]))

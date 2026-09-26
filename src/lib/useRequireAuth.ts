@@ -17,7 +17,7 @@ export default function useRequireAuth(allowedRoles?: string[]) {
         const target = typeof window !== 'undefined'
           ? `${window.location.pathname}${window.location.search}`
           : '/';
-        router.push(`/auth/login?redirect=${encodeURIComponent(target)}` as any);
+        router.replace(`/auth/login?redirect=${encodeURIComponent(target)}` as any);
         return;
       }
 

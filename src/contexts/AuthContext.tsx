@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(null);
-    router.push('/auth/login' as Route);
+    router.replace('/auth/login' as Route);
   };
 
   const completeOnboarding = () => {
@@ -307,7 +307,7 @@ export function useRequireAuth(requiredRoles?: string[]) {
       const target = typeof window !== 'undefined'
         ? `${window.location.pathname}${window.location.search}`
         : '/';
-      router.push(`/auth/login?redirect=${encodeURIComponent(target)}` as any);
+      router.replace(`/auth/login?redirect=${encodeURIComponent(target)}` as any);
       return;
     }
 

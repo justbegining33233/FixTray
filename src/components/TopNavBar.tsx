@@ -440,6 +440,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       case 'manager': return '/manager/messages';
       case 'shop': return '/shop/customer-messages';
       case 'admin': return '/admin/messages';
+      case 'superadmin': return '/admin/messaging';
       case 'customer': return '/customer/messages';
       default: return '/';
     }

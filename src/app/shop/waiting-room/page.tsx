@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { FaBatteryFull, FaCheckCircle, FaExclamationTriangle, FaFlagCheckered, FaHourglassHalf, FaMobileAlt, FaOilCan, FaStar, FaWrench } from 'react-icons/fa';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
 import { toWaitingBoardStatus } from '@/lib/waitingRoomBoard';
 
 interface WaitingRoomEntry {
@@ -33,6 +33,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 function WaitingRoomContent() {
   const say = usePhrase();
+  useRequireAuth(['shop']);
   const PROMOS = [
     ' Summer Tire Special  -  $15 off any set of 4 tires this month!',
     <><FaOilCan style={{marginRight:4}} /> {say("Oil change + tire rotation package  -  only $59.99!")}</>,

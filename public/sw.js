@@ -1,6 +1,6 @@
 /* eslint-disable */
 // FixTray Service Worker — offline caching + background sync
-const CACHE_NAME = 'fixtray-v8';
+const CACHE_NAME = 'fixtray-v9';
 const API_CACHE   = 'fixtray-api-v3';
 
 // Precache the static tech workspace. Next HTML stays network-first so
@@ -56,6 +56,20 @@ function precacheUrl(cache, url) {
 
 function isOfflineWorkspacePath(pathname) {
   return pathname === '/tech-offline' || pathname.startsWith('/tech-offline/');
+}
+
+function isTechWorkspaceNavigation(pathname) {
+  return pathname === '/tech' || pathname.startsWith('/tech/') || isOfflineWorkspacePath(pathname);
+}
+
+function offlineDocument(pathname) {
+  if (!isTechWorkspaceNavigation(pathname)) {
+    return caches.match('/offline').then((cached) => cached || new Response('Offline', { status: 503 }));
+  }
+  return caches.match(OFFLINE_SHELL).then((shell) => {
+    if (shell) return injectPlatformOwnerEscape(shell);
+    return caches.match('/offline').then((cached) => cached || new Response('Offline', { status: 503 }));
+  });
 }
 
 // A controlling worker can keep serving a cached copy of this page after the
@@ -171,17 +185,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Navigation: network first so deploys land immediately.
-  // Offline, serve the tech workspace (or the last cached document).
+  // Offline, techs get the workspace. Every other role gets the offline page.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() =>
-        caches.match(OFFLINE_SHELL).then((shell) => {
-          if (shell) return injectPlatformOwnerEscape(shell);
-          return caches.match('/offline').then(
-            (cached) => cached || new Response('Offline', { status: 503 })
-          );
-        })
-      )
+      fetch(request).catch(() => offlineDocument(url.pathname))
     );
     return;
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
 type ApiKeyRow = {
   id: string;
@@ -18,6 +19,7 @@ function authHeaders(): HeadersInit {
 
 export default function ApiKeysPage() {
   const say = usePhrase();
+  useRequireAuth(['shop']);
   const [keys, setKeys] = useState<ApiKeyRow[]>([]);
   const [name, setName] = useState('');
   const [freshKey, setFreshKey] = useState('');

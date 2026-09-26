@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Capacitor } from '@capacitor/core';
+import { useIsNative } from '@/context/NativeContext';
+import { isAppWebViewClient } from '@/lib/nativeIntro';
 import { usePhrase } from '@/lib/usePhrase';
 import { shellHrefForRole } from '@/lib/roleNav';
 import { useAuth } from '@/contexts/AuthContext';
@@ -73,19 +75,47 @@ export default function RoleTabBar({
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { user } = useAuth();
+  const native = useIsNative();
+  const [inApp, setInApp] = useState(native);
   const [internalOpen, setInternalOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [shellReady, setShellReady] = useState(false);
   const open = moreOpen ?? internalOpen;
+  const pathRef = useRef(pathname);
+  const toggleAt = useRef(0);
+  const onMoreOpenChangeRef = useRef(onMoreOpenChange);
+  onMoreOpenChangeRef.current = onMoreOpenChange;
 
   const setOpen = (next: boolean) => {
-    onMoreOpenChange?.(next);
+    onMoreOpenChangeRef.current?.(next);
     if (moreOpen === undefined) setInternalOpen(next);
   };
 
+  const toggleMore = () => {
+    const now = Date.now();
+    // A touch tap can deliver a second click. Ignore it so the sheet stays open.
+    if (now - toggleAt.current < 450) return;
+    toggleAt.current = now;
+    setOpen(!open);
+  };
+
   useEffect(() => {
+    if (isAppWebViewClient()) setInApp(true);
+    setShellReady(true);
+  }, []);
+
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener('fixtray-close-overlays', close);
+    return () => window.removeEventListener('fixtray-close-overlays', close);
+  }, []);
+
+  useEffect(() => {
+    if (pathRef.current === pathname) return;
+    pathRef.current = pathname;
     setOpen(false);
     setQuery('');
-    // Close the directory when the route changes. setOpen is stable enough for this.
+    // Close the directory only when the route actually changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -150,6 +180,7 @@ export default function RoleTabBar({
     <>
       {open && (
         <div
+          data-more-backdrop="1"
           onClick={() => setOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.62)', zIndex: 1200 }}
         />
@@ -162,6 +193,7 @@ export default function RoleTabBar({
           right: 0,
           bottom: open ? 0 : '-110%',
           maxHeight: 'min(78dvh, 720px)',
+          pointerEvents: open ? 'auto' : 'none',
           background: '#020608',
           borderTop: '1px solid var(--accent-border, rgba(229,51,42,0.3))',
           borderRadius: '22px 22px 0 0',
@@ -213,16 +245,19 @@ export default function RoleTabBar({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
           <LanguageSwitcher />
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.setItem('viewMode', 'desktop');
-              window.location.reload();
-            }}
-            style={ghostButton}
-          >
-            {say('Web view')}
-          </button>
+          {inApp ? null : (
+            <button
+              type="button"
+              data-web-view-toggle="1"
+              onClick={() => {
+                localStorage.setItem('viewMode', 'desktop');
+                window.location.reload();
+              }}
+              style={ghostButton}
+            >
+              {say('Web view')}
+            </button>
+          )}
           <button type="button" onClick={() => void signOut()} style={{ ...ghostButton, color: 'var(--accent, #e5332a)', borderColor: 'var(--accent-border, rgba(229,51,42,0.3))' }}>
             <IconLogOut size={16} /> {say('Sign Out')}
           </button>
@@ -231,6 +266,7 @@ export default function RoleTabBar({
 
       <div
         data-role-tab-bar={nav.id}
+        data-shell-ready={shellReady ? '1' : '0'}
         style={{
           position: 'fixed',
           bottom: 0,
@@ -249,7 +285,7 @@ export default function RoleTabBar({
         {nav.tabs.map((tab, index) => (
           <TabButton key={tab.label} label={say(tab.label)} icon={tab.icon} active={!open && index === tabIndex} onClick={() => go(tab.href)} />
         ))}
-        <TabButton label={say('More')} icon="grid" active={moreActive} onClick={() => setOpen(!open)} />
+        <TabButton label={say('More')} icon="grid" active={moreActive} onClick={toggleMore} more />
       </div>
     </>
   );
@@ -260,6 +296,8 @@ function MoreCard({ item, active, onClick }: { item: MobileLink; active: boolean
   return (
     <button
       type="button"
+      data-more-href={item.href}
+      data-more-label={item.label}
       onClick={onClick}
       style={{
         display: 'flex',
@@ -281,10 +319,11 @@ function MoreCard({ item, active, onClick }: { item: MobileLink; active: boolean
   );
 }
 
-function TabButton({ label, icon, active, onClick }: { label: string; icon: MobileIconName; active: boolean; onClick: () => void }) {
+function TabButton({ label, icon, active, onClick, more = false }: { label: string; icon: MobileIconName; active: boolean; onClick: () => void; more?: boolean }) {
   return (
     <button
       type="button"
+      data-tab-more={more ? '1' : undefined}
       onClick={onClick}
       style={{
         flex: 1,

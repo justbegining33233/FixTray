@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
 type WebhookRow = {
   id: string;
@@ -17,6 +18,7 @@ function authHeaders(): HeadersInit {
 
 export default function WebhooksPage() {
   const say = usePhrase();
+  useRequireAuth(['shop']);
   const [webhooks, setWebhooks] = useState<WebhookRow[]>([]);
   const [url, setUrl] = useState('');
   const [secret, setSecret] = useState('');

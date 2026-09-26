@@ -3,9 +3,11 @@
 import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
 export default function AddFleetVehiclePage() {
   const say = usePhrase();
+  useRequireAuth(['shop']);
   const router = useRouter();
   const params = useParams();
   const fleetAccountId = params.id as string;

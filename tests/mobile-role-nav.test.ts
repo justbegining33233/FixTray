@@ -9,6 +9,7 @@ import {
   pageCoveredByNav,
 } from '../src/lib/mobileRoleNav';
 import { SHOP_LEVEL_ADMIN_PATHS, isShopScopedPath } from '../src/lib/platformOwnerScope';
+import { isShopEdgeSensitivePath } from '../src/lib/shopRestrictedRoutes';
 
 const APP = path.join(process.cwd(), 'src/app');
 
@@ -79,7 +80,8 @@ describe('mobile role tabs', () => {
     // Shop-operational pages under /admin redirect the platform owner home, so they stay out of its menu.
     const shopLevelAdmin = (page: string) => roleId === 'superadmin'
       && SHOP_LEVEL_ADMIN_PATHS.some((prefix) => page === prefix || page.startsWith(`${prefix}/`));
-    const missing = pages.filter((page) => !discontinued.has(page) && !shopLevelAdmin(page) && !pageCoveredByNav(page, hrefs));
+    const shopEdge = (page: string) => roleId === 'shop' && isShopEdgeSensitivePath(page);
+    const missing = pages.filter((page) => !discontinued.has(page) && !shopLevelAdmin(page) && !shopEdge(page) && !pageCoveredByNav(page, hrefs));
     expect(missing).toEqual([]);
   });
 
@@ -97,6 +99,8 @@ describe('mobile role tabs', () => {
 
   it('leaves shop, manager, tech, and customer menus unchanged', () => {
     expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.shop)).toContain('/tech-offline/');
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.shop).filter((href) => isShopEdgeSensitivePath(href))).toEqual([]);
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.customer)).not.toContain('/tech-offline/');
     expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.manager).length).toBeGreaterThan(0);
     expect(mobileNavForActor('shop', { role: 'shop' })).toBe(MOBILE_ROLE_NAVS.shop);
     expect(mobileNavForActor('tech', { role: 'tech' })).toBe(MOBILE_ROLE_NAVS.tech);

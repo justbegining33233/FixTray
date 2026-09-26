@@ -69,6 +69,8 @@ async function openApp(browser: import('@playwright/test').Browser, role: string
     });
   }
   const page = await context.newPage();
+  page.setDefaultTimeout(20_000);
+  page.setDefaultNavigationTimeout(30_000);
   return { context, page };
 }
 
@@ -227,6 +229,8 @@ test.describe('browser desktop preference always has a way back', () => {
       await session(context, family.role, false);
       await context.addInitScript(() => localStorage.setItem('viewMode', 'desktop'));
       const page = await context.newPage();
+      page.setDefaultTimeout(20_000);
+      page.setDefaultNavigationTimeout(30_000);
       try {
         await page.goto(family.path, { waitUntil: 'domcontentloaded' });
         await settle(page);

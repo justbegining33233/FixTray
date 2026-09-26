@@ -146,8 +146,9 @@ test.describe('app mode navigation has a way back', () => {
               label: node.getAttribute('data-more-label') || '',
             })),
           );
-          // The sheet covers the middle of the backdrop. Tap the top edge to close it.
-          await page.locator('[data-more-backdrop="1"]').click({ position: { x: 12, y: 12 } });
+          // A second tap on More closes the directory. The backdrop's top edge can sit under the offline banner.
+          await page.waitForTimeout(500);
+          await (await shellBar(page, target.bar)).locator('[data-tab-more="1"]').click();
           await expect(page.locator('[data-role-more="open"]')).toHaveCount(0);
 
           const returnHome = async () => {

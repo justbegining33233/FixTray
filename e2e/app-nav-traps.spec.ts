@@ -61,6 +61,8 @@ async function openApp(browser: import('@playwright/test').Browser, role: string
     viewport: { width, height },
     userAgent: 'FixTray-Android-App-Pro',
     hasTouch: true,
+    // A controlling service worker reloads the document once and cancels the crawl mid-click.
+    serviceWorkers: 'block',
   });
   await session(context, role, true);
   if (desktop) {
@@ -146,9 +148,14 @@ test.describe('app mode navigation has a way back', () => {
               label: node.getAttribute('data-more-label') || '',
             })),
           );
-          // A second tap on More closes the directory. The backdrop's top edge can sit under the offline banner.
+          // A second tap on More closes the directory. Ignore a duplicate touch tap, then tap again.
+          const moreButton = (await shellBar(page, target.bar)).locator('[data-tab-more="1"]');
           await page.waitForTimeout(500);
-          await (await shellBar(page, target.bar)).locator('[data-tab-more="1"]').click();
+          await moreButton.click();
+          if (await page.locator('[data-role-more="open"]').count()) {
+            await page.waitForTimeout(500);
+            await moreButton.click();
+          }
           await expect(page.locator('[data-role-more="open"]')).toHaveCount(0);
 
           const returnHome = async () => {
@@ -226,6 +233,7 @@ test.describe('browser desktop preference always has a way back', () => {
         viewport: { width: 390, height: 844 },
         userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
         hasTouch: true,
+        serviceWorkers: 'block',
       });
       await session(context, family.role, false);
       await context.addInitScript(() => localStorage.setItem('viewMode', 'desktop'));

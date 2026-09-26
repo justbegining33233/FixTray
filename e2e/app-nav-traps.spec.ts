@@ -74,7 +74,28 @@ async function openApp(browser: import('@playwright/test').Browser, role: string
 
 async function settle(page: Page) {
   await page.waitForLoadState('domcontentloaded').catch(() => {});
-  await page.waitForTimeout(300);
+}
+
+async function shellBar(page: Page, barId: string) {
+  const bar = page.locator(`[data-role-tab-bar="${barId}"][data-shell-ready="1"]`);
+  await expect(bar).toBeVisible({ timeout: 20000 });
+  return bar;
+}
+
+async function openMore(page: Page, barId: string) {
+  const sheet = page.locator('[data-role-more="open"]');
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (await sheet.isVisible().catch(() => false)) return sheet;
+    await (await shellBar(page, barId)).locator('[data-tab-more="1"]').click();
+    try {
+      await expect(sheet).toBeVisible({ timeout: 3000 });
+      return sheet;
+    } catch {
+      // The tap can land before the next paint. Try again once the bar is ready.
+    }
+  }
+  await expect(sheet).toBeVisible();
+  return sheet;
 }
 
 async function stablePath(page: Page) {
@@ -94,11 +115,10 @@ async function assertLoaded(page: Page, label: string) {
   const body = await page.locator('body').innerText({ timeout: 15000 }).catch(() => '');
   expect(body, label).not.toMatch(/Application error|Internal Server Error|Unhandled Runtime Error/i);
   expect(body, label).not.toMatch(/Page Not Found|404\s+-\s+Not Found/);
-  const bar = page.locator('[data-role-tab-bar]');
   if (path.startsWith('/tech-offline')) {
     await expect(page.locator('#tabbar'), label).toBeVisible({ timeout: 15000 });
   } else {
-    await expect(bar, label).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-role-tab-bar][data-shell-ready="1"]'), label).toBeVisible({ timeout: 20000 });
   }
   return path;
 }
@@ -111,13 +131,9 @@ test.describe('app mode navigation has a way back', () => {
         const { context, page } = await openApp(browser, target.role, mode.width, mode.height);
         try {
           await page.goto(target.home, { waitUntil: 'domcontentloaded' });
-          await page.waitForFunction(() => navigator.serviceWorker?.controller, undefined, { timeout: 8000 }).catch(() => {});
           await settle(page);
-          const bar = page.locator(`[data-role-tab-bar="${target.bar}"]`);
-          await expect(bar).toBeVisible({ timeout: 20000 });
-          await bar.getByRole('button', { name: 'More' }).click();
-          const more = page.locator('[data-role-more="open"]');
-          await expect(more).toBeVisible();
+          const bar = await shellBar(page, target.bar);
+          const more = await openMore(page, target.bar);
           await expect(more.getByRole('button', { name: /web view/i })).toHaveCount(0);
           const tabLabels = (await bar.getByRole('button').allInnerTexts())
             .map((label) => label.replace(/\s+/g, ' ').trim())
@@ -128,14 +144,14 @@ test.describe('app mode navigation has a way back', () => {
               label: node.getAttribute('data-more-label') || '',
             })),
           );
-          await bar.getByRole('button', { name: 'More' }).click();
+          await page.locator('[data-more-backdrop="1"]').click();
           await expect(page.locator('[data-role-more="open"]')).toHaveCount(0);
 
           for (const label of tabLabels) {
             await page.goto(target.home, { waitUntil: 'domcontentloaded' });
             await settle(page);
             const before = new URL(page.url()).pathname;
-            await page.locator(`[data-role-tab-bar="${target.bar}"]`).getByRole('button', { name: label, exact: true }).click();
+            await (await shellBar(page, target.bar)).getByRole('button', { name: label, exact: true }).click();
             const landed = await assertLoaded(page, `${target.role} tab ${label}`);
             if (landed !== before) {
               await page.goBack().catch(() => {});
@@ -147,9 +163,7 @@ test.describe('app mode navigation has a way back', () => {
             await page.goto(target.home, { waitUntil: 'domcontentloaded' });
             await settle(page);
             const before = new URL(page.url()).pathname;
-            await page.locator(`[data-role-tab-bar="${target.bar}"]`).getByRole('button', { name: 'More' }).click();
-            const sheet = page.locator('[data-role-more="open"]');
-            await expect(sheet).toBeVisible();
+            const sheet = await openMore(page, target.bar);
             await sheet.locator(`[data-more-href="${item.href}"][data-more-label="${item.label}"]`).first().click();
             const landed = await assertLoaded(page, `${target.role} more ${item.label} ${item.href}`);
             if (landed !== before) {
@@ -169,13 +183,11 @@ test.describe('app mode navigation has a way back', () => {
     try {
       await page.goto('/shop/home', { waitUntil: 'domcontentloaded' });
       await settle(page);
-      await expect(page.locator('[data-role-tab-bar="shop"]')).toBeVisible({ timeout: 20000 });
+      await expect(page.locator('[data-role-tab-bar="shop"][data-shell-ready="1"]')).toBeVisible({ timeout: 20000 });
       await expect(page.locator('[data-desktop-view-escape]')).toHaveCount(0);
       const stored = await page.evaluate(() => localStorage.getItem('viewMode'));
       expect(stored).not.toBe('desktop');
-      await page.locator('[data-role-tab-bar="shop"]').getByRole('button', { name: 'More' }).click();
-      const more = page.locator('[data-role-more="open"]');
-      await expect(more).toBeVisible();
+      const more = await openMore(page, 'shop');
       await expect(more.locator('[data-web-view-toggle]')).toHaveCount(0);
       await expect(more.getByRole('button', { name: /web view/i })).toHaveCount(0);
     } finally {

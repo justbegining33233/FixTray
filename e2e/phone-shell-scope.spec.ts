@@ -159,11 +159,12 @@ test.describe('phone shell scroll and platform owner scope', () => {
       await settle(page);
       const bar = page.locator('[data-role-tab-bar="superadmin"]');
       await expect(bar).toBeVisible({ timeout: 20000 });
+      await expect(page.locator('[data-role-tab-bar="superadmin"][data-shell-ready="1"]')).toBeVisible({ timeout: 20000 });
       await expect(bar).toContainText('Overview');
       await expect(bar).toContainText('Shops');
       await expect(bar).toContainText('Customers');
       await expect(bar).toContainText('Analytics');
-      await bar.getByRole('button', { name: 'More' }).click();
+      await bar.locator('[data-tab-more="1"]').click();
       const more = page.locator('[data-role-more="open"]');
       await expect(more).toBeVisible();
       const labels = await more.locator('button').allInnerTexts();
@@ -214,8 +215,9 @@ test.describe('phone shell scroll and platform owner scope', () => {
       await settle(page);
       await expect(page).toHaveURL(/\/shop\/reports/);
       await expect(page.locator('[data-mobile-shell-body]')).toBeVisible({ timeout: 20000 });
-      const bar = page.locator('[data-role-tab-bar="shop"]');
-      await bar.getByRole('button', { name: 'More' }).click();
+      const bar = page.locator('[data-role-tab-bar="shop"][data-shell-ready="1"]');
+      await expect(bar).toBeVisible({ timeout: 20000 });
+      await bar.locator('[data-tab-more="1"]').click();
       const more = page.locator('[data-role-more="open"]');
       const flat = (await more.locator('button').allInnerTexts()).join('\n');
       for (const label of SHOP_MORE_STILL_THERE) expect(flat).toContain(label);

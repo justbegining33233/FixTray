@@ -81,6 +81,8 @@ describe('stale tech-offline page', () => {
     expect(sw).toContain('fixtray-v8');
     expect(sw).toContain("request.mode === 'navigate'");
     expect(sw).toContain('injectPlatformOwnerEscape');
+    expect(sw).toContain("charAt(0) === '<'");
+    expect(sw).toContain('precacheUrl');
     const navigateFirst = sw.indexOf('networkOfflineNavigation(request)');
     const assetCache = sw.indexOf('caches.match(request)');
     expect(navigateFirst).toBeGreaterThan(0);

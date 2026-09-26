@@ -66,8 +66,17 @@ async function session(context: BrowserContext, role: string, native: boolean) {
   });
 }
 
+async function settle(page: Page) {
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+  // The production service worker reloads the page once when it takes control.
+  await page.waitForFunction(() => navigator.serviceWorker?.controller, undefined, { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  await page.waitForLoadState('domcontentloaded').catch(() => {});
+}
+
 async function probeScroll(page: Page, path: string) {
   await page.goto(path, { waitUntil: 'domcontentloaded' });
+  await settle(page);
   const shell = page.locator('[data-mobile-shell-body]');
   await expect(shell).toBeVisible({ timeout: 20000 });
   await page.evaluate(() => {
@@ -76,7 +85,8 @@ async function probeScroll(page: Page, path: string) {
     const spacer = document.createElement('div');
     spacer.dataset.scrollProbe = '1';
     spacer.style.height = '2400px';
-    body.appendChild(spacer);
+    // Put the probe at the top so the wheel and swipe hit the shell, not a nested table scroller.
+    body.insertBefore(spacer, body.firstChild);
   });
   const metrics = await shell.evaluate((node) => ({
     scrollHeight: node.scrollHeight,
@@ -93,13 +103,18 @@ async function probeScroll(page: Page, path: string) {
   const box = await shell.boundingBox();
   if (!box) throw new Error(`no shell box for ${path}`);
   const client = await page.context().newCDPSession(page);
-  const x = box.x + box.width / 2;
-  const y1 = box.y + Math.min(box.height * 0.72, box.height - 24);
-  const y2 = box.y + 40;
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: y1, id: 1 }] });
-  for (let step = 1; step <= 6; step += 1) {
-    const y = y1 + ((y2 - y1) * step) / 6;
-    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y, id: 1 }] });
+  await client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+  // Stay above the fixed tab bar. The body extends underneath it.
+  const x = Math.round(box.x + box.width / 2);
+  const y1 = Math.round(box.y + Math.min(box.height * 0.55, box.height - 120));
+  const y2 = Math.round(box.y + 48);
+  const point = (y: number) => ({ x, y, id: 1, radiusX: 1, radiusY: 1, force: 1 });
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(y1)] });
+  const steps = 8;
+  for (let step = 1; step <= steps; step += 1) {
+    const y = Math.round(y1 + ((y2 - y1) * step) / steps);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(y)] });
+    await page.waitForTimeout(20);
   }
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await client.detach();
@@ -107,7 +122,6 @@ async function probeScroll(page: Page, path: string) {
 }
 
 test.describe('phone shell scroll and platform owner scope', () => {
-  test.describe.configure({ mode: 'serial' });
 
   for (const mode of [
     { name: 'android-app-phone', width: 390, height: 844, ua: 'FixTray-Android-App-Pro', native: true },
@@ -142,6 +156,7 @@ test.describe('phone shell scroll and platform owner scope', () => {
     const page = await context.newPage();
     try {
       await page.goto('/admin/home', { waitUntil: 'domcontentloaded' });
+      await settle(page);
       const bar = page.locator('[data-role-tab-bar="superadmin"]');
       await expect(bar).toBeVisible({ timeout: 20000 });
       await expect(bar).toContainText('Overview');
@@ -169,7 +184,7 @@ test.describe('phone shell scroll and platform owner scope', () => {
     const page = await context.newPage();
     try {
       for (const path of OWNER_REDIRECTS) {
-        await page.goto(path, { waitUntil: 'domcontentloaded' });
+        await page.goto(path, { waitUntil: 'domcontentloaded' }).catch(() => {});
         await expect(page).toHaveURL(/\/admin\/home$/, { timeout: 20000 });
       }
       await page.goto('/admin/home');
@@ -196,6 +211,7 @@ test.describe('phone shell scroll and platform owner scope', () => {
     const page = await context.newPage();
     try {
       await page.goto('/shop/reports', { waitUntil: 'domcontentloaded' });
+      await settle(page);
       await expect(page).toHaveURL(/\/shop\/reports/);
       await expect(page.locator('[data-mobile-shell-body]')).toBeVisible({ timeout: 20000 });
       const bar = page.locator('[data-role-tab-bar="shop"]');
@@ -204,7 +220,9 @@ test.describe('phone shell scroll and platform owner scope', () => {
       const flat = (await more.locator('button').allInnerTexts()).join('\n');
       for (const label of SHOP_MORE_STILL_THERE) expect(flat).toContain(label);
 
-      await page.goto('/admin/user-management', { waitUntil: 'domcontentloaded' });
+      await page.goto('/admin/user-management', { waitUntil: 'domcontentloaded' }).catch(async () => {
+        await page.goto('/admin/user-management', { waitUntil: 'domcontentloaded' });
+      });
       await expect(page.getByRole('heading', { name: 'Forbidden' })).toBeVisible({ timeout: 20000 });
     } finally {
       await context.close();
@@ -219,9 +237,12 @@ test.describe('phone shell scroll and platform owner scope', () => {
       const rolePage = await roleContext.newPage();
       try {
         await rolePage.goto(path, { waitUntil: 'domcontentloaded' });
+        await settle(rolePage);
         await expect(rolePage).toHaveURL(new RegExp(`${path}$`));
         await expect(rolePage.locator('[data-mobile-shell-body]')).toBeVisible({ timeout: 20000 });
-        await rolePage.goto('/admin/pending-shops', { waitUntil: 'domcontentloaded' });
+        await rolePage.goto('/admin/pending-shops', { waitUntil: 'domcontentloaded' }).catch(async () => {
+          await rolePage.goto('/admin/pending-shops', { waitUntil: 'domcontentloaded' });
+        });
         await expect(rolePage.getByRole('heading', { name: 'Forbidden' })).toBeVisible({ timeout: 20000 });
       } finally {
         await roleContext.close();
@@ -239,7 +260,8 @@ test.describe('phone shell scroll and platform owner scope', () => {
     const page = await context.newPage();
     try {
       await page.goto('/auth/login', { waitUntil: 'domcontentloaded' });
-      await page.waitForFunction(() => navigator.serviceWorker?.controller, undefined, { timeout: 20000 });
+      await settle(page);
+      await page.waitForTimeout(500);
       await page.evaluate(async () => {
         const cache = await caches.open('fixtray-v8');
         const stale = '<!doctype html><html><head><title>stale</title></head><body><h1>STUCK OFFLINE</h1></body></html>';

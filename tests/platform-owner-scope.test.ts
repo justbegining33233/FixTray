@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { generateAccessToken } from '../src/lib/auth';
-import { PLATFORM_HOME, isPlatformActor, isShopScopedPath, platformOwnerRedirect } from '../src/lib/platformOwnerScope';
+import { PLATFORM_HOME, isPlatformActor, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from '../src/lib/platformOwnerScope';
 import { roleDeniedRedirect } from '../src/lib/roleNav';
 import { gateCrossRole, requestHeadersWithNativePlatform } from '../src/proxy';
 
@@ -61,6 +61,15 @@ describe('platform owner scope', () => {
 
     const anonymous = await gateCrossRole(new NextRequest('http://localhost/tech-offline/'));
     expect(anonymous).toBeNull();
+
+    expect(isStaticAssetPath('/tech-offline/platform-owner.js')).toBe(true);
+    expect(isStaticAssetPath('/tech-offline/app.css')).toBe(true);
+    expect(isStaticAssetPath('/tech-offline/index.html')).toBe(false);
+    expect(isStaticAssetPath('/tech-offline/')).toBe(false);
+    const asset = await gateCrossRole(new NextRequest('http://localhost/tech-offline/platform-owner.js', {
+      headers: { cookie: `sos_auth=${owner}` },
+    }));
+    expect(asset).toBeNull();
 
     const forbidden = await gateCrossRole(new NextRequest('http://localhost/admin/user-management', {
       headers: { cookie: `sos_auth=${shop}` },

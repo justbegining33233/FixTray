@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
-import { PLATFORM_HOME, isShopScopedPath, platformOwnerRedirect } from './lib/platformOwnerScope';
+import { PLATFORM_HOME, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -189,7 +189,8 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
     request.headers.get('authorization')?.replace('Bearer ', '');
 
   // The platform owner only sees platform pages. Shop screens send it home.
-  if (token && isShopScopedPath(pathname)) {
+  // Leave scripts and styles alone so a cached offline page can still load them.
+  if (token && isShopScopedPath(pathname) && !isStaticAssetPath(pathname)) {
     const ownerPayload = await verifyJwt(token);
     const ownerRole = typeof ownerPayload?.role === 'string' ? ownerPayload.role : undefined;
     if (platformOwnerRedirect(pathname, { role: ownerRole })) {

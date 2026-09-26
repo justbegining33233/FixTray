@@ -24,9 +24,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) =>
-        cache.addAll(PRECACHE_URLS).catch(() => {/* ignore individual failures */})
-      )
+      .then((cache) => Promise.all(PRECACHE_URLS.map((url) => precacheUrl(cache, url))))
       .catch(() => undefined)
   );
 });
@@ -45,6 +43,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// addAll follows redirects and would store /admin/home HTML under a script URL.
+// Keep only a real 200, and never a document in place of a script or style.
+function precacheUrl(cache, url) {
+  const documentUrl = url === '/offline' || url === OFFLINE_SHELL || /\.html$/i.test(url);
+  return fetch(url, { redirect: 'manual', cache: 'no-store' }).then((response) => {
+    if (!response || !response.ok || response.type === 'opaqueredirect') return undefined;
+    if (!documentUrl && isHtmlResponse(response)) return undefined;
+    return cache.put(url, response);
+  }).catch(() => undefined);
+}
+
 function isOfflineWorkspacePath(pathname) {
   return pathname === '/tech-offline' || pathname.startsWith('/tech-offline/');
 }
@@ -62,14 +71,28 @@ function releaseStaleOfflineClients() {
   );
 }
 
+function isHtmlResponse(response) {
+  if (!response) return false;
+  return (response.headers.get('content-type') || '').toLowerCase().indexOf('text/html') !== -1;
+}
+
 function injectPlatformOwnerEscape(response) {
-  return response.text().then((html) => {
-    if (html.indexOf('platform-owner.js') !== -1 || html.indexOf('fixtrayLeavePlatformOwner') !== -1) {
+  return Promise.all([response.text(), caches.match('/tech-offline/platform-owner.js')]).then(([html, script]) => {
+    if (html.indexOf('fixtrayLeavePlatformOwner') !== -1) {
       return new Response(html, { status: response.status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
-    const tag = '<script src="/tech-offline/platform-owner.js"></script>';
-    const next = html.indexOf('</head>') !== -1 ? html.replace('</head>', tag + '</head>') : tag + html;
-    return new Response(next, { status: response.status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    const finish = (code) => {
+      // A redirected asset cache can store the platform home HTML under the script URL.
+      // Never execute that as JavaScript.
+      if (code && String(code).trim().charAt(0) === '<') code = '';
+      // Inline the escape so a cached page can leave even when the script request cannot.
+      const tag = code
+        ? '<script>' + code.replace(/<\/script/gi, '<\\/script') + '</script>'
+        : '<script src="/tech-offline/platform-owner.js"></script>';
+      const next = html.indexOf('</head>') !== -1 ? html.replace('</head>', tag + '</head>') : tag + html;
+      return new Response(next, { status: response.status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    };
+    return script && !isHtmlResponse(script) ? script.text().then(finish) : finish('');
   });
 }
 
@@ -132,13 +155,17 @@ self.addEventListener('fetch', (event) => {
       return;
     }
     event.respondWith(
-      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => undefined);
-        }
-        return response;
-      }))
+      caches.match(request).then((cached) => {
+        if (cached && !isHtmlResponse(cached)) return cached;
+        return fetch(request, { redirect: 'manual' }).then((response) => {
+          if (response.ok && response.type !== 'opaqueredirect' && !isHtmlResponse(response)) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => undefined);
+            return response;
+          }
+          return cached || response;
+        }).catch(() => cached || new Response('', { status: 504 }));
+      })
     );
     return;
   }

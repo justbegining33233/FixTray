@@ -76,3 +76,8 @@ export function platformOwnerRedirect(pathname: string, actor: PlatformActor): s
 export function isShopScopedHref(href: string): boolean {
   return isShopScopedPath(href);
 }
+
+/** Scripts, styles, and fonts under a shop path are not pages. */
+export function isStaticAssetPath(pathname: string): boolean {
+  return /\.(?:js|mjs|css|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|json|txt|xml)$/i.test(cleanPath(pathname));
+}

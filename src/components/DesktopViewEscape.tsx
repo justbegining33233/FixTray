@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useIsNative } from '@/context/NativeContext';
 import { setViewMode } from '@/hooks/useIsMobile';
 import { isAppWebViewClient } from '@/lib/nativeIntro';
-import { usePhrase } from '@/lib/usePhrase';
 
 /**
  * Always-visible way out of a stored desktop preference.
@@ -12,7 +12,7 @@ import { usePhrase } from '@/lib/usePhrase';
  * The installed app never shows this — it ignores the preference entirely.
  */
 export default function DesktopViewEscape() {
-  const say = usePhrase();
+  const t = useTranslations('chrome');
   const native = useIsNative();
   const [forcedDesktop, setForcedDesktop] = useState(false);
 
@@ -48,7 +48,7 @@ export default function DesktopViewEscape() {
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
-      <span style={{ fontSize: 13, fontWeight: 650, lineHeight: 1.3 }}>{say('You are in the desktop layout.')}</span>
+      <span style={{ fontSize: 13, fontWeight: 650, lineHeight: 1.3 }}>Desktop layout</span>
       <button
         type="button"
         onClick={() => setViewMode('mobile')}
@@ -64,7 +64,7 @@ export default function DesktopViewEscape() {
           cursor: 'pointer',
         }}
       >
-        {say('Switch to Mobile View')}
+        {t('mobileView')}
       </button>
     </div>
   );

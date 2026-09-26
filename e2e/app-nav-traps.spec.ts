@@ -150,7 +150,9 @@ test.describe('app mode navigation has a way back', () => {
 
           const returnHome = async () => {
             if (new URL(page.url()).pathname !== target.home) {
-              await page.goBack({ waitUntil: 'domcontentloaded' }).catch(() => {});
+              // Client-side back does not fire a document load. Waiting for one burns the navigation timeout.
+              await page.goBack({ waitUntil: 'commit', timeout: 8000 }).catch(() => {});
+              await page.waitForFunction((home) => location.pathname === home, target.home, { timeout: 8000 }).catch(() => {});
             }
             if (new URL(page.url()).pathname !== target.home) {
               await page.goto(target.home, { waitUntil: 'domcontentloaded' });

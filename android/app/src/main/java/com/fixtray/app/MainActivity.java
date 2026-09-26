@@ -23,6 +23,7 @@ import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
     private boolean introVisible = false;
+    private OnBackPressedCallback backCallback;
     private FrameLayout introLayer;
     private TextureView introTexture;
     private MediaPlayer introPlayer;
@@ -57,8 +58,8 @@ public class MainActivity extends BridgeActivity {
             ws.setLoadWithOverviewMode(false);
         }
 
-        // -- Handle back button: go back in WebView history if possible --
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+        // Hardware back: close overlays or return inside the app. Exit only from home.
+        backCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 if (introVisible) {
@@ -66,15 +67,17 @@ public class MainActivity extends BridgeActivity {
                     return;
                 }
                 WebView wv = getBridge().getWebView();
-                if (wv != null && wv.canGoBack()) {
-                    wv.goBack();
-                } else {
-                    // Let the system handle it (exit app)
-                    setEnabled(false);
-                    getOnBackPressedDispatcher().onBackPressed();
+                if (wv == null) {
+                    exitFromBack();
+                    return;
                 }
+                wv.evaluateJavascript(
+                    "(function(){try{return window.fixtrayHardwareBack?window.fixtrayHardwareBack():'native';}catch(e){return 'native';}})()",
+                    value -> runOnUiThread(() -> applyHardwareBack(value))
+                );
             }
-        });
+        };
+        getOnBackPressedDispatcher().addCallback(this, backCallback);
 
         // -- Inject CSS on every page load via Capacitor's proper API --
         getBridge().addWebViewListener(new WebViewListener() {
@@ -89,6 +92,24 @@ public class MainActivity extends BridgeActivity {
         });
 
         showIntro();
+    }
+
+    /** "handled" means the page already moved. "exit" leaves the app. "native" is the old goBack-or-exit path. */
+    private void applyHardwareBack(String value) {
+        String action = value == null ? "native" : value.replace("\"", "").trim();
+        if ("handled".equals(action)) return;
+        WebView wv = getBridge().getWebView();
+        if ("native".equals(action) && wv != null && wv.canGoBack()) {
+            wv.goBack();
+            return;
+        }
+        exitFromBack();
+    }
+
+    private void exitFromBack() {
+        if (backCallback != null) backCallback.setEnabled(false);
+        getOnBackPressedDispatcher().onBackPressed();
+        if (backCallback != null) backCallback.setEnabled(true);
     }
 
     @Override

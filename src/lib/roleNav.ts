@@ -23,6 +23,7 @@ const MANAGER_SHELL_HREFS: Record<string, string> = {
   '/shop/estimates': '/manager/estimates',
   '/shop/dvi': '/manager/inspections',
   '/shop/work-authorizations': '/manager/work-authorizations',
+  '/shop/manage-team': '/manager/team',
   '/shop/customer-messages': '/manager/messages',
   '/shop/analytics': '/manager/reports',
   '/shop/admin': '/manager/home',

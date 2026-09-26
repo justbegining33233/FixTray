@@ -120,8 +120,8 @@ export function nativePlatformFromRequest(request: NextRequest): 'android' | 'io
   const nativeCookie = request.cookies.get('x-fixtray-native')?.value;
   const ua = request.headers.get('user-agent') ?? '';
   if (nativeCookie === 'android' || nativeCookie === 'ios') return nativeCookie;
-  if (ua.includes('FixTray-Android-App-Pro')) return 'android';
-  if (ua.includes('FixTray-iOS-App-Pro')) return 'ios';
+  if (ua.includes('FixTray-Android-App')) return 'android';
+  if (ua.includes('FixTray-iOS-App')) return 'ios';
   return null;
 }
 

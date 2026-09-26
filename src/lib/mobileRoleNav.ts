@@ -8,6 +8,7 @@
 
 import { normalizeRole } from '@/lib/roleNav';
 import { isShopScopedHref } from '@/lib/platformOwnerScope';
+import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
 
 export type MobileIconName =
   | 'home'
@@ -76,6 +77,20 @@ export function withoutOwnerOnlyLinks(nav: MobileRoleNav, isOwner: boolean): Mob
       .map((group) => ({
         ...group,
         items: group.items.filter((item) => item.label !== 'Owner Tools' && !item.href.startsWith('/admin/owner')),
+      }))
+      .filter((group) => group.items.length > 0),
+  };
+}
+
+/** Sessions, API keys, health, and the other shop-edge pages stay off shop menus. */
+export function withoutShopEdgeSensitiveLinks(nav: MobileRoleNav): MobileRoleNav {
+  return {
+    ...nav,
+    tabs: nav.tabs.filter((tab) => !isShopEdgeSensitivePath(tab.href)),
+    more: nav.more
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => !isShopEdgeSensitivePath(item.href)),
       }))
       .filter((group) => group.items.length > 0),
   };
@@ -246,8 +261,6 @@ const shopNav: MobileRoleNav = {
     ]),
     section('Shop', [
       link('Command Center', '/shop/admin', 'clipboard'),
-      link('Shop Admin Health', '/shop/admin/health', 'search'),
-      link('Shop Admin Logs', '/shop/admin/logs', 'file'),
       link('Shop Admin Settings', '/shop/admin/settings', 'settings'),
       link('Time Clock', '/shop/timeclock', 'clock'),
       link('Services', '/shop/services', 'wrench'),
@@ -267,10 +280,6 @@ const shopNav: MobileRoleNav = {
       link('Shop Settings', '/shop/settings', 'settings'),
       link('Permissions', '/shop/settings/permissions', 'settings'),
       link('Schedule', '/shop/settings/schedule', 'calendar'),
-      link('Sessions', '/shop/settings/sessions', 'clock'),
-      link('Two-Factor Auth', '/shop/settings/two-factor', 'settings'),
-      link('API Keys', '/shop/settings/api-keys', 'settings'),
-      link('Webhooks', '/shop/settings/webhooks', 'settings'),
       link('Profile', '/shop/profile', 'user'),
       link('Complete Profile', '/shop/complete-profile', 'user'),
       link('Shop', '/shop', 'home'),
@@ -396,7 +405,6 @@ const customerNav: MobileRoleNav = {
   ],
   more: [
     section('Services', [
-      link('Offline', '/tech-offline/', 'clipboard'),
       link('Find Shops', '/customer/findshops', 'search'),
       link('Work Orders', '/customer/workorders', 'orders'),
       link('My Estimates', '/customer/estimates', 'file'),
@@ -429,7 +437,7 @@ const customerNav: MobileRoleNav = {
 
 export const MOBILE_ROLE_NAVS: Record<MobileRoleNav['id'], MobileRoleNav> = {
   superadmin: superadminNav,
-  shop: shopNav,
+  shop: withoutShopEdgeSensitiveLinks(shopNav),
   manager: managerNav,
   tech: techNav,
   customer: customerNav,

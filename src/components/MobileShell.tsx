@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import type { Route } from 'next';
 import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { isAppWebViewClient } from '@/lib/nativeIntro';
 import { normalizeRole, readClientActorRole, shellHrefForRole } from '@/lib/roleNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
@@ -677,6 +678,7 @@ export default function MobileShell({
   const { user } = useAuth();
   const isNative = useIsNative();
   const isMobile = useIsMobile();
+  const [inApp, setInApp] = useState(isNative);
   const router = useRouter();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -697,6 +699,24 @@ export default function MobileShell({
     manager: '/manager/home',
     admin: '/admin/home',
   };
+
+  useEffect(() => {
+    if (isAppWebViewClient()) setInApp(true);
+  }, []);
+
+  useEffect(() => {
+    const close = () => {
+      setDrawerOpen(false);
+      setNewMenuOpen(false);
+      setMoreOpen(false);
+      if (drawerCloseTimerRef.current) clearTimeout(drawerCloseTimerRef.current);
+      if (newMenuCloseTimerRef.current) clearTimeout(newMenuCloseTimerRef.current);
+      drawerCloseTimerRef.current = setTimeout(() => setDrawerMounted(false), 180);
+      newMenuCloseTimerRef.current = setTimeout(() => setNewMenuMounted(false), 180);
+    };
+    window.addEventListener('fixtray-close-overlays', close);
+    return () => window.removeEventListener('fixtray-close-overlays', close);
+  }, []);
 
   // Close overlays on route change
   useEffect(() => {
@@ -1005,6 +1025,7 @@ export default function MobileShell({
       {/* ─── DRAWER ──────────────────────────────────────────────── */}
       {drawerMounted && (
         <div
+          data-mobile-drawer={drawerOpen ? 'open' : 'closed'}
           onClick={closeDrawer}
           style={{
             position: 'fixed',
@@ -1095,22 +1116,25 @@ export default function MobileShell({
               <LanguageSwitcher />
             </div>
 
-            {/* Switch to Web View */}
-            <div style={{ padding: '6px 16px 0' }}>
-              <button
-                onClick={() => {
-                  localStorage.setItem('viewMode', 'desktop');
-                  window.location.reload();
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  fontSize: 12, color: '#93c5fd', cursor: 'pointer',
-                  background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
-                  padding: '8px 12px', borderRadius: 8, width: '100%', textAlign: 'left',
-                  touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
-                }}
-              >🖥️ {t('webView')}</button>
-            </div>
+            {inApp ? null : (
+              <div style={{ padding: '6px 16px 0' }}>
+                <button
+                  type="button"
+                  data-web-view-toggle="1"
+                  onClick={() => {
+                    localStorage.setItem('viewMode', 'desktop');
+                    window.location.reload();
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    fontSize: 12, color: '#93c5fd', cursor: 'pointer',
+                    background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                    padding: '8px 12px', borderRadius: 8, width: '100%', textAlign: 'left',
+                    touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                  }}
+                >🖥️ {t('webView')}</button>
+              </div>
+            )}
 
             {/* Sign out */}
             <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>

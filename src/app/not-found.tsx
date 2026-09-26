@@ -1,11 +1,18 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
 import Link from 'next/link';
 import { FaHome, FaArrowLeft, FaExclamationTriangle } from 'react-icons/fa';
+import { ROLE_HOME } from '@/lib/roleConfig';
 
 export default function NotFound() {
   const say = usePhrase();
+  const [home, setHome] = useState('/');
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') || '';
+    if (ROLE_HOME[role]) setHome(ROLE_HOME[role]);
+  }, []);
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-lg w-full text-center">
@@ -29,7 +36,8 @@ export default function NotFound() {
           >
             <FaArrowLeft className="w-4 h-4" /> {say("Go Back")}{' '}</button>
           <Link
-            href="/"
+            href={home as never}
+            data-not-found-home="1"
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors"
             style={{ background: '#e5332a', color: '#fff' }}
           >

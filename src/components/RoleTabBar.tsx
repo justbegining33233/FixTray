@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Capacitor } from '@capacitor/core';
+import { useIsNative } from '@/context/NativeContext';
+import { isAppWebViewClient } from '@/lib/nativeIntro';
 import { usePhrase } from '@/lib/usePhrase';
 import { shellHrefForRole } from '@/lib/roleNav';
 import { useAuth } from '@/contexts/AuthContext';
@@ -73,6 +75,8 @@ export default function RoleTabBar({
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { user } = useAuth();
+  const native = useIsNative();
+  const [inApp, setInApp] = useState(native);
   const [internalOpen, setInternalOpen] = useState(false);
   const [query, setQuery] = useState('');
   const open = moreOpen ?? internalOpen;
@@ -81,6 +85,16 @@ export default function RoleTabBar({
     onMoreOpenChange?.(next);
     if (moreOpen === undefined) setInternalOpen(next);
   };
+
+  useEffect(() => {
+    if (isAppWebViewClient()) setInApp(true);
+  }, []);
+
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener('fixtray-close-overlays', close);
+    return () => window.removeEventListener('fixtray-close-overlays', close);
+  }, []);
 
   useEffect(() => {
     setOpen(false);
@@ -213,16 +227,19 @@ export default function RoleTabBar({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
           <LanguageSwitcher />
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.setItem('viewMode', 'desktop');
-              window.location.reload();
-            }}
-            style={ghostButton}
-          >
-            {say('Web view')}
-          </button>
+          {inApp ? null : (
+            <button
+              type="button"
+              data-web-view-toggle="1"
+              onClick={() => {
+                localStorage.setItem('viewMode', 'desktop');
+                window.location.reload();
+              }}
+              style={ghostButton}
+            >
+              {say('Web view')}
+            </button>
+          )}
           <button type="button" onClick={() => void signOut()} style={{ ...ghostButton, color: 'var(--accent, #e5332a)', borderColor: 'var(--accent-border, rgba(229,51,42,0.3))' }}>
             <IconLogOut size={16} /> {say('Sign Out')}
           </button>
@@ -260,6 +277,8 @@ function MoreCard({ item, active, onClick }: { item: MobileLink; active: boolean
   return (
     <button
       type="button"
+      data-more-href={item.href}
+      data-more-label={item.label}
       onClick={onClick}
       style={{
         display: 'flex',

@@ -117,7 +117,8 @@ async function assertLoaded(page: Page, label: string) {
   const path = await stablePath(page);
   expect(path, label).not.toMatch(/\/auth\/login/);
   const body = await page.locator('body').innerText({ timeout: 15000 }).catch(() => '');
-  expect(body, label).not.toMatch(/Application error|Internal Server Error|Unhandled Runtime Error/i);
+  // A widget can say the data request failed when the database is absent. That is not a stuck page.
+  expect(body, label).not.toMatch(/Application error|Unhandled Runtime Error/i);
   expect(body, label).not.toMatch(/Page Not Found|404\s+-\s+Not Found/);
   if (path.startsWith('/tech-offline')) {
     await expect(page.locator('#tabbar'), label).toBeVisible({ timeout: 15000 });

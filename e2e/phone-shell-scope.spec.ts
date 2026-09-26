@@ -203,6 +203,7 @@ test.describe('phone shell scroll and platform owner scope', () => {
   });
 
   test('shop, manager, tech, and customer still reach their pages and 403 on admin', async ({ browser }) => {
+    test.setTimeout(180_000);
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
       userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',

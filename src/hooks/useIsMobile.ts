@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useIsMobileUA } from '@/context/NativeContext';
+import { isAppWebViewClient } from '@/lib/nativeIntro';
 
 export type ViewMode = 'auto' | 'mobile' | 'desktop';
 
@@ -40,7 +41,8 @@ export function useIsMobile(): boolean {
   useEffect(() => {
     const stored = localStorage.getItem('viewMode');
     if (stored === 'desktop') { setIsMobile(false); return; }
-    if (stored === 'mobile')  { setIsMobile(true);  return; }
+    // The Android/iOS app stays in the phone shell at tablet widths. Web view still opts out.
+    if (stored === 'mobile' || isAppWebViewClient()) { setIsMobile(true); return; }
     // No preference → use viewport width, respond to resize
     const check = () => setIsMobile(window.innerWidth < 768);
     check();

@@ -1,6 +1,6 @@
 /* eslint-disable */
 // FixTray Service Worker — offline caching + background sync
-const CACHE_NAME = 'fixtray-v7';
+const CACHE_NAME = 'fixtray-v8';
 const API_CACHE   = 'fixtray-api-v3';
 
 // Precache the static tech workspace. Next HTML stays network-first so
@@ -13,6 +13,7 @@ const PRECACHE_URLS = [
   '/tech-offline/app.js',
   '/tech-offline/app.css',
   '/tech-offline/engine.js',
+  '/tech-offline/platform-owner.js',
   '/tech-offline/fonts/inter-latin.woff2',
   '/tech-offline/fonts/plus-jakarta-latin.woff2',
 ];
@@ -40,8 +41,55 @@ self.addEventListener('activate', (event) => {
           .map((k) => caches.delete(k))
       )
     ).then(() => self.clients.claim())
+      .then(() => releaseStaleOfflineClients())
   );
 });
+
+function isOfflineWorkspacePath(pathname) {
+  return pathname === '/tech-offline' || pathname.startsWith('/tech-offline/');
+}
+
+// A controlling worker can keep serving a cached copy of this page after the
+// platform-owner redirect ships. Reload those tabs so the new handler runs.
+function releaseStaleOfflineClients() {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) =>
+    Promise.all(clients.map((client) => {
+      let path = '';
+      try { path = new URL(client.url).pathname; } catch (e) { return undefined; }
+      if (!isOfflineWorkspacePath(path) || typeof client.navigate !== 'function') return undefined;
+      return client.navigate(client.url);
+    }))
+  );
+}
+
+function injectPlatformOwnerEscape(response) {
+  return response.text().then((html) => {
+    if (html.indexOf('platform-owner.js') !== -1 || html.indexOf('fixtrayLeavePlatformOwner') !== -1) {
+      return new Response(html, { status: response.status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
+    const tag = '<script src="/tech-offline/platform-owner.js"></script>';
+    const next = html.indexOf('</head>') !== -1 ? html.replace('</head>', tag + '</head>') : tag + html;
+    return new Response(next, { status: response.status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  });
+}
+
+// Document loads hit the network so a platform-owner redirect can change the
+// URL. Cache is only the offline fallback, and that fallback still carries
+// the escape script.
+function networkOfflineNavigation(request) {
+  return fetch(request, { redirect: 'manual', cache: 'no-store' }).then((response) => {
+    if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+      return response;
+    }
+    if (response.ok) {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(OFFLINE_SHELL, copy)).catch(() => undefined);
+    }
+    return response;
+  }).catch(() =>
+    caches.match(OFFLINE_SHELL).then((cached) => (cached ? injectPlatformOwnerEscape(cached) : new Response('Offline', { status: 503 })))
+  );
+}
 
 // ─── Fetch: routing strategy ──────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
@@ -76,8 +124,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static tech workspace: cache-first so a cold start with no signal still opens.
-  if (url.pathname.startsWith('/tech-offline/')) {
+  // Static tech workspace. Navigations are network-first (see networkOfflineNavigation).
+  // Scripts and styles stay cache-first so a cold start with no signal still opens.
+  if (isOfflineWorkspacePath(url.pathname)) {
+    if (request.mode === 'navigate') {
+      event.respondWith(networkOfflineNavigation(request));
+      return;
+    }
     event.respondWith(
       caches.match(request).then((cached) => cached || fetch(request).then((response) => {
         if (response.ok) {
@@ -95,11 +148,12 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() =>
-        caches.match(OFFLINE_SHELL).then(
-          (shell) => shell || caches.match('/offline').then(
+        caches.match(OFFLINE_SHELL).then((shell) => {
+          if (shell) return injectPlatformOwnerEscape(shell);
+          return caches.match('/offline').then(
             (cached) => cached || new Response('Offline', { status: 503 })
-          )
-        )
+          );
+        })
       )
     );
     return;

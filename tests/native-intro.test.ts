@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { introHandoffPath, readIntroSession } from '../src/lib/nativeIntro';
+import { introHandoffPath, isAppWebView, readIntroSession } from '../src/lib/nativeIntro';
 
 const ROOT = process.cwd();
 
@@ -71,5 +71,15 @@ describe('bundled intro stays off the website', () => {
     expect(config).toContain("url: 'https://fixtray.app/auth/login?from=intro'");
     expect(login).toContain('Capacitor.isNativePlatform()');
     expect(login).toContain('introHandoffPath');
+  });
+});
+
+describe('app webview shell', () => {
+  it('keeps the phone shell for the app user-agent and native cookie only', () => {
+    expect(isAppWebView({ userAgent: 'FixTray-Android-App-Pro' })).toBe(true);
+    expect(isAppWebView({ userAgent: 'FixTray-iOS-App-Pro' })).toBe(true);
+    expect(isAppWebView({ cookie: 'x-fixtray-native=android' })).toBe(true);
+    expect(isAppWebView({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile' })).toBe(false);
+    expect(isAppWebView({ userAgent: 'Mozilla/5.0 Chrome' })).toBe(false);
   });
 });

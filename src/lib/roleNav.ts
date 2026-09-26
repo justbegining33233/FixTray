@@ -5,6 +5,7 @@
  */
 
 import { forbiddenFromPath } from './roleAccess';
+import { platformOwnerRedirect } from './platformOwnerScope';
 
 export const SHOP_JOBS_HREF = '/shop/jobs';
 
@@ -67,8 +68,10 @@ export function managerShopRedirect(href: string, role?: string | null): string 
   return dest === path ? null : dest;
 }
 
-/** Forbidden page, or the manager-owned equivalent when one exists. */
+/** Forbidden page, the manager-owned equivalent, or the platform home for the platform owner on a shop page. */
 export function roleDeniedRedirect(pathname: string, role?: string | null): string {
+  const platformHome = platformOwnerRedirect(pathname, { role });
+  if (platformHome) return platformHome;
   const owned = managerShopRedirect(pathname, role);
   if (owned) return owned;
   const { path } = splitHref(pathname);

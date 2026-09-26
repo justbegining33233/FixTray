@@ -70,6 +70,18 @@ html {
   height: 100%;
 }
 
+/* Phone/app shell: one screen tall so [data-mobile-shell-body] scrolls.
+   100vh first for WebViews without dvh support. */
+[data-mobile-shell-root] {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+
+[data-mobile-shell-body] {
+  min-height: 0;
+}
+
 body {
   min-height: 100vh;
   min-height: 100dvh;

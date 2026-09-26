@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
+import { PLATFORM_HOME, isShopScopedPath, platformOwnerRedirect } from './lib/platformOwnerScope';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -114,6 +115,23 @@ async function verifyJwt(token: string): Promise<Record<string, unknown> | null>
   }
 }
 
+/** Android/iOS app cookie or user-agent. Layout reads `x-fixtray-native` to keep the phone shell. */
+export function nativePlatformFromRequest(request: NextRequest): 'android' | 'ios' | null {
+  const nativeCookie = request.cookies.get('x-fixtray-native')?.value;
+  const ua = request.headers.get('user-agent') ?? '';
+  if (nativeCookie === 'android' || nativeCookie === 'ios') return nativeCookie;
+  if (ua.includes('FixTray-Android-App-Pro')) return 'android';
+  if (ua.includes('FixTray-iOS-App-Pro')) return 'ios';
+  return null;
+}
+
+export function requestHeadersWithNativePlatform(request: NextRequest): Headers {
+  const headers = new Headers(request.headers);
+  const nativePlatform = nativePlatformFromRequest(request);
+  if (nativePlatform) headers.set('x-fixtray-native', nativePlatform);
+  return headers;
+}
+
 //  Proxy 
 
 export async function proxy(request: NextRequest) {
@@ -147,22 +165,8 @@ export async function proxy(request: NextRequest) {
   const shellEntry = await installedShellEntryRedirect(request);
   if (shellEntry) return shellEntry;
 
-  //  Native-app detection 
-  // Build a modified headers object that includes x-fixtray-native so
-  // layout.tsx can read it server-side and render the correct shell from byte 1.
-  const nativeCookie = request.cookies.get('x-fixtray-native')?.value;
-  const ua = request.headers.get('user-agent') ?? '';
-  const isAndroidUA = ua.includes('FixTray-Android-App-Pro');
-  const isIosUA = ua.includes('FixTray-iOS-App-Pro');
-  const nativePlatform: string | null =
-    nativeCookie === 'android' || nativeCookie === 'ios'
-      ? nativeCookie
-      : isAndroidUA ? 'android'
-      : isIosUA ? 'ios'
-      : null;
-
-  const requestHeaders = new Headers(request.headers);
-  if (nativePlatform) requestHeaders.set('x-fixtray-native', nativePlatform);
+  // layout.tsx reads x-fixtray-native so the phone shell is server-rendered at any width.
+  const requestHeaders = requestHeadersWithNativePlatform(request);
   const passThrough = () => NextResponse.next({ request: { headers: requestHeaders } });
   // 
 
@@ -179,11 +183,21 @@ export async function proxy(request: NextRequest) {
 export async function gateCrossRole(request: NextRequest): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
   if (pathname.startsWith('/api/') || pathname === '/admin/login') return null;
-  if (!rolesForPath(pathname)) return null;
 
   const token =
     request.cookies.get('sos_auth')?.value ??
     request.headers.get('authorization')?.replace('Bearer ', '');
+
+  // The platform owner only sees platform pages. Shop screens send it home.
+  if (token && isShopScopedPath(pathname)) {
+    const ownerPayload = await verifyJwt(token);
+    const ownerRole = typeof ownerPayload?.role === 'string' ? ownerPayload.role : undefined;
+    if (platformOwnerRedirect(pathname, { role: ownerRole })) {
+      return NextResponse.redirect(new URL(PLATFORM_HOME, request.url));
+    }
+  }
+
+  if (!rolesForPath(pathname)) return null;
 
   if (!token) {
     const loginUrl = new URL('/auth/login', request.url);
@@ -254,5 +268,7 @@ export const config = {
     '/manager/:path*',
     '/workorders/:path*',
     '/reports/:path*',
+    '/tech-offline',
+    '/tech-offline/:path*',
   ],
 };

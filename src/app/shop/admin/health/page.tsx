@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
 export default function ShopAdminHealthPage() {
   const say = usePhrase();
+  useRequireAuth(['shop']);
   const [shopName, setShopName] = useState('');
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
 

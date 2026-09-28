@@ -80,6 +80,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['resend', 'twilio', 'winston'],
   async redirects() {
     return [
+      // Next strips the trailing slash, and the folder index is not served at the bare path.
+      // Staff More links use /tech-offline/, which otherwise lands on the 404 page.
+      { source: '/tech-offline', destination: '/tech-offline/index.html', permanent: false },
       // Legacy flat-path routes — redirect to correct nested paths
       { source: '/payment-success',           destination: '/payment/success',       permanent: false },
       { source: '/payment-cancel',            destination: '/payment/cancel',        permanent: false },

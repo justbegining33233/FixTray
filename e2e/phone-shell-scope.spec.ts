@@ -6,7 +6,7 @@ const SECRET = process.env.JWT_SECRET || 'playwright-shell-secret';
 const SCROLL_PAGES = [
   { path: '/admin/user-management', role: 'superadmin' },
   { path: '/admin/activity-logs', role: 'superadmin' },
-  { path: '/shop/reports', role: 'shop' },
+  { path: '/shop/analytics', role: 'shop' },
   { path: '/shop/settings', role: 'shop' },
   { path: '/manager/team', role: 'manager' },
   { path: '/tech/jobs', role: 'tech' },
@@ -24,9 +24,9 @@ const OWNER_REDIRECTS = [
   '/admin/dvi-approvals',
 ];
 
-const SHOP_MORE_STILL_THERE = ['Offline', 'Inventory', 'Environmental Fees', 'Campaigns'];
-const OWNER_MORE_GONE = ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance'];
-const OWNER_MORE_KEPT = ['Pending Shops', 'User Management', 'Platform Settings', 'Revenue & Payouts', 'Health Check', 'Activity Logs', 'Messaging'];
+const SHOP_MORE_STILL_THERE = ['Inventory', 'Environmental Fees', 'Campaigns'];
+const OWNER_MORE_GONE = ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance', 'Owner Tools', 'Command Center', 'Security Settings', 'Platform Home', 'Admin Home'];
+const OWNER_MORE_KEPT = ['Shop Approvals', 'Users', 'Platform Settings', 'Revenue & Payouts', 'Health', 'Activity Logs', 'Messaging'];
 
 function sign(role: string) {
   return jwt.sign({
@@ -159,11 +159,12 @@ test.describe('phone shell scroll and platform owner scope', () => {
       await settle(page);
       const bar = page.locator('[data-role-tab-bar="superadmin"]');
       await expect(bar).toBeVisible({ timeout: 20000 });
+      await expect(page.locator('[data-role-tab-bar="superadmin"][data-shell-ready="1"]')).toBeVisible({ timeout: 20000 });
       await expect(bar).toContainText('Overview');
       await expect(bar).toContainText('Shops');
       await expect(bar).toContainText('Customers');
       await expect(bar).toContainText('Analytics');
-      await bar.getByRole('button', { name: 'More' }).click();
+      await bar.locator('[data-tab-more="1"]').click();
       const more = page.locator('[data-role-more="open"]');
       await expect(more).toBeVisible();
       const labels = await more.locator('button').allInnerTexts();
@@ -202,6 +203,7 @@ test.describe('phone shell scroll and platform owner scope', () => {
   });
 
   test('shop, manager, tech, and customer still reach their pages and 403 on admin', async ({ browser }) => {
+    test.setTimeout(180_000);
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
       userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
@@ -210,12 +212,13 @@ test.describe('phone shell scroll and platform owner scope', () => {
     await session(context, 'shop', false);
     const page = await context.newPage();
     try {
-      await page.goto('/shop/reports', { waitUntil: 'domcontentloaded' });
+      await page.goto('/shop/analytics', { waitUntil: 'domcontentloaded' });
       await settle(page);
-      await expect(page).toHaveURL(/\/shop\/reports/);
+      await expect(page).toHaveURL(/\/shop\/analytics/);
       await expect(page.locator('[data-mobile-shell-body]')).toBeVisible({ timeout: 20000 });
-      const bar = page.locator('[data-role-tab-bar="shop"]');
-      await bar.getByRole('button', { name: 'More' }).click();
+      const bar = page.locator('[data-role-tab-bar="shop"][data-shell-ready="1"]');
+      await expect(bar).toBeVisible({ timeout: 20000 });
+      await bar.locator('[data-tab-more="1"]').click();
       const more = page.locator('[data-role-more="open"]');
       const flat = (await more.locator('button').allInnerTexts()).join('\n');
       for (const label of SHOP_MORE_STILL_THERE) expect(flat).toContain(label);

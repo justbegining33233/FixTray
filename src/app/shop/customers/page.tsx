@@ -4,6 +4,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
 interface Customer {
   id: string;
@@ -13,6 +14,7 @@ interface Customer {
 
 export default function ShopCustomersPage() {
   const say = usePhrase();
+  useRequireAuth(['shop']);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);

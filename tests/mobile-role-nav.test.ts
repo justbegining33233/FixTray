@@ -1,36 +1,12 @@
-import fs from 'fs';
-import path from 'path';
 import {
   MOBILE_ROLE_NAVS,
   allMobileNavHrefs,
-  hrefPath,
   isSuperAdminActor,
   mobileNavForActor,
-  pageCoveredByNav,
 } from '../src/lib/mobileRoleNav';
-import { SHOP_LEVEL_ADMIN_PATHS, isShopScopedPath } from '../src/lib/platformOwnerScope';
-
-const APP = path.join(process.cwd(), 'src/app');
-
-function staticPages(roleDir: string): string[] {
-  const root = path.join(APP, roleDir);
-  const found: string[] = [];
-  const walk = (dir: string) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-        continue;
-      }
-      if (entry.name !== 'page.tsx') continue;
-      const route = full.slice(APP.length).replace(/\/page\.tsx$/, '').replace(/\\/g, '/') || '/';
-      if (route.endsWith('/login') || route.includes('[')) continue;
-      found.push(route);
-    }
-  };
-  walk(root);
-  return found.sort();
-}
+import { isShopScopedPath } from '../src/lib/platformOwnerScope';
+import { isShopEdgeSensitivePath } from '../src/lib/shopRestrictedRoutes';
+import { menuHrefs, type MenuRole } from '../src/lib/roleMenus';
 
 describe('mobile role tabs', () => {
   it('uses the approved primary labels', () => {
@@ -57,30 +33,21 @@ describe('mobile role tabs', () => {
     expect(mobileNavForActor('shop', { role: 'customer' })?.id).toBe('shop');
   });
 
-  it('shows Owner Tools only for the platform owner', () => {
+  it('does not list owner tools, offline, or duplicate platform homes', () => {
     const labels = (isOwner: boolean) =>
       mobileNavForActor('admin', { role: 'superadmin', isOwner })?.more.flatMap((group) => group.items.map((item) => item.label)) || [];
+    expect(labels(true)).not.toContain('Owner Tools');
     expect(labels(false)).not.toContain('Owner Tools');
-    expect(labels(true)).toContain('Owner Tools');
-    expect(MOBILE_ROLE_NAVS.superadmin.more.flatMap((group) => group.items.map((item) => item.label))).toContain('Owner Tools');
+    const hrefs = allMobileNavHrefs(MOBILE_ROLE_NAVS.superadmin);
+    expect(hrefs.filter((href) => href.startsWith('/admin/owner'))).toEqual([]);
+    expect(hrefs).not.toContain('/tech-offline');
+    expect(hrefs).not.toContain('/admin');
+    expect(hrefs).not.toContain('/superadmin');
+    expect(hrefs.filter((href) => href.includes('security'))).toEqual(['/admin/security']);
   });
 
-  it.each([
-    ['superadmin', ['admin', 'superadmin']],
-    ['shop', ['shop']],
-    ['manager', ['manager']],
-    ['tech', ['tech']],
-    ['customer', ['customer']],
-  ] as const)('covers every static %s page from tabs + More', (roleId, dirs) => {
-    const hrefs = allMobileNavHrefs(MOBILE_ROLE_NAVS[roleId]).map(hrefPath);
-    const pages = dirs.flatMap(staticPages);
-    // Shop subscription plans are discontinued. Leave the page for the removal PR.
-    const discontinued = new Set(['/shop/subscribe']);
-    // Shop-operational pages under /admin redirect the platform owner home, so they stay out of its menu.
-    const shopLevelAdmin = (page: string) => roleId === 'superadmin'
-      && SHOP_LEVEL_ADMIN_PATHS.some((prefix) => page === prefix || page.startsWith(`${prefix}/`));
-    const missing = pages.filter((page) => !discontinued.has(page) && !shopLevelAdmin(page) && !pageCoveredByNav(page, hrefs));
-    expect(missing).toEqual([]);
+  it.each(['superadmin', 'shop', 'manager', 'tech', 'customer'] as const)('%s app menu hrefs match the web menu', (roleId: MenuRole) => {
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS[roleId]).slice().sort()).toEqual(menuHrefs(roleId).slice().sort());
   });
 
   it('lists only platform pages for the platform owner', () => {
@@ -88,16 +55,25 @@ describe('mobile role tabs', () => {
     const hrefs = nav ? allMobileNavHrefs(nav) : [];
     expect(hrefs.length).toBeGreaterThan(0);
     expect(hrefs.filter((href) => isShopScopedPath(href))).toEqual([]);
-    const labels = nav?.more.flatMap((group) => group.items.map((item) => item.label)) ?? [];
-    for (const shopLabel of ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance']) {
+    const labels = [
+      ...(nav?.tabs.map((tab) => tab.label) ?? []),
+      ...(nav?.more.flatMap((group) => group.items.map((item) => item.label)) ?? []),
+    ];
+    for (const shopLabel of ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance', 'Owner Tools', 'Command Center', 'Security Settings', 'Platform Security', 'Platform Home', 'Admin Home']) {
       expect(labels).not.toContain(shopLabel);
     }
-    expect(labels).toEqual(expect.arrayContaining(['Pending Shops', 'Shops', 'User Management', 'Platform Settings', 'Revenue & Payouts', 'Health Check', 'Activity Logs', 'Messaging']));
+    expect(labels).toEqual(expect.arrayContaining(['Shop Approvals', 'Shops', 'Users', 'Platform Settings', 'Revenue & Payouts', 'Health', 'Activity Logs', 'Messaging']));
+    expect(labels.filter((label) => label === 'Profile' || label === 'My Profile' || label === 'Platform Profile')).toEqual(['Profile']);
+    expect(labels.filter((label) => label === 'Command Center' || label === 'Platform Home' || label === 'Admin Home' || label === 'Dashboard')).toEqual([]);
+    expect(hrefs.filter((href) => href === '/admin/home')).toEqual(['/admin/home']);
   });
 
-  it('leaves shop, manager, tech, and customer menus unchanged', () => {
-    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.shop)).toContain('/tech-offline/');
-    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.manager).length).toBeGreaterThan(0);
+  it('keeps shop edge pages and the offline app off shop, manager, and customer menus', () => {
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.shop)).not.toContain('/tech-offline');
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.shop).filter((href) => isShopEdgeSensitivePath(href))).toEqual([]);
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.manager)).not.toContain('/tech-offline');
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.customer)).not.toContain('/tech-offline');
+    expect(allMobileNavHrefs(MOBILE_ROLE_NAVS.tech)).toContain('/tech-offline');
     expect(mobileNavForActor('shop', { role: 'shop' })).toBe(MOBILE_ROLE_NAVS.shop);
     expect(mobileNavForActor('tech', { role: 'tech' })).toBe(MOBILE_ROLE_NAVS.tech);
     expect(mobileNavForActor('customer', { role: 'customer' })).toBe(MOBILE_ROLE_NAVS.customer);

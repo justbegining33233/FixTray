@@ -25,6 +25,7 @@ import { saveSeenWorkOrderIds, syncSeenWorkOrderIds } from '@/lib/seenWorkOrderA
 import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
 import { roleUsesShopAdminApis } from '@/lib/customerSession';
+import { topBarFor } from '@/lib/roleMenus';
 
 interface TopNavBarProps {
   onMenuToggle?: () => void;
@@ -373,29 +374,9 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     );
   };
 
-  const getHomeLink = () => {
-    switch (activeRole) {
-      case 'shop': return '/shop/admin';
-      case 'manager': return '/manager/home';
-      case 'tech': return '/tech/home';
-      case 'admin': return '/admin/home';
-      case 'superadmin': return '/admin/home';
-      case 'customer': return '/customer/dashboard';
-      default: return '/';
-    }
-  };
+  const getHomeLink = () => topBarFor(activeRole)?.home || '/';
 
-  const getProfileLink = (): Route => {
-    switch (activeRole) {
-      case 'shop': return '/shop/profile' as Route;
-      case 'manager': return '/manager/profile' as Route;
-      case 'tech': return '/tech/profile' as Route;
-      case 'admin': return '/admin/profile' as Route;
-      case 'superadmin': return '/superadmin/profile' as Route;
-      case 'customer': return '/customer/profile' as Route;
-      default: return '/' as Route;
-    }
-  };
+  const getProfileLink = (): Route => (topBarFor(activeRole)?.profile || '/') as Route;
 
   const handleClockToggle = async () => {
     if (typeof window === 'undefined' || !userId) return;
@@ -434,16 +415,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     }
   };
 
-  const getMessagesLink = () => {
-    switch (activeRole) {
-      case 'tech': return '/tech/messages';
-      case 'manager': return '/manager/messages';
-      case 'shop': return '/shop/customer-messages';
-      case 'admin': return '/admin/messages';
-      case 'customer': return '/customer/messages';
-      default: return '/';
-    }
-  };
+  const getMessagesLink = () => topBarFor(activeRole)?.messages || '/';
 
   const acknowledgeNotifications = async (items: Array<{ id: string; type?: string }>) => {
     if (items.length === 0) return;

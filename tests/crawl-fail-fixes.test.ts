@@ -40,10 +40,13 @@ describe('manager shell destinations', () => {
     expect(managerShopRedirect('/shop/dvi', 'manager')).toBe('/manager/inspections');
     expect(managerShopRedirect('/shop/work-authorizations', 'manager')).toBe('/manager/work-authorizations');
     expect(managerShopRedirect('/shop/jobs', 'manager')).toBe('/manager/assignments');
+    expect(managerShopRedirect('/shop/manage-team', 'manager')).toBe('/manager/team');
+    expect(shellHrefForRole('/shop/manage-team', 'manager')).toBe('/manager/team');
     expect(roleDeniedRedirect('/shop/home', 'manager')).toBe('/manager/dashboard');
     expect(roleDeniedRedirect('/shop/estimates', 'manager')).toBe('/manager/estimates');
     expect(roleDeniedRedirect('/shop/dvi', 'manager')).toBe('/manager/inspections');
     expect(roleDeniedRedirect('/shop/work-authorizations', 'manager')).toBe('/manager/work-authorizations');
+    expect(roleDeniedRedirect('/shop/manage-team', 'manager')).toBe('/manager/team');
   });
 
   it('leaves shop, tech, calendar, and roadside on their own pages', () => {

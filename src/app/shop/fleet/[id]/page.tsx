@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { FleetVehiclesList } from '@/components/FleetVehiclesList';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
 interface FleetAccount {
   id: string;
@@ -25,6 +26,7 @@ interface FleetAccount {
 
 export default function FleetAccountDetailPage() {
   const say = usePhrase();
+  useRequireAuth(['shop']);
   const params = useParams();
   const id = params.id as string;
   const [account, setAccount] = useState<FleetAccount | null>(null);

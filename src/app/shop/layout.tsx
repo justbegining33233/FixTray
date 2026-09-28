@@ -31,6 +31,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   const isDesktopMode = !(isNative || isMobile);
   const showBackToDashboard = false;
   const actorRole = normalizeRole(user?.role);
+  const shellRole = actorRole === 'manager' ? 'manager' : actorRole === 'tech' ? 'tech' : 'shop';
   const managerDest = !isLoading && actorRole === 'manager' ? managerShopRedirect(pathname, 'manager') : null;
 
   useEffect(() => {
@@ -47,8 +48,9 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
     ) return;
     // Only redirect authenticated users — don't interfere during auth loading
     if (!user) return;
-    // Managers are sent to manager-owned pages, not the shop agreement gate.
-    if (actorRole === 'manager') return;
+    // Only the shop owner signs the participation agreement. A tech or manager
+    // on a shared shop page must not be bounced into shop settings.
+    if (actorRole !== 'shop') return;
     if (typeof window !== 'undefined' && localStorage.getItem('fixtrayAgreementAccepted') === 'true') return;
 
     let cancelled = false;
@@ -76,7 +78,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   if ((isNative || isMobile) && pathname !== '/shop/home') {
     return (
       <MobileShell
-        role={actorRole === 'manager' ? 'manager' : 'shop'}
+        role={shellRole}
         isHome={false}
         sectionTitle={getTitle(pathname)}
         userName={user?.name}

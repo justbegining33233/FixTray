@@ -1,10 +1,18 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
+import Link from 'next/link';
 import { FaSatelliteDish } from 'react-icons/fa';
+import { ROLE_HOME } from '@/lib/roleConfig';
 
 export default function OfflinePage() {
   const say = usePhrase();
+  const [home, setHome] = useState('/auth/login');
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') || '';
+    setHome(ROLE_HOME[role] || '/auth/login');
+  }, []);
   return (
     <div style={{
       minHeight: '100dvh',
@@ -32,6 +40,9 @@ export default function OfflinePage() {
         }}
       >
         {say("Try Again")}{' '}</button>
+      <Link href={home as never} style={{ marginTop: 16, color: '#e5332a', fontWeight: 700, textDecoration: 'none' }}>
+        {say("Go to your home")}
+      </Link>
     </div>
   );
 }

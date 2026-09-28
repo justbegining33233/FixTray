@@ -102,10 +102,13 @@ describe('SA-002 owner access to /superadmin/tenants', () => {
       headers: { cookie: `sos_auth=${token}` },
     });
 
-    expect(await gateCrossRole(request)).toBeNull();
+    const gate = await gateCrossRole(request);
+    expect(gate?.headers.get('x-middleware-rewrite') || '').not.toContain('/forbidden');
+    expect(gate?.status).toBe(307);
+    expect(gate?.headers.get('location')).toBe('http://localhost/admin/home');
   });
 
-  it('still forbids a customer and a non-owner admin', async () => {
+  it('sends a customer and a platform admin home instead of a second tenants page', async () => {
     const customer = generateAccessToken({ id: 'c-1', role: 'customer', isOwner: true });
     const admin = generateAccessToken({ id: 'a-1', username: 'staff', role: 'admin', isOwner: false, isSuperAdmin: false });
 
@@ -116,10 +119,10 @@ describe('SA-002 owner access to /superadmin/tenants', () => {
       headers: { cookie: `sos_auth=${admin}` },
     }));
 
-    expect(customerGate).not.toBeNull();
-    expect(adminGate).not.toBeNull();
-    expect(customerGate?.headers.get('x-middleware-rewrite') || '').toContain('/forbidden');
-    expect(adminGate?.headers.get('x-middleware-rewrite') || '').toContain('/forbidden');
+    expect(customerGate?.headers.get('x-middleware-rewrite') || '').not.toContain('/forbidden');
+    expect(customerGate?.headers.get('location')).toBe('http://localhost/customer/dashboard');
+    expect(adminGate?.headers.get('x-middleware-rewrite') || '').not.toContain('/forbidden');
+    expect(adminGate?.headers.get('location')).toBe('http://localhost/admin/home');
   });
 });
 

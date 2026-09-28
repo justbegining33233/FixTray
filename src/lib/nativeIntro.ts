@@ -124,6 +124,19 @@ export function decodeIntroClaims(token: string): IntroTokenClaims | null {
  * Blocking bootstrap for `/`. Runs before the marketing page paints.
  * Does not add from=intro, so the website never plays the native intro.
  */
+/**
+ * Runs before paint. A stored desktop preference must not flash the computer
+ * layout inside the Capacitor app, and the next open must recover stuck installs.
+ */
+export function appDesktopViewResetScript(): string {
+  return `(function(){try{
+    var ua=navigator.userAgent||'';
+    var cookie=document.cookie||'';
+    var app=ua.indexOf('FixTray-Android-App')!==-1||ua.indexOf('FixTray-iOS-App')!==-1||/(?:^|;\\s*)x-fixtray-native=/.test(cookie);
+    if(app&&localStorage.getItem('viewMode')==='desktop') localStorage.removeItem('viewMode');
+  }catch(e){}})();`;
+}
+
 export function installedShellBootstrapScript(): string {
   const dashboards = JSON.stringify(ROLE_DASHBOARD);
   return `(function(){try{

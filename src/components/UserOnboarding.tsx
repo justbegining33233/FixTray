@@ -279,7 +279,7 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div data-onboarding-tour="1" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 14000 }}>
       <div className="rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" style={{background:"rgba(10,16,32,0.95)",border:"1px solid rgba(255,255,255,0.08)"}}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[rgba(255,255,255,0.08)]">
@@ -293,6 +293,9 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
             </div>
           </div>
           <button
+            type="button"
+            data-onboarding-close="1"
+            aria-label={say('Skip Tour')}
             onClick={handleSkip}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
           >

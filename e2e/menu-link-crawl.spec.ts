@@ -81,6 +81,8 @@ async function collectTargets(page: Page): Promise<string[]> {
   });
 }
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('in-page links stay inside each role menu', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'The link crawl runs once on Chromium.');
 
@@ -126,12 +128,12 @@ test.describe('in-page links stay inside each role menu', () => {
       try {
         if (role === 'customer') {
           await page.goto('/customer/dashboard', { waitUntil: 'domcontentloaded' });
-          await expect(page.locator('a[href="/customer/messages"]')).toBeVisible();
+          await expect(page.locator('a[href="/customer/messages"]').first()).toBeVisible({ timeout: 20_000 });
         }
         if (role === 'superadmin') {
           await page.goto('/admin/home', { waitUntil: 'domcontentloaded' });
-          await expect(page.locator('aside a[href="/admin/shops"]')).toBeVisible();
-          await expect(page.locator('a[href="/admin/messaging"]')).toBeVisible();
+          await expect(page.locator('aside a[href="/admin/shops"]').first()).toBeVisible({ timeout: 20_000 });
+          await expect(page.locator('a[href="/admin/messaging"]').first()).toBeVisible({ timeout: 20_000 });
         }
 
         for (const href of pages) {

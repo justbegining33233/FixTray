@@ -283,7 +283,7 @@ export default function RoleTabBar({
         }}
       >
         {nav.tabs.map((tab, index) => (
-          <TabButton key={tab.label} label={say(tab.label)} icon={tab.icon} active={!open && index === tabIndex} onClick={() => go(tab.href)} />
+          <TabButton key={tab.label} label={say(tab.label)} icon={tab.icon} href={tab.href} active={!open && index === tabIndex} onClick={() => go(tab.href)} />
         ))}
         <TabButton label={say('More')} icon="grid" active={moreActive} onClick={toggleMore} more />
       </div>
@@ -319,10 +319,11 @@ function MoreCard({ item, active, onClick }: { item: MobileLink; active: boolean
   );
 }
 
-function TabButton({ label, icon, active, onClick, more = false }: { label: string; icon: MobileIconName; active: boolean; onClick: () => void; more?: boolean }) {
+function TabButton({ label, icon, active, onClick, more = false, href }: { label: string; icon: MobileIconName; active: boolean; onClick: () => void; more?: boolean; href?: string }) {
   return (
     <button
       type="button"
+      data-tab-href={more ? undefined : href}
       data-tab-more={more ? '1' : undefined}
       onClick={onClick}
       style={{

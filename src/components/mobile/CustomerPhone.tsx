@@ -9,6 +9,7 @@ import SignatureCapture from '@/components/SignatureCapture';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { workOrderStatusLabel } from '@/lib/workOrderStatus';
 import { count, firstName, money, vehicleLabel } from '@/components/mobile/format';
+import { customerTileHref, topBarFor } from '@/lib/roleMenus';
 import '@/components/mobile/phone-mock.css';
 
 const STEPS = ['Received', 'Estimate', 'Approved', 'In progress', 'Ready'];
@@ -75,16 +76,16 @@ export function CustomerDashPhone({
           ))}
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-          <Link href={'/customer/tracking' as Route} className="pm-btn pm-btn-primary" style={{ flex: 1 }}>{say('Live Tracking')}</Link>
-          <Link href={'/customer/messages' as Route} className="pm-btn pm-btn-secondary" style={{ flex: 1 }}>{say('Messages')}</Link>
+          <Link href={customerTileHref('tracking') as Route} className="pm-btn pm-btn-primary" style={{ flex: 1 }}>{say('Live Tracking')}</Link>
+          <Link href={(topBarFor('customer')?.messages || '/customer/messages') as Route} className="pm-btn pm-btn-secondary" style={{ flex: 1 }}>{say('Messages')}</Link>
         </div>
       </div>
       <div className="pm-sect">{say('Discover')}</div>
       <div className="pm-qa">
-        <Link href={'/customer/findshops' as Route}><span className="pm-ico"><FaSearch /></span>{say('Find Shops')}</Link>
-        <Link href={'/customer/appointments' as Route}><span className="pm-ico a"><FaCalendarAlt /></span>{say('Appointments')}</Link>
-        <Link href={'/customer/estimates' as Route}><span className="pm-ico p"><FaFileAlt /></span>{say('My Estimates')}</Link>
-        <Link href={'/customer/payments' as Route}><span className="pm-ico g"><FaCreditCard /></span>{say('Payments')}</Link>
+        <Link href={customerTileHref('findshops') as Route}><span className="pm-ico"><FaSearch /></span>{say('Find Shops')}</Link>
+        <Link href={customerTileHref('appointments') as Route}><span className="pm-ico a"><FaCalendarAlt /></span>{say('Appointments')}</Link>
+        <Link href={customerTileHref('quotes') as Route}><span className="pm-ico p"><FaFileAlt /></span>{say('My Estimates')}</Link>
+        <Link href={customerTileHref('payments') as Route}><span className="pm-ico g"><FaCreditCard /></span>{say('Payments')}</Link>
       </div>
       <div className="pm-card" style={{ padding: '4px 12px' }}>
         <div style={{ paddingTop: 10 }}><h3>{say('Recent')}</h3></div>

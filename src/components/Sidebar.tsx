@@ -4,28 +4,14 @@ import { usePhrase } from '@/lib/usePhrase';
 // Use react-icons for all icons
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { FaArrowLeft, FaArrowRight, FaBolt, FaBoxes, FaBuilding, FaBullhorn, FaBullseye, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaChartLine, FaClipboardList, FaClock, FaCog, FaCogs, FaComments, FaCreditCard, FaDatabase, FaDesktop, FaEdit, FaEnvelope, FaGift, FaHome, FaIndustry, FaLeaf, FaListAlt, FaLock, FaMapMarkerAlt, FaMoneyBill, FaPlug, FaReceipt, FaRecycle, FaRoad, FaScroll, FaSearch, FaServer, FaShieldAlt, FaShoppingCart, FaStar, FaStore, FaSyncAlt, FaTools, FaUser, FaUserTie, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight, FaBoxes, FaBullhorn, FaCalendarAlt, FaCamera, FaCar, FaCaretDown, FaChartBar, FaClipboardList, FaClock, FaCog, FaComments, FaCreditCard, FaHome, FaListAlt, FaMapMarkerAlt, FaMoneyBill, FaScroll, FaSearch, FaStar, FaStore, FaTools, FaUser, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { normalizeRole, shellHrefForRole } from '@/lib/roleNav';
-import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
-import { isPlatformActor, isShopScopedHref } from '@/lib/platformOwnerScope';
-
-interface MenuItem {
-  icon: ReactNode;
-  label: string;
-  href: string;
-  badge?: number;
-}
-
-interface MenuGroup {
-  label: string;
-  icon: ReactNode;
-  defaultOpen?: boolean;
-  items: MenuItem[];
-}
+import { normalizeRole } from '@/lib/roleNav';
+import { isPlatformActor } from '@/lib/platformOwnerScope';
+import { filterMenuGroups, type MenuIcon, type SidebarRole } from '@/lib/roleMenus';
 
 interface SidebarProps {
   role: 'shop' | 'manager' | 'tech' | 'admin' | 'superadmin';
@@ -35,304 +21,34 @@ interface SidebarProps {
   activeHash?: string;
 }
 
-const shopGroups: MenuGroup[] = [
-  {
-    label: 'Overview',
-    icon: <FaChartBar />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaHome />, label: 'Dashboard',  href: '/shop/admin' },
-      { icon: <FaStore />, label: 'Shop Home',  href: '/shop/home' },
-      { icon: <FaComments />, label: 'Messages',   href: '/shop/customer-messages' },
-    ],
-  },
-  {
-    label: 'Work Orders',
-    icon: <FaClipboardList />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaListAlt />,  label: 'All Orders',       href: '/shop/jobs' },
-      { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
-      { icon: <FaRoad />,  label: 'Roadside Jobs',    href: '/workorders/roadside' },
-      { icon: <FaMapMarkerAlt />, label: 'Road Map', href: '/shop/map' },
-      { icon: <FaClipboardList />, label: 'Estimates', href: '/shop/estimates' },
-      { icon: <FaEdit />,  label: 'Authorizations',    href: '/shop/work-authorizations' },
-      { icon: <FaTools />,  label: 'Templates',          href: '/shop/templates' },
-      { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/shop/recurring-workorders' },
-      { icon: <FaDesktop />,  label: 'Waiting Room',       href: '/shop/waiting-room' },
-    ],
-  },
-  {
-    label: 'Team & Payroll',
-    icon: <FaUsers />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaUsers />, label: 'Manage Team',  href: '/shop/manage-team' },
-      { icon: <FaLock />, label: 'Permissions',  href: '/shop/settings/permissions' },
-      { icon: <FaMoneyBill />, label: 'Payroll',      href: '/shop/payroll' },
-      { icon: <FaClock />, label: 'Time Clock',   href: '/shop/timeclock' },
-      { icon: <FaCalendarAlt />, label: 'Schedule',     href: '/shop/settings/schedule' },
-    ]
-  },
-  {
-    label: 'Inventory & Parts',
-    icon: <FaBoxes />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaBoxes />, label: 'Inventory',       href: '/shop/inventory' },
-      { icon: <FaSyncAlt />, label: 'Shared Inventory', href: '/shop/inventory/shared' },
-      { icon: <FaIndustry />, label: 'Vendors',         href: '/shop/vendors' },
-      { icon: <FaShoppingCart />, label: 'Purchase Orders', href: '/shop/purchase-orders' },
-      { icon: <FaRecycle />, label: 'Core Returns',    href: '/shop/core-returns' },
-    ],
-  },
-  {
-    label: 'Vehicle Services',
-    icon: <FaCar />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaTools />, label: 'Services',            href: '/shop/services' },
-      { icon: <FaRoad />, label: 'Loaners',              href: '/shop/loaners' },
-      { icon: <FaBuilding />, label: 'Fleet Accounts',       href: '/shop/fleet' },
-      { icon: <FaSearch />, label: 'DVI Inspections',      href: '/shop/dvi' },
-      { icon: <FaCamera />, label: 'Condition Reports',    href: '/shop/condition-reports' },
-      { icon: <FaCamera />, label: 'Photos',               href: '/shop/photos' },
-      { icon: <FaCar />, label: 'State Inspections',    href: '/shop/inspections' },
-      { icon: <FaLeaf />, label: 'Environmental Fees',   href: '/shop/environmental-fees' },
-    ],
-  },
-  {
-    label: 'Financials',
-    icon: <FaChartBar />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaChartBar />, label: 'Reports',           href: '/shop/analytics' },
-      { icon: <FaClipboardList />, label: 'EOD Report',          href: '/shop/eod-report' },
-      { icon: <FaClock />, label: 'SLA Metrics',        href: '/shop/analytics/sla' },
-      { icon: <FaUserTie />, label: 'Employee Perf',      href: '/shop/analytics/performance' },
-      { icon: <FaUser />, label: 'Customer CRM',      href: '/shop/customer-reports' },
-      { icon: <FaChartBar />, label: 'AR Aging',           href: '/shop/ar-aging' },
-      { icon: <FaChartBar />, label: 'Profit Margins',     href: '/shop/profit-margins' },
-      { icon: <FaCreditCard />, label: 'Payment Links',      href: '/shop/payment-links' },
-      { icon: <FaStar />, label: 'Reviews',            href: '/shop/reviews' },
-    ],
-  },
-  {
-    label: 'Growth',
-    icon: <FaBullseye />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaGift />, label: 'Referrals',    href: '/shop/referrals' },
-      { icon: <FaBullhorn />, label: 'Campaigns',    href: '/shop/campaigns' },
-      { icon: <FaPlug />, label: 'Integrations', href: '/shop/integrations' },
-      { icon: <FaBolt />, label: 'Automations',  href: '/shop/automations' },
-      { icon: <FaMapMarkerAlt />, label: 'Locations',    href: '/shop/locations' },
-    ],
-  },
-  {
-    label: 'Settings',
-    icon: <FaCog />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaCog />, label: 'Shop Settings',   href: '/shop/settings' },
-      { icon: <FaTools />, label: 'Admin Panel',     href: '/shop/admin/settings' },
-      { icon: <FaReceipt />, label: 'Tax Settings',    href: '/shop/tax-settings' },
-      { icon: <FaLock />, label: 'Security', href: '/shop/settings?tab=security' },
-    ],
-  },
-];
-
-const managerGroups: MenuGroup[] = [
-  {
-    label: 'Overview',
-    icon: <FaChartBar />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaHome />, label: 'Dashboard',  href: '/manager/home' },
-      { icon: <FaComments />, label: 'Messages',   href: '/manager/messages' },
-    ],
-  },
-  {
-    label: 'Work Orders',
-    icon: <FaClipboardList />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaListAlt />,  label: 'All Orders',       href: '/manager/home' },
-      { icon: <FaIndustry />,  label: 'In-Shop Jobs',      href: '/shop/new-inshop-job' },
-      { icon: <FaRoad />,  label: 'Roadside Jobs',    href: '/workorders/roadside' },
-      { icon: <FaMapMarkerAlt />, label: 'Road Map', href: '/manager/map' },
-      { icon: <FaClipboardList />, label: 'Estimates', href: '/manager/estimates' },
-      { icon: <FaEdit />,  label: 'Authorizations',    href: '/manager/work-authorizations' },
-      { icon: <FaTools />,  label: 'Templates',          href: '/manager/templates' },
-      { icon: <FaSyncAlt />,  label: 'Recurring',          href: '/manager/recurring-workorders' },
-    ],
-  },
-  {
-    label: 'Team',
-    icon: <FaUsers />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaUsers />, label: 'Manage Team',  href: '/manager/team' },
-      { icon: <FaLock />, label: 'Permissions',  href: '/manager/settings/permissions' },
-      { icon: <FaMoneyBill />, label: 'Payroll',      href: '/manager/payroll' },
-      { icon: <FaClock />, label: 'Time Clock',   href: '/manager/timeclock' },
-      { icon: <FaBoxes />, label: 'Inventory',    href: '/manager/inventory' },
-    ]
-  },
-  {
-    label: 'Settings',
-    icon: <FaCog />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaCog />, label: 'Manager Settings',   href: '/manager/settings' },
-      { icon: <FaTools />, label: 'Admin Panel',     href: '/manager/admin/settings' },
-      { icon: <FaScroll />, label: 'Audit Logs',      href: '/manager/admin/logs' },
-      { icon: <FaLock />, label: 'Two-Factor Auth', href: '/manager/settings/two-factor' },
-    ],
-  },
-];
-
-const techGroups: MenuGroup[] = [
-  {
-    label: 'Overview',
-    icon: <FaHome />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaHome />, label: 'Home',      href: '/tech/home' },
-      { icon: <FaComments />, label: 'Messages',  href: '/tech/messages' },
-    ],
-  },
-  {
-    label: 'Time & Jobs',
-    icon: <FaClock />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaClock />, label: 'Time Clock',       href: '/tech/timeclock' },
-      { icon: <FaListAlt />,  label: 'Command Center',  href: '/tech/command-center' },
-      { icon: <FaClipboardList />, label: 'Active Jobs', href: '/tech/jobs?view=active' },
-      { icon: <FaClipboardList />, label: 'Job History', href: '/tech/jobs?view=history' },
-      { icon: <FaClipboardList />, label: 'Estimates', href: '/tech/estimates' },
-      { icon: <FaIndustry />,  label: 'New In-Shop Job',  href: '/tech/new-inshop-job' },
-      { icon: <FaRoad />,  label: 'New Roadside Job', href: '/tech/new-roadside-job' },
-    ],
-  },
-  {
-    label: 'Tools',
-    icon: <FaTools />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaTools />, label: 'All Tools',      href: '/tech/all-tools' },
-      { icon: <FaSearch />, label: 'DVI Form',       href: '/tech/dvi' },
-      { icon: <FaSearch />, label: 'DTC Lookup',     href: '/tech/dtc-lookup' },
-      { icon: <FaCamera />, label: 'Photos',         href: '/tech/photos' },
-      { icon: <FaBoxes />, label: 'Inventory',      href: '/tech/inventory' },
-      { icon: <FaMapMarkerAlt />, label: 'Share Location', href: '/tech/share-location' },
-      { icon: <FaLock />, label: 'Two-Factor Auth', href: '/tech/settings/two-factor' },
-    ],
-  },
-];
-
-const adminGroups: MenuGroup[] = [
-  {
-    label: 'Overview',
-    icon: <FaHome />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaHome />, label: 'Dashboard', href: '/admin/home' },
-      { icon: <FaComments />, label: 'Messaging', href: '/admin/messaging' },
-    ],
-  },
-  {
-    label: 'Platform Management',
-    icon: <FaStore />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaStore />, label: 'Shops', href: '/admin/shops' },
-      { icon: <FaUsers />, label: 'Users', href: '/admin/user-management' },
-      { icon: <FaUser />, label: 'Customers', href: '/admin/manage-customers' },
-      { icon: <FaBuilding />, label: 'Tenants', href: '/admin/manage-tenants' },
-    ],
-  },
-  {
-    label: 'Communications',
-    icon: <FaBullhorn />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaEnvelope />, label: 'Email Templates', href: '/admin/email-templates' },
-    ],
-  },
-  {
-    label: 'Financial & Reporting',
-    icon: <FaChartBar />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaChartLine />, label: 'Analytics', href: '/admin/platform-analytics' },
-      { icon: <FaChartBar />, label: 'Revenue', href: '/admin/revenue' },
-      { icon: <FaReceipt />, label: 'Financial Reports', href: '/admin/financial-reports' },
-    ],
-  },
-  {
-    label: 'Security & Compliance',
-    icon: <FaLock />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaShieldAlt />, label: 'Security', href: '/admin/security' },
-      { icon: <FaCogs />, label: 'Settings', href: '/admin/security-settings' },
-      { icon: <FaScroll />, label: 'Activity Logs', href: '/admin/activity-logs' },
-      { icon: <FaDesktop />, label: 'Sessions', href: '/admin/sessions' },
-    ],
-  },
-  {
-    label: 'System Administration',
-    icon: <FaCog />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaCog />, label: 'Settings', href: '/admin/settings' },
-      { icon: <FaTools />, label: 'Admin Tools', href: '/admin/admin-tools' },
-      { icon: <FaDatabase />, label: 'Backup/Restore', href: '/admin/backup-restore' },
-    ],
-  },
-];
-
-const superadminGroups: MenuGroup[] = [
-  {
-    label: 'Overview',
-    icon: <FaHome />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaHome />, label: 'Dashboard', href: '/superadmin' },
-      { icon: <FaUsers />, label: 'Users', href: '/superadmin/users' },
-    ],
-  },
-  {
-    label: 'Infrastructure',
-    icon: <FaIndustry />,
-    defaultOpen: true,
-    items: [
-      { icon: <FaServer />, label: 'Deployments', href: '/superadmin/deployments' },
-      { icon: <FaDatabase />, label: 'Infrastructure', href: '/superadmin/infrastructure' },
-      { icon: <FaBuilding />, label: 'Tenants', href: '/superadmin/tenants' },
-    ],
-  },
-  {
-    label: 'Security & Monitoring',
-    icon: <FaShieldAlt />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaLock />, label: 'Security', href: '/superadmin/security' },
-      { icon: <FaChartLine />, label: 'Analytics', href: '/superadmin/analytics' },
-    ],
-  },
-  {
-    label: 'Configuration',
-    icon: <FaCog />,
-    defaultOpen: false,
-    items: [
-      { icon: <FaCog />, label: 'Settings', href: '/superadmin/settings' },
-      { icon: <FaUser />, label: 'Profile', href: '/superadmin/profile' },
-    ],
-  },
-];
+function menuIcon(name: MenuIcon): ReactNode {
+  const icons: Record<MenuIcon, ReactNode> = {
+    home: <FaHome />,
+    orders: <FaListAlt />,
+    messages: <FaComments />,
+    team: <FaUsers />,
+    calendar: <FaCalendarAlt />,
+    wrench: <FaTools />,
+    clock: <FaClock />,
+    settings: <FaCog />,
+    inventory: <FaBoxes />,
+    dollar: <FaMoneyBill />,
+    chart: <FaChartBar />,
+    car: <FaCar />,
+    star: <FaStar />,
+    user: <FaUser />,
+    card: <FaCreditCard />,
+    search: <FaSearch />,
+    camera: <FaCamera />,
+    pin: <FaMapMarkerAlt />,
+    clipboard: <FaClipboardList />,
+    tools: <FaTools />,
+    grid: <FaStore />,
+    file: <FaScroll />,
+    bell: <FaBullhorn />,
+  };
+  return icons[name];
+}
 
 // --- COMPONENT ---------------------------------------------------------------
 
@@ -351,32 +67,14 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
   const [isCompactDesktop, setIsCompactDesktop] = useState(false);
   const [currentHash, setCurrentHash] = useState('');
 
-  const groups = 
-    role === 'shop' ? shopGroups :
-    role === 'manager' ? managerGroups :
-    role === 'tech' ? techGroups :
-    role === 'admin' ? adminGroups :
-    role === 'superadmin' ? superadminGroups :
-    techGroups; // fallback
-  const filteredGroups = (role === 'shop'
-    ? groups.map((group) => ({
-        ...group,
-        items: group.items.filter((item) => !isShopEdgeSensitivePath(item.href)),
-      }))
-    : groups
-  ).map((group) => ({
+  const filteredGroups = filterMenuGroups(role as SidebarRole, linkRole, platformActor).map((group) => ({
     ...group,
-    items: group.items
-      .filter((item) => item.href !== '/admin/coupons')
-      .filter((item) => !(platformActor && isShopScopedHref(item.href)))
-      .map((item) => ({
-        ...item,
-        href: shellHrefForRole(item.href, linkRole),
-      })),
-  })).filter((group) => group.items.length > 0);
+    icon: menuIcon(group.icon),
+    items: group.items.map((item) => ({ ...item, icon: menuIcon(item.icon) })),
+  }));
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(groups.map(g => [g.label, g.defaultOpen ?? false]))
+    Object.fromEntries(filteredGroups.map(g => [g.label, g.defaultOpen ?? false]))
   );
 
   useEffect(() => {

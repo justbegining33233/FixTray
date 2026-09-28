@@ -15,6 +15,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { loyaltyPointsFromRewards } from '@/lib/rewardPayload';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { CustomerDashPhone } from '@/components/mobile/CustomerPhone';
+import { customerTileHref } from '@/lib/roleMenus';
 
 export default function CustomerDashboard() {
   useRequireAuth(['customer']);
@@ -235,7 +236,7 @@ export default function CustomerDashboard() {
       detail: 'Search by location and compare ratings', 
       badge: 'Popular', 
       badgeColor: '#e5332a', 
-      link: '/customer/findshops',
+      link: customerTileHref('findshops'),
       getData: () => []
     },
     { 
@@ -246,7 +247,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.upcomingAppointments} {say('upcoming')} · {stats.appointmentCount} {say('total')}</>, 
       badge: stats.upcomingAppointments > 0 ? 'Active' : '', 
       badgeColor: '#10b981', 
-      link: '/customer/appointments',
+      link: customerTileHref('appointments'),
       getData: () => recentData.appointments
     },
     {
@@ -257,7 +258,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.historyCount} {say('completed')}</>,
       badge: stats.historyCount > 0 ? 'History' : '',
       badgeColor: '#f59e0b',
-      link: '/customer/workorders',
+      link: customerTileHref('workorders'),
       getData: () => recentData.history
     },
     { 
@@ -268,7 +269,7 @@ export default function CustomerDashboard() {
       detail: 'Get estimates before service', 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/estimates',
+      link: customerTileHref('quotes'),
       getData: () => []
     },
   ];
@@ -282,7 +283,7 @@ export default function CustomerDashboard() {
       detail: 'View real-time location updates', 
       badge: 'Live', 
       badgeColor: '#ef4444', 
-      link: '/customer/tracking',
+      link: customerTileHref('tracking'),
       getData: () => []
     },
     { 
@@ -293,7 +294,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.vehicleCount} {say(stats.vehicleCount === 1 ? 'vehicle registered' : 'vehicles registered')}</>, 
       badge: 'Essential', 
       badgeColor: '#f59e0b', 
-      link: '/customer/vehicles',
+      link: customerTileHref('vehicles'),
       getData: () => recentData.vehicles
     },
   ];
@@ -307,7 +308,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.reviewCount} {say(stats.reviewCount === 1 ? 'review written' : 'reviews written')}</>, 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/reviews',
+      link: customerTileHref('reviews'),
       getData: () => recentData.reviews
     },
     { 
@@ -318,7 +319,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.favoriteCount} {say(stats.favoriteCount === 1 ? 'saved favorite' : 'saved favorites')}</>, 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/favorites',
+      link: customerTileHref('favorites'),
       getData: () => recentData.favorites
     },
     { 
@@ -329,7 +330,7 @@ export default function CustomerDashboard() {
       detail: <>{loyaltyPoints} {say('points')} - {tier} {say('tier')}</>, 
       badge: 'New', 
       badgeColor: '#a855f7', 
-      link: '/customer/rewards',
+      link: customerTileHref('rewards'),
       getData: () => []
     },
     { 
@@ -340,7 +341,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.paymentMethods} {say(stats.paymentMethods === 1 ? 'saved payment method' : 'saved payment methods')}</>, 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/payments',
+      link: customerTileHref('payments'),
       getData: () => recentData.payments
     },
     { 
@@ -351,7 +352,7 @@ export default function CustomerDashboard() {
       detail: 'Review pending recurring service requests', 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/recurring-approvals',
+      link: customerTileHref('recurring-approvals'),
       getData: () => []
     },
     { 
@@ -362,7 +363,7 @@ export default function CustomerDashboard() {
       detail: 'Quick stats and recent activity', 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/overview',
+      link: customerTileHref('overview'),
       getData: () => []
     },
   ];
@@ -376,7 +377,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.historyCount} {say(stats.historyCount === 1 ? 'completed service' : 'completed services')}</>, 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/history',
+      link: customerTileHref('history'),
       getData: () => recentData.history
     },
     { 
@@ -387,7 +388,7 @@ export default function CustomerDashboard() {
       detail: <>{stats.documentCount} {say(stats.documentCount === 1 ? 'document available' : 'documents available')}</>, 
       badge: '', 
       badgeColor: '', 
-      link: '/customer/documents',
+      link: customerTileHref('documents'),
       getData: () => recentData.documents
     },
     { 
@@ -398,7 +399,7 @@ export default function CustomerDashboard() {
       detail: 'Analytics and reports', 
       badge: 'Pro', 
       badgeColor: '#ec4899', 
-      link: '/customer/insights',
+      link: customerTileHref('insights'),
       getData: () => []
     },
   ];

@@ -6,7 +6,7 @@ const SECRET = process.env.JWT_SECRET || 'playwright-shell-secret';
 const SCROLL_PAGES = [
   { path: '/admin/user-management', role: 'superadmin' },
   { path: '/admin/activity-logs', role: 'superadmin' },
-  { path: '/shop/reports', role: 'shop' },
+  { path: '/shop/analytics', role: 'shop' },
   { path: '/shop/settings', role: 'shop' },
   { path: '/manager/team', role: 'manager' },
   { path: '/tech/jobs', role: 'tech' },
@@ -24,9 +24,9 @@ const OWNER_REDIRECTS = [
   '/admin/dvi-approvals',
 ];
 
-const SHOP_MORE_STILL_THERE = ['Offline', 'Inventory', 'Environmental Fees', 'Campaigns'];
-const OWNER_MORE_GONE = ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance'];
-const OWNER_MORE_KEPT = ['Pending Shops', 'User Management', 'Platform Settings', 'Revenue & Payouts', 'Health Check', 'Activity Logs', 'Messaging'];
+const SHOP_MORE_STILL_THERE = ['Inventory', 'Environmental Fees', 'Campaigns'];
+const OWNER_MORE_GONE = ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance', 'Owner Tools', 'Command Center', 'Security Settings', 'Platform Home', 'Admin Home'];
+const OWNER_MORE_KEPT = ['Shop Approvals', 'Users', 'Platform Settings', 'Revenue & Payouts', 'Health', 'Activity Logs', 'Messaging'];
 
 function sign(role: string) {
   return jwt.sign({
@@ -212,9 +212,9 @@ test.describe('phone shell scroll and platform owner scope', () => {
     await session(context, 'shop', false);
     const page = await context.newPage();
     try {
-      await page.goto('/shop/reports', { waitUntil: 'domcontentloaded' });
+      await page.goto('/shop/analytics', { waitUntil: 'domcontentloaded' });
       await settle(page);
-      await expect(page).toHaveURL(/\/shop\/reports/);
+      await expect(page).toHaveURL(/\/shop\/analytics/);
       await expect(page.locator('[data-mobile-shell-body]')).toBeVisible({ timeout: 20000 });
       const bar = page.locator('[data-role-tab-bar="shop"][data-shell-ready="1"]');
       await expect(bar).toBeVisible({ timeout: 20000 });

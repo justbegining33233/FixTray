@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
 import { PLATFORM_HOME, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
+import { portalAccessDecision, roleHome } from './lib/roleMenus';
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -198,9 +199,10 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
     }
   }
 
-  if (!rolesForPath(pathname)) return null;
+  if (isStaticAssetPath(pathname)) return null;
 
   if (!token) {
+    if (!rolesForPath(pathname)) return null;
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
@@ -209,20 +211,36 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
   const payload = await verifyJwt(token);
   const role = typeof payload?.role === 'string' ? payload.role : undefined;
   if (!role) {
+    if (!rolesForPath(pathname)) return null;
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  if (isRouteAllowed(pathname, {
+  const actor = {
     role,
     isOwner: payload?.isOwner === true,
     isSuperAdmin: payload?.isSuperAdmin === true,
-  })) {
+  };
+  const decision = portalAccessDecision(pathname, actor);
+  if (decision === 'home') {
+    return NextResponse.redirect(new URL(roleHome(role), request.url));
+  }
+  if (decision === 'forbidden') {
+    return rewriteForbidden(request, pathname);
+  }
+
+  if (!rolesForPath(pathname)) return null;
+
+  if (isRouteAllowed(pathname, actor)) {
     if (pathname.startsWith('/admin/owner') && payload?.isOwner !== true) {
       return NextResponse.redirect(new URL('/admin/home', request.url));
     }
     return null;
   }
 
+  return rewriteForbidden(request, pathname);
+}
+
+function rewriteForbidden(request: NextRequest, pathname: string): NextResponse {
   const forbidden = request.nextUrl.clone();
   const target = forbiddenFromPath(pathname);
   const [path, search = ''] = target.split('?');
@@ -268,7 +286,10 @@ export const config = {
     '/customer/:path*',
     '/manager/:path*',
     '/workorders/:path*',
+    '/reports',
     '/reports/:path*',
+    '/admin',
+    '/superadmin',
     '/tech-offline',
     '/tech-offline/:path*',
   ],

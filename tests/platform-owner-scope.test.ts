@@ -52,12 +52,14 @@ describe('platform owner scope', () => {
     const shopGate = await gateCrossRole(new NextRequest('http://localhost/shop/reports', {
       headers: { cookie: `sos_auth=${shop}` },
     }));
-    expect(shopGate).toBeNull();
+    expect(shopGate?.status).toBe(307);
+    expect(shopGate?.headers.get('location')).toBe('http://localhost/shop/admin');
 
     const offlineTech = await gateCrossRole(new NextRequest('http://localhost/tech-offline/', {
       headers: { cookie: `sos_auth=${shop}` },
     }));
-    expect(offlineTech).toBeNull();
+    expect(offlineTech?.status).toBe(307);
+    expect(offlineTech?.headers.get('location')).toBe('http://localhost/shop/admin');
 
     const anonymous = await gateCrossRole(new NextRequest('http://localhost/tech-offline/'));
     expect(anonymous).toBeNull();

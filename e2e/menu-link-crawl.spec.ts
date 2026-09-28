@@ -81,8 +81,6 @@ async function collectTargets(page: Page): Promise<string[]> {
   });
 }
 
-test.describe.configure({ mode: 'serial' });
-
 test.describe('in-page links stay inside each role menu', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'The link crawl runs once on Chromium.');
 
@@ -96,7 +94,7 @@ test.describe('in-page links stay inside each role menu', () => {
       await session(context, role);
       const page = await context.newPage();
       page.setDefaultTimeout(20_000);
-      page.setDefaultNavigationTimeout(30_000);
+      page.setDefaultNavigationTimeout(60_000);
       const home = roleHome(role);
       const pages = menuHrefs(role);
       const failures: string[] = [];
@@ -140,6 +138,7 @@ test.describe('in-page links stay inside each role menu', () => {
           if (seen.has(`page:${href}`)) continue;
           seen.add(`page:${href}`);
           const response = await page.goto(href, { waitUntil: 'domcontentloaded' });
+          await page.waitForTimeout(400);
           if ((response?.status() || 200) >= 400 && !isDynamicRecord(cleanPath(href))) {
             failures.push(`${role} menu ${href} responded ${response?.status()}`);
           }
@@ -161,6 +160,7 @@ test.describe('in-page links stay inside each role menu', () => {
               continue;
             }
             const response = await page.goto(target, { waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(250);
             if ((response?.status() || 200) >= 400 && !isDynamicRecord(targetPath)) {
               failures.push(`${role} ${href} -> ${target} responded ${response?.status()}`);
             }

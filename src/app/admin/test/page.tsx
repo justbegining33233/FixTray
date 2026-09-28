@@ -99,7 +99,7 @@ export default function AdminTestPage() {
       name: 'Shop Management',
       icon: '',
       description: 'Registration, approvals, profiles, settings, services, labor rates',
-      route: '/admin/manage-shops',
+      route: '/admin/shops',
       features: [
         { name: 'Shop Registration', status: 'operational' },
         { name: 'Pending Approvals', status: 'operational' },
@@ -114,7 +114,7 @@ export default function AdminTestPage() {
       name: 'Work Orders',
       icon: '',
       description: 'Create, track, photos, invoices, payments, history',
-      route: '/admin/dashboard',
+      route: '/admin/home',
       features: [
         { name: 'Create Work Order', status: 'operational' },
         { name: 'Work Order Status', status: 'operational' },
@@ -249,7 +249,7 @@ export default function AdminTestPage() {
       name: 'Security',
       icon: '',
       description: 'CSRF, rate limiting, JWT, audit logs',
-      route: '/admin/security-settings',
+      route: '/admin/security',
       features: [
         { name: 'CSRF Protection', status: 'operational' },
         { name: 'Rate Limiting', status: 'operational' },
@@ -262,7 +262,7 @@ export default function AdminTestPage() {
       name: 'System',
       icon: '',
       description: 'Health check, uploads, data isolation, backup',
-      route: '/admin/system-settings',
+      route: '/admin/settings',
       features: [
         { name: 'Health Check', status: 'operational' },
         { name: 'File Upload', status: 'operational' },
@@ -279,7 +279,6 @@ export default function AdminTestPage() {
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', href: '/admin/home', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { id: 'status', label: 'System Status', href: '/admin/test', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', active: true },
-    { id: 'guide', label: 'Feature Guide', href: '/admin/guide', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
   ];
 
   const quickLinks = [
@@ -589,8 +588,8 @@ export default function AdminTestPage() {
                     { href: '/admin/user-management', icon: '', label: say("Users") },
                     { href: '/admin/platform-analytics', icon: '', label: say("Analytics") },
                     { href: '/admin/activity-logs', icon: '', label: say("Logs") },
-                    { href: '/admin/security-settings', icon: '', label: say("Security") },
-                    { href: '/admin/system-settings', icon: '', label: say("Settings") },
+                    { href: '/admin/security', icon: '', label: say("Security") },
+                    { href: '/admin/settings', icon: '', label: say("Settings") },
                     { href: '/admin/activity-logs', icon: '', label: say("Audit") },
                   ].map((link, i) => (
                     <Link

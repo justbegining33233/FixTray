@@ -106,7 +106,7 @@ export default function SuperAdminInfrastructure() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Link href={"/superadmin/analytics" as Route} className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg">
+            <Link href={"/admin/platform-analytics" as Route} className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg">
               <FaArrowLeft className="w-4 h-4 text-[#94a3b8]" />
             </Link>
             <div>

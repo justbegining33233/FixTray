@@ -87,7 +87,7 @@ export default function SuperAdminSecurity() {
     <div className="min-h-screen p-4 md:p-8 pt-20 md:pt-8 bg-black text-white">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href={"/superadmin/analytics" as Route} className="p-2 hover:bg-white/5 rounded-lg">
+          <Link href={"/admin/home" as Route} className="p-2 hover:bg-white/5 rounded-lg">
             <FaArrowLeft className="w-4 h-4 text-zinc-400" />
           </Link>
           <div>
@@ -121,7 +121,7 @@ export default function SuperAdminSecurity() {
 
         {/* Quick Links */}
         <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <Link href={"/admin/security-settings" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <Link href={"/admin/security" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
             <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
               <FaLock className="w-6 h-6 text-indigo-400" />
             </div>

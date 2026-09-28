@@ -93,7 +93,7 @@ export default function ReportsAnalytics() {
       case 'shop': return '/shop/admin';
       case 'tech': return '/tech/home';
       case 'manager': return '/tech/home';
-      case 'customer': return '/customer/home';
+      case 'customer': return '/customer/dashboard';
       default: return '/';
     }
   };

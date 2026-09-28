@@ -28,7 +28,7 @@ export function introHandoffPath(session: IntroSession | null, now = Date.now())
   if (!session?.role) return null;
   if (typeof session.exp === 'number' && now >= session.exp * 1000) return null;
   if (session.role === 'shop') {
-    return session.shopProfileComplete ? '/shop/home' : '/shop/complete-profile';
+    return session.shopProfileComplete ? '/shop/admin' : '/shop/settings/complete-profile';
   }
   return ROLE_DASHBOARD[session.role] ?? null;
 }
@@ -164,7 +164,7 @@ export function installedShellBootstrapScript(): string {
           if(!(typeof exp==='number'&&Date.now()>=exp*1000)){
             var map=${dashboards};
             if(role==='shop'){
-              dest=localStorage.getItem('shopProfileComplete')==='true'?'/shop/home':'/shop/complete-profile';
+              dest=localStorage.getItem('shopProfileComplete')==='true'?'/shop/admin':'/shop/settings/complete-profile';
             }else if(map[role]){dest=map[role];}
           }
         }

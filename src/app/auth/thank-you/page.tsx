@@ -37,7 +37,7 @@ export default function ThankYouPage() {
       }
       switch(userRole) {
         case 'customer':
-          router.push('/customer/home' as Route);
+          router.push('/customer/dashboard' as Route);
           break;
         case 'shop':
           router.push('/shop/admin' as Route);
@@ -76,7 +76,7 @@ export default function ThankYouPage() {
                 href={(() => {
                   const userRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
                   switch(userRole) {
-                    case 'customer': return '/customer/home';
+                    case 'customer': return '/customer/dashboard';
                     case 'shop': return '/shop/admin';
                     case 'tech': return '/tech/home';
                     case 'manager': return '/manager/home';

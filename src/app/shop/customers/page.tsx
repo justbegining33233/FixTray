@@ -71,7 +71,7 @@ export default function ShopCustomersPage() {
         {filtered.map(c => (
           <Link
             key={c.id}
-            href={`/shop/customers/${c.id}/crm` as Route}
+            href={`/shop/customer-reports/${c.id}` as Route}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '14px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.04)',

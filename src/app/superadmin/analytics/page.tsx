@@ -164,7 +164,7 @@ export default function SuperAdminAnalytics() {
 
         {/* Deep Links */}
         <div className="grid md:grid-cols-2 gap-4">
-          <Link href={"/superadmin/users" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <Link href={"/admin/user-management" as Route} className="rounded-2xl p-5 transition-shadow flex items-center gap-4" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
             <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
               <FaChartBar className="w-6 h-6 text-indigo-400" />
             </div>
@@ -188,7 +188,7 @@ export default function SuperAdminAnalytics() {
         <div className="mt-8 rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
           <h2 className="text-lg font-semibold text-white mb-4">{say("Super Admin Controls")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <Link href={"/superadmin/users" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+            <Link href={"/admin/user-management" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
               <p className="font-medium text-white flex items-center gap-2"><FaUsers className="w-4 h-4 text-[#ff6b64]" /> {say("Users")}</p>
               <p className="text-sm text-[#94a3b8] mt-1">{say("Platform-wide user visibility")}</p>
             </Link>
@@ -196,7 +196,7 @@ export default function SuperAdminAnalytics() {
               <p className="font-medium text-white flex items-center gap-2"><FaBuilding className="w-4 h-4 text-indigo-400" /> {say("Shops")}</p>
               <p className="text-sm text-[#94a3b8] mt-1">{say("Approved shops and profile readiness")}</p>
             </Link>
-            <Link href={"/superadmin/security" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+            <Link href={"/admin/security" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
               <p className="font-medium text-white flex items-center gap-2"><FaShieldAlt className="w-4 h-4 text-emerald-400" /> {say("Security")}</p>
               <p className="text-sm text-[#94a3b8] mt-1">{say("Audit and protection posture")}</p>
             </Link>
@@ -204,7 +204,7 @@ export default function SuperAdminAnalytics() {
               <p className="font-medium text-white flex items-center gap-2"><FaServer className="w-4 h-4 text-amber-400" /> {say("Infrastructure")}</p>
               <p className="text-sm text-[#94a3b8] mt-1">{say("Live runtime and environment checks")}</p>
             </Link>
-            <Link href={"/superadmin/settings" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
+            <Link href={"/admin/settings" as Route} className="rounded-xl p-4 border border-white/10 hover:bg-white/5 transition-colors">
               <p className="font-medium text-white flex items-center gap-2"><FaCog className="w-4 h-4 text-sky-400" /> {say("Settings")}</p>
               <p className="text-sm text-[#94a3b8] mt-1">{say("Global platform configuration")}</p>
             </Link>

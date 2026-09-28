@@ -83,7 +83,7 @@ export default function SuperAdminUsers() {
     <div className="min-h-screen bg-black p-4 md:p-8 pt-20 md:pt-8 text-white">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href={"/superadmin/analytics" as Route} className="p-2 hover:bg-white/5 rounded-lg">
+          <Link href={"/admin/home" as Route} className="p-2 hover:bg-white/5 rounded-lg">
             <FaArrowLeft className="w-4 h-4 text-zinc-400" />
           </Link>
           <div className="flex-1">

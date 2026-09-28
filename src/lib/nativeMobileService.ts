@@ -316,7 +316,10 @@ class NativeMobileService {
       case 'view':
         // Navigate to relevant page based on notification data
         if (notification.data?.workOrderId) {
-          window.location.href = `/workorders/${notification.data.workOrderId}`;
+          const role = (localStorage.getItem('userRole') || '').toLowerCase();
+          const id = notification.data.workOrderId;
+          if (role === 'customer') window.location.href = `/customer/workorders/${id}`;
+          else if (role === 'shop' || role === 'manager' || role === 'tech') window.location.href = `/workorders/${id}`;
         }
         break;
       case 'dismiss':

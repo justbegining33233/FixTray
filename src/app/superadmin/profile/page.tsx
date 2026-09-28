@@ -94,7 +94,7 @@ function SuperAdminProfilePageContent() {
   return (
     <div style={{ minHeight: '100vh', background: '#000000', color: '#e2e8f0' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        <Link href={'/superadmin/analytics' as Route} style={{ color: '#93c5fd', textDecoration: 'none', fontSize: 14 }}>
+        <Link href={'/admin/home' as Route} style={{ color: '#93c5fd', textDecoration: 'none', fontSize: 14 }}>
           {say("Back to Super Admin Dashboard")}{' '}</Link>
 
         <div style={{ marginTop: 14, background: '#000000', border: '1px solid #1f2937', borderRadius: 16, padding: 20 }}>
@@ -170,9 +170,9 @@ function SuperAdminProfilePageContent() {
                   <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Open your security and global settings pages.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 460 }}>
-                    <Link href={'/superadmin/security' as Route} style={{ textDecoration: 'none', color: '#c7d2fe', border: '1px solid #3730a3', borderRadius: 8, padding: '10px 12px', background: 'rgba(55,48,163,0.2)' }}>
+                    <Link href={'/admin/security' as Route} style={{ textDecoration: 'none', color: '#c7d2fe', border: '1px solid #3730a3', borderRadius: 8, padding: '10px 12px', background: 'rgba(55,48,163,0.2)' }}>
                       {say("Security Settings")}{' '}</Link>
-                    <Link href={'/superadmin/settings' as Route} style={{ textDecoration: 'none', color: '#c7d2fe', border: '1px solid #3730a3', borderRadius: 8, padding: '10px 12px', background: 'rgba(55,48,163,0.2)' }}>
+                    <Link href={'/admin/settings' as Route} style={{ textDecoration: 'none', color: '#c7d2fe', border: '1px solid #3730a3', borderRadius: 8, padding: '10px 12px', background: 'rgba(55,48,163,0.2)' }}>
                       {say("Global Settings")}{' '}</Link>
                   </div>
                 </div>

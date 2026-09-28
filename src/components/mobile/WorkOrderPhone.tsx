@@ -7,6 +7,8 @@ import { usePhrase } from '@/lib/usePhrase';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { money, vehicleLabel } from '@/components/mobile/format';
+import { useAuth } from '@/contexts/AuthContext';
+import { normalizeRole } from '@/lib/roleNav';
 import '@/components/mobile/phone-mock.css';
 
 type Line = { type: string; description: string; price: number; qty: number };
@@ -48,6 +50,15 @@ export function WorkOrderPhone({
   paidLabel: string;
 }) {
   const say = usePhrase();
+  const { user } = useAuth();
+  const actor = normalizeRole(user?.role);
+  const backHref = actor === 'manager'
+    ? '/manager/assignments'
+    : actor === 'tech'
+      ? '/tech/jobs?view=active'
+      : actor === 'customer'
+        ? '/customer/workorders'
+        : '/shop/jobs';
   const customer = [wo.customer?.firstName, wo.customer?.lastName].filter(Boolean).join(' ') || say('Customer');
   const tech = wo.assignedTo ? `${wo.assignedTo.firstName || ''} ${wo.assignedTo.lastName || ''}`.trim() : say('Unassigned');
   const plate = wo.vehicle?.licensePlate || '—';
@@ -63,7 +74,7 @@ export function WorkOrderPhone({
   ];
   return (
     <div className="pm">
-      <Link href={'/shop/jobs' as Route} className="pm-back">← {say('Back')}</Link>
+      <Link href={backHref as Route} className="pm-back">← {say('Back')}</Link>
       <div className="pm-row">
         <div>
           <h1 className="pm-title">{shortWorkOrderLabel(wo.id)}</h1>

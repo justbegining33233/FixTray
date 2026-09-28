@@ -1,5 +1,5 @@
 /** New menu: open the manual shop registration form, not the shops list. */
-export const OWNER_ADD_SHOP_HREF = '/admin/manage-shops/new';
+export const OWNER_ADD_SHOP_HREF = '/admin/shops/new';
 
 /** New menu: open the create-user form, not the users list. */
 export const OWNER_ADD_USER_HREF = '/admin/user-management/new';
@@ -42,5 +42,5 @@ export function shopDetailsBackTarget(from: string | null | undefined): { href: 
   ) {
     return { href: '/admin/accepted-shops', label: 'Back to Accepted Shops' };
   }
-  return { href: '/admin/manage-shops', label: 'Back to Manage Shops' };
+  return { href: '/admin/shops', label: 'Back to Shops' };
 }

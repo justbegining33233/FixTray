@@ -370,7 +370,7 @@ export default function WorkOrderForm({ initialData, onSubmit, initialServiceLoc
       } else {
         // Redirect based on user role
         if (userRole === 'customer') {
-          router.push('/customer/home' as Route);
+          router.push('/customer/dashboard' as Route);
         } else if (userRole === 'tech') {
           router.push('/tech/home' as Route);
         } else if (userRole === 'manager') {

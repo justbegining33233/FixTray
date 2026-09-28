@@ -59,7 +59,7 @@ export default function BackupRestore() {
         <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href="/admin/home" style={{ color: '#e5332a', fontSize: 22, fontWeight: 900, textDecoration: 'none' }}>{say("FixTray Admin")}</Link>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}><FaSave style={{marginRight:4}} /> {say("Backup & Restore")}</h1>
-          <Link href="/admin/system-settings" style={{ color: '#9aa3b2', fontSize: 13, textDecoration: 'none' }}><FaArrowLeft style={{marginRight:4}} /> {say("System Settings")}</Link>
+          <Link href="/admin/settings" style={{ color: '#9aa3b2', fontSize: 13, textDecoration: 'none' }}><FaArrowLeft style={{marginRight:4}} /> {say("System Settings")}</Link>
         </div>
       </div>
 

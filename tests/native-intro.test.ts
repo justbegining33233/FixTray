@@ -16,8 +16,8 @@ describe('native intro handoff', () => {
   });
 
   it('sends a shop with a finished profile home, and an unfinished shop to profile setup', () => {
-    expect(introHandoffPath({ role: 'shop', shopProfileComplete: true }, now)).toBe('/shop/home');
-    expect(introHandoffPath({ role: 'shop', shopProfileComplete: false }, now)).toBe('/shop/complete-profile');
+    expect(introHandoffPath({ role: 'shop', shopProfileComplete: true }, now)).toBe('/shop/admin');
+    expect(introHandoffPath({ role: 'shop', shopProfileComplete: false }, now)).toBe('/shop/settings/complete-profile');
   });
 
   it('stays on login when the session is missing, expired, or unknown', () => {

@@ -59,7 +59,7 @@ function messagesLink(role: string): string {
     case 'manager': return '/manager/messages';
     case 'shop': return '/shop/customer-messages';
     case 'admin':
-    case 'superadmin': return '/admin/messages';
+    case 'superadmin': return '/admin/messaging';
     default: return '/customer/messages';
   }
 }

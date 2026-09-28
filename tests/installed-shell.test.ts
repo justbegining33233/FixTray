@@ -105,8 +105,8 @@ describe('installed shell client launch', () => {
   it('reuses the intro handoff map and falls back to login', () => {
     expect(installedShellLaunchPath(null)).toBe('/auth/login');
     expect(installedShellLaunchPath({ role: 'manager', shopProfileComplete: false })).toBe('/manager/home');
-    expect(installedShellLaunchPath({ role: 'shop', shopProfileComplete: true })).toBe('/shop/home');
-    expect(installedShellLaunchPath({ role: 'shop', shopProfileComplete: false })).toBe('/shop/complete-profile');
+    expect(installedShellLaunchPath({ role: 'shop', shopProfileComplete: true })).toBe('/shop/admin');
+    expect(installedShellLaunchPath({ role: 'shop', shopProfileComplete: false })).toBe('/shop/settings/complete-profile');
   });
 
   it('bootstrap leaves browsers alone, sends standalone to login, and continues a session', () => {

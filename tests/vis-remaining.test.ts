@@ -37,7 +37,7 @@ describe('VIS-028 payroll team', () => {
 
 describe('VIS-031 manager alerts', () => {
   it('sends every urgent tile to a real list', () => {
-    expect(managerAlertHref('overdue-jobs')).toBe('/manager/dashboard');
+    expect(managerAlertHref('overdue-jobs')).toBe('/manager/assignments');
     expect(managerAlertHref('unassigned-jobs')).toBe('/manager/assignments');
     expect(managerAlertHref('low-inventory')).toBe('/manager/inventory');
     expect(managerAlertHref('pending-requests')).toBe('/manager/inventory');
@@ -64,7 +64,7 @@ describe('VIS-003 legacy shop routes', () => {
   it('redirects dead board and appointments paths', () => {
     expect(LEGACY_SHOP_REDIRECTS).toEqual(expect.arrayContaining([
       { source: '/shop/board', destination: '/shop/home', permanent: false },
-      { source: '/shop/appointments', destination: '/shop/calendar', permanent: false },
+      { source: '/shop/appointments', destination: '/shop/settings/schedule', permanent: false },
       { source: '/shop/subscribe', destination: '/shop/home', permanent: false },
     ]));
   });

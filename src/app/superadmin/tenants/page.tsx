@@ -68,7 +68,7 @@ export default function SuperAdminTenants() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-20 md:pt-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href={"/superadmin/dashboard" as Route} className="p-2 hover:bg-gray-100 rounded-lg">
+          <Link href={"/admin/home" as Route} className="p-2 hover:bg-gray-100 rounded-lg">
             <FaArrowLeft className="w-4 h-4 text-gray-500" />
           </Link>
           <div>

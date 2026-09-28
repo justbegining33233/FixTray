@@ -83,7 +83,7 @@ export default function SuperAdminDeployments() {
     <div className="min-h-screen p-4 md:p-8 pt-20 md:pt-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href={"/superadmin/analytics" as Route} className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg">
+          <Link href={"/admin/platform-analytics" as Route} className="p-2 hover:bg-[rgba(255,255,255,0.08)] rounded-lg">
             <FaArrowLeft className="w-4 h-4 text-[#94a3b8]" />
           </Link>
           <div>

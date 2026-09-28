@@ -157,7 +157,7 @@ export default function ShopAdminPage() {
 
     // Only shop owners need a complete profile; managers don't set up the shop
     if (!profileComplete && !isManager) {
-      router.push('/shop/complete-profile' as Route);
+      router.push('/shop/settings/complete-profile' as Route);
       return;
     }
 

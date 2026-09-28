@@ -46,7 +46,7 @@ describe('owner shell routes', () => {
   });
 
   it('opens create flows from the New menu', () => {
-    expect(OWNER_ADD_SHOP_HREF).toBe('/admin/manage-shops/new');
+    expect(OWNER_ADD_SHOP_HREF).toBe('/admin/shops/new');
     expect(OWNER_ADD_USER_HREF).toBe('/admin/user-management/new');
   });
 
@@ -59,17 +59,17 @@ describe('owner shell routes', () => {
       `/admin/shop-details/${shopId}?from=manage-shops`,
     );
     expect(shopDetailsBackTarget('manage-shops')).toEqual({
-      href: '/admin/manage-shops',
-      label: 'Back to Manage Shops',
+      href: '/admin/shops',
+      label: 'Back to Shops',
     });
   });
 
   it('sends shop details back to shops, not customers', () => {
     expect(shopDetailsBackTarget(null)).toEqual({
-      href: '/admin/manage-shops',
-      label: 'Back to Manage Shops',
+      href: '/admin/shops',
+      label: 'Back to Shops',
     });
-    expect(shopDetailsBackTarget('customers').href).toBe('/admin/manage-shops');
+    expect(shopDetailsBackTarget('customers').href).toBe('/admin/shops');
     expect(shopDetailsBackTarget('accepted')).toEqual({
       href: '/admin/accepted-shops',
       label: 'Back to Accepted Shops',

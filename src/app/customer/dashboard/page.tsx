@@ -435,7 +435,10 @@ export default function CustomerDashboard() {
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       {/* Top Navigation */}
       <TopNavBar showMenuButton={false} />
-      <div style={{background:'rgba(0,0,0,0.15)', padding:'8px 32px', display:'flex', justifyContent:'flex-end'}}>
+      <div style={{background:'rgba(0,0,0,0.15)', padding:'8px 32px', display:'flex', justifyContent:'flex-end', alignItems:'center', gap:16}}>
+        <Link href={'/customer/messages' as Route} style={{ textDecoration:'none', color:'#fecaca', fontWeight:700, fontSize:14, padding:'8px 14px', borderRadius:8, border:'1px solid rgba(229,51,42,0.45)', background:'rgba(229,51,42,0.16)' }}>
+          {say('Messages')}
+        </Link>
         <div style={{fontSize:12, color:'#b8beca'}}>{say(tier)} - {say(loyaltyPoints)} pts</div>
       </div>
 

@@ -69,19 +69,19 @@ export default function SuperAdminDashboard() {
   if (!user) return null;
 
   const statCards = [
-    { label: 'Total Shops', value: stats.totalShops, icon: FaBuilding, color: 'bg-indigo-500', href: '/superadmin/tenants' },
-    { label: 'Total Users', value: stats.totalUsers, icon: FaUsers, color: 'bg-blue-500', href: '/superadmin/users' },
-    { label: 'Active Work Orders', value: stats.activeWorkOrders, icon: FaClock, color: 'bg-amber-500', href: '/superadmin/analytics' },
+    { label: 'Total Shops', value: stats.totalShops, icon: FaBuilding, color: 'bg-indigo-500', href: '/admin/shops' },
+    { label: 'Total Users', value: stats.totalUsers, icon: FaUsers, color: 'bg-blue-500', href: '/admin/user-management' },
+    { label: 'Active Work Orders', value: stats.activeWorkOrders, icon: FaClock, color: 'bg-amber-500', href: '/admin/platform-analytics' },
     { label: 'System Health', value: stats.systemHealth === 'healthy' ? 'Healthy' : 'Issues', icon: stats.systemHealth === 'healthy' ? FaCheckCircle : FaExclamationTriangle, color: stats.systemHealth === 'healthy' ? 'bg-green-500' : 'bg-red-500', href: '/superadmin/infrastructure' },
   ];
 
   const quickLinks = [
-    { label: 'Tenants', icon: FaBuilding, href: '/superadmin/tenants', desc: 'Manage shops & tenants' },
-    { label: 'Users', icon: FaUsers, href: '/superadmin/users', desc: 'All platform users' },
-    { label: 'Security', icon: FaShieldAlt, href: '/superadmin/security', desc: 'Security & audit' },
+    { label: 'Tenants', icon: FaBuilding, href: '/admin/manage-tenants', desc: 'Manage shops & tenants' },
+    { label: 'Users', icon: FaUsers, href: '/admin/user-management', desc: 'All platform users' },
+    { label: 'Security', icon: FaShieldAlt, href: '/admin/security', desc: 'Security & audit' },
     { label: 'Infrastructure', icon: FaServer, href: '/superadmin/infrastructure', desc: 'System health' },
     { label: 'Deployments', icon: FaRocket, href: '/superadmin/deployments', desc: 'Deploy history' },
-    { label: 'Analytics', icon: FaChartBar, href: '/superadmin/analytics', desc: 'Platform analytics' },
+    { label: 'Analytics', icon: FaChartBar, href: '/admin/platform-analytics', desc: 'Platform analytics' },
   ];
 
   return (
@@ -108,7 +108,7 @@ export default function SuperAdminDashboard() {
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">{say("Recent Tenants")}</h2>
-              <Link href={"/superadmin/tenants" as Route} className="text-indigo-600 text-sm hover:underline flex items-center gap-1">
+              <Link href={"/admin/manage-tenants" as Route} className="text-indigo-600 text-sm hover:underline flex items-center gap-1">
                 {say("View all")}{' '}<FaArrowRight className="w-3 h-3" />
               </Link>
             </div>

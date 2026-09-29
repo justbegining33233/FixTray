@@ -118,6 +118,31 @@ describe('role menus', () => {
     expect(roleHome('superadmin')).toBe('/admin/home');
   });
 
+  it('opens the shop customer directory and a customer record under Customer CRM', () => {
+    expect(menuHrefs('shop')).toContain('/shop/customer-reports');
+    expect(portalAccessDecision('/shop/customers', 'shop')).toBe('allow');
+    expect(portalAccessDecision('/shop/customer-reports/cust-1', 'shop')).toBe('allow');
+    expect(canOpenMenuPath('shop', '/shop/customers')).toBe(true);
+    expect(portalAccessDecision('/shop/customers', 'manager')).toBe('home');
+    expect(portalAccessDecision('/shop/customers', 'tech')).toBe('home');
+    expect(portalAccessDecision('/shop/customers', 'customer')).toBe('home');
+    expect(portalAccessDecision('/shop/customers/cust-1/crm', 'manager')).toBe('home');
+
+    const reports = fs.readFileSync(path.join(process.cwd(), 'src/app/shop/customer-reports/page.tsx'), 'utf8');
+    const directory = fs.readFileSync(path.join(process.cwd(), 'src/app/shop/customers/page.tsx'), 'utf8');
+    expect(reports).toContain('href="/shop/customers"');
+    expect(reports).toContain('/shop/customer-reports/${c.id}');
+    expect(directory).toContain('/shop/customer-reports/${c.id}');
+  });
+
+  it('points the platform owner Total shops View at the shops list', () => {
+    const source = fs.readFileSync(path.join(process.cwd(), 'src/app/admin/home/page.tsx'), 'utf8');
+    const start = source.indexOf('{say("Total shops")}');
+    expect(start).toBeGreaterThan(-1);
+    const href = source.slice(start, start + 400).match(/href="([^"]+)"/);
+    expect(href?.[1]).toBe('/admin/shops');
+  });
+
   it('still opens children, work-order details, and personal pages', () => {
     expect(portalAccessDecision('/workorders/wo-1', 'shop')).toBe('allow');
     expect(portalAccessDecision('/workorders/wo-1', 'manager')).toBe('allow');

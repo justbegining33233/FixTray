@@ -128,10 +128,19 @@ test.describe('in-page links stay inside each role menu', () => {
           await page.goto('/customer/dashboard', { waitUntil: 'domcontentloaded' });
           await expect(page.locator('a[href="/customer/messages"]').first()).toBeVisible({ timeout: 20_000 });
         }
+        if (role === 'shop') {
+          await page.goto('/shop/customer-reports', { waitUntil: 'domcontentloaded' });
+          await expect(page.locator('a[href="/shop/customers"]').first()).toBeVisible({ timeout: 20_000 });
+          await page.goto('/shop/customers', { waitUntil: 'domcontentloaded' });
+          await expect(page).toHaveURL(/\/shop\/customers$/);
+          await expect(page.getByRole('heading', { name: 'Forbidden' })).toHaveCount(0);
+        }
         if (role === 'superadmin') {
           await page.goto('/admin/home', { waitUntil: 'domcontentloaded' });
           await expect(page.locator('aside a[href="/admin/shops"]').first()).toBeVisible({ timeout: 20_000 });
           await expect(page.locator('a[href="/admin/messaging"]').first()).toBeVisible({ timeout: 20_000 });
+          const totalShops = page.locator('div.rounded-xl').filter({ hasText: 'Total shops' });
+          await expect(totalShops.getByRole('link', { name: 'View' })).toHaveAttribute('href', '/admin/shops');
         }
 
         for (const href of pages) {

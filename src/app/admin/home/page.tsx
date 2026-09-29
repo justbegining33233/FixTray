@@ -412,7 +412,7 @@ function AdminHomeContent() {
                     <p className="text-xs text-slate-300">{say("Total shops")}</p>
                     <p className="text-lg font-semibold text-white">{totalShopsCount ?? 0}</p>
                   </div>
-                  <Link href="/admin/revenue" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("View")}</Link>
+                  <Link href="/admin/shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("View")}</Link>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
                   <div>

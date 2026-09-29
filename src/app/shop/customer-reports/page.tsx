@@ -3,6 +3,7 @@
 import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaUser } from 'react-icons/fa';
 
@@ -93,6 +94,9 @@ export default function CustomerReportsPage() {
       </div>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <Link href="/shop/customers" style={{ color: '#93c5fd', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>{say("Customer directory")}</Link>
+        </div>
         {/* Period selector */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {PERIODS.map(p => (
@@ -163,7 +167,7 @@ export default function CustomerReportsPage() {
                       <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                         <td style={{ padding: '12px 16px', color: '#9aa3b2', fontSize: 13 }}>{i + 1}</td>
                         <td style={{ padding: '12px 16px' }}>
-                          <div style={{ fontWeight: 600, color: '#e5e7eb', fontSize: 14 }}>{say(c.name)}</div>
+                          <Link href={`/shop/customer-reports/${c.id}` as Route} style={{ fontWeight: 600, color: '#93c5fd', fontSize: 14, textDecoration: 'none' }}>{say(c.name)}</Link>
                         </td>
                         <td style={{ padding: '12px 16px', color: '#9aa3b2', fontSize: 13 }}>{say(c.email)}</td>
                         <td style={{ padding: '12px 16px' }}>

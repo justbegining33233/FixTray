@@ -59,7 +59,7 @@ export default function ShopJobsPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', padding: 24 }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <Link href="/shop/home" style={{ color: '#e5332a', textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>
+        <Link href="/shop/admin" style={{ color: '#e5332a', textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>
           <FaArrowLeft style={{ marginRight: 4 }} /> {say('Back to Dashboard')}
         </Link>
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 8px' }}>

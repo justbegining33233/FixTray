@@ -426,7 +426,7 @@ function AdminHomeContent() {
                     <p className="text-xs text-slate-300">{say("Approved shops")}</p>
                     <p className="text-lg font-semibold text-white">{approvedShopsCount ?? 0}</p>
                   </div>
-                  <Link href="/admin/shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("Open")}</Link>
+                  <Link href="/admin/accepted-shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("Open")}</Link>
                 </div>
               </div>
             </div>

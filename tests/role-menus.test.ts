@@ -110,7 +110,9 @@ describe('role menus', () => {
     expect(portalAccessDecision('/admin', 'superadmin')).toBe('home');
     expect(portalAccessDecision('/superadmin', 'superadmin')).toBe('home');
     expect(portalAccessDecision('/customer/features', 'customer')).toBe('home');
-    expect(portalAccessDecision('/customer/addresses', 'customer')).toBe('home');
+    expect(portalAccessDecision('/customer/addresses', 'customer')).toBe('allow');
+    expect(portalAccessDecision('/customer/addresses', 'shop')).toBe('home');
+    expect(portalAccessDecision('/customer/addresses', 'superadmin')).toBe('home');
     expect(portalAccessDecision('/tech-offline', 'shop')).toBe('home');
     expect(portalAccessDecision('/tech-offline', 'manager')).toBe('home');
     expect(roleHome('shop')).toBe('/shop/admin');
@@ -141,6 +143,19 @@ describe('role menus', () => {
     expect(start).toBeGreaterThan(-1);
     const href = source.slice(start, start + 400).match(/href="([^"]+)"/);
     expect(href?.[1]).toBe('/admin/shops');
+    const approved = source.indexOf('{say("Approved shops")}');
+    expect(approved).toBeGreaterThan(-1);
+    const approvedHref = source.slice(approved, approved + 400).match(/href="([^"]+)"/);
+    expect(approvedHref?.[1]).toBe('/admin/accepted-shops');
+  });
+
+  it('lets a customer open saved addresses from the profile', () => {
+    const profile = fs.readFileSync(path.join(process.cwd(), 'src/app/customer/profile/page.tsx'), 'utf8');
+    expect(profile).toContain("say(\"Saved Addresses\")");
+    expect(profile).toContain("say(\"Manage saved addresses\")");
+    expect(profile).toContain("'/customer/addresses'");
+    expect(canOpenMenuPath('customer', '/customer/addresses')).toBe(true);
+    expect(menuHrefs('customer')).not.toContain('/customer/addresses');
   });
 
   it('still opens children, work-order details, and personal pages', () => {

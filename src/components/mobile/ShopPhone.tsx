@@ -81,7 +81,7 @@ export function ShopOpsPhone({
         <h3 style={{ marginBottom: 10 }}>{say('Quick Actions')}</h3>
         <div className="pm-qa">
           <Link href={'/shop/new-inshop-job' as Route}><span className="pm-ico"><FaPlus /></span>{say('New In-Shop Job')}</Link>
-          <Link href={'/workorders/roadside' as Route}><span className="pm-ico a"><FaTruck /></span>{say('New Roadside Job')}</Link>
+          <Link href={'/workorders/roadside/new' as Route}><span className="pm-ico a"><FaTruck /></span>{say('New Roadside Job')}</Link>
           <Link href={'/shop/estimates' as Route}><span className="pm-ico p"><FaFileAlt /></span>{say('Estimates')}</Link>
           <Link href={'/shop/vendors' as Route}><span className="pm-ico n"><FaBox /></span>{say('Vendors & Parts')}</Link>
         </div>

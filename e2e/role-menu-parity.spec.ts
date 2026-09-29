@@ -32,7 +32,7 @@ const BLOCKED: Record<MenuRole, string[]> = {
     '/reports',
   ],
   tech: ['/shop/calendar', '/reports'],
-  customer: ['/reports', '/customer/features', '/customer/addresses'],
+  customer: ['/reports', '/customer/features'],
 };
 
 function sign(role: string) {

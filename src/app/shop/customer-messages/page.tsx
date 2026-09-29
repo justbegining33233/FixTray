@@ -39,7 +39,7 @@ export default function CustomerMessagesPage() {
     <div style={{ minHeight: '100vh', background: 'transparent' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(245,158,11,0.3)', padding: '20px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Link href="/shop/home" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
+          <Link href="/shop/admin" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
             <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>

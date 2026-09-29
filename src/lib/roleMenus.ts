@@ -525,6 +525,16 @@ function isShopRecordDetail(path: string, role: MenuRole): boolean {
   return menuHrefs(role).some((href) => cleanMenuPath(href) === '/admin/shops');
 }
 
+/**
+ * Shop Customer CRM lives at /shop/customer-reports. The directory at
+ * /shop/customers is that same list. Per-customer records stay children of
+ * the menu page (/shop/customer-reports/:id).
+ */
+function isShopCustomerDirectory(path: string, role: MenuRole): boolean {
+  if (role !== 'shop' || path !== '/shop/customers') return false;
+  return menuHrefs(role).some((href) => cleanMenuPath(href) === '/shop/customer-reports');
+}
+
 export function canOpenMenuPath(role: MenuRole, pathname: string): boolean {
   const path = cleanMenuPath(pathname);
   const hrefs = menuHrefs(role);
@@ -533,6 +543,7 @@ export function canOpenMenuPath(role: MenuRole, pathname: string): boolean {
   if (isChild(path, role)) return true;
   if (isWorkOrderDetail(path, role)) return true;
   if (isShopRecordDetail(path, role)) return true;
+  if (isShopCustomerDirectory(path, role)) return true;
   return false;
 }
 

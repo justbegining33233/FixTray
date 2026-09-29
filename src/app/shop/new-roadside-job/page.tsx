@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { mapShopServiceOptions } from '@/lib/shopServiceOptions';
+import { portalDashboardHref } from '@/lib/portalHome';
 import { FaArrowLeft, FaCar } from 'react-icons/fa';
 
 export default function ShopNewRoadsideJob() {
@@ -86,12 +87,7 @@ export default function ShopNewRoadsideJob() {
     return null;
   }
 
-  const homeByRole: Record<string, string> = {
-    tech: '/tech/home',
-    manager: '/manager/home',
-    shop: '/shop/home',
-  };
-  const homeHref = (homeByRole[user.role] || '/shop/home') as Route;
+  const homeHref = portalDashboardHref(user.role) as Route;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

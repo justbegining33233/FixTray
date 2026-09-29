@@ -209,7 +209,7 @@ export default function ShopHome() {
 
   const quickActions: QuickAction[] = [
     { label: <><FaStore style={{marginRight:6}}/>{say("New In-Shop Job")}</>, href: '/shop/new-inshop-job', tint: 'rgba(229,51,42,0.18)', color: '#e5332a', border: 'rgba(229,51,42,0.28)' },
-    { label: <><FaRoad style={{marginRight:6}}/>{say("New Roadside Job")}</>, href: '/workorders/roadside', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
+    { label: <><FaRoad style={{marginRight:6}}/>{say("New Roadside Job")}</>, href: '/workorders/roadside/new', tint: 'rgba(59,130,246,0.18)', color: '#60a5fa', border: 'rgba(59,130,246,0.28)' },
     { label: <><FaClipboardList style={{marginRight:6}}/>{say("Estimates")}</>, href: '/shop/estimates', tint: 'rgba(168,85,247,0.18)', color: '#c084fc', border: 'rgba(168,85,247,0.28)' },
     { label: <><FaTools style={{marginRight:6}}/>{say("Services")}</>, href: '/shop/services', tint: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: 'rgba(245,158,11,0.28)' },
     { label: <><FaIndustry style={{marginRight:6}}/>{say("Vendors & Parts")}</>, href: '/shop/vendors', tint: 'rgba(139,92,246,0.18)', color: '#8b5cf6', border: 'rgba(139,92,246,0.28)' },

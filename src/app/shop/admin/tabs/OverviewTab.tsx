@@ -341,20 +341,18 @@ export default function OverviewTab({
             ))}
 
             {shopStats.inventory.pendingRequests > 0 && (
-              <Link href="/shop/home" style={{ textDecoration: 'none' }}>
-                <button style={{ width: '100%', padding: 16, background: 'rgba(229,51,42,0.2)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, color: '#e5332a', fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: 20 }}><FaExclamationTriangle /></span>
-                    <div>
-                      <div>{say("Pending Inventory Requests")}</div>
-                      <div style={{ fontSize: 11, opacity: 0.8 }}>{say("Requires approval")}</div>
-                    </div>
+              <button type="button" onClick={() => setTab('inventory')} style={{ width: '100%', padding: 16, background: 'rgba(229,51,42,0.2)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 8, color: '#e5332a', fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 20 }}><FaExclamationTriangle /></span>
+                  <div>
+                    <div>{say("Pending Inventory Requests")}</div>
+                    <div style={{ fontSize: 11, opacity: 0.8 }}>{say("Requires approval")}</div>
                   </div>
-                  <div style={{ padding: '4px 12px', background: '#e5332a', borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
-                    {say(shopStats.inventory.pendingRequests)}
-                  </div>
-                </button>
-              </Link>
+                </div>
+                <div style={{ padding: '4px 12px', background: '#e5332a', borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
+                  {say(shopStats.inventory.pendingRequests)}
+                </div>
+              </button>
             )}
           </div>
         </div>

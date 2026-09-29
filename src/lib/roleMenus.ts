@@ -535,6 +535,14 @@ function isShopCustomerDirectory(path: string, role: MenuRole): boolean {
   return menuHrefs(role).some((href) => cleanMenuPath(href) === '/shop/customer-reports');
 }
 
+/**
+ * Saved addresses stay a customer profile link, not a second sidebar item.
+ * The page at /customer/addresses already exists; opening it must not bounce home.
+ */
+function isCustomerAddressBook(path: string, role: MenuRole): boolean {
+  return role === 'customer' && path === '/customer/addresses';
+}
+
 export function canOpenMenuPath(role: MenuRole, pathname: string): boolean {
   const path = cleanMenuPath(pathname);
   const hrefs = menuHrefs(role);
@@ -544,6 +552,7 @@ export function canOpenMenuPath(role: MenuRole, pathname: string): boolean {
   if (isWorkOrderDetail(path, role)) return true;
   if (isShopRecordDetail(path, role)) return true;
   if (isShopCustomerDirectory(path, role)) return true;
+  if (isCustomerAddressBook(path, role)) return true;
   return false;
 }
 

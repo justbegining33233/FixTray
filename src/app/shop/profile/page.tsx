@@ -222,7 +222,7 @@ function ShopProfilePageContent() {
                   <div style={{ display: 'grid', gap: 10, maxWidth: 460 }}>
                     <Link href={'/shop/settings' as Route} style={{ textDecoration: 'none', color: '#86efac', border: '1px solid #166534', borderRadius: 8, padding: '10px 12px', background: 'rgba(22,101,52,0.2)' }}>
                       {say("Shop Settings")}{' '}</Link>
-                    <Link href={'/shop/home' as Route} style={{ textDecoration: 'none', color: '#86efac', border: '1px solid #166534', borderRadius: 8, padding: '10px 12px', background: 'rgba(22,101,52,0.2)' }}>
+                    <Link href={'/shop/admin' as Route} style={{ textDecoration: 'none', color: '#86efac', border: '1px solid #166534', borderRadius: 8, padding: '10px 12px', background: 'rgba(22,101,52,0.2)' }}>
                       {say("Shop Dashboard")}{' '}</Link>
                   </div>
                 </div>

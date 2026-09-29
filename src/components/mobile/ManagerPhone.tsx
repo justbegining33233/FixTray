@@ -47,13 +47,13 @@ export function ManagerDashboardPhone({
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           <Link href={'/manager/assignments' as Route} className="pm-btn pm-btn-primary" style={{ flex: 1 }}>{say('Open Job Queue')}</Link>
-          <Link href={'/manager/dashboard' as Route} className="pm-btn pm-btn-secondary" style={{ flex: 1 }}>{say('View All Jobs')}</Link>
+          <Link href={'/manager/assignments' as Route} className="pm-btn pm-btn-secondary" style={{ flex: 1 }}>{say('View All Jobs')}</Link>
         </div>
       </div>
       <div className="pm-card" style={{ padding: '4px 12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 }}>
           <h3>{say('Team Performance')}</h3>
-          <Link href={'/shop/manage-team' as Route} className="sub" style={{ fontSize: 11, color: '#475569', fontWeight: 600, textDecoration: 'none' }}>{say('View Full Team')}</Link>
+          <Link href={'/manager/team' as Route} className="sub" style={{ fontSize: 11, color: '#475569', fontWeight: 600, textDecoration: 'none' }}>{say('View Full Team')}</Link>
         </div>
         {team.length === 0 ? <div className="pm-empty">{say('No team performance data yet.')}</div> : team.slice(0, 5).map((member) => {
           const name = member.name || say('Technician');

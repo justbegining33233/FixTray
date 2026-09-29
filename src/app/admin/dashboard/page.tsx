@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <Link
-              href="/admin/manage-shops"
+              href="/admin/shops"
               style={{
                 background: 'rgba(59, 130, 246, 0.2)',
                 border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -257,7 +257,7 @@ export default function AdminDashboardPage() {
           <h2 style={{ color: '#fff', fontSize: 20, marginBottom: 20 }}>{say("Quick Actions")}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             <Link
-              href="/admin/manage-shops"
+              href="/admin/shops"
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -305,7 +305,7 @@ export default function AdminDashboardPage() {
             </Link>
 
             <Link
-              href="/admin/system-settings"
+              href="/admin/settings"
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)',

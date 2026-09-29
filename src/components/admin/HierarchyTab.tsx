@@ -179,9 +179,7 @@ export function HierarchyTab({ shops, liveMetrics }: HierarchyTabProps) {
           <h3 className="text-sm font-semibold text-[#FAFAFA] mb-5">{say("Pending Actions")}</h3>
           <div className="space-y-3">
             <ActionItem label={say("Shop Applications")} value={liveMetrics?.pendingActions?.shopApplications ?? 0} type="warning" action="Review" href="/admin/pending-shops" />
-            <ActionItem label={say("Pending Work Orders")} value={liveMetrics?.pendingActions?.pendingWorkOrders ?? 0} type="info" action="Assign" href="/admin/command-center" />
-            <ActionItem label={say("Customer Messages")} value={liveMetrics?.pendingActions?.customerMessages ?? 0} type="warning" action="Open" href="/admin/messages" />
-            <ActionItem label={say("Overdue Jobs")} value={liveMetrics?.pendingActions?.overdueWorkOrders ?? 0} type="error" action="Urgent" href="/admin/command-center?filter=overdue" />
+            <ActionItem label={say("Customer Messages")} value={liveMetrics?.pendingActions?.customerMessages ?? 0} type="warning" action="Open" href="/admin/messaging" />
           </div>
         </div>
       </div>

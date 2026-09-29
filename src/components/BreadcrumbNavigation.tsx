@@ -189,7 +189,7 @@ export const RoleBreadcrumbs = {
     ];
 
     if (pathname.includes('/jobs') || pathname.includes('/work-orders')) {
-      baseItems.push({ label: 'My Jobs', href: '/tech/work-orders' });
+      baseItems.push({ label: 'My Jobs', href: '/tech/jobs?view=active' });
       if (pathname.includes('/[id]')) {
         baseItems.push({ label: 'Job Details', href: pathname, isActive: true });
       }
@@ -224,15 +224,15 @@ export const RoleBreadcrumbs = {
 
   admin: (pathname: string) => {
     const baseItems: BreadcrumbItem[] = [
-      { label: 'Admin Portal', href: '/admin/dashboard' }
+      { label: 'Admin Portal', href: '/admin/home' }
     ];
 
     if (pathname.includes('/users')) {
       baseItems.push({ label: 'User Management', href: '/admin/user-management', isActive: true });
     } else if (pathname.includes('/security')) {
-      baseItems.push({ label: 'Security Center', href: '/admin/security-settings', isActive: true });
+      baseItems.push({ label: 'Security Center', href: '/admin/security', isActive: true });
     } else if (pathname.includes('/system')) {
-      baseItems.push({ label: 'System Configuration', href: '/admin/system-settings', isActive: true });
+      baseItems.push({ label: 'System Configuration', href: '/admin/settings', isActive: true });
     } else if (pathname.includes('/analytics')) {
       baseItems.push({ label: 'System Analytics', href: '/admin/platform-analytics', isActive: true });
     }
@@ -242,11 +242,11 @@ export const RoleBreadcrumbs = {
 
   shop: (pathname: string) => {
     const baseItems: BreadcrumbItem[] = [
-      { label: 'Shop Portal', href: '/shop/home' }
+      { label: 'Shop Portal', href: '/shop/admin' }
     ];
 
     if (pathname.includes('/customers')) {
-      baseItems.push({ label: 'Customer Management', href: '/shop/customers', isActive: true });
+      baseItems.push({ label: 'Customer Management', href: '/shop/customer-reports', isActive: true });
     } else if (pathname.includes('/jobs')) {
       baseItems.push({ label: 'Service Requests', href: '/shop/home', isActive: true });
     } else if (pathname.includes('/reviews')) {
@@ -260,7 +260,7 @@ export const RoleBreadcrumbs = {
 
   superadmin: (pathname: string) => {
     const baseItems: BreadcrumbItem[] = [
-      { label: 'Super Admin', href: '/superadmin/analytics' }
+      { label: 'Super Admin', href: '/admin/home' }
     ];
 
     if (pathname.includes('/infrastructure')) {
@@ -268,7 +268,7 @@ export const RoleBreadcrumbs = {
     } else if (pathname.includes('/deployments')) {
       baseItems.push({ label: 'Deployments', href: '/superadmin/deployments', isActive: true });
     } else if (pathname.includes('/analytics')) {
-      baseItems.push({ label: 'Enterprise Analytics', href: '/superadmin/analytics', isActive: true });
+      baseItems.push({ label: 'Enterprise Analytics', href: '/admin/platform-analytics', isActive: true });
     }
 
     return baseItems;

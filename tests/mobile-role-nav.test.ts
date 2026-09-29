@@ -33,13 +33,13 @@ describe('mobile role tabs', () => {
     expect(mobileNavForActor('shop', { role: 'customer' })?.id).toBe('shop');
   });
 
-  it('does not list owner tools, offline, or duplicate platform homes', () => {
+  it('shows owner tools only to the platform owner, and hides offline and duplicate homes', () => {
     const labels = (isOwner: boolean) =>
       mobileNavForActor('admin', { role: 'superadmin', isOwner })?.more.flatMap((group) => group.items.map((item) => item.label)) || [];
-    expect(labels(true)).not.toContain('Owner Tools');
+    expect(labels(true)).toContain('Owner Tools');
     expect(labels(false)).not.toContain('Owner Tools');
     const hrefs = allMobileNavHrefs(MOBILE_ROLE_NAVS.superadmin);
-    expect(hrefs.filter((href) => href.startsWith('/admin/owner'))).toEqual([]);
+    expect(hrefs.filter((href) => href.startsWith('/admin/owner'))).toEqual(['/admin/owner']);
     expect(hrefs).not.toContain('/tech-offline');
     expect(hrefs).not.toContain('/admin');
     expect(hrefs).not.toContain('/superadmin');
@@ -59,7 +59,7 @@ describe('mobile role tabs', () => {
       ...(nav?.tabs.map((tab) => tab.label) ?? []),
       ...(nav?.more.flatMap((group) => group.items.map((item) => item.label)) ?? []),
     ];
-    for (const shopLabel of ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance', 'Owner Tools', 'Command Center', 'Security Settings', 'Platform Security', 'Platform Home', 'Admin Home']) {
+    for (const shopLabel of ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance', 'Command Center', 'Security Settings', 'Platform Security', 'Platform Home', 'Admin Home']) {
       expect(labels).not.toContain(shopLabel);
     }
     expect(labels).toEqual(expect.arrayContaining(['Shop Approvals', 'Shops', 'Users', 'Platform Settings', 'Revenue & Payouts', 'Health', 'Activity Logs', 'Messaging']));

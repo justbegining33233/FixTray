@@ -85,7 +85,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ico: '🔧',
     tiles: [
       { ico: '🗂️', name: 'Ops Overview', sub: 'Jobs & repairs', href: '/shop/home', color: '#0f1e3a', badge: undefined, span2: true },
-      { ico: '📅', name: 'Calendar', sub: 'Appointments', href: '/shop/calendar', color: '#0f2214' },
+      { ico: '📅', name: 'Calendar', sub: 'Appointments', href: '/shop/settings/schedule', color: '#0f2214' },
       { ico: '👥', name: 'Team', sub: 'Manage staff', href: '/shop/manage-team', color: '#1a0f2e' },
       { ico: '💬', name: 'Messages', sub: 'Customer chat', href: '/shop/customer-messages', color: '#0f0f2e' },
       { ico: '🔩', name: 'Inventory', sub: 'Parts & stock', href: '/shop/inventory', color: '#2e1a0a' },
@@ -104,7 +104,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         match: ['/shop/home', '/shop/jobs', '/shop/calendar', '/shop/dvi', '/shop/work-authorizations', '/shop/recurring-workorders', '/shop/new-inshop-job', '/shop/waiting-room', '/shop/estimates'],
         tabs: [
           { ico: '🗂️', label: 'Jobs', href: '/shop/jobs' },
-          { ico: '📅', label: 'Calendar', href: '/shop/calendar' },
+          { ico: '📅', label: 'Calendar', href: '/shop/settings/schedule' },
           { ico: '🏪', label: 'Ops', href: '/shop/home' },
           { ico: '💰', label: 'Estimates', href: '/shop/estimates' },
           { ico: '🔍', label: 'DVI', href: '/shop/dvi' },
@@ -147,7 +147,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     newOptions: [
       { ico: '🏪', title: 'In-Shop Job', sub: 'Customer at the shop', href: '/shop/new-inshop-job' },
-      { ico: '🚐', title: 'Roadside Job', sub: 'Vehicle at another location', href: '/shop/new-roadside-job' },
+      { ico: '🚐', title: 'Roadside Job', sub: 'Vehicle at another location', href: '/workorders/roadside' },
     ],
     drawer: [
       {
@@ -155,7 +155,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         items: [
           { ico: '🗂️', label: 'Work Orders', href: '/shop/jobs' },
           { ico: '🗺️', label: 'Road Map', href: '/shop/map' },
-          { ico: '📅', label: 'Calendar', href: '/shop/calendar' },
+          { ico: '📅', label: 'Calendar', href: '/shop/settings/schedule' },
           { ico: '🏪', label: 'Ops Overview / Waiting Room', href: '/shop/home' },
           { ico: '🔍', label: 'DVI Inspections', href: '/shop/dvi' },
           { ico: '💰', label: 'Estimates', href: '/shop/estimates' },
@@ -169,7 +169,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
           { ico: '👥', label: 'Manage Team', href: '/shop/manage-team' },
           { ico: '🕐', label: 'Time Clock', href: '/shop/timeclock' },
           { ico: '💳', label: 'Payroll', href: '/shop/payroll' },
-          { ico: '🗓️', label: 'Schedule', href: '/shop/calendar' },
+          { ico: '🗓️', label: 'Schedule', href: '/shop/settings/schedule' },
         ],
       },
       {
@@ -464,7 +464,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     ],
     newOptions: [
       { ico: '🏪', title: 'In-Shop Job', sub: 'Create new in-shop work order', href: '/shop/new-inshop-job' },
-      { ico: '🚐', title: 'Roadside Job', sub: 'Dispatch a roadside job', href: '/shop/new-roadside-job' },
+      { ico: '🚐', title: 'Roadside Job', sub: 'Dispatch a roadside job', href: '/workorders/roadside' },
     ],
     drawer: [
       {
@@ -509,19 +509,19 @@ const ROLES: Record<ShellRole, RoleConfig> = {
     roleLabel: 'Super Admin',
     ico: '🛡️',
     tiles: [
-      { ico: '🏪', name: 'Manage Shops', sub: 'All shops', href: '/admin/manage-shops', color: '#0f1e3a', span2: true },
+      { ico: '🏪', name: 'Manage Shops', sub: 'All shops', href: '/admin/shops', color: '#0f1e3a', span2: true },
       { ico: '⏳', name: 'Pending Shops', sub: 'Awaiting review', href: '/admin/pending-shops', color: '#2e1a0a' },
-      { ico: '👥', name: 'Users', sub: 'All accounts', href: '/superadmin/users', color: '#0f2214' },
+      { ico: '👥', name: 'Users', sub: 'All accounts', href: '/admin/user-management', color: '#0f2214' },
       { ico: '💰', name: 'Revenue', sub: 'Shop fees', href: '/admin/revenue', color: '#0a1e2e' },
-      { ico: '📊', name: 'Analytics', sub: 'Platform-wide', href: '/superadmin/analytics', color: '#1a0f2e' },
-      { ico: '🔐', name: 'Security', sub: 'Logs & threats', href: '/superadmin/security', color: '#0f0f2e' },
+      { ico: '📊', name: 'Analytics', sub: 'Platform-wide', href: '/admin/platform-analytics', color: '#1a0f2e' },
+      { ico: '🔐', name: 'Security', sub: 'Logs & threats', href: '/admin/security', color: '#0f0f2e' },
       { ico: '📧', name: 'Email Templates', sub: 'System emails', href: '/admin/email-templates', color: '#2e0f0f' },
       { ico: '⚙️', name: 'System', sub: 'All settings', href: '/admin/settings', color: '#111318' },
     ],
     footer: [
       { ico: '🏠', label: 'Home', href: '/admin/home' },
-      { ico: '🏪', label: 'Shops', href: '/admin/manage-shops' },
-      { ico: '💬', label: 'Chat', href: '/admin/messages' },
+      { ico: '🏪', label: 'Shops', href: '/admin/shops' },
+      { ico: '💬', label: 'Chat', href: '/admin/messaging' },
       { ico: '⚙️', label: 'System', href: '/admin/settings' },
     ],
     newOptions: [
@@ -532,14 +532,14 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       {
         title: 'Shops',
         items: [
-          { ico: '🏪', label: 'Manage Shops', href: '/admin/manage-shops' },
+          { ico: '🏪', label: 'Manage Shops', href: '/admin/shops' },
           { ico: '⏳', label: 'Pending Shops', href: '/admin/pending-shops' },
         ],
       },
       {
         title: 'Users',
         items: [
-          { ico: '👥', label: 'User Management', href: '/superadmin/users' },
+          { ico: '👥', label: 'User Management', href: '/admin/user-management' },
           { ico: '👤', label: 'Customers', href: '/admin/manage-customers' },
         ],
       },
@@ -547,13 +547,13 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         title: 'Finance',
         items: [
           { ico: '💰', label: 'Revenue', href: '/admin/revenue' },
-          { ico: '📊', label: 'Analytics', href: '/superadmin/analytics' },
+          { ico: '📊', label: 'Analytics', href: '/admin/platform-analytics' },
         ],
       },
       {
         title: 'Platform',
         items: [
-          { ico: '🔐', label: 'Security', href: '/superadmin/security' },
+          { ico: '🔐', label: 'Security', href: '/admin/security' },
           { ico: '📋', label: 'Activity Logs', href: '/admin/activity-logs' },
           { ico: '📧', label: 'Email Templates', href: '/admin/email-templates' },
           { ico: '⚙️', label: 'System Settings', href: '/admin/settings' },
@@ -564,7 +564,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       {
         match: ['/admin/manage-shops', '/admin/pending-shops', '/admin/accepted-shops', '/admin/shop-details'],
         tabs: [
-          { ico: '🏪', label: 'Shops', href: '/admin/manage-shops' },
+          { ico: '🏪', label: 'Shops', href: '/admin/shops' },
           { ico: '⏳', label: 'Pending', href: '/admin/pending-shops' },
           { ico: '✅', label: 'Accepted', href: '/admin/accepted-shops' },
         ],
@@ -572,7 +572,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       {
         match: ['/superadmin/users', '/admin/manage-customers', '/admin/user-management'],
         tabs: [
-          { ico: '👥', label: 'Users', href: '/superadmin/users' },
+          { ico: '👥', label: 'Users', href: '/admin/user-management' },
           { ico: '👤', label: 'Customers', href: '/admin/manage-customers' },
           { ico: '🔑', label: 'User Mgmt', href: '/admin/user-management' },
         ],
@@ -581,7 +581,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         match: ['/admin/revenue', '/superadmin/analytics', '/admin/financial-reports', '/admin/platform-analytics'],
         tabs: [
           { ico: '💰', label: 'Revenue', href: '/admin/revenue' },
-          { ico: '📊', label: 'Analytics', href: '/superadmin/analytics' },
+          { ico: '📊', label: 'Analytics', href: '/admin/platform-analytics' },
           { ico: '📈', label: 'Platform', href: '/admin/platform-analytics' },
           { ico: '📑', label: 'Reports', href: '/admin/financial-reports' },
         ],
@@ -589,7 +589,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
       {
         match: ['/superadmin/security', '/admin/activity-logs', '/admin/email-templates', '/admin/settings', '/admin/system-settings'],
         tabs: [
-          { ico: '🔐', label: 'Security', href: '/superadmin/security' },
+          { ico: '🔐', label: 'Security', href: '/admin/security' },
           { ico: '📋', label: 'Logs', href: '/admin/activity-logs' },
           { ico: '📧', label: 'Email', href: '/admin/email-templates' },
           { ico: '⚙️', label: 'Settings', href: '/admin/settings' },

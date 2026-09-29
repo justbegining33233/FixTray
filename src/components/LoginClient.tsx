@@ -179,7 +179,7 @@ export default function LoginClient() {
               localStorage.setItem('fixtrayAgreementAccepted', 'true');
             }
             setLoading(false);
-            const nextRoute = profileComplete ? '/shop/home' : '/shop/complete-profile';
+            const nextRoute = profileComplete ? '/shop/admin' : '/shop/settings/complete-profile';
             navigateAfterLogin(getPostLoginRoute(nextRoute, ['/shop/', '/workorders/']));
             return true;
           }

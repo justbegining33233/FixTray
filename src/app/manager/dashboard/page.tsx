@@ -264,7 +264,7 @@ export default function ManagerDashboard() {
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: '#e5332a', marginBottom: 8 }}><FaExclamationTriangle style={{marginRight:4}} /> {say("Pending Inventory")}</h3>
                 <p style={{ fontSize: 14, color: '#e5e7eb' }}>
                   {say(data.stats.pendingInventoryRequests)} {say("items need approval")}{' '}</p>
-                <Link href="/shop/services" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginTop: 12, display: 'inline-block' }}>
+                <Link href="/manager/inventory" style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginTop: 12, display: 'inline-block' }}>
                   {say("Review Requests")}{' '}<FaArrowRight style={{marginRight:4}} />
                 </Link>
               </div>

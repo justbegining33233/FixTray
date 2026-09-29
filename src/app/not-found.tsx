@@ -50,13 +50,13 @@ export default function NotFound() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <Link href="/customer/dashboard" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(229,51,42,0.12)', color: '#fca5a5' }}>
               {say("Customer")}{' '}</Link>
-            <Link href="/shop/home" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(34,197,94,0.10)', color: '#86efac' }}>
+            <Link href="/shop/admin" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(34,197,94,0.10)', color: '#86efac' }}>
               {say("Shop")}{' '}</Link>
             <Link href="/tech/home" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(229,51,42,0.10)', color: '#ffb4ad' }}>
               {say("Technician")}{' '}</Link>
-            <Link href="/manager/dashboard" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(168,85,247,0.10)', color: '#d8b4fe' }}>
+            <Link href="/manager/home" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(168,85,247,0.10)', color: '#d8b4fe' }}>
               {say("Manager")}{' '}</Link>
-            <Link href="/admin/dashboard" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(245,158,11,0.10)', color: '#fcd34d' }}>
+            <Link href="/admin/home" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(245,158,11,0.10)', color: '#fcd34d' }}>
               {say("Admin")}{' '}</Link>
             <Link href="/auth/login" className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
               {say("Sign In")}{' '}</Link>

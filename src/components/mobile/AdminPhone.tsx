@@ -83,7 +83,7 @@ export function AdminOverviewPhone({
           <span className="val">{count(pendingApprovals)}</span>
           <span className="hint" style={{ color: '#fbbf24' }}>{say('Review →')}</span>
         </Link>
-        <Link href={'/admin/manage-shops' as Route} className="pm-stat pm-t-red">
+        <Link href={'/admin/shops' as Route} className="pm-stat pm-t-red">
           <span className="lbl">{say('Total shops')}</span>
           <span className="val">{count(totalShops)}</span>
           <span className="hint">{say('View →')}</span>

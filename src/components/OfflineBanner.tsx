@@ -2,6 +2,8 @@
 
 import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { normalizeRole } from '@/lib/roleNav';
 
 type OfflineDetail = {
   offline?: boolean;
@@ -16,6 +18,8 @@ type OfflineDetail = {
 
 export default function OfflineBanner() {
   const say = usePhrase();
+  const { user } = useAuth();
+  const isTech = normalizeRole(user?.role) === 'tech';
   const [offline, setOffline] = useState(false);
   const [detail, setDetail] = useState<OfflineDetail>({});
 
@@ -81,7 +85,7 @@ export default function OfflineBanner() {
           {say('Sync now')}
         </button>
       )}
-      {(offline || techOffline) && (
+      {isTech && (offline || techOffline) && (
         <a href="/tech-offline/" style={{ color: 'inherit', fontWeight: 700 }}>{say('Offline jobs')}</a>
       )}
     </div>

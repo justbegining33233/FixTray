@@ -148,7 +148,7 @@ export default function ManageShopsClient() {
           </div>
         </div>
         <div style={{display:'flex', gap:12, alignItems:'center'}}>
-          <Link href={"/admin/manage-shops/new" as Route} style={{padding:'8px 16px', background:'#e5332a', color:'white', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:700}}>
+          <Link href={"/admin/shops/new" as Route} style={{padding:'8px 16px', background:'#e5332a', color:'white', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:700}}>
             {say("Add Shop")}
           </Link>
           <Link href="/admin/home" style={{padding:'8px 16px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', borderRadius:6, textDecoration:'none', fontSize:13, fontWeight:600}}>

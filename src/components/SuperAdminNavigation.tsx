@@ -49,7 +49,7 @@ export default function SuperAdminNavigation({
 
   const recentNotifications = [
     ...(systemAlerts > 0 ? [{ id: 'system-alerts', title: 'System Alerts', description: `${systemAlerts} infrastructure alert(s)`, href: '/superadmin/infrastructure' }] : []),
-    ...(securityIncidents > 0 ? [{ id: 'security-incidents', title: 'Security Incidents', description: `${securityIncidents} security incident(s)`, href: '/superadmin/security' }] : []),
+    ...(securityIncidents > 0 ? [{ id: 'security-incidents', title: 'Security Incidents', description: `${securityIncidents} security incident(s)`, href: '/admin/security' }] : []),
     ...(deploymentTasks > 0 ? [{ id: 'deployments', title: 'Deployment Tasks', description: `${deploymentTasks} pending deployment task(s)`, href: '/superadmin/deployments' }] : []),
   ];
 
@@ -74,19 +74,19 @@ export default function SuperAdminNavigation({
   const navigationItems = [
     {
       name: 'Dashboard',
-      href: '/superadmin/analytics',
+      href: '/admin/home',
       icon: FaHome,
       description: 'Enterprise overview'
     },
     {
       name: 'Users',
-      href: '/superadmin/users',
+      href: '/admin/user-management',
       icon: FaUsers,
       description: 'Global user management'
     },
     {
       name: 'Security',
-      href: '/superadmin/security',
+      href: '/admin/security',
       icon: FaShieldAlt,
       badge: securityIncidents > 0 ? securityIncidents : undefined,
       description: 'Enterprise security'
@@ -107,13 +107,13 @@ export default function SuperAdminNavigation({
     },
     {
       name: 'Analytics',
-      href: '/superadmin/analytics',
+      href: '/admin/platform-analytics',
       icon: FaChartBar,
       description: 'Enterprise metrics'
     },
     {
       name: 'Global Settings',
-      href: '/superadmin/settings',
+      href: '/admin/settings',
       icon: FaGlobe,
       description: 'Platform configuration'
     },
@@ -134,7 +134,7 @@ export default function SuperAdminNavigation({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href={"/superadmin/analytics" as Route} className="flex items-center space-x-2">
+            <Link href={"/admin/home" as Route} className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">F</span>
               </div>
@@ -220,7 +220,7 @@ export default function SuperAdminNavigation({
 
               {/* Quick Actions */}
               <Link
-                href={"/superadmin/users" as Route}
+                href={"/admin/user-management" as Route}
                 className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 {say("Manage Users")}{' '}</Link>
@@ -253,7 +253,7 @@ export default function SuperAdminNavigation({
                       <FaUser className="w-4 h-4" />
                       {say("My Profile")}{' '}</Link>
                     <Link
-                      href={'/superadmin/settings' as Route}
+                      href={'/admin/settings' as Route}
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2 px-4 py-3 text-sm text-[#e2e8f0] hover:bg-[rgba(255,255,255,0.04)]"
                     >

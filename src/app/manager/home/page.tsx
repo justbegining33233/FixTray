@@ -326,7 +326,7 @@ export default function ManagerHome() {
                   <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
                     <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}><FaClipboardList style={{marginRight:4}} /> {say("Work Orders Overview")}</h2>
                     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:16}}>
-                      <Link href="/manager/dashboard" style={{textAlign:'center', textDecoration:'none'}}>
+                      <Link href="/manager/assignments" style={{textAlign:'center', textDecoration:'none'}}>
                         <div style={{fontSize:28, fontWeight:700, color:'#e5332a'}}>{say(workOrderStats.activeJobs)}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>{say("Active Jobs")}</div>
                       </Link>
@@ -334,17 +334,17 @@ export default function ManagerHome() {
                         <div style={{fontSize:28, fontWeight:700, color:'#f59e0b'}}>{say(workOrderStats.pendingAssignments)}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>{say("Awaiting Clock-In")}</div>
                       </Link>
-                      <Link href="/manager/dashboard" style={{textAlign:'center', textDecoration:'none'}}>
+                      <Link href="/manager/assignments" style={{textAlign:'center', textDecoration:'none'}}>
                         <div style={{fontSize:28, fontWeight:700, color:'#ef4444'}}>{say(workOrderStats.overdueJobs)}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>{say("Overdue")}</div>
                       </Link>
-                      <Link href="/manager/dashboard" style={{textAlign:'center', textDecoration:'none'}}>
+                      <Link href="/manager/assignments" style={{textAlign:'center', textDecoration:'none'}}>
                         <div style={{fontSize:28, fontWeight:700, color:'#22c55e'}}>{say(workOrderStats.completedToday)}</div>
                         <div style={{color:'#9aa3b2', fontSize:12}}>{say("Completed Today")}</div>
                       </Link>
                     </div>
                     <div style={{display:'flex', gap:12, marginTop:20}}>
-                      <Link href="/manager/dashboard" style={{flex:1, padding:12, background:'#e5332a', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
+                      <Link href="/manager/assignments" style={{flex:1, padding:12, background:'#e5332a', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
                         {say("View All Jobs")}{' '}</Link>
                       <Link href="/manager/assignments" style={{flex:1, padding:12, background:'#6b7280', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
                         {say("Open Job Queue")}{' '}</Link>
@@ -375,7 +375,7 @@ export default function ManagerHome() {
                         ))
                       )}
                     </div>
-                    <Link href="/shop/manage-team" style={{display:'block', marginTop:16, padding:12, background:'#6b7280', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
+                    <Link href="/manager/team" style={{display:'block', marginTop:16, padding:12, background:'#6b7280', color:'white', borderRadius:8, textDecoration:'none', textAlign:'center', fontWeight:600}}>
                       {say("View Full Team")}{' '}</Link>
                   </div>
 
@@ -561,19 +561,19 @@ export default function ManagerHome() {
                   <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
                     <h3 style={{color:'#e5e7eb', marginBottom:16, fontSize:16}}>{say("Quick Actions")}</h3>
                     <div style={{display:'grid', gap:8}}>
-                      <Link href="/manager/dashboard" style={{padding:12, background:'rgba(168,85,247,0.2)', borderRadius:8, textDecoration:'none', color:'#a855f7', fontSize:14, fontWeight:700, border:'1px solid rgba(168,85,247,0.3)'}}>
+                      <Link href="/manager/assignments" style={{padding:12, background:'rgba(168,85,247,0.2)', borderRadius:8, textDecoration:'none', color:'#a855f7', fontSize:14, fontWeight:700, border:'1px solid rgba(168,85,247,0.3)'}}>
                         <FaChartBar style={{marginRight:4}} /> {say("Manager Dashboard")}{' '}</Link>
                       <Link href="/manager/assignments" style={{padding:12, background:'rgba(168,85,247,0.2)', borderRadius:8, textDecoration:'none', color:'#a855f7', fontSize:14, fontWeight:700, border:'1px solid rgba(168,85,247,0.3)'}}>
                         <FaUsers style={{marginRight:4}} /> {say("Assign Work Orders")}{' '}</Link>
                       <Link href="/manager/estimates" style={{padding:12, background:'rgba(34,197,94,0.2)', borderRadius:8, textDecoration:'none', color:'#22c55e', fontSize:14, fontWeight:700, border:'1px solid rgba(34,197,94,0.3)'}}>
                         <FaDollarSign style={{marginRight:4}} /> {say("Create Estimates")}{' '}</Link>
-                      <Link href="/workorders/inshop" style={{padding:12, background:'rgba(229,51,42,0.2)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:700, border:'1px solid rgba(229,51,42,0.3)'}}>
+                      <Link href="/shop/new-inshop-job" style={{padding:12, background:'rgba(229,51,42,0.2)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:700, border:'1px solid rgba(229,51,42,0.3)'}}>
                         <FaClipboardList style={{marginRight:4}} /> {say("Create In-Shop Work Order")}{' '}</Link>
-                      <Link href="/shop/new-roadside-job" style={{padding:12, background:'rgba(59,130,246,0.2)', borderRadius:8, textDecoration:'none', color:'#60a5fa', fontSize:14, fontWeight:700, border:'1px solid rgba(59,130,246,0.35)'}}>
+                      <Link href="/workorders/roadside" style={{padding:12, background:'rgba(59,130,246,0.2)', borderRadius:8, textDecoration:'none', color:'#60a5fa', fontSize:14, fontWeight:700, border:'1px solid rgba(59,130,246,0.35)'}}>
                         <FaClipboardList style={{marginRight:4}} /> {say("Create Roadside Work Order")}{' '}</Link>
-                      <Link href="/manager/dashboard" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600, cursor:'pointer'}}>
+                      <Link href="/manager/assignments" style={{padding:12, background:'rgba(229,51,42,0.1)', borderRadius:8, textDecoration:'none', color:'#e5332a', fontSize:14, fontWeight:600, cursor:'pointer'}}>
                         <FaChartBar style={{marginRight:4}} /> {say("View Center Control")}{' '}</Link>
-                      <Link href="/shop/manage-team" style={{padding:12, background:'rgba(168,85,247,0.1)', borderRadius:8, textDecoration:'none', color:'#a855f7', fontSize:14, fontWeight:600}}>
+                      <Link href="/manager/team" style={{padding:12, background:'rgba(168,85,247,0.1)', borderRadius:8, textDecoration:'none', color:'#a855f7', fontSize:14, fontWeight:600}}>
                         <FaUsers style={{marginRight:4}} /> {say("Manage Team")}{' '}</Link>
                       <button 
                         onClick={() => window.location.href = 'tel:911'}

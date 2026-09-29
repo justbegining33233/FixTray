@@ -469,10 +469,17 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       case 'messages':
         router.push(getMessagesLink() as Route);
         break;
-      case 'workorders':
+      case 'workorders': {
         const workOrderId = n.id.replace('wo-', '');
-        router.push(`/workorders/${workOrderId}` as any);
+        if (activeRole === 'customer') {
+          router.push(`/customer/workorders/${workOrderId}` as Route);
+        } else if (activeRole === 'admin' || activeRole === 'superadmin') {
+          break;
+        } else {
+          router.push(`/workorders/${workOrderId}` as Route);
+        }
         break;
+      }
       default:
         router.push(getMessagesLink() as Route);
     }

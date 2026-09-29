@@ -43,7 +43,7 @@ function TechWorkOrders() {
           {say("Work Orders")}{' '}</h1>
         <p style={{ color: '#9aa3b2', marginTop: 0 }}>{say("Open work orders assigned to you.")}</p>
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          <Link href="/tech/work-orders" style={{ padding: '8px 14px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, background: '#e5332a', color: '#fff' }}>{say("Work Orders")}</Link>
+          <Link href="/tech/jobs?view=active" style={{ padding: '8px 14px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, background: '#e5332a', color: '#fff' }}>{say("Work Orders")}</Link>
           <Link href={techJobsHref('history') as any} style={{ padding: '8px 14px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, background: 'rgba(255,255,255,0.08)', color: '#fff' }}>{say("History")}</Link>
         </div>
         {loading ? <div style={{ color: '#9aa3b2' }}>{say("Loading work orders...")}</div> : null}

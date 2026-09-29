@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { FaCar, FaSearch, FaUser, FaWrench } from 'react-icons/fa';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
+import { useAuth } from '@/contexts/AuthContext';
+import { normalizeRole } from '@/lib/roleNav';
 
 interface SearchResults {
   customers: Array<{ id: string; firstName: string; lastName: string; email: string; phone: string | null }>;
@@ -18,6 +20,8 @@ interface SearchResults {
 export default function GlobalSearch() {
   const say = usePhrase();
   const router = useRouter();
+  const { user } = useAuth();
+  const actor = normalizeRole(user?.role);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -71,6 +75,15 @@ export default function GlobalSearch() {
       }
     }, 300);
   }, [query]);
+
+  const customerRecordHref = (id: string) => (actor === 'shop' ? `/shop/customer-reports/${id}` : null);
+  const inventoryHref = actor === 'manager' ? '/manager/inventory' : actor === 'tech' ? '/tech/inventory' : actor === 'shop' ? '/shop/inventory' : null;
+  const servicesHref = actor === 'shop' ? '/shop/services' : null;
+  const workOrderHref = (id: string) => {
+    if (actor === 'customer') return `/customer/workorders/${id}`;
+    if (actor === 'shop' || actor === 'manager' || actor === 'tech') return `/workorders/${id}`;
+    return null;
+  };
 
   const navigate = (path: string) => {
     setIsFocused(false);
@@ -139,13 +152,13 @@ export default function GlobalSearch() {
             <div style={{ padding: 24, textAlign: 'center', color: '#9aa3b2', fontSize: 13 }}>{say("No results found")}</div>
           )}
 
-          {results && results.customers.length > 0 && (
+          {actor === 'shop' && results && results.customers.length > 0 && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Customers")}</div>
               {results.customers.map(c => (
                 <div
                   key={c.id}
-                  onClick={() => navigate(`/shop/customers/${c.id}/crm`)}
+                  onClick={() => { const href = customerRecordHref(c.id); if (href) navigate(href); }}
                   style={{ padding: '10px 12px', borderRadius: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -157,13 +170,13 @@ export default function GlobalSearch() {
             </div>
           )}
 
-          {results && results.workOrders.length > 0 && (
+          {workOrderHref('x') && results && results.workOrders.length > 0 && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Work Orders")}</div>
               {results.workOrders.map(wo => (
                 <div
                   key={wo.id}
-                  onClick={() => navigate(`/workorders/${wo.id}`)}
+                  onClick={() => { const href = workOrderHref(wo.id); if (href) navigate(href); }}
                   style={{ padding: '10px 12px', borderRadius: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -175,13 +188,13 @@ export default function GlobalSearch() {
             </div>
           )}
 
-          {results && results.vehicles.length > 0 && (
+          {actor === 'shop' && results && results.vehicles.length > 0 && (
             <div>
               <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Vehicles")}</div>
               {results.vehicles.map(v => (
                 <div
                   key={v.id}
-                  onClick={() => navigate(`/shop/customers/${v.customerId}/crm`)}
+                  onClick={() => { const href = customerRecordHref(v.customerId); if (href) navigate(href); }}
                   style={{ padding: '10px 12px', borderRadius: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -193,13 +206,13 @@ export default function GlobalSearch() {
             </div>
           )}
 
-          {results && results.parts.length > 0 && (
+          {inventoryHref && results && results.parts.length > 0 && (
             <div style={{ marginTop: 8 }}>
               <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Inventory / Parts")}</div>
               {results.parts.map(p => (
                 <div
                   key={p.id}
-                  onClick={() => navigate('/shop/inventory')}
+                  onClick={() => { if (inventoryHref) navigate(inventoryHref); }}
                   style={{ padding: '10px 12px', borderRadius: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -211,13 +224,13 @@ export default function GlobalSearch() {
             </div>
           )}
 
-          {results && results.laborRates.length > 0 && (
+          {servicesHref && results && results.laborRates.length > 0 && (
             <div style={{ marginTop: 8 }}>
               <div style={{ padding: '4px 12px', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{say("Labor Rates")}</div>
               {results.laborRates.map(rate => (
                 <div
                   key={rate.id}
-                  onClick={() => navigate('/shop/services')}
+                  onClick={() => { if (servicesHref) navigate(servicesHref); }}
                   style={{ padding: '10px 12px', borderRadius: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}

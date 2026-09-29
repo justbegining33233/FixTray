@@ -51,7 +51,7 @@ export default function AdminNavigation({
   const navigationItems = [
     {
       name: 'Dashboard',
-      href: '/admin/dashboard',
+      href: '/admin/home',
       icon: FaHome,
       description: 'System overview'
     },
@@ -64,14 +64,14 @@ export default function AdminNavigation({
     },
     {
       name: 'Security',
-      href: '/admin/security-settings',
+      href: '/admin/security',
       icon: FaShieldAlt,
       badge: securityIssues > 0 ? securityIssues : undefined,
       description: 'Security settings'
     },
     {
       name: 'System',
-      href: '/admin/system-settings',
+      href: '/admin/settings',
       icon: FaServer,
       badge: systemAlerts > 0 ? systemAlerts : undefined,
       description: 'System configuration'
@@ -112,7 +112,7 @@ export default function AdminNavigation({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/admin/dashboard" className="flex items-center space-x-2">
+            <Link href="/admin/home" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">F</span>
               </div>

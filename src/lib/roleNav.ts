@@ -18,7 +18,7 @@ export const MANAGER_SHOP_SWITCH_PATHS = [
 ] as const;
 
 const MANAGER_SHELL_HREFS: Record<string, string> = {
-  '/shop/home': '/manager/dashboard',
+  '/shop/home': '/manager/home',
   '/shop/jobs': '/manager/assignments',
   '/shop/estimates': '/manager/estimates',
   '/shop/dvi': '/manager/inspections',
@@ -27,7 +27,10 @@ const MANAGER_SHELL_HREFS: Record<string, string> = {
   '/shop/customer-messages': '/manager/messages',
   '/shop/analytics': '/manager/reports',
   '/shop/admin': '/manager/home',
-  '/tech/new-roadside-job': '/shop/new-roadside-job',
+  '/tech/new-roadside-job': '/workorders/roadside',
+  '/shop/new-roadside-job': '/workorders/roadside',
+  '/shop/calendar': '/manager/schedule',
+  '/shop/settings/schedule': '/manager/schedule',
 };
 
 export function normalizeRole(role?: string | null): string {
@@ -52,7 +55,7 @@ export function shellHrefForRole(href: string, role?: string | null): string {
   }
 
   if (actor !== 'tech' && path === '/tech/new-roadside-job') {
-    return `/shop/new-roadside-job${query}`;
+    return `/workorders/roadside${query}`;
   }
 
   return href;

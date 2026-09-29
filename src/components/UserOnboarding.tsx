@@ -122,7 +122,7 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
           title: 'Team Management',
           description: 'Monitor your team\'s performance and manage daily operations.',
           icon: <FaMapMarkerAlt className="w-6 h-6 text-purple-500" />,
-          target: '[href="/manager/dashboard"]',
+          target: '[href="/manager/assignments"]',
           action: 'Review team metrics and alerts'
         },
         {
@@ -156,7 +156,7 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
           title: 'System Administration',
           description: 'Monitor system health, manage users, and configure settings.',
           icon: <FaMapMarkerAlt className="w-6 h-6 text-orange-500" />,
-          target: '[href="/admin/dashboard"]',
+          target: '[href="/admin/home"]',
           action: 'Check system status and alerts'
         },
         {
@@ -172,7 +172,7 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
           title: 'Security Center',
           description: 'Monitor security events and manage access controls.',
           icon: <FaCheck className="w-6 h-6 text-red-500" />,
-          target: '[href="/admin/security-settings"]',
+          target: '[href="/admin/security"]',
           action: 'Check security status'
         },
         {
@@ -206,7 +206,7 @@ export default function UserOnboarding({ userRole, onComplete, onSkip }: UserOnb
           title: 'Service Requests',
           description: 'Handle incoming service requests and manage your workflow.',
           icon: <FaCheck className="w-6 h-6 text-orange-500" />,
-          target: '[href="/workorders/list"]',
+          target: '[href="/shop/jobs"]',
           action: 'Check pending service requests'
         },
         {

@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
         if (data.admin?.isSuperAdmin) {
           router.push('/admin/home' as Route);
         } else {
-          router.push('/admin/dashboard' as Route);
+          router.push('/admin/home' as Route);
         }
       } else {
         setError(data.error || 'Login failed');

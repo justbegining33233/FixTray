@@ -86,7 +86,7 @@ export default function DashboardWelcome({
           {
             title: 'View My Jobs',
             description: `You have ${stats.activeJobs || 0} active jobs`,
-            href: '/tech/work-orders',
+            href: '/tech/jobs?view=active',
             icon: <FaClipboardList className="w-5 h-5" />,
             color: 'bg-[#e5332a]',
             priority: 'high' as const
@@ -138,7 +138,7 @@ export default function DashboardWelcome({
           {
             title: 'System Status',
             description: 'Check system health and alerts',
-            href: '/admin/dashboard',
+            href: '/admin/home',
             icon: <FaExclamationTriangle className="w-5 h-5" />,
             color: 'bg-orange-500 hover:bg-orange-600',
             priority: 'high' as const
@@ -154,7 +154,7 @@ export default function DashboardWelcome({
           {
             title: 'Security Center',
             description: 'Monitor security and access',
-            href: '/admin/security-settings',
+            href: '/admin/security',
             icon: <FaCheckCircle className="w-5 h-5" />,
             color: 'bg-red-500 hover:bg-red-600',
             priority: 'medium' as const
@@ -198,7 +198,7 @@ export default function DashboardWelcome({
           {
             title: 'Enterprise Overview',
             description: 'Monitor all shops and systems',
-            href: '/superadmin/analytics',
+            href: '/admin/platform-analytics',
             icon: <FaChartBar className="w-5 h-5" />,
             color: 'bg-indigo-500 hover:bg-indigo-600',
             priority: 'high' as const

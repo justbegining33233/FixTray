@@ -63,7 +63,7 @@ export default function AppGuidePage() {
         { name: 'Platform Analytics', description: 'Usage stats and metrics', status: 'ready', route: '/admin/platform-analytics', apiEndpoint: '/api/admin/analytics' },
         { name: 'Activity Logs', description: 'Track user and system activity', status: 'ready', route: '/admin/activity-logs', apiEndpoint: '/api/admin/activity-logs' },
         { name: 'Financial Reports', description: 'Revenue and billing reports', status: 'ready', apiEndpoint: '/api/admin/financial-reports' },
-        { name: 'System Settings', description: 'Configure platform settings', status: 'ready', route: '/admin/system-settings', apiEndpoint: '/api/admin/settings' },
+        { name: 'System Settings', description: 'Configure platform settings', status: 'ready', route: '/admin/settings', apiEndpoint: '/api/admin/settings' },
       ]
     },
     {
@@ -71,9 +71,9 @@ export default function AppGuidePage() {
       icon: '',
       description: 'Advanced admin tools and management',
       features: [
-        { name: 'Command Center', description: 'Real-time platform monitoring', status: 'ready', route: '/admin/command-center', apiEndpoint: '/api/admin/command-center' },
+        { name: 'Command Center', description: 'Real-time platform monitoring', status: 'ready', route: '/admin/test', apiEndpoint: '/api/admin/command-center' },
         { name: 'Email Templates', description: 'Manage system email templates', status: 'ready', route: '/admin/email-templates', apiEndpoint: '/api/admin/email-templates' },
-        { name: 'Security Settings', description: 'Configure security policies', status: 'ready', route: '/admin/security-settings', apiEndpoint: '/api/admin/security' },
+        { name: 'Security Settings', description: 'Configure security policies', status: 'ready', route: '/admin/security', apiEndpoint: '/api/admin/security' },
         { name: 'Backup & Restore', description: 'Database backup management', status: 'ready', route: '/admin/backup-restore', apiEndpoint: '/api/admin/backup' },
         { name: 'Revenue Analytics', description: 'Detailed revenue reporting', status: 'ready', route: '/admin/revenue', apiEndpoint: '/api/admin/revenue' },
         { name: 'Session Management', description: 'Monitor active user sessions', status: 'ready', route: '/admin/sessions', apiEndpoint: '/api/auth/sessions' },
@@ -126,7 +126,7 @@ export default function AppGuidePage() {
         { name: 'Team Performance', description: 'Technician productivity metrics', status: 'ready', apiEndpoint: '/api/shop/team-performance' },
         { name: 'Recent Activity', description: 'Recent shop activities feed', status: 'ready', apiEndpoint: '/api/shop/recent-activity' },
         { name: 'Urgent Alerts', description: 'Critical notifications and alerts', status: 'ready', apiEndpoint: '/api/shop/urgent-alerts' },
-        { name: 'Complete Profile Setup', description: 'Initial shop profile completion', status: 'ready', route: '/shop/complete-profile' },
+        { name: 'Complete Profile Setup', description: 'Initial shop profile completion', status: 'ready', route: '/shop/settings/complete-profile' },
       ]
     },
     {
@@ -179,8 +179,8 @@ export default function AppGuidePage() {
       description: 'Create and manage repair orders',
       features: [
         { name: 'Create Work Order', description: 'New work order with customer/vehicle', status: 'ready', route: '/workorders/new', apiEndpoint: '/api/workorders' },
-        { name: 'Work Order List', description: 'View all work orders with filters and search', status: 'ready', route: '/workorders/list', apiEndpoint: '/api/workorders' },
-        { name: 'In-Shop Work Orders', description: 'Dedicated in-shop repair order view', status: 'ready', route: '/workorders/inshop', apiEndpoint: '/api/workorders' },
+        { name: 'Work Order List', description: 'View all work orders with filters and search', status: 'ready', route: '/shop/jobs', apiEndpoint: '/api/workorders' },
+        { name: 'In-Shop Work Orders', description: 'Dedicated in-shop repair order view', status: 'ready', route: '/shop/new-inshop-job', apiEndpoint: '/api/workorders' },
         { name: 'Work Order Details', description: 'Full order details and editing', status: 'ready', route: '/workorders/[id]' },
         { name: 'Status Updates', description: 'Change order status (pending, in-progress, complete)', status: 'ready', apiEndpoint: '/api/workorders/[id]' },
         { name: 'Photo Uploads', description: 'Attach before/after photos', status: 'ready', apiEndpoint: '/api/workorders/[id]/photos' },
@@ -258,7 +258,7 @@ export default function AppGuidePage() {
       features: [
         { name: 'Service Insights', description: 'Personal service analytics', status: 'ready', route: '/customer/insights' },
         { name: 'Features Overview', description: 'Available platform features', status: 'ready', route: '/customer/features' },
-        { name: 'Home Dashboard', description: 'Customer home page', status: 'ready', route: '/customer/home' },
+        { name: 'Home Dashboard', description: 'Customer home page', status: 'ready', route: '/customer/dashboard' },
         { name: 'Overview', description: 'Account overview and summary', status: 'ready', route: '/customer/overview' },
         { name: 'Authorization', description: 'Service authorization management', status: 'ready', route: '/customer/authorization' },
       ]
@@ -269,7 +269,7 @@ export default function AppGuidePage() {
       description: 'Team management and oversight features',
       features: [
         { name: 'Manager Home', description: 'Manager landing page with quick actions', status: 'ready', route: '/manager/home' },
-        { name: 'Manager Dashboard', description: 'Team oversight and full management panel', status: 'ready', route: '/manager/dashboard' },
+        { name: 'Manager Dashboard', description: 'Team oversight and full management panel', status: 'ready', route: '/manager/home' },
         { name: 'Manager Assignments', description: 'Assign work to team members', status: 'ready', route: '/manager/assignments', apiEndpoint: '/api/manager/assignments' },
         { name: 'Manager Estimates', description: 'Create and manage estimates for customers', status: 'ready', route: '/manager/estimates', apiEndpoint: '/api/manager/estimates' },
         { name: 'Performance Monitoring', description: 'Track team performance', status: 'ready', apiEndpoint: '/api/manager/performance' },
@@ -326,7 +326,7 @@ export default function AppGuidePage() {
         { name: 'Appointment Booking', description: 'Schedule appointments', status: 'ready', apiEndpoint: '/api/appointments' },
         { name: 'Available Slots', description: 'Define available time slots', status: 'ready', notes: 'Based on business hours' },
         { name: 'Appointment Reminders', description: 'Auto-remind customers', status: 'ready', apiEndpoint: '/api/cron/appointment-reminders' },
-        { name: 'Calendar View', description: 'View appointments on calendar', status: 'ready', route: '/shop/calendar' },
+        { name: 'Calendar View', description: 'View appointments on calendar', status: 'ready', route: '/shop/settings/schedule' },
         { name: 'Recurring Appointments', description: 'Set up repeat bookings', status: 'ready', route: '/shop/appointments/recurring', apiEndpoint: '/api/appointments/recurring' },
       ]
     },

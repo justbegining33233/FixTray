@@ -164,7 +164,7 @@ function WaitingRoomContent() {
                 {say("Pending in-shop appointments from Shop Home and the calendar appear here automatically. A separate check-in is not required.")}{' '}</div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20 }}>
                 <Link href="/shop/home" style={{ background: '#e5332a', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>{say("Shop Home")}</Link>
-                <Link href="/shop/calendar" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>{say("Calendar")}</Link>
+                <Link href="/shop/settings/schedule" style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 700 }}>{say("Calendar")}</Link>
               </div>
             </div>
           )}

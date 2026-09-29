@@ -147,8 +147,6 @@ function CustomerProfilePageContent() {
                     <button type="submit" disabled={saving} style={{ width: 'fit-content', padding: '10px 14px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.75 : 1 }}>
                       {saving ? say("Saving...") : say("Save Changes")}
                     </button>
-                    <Link href={'/customer/addresses' as Route} style={{ textDecoration: 'none', color: '#fecaca', fontWeight: 700 }}>
-                      {say("Manage saved addresses")}{' '}</Link>
                     </form>
                   </div>
                 </div>
@@ -160,8 +158,8 @@ function CustomerProfilePageContent() {
                   <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 14 }}>{say("Useful customer pages.")}</p>
 
                   <div style={{ display: 'grid', gap: 10, maxWidth: 460 }}>
-                    <Link href={'/customer/addresses' as Route} style={{ textDecoration: 'none', color: '#fecaca', border: '1px solid #991b1b', borderRadius: 8, padding: '10px 12px', background: 'rgba(153,27,27,0.2)' }}>
-                      {say("Saved Addresses")}{' '}</Link>
+                    <Link href={'/customer/messages' as Route} style={{ textDecoration: 'none', color: '#fecaca', border: '1px solid #991b1b', borderRadius: 8, padding: '10px 12px', background: 'rgba(153,27,27,0.2)' }}>
+                      {say("Messages")}{' '}</Link>
                     <Link href={'/customer/vehicles' as Route} style={{ textDecoration: 'none', color: '#fecaca', border: '1px solid #991b1b', borderRadius: 8, padding: '10px 12px', background: 'rgba(153,27,27,0.2)' }}>
                       {say("My Vehicles")}{' '}</Link>
                     <Link href={'/customer/workorders' as Route} style={{ textDecoration: 'none', color: '#fecaca', border: '1px solid #991b1b', borderRadius: 8, padding: '10px 12px', background: 'rgba(153,27,27,0.2)' }}>

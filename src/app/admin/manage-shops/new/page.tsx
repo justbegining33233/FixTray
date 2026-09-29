@@ -92,7 +92,7 @@ export default function AddShopPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'transparent' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: 32 }}>
-        <Link href={"/admin/manage-shops" as Route} style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, display: 'inline-block', marginBottom: 16 }}>
+        <Link href={"/admin/shops" as Route} style={{ color: '#e5332a', textDecoration: 'none', fontSize: 14, fontWeight: 600, display: 'inline-block', marginBottom: 16 }}>
           <FaArrowLeft style={{ marginRight: 4 }} /> {say("Back to Manage Shops")}
         </Link>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 }}>{say("Add Shop")}</h1>
@@ -143,7 +143,7 @@ export default function AddShopPage() {
               <button type="submit" disabled={submitting} style={{ padding: '10px 18px', background: '#e5332a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer' }}>
                 {submitting ? say("Creating...") : say("Add Shop")}
               </button>
-              <Link href={"/admin/manage-shops" as Route} style={{ padding: '10px 18px', color: '#e5e7eb', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8 }}>
+              <Link href={"/admin/shops" as Route} style={{ padding: '10px 18px', color: '#e5e7eb', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8 }}>
                 {say("Cancel")}
               </Link>
             </div>

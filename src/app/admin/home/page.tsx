@@ -1,6 +1,6 @@
 'use client';
 import { usePhrase } from '@/lib/usePhrase';
-import { FaBook, FaSave, FaSlidersH, FaStethoscope } from 'react-icons/fa';
+import { FaSave, FaStethoscope } from 'react-icons/fa';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -8,6 +8,8 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
 import { MobilePageFrame } from '@/components/MobileShell';
+import Sidebar from '@/components/Sidebar';
+import TopNavBar from '@/components/TopNavBar';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { DashboardTab } from '@/app/admin/home/components/DashboardTabClean';
 import { UsersTab } from '@/app/admin/home/components/UsersTab';
@@ -32,6 +34,7 @@ function AdminHomeContent() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const {
@@ -158,22 +161,20 @@ function AdminHomeContent() {
   ];
 
   const quickLinks = [
-    { href: '/admin/command-center', label: <><FaSlidersH style={{marginRight:4}} /> {say("Command Center")}</>, icon: 'command', highlight: true },
-    { href: '/admin/messages', label: ' Messages', icon: 'messages' },
+    { href: '/admin/messaging', label: ' Messages', icon: 'messages', highlight: true },
     ...(isOwnerProfile ? [{ href: '/admin/revenue', label: ' Revenue & Payouts', icon: 'money' }] : []),
     { href: '/admin/pending-shops', label: 'Pending Approvals', badge: pendingApprovalsCount, icon: 'clock' },
     { href: '/admin/accepted-shops', label: ' Accepted Shops', icon: 'shops' },
-    { href: '/admin/manage-shops', label: ' Manage Shops', icon: 'shops' },
+    { href: '/admin/shops', label: ' Manage Shops', icon: 'shops' },
     { href: '/admin/manage-customers', label: ' Manage Customers', icon: 'users' },
     { href: '/admin/user-management', label: ' User Management', icon: 'users' },
     { href: '/admin/platform-analytics', label: ' Platform Analytics', icon: 'analytics' },
     { href: '/admin/financial-reports', label: ' Financial Reports', icon: 'finance' },
     { href: '/admin/email-templates', label: ' Email Templates', icon: 'email' },
     { href: '/admin/sessions', label: ' Active Sessions', icon: 'sessions' },
-    { href: '/admin/security-settings', label: ' Security Settings', icon: 'security' },
-    { href: '/admin/system-settings', label: ' System Settings', icon: 'settings' },
+    { href: '/admin/security', label: ' Security Settings', icon: 'security' },
+    { href: '/admin/settings', label: ' System Settings', icon: 'settings' },
     { href: '/admin/backup-restore', label: <><FaSave style={{marginRight:4}} /> {say("Backup & Restore")}</>, icon: 'backup' },
-    { href: '/admin/guide', label: <><FaBook style={{marginRight:4}} /> {say("Documentation")}</>, icon: 'book' },
     { href: '/admin/test', label: <><FaStethoscope style={{marginRight:4}} /> {say("Health Check")}</>, icon: 'health' },
   ];
 
@@ -234,7 +235,10 @@ function AdminHomeContent() {
   }
 
   return (
-    <MobilePageFrame role="admin" isHome userName={user?.name}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#000000' }}>
+      <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <TopNavBar onMenuToggle={() => setSidebarOpen((open) => !open)} showMenuButton />
     <div className="min-h-screen bg-[#000000] text-slate-100">
       <div className="relative z-10">
         {searchOpen && (
@@ -264,15 +268,15 @@ function AdminHomeContent() {
                 { label: say("Shops"), action: () => handleSectionSelect('hierarchy'), key: 'S' },
                 { label: say("Pending Approvals"), action: () => { router.push('/admin/pending-shops' as Route); setSearchOpen(false); }, key: 'P' },
                 { label: say("Accepted Shops"), action: () => { router.push('/admin/accepted-shops' as Route); setSearchOpen(false); }, key: '' },
-                { label: say("Manage Shops"), action: () => { router.push('/admin/manage-shops' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Manage Shops"), action: () => { router.push('/admin/shops' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("Manage Customers"), action: () => { router.push('/admin/manage-customers' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("User Management"), action: () => { router.push('/admin/user-management' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("Platform Analytics"), action: () => { router.push('/admin/platform-analytics' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("Financial Reports"), action: () => { router.push('/admin/financial-reports' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("Email Templates"), action: () => { router.push('/admin/email-templates' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("Active Sessions"), action: () => { router.push('/admin/sessions' as Route); setSearchOpen(false); }, key: '' },
-                { label: say("Security Settings"), action: () => { router.push('/admin/security-settings' as Route); setSearchOpen(false); }, key: '' },
-                { label: say("System Settings"), action: () => { router.push('/admin/system-settings' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("Security Settings"), action: () => { router.push('/admin/security' as Route); setSearchOpen(false); }, key: '' },
+                { label: say("System Settings"), action: () => { router.push('/admin/settings' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("Backup & Restore"), action: () => { router.push('/admin/backup-restore' as Route); setSearchOpen(false); }, key: '' },
                 { label: say("System Status"), action: () => { router.push('/admin/test' as Route); setSearchOpen(false); }, key: 'T' },
               ].map((item, i) => (
@@ -422,7 +426,7 @@ function AdminHomeContent() {
                     <p className="text-xs text-slate-300">{say("Approved shops")}</p>
                     <p className="text-lg font-semibold text-white">{approvedShopsCount ?? 0}</p>
                   </div>
-                  <Link href="/admin/manage-shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("Open")}</Link>
+                  <Link href="/admin/shops" className="text-xs text-orange-300 hover:text-orange-200 no-underline">{say("Open")}</Link>
                 </div>
               </div>
             </div>
@@ -508,7 +512,8 @@ function AdminHomeContent() {
       </div>
       </div>
     </div>
-    </MobilePageFrame>
+      </div>
+    </div>
   );
 }
 

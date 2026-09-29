@@ -265,7 +265,7 @@ export default function FindShops() {
                     )}
                   </div>
                   <div style={{display:'flex', gap:12}}>
-                    <Link href={`/customer/shop/${fav.shop.id}`} style={{
+                    <Link href={`/customer/findshops/${fav.shop.id}`} style={{
                       flex:1,
                       padding:'12px',
                       background:'rgba(229,51,42,0.1)',
@@ -397,7 +397,7 @@ export default function FindShops() {
                     )}
                   </div>
                   <div style={{display:'flex', gap:12}}>
-                    <Link href={`/customer/shop/${shop.id}`} style={{
+                    <Link href={`/customer/findshops/${shop.id}`} style={{
                       flex:1,
                       padding:'12px',
                       background:'rgba(229,51,42,0.1)',
@@ -457,7 +457,7 @@ export default function FindShops() {
 
         {/* Back to Home */}
         <div style={{marginTop:32, textAlign:'center'}}>
-          <Link href="/customer/home" style={{
+          <Link href="/customer/dashboard" style={{
             padding:'12px 24px',
             background:'#e5332a',
             color:'white',

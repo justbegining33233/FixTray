@@ -11,7 +11,7 @@ export function portalDashboardHref(role?: string | null): string {
     case 'superadmin':
       return '/admin/home';
     default:
-      return '/shop/home';
+      return '/shop/admin';
   }
 }
 
@@ -19,5 +19,5 @@ export function techJobCreateHref(kind: 'inshop' | 'roadside', role?: string | n
   if (role === 'tech') {
     return kind === 'roadside' ? '/tech/new-roadside-job' : '/tech/new-inshop-job';
   }
-  return kind === 'roadside' ? '/shop/new-roadside-job' : '/shop/new-inshop-job';
+  return kind === 'roadside' ? '/workorders/roadside/new' : '/shop/new-inshop-job';
 }

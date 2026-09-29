@@ -185,6 +185,14 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
   const { pathname } = request.nextUrl;
   if (pathname.startsWith('/api/') || pathname === '/admin/login') return null;
 
+  // Profile setup is a child of Shop Settings. Keep the old address working
+  // (including the Stripe return query) without opening a page outside the menu.
+  if (pathname === '/shop/complete-profile' || pathname.startsWith('/shop/complete-profile/')) {
+    const dest = request.nextUrl.clone();
+    dest.pathname = '/shop/settings/complete-profile';
+    return NextResponse.redirect(dest);
+  }
+
   const token =
     request.cookies.get('sos_auth')?.value ??
     request.headers.get('authorization')?.replace('Bearer ', '');

@@ -98,7 +98,7 @@ export default function ShopReportsPage() {
   const getDashboardLink = () => {
     const isShopAdmin = (user as any)?.isShopAdmin;
     if (userRole === 'shop') return isShopAdmin ? '/shop/admin' : '/shop/home';
-    if (userRole === 'manager') return '/manager/dashboard';
+    if (userRole === 'manager') return '/manager/home';
     if (userRole === 'tech') return '/tech/home';
     return '/dashboard';
   };

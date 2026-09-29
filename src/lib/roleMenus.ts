@@ -155,6 +155,7 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
       items: [
         { icon: 'settings', label: 'Platform Settings', href: '/admin/settings' },
         { icon: 'tools', label: 'Admin Tools', href: '/admin/admin-tools' },
+        { icon: 'user', label: 'Owner Tools', href: '/admin/owner' },
         { icon: 'inventory', label: 'Backup/Restore', href: '/admin/backup-restore' },
         { icon: 'tools', label: 'Deployments', href: '/superadmin/deployments' },
         { icon: 'settings', label: 'Infrastructure', href: '/superadmin/infrastructure' },
@@ -365,6 +366,9 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
         { icon: 'tools', label: 'All Tools', href: '/tech/all-tools' },
         { icon: 'search', label: 'DVI Form', href: '/tech/dvi' },
         { icon: 'file', label: 'DTC Lookup', href: '/tech/dtc-lookup' },
+        { icon: 'search', label: 'Diagnostics', href: '/tech/diagnostics' },
+        { icon: 'file', label: 'Manuals', href: '/tech/manuals' },
+        { icon: 'user', label: 'Customers', href: '/tech/customers' },
         { icon: 'camera', label: 'Photos', href: '/tech/photos' },
         { icon: 'inventory', label: 'Inventory', href: '/tech/inventory' },
         { icon: 'pin', label: 'Share Location', href: '/tech/share-location' },

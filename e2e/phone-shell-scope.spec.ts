@@ -273,12 +273,10 @@ test.describe('phone shell scroll and platform owner scope', () => {
       });
       await context.setOffline(true);
       await page.goto('/tech-offline/', { waitUntil: 'domcontentloaded' });
-      await expect(page.getByText('STUCK OFFLINE')).toBeVisible({ timeout: 15000 });
-      await expect.poll(() => page.evaluate(() => typeof (window as Window & { fixtrayLeavePlatformOwner?: unknown }).fixtrayLeavePlatformOwner)).toBe('function');
+      await expect(page.getByRole('heading', { name: "You're Offline" })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('STUCK OFFLINE')).toHaveCount(0);
       const left = page.waitForURL(/\/admin\/home$/, { timeout: 20000 });
       await context.setOffline(false);
-      // Coming back online fires `online` itself. Dispatch only if that navigation has not started.
-      await page.evaluate(() => window.dispatchEvent(new Event('online'))).catch(() => undefined);
       await left;
     } finally {
       await context.setOffline(false);

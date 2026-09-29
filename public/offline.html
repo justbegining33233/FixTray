@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>You're Offline</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #000; color: #f1f5f9; }
+    body {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+      padding: calc(24px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));
+    }
+    main { max-width: 360px; }
+    h1 { font-size: 24px; font-weight: 700; margin: 0 0 8px; }
+    p { font-size: 14px; line-height: 1.5; color: #94a3b8; margin: 0 0 16px; }
+    button, a {
+      display: inline-block;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    button {
+      background: #e5332a;
+      color: #fff;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 24px;
+      cursor: pointer;
+    }
+    a { color: #e5332a; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <main data-offline-screen="1">
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection. Some features may be unavailable until you reconnect.</p>
+    <p>Payments, approvals, estimates, and pay changes need a connection.</p>
+    <button type="button" onclick="location.reload()">Try Again</button>
+    <div><a id="offline-home" href="#">Go to your home</a></div>
+  </main>
+  <script>
+    (function () {
+      var homes = {
+        admin: '/admin/home',
+        superadmin: '/admin/home',
+        shop: '/shop/admin',
+        manager: '/manager/home',
+        tech: '/tech/home',
+        customer: '/customer/dashboard'
+      };
+      var link = document.getElementById('offline-home');
+      if (link) {
+        var role = '';
+        try { role = localStorage.getItem('userRole') || ''; } catch (e) { role = ''; }
+        link.setAttribute('href', homes[role] || '/auth/login');
+      }
+      // The network came back. Load the real page for this address.
+      window.addEventListener('online', function () { window.location.reload(); });
+    })();
+  </script>
+</body>
+</html>

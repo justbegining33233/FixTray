@@ -3,6 +3,7 @@
 import { usePhrase } from '@/lib/usePhrase';
 import React, { Component, ReactNode, ErrorInfo } from 'react';
 import * as Sentry from '@sentry/nextjs';
+import OfflineNotice, { useNetworkOnline } from '@/components/OfflineNotice';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -40,6 +41,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 function ErrorFallback({ error, info }: { error?: Error; info?: ErrorInfo }) {
+  const online = useNetworkOnline();
+  if (!online) return <OfflineNotice />;
+  return <OnlineErrorFallback error={error} info={info} />;
+}
+
+function OnlineErrorFallback({ error, info }: { error?: Error; info?: ErrorInfo }) {
   const say = usePhrase();
   return (
     <div className="p-8 text-center text-red-600">

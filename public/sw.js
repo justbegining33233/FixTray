@@ -1,14 +1,20 @@
 /* eslint-disable */
 // FixTray Service Worker — offline caching + background sync
-const CACHE_NAME = 'fixtray-v9';
-const API_CACHE   = 'fixtray-api-v3';
+// Bump the runtime query when this file's offline rules change so importScripts is not stale.
+importScripts('/offline-access.js?v=10', '/offline-session.js?v=10');
 
-// Precache the static tech workspace. Next HTML stays network-first so
-// deploys are not stuck behind an old shell. When the network is gone,
-// navigation falls back to this workspace.
+const CACHE_NAME = 'fixtray-v10';
+const API_CACHE   = 'fixtray-api-v3';
+const PAGE_CACHE = self.FixTrayOfflineAccess.PAGE_CACHE;
+const OFFLINE_DOCUMENT = self.FixTrayOfflineAccess.OFFLINE_DOCUMENT;
+
+// Precache the static tech workspace and the role-neutral offline screen.
+// Next HTML stays network-first so deploys are not stuck behind an old shell.
+// When the network is gone, techs get the workspace. Every other role gets
+// that role's cached page, or the static offline screen. Never another role's page.
 const OFFLINE_SHELL = '/tech-offline/index.html';
 const PRECACHE_URLS = [
-  '/offline',
+  OFFLINE_DOCUMENT,
   OFFLINE_SHELL,
   '/tech-offline/app.js',
   '/tech-offline/app.css',
@@ -17,6 +23,8 @@ const PRECACHE_URLS = [
   '/tech-offline/fonts/inter-latin.woff2',
   '/tech-offline/fonts/plus-jakarta-latin.woff2',
 ];
+
+const OFFLINE_HTML_FALLBACK = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>You\'re Offline</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#000;color:#f1f5f9;font-family:system-ui,sans-serif;text-align:center;padding:24px"><main data-offline-screen="1"><h1>You\'re Offline</h1><p>It looks like you\'ve lost your internet connection. Some features may be unavailable until you reconnect.</p><p>Payments, approvals, estimates, and pay changes need a connection.</p><button type="button" onclick="location.reload()">Try Again</button><div><a id="offline-home" href="#">Go to your home</a></div></main><script>(function(){var homes={admin:"/admin/home",superadmin:"/admin/home",shop:"/shop/admin",manager:"/manager/home",tech:"/tech/home",customer:"/customer/dashboard"};var link=document.getElementById("offline-home");if(link){var role="";try{role=localStorage.getItem("userRole")||""}catch(e){role=""}link.setAttribute("href",homes[role]||"/auth/login")}window.addEventListener("online",function(){window.location.reload()})})();</script></body></html>';
 
 // ─── Install: pre-cache offline page only ────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -35,7 +43,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE && k !== PAGE_CACHE)
           .map((k) => caches.delete(k))
       )
     ).then(() => self.clients.claim())
@@ -46,7 +54,7 @@ self.addEventListener('activate', (event) => {
 // addAll follows redirects and would store /admin/home HTML under a script URL.
 // Keep only a real 200, and never a document in place of a script or style.
 function precacheUrl(cache, url) {
-  const documentUrl = url === '/offline' || url === OFFLINE_SHELL || /\.html$/i.test(url);
+  const documentUrl = url === OFFLINE_DOCUMENT || url === OFFLINE_SHELL || /\.html$/i.test(url);
   return fetch(url, { redirect: 'manual', cache: 'no-store' }).then((response) => {
     if (!response || !response.ok || response.type === 'opaqueredirect') return undefined;
     if (!documentUrl && isHtmlResponse(response)) return undefined;
@@ -62,14 +70,68 @@ function isTechWorkspaceNavigation(pathname) {
   return pathname === '/tech' || pathname.startsWith('/tech/') || isOfflineWorkspacePath(pathname);
 }
 
-function offlineDocument(pathname) {
-  if (!isTechWorkspaceNavigation(pathname)) {
-    return caches.match('/offline').then((cached) => cached || new Response('Offline', { status: 503 }));
-  }
-  return caches.match(OFFLINE_SHELL).then((shell) => {
-    if (shell) return injectPlatformOwnerEscape(shell);
-    return caches.match('/offline').then((cached) => cached || new Response('Offline', { status: 503 }));
+function dropBody(response) {
+  try {
+    if (response && response.body && response.body.cancel) response.body.cancel();
+  } catch (e) { /* already consumed */ }
+}
+
+function offlineScreen() {
+  return caches.open(CACHE_NAME).then((cache) => cache.match(OFFLINE_DOCUMENT)).then((cached) => {
+    if (cached) return cached;
+    return new Response(OFFLINE_HTML_FALLBACK, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   });
+}
+
+function shellDocument() {
+  return caches.open(CACHE_NAME).then((cache) => cache.match(OFFLINE_SHELL)).then((shell) => shell || caches.match(OFFLINE_SHELL));
+}
+
+function pageKey(session, url, kind) {
+  if (!session || !session.role || !session.userId) return '';
+  const stable = self.FixTrayOfflineAccess.stablePath(url.pathname, url.search);
+  return self.FixTrayOfflineAccess.pageCacheUrl(self.location.origin, session.role, stable, kind, session.userId);
+}
+
+function cachedRolePage(session, url, kind) {
+  const key = pageKey(session, url, kind);
+  if (!key) return Promise.resolve(null);
+  return caches.open(PAGE_CACHE).then((cache) => cache.match(key));
+}
+
+function stashRolePage(session, url, response, kind) {
+  const key = pageKey(session, url, kind);
+  const decision = self.FixTrayOfflineAccess.decision(url.pathname, session && session.role);
+  if (!key || decision !== 'cached') {
+    dropBody(response);
+    return Promise.resolve();
+  }
+  return caches.open(PAGE_CACHE).then((cache) => cache.put(key, response)).catch(() => undefined);
+}
+
+// Offline navigation: tech workspace, this user's cached document, or the static screen.
+function offlineDocument(input) {
+  const url = typeof input === 'string' ? new URL(input, self.location.origin) : input;
+  return self.FixTrayOfflineSession.readSession().then((session) => {
+    const target = self.FixTrayOfflineAccess.navigationTarget(
+      url.pathname,
+      session && session.role,
+      false,
+    );
+    if (target === 'tech-shell' || (session && session.role === 'tech' && isTechWorkspaceNavigation(url.pathname))) {
+      return shellDocument().then((shell) => {
+        if (shell) return injectPlatformOwnerEscape(shell);
+        return offlineScreen();
+      });
+    }
+    if (self.FixTrayOfflineAccess.decision(url.pathname, session && session.role) !== 'cached') {
+      return offlineScreen();
+    }
+    return cachedRolePage(session, url, 'doc').then((page) => page || offlineScreen());
+  }).catch(() => offlineScreen());
 }
 
 // A controlling worker can keep serving a cached copy of this page after the
@@ -88,6 +150,10 @@ function releaseStaleOfflineClients() {
 function isHtmlResponse(response) {
   if (!response) return false;
   return (response.headers.get('content-type') || '').toLowerCase().indexOf('text/html') !== -1;
+}
+
+function isRedirect(response) {
+  return !response || response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400);
 }
 
 function injectPlatformOwnerEscape(response) {
@@ -112,20 +178,58 @@ function injectPlatformOwnerEscape(response) {
 
 // Document loads hit the network so a platform-owner redirect can change the
 // URL. Cache is only the offline fallback, and that fallback still carries
-// the escape script.
+// the escape script. A non-tech never receives the tech workspace.
 function networkOfflineNavigation(request) {
+  const url = new URL(request.url);
   return fetch(request, { redirect: 'manual', cache: 'no-store' }).then((response) => {
-    if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
-      return response;
-    }
+    if (isRedirect(response)) return response;
     if (response.ok) {
       const copy = response.clone();
       caches.open(CACHE_NAME).then((cache) => cache.put(OFFLINE_SHELL, copy)).catch(() => undefined);
     }
     return response;
-  }).catch(() =>
-    caches.match(OFFLINE_SHELL).then((cached) => (cached ? injectPlatformOwnerEscape(cached) : new Response('Offline', { status: 503 })))
-  );
+  }).catch(() => offlineDocument(url));
+}
+
+function networkThenRolePage(request) {
+  const url = new URL(request.url);
+  return fetch(request, { redirect: 'manual', cache: 'no-store' }).then((response) => {
+    if (isRedirect(response)) return response;
+    if (response.ok && isHtmlResponse(response)) {
+      const copy = response.clone();
+      self.FixTrayOfflineSession.readSession()
+        .then((session) => stashRolePage(session, url, copy, 'doc'))
+        .catch(() => dropBody(copy));
+    }
+    return response;
+  }).catch(() => offlineDocument(url));
+}
+
+function isAppDataRequest(request) {
+  if (request.mode === 'navigate') return false;
+  const headers = request.headers;
+  if (headers.get('RSC') === '1') return true;
+  if (headers.get('Next-Router-Prefetch')) return true;
+  if (headers.get('Next-Router-Segment-Prefetch')) return true;
+  const accept = headers.get('Accept') || '';
+  return accept.indexOf('text/x-component') !== -1;
+}
+
+function networkThenRoleData(request) {
+  const url = new URL(request.url);
+  return self.FixTrayOfflineSession.readSession().then((session) => {
+    const allowed = self.FixTrayOfflineAccess.decision(url.pathname, session && session.role) === 'cached';
+    return fetch(request).then((response) => {
+      if (response.ok && allowed) {
+        const copy = response.clone();
+        stashRolePage(session, url, copy, 'rsc');
+      }
+      return response;
+    }).catch(() => {
+      if (!allowed) return new Response('', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      return cachedRolePage(session, url, 'rsc').then((cached) => cached || new Response('', { status: 503, headers: { 'Content-Type': 'text/plain' } }));
+    });
+  }).catch(() => new Response('', { status: 503, headers: { 'Content-Type': 'text/plain' } }));
 }
 
 // ─── Fetch: routing strategy ──────────────────────────────────────────────────
@@ -135,6 +239,11 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests — mutations go straight to the network.
   if (request.method !== 'GET') return;
+
+  if (url.pathname.startsWith('/__fixtray_page__')) {
+    event.respondWith(new Response('', { status: 404 }));
+    return;
+  }
 
   // API routes: network-first, fall back to cached response when offline.
   if (url.pathname.startsWith('/api/')) {
@@ -185,11 +294,15 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Navigation: network first so deploys land immediately.
-  // Offline, techs get the workspace. Every other role gets the offline page.
+  // Offline, techs get the workspace. Every other role gets their own cached
+  // page or the static offline screen. Blocked URLs never reuse another role's cache.
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => offlineDocument(url.pathname))
-    );
+    event.respondWith(networkThenRolePage(request));
+    return;
+  }
+
+  if (isAppDataRequest(request)) {
+    event.respondWith(networkThenRoleData(request));
     return;
   }
 

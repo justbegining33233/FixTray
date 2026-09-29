@@ -7,6 +7,7 @@ import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
 import { actorSatisfiesRoles } from '@/lib/roleAccess';
 import { roleDeniedRedirect } from '@/lib/roleNav';
+import { rememberOfflineSession } from '@/lib/offlinePageCache';
 
 interface LoginUserData {
   id: string;
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('isOwner');
           setUser(null);
           setIsLoading(false);
+          void rememberOfflineSession(null, null);
           return;
         }
 
@@ -142,6 +144,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role = decodedToken.role;
           localStorage.setItem('userRole', role);
         }
+
+        void rememberOfflineSession(role && name && id ? role : null, role && name && id ? id : null);
 
         // If valid token found, ensure socket is connected for real-time updates
         try {
@@ -211,6 +215,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (userData.isOwner) localStorage.setItem('isOwner', 'true');
     else localStorage.removeItem('isOwner');
 
+    void rememberOfflineSession(userData.role, userData.id);
+
     setUser({
       id: userData.id,
       name: userData.name,
@@ -242,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('isOwner');
     localStorage.removeItem('token');
     window.dispatchEvent(new Event('fixtray-logout'));
+    await rememberOfflineSession(null, null);
 
     try {
       const { default: socketClient } = await import('@/lib/socket-client');

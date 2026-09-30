@@ -20,9 +20,11 @@ describe('dead marketing and admin aliases', () => {
     expect(bySource['/capabilities']).toBe('/features');
     expect(bySource['/help']).toBeUndefined();
     expect(bySource['/help-center']).toBe('/help');
-    expect(bySource['/docs']).toBe('/features');
-    expect(bySource['/blog']).toBe('/features');
+    expect(bySource['/docs']).toBeUndefined();
+    expect(bySource['/blog']).toBeUndefined();
     expect(bySource['/demo']).toBe('/contact');
+    expect(bySource['/signup']).toBe('/get-started');
+    expect(bySource['/auth/register']).toBe('/get-started');
     expect(bySource['/register/shop']).toBe('/auth/register/shop');
     expect(bySource['/pricing']).toBe('/features');
     expect(bySource['/register/success']).toBe('/auth/thank-you');

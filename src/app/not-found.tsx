@@ -25,7 +25,7 @@ export default function NotFound() {
         <h1 className="text-6xl font-bold mb-2" style={{ color: '#f1f5f9' }}>404</h1>
         <h2 className="text-xl font-semibold mb-3" style={{ color: '#e2e8f0' }}>{say("Page Not Found")}</h2>
         <p className="mb-8" style={{ color: '#94a3b8' }}>
-          {say("The page you&apos;re looking for doesn&apos;t exist or has been moved.\n          Check the URL or navigate back to a known page.")}{' '}</p>
+          {say("The page you're looking for doesn't exist or has been moved. Check the URL or navigate back to a known page.")}{' '}</p>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">

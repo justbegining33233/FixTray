@@ -143,7 +143,7 @@ describe('message catalogs', () => {
 
   it('looks up homepage copy when the catalog stored a literal backslash-n', () => {
     const index = JSON.parse(fs.readFileSync(path.join(root, 'src/lib/phraseIndex.json'), 'utf8')) as Record<string, string>;
-    const src = fs.readFileSync(path.join(root, 'src/app/page.tsx'), 'utf8');
+    const src = fs.readFileSync(path.join(root, 'src/components/MarketingHome.tsx'), 'utf8');
     const match = src.match(/say\("(FixTray now unifies[^"]*)"\)/);
     expect(match).not.toBeNull();
     const runtime = (match?.[1] ?? '').replaceAll('\\n', '\n');

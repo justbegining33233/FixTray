@@ -152,7 +152,7 @@ describe('installed shell client launch', () => {
   it('keeps the installed start url on login and the intro off the website', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/manifest.json'), 'utf8'));
     expect(manifest.start_url).toBe('/auth/login');
-    const page = fs.readFileSync(path.join(ROOT, 'src/app/page.tsx'), 'utf8');
+    const page = fs.readFileSync(path.join(ROOT, 'src/components/MarketingHome.tsx'), 'utf8');
     const layout = fs.readFileSync(path.join(ROOT, 'src/app/layout.tsx'), 'utf8');
     expect(page).toContain('installedShellBootstrapScript');
     expect(page).toContain('window.location.replace');

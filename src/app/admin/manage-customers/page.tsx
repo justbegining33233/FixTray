@@ -327,7 +327,7 @@ export default function ManageCustomers() {
                       </span>
                     </div>
                     <div style={{ fontSize: 14, color: '#9aa3b2' }}>
-                      {say(customer.company)}  {say("•  Member for")}{' '}{say(customer.lifetimeMonths)} months
+                      {say(customer.company)}  {say("•  Customer for")}{' '}{say(customer.lifetimeMonths)} months
                     </div>
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export default function ManageCustomers() {
                   <div><span style={{ color: '#6b7280' }}>{say("Company:")}</span> <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(selectedCustomer.company)}</span></div>
                   <div><span style={{ color: '#6b7280' }}>{say("Email:")}</span> <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(selectedCustomer.email)}</span></div>
                   <div><span style={{ color: '#6b7280' }}>{say("Phone:")}</span> <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(selectedCustomer.phone)}</span></div>
-                  <div><span style={{ color: '#6b7280' }}>{say("Member Since:")}</span> <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{formatDate(selectedCustomer.createdAt)}</span></div>
+                  <div><span style={{ color: '#6b7280' }}>{say("Customer since:")}</span> <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{formatDate(selectedCustomer.createdAt)}</span></div>
                   <div><span style={{ color: '#6b7280' }}>{say("Email Verified:")}</span> <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{selectedCustomer.emailVerified ? say("Yes") : say("No")}</span></div>
                 </div>
               </div>

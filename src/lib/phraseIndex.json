@@ -1259,7 +1259,6 @@
   "At Risk (&lt;40)": "at_risk_and_lt_40",
   "Loading customers...": "loading_customers",
   "No customers found": "no_customers_found",
-  "•  Member for": "member_for",
   "% done)": "done",
   "FixTray Fees": "fixtray_fees",
   "This mo:": "this_mo",
@@ -1272,7 +1271,6 @@
   "Company:": "company",
   "Email:": "email_2",
   "Phone:": "phone_2",
-  "Member Since:": "member_since",
   "Email Verified:": "email_verified",
   "Yes": "yes",
   "Activity & Fees": "activity_and_fees",
@@ -5619,5 +5617,7 @@
   "Create an account": "create_an_account",
   "Choose a shop account or a customer account. Log in is only for people who already have one.": "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one",
   "For a shop that runs jobs, estimates, and payments.": "for_a_shop_that_runs_jobs_estimates_and_payments",
-  "For someone booking service and following a job.": "for_someone_booking_service_and_following_a_job"
+  "For someone booking service and following a job.": "for_someone_booking_service_and_following_a_job",
+  "•  Customer for": "member_for",
+  "Customer since:": "member_since"
 }

@@ -11,7 +11,8 @@ import TechOfflineBridge from '@/components/TechOfflineBridge';
 import { NativeProvider } from '@/context/NativeContext';
 import NativeStatusBar from '@/components/NativeStatusBar';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { appDocumentTitle } from '@/lib/phraseKey';
 import { appDesktopViewResetScript, installedShellBootstrapScript } from '@/lib/nativeIntro';
 import AppNavigationGuard from '@/components/AppNavigationGuard';
 import DesktopViewEscape from '@/components/DesktopViewEscape';
@@ -37,32 +38,35 @@ export const viewport: Viewport = {
   themeColor: '#e5332a',
 };
 
-export const metadata: Metadata = {
-  title: "FixTray - Work Order Management",
-  description: "Streamlined work order management for roadside and in-shop services",
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'FixTray',
-  },
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
-      { url: '/icons/fixtray-ft-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/icons/fixtray-ft-48.png', sizes: '48x48', type: 'image/png' },
-      { url: '/icons/fixtray-ft-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/fixtray-ft-512.png', sizes: '512x512', type: 'image/png' },
-    ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
-    shortcut: ['/favicon.ico'],
-  },
-  // Performance optimizations
-  other: {
-    'dns-prefetch': 'https://res.cloudinary.com',
-    'preconnect': 'https://api.stripe.com',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('phrases');
+  return {
+    title: appDocumentTitle(t('work_order_management_2')),
+    description: "Streamlined work order management for roadside and in-shop services",
+    manifest: '/manifest.json',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: 'FixTray',
+    },
+    icons: {
+      icon: [
+        { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
+        { url: '/icons/fixtray-ft-32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/icons/fixtray-ft-48.png', sizes: '48x48', type: 'image/png' },
+        { url: '/icons/fixtray-ft-192.png', sizes: '192x192', type: 'image/png' },
+        { url: '/icons/fixtray-ft-512.png', sizes: '512x512', type: 'image/png' },
+      ],
+      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+      shortcut: ['/favicon.ico'],
+    },
+    // Performance optimizations
+    other: {
+      'dns-prefetch': 'https://res.cloudinary.com',
+      'preconnect': 'https://api.stripe.com',
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

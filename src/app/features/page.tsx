@@ -20,7 +20,7 @@ export default function FeaturesPage() {
         <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
           {say("The full stack for world-class work orders.")}{' '}</h1>
         <p className="mt-5 mx-auto max-w-2xl text-lg text-slate-300">
-          {say("FixTray covers the full operating loop: work orders, dispatch, customer communication, team workflow, inventory, payroll, analytics, and multi-shop growth.")}{' '}</p>
+          {say("FixTray covers the full operating loop: work orders, customer communication, team workflow, inventory, payroll, analytics, and multi-shop growth.")}{' '}</p>
         <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">
           {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -33,7 +33,7 @@ export default function FeaturesPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             { title: say("Work order control"), detail: say("Manage intake, assignment, approvals, estimates, payments, and closeout from one system.") },
-            { title: say("Dispatch and location"), detail: say("On a road call or assigned job, a technician follows turn-by-turn directions on the job screen in the browser.") },
+            { title: say("Driving directions"), detail: say("On a road call or assigned job, a technician follows turn-by-turn directions on the job screen in the browser.") },
             { title: say("Customer communication"), detail: say("Messages and updates stay in the workflow. A denied estimate carries a notification flag so a person can look. The flag does not approve, deny, or hand the job off.") },
             { title: say("Mobile tech suite"), detail: say("Run time tracking, photos, inspections, and field updates from technician screens in the browser.") },
             { title: say("Operational finance"), detail: say("Handle inventory, payroll, budget tracking, and reporting without separate back-office tooling.") },

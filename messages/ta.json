@@ -5726,6 +5726,11 @@
     "create_an_account": "Create an account",
     "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one": "Choose a shop account or a customer account. Log in is only for people who already have one.",
     "for_a_shop_that_runs_jobs_estimates_and_payments": "For a shop that runs jobs, estimates, and payments.",
-    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job."
+    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job.",
+    "role_based_pages": "பங்கு சார்ந்த பக்கங்கள்",
+    "role_based_pages_for_work_orders_approvals_and_customer_ready_updates": "பணி ஆணைகள், ஒப்புதல்கள் மற்றும் வாடிக்கையாளர்-தயார் புதுப்பிப்புகளுக்கான பங்கு அடிப்படையிலான பக்கங்கள்.",
+    "from_intake_and_assignment_to_approvals_invoicing_payment_and_close_out_with_status_history_on_t": "பணியின் நிலை வரலாறுடன், உள்வாங்குதல் மற்றும் பணி நியமனம் முதல் ஒப்புதல்கள், விலைப்பட்டியல், பணம் செலுத்துதல் மற்றும் மூடுதல் வரை.",
+    "fixtray_covers_the_full_operating_loop_work_orders_customer_communication_team_workflow_inventor": "FixTray முழு செயல்பாட்டு வளையத்தையும் உள்ளடக்கியது: பணி ஆணைகள், வாடிக்கையாளர் தொடர்பு, குழு பணிப்பாய்வு, சரக்கு, ஊதியம், பகுப்பாய்வு மற்றும் பல பணிமனை வளர்ச்சி.",
+    "driving_directions": "ஓட்டும் திசைகள்"
   }
 }

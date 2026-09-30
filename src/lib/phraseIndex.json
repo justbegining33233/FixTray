@@ -5642,5 +5642,10 @@
   "Open driving directions in the browser": "open_driving_directions_in_the_browser",
   "Apple Maps in the browser": "apple_maps_in_the_browser",
   "Roadside and in-shop jobs, turn-by-turn directions on the job screen in the browser, diagnostics, photos, parts checks, time tracking, and customer communication.": "roadside_and_in_shop_jobs_turn_by_turn_directions_on_the_job_screen_in_the_browser_diagnostics_p",
-  "A notification flag when a customer denies an estimate. The flag needs a look and does not approve, deny, or move the job": "a_notification_flag_when_a_customer_denies_an_estimate_the_flag_needs_a_look_and_does_not_approv"
+  "A notification flag when a customer denies an estimate. The flag needs a look and does not approve, deny, or move the job": "a_notification_flag_when_a_customer_denies_an_estimate_the_flag_needs_a_look_and_does_not_approv",
+  "Role-based pages": "role_based_pages",
+  "Role-based pages for work orders, approvals, and customer-ready updates.": "role_based_pages_for_work_orders_approvals_and_customer_ready_updates",
+  "From intake and assignment to approvals, invoicing, payment, and close-out, with status history on the job.": "from_intake_and_assignment_to_approvals_invoicing_payment_and_close_out_with_status_history_on_t",
+  "FixTray covers the full operating loop: work orders, customer communication, team workflow, inventory, payroll, analytics, and multi-shop growth.": "fixtray_covers_the_full_operating_loop_work_orders_customer_communication_team_workflow_inventor",
+  "Driving directions": "driving_directions"
 }

@@ -45,7 +45,7 @@ export default function ContactPage() {
     <MarketingShell>
       <section className="mx-auto max-w-6xl px-6 pt-24 pb-16">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">{say("Contact")}</p>
-        <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">{say("Let's build your command center.")}</h1>
+        <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">{say("Tell us about your shop")}</h1>
         <p className="mt-5 max-w-2xl text-lg text-slate-300">
           {say("Tell us about your operation and we'll tailor the rollout. Expect a response within one business day.")}{' '}</p>
       </section>

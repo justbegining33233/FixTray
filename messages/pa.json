@@ -5726,6 +5726,11 @@
     "create_an_account": "Create an account",
     "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one": "Choose a shop account or a customer account. Log in is only for people who already have one.",
     "for_a_shop_that_runs_jobs_estimates_and_payments": "For a shop that runs jobs, estimates, and payments.",
-    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job."
+    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job.",
+    "role_based_pages": "ਰੋਲ-ਅਧਾਰਿਤ ਪੰਨੇ",
+    "role_based_pages_for_work_orders_approvals_and_customer_ready_updates": "ਕੰਮ ਦੇ ਆਦੇਸ਼ਾਂ, ਪ੍ਰਵਾਨਗੀਆਂ, ਅਤੇ ਗਾਹਕਾਂ ਲਈ ਤਿਆਰ ਅੱਪਡੇਟਾਂ ਲਈ ਭੂਮਿਕਾ-ਅਧਾਰਿਤ ਪੰਨੇ।",
+    "from_intake_and_assignment_to_approvals_invoicing_payment_and_close_out_with_status_history_on_t": "ਦਾਖਲੇ ਅਤੇ ਅਸਾਈਨਮੈਂਟ ਤੋਂ ਲੈ ਕੇ ਮਨਜ਼ੂਰੀਆਂ, ਇਨਵੌਇਸਿੰਗ, ਭੁਗਤਾਨ ਅਤੇ ਬੰਦ-ਆਊਟ, ਨੌਕਰੀ 'ਤੇ ਸਥਿਤੀ ਇਤਿਹਾਸ ਦੇ ਨਾਲ।",
+    "fixtray_covers_the_full_operating_loop_work_orders_customer_communication_team_workflow_inventor": "FixTray ਪੂਰੇ ਓਪਰੇਟਿੰਗ ਲੂਪ ਨੂੰ ਕਵਰ ਕਰਦਾ ਹੈ: ਵਰਕ ਆਰਡਰ, ਗਾਹਕ ਸੰਚਾਰ, ਟੀਮ ਵਰਕਫਲੋ, ਵਸਤੂ ਸੂਚੀ, ਤਨਖਾਹ, ਵਿਸ਼ਲੇਸ਼ਣ, ਅਤੇ ਮਲਟੀ-ਸ਼ਾਪ ਵਾਧਾ।",
+    "driving_directions": "ਡ੍ਰਾਈਵਿੰਗ ਦਿਸ਼ਾਵਾਂ"
   }
 }

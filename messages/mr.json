@@ -5726,6 +5726,11 @@
     "create_an_account": "Create an account",
     "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one": "Choose a shop account or a customer account. Log in is only for people who already have one.",
     "for_a_shop_that_runs_jobs_estimates_and_payments": "For a shop that runs jobs, estimates, and payments.",
-    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job."
+    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job.",
+    "role_based_pages": "भूमिका-आधारित पृष्ठे",
+    "role_based_pages_for_work_orders_approvals_and_customer_ready_updates": "वर्क ऑर्डर, मंजूरी आणि ग्राहक-तयार अद्यतनांसाठी भूमिका-आधारित पृष्ठे.",
+    "from_intake_and_assignment_to_approvals_invoicing_payment_and_close_out_with_status_history_on_t": "ग्रहण आणि असाइनमेंट पासून मंजुऱ्या, इनव्हॉइसिंग, पेमेंट आणि क्लोज-आउट पर्यंत, नोकरीच्या स्थिती इतिहासासह.",
+    "fixtray_covers_the_full_operating_loop_work_orders_customer_communication_team_workflow_inventor": "FixTray संपूर्ण ऑपरेटिंग लूप कव्हर करते: वर्क ऑर्डर, ग्राहक कम्युनिकेशन, टीम वर्कफ्लो, इन्व्हेंटरी, पेरोल, ॲनालिटिक्स आणि मल्टी-शॉप ग्रोथ.",
+    "driving_directions": "ड्रायव्हिंग दिशानिर्देश"
   }
 }

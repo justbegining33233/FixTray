@@ -5726,6 +5726,11 @@
     "create_an_account": "Create an account",
     "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one": "Choose a shop account or a customer account. Log in is only for people who already have one.",
     "for_a_shop_that_runs_jobs_estimates_and_payments": "For a shop that runs jobs, estimates, and payments.",
-    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job."
+    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job.",
+    "role_based_pages": "పాత్ర-ఆధారిత పేజీలు",
+    "role_based_pages_for_work_orders_approvals_and_customer_ready_updates": "పని ఆర్డర్‌లు, ఆమోదాలు మరియు కస్టమర్-సిద్ధంగా ఉన్న అప్‌డేట్‌ల కోసం పాత్ర-ఆధారిత పేజీలు.",
+    "from_intake_and_assignment_to_approvals_invoicing_payment_and_close_out_with_status_history_on_t": "ఉద్యోగంలో స్టేటస్ హిస్టరీతో ఇన్‌టేక్ మరియు అసైన్‌మెంట్ నుండి ఆమోదాలు, ఇన్‌వాయిస్, పేమెంట్ మరియు క్లోజ్-అవుట్ వరకు.",
+    "fixtray_covers_the_full_operating_loop_work_orders_customer_communication_team_workflow_inventor": "FixTray పూర్తి ఆపరేటింగ్ లూప్‌ను కవర్ చేస్తుంది: వర్క్ ఆర్డర్‌లు, కస్టమర్ కమ్యూనికేషన్, టీమ్ వర్క్‌ఫ్లో, ఇన్వెంటరీ, పేరోల్, అనలిటిక్స్ మరియు మల్టీ-వర్క్‌షాప్ గ్రోత్.",
+    "driving_directions": "డ్రైవింగ్ దిశలు"
   }
 }

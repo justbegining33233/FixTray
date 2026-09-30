@@ -33,8 +33,8 @@ export default function FeaturesPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             { title: say("Work order control"), detail: say("Manage intake, assignment, approvals, estimates, payments, and closeout from one system.") },
-            { title: say("Dispatch and location"), detail: say("Coordinate teams by role, availability, status, and location context.") },
-            { title: say("Customer communication"), detail: say("Send approvals, updates, documents, and messages from the same workflow.") },
+            { title: say("Dispatch and location"), detail: say("On a road call or assigned job, a technician follows turn-by-turn directions on the job screen in the browser.") },
+            { title: say("Customer communication"), detail: say("Messages and updates stay in the workflow. A denied estimate carries a notification flag so a person can look. The flag does not approve, deny, or hand the job off.") },
             { title: say("Mobile tech suite"), detail: say("Run time tracking, photos, inspections, and field updates from technician screens in the browser.") },
             { title: say("Operational finance"), detail: say("Handle inventory, payroll, budget tracking, and reporting without separate back-office tooling.") },
             { title: say("Multi-shop visibility"), detail: say("Owners can run more than one shop with shared oversight.") }
@@ -76,7 +76,8 @@ export default function FeaturesPage() {
               {[
                 say("Offline capture and sync"),
                 say("Photos, inspections, and customer signatures on approvals"),
-                say("Road-call map, shared location, and the job on the tech's screen.")
+                say("Road-call map, shared location, and the job on the tech's screen."),
+                say("Turn-by-turn directions on the job screen in the phone browser")
               ].map((item) => (
                 <li key={item} className="flex items-center justify-center gap-3">
                   <span className="h-2 w-2 rounded-full bg-pink-400" />

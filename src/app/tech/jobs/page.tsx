@@ -83,6 +83,7 @@ function TechJobsList() {
                 </Link>
                 {view === 'active' ? (
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <Link href={`/workorders/${order.id}#directions` as any} style={{ background: 'transparent', color: '#93c5fd', border: '1px solid rgba(147,197,253,0.4)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, textDecoration: 'none' }}>{say("Turn-by-turn")}</Link>
                     <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id, status: 'en-route', baseStatus: order.status || 'assigned' } }))} style={{ background: '#e5332a', color: '#fff', border: 0, borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}>{say("Start / En route")}</button>
                     <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('fixtray-prep-download', { detail: { workOrderId: order.id } }))} style={{ background: 'transparent', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}>{say("Download for offline")}</button>
                   </div>

@@ -26,6 +26,7 @@ import { decodeToken } from '@/lib/auth-client';
 import { resolveShopId } from '@/lib/shopAccess';
 import { roleUsesShopAdminApis } from '@/lib/customerSession';
 import { topBarFor } from '@/lib/roleMenus';
+import { FlagMark } from '@/components/AttentionFlagBanner';
 
 interface TopNavBarProps {
   onMenuToggle?: () => void;
@@ -46,7 +47,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [navMsg, setNavMsg] = useState<{type:'success'|'error';text:string}|null>(null);
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; time: string; read?: boolean; type?: string; icon?: string }>>([]);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; time: string; read?: boolean; type?: string; icon?: string; flagged?: boolean; workOrderId?: string }>>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -195,6 +196,30 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
       const data = await response.json();
       const conversations = Array.isArray(data?.conversations) ? data.conversations : [];
 
+      let flagNotifications: Array<{ id: string; title: string; body: string; time: string; read: boolean; type: string; icon: string; flagged: boolean; workOrderId?: string }> = [];
+      try {
+        const flagResponse = await fetch('/api/notifications/flags', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (flagResponse.ok) {
+          const flagData = await flagResponse.json();
+          const rows = Array.isArray(flagData?.flags) ? flagData.flags : [];
+          flagNotifications = rows.map((row: { id: string; title: string; message: string; createdAt: string; workOrderId?: string }) => ({
+            id: row.id,
+            title: row.title,
+            body: row.message,
+            time: formatTimeAgo(row.createdAt),
+            read: false,
+            type: 'attention',
+            icon: '⚑',
+            flagged: true,
+            workOrderId: row.workOrderId,
+          }));
+        }
+      } catch {
+        flagNotifications = [];
+      }
+
       const messageNotifications = conversations
         .filter((conv: any) => conv.unreadCount > 0)
         .map((conv: any) => ({
@@ -257,7 +282,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
         // For example: maintenance notices, feature updates, etc.
       ];
 
-      const incoming = [...messageNotifications, ...workOrderNotifications, ...systemNotifications];
+      const incoming = [...flagNotifications, ...messageNotifications, ...workOrderNotifications, ...systemNotifications];
       const dismissed = await syncSeenWorkOrderIds();
       setDismissedWorkOrders(dismissed);
       for (const id of Array.from(pendingAckRef.current)) {
@@ -418,7 +443,9 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   const getMessagesLink = () => topBarFor(activeRole)?.messages || '/';
 
   const acknowledgeNotifications = async (items: Array<{ id: string; type?: string }>) => {
-    if (items.length === 0) return;
+    const actionable = items.filter((item) => item.type !== 'attention');
+    if (actionable.length === 0) return;
+    items = actionable;
     const ids = new Set(items.map((item) => item.id));
     ids.forEach((id) => pendingAckRef.current.add(id));
     const workOrderIds = items.filter((item) => item.type === 'workorders').map((item) => item.id);
@@ -454,7 +481,12 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
     }));
   };
 
-  const handleNotificationClick = (n: { id: string; type?: string }) => {
+  const handleNotificationClick = (n: { id: string; type?: string; workOrderId?: string }) => {
+    if (n.type === 'attention') {
+      setShowNotifications(false);
+      if (n.workOrderId) router.push(`/workorders/${n.workOrderId}` as Route);
+      return;
+    }
     if ((n.type === 'workorders' || n.id.startsWith('wo-')) && typeof window !== 'undefined') {
       const seenId = n.id.startsWith('wo-') ? n.id : `wo-${n.id}`;
       const next = saveSeenWorkOrderIds([seenId]);
@@ -510,7 +542,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
   const displayUserName = userName || shopName || 'User';
 
   const markAllAsRead = () => {
-    void acknowledgeNotifications(filteredNotifications);
+    void acknowledgeNotifications(filteredNotifications.filter((item) => item.type !== 'attention'));
   };
 
   const updateNotificationPrefs = (type: string, enabled: boolean) => {
@@ -593,6 +625,11 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
             color: unreadCount > 0 ? '#ef4444' : '#e5e7eb'
           }} />
         </span>
+        {filteredNotifications.some((item) => item.flagged) && (
+          <span style={{ position: 'absolute', top: -10, left: -6 }}>
+            <FlagMark label={say('Flag')} />
+          </span>
+        )}
         {unreadCount > 0 && (
           <span style={{
             background: '#ef4444',
@@ -698,7 +735,12 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                         fontSize: 13,
                         lineHeight: 1.3,
                         opacity: n.read ? 0.8 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        flexWrap: 'wrap',
                       }}>
+                        {n.flagged ? <FlagMark label={say('Flag')} /> : null}
                         {say(n.title)}
                       </div>
                       <span style={{

@@ -159,6 +159,7 @@ export function TechJobsPhone({
               <span className="pm-badge pm-b-ghost">{place}</span>
               <span style={{ flex: 1 }} />
               <Link href={`/workorders/${order.id}` as Route} className="pm-btn pm-btn-secondary pm-btn-md">{say('View')}</Link>
+              {view === 'active' ? <Link href={`/workorders/${order.id}#directions` as Route} className="pm-btn pm-btn-ghost pm-btn-md">{say('Turn-by-turn')}</Link> : null}
               {inProgress ? (
                 <Link href={'/tech/photos' as Route} className="pm-btn pm-btn-primary pm-btn-md">{say('Photos')}</Link>
               ) : null}

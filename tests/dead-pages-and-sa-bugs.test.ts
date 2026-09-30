@@ -18,8 +18,8 @@ describe('dead marketing and admin aliases', () => {
     const bySource = Object.fromEntries(PUBLIC_AND_ADMIN_REDIRECTS.map((row) => [row.source, row.destination]));
     expect(bySource['/admin/manage-users']).toBe('/admin/user-management');
     expect(bySource['/capabilities']).toBe('/features');
-    expect(bySource['/help']).toBe('/contact');
-    expect(bySource['/help-center']).toBe('/contact');
+    expect(bySource['/help']).toBeUndefined();
+    expect(bySource['/help-center']).toBe('/help');
     expect(bySource['/docs']).toBe('/features');
     expect(bySource['/blog']).toBe('/features');
     expect(bySource['/demo']).toBe('/contact');

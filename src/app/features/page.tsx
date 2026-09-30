@@ -1,6 +1,7 @@
 "use client";
 
 import { usePhrase } from '@/lib/usePhrase';
+import { memberAndCustomerFeeCopy } from "@/lib/publicFeeCopy";
 import Link from "next/link";
 import MarketingShell from "@/components/MarketingShell";
 
@@ -21,6 +22,8 @@ export default function FeaturesPage() {
           {say("Work orders for roadside and in the shop.")}{' '}</h1>
         <p className="mt-5 mx-auto max-w-2xl text-lg text-slate-300">
           {say("FixTray is a free work-order system for auto service. There is a shop account and a customer account. Role-based pages cover work orders, approvals, and customer-ready updates.")}{' '}</p>
+        <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">
+          {say(memberAndCustomerFeeCopy())}{' '}</p>
         <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">
           {say("A shop can track parts inventory, run payroll from time entries, view work-order analytics, and switch between shops that share an email.")}{' '}</p>
         <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">

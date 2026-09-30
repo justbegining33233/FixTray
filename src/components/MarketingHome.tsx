@@ -4,6 +4,7 @@ import { useLayoutEffect } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
 import dynamic from 'next/dynamic';
 import Link from "next/link";
+import { memberAndCustomerFeeCopy } from "@/lib/publicFeeCopy";
 import {
   decodeIntroClaims,
   installedShellBootstrapScript,
@@ -108,6 +109,8 @@ export default function Home() {
 
         <p className="mx-auto mt-5 max-w-3xl text-lg text-slate-300">
           {say("FixTray is a free work-order system for auto service. There is a shop account and a customer account. Role-based pages cover work orders, approvals, and customer-ready updates.")}{' '}</p>
+        <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-slate-300">
+          {say(memberAndCustomerFeeCopy())}{' '}</p>
 
         <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-slate-300">
           {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
@@ -115,6 +118,8 @@ export default function Home() {
         <div className="mt-9 flex flex-wrap justify-center gap-4">
           <Link href="/get-started" className="rounded-xl px-7 py-3 text-sm font-semibold transition hover:opacity-90" style={primaryBtn}>
             {say("Get started")}{' '}</Link>
+          <Link href="/demo" className="rounded-xl px-7 py-3 text-sm font-semibold transition" style={ghostBtn}>
+            {say("Try the demo shop")}{' '}</Link>
           <Link href="/contact" className="rounded-xl px-7 py-3 text-sm font-semibold transition" style={ghostBtn}>
             {say("Contact us")}{' '}</Link>
         </div>

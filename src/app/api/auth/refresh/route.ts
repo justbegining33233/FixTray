@@ -62,7 +62,28 @@ export async function POST(request: NextRequest) {
 
     const newRaw = (await import('@/lib/auth')).generateRandomToken(48);
     const newHash = await bcrypt.hash(newRaw, 12);
-    const newExpires = (await import('@/lib/auth')).refreshExpiryDate();
+    let newExpires = (await import('@/lib/auth')).refreshExpiryDate();
+    let demoExpiresIn: number | undefined;
+    if (!record.adminId && record.metadata) {
+      let meta: { customerId?: string; shopId?: string; techId?: string } = {};
+      try { meta = JSON.parse(record.metadata) as typeof meta; } catch { meta = {}; }
+      let shopId = meta.shopId;
+      if (!shopId && meta.techId) {
+        const tech = await prisma.tech.findUnique({ where: { id: meta.techId }, select: { shopId: true } });
+        shopId = tech?.shopId;
+      }
+      if (shopId) {
+        const { demoLoginWindow } = await import('@/lib/demoShop');
+        const demoWindow = await demoLoginWindow(shopId, false);
+        if (demoWindow.blocked) {
+          return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+        }
+        if (demoWindow.sessionExpiresAt) {
+          newExpires = demoWindow.sessionExpiresAt;
+          demoExpiresIn = demoWindow.expiresIn;
+        }
+      }
+    }
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
 
     if (record.adminId) {
@@ -125,7 +146,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const accessToken = (await import('@/lib/auth')).generateAccessToken(payload);
+    const accessToken = (await import('@/lib/auth')).generateAccessToken(payload, demoExpiresIn);
 
     const response = NextResponse.json({ accessToken });
     // set new refresh cookie
@@ -157,7 +178,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 15,
+      maxAge: demoExpiresIn ?? 60 * 15,
     });
     return response;
   } catch (error) {

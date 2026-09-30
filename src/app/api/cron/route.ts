@@ -36,6 +36,14 @@ export async function GET(request: NextRequest) {
   const results: Record<string, any> = {};
   const now = new Date();
 
+  try {
+    const { sweepExpiredDemos } = await import('@/lib/demoShop');
+    results.demoShopsReset = await sweepExpiredDemos(now);
+  } catch (error) {
+    console.error('Demo shop reset error:', error);
+    results.demoShopsReset = { error: 'Failed' };
+  }
+
   // VIS-019: open appointments become overdue 15 minutes after their start time.
   try {
     const overdueCutoff = new Date(now.getTime() - APPOINTMENT_OVERDUE_GRACE_MS);

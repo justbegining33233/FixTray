@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import type { AuthUser } from '@/lib/auth';
 import { acceptedShopContactPayload, canExposeShopContact } from '@/lib/shopContact';
+import { DEMO_USERNAME_PREFIX } from '@/lib/demoShopRules';
 
 export async function GET(request: NextRequest) {
   // Require authentication — shop discovery is only for logged-in users
@@ -52,7 +53,11 @@ export async function GET(request: NextRequest) {
     const exposeContact = canExposeShopContact(auth.role);
 
     // Format response — only expose public-facing fields (NO password, no credentials)
-    const formattedShops = approvedShops.map((shop) => {
+    const shopsForViewer = auth.role === 'customer'
+      ? approvedShops.filter((shop) => !shop.username.startsWith(DEMO_USERNAME_PREFIX))
+      : approvedShops;
+
+    const formattedShops = shopsForViewer.map((shop) => {
       const completedJobs = shop.workOrders.filter(wo => wo.status === 'closed').length;
       const totalRevenue = shop.workOrders
         .filter(wo => wo.paymentStatus === 'paid')

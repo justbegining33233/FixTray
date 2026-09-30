@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
+import { fixtrayServiceFeeLabel } from '@/lib/publicFeeCopy';
 
 export const PUBLIC_SITE_ORIGIN = 'https://fixtray.app';
 
 export const PUBLIC_SITE_TITLE = 'FixTray - Free work orders for auto service';
 
 export const PUBLIC_SITE_DESCRIPTION =
-  'FixTray is a free work-order system for auto service, roadside and in the shop, with shop and customer accounts for work orders, approvals, and updates. A mobile app is in development; until it ships, use the website, including a phone browser.';
+  `FixTray is a free work-order system for auto service shop members (the shop owner and that shop's employees). Customers pay the shop's quote plus a FixTray service fee of ${fixtrayServiceFeeLabel()} when that fee applies. A mobile app is in development; until it ships, use the website, including a phone browser.`;
 
 export function publicCanonicalUrl(path: string): string {
   if (path === '/') return PUBLIC_SITE_ORIGIN;

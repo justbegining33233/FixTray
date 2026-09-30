@@ -1832,3 +1832,19 @@ model LoginAttempt {
   @@index([userId, createdAt])
   @@map("login_attempts")
 }
+
+/// One row per emailed demo-shop login. The clock starts at first shop login.
+model DemoSession {
+  id             String    @id @default(cuid())
+  email          String
+  shopId         String    @unique
+  seedCustomerId String?
+  firstLoginAt   DateTime?
+  expiresAt      DateTime?
+  resetAt        DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("demo_sessions")
+}

@@ -54,12 +54,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid TOTP token' }, { status: 401 });
     }
 
-    // Issue the full access token
+    // Issue the full access token. A demo shop stays inside the 30-minute window.
+    const { demoLoginWindow } = await import('@/lib/demoShop');
+    const demoWindow = await demoLoginWindow(shop.id, true);
+    if (demoWindow.blocked) {
+      return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+    }
     const accessToken = generateAccessToken({
       id: shop.id,
       username: shop.username,
       role: 'shop',
-    });
+    }, demoWindow.expiresIn);
 
     return NextResponse.json({
       id: shop.id,

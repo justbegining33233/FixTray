@@ -38,8 +38,8 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateAccessToken(payload: Record<string, unknown>): string {
-  const options: SignOptions = { expiresIn: ACCESS_TOKEN_EXPIRES_IN as any };
+export function generateAccessToken(payload: Record<string, unknown>, expiresIn?: SignOptions['expiresIn']): string {
+  const options: SignOptions = { expiresIn: expiresIn ?? (ACCESS_TOKEN_EXPIRES_IN as SignOptions['expiresIn']) };
   return jwt.sign(payload, getJwtSecret(), options);
 }
 

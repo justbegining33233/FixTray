@@ -24,10 +24,18 @@ export async function GET(request: Request) {
   try {
     // Lightweight query — just proves the connection is alive.
     await prisma.$queryRaw`SELECT 1`;
+    let demoShopsReset = 0;
+    try {
+      const { sweepExpiredDemos } = await import('@/lib/demoShop');
+      demoShopsReset = await sweepExpiredDemos();
+    } catch (error) {
+      logger.error('[keepalive] demo reset failed', { error: error instanceof Error ? error.message : String(error) });
+    }
     return NextResponse.json({
       ok: true,
       latencyMs: Date.now() - start,
       timestamp: new Date().toISOString(),
+      demoShopsReset,
     });
   } catch (error) {
     logger.error('[keepalive] DB ping failed', { error: error instanceof Error ? error.message : String(error) });

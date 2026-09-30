@@ -53,78 +53,35 @@ const neonBadge: React.CSSProperties = {
   color: "#ffb3ad",
 };
 
-const platformHighlights = [
+const roles = [
   {
-    title: "Role-based control",
-    detail: "Admin, superadmin, shop, manager, tech, and customer experiences tied to one data model.",
+    role: "Platform owner",
+    summary: "Runs the FixTray site and the shop accounts on it.",
   },
   {
-    title: "Work order lifecycle",
-    detail: "From intake and assignment to approvals, invoicing, payment, and close-out, with status history on the job.",
-  },
-  {
-    title: "Real-time operations",
-    detail: "Messaging, notifications, GPS tracking, and team activity are part of the same platform.",
-  },
-  {
-    title: "Business intelligence",
-    detail: "Analytics, payroll, labor, inventory, and financial reporting in operational context.",
-  },
-  {
-    title: "Specialized shop tooling",
-    detail: "DVI, core returns, loaners, state inspections, fleets, AR aging, and environmental fee workflows.",
-  },
-  {
-    title: "Platform-ready foundation",
-    detail: "Security events, API keys, webhooks, multi-location controls, and deployment tooling.",
-  },
-];
-
-const roleCenters = [
-  {
-    role: "Super Admin",
-    summary: "Platform infrastructure, shop visibility, deployments, system analytics, and global controls.",
-  },
-  {
-    role: "Admin",
-    summary: "Shop approvals, customer and user oversight, revenue, backups, and day-to-day platform work.",
-  },
-  {
-    role: "Shop Owner",
-    summary: "Work orders, staffing, payroll, templates, vendors, scheduling, and full business execution.",
+    role: "Shop owner",
+    summary: "Runs the shop's work orders, team, and customer updates.",
   },
   {
     role: "Manager",
-    summary: "Daily assignment flow, estimates, team permissions, inventory supervision, and operational accountability.",
+    summary: "Assigns work and follows the shop's jobs.",
   },
   {
     role: "Technician",
-    summary: "Roadside and in-shop jobs, turn-by-turn directions on the job screen in the browser, diagnostics, photos, parts checks, time tracking, and customer communication.",
+    summary: "Works roadside and in-shop jobs, with directions on the job screen. A tech can save a job for offline use.",
   },
   {
     role: "Customer",
-    summary: "Booking, approvals, messages, vehicles, rewards, payments, history, and live service visibility.",
+    summary: "Approves work and follows updates on their job.",
   },
 ];
 
-const operations = [
-  "Work order creation, assignment, and status orchestration",
-  "Messaging, unread counters, notifications, and customer communication",
-  "A notification flag when a customer denies an estimate. The flag needs a look and does not approve, deny, or move the job",
-  "Shop scheduling, blocked dates, bays, and capacity control",
-  "Inventory stock, low-stock logic, purchase orders, and vendor workflows",
-  "Payroll schedules, attendance, overtime, pay periods, and paystubs",
-  "Recurring work orders and recurring approval handling",
-  "Stripe Connect, payment links, and webhook processing",
-  "Reviews, referrals, campaigns, and customer insights",
-];
-
-const reliability = [
-  "JWT auth, CSRF controls, role-based route gating",
-  "Session and security event pipelines with hardened fallbacks",
-  "Rate limit support, health endpoints, and diagnostics",
-  "Technicians can save a job for offline use. The site runs in the browser, including on a phone.",
-  "Production build + route scanning workflow for broken-link prevention",
+const included = [
+  "Messaging, notifications, GPS, and team activity.",
+  "Driving directions on the job screen in the browser.",
+  "Reminders and repeat work.",
+  "SLA timing on completed jobs.",
+  "Email and text campaigns.",
 ];
 
 export default function Home() {
@@ -144,115 +101,54 @@ export default function Home() {
       >
         <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em]" style={neonBadge}>
           <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: "#e5332a" }} />
-          {say("FixTray Platform Overview")}{' '}</div>
+          {say("Free for auto service")}{' '}</div>
 
         <h1 className="mt-8 text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-          {say("One operating system for")}{' '}<span
-            style={{
-              display: 'block',
-              background: "linear-gradient(90deg, #e5332a, #ff6b5e, #ff948d)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            {say("modern auto service operations")}{' '}</span>
-        </h1>
+          {say("Work orders for roadside and in the shop.")}{' '}</h1>
 
         <p className="mx-auto mt-5 max-w-3xl text-lg text-slate-300">
-          {say("FixTray now unifies every major workflow in the app: role-driven portals, real-time communications,\n          work order orchestration, payroll, inventory, analytics, customer lifecycle, and specialized shop services.")}{' '}</p>
+          {say("FixTray is a free work-order system for auto service. There is a shop account and a customer account. Role-based pages cover work orders, approvals, and customer-ready updates.")}{' '}</p>
 
         <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-slate-300">
           {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
 
         <div className="mt-9 flex flex-wrap justify-center gap-4">
           <Link href="/get-started" className="rounded-xl px-7 py-3 text-sm font-semibold transition hover:opacity-90" style={primaryBtn}>
-            {say("Open FixTray")}{' '}</Link>
+            {say("Get started")}{' '}</Link>
           <Link href="/contact" className="rounded-xl px-7 py-3 text-sm font-semibold transition" style={ghostBtn}>
-            {say("Talk to sales")}{' '}</Link>
+            {say("Contact us")}{' '}</Link>
         </div>
+      </section>
 
-        <div className="mt-14 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: say("Role experiences"), value: "6" },
-            { label: say("Major operational modules"), value: "20+" },
-            { label: say("Work orders for auto service"), value: say("Free") },
-            { label: say("Messages, alerts, and GPS"), value: say("Included") },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl px-6 py-5" style={glassCard}>
-              <p className="text-2xl font-semibold text-white">{say(s.value)}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.25em]" style={{ color: "#94a3b8" }}>
-                {say(s.label)}
-              </p>
+      <section className="mx-auto max-w-6xl px-6 pb-24" style={{ width: '100%', maxWidth: 1152, marginLeft: 'auto', marginRight: 'auto' }}>
+        <div className="flex flex-col items-center text-center gap-3">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Five roles")}</p>
+          <h2 className="text-3xl font-semibold text-white">{say("Platform owner, shop owner, manager, tech, and customer.")}</h2>
+        </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {roles.map((item) => (
+            <div key={item.role} className="rounded-2xl p-6" style={glassCard}>
+              <p className="text-lg font-semibold text-white">{say(item.role)}</p>
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: "#94a3b8" }}>{say(item.summary)}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24" style={{ width: '100%', maxWidth: 1152, marginLeft: 'auto', marginRight: 'auto' }}>
-        <div className="flex flex-col items-center text-center gap-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Current platform scope")}</p>
-          <h2 className="text-3xl font-semibold text-white">{say("What is live in FixTray today")}</h2>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {platformHighlights.map((item) => (
-            <div key={item.title} className="rounded-2xl p-6" style={glassCard}>
-              <p className="text-lg font-semibold text-white">{say(item.title)}</p>
-              <p className="mt-3 text-sm leading-relaxed" style={{ color: "#94a3b8" }}>{say(item.detail)}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-2" style={{ width: '100%', maxWidth: 1152, marginLeft: 'auto', marginRight: 'auto' }}>
         <div className="rounded-2xl p-7" style={glassCard}>
-          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Role-based pages")}</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">{say("Every team works in context")}</h3>
+          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("With the job")}</p>
+          <h3 className="mt-3 text-2xl font-semibold text-white">{say("Messages, directions, reminders, and campaigns.")}</h3>
           <div className="mt-6 grid gap-3">
-            {roleCenters.map((entry) => (
-              <div
-                key={entry.role}
-                className="rounded-xl px-4 py-3"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
-              >
-                <p className="text-sm font-semibold text-white">{say(entry.role)}</p>
-                <p className="mt-1 text-sm" style={{ color: "#94a3b8" }}>{say(entry.summary)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl p-7" style={glassCard}>
-          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Operational depth")}</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">{say("Beyond basic work orders")}</h3>
-          <div className="mt-6 grid gap-3">
-            {operations.map((line) => (
+            {included.map((line) => (
               <div key={line} className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: "#e5332a" }} />
                 <p className="text-sm" style={{ color: "#cbd5e1" }}>{say(line)}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-24" style={{ width: '100%', maxWidth: 1152, marginLeft: 'auto', marginRight: 'auto' }}>
-        <div className="rounded-2xl px-8 py-10" style={{ background: "rgba(8,13,26,0.75)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Reliability and security")}</p>
-              <h3 className="mt-3 text-2xl font-semibold text-white">{say("Production hardening built into the app")}</h3>
-              <p className="mt-3 text-sm leading-relaxed" style={{ color: "#cbd5e1" }}>
-                {say("FixTray includes route protection, session governance, hardened auth flows, scanning-driven link validation,\n                and production-safe fallbacks for advanced operational surfaces.")}{' '}</p>
-            </div>
-            <div className="grid gap-3">
-              {reliability.map((item) => (
-                <div key={item} className="rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <p className="text-sm" style={{ color: "#cbd5e1" }}>{say(item)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <p className="mt-6 text-sm leading-relaxed" style={{ color: "#cbd5e1" }}>
+            {say("A shop can track parts inventory, run payroll from time entries, view work-order analytics, and switch between shops that share an email.")}{' '}</p>
         </div>
       </section>
 
@@ -268,10 +164,10 @@ export default function Home() {
         >
           <div className="flex flex-col items-center text-center gap-6">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Ready to run")}</p>
-              <h3 className="mt-3 text-2xl font-semibold text-white">{say("Everything your team needs is now in one place.")}</h3>
+              <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Accounts")}</p>
+              <h3 className="mt-3 text-2xl font-semibold text-white">{say("Shop account or customer account.")}</h3>
               <p className="mt-2 text-sm" style={{ color: "#cbd5e1" }}>
-                {say("Launch fast with the complete FixTray workflow stack, from customer intake to final payment and reporting.")}{' '}</p>
+                {say("Sign in if you already have an account. Otherwise create the shop account or the customer account.")}{' '}</p>
             </div>
             <div className="flex flex-wrap justify-center gap-3">
               <Link href="/auth/login" className="rounded-xl px-7 py-3 text-sm font-semibold transition hover:opacity-90" style={primaryBtn}>

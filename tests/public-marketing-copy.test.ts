@@ -63,12 +63,23 @@ describe('public marketing copy', () => {
     const features = fs.readFileSync(path.join(root, 'src/app/features/page.tsx'), 'utf8');
     const home = fs.readFileSync(path.join(root, 'src/components/MarketingHome.tsx'), 'utf8');
     const contact = fs.readFileSync(path.join(root, 'src/app/contact/page.tsx'), 'utf8');
+    const about = fs.readFileSync(path.join(root, 'src/app/about/page.tsx'), 'utf8');
     expect(features).toContain('SLA timing for completed jobs');
     expect(features).toContain('Email and text campaigns, plus reminder messages');
     expect(features).toContain('Save a job for offline use');
     expect(features).toContain('A mobile app is in development.');
+    expect(features).toContain('track parts inventory, run payroll from time entries');
     expect(home).toContain('A mobile app is in development.');
+    expect(home).toContain('Platform owner, shop owner, manager, tech, and customer.');
+    expect(home).toContain('Contact us');
     expect(home).not.toContain('no mobile app');
+    expect(home).not.toContain('Talk to sales');
+    expect(home).not.toContain('operating system');
+    expect(home).not.toContain('20+');
+    expect(home).not.toContain('Role experiences');
+    expect(features).not.toContain('full operating loop');
+    expect(features).not.toContain('Operational finance');
+    expect(about).not.toContain('operating system');
     expect(contact).toContain('Expect a response within one business day.');
   });
 

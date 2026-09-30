@@ -24,7 +24,7 @@ export default function FeaturesPage() {
         <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">
           {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/auth/login" className="rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30">
+          <Link href="/get-started" className="rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30">
             {say("Get started")}{' '}</Link>
         </div>
       </section>

@@ -12,4 +12,12 @@ export const PUBLIC_AND_ADMIN_REDIRECTS: Array<{ source: string; destination: st
   { source: '/register/success', destination: '/auth/thank-you', permanent: false },
   { source: '/register/canceled', destination: '/auth/thank-you', permanent: false },
   { source: '/admin/subscriptions', destination: '/admin/home', permanent: false },
+  { source: '/auth/forgot', destination: '/auth/reset', permanent: false },
+  { source: '/forgot-password', destination: '/auth/reset', permanent: false },
+  { source: '/auth/forgot-password', destination: '/auth/reset', permanent: false },
+  { source: '/reset-password', destination: '/auth/reset', permanent: false },
+  { source: '/auth/reset-password', destination: '/auth/reset', permanent: false },
+  { source: '/auth/password', destination: '/auth/reset', permanent: false },
+  { source: '/privacy-policy', destination: '/privacy', permanent: false },
+  { source: '/terms-of-service', destination: '/terms', permanent: false },
 ];

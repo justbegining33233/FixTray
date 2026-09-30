@@ -64,7 +64,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
             <Link href="/auth/login" style={{ color: "#94a3b8" }} className="transition hover:text-white">
               {say("Log in")}{' '}</Link>
             <Link
-              href="/auth/login"
+              href="/get-started"
               className="transition"
               style={{
                 background: "#e5332a",
@@ -136,6 +136,8 @@ export default function MarketingShell({ children }: MarketingShellProps) {
           }}
         >
           <span> {say("2026 FixTray. All rights reserved.")}</span>
+          <Link href="/privacy" className="hover:text-white">{say("Privacy Policy")}</Link>
+          <Link href="/terms" className="hover:text-white">{say("Terms of Service")}</Link>
           <span>{say("Built for owner-operators, growing shop teams, and multi-shop service groups.")}</span>
         </div>
       </footer>

@@ -165,7 +165,7 @@ export default function Home() {
           {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
 
         <div className="mt-9 flex flex-wrap justify-center gap-4">
-          <Link href="/auth/login" className="rounded-xl px-7 py-3 text-sm font-semibold transition hover:opacity-90" style={primaryBtn}>
+          <Link href="/get-started" className="rounded-xl px-7 py-3 text-sm font-semibold transition hover:opacity-90" style={primaryBtn}>
             {say("Open FixTray")}{' '}</Link>
           <Link href="/contact" className="rounded-xl px-7 py-3 text-sm font-semibold transition" style={ghostBtn}>
             {say("Talk to sales")}{' '}</Link>

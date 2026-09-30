@@ -7,7 +7,7 @@ export default function PrivacyPage() {
       <article className="mx-auto max-w-3xl px-6 pb-24 pt-24 text-slate-300">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Privacy</p>
         <h1 className="mt-4 text-4xl font-semibold text-white">Privacy</h1>
-        <p className="mt-3 text-sm text-slate-400">Last updated September 30, 2026.</p>
+        <p className="mt-3 text-sm text-slate-400">Last updated September 29, 2026.</p>
         <div className="mt-8 space-y-8 text-sm leading-7">
           <p>
             FixTray is a website for repair shops and their customers. This page describes information the product stores, based on how the site works. It is not a certification.

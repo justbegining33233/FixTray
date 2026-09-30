@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { actorMayAccessShop } from '@/lib/shopAccess';
+import { decorateWorkOrderMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
 
 // DEPRECATED: Uses legacy Message model scoped to work orders.
 // New chat functionality uses /api/messages (DirectMessage model).
@@ -83,12 +84,17 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    // Format messages with work order context
-    const formattedMessages = messages.map((msg) => ({
+    const viewerLocale = await resolveAccountLocale(request, { id: decoded.id, role: decoded.role });
+    const shown = await decorateWorkOrderMessages(messages, viewerLocale);
+
+    // Format messages with work order context. body stays the original text.
+    const formattedMessages = shown.map((msg) => ({
       id: msg.id,
       sender: msg.sender,
       senderName: msg.senderName,
       body: msg.body,
+      displayBody: msg.displayBody,
+      originalBody: msg.originalBody,
       createdAt: msg.createdAt,
       workOrder: {
         id: msg.workOrder.id,

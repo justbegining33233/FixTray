@@ -370,7 +370,7 @@ export default function NotificationBell() {
                       ×
                     </button>
                   </div>
-                  <div style={{fontSize:12, color:'#9ca3af', marginBottom:4}}>{say(notif.message)}</div>
+                  <div style={{fontSize:12, color:'#9ca3af', marginBottom:4}}>{notif.kind === 'message' ? (notif.message === 'Photo' ? say('Photo') : notif.message) : say(notif.message)}</div>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                     <div style={{fontSize:10, color:'#6b7280'}}>
                       {new Date(notif.createdAt).toLocaleString()}

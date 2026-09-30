@@ -9,6 +9,7 @@ import {
 } from '../src/lib/locale';
 import { platformSettingsUpdate } from '../src/lib/platformSettingsPatch';
 import { englishCatalog, readLocaleCatalog } from '../src/lib/messageCatalog';
+import { appDocumentTitle, phraseIndexKey, presentPhrase } from '../src/lib/phraseKey';
 
 function flattenKeys(value: unknown, prefix = ''): string[] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [prefix];
@@ -138,5 +139,74 @@ describe('message catalogs', () => {
       }
     }
     expect(missing).toEqual([]);
+  });
+
+  it('looks up homepage copy when the catalog stored a literal backslash-n', () => {
+    const index = JSON.parse(fs.readFileSync(path.join(root, 'src/lib/phraseIndex.json'), 'utf8')) as Record<string, string>;
+    const src = fs.readFileSync(path.join(root, 'src/app/page.tsx'), 'utf8');
+    const match = src.match(/say\("(FixTray now unifies[^"]*)"\)/);
+    expect(match).not.toBeNull();
+    const runtime = (match?.[1] ?? '').replaceAll('\\n', '\n');
+    expect(runtime.includes('\n')).toBe(true);
+    const key = phraseIndexKey(runtime, index);
+    expect(key).toBe('fixtray_now_unifies_every_major_workflow_in_the_app_role_driven_portals_real_time_communications');
+    const es = JSON.parse(fs.readFileSync(path.join(root, 'messages/es.json'), 'utf8'));
+    const shown = presentPhrase(runtime, es.phrases[key]);
+    expect(shown.includes('\n')).toBe(true);
+    expect(shown.includes('\\n')).toBe(false);
+    expect(shown.toLowerCase()).toContain('taller');
+  });
+
+  it('builds the document title from the work-order phrase', () => {
+    expect(appDocumentTitle('Work Order Management')).toBe('FixTray - Work Order Management');
+    const es = JSON.parse(fs.readFileSync(path.join(root, 'messages/es.json'), 'utf8'));
+    expect(appDocumentTitle(es.phrases.work_order_management_2)).toBe('FixTray - Gestión de órdenes de trabajo');
+  });
+
+  it('uses workshop, manufacturer, work-order, service-bay, and app-screen senses', () => {
+    const es = JSON.parse(fs.readFileSync(path.join(root, 'messages/es.json'), 'utf8'));
+    const de = JSON.parse(fs.readFileSync(path.join(root, 'messages/de.json'), 'utf8'));
+    const zh = JSON.parse(fs.readFileSync(path.join(root, 'messages/zh.json'), 'utf8'));
+    expect(es.phrases.shop).toBe('Taller');
+    expect(es.phrases.make).toBe('Marca *');
+    expect(es.phrases.open_jobs).toBe('Órdenes abiertas');
+    expect(es.phrases.open_jobs.toLowerCase()).not.toContain('empleo');
+    expect(es.phrases.bay.toLowerCase()).toContain('servicio');
+    expect(es.phrases.dashboard).toBe('Panel');
+    expect(es.phrases.member_since).toBe('Cliente desde:');
+    expect(es.validation.minLength).toContain('{min}');
+    expect(de.phrases.dashboard).not.toContain('Armaturenbrett');
+    expect(de.phrases.to_shop).toBe('Zur Werkstatt');
+    expect(zh.phrases.jobs).toBe('工单');
+    expect(zh.phrases.dashboard).toBe('控制面板');
+    expect(zh.phrases.view_jobs).toBe('查看工单');
+  });
+
+  it('keeps interpolation tokens aligned with the English source', () => {
+    const en = JSON.parse(fs.readFileSync(path.join(root, 'messages/en.json'), 'utf8'));
+    const identRe = /\{\{?[A-Za-z_][A-Za-z0-9_]*\}?\}/g;
+    const walk = (value: unknown, prefix: string, out: Array<[string, string]>) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+      for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+        const next = prefix ? `${prefix}.${key}` : key;
+        if (typeof child === 'string') out.push([next, child]);
+        else walk(child, next, out);
+      }
+    };
+    const enPairs: Array<[string, string]> = [];
+    walk(en, '', enPairs);
+    for (const locale of SUPPORTED_LOCALES) {
+      if (locale === 'en') continue;
+      const catalog = JSON.parse(fs.readFileSync(path.join(root, `messages/${locale}.json`), 'utf8'));
+      const pairs: Array<[string, string]> = [];
+      walk(catalog, '', pairs);
+      const map = new Map(pairs);
+      for (const [key, english] of enPairs) {
+        const tokens = english.match(identRe);
+        if (!tokens) continue;
+        const translated = map.get(key) ?? '';
+        for (const token of tokens) expect(translated).toContain(token);
+      }
+    }
   });
 });

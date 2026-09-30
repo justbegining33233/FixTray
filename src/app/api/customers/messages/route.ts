@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/middleware';
+import { decorateCustomerMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
 
 // DEPRECATED: Uses legacy CustomerMessage model.
 // New chat functionality uses /api/messages (DirectMessage model).
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     const where: any = { customerId: user.id };
     if (workOrderId) where.workOrderId = workOrderId;
 
-    const messages = await prisma.customerMessage.findMany({
+    const messages = await decorateCustomerMessages(await prisma.customerMessage.findMany({
       where,
       orderBy: { sentAt: 'asc' },
       include: {
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-    });
+    }), await resolveAccountLocale(request, user));
 
     return NextResponse.json({ messages });
   } catch (error) {
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       customerId: user.id,
       from: 'customer',
       content,
+      sourceLocale: await resolveAccountLocale(request, user),
       read: true, // Mark customer messages as read by default
       sentAt: new Date(),
     };
@@ -73,7 +75,11 @@ export async function POST(request: NextRequest) {
       data,
     });
 
-    return NextResponse.json(message, { status: 201 });
+    return NextResponse.json({
+      ...message,
+      displayBody: message.content,
+      originalBody: message.content,
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating message:', error);
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });

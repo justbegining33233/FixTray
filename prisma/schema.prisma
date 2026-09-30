@@ -24,6 +24,7 @@ model Customer {
   emailVerifiedAt     DateTime?
   internalNotes       String?
   tags                String?
+  preferredLocale     String?
   appointments        Appointment[]
   documents           CustomerDocument[]
   messages            CustomerMessage[]
@@ -87,6 +88,7 @@ model Shop {
   status              String                   @default("pending")
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
+  preferredLocale     String?
   approvedAt          DateTime?
   stripeAccountId     String?
   twoFactorEnabled    Boolean                  @default(false)
@@ -233,6 +235,7 @@ model Tech {
   lastLocationUpdate    DateTime?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
+  preferredLocale       String?
   bankAccountInfo       String?
   department            String?
   emergencyContact      String?
@@ -353,6 +356,8 @@ model Message {
   sender         String
   senderName     String
   body           String
+  sourceLocale   String?
+  translations   String?
   attachmentUrl  String?
   attachmentType String?
   clientMutationId String? @unique
@@ -449,6 +454,7 @@ model Admin {
   password      String
   email         String         @unique
   isSuperAdmin  Boolean        @default(false)
+  preferredLocale String?
   createdAt     DateTime       @default(now())
   refreshTokens RefreshToken[]
 
@@ -673,6 +679,8 @@ model DirectMessage {
   shopId         String?
   subject        String?
   body           String
+  sourceLocale   String?
+  translations   String?
   attachmentUrl  String?
   attachmentType String?
   isRead         Boolean   @default(false)
@@ -769,6 +777,8 @@ model CustomerMessage {
   appointmentId String?
   from          String
   content       String
+  sourceLocale  String?
+  translations  String?
   attachmentUrl String?
   read          Boolean      @default(false)
   clientMutationId String?   @unique
@@ -1542,9 +1552,11 @@ model PortalChatMessage {
   id        String   @id @default(cuid())
   role      String
   channelId String   @default("global")
-  sender    String
-  body      String
-  timestamp DateTime @default(now())
+  sender       String
+  body         String
+  sourceLocale String?
+  translations String?
+  timestamp    DateTime @default(now())
 
   @@index([role, channelId])
   @@map("portal_chat_messages")

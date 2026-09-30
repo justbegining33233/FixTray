@@ -11,6 +11,7 @@ import NotificationBell from '../../../components/NotificationBell';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import '../../../styles/sos-theme.css';
 import { FaArrowLeft, FaCamera, FaMapMarkerAlt, FaStar } from 'react-icons/fa';
+import { messageListPreview } from '@/lib/messageAttachment';
 
 function TechPortalEnhancedContent() {
   const say = usePhrase();
@@ -254,7 +255,7 @@ function MessagesTab({ techName }: { techName: string }) {
         (Array.isArray(conv.messages) ? conv.messages : []).map((msg: any) => ({
           id: String(msg.id),
           sender: msg.senderName || conv.contactName || 'Contact',
-          message: String(msg.body || ''),
+          message: messageListPreview(msg.displayBody || msg.body, msg.attachmentUrl),
           time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: msg.senderId === userId ? 'sent' : 'received',
           createdAt: msg.createdAt,
@@ -337,7 +338,7 @@ function MessagesTab({ techName }: { techName: string }) {
             background: msg.type === 'sent' ? 'rgba(229,51,42,0.14)' : '#454545',
           }}>
             <div style={{fontSize:11, fontWeight:600, marginBottom:4}}>{say(msg.sender)}</div>
-            <div style={{fontSize:13, marginBottom:4}}>{say(msg.message)}</div>
+            <div style={{fontSize:13, marginBottom:4}}>{msg.message}</div>
             <div style={{fontSize:10, color:'#9aa3b2'}}>{say(msg.time)}</div>
           </div>
         ))}

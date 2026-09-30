@@ -717,7 +717,7 @@ export default function TopNavBar({ onMenuToggle, showMenuButton = false }: TopN
                       marginBottom: 6,
                       opacity: n.read ? 0.7 : 0.9,
                     }}>
-                      {say(n.body)}
+                      {n.type === 'messages' ? (n.body === 'Photo' ? say('Photo') : n.body) : say(n.body)}
                     </div>
                     <div style={{
                       color: '#93c5fd',

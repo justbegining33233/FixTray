@@ -122,7 +122,7 @@ export default function CustomerMessaging({
         {messages.map((m) => (
           <div key={m.id} className={`p-2 rounded ${m.sender === 'customer' ? 'bg-[rgba(229,51,42,0.1)]' : 'bg-[rgba(255,255,255,0.05)]'}`}>
             <div className="text-xs text-[#64748b]">{m.senderName ?? m.sender} - {new Date(m.timestamp).toLocaleString()}</div>
-            <ChatMessageBody body={m.body} attachmentUrl={m.attachmentUrl} textStyle={{ fontSize: 14, color: '#f1f5f9' }} />
+            <ChatMessageBody body={m.body} displayBody={m.displayBody} attachmentUrl={m.attachmentUrl} textStyle={{ fontSize: 14, color: '#f1f5f9' }} />
           </div>
         ))}
       </div>

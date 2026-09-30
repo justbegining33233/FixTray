@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPortalMessages } from '@/lib/portalChat';
 import { PortalRole } from '@/types/portalChat';
 import { requireRole } from '@/lib/auth';
+import { resolveAccountLocale } from '@/lib/chatTranslationStore';
 
 export const runtime = 'nodejs';
 
@@ -14,12 +15,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ role
     return new Response('Invalid role', { status: 400 });
   }
   const channelId = req.nextUrl.searchParams.get('channel') || 'global';
+  const viewerLocale = await resolveAccountLocale(req, auth);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       const send = async () => {
-        const messages = await getPortalMessages(role as PortalRole, channelId);
+        const messages = await getPortalMessages(role as PortalRole, channelId, viewerLocale);
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(messages)}\n\n`));
       };
 

@@ -19,6 +19,7 @@ interface Message {
   receiverRole: string;
   receiverName: string;
   body: string;
+  displayBody?: string | null;
   attachmentUrl?: string | null;
   attachmentType?: string | null;
   createdAt: string;
@@ -536,7 +537,7 @@ export default function CustomerMessagingCard({ header = "Messages", initialShop
                               {say(msg.senderName)}
                             </div>
                           )}
-                          <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 13, color: "#e5e7eb" }} />
+                          <ChatMessageBody body={msg.body} displayBody={msg.displayBody} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 13, color: "#e5e7eb" }} />
                           <div style={{ fontSize: 9, color: "#6b7280", marginTop: 4, textAlign: "right" }}>
                             {new Date(msg.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </div>

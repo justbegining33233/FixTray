@@ -21,6 +21,9 @@ describe('production column ensure', () => {
     expect(sql).toContain('"require2FA"');
     expect(sql).toContain('"platform_config"');
     expect(sql).toContain('"defaultLanguage"');
+    expect(sql).toContain('"preferredLocale"');
+    expect(sql).toContain('"sourceLocale"');
+    expect(sql).toContain('"translations"');
     expect(sql).toContain('"tax_rules"');
     expect(sql).toContain('"state"');
     expect(sql).toContain('"county"');

@@ -7,6 +7,7 @@ export type ThreadMessage = {
   sender: string;
   senderName?: string;
   body: string;
+  displayBody?: string;
   timestamp: Date;
   attachmentUrl?: string;
   attachmentType?: string;
@@ -21,6 +22,7 @@ export function toThreadMessage(raw: {
   timestamp?: string | Date | null;
   attachmentUrl?: string | null;
   attachmentType?: string | null;
+  displayBody?: string | null;
 }): ThreadMessage | null {
   if (!raw?.id) return null;
   const content = chatMessageContent(raw);
@@ -36,6 +38,7 @@ export function toThreadMessage(raw: {
     sender: String(raw.sender || 'customer'),
     senderName: raw.senderName || undefined,
     body: String(raw.body || ''),
+    displayBody: typeof raw.displayBody === 'string' ? raw.displayBody : undefined,
     timestamp,
     attachmentUrl,
     attachmentType: raw.attachmentType || (attachmentUrl ? 'image' : undefined),

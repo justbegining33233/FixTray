@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
 import { resolveChatAttachment } from '@/lib/messageAttachment';
 import { workOrderDirectMessage, workOrderSeenWhere } from '@/lib/workOrderMessagePersist';
+import { resolveAccountLocale, stampOutgoingTranslation } from '@/lib/chatTranslationStore';
 
 export async function POST(
   request: NextRequest,
@@ -61,12 +62,14 @@ export async function POST(
     }
 
     // Save the work-order row first. A shop-inbox mirror must not roll the chat line back.
+    const sourceLocale = await resolveAccountLocale(request, auth);
     const message = await prisma.message.create({
       data: {
         workOrderId,
         sender: auth.role,
         senderName,
         body: messageBody,
+        sourceLocale,
         attachmentUrl,
         attachmentType,
       },
@@ -88,9 +91,11 @@ export async function POST(
       attachmentUrl,
       attachmentType,
     });
+    let mirrorId: string | null = null;
     if (mirror) {
       try {
-        await prisma.directMessage.create({ data: mirror });
+        const mirrored = await prisma.directMessage.create({ data: { ...mirror, sourceLocale } });
+        mirrorId = mirrored.id;
       } catch (mirrorError) {
         logger.error('Work order message saved but shop inbox mirror failed', {
           error: mirrorError instanceof Error ? mirrorError.message : String(mirrorError),
@@ -98,8 +103,24 @@ export async function POST(
         });
       }
     }
+    const audiences = [
+      { role: 'customer', id: wo.customerId },
+      { role: 'shop', id: wo.shopId },
+    ];
+    if (wo.assignedTechId) audiences.push({ role: 'tech', id: wo.assignedTechId });
+    await stampOutgoingTranslation({
+      body: messageBody,
+      sourceLocale,
+      audiences,
+      persist: async (fields) => {
+        await prisma.message.update({ where: { id: message.id }, data: fields });
+        if (mirrorId) await prisma.directMessage.update({ where: { id: mirrorId }, data: fields });
+      },
+    });
 
-    return NextResponse.json({ message }, { status: 201 });
+    return NextResponse.json({
+      message: { ...message, sourceLocale, displayBody: message.body, originalBody: message.body },
+    }, { status: 201 });
   } catch (error) {
     logger.error('Error sending work order message', {
       error: error instanceof Error ? error.message : String(error),

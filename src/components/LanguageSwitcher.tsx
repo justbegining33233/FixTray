@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
@@ -20,6 +21,20 @@ export default function LanguageSwitcher() {
     writeLocaleCookie(next as AppLocale);
     router.refresh();
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const token = window.localStorage.getItem('token');
+    if (!token) return;
+    void fetch('/api/account/locale', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ locale }),
+    }).catch(() => {});
+  }, [locale]);
 
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, width: 'auto' }}>

@@ -10,6 +10,7 @@ import {
   type MessageViewer,
 } from '@/lib/directMessageAccess';
 import { messageListPreview, resolveChatAttachment } from '@/lib/messageAttachment';
+import { decorateDirectMessages, resolveAccountLocale, stampOutgoingTranslation } from '@/lib/chatTranslationStore';
 
 // GET - Fetch messages/conversations for the logged-in user
 export async function GET(request: NextRequest) {
@@ -55,13 +56,13 @@ export async function GET(request: NextRequest) {
       where.AND = [threadAccessWhere(viewer, contactId, contactRole)];
     }
 
-    const messages = await prisma.directMessage.findMany({
+    const messages = await decorateDirectMessages(await prisma.directMessage.findMany({
       where,
       orderBy: { createdAt: contactId ? 'asc' : 'desc' },
       // When fetching a specific conversation, return the full history (no cap).
       // For the conversation list view, fetch the latest `limit` messages.
       ...(contactId ? {} : { take: limit }),
-    });
+    }), await resolveAccountLocale(request, { id: userId, role: userRole }));
 
     // Group messages into conversations
     const conversations = new Map();
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
           contactId: otherId,
           contactRole: otherRole,
           contactName: otherName,
-          lastMessage: messageListPreview(msg.body, msg.attachmentUrl),
+          lastMessage: messageListPreview(msg.displayBody || msg.body, msg.attachmentUrl),
           lastMessageAt: msg.createdAt,
           unreadCount: 0,
           messages: [],
@@ -370,6 +371,7 @@ export async function POST(request: NextRequest) {
       { id: receiverId, role: receiverRole, name: normalizedReceiverName },
     ];
 
+    const sourceLocale = await resolveAccountLocale(request, { id: senderId, role: senderRole });
     const created = await Promise.all(targets.map((t) =>
       prisma.directMessage.create({
         data: {
@@ -381,6 +383,7 @@ export async function POST(request: NextRequest) {
           receiverName: t.name,
           subject: subject || null,
           body: trimmedBody,
+          sourceLocale,
           attachmentUrl: resolved.value.attachmentUrl,
           attachmentType: resolved.value.attachmentType,
           shopId,
@@ -388,8 +391,25 @@ export async function POST(request: NextRequest) {
         },
       })
     ));
+    await stampOutgoingTranslation({
+      body: trimmedBody,
+      sourceLocale,
+      audiences: targets.map((target) => ({ id: target.id, role: target.role })),
+      persist: async (fields) => {
+        await prisma.directMessage.updateMany({
+          where: { id: { in: created.map((row) => row.id) } },
+          data: fields,
+        });
+      },
+    });
+    const message = {
+      ...created[0],
+      sourceLocale,
+      displayBody: created[0].body,
+      originalBody: created[0].body,
+    };
 
-    return NextResponse.json({ message: created[0], copies: created.length, success: true });
+    return NextResponse.json({ message, copies: created.length, success: true });
   } catch (error) {
     console.error('Error sending message:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

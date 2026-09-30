@@ -7,12 +7,13 @@ import { usePhrase } from '@/lib/usePhrase';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { money, vehicleLabel } from '@/components/mobile/format';
+import { chatMessageContent } from '@/lib/messageAttachment';
 import { useAuth } from '@/contexts/AuthContext';
 import { normalizeRole } from '@/lib/roleNav';
 import '@/components/mobile/phone-mock.css';
 
 type Line = { type: string; description: string; price: number; qty: number };
-type Note = { id: string; senderName?: string; sender?: string; body: string; createdAt: string };
+type Note = { id: string; senderName?: string; sender?: string; body: string; displayBody?: string | null; createdAt: string };
 
 function toneClass(status: string): string {
   const tone = workOrderStatusTone(status);
@@ -132,7 +133,7 @@ export function WorkOrderPhone({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
           {messages.length === 0 ? <div className="pm-empty">{say('No messages yet.')}</div> : messages.slice(-4).map((message) => (
             <div key={message.id} className="pm-msg them">
-              {message.body}
+              {chatMessageContent({ body: message.displayBody || message.body }).text}
               <div className="meta">{message.senderName || message.sender || say('Shop')} · {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</div>
             </div>
           ))}

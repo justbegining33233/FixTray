@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { decorateWorkOrderMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
 
 export async function GET(
   request: NextRequest,
@@ -64,6 +65,8 @@ export async function GET(
             sender: true,
             senderName: true,
             body: true,
+            sourceLocale: true,
+            translations: true,
             createdAt: true,
           },
         },
@@ -85,6 +88,10 @@ export async function GET(
       estimate?.amount ?? estimate?.total ?? workOrder.estimatedCost ?? 0
     ) || 0;
     const bill = billWithServiceFee(quoteAmount, await getPlatformServiceFeeUsd());
+    const shownMessages = await decorateWorkOrderMessages(
+      workOrder.messages || [],
+      await resolveAccountLocale(request, { id: payload.id, role: payload.role }),
+    );
     const response = {
       id: workOrder.id,
       issueDescription: workOrder.issueDescription,
@@ -99,11 +106,13 @@ export async function GET(
       assignedTo: workOrder.assignedTo,
       vehicle: workOrder.vehicle,
       tracking: workOrder.tracking || null,
-      messages: (workOrder.messages || []).map((message: { id: string; sender: string; senderName: string; body: string; createdAt: Date }) => ({
+      messages: shownMessages.map((message) => ({
         id: message.id,
         sender: message.sender,
         senderName: message.senderName,
         body: message.body,
+        displayBody: message.displayBody,
+        originalBody: message.originalBody,
         createdAt: message.createdAt.toISOString(),
         timestamp: message.createdAt.toISOString(),
       })),

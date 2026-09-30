@@ -11,7 +11,7 @@ import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeB
 import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
 import ChatMessageBody from '@/components/ChatMessageBody';
 
-interface WOMessage { id: string; sender: string; senderName: string; body: string; createdAt: string; attachmentUrl?: string | null }
+interface WOMessage { id: string; sender: string; senderName: string; body: string; displayBody?: string | null; createdAt: string; attachmentUrl?: string | null }
 interface WOPhoto   { id: string; url: string; type: string; caption?: string; uploadedAt: string }
 interface WODetail  { messages: WOMessage[]; photos: WOPhoto[] }
 
@@ -760,7 +760,7 @@ export default function Estimates() {
                                           border: `1px solid ${isShop ? 'rgba(96,165,250,0.2)' : 'rgba(229,51,42,0.2)'}`,
                                         }}>
                                           <div style={{fontSize:11, fontWeight:700, color: isShop ? '#60a5fa' : '#e5332a', marginBottom:3}}>{msg.senderName || msg.sender}</div>
-                                          <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 12, color: '#e5e7eb', lineHeight: 1.5 }} />
+                                          <ChatMessageBody body={msg.body} displayBody={msg.displayBody} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 12, color: '#e5e7eb', lineHeight: 1.5 }} />
                                         </div>
                                         <div style={{fontSize:10, color:'#6b7280', marginTop:2, paddingInline:4}}>
                                           {new Date(msg.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}{' '}
@@ -1151,7 +1151,7 @@ export default function Estimates() {
                                               border: `1px solid ${isShop ? 'rgba(96,165,250,0.2)' : 'rgba(229,51,42,0.2)'}`,
                                             }}>
                                               <div style={{fontSize:11,fontWeight:700,color:isShop?'#60a5fa':'#e5332a',marginBottom:3}}>{msg.senderName||msg.sender}</div>
-                                              <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 12, color: '#e5e7eb', lineHeight: 1.5 }} />
+                                              <ChatMessageBody body={msg.body} displayBody={msg.displayBody} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 12, color: '#e5e7eb', lineHeight: 1.5 }} />
                                             </div>
                                             <div style={{fontSize:10,color:'#6b7280',marginTop:2,paddingInline:4}}>
                                               {new Date(msg.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}{' '}

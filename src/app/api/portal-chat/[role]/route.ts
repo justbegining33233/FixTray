@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addPortalMessage, getPortalMessages } from '@/lib/portalChat';
 import { PortalRole } from '@/types/portalChat';
 import { requireRole } from '@/lib/auth';
+import { resolveAccountLocale } from '@/lib/chatTranslationStore';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ role: string }> }) {
   const auth = requireRole(req, ['tech', 'manager', 'admin']);
@@ -13,7 +14,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ role
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
     const channelId = req.nextUrl.searchParams.get('channel') || 'global';
-    const messages = await getPortalMessages(role as PortalRole, channelId);
+    const viewerLocale = await resolveAccountLocale(req, auth);
+    const messages = await getPortalMessages(role as PortalRole, channelId, viewerLocale);
     return NextResponse.json(messages);
   } catch (err) {
     console.error('Error fetching portal messages', err);
@@ -39,7 +41,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rol
       return NextResponse.json({ error: 'Message body required' }, { status: 400 });
     }
 
-    const msg = await addPortalMessage(role as PortalRole, sender, body, channelId);
+    const viewerLocale = await resolveAccountLocale(req, auth);
+    const msg = await addPortalMessage(role as PortalRole, sender, body, channelId, viewerLocale);
     return NextResponse.json(msg, { status: 201 });
   } catch (err) {
     console.error('Error posting portal message', err);

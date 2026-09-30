@@ -25,7 +25,7 @@ import { WorkOrderPhone } from '@/components/mobile/WorkOrderPhone';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type WOMessage = { id: string; sender: string; senderName: string; body: string; createdAt: string; attachmentUrl?: string | null; attachmentType?: string | null };
+type WOMessage = { id: string; sender: string; senderName: string; body: string; displayBody?: string | null; createdAt: string; attachmentUrl?: string | null; attachmentType?: string | null };
 type Vehicle   = { id: string; vehicleType: string; make?: string; model?: string; year?: number; vin?: string; licensePlate?: string };
 
 type LineItem = { _key: string; type: 'labor' | 'part' | 'misc'; description: string; partNumber: string; price: number; qty: number; status: 'new' | 'saved'; poId?: string; poCost?: number; };
@@ -966,7 +966,7 @@ export default function WorkOrderDetailPage() {
                       border: `1px solid ${isShop ? 'rgba(229,51,42,0.3)' : 'rgba(255,255,255,0.1)'}`,
                     }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: isShop ? '#e5332a' : '#60a5fa', marginBottom: 4 }}>{msg.senderName || msg.sender}</div>
-                      <ChatMessageBody body={msg.body} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 13, color: '#e5e7eb', lineHeight: 1.5 }} />
+                      <ChatMessageBody body={msg.body} displayBody={msg.displayBody} attachmentUrl={msg.attachmentUrl} textStyle={{ fontSize: 13, color: '#e5e7eb', lineHeight: 1.5 }} />
                     </div>
                     <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2, paddingInline: 4 }}>
                       {new Date(msg.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}{' '}

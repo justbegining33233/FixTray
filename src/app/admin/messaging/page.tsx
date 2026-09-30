@@ -18,6 +18,7 @@ interface Conversation {
   receiverRole: string;
   subject?: string;
   body: string;
+  displayBody?: string;
   unreadCount: number;
   lastMessageAt: string;
   isRead: boolean;
@@ -213,7 +214,9 @@ export default function AdminMessagingPage() {
                       </div>
                     )}
                     <div style={{ color: '#9ca3af', fontSize: 12, maxWidth: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {say(messageListPreview(conv.body))}
+                      {messageListPreview(conv.displayBody || conv.body) === 'Photo'
+                        ? say('Photo')
+                        : messageListPreview(conv.displayBody || conv.body)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 150 }}>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { decorateDirectMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
 
 /**
  * GET /api/admin/messages
@@ -12,10 +13,12 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get all direct messages
-    const messages = await prisma.directMessage.findMany({
+    const stored = await prisma.directMessage.findMany({
       orderBy: { createdAt: 'desc' },
       take: 500,
     });
+    const viewerLocale = await resolveAccountLocale(request, auth);
+    const messages = await decorateDirectMessages(stored, viewerLocale);
 
     // Get unread count
     const unreadCount = await prisma.directMessage.count({
@@ -37,6 +40,8 @@ export async function GET(request: NextRequest) {
           receiverRole: msg.receiverRole,
           subject: msg.subject,
           body: msg.body,
+          displayBody: msg.displayBody,
+          originalBody: msg.originalBody,
           lastMessageAt: msg.createdAt,
           unreadCount: msg.isRead ? 0 : 1,
           isRead: msg.isRead,

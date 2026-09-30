@@ -12,6 +12,7 @@ import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
 import { hasWorkOrderFieldUpdates, legacyMessagesToStore, workOrderDirectMessage } from '@/lib/workOrderMessagePersist';
+import { decorateWorkOrderMessages, resolveAccountLocale, stampOutgoingTranslation } from '@/lib/chatTranslationStore';
 
 export async function GET(
   request: NextRequest,
@@ -92,8 +93,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
+    const viewerLocale = await resolveAccountLocale(request, auth);
+    const messages = await decorateWorkOrderMessages(workOrder.messages, viewerLocale);
     return NextResponse.json(
-      { ...workOrder, fixtrayServiceFee: await getPlatformServiceFeeUsd() },
+      { ...workOrder, messages, fixtrayServiceFee: await getPlatformServiceFeeUsd() },
       { headers: corsHeaders }
     );
   } catch (error) {
@@ -155,16 +158,23 @@ export async function PUT(
     });
     const chatLines = legacyMessagesToStore(existingThread, legacyMessages, auth.role);
     if (chatLines.length > 0) {
+      const sourceLocale = await resolveAccountLocale(request, auth);
       const customerName = current.customer
         ? `${current.customer.firstName || ''} ${current.customer.lastName || ''}`.trim()
         : 'Customer';
+      const audiences = [
+        { role: 'customer', id: current.customerId },
+        { role: 'shop', id: current.shopId },
+      ];
+      if (current.assignedTechId) audiences.push({ role: 'tech', id: current.assignedTechId });
       for (const line of chatLines) {
-        await prisma.message.create({
+        const stored = await prisma.message.create({
           data: {
             workOrderId: id,
             sender: line.sender,
             senderName: line.senderName,
             body: line.body,
+            sourceLocale,
           },
         });
         const mirror = workOrderDirectMessage({
@@ -178,23 +188,36 @@ export async function PUT(
           senderName: auth.role === 'customer' ? (customerName || line.senderName) : line.senderName,
           body: line.body,
         });
-        if (!mirror) continue;
-        try {
-          await prisma.directMessage.create({ data: mirror });
-        } catch (mirrorError) {
-          logger.error('Work order chat line saved but shop inbox mirror failed', {
-            error: mirrorError instanceof Error ? mirrorError.message : String(mirrorError),
-            workOrderId: id,
-          });
+        let mirrorId: string | null = null;
+        if (mirror) {
+          try {
+            const mirrored = await prisma.directMessage.create({ data: { ...mirror, sourceLocale } });
+            mirrorId = mirrored.id;
+          } catch (mirrorError) {
+            logger.error('Work order chat line saved but shop inbox mirror failed', {
+              error: mirrorError instanceof Error ? mirrorError.message : String(mirrorError),
+              workOrderId: id,
+            });
+          }
         }
+        await stampOutgoingTranslation({
+          body: line.body,
+          sourceLocale,
+          audiences,
+          persist: async (fields) => {
+            await prisma.message.update({ where: { id: stored.id }, data: fields });
+            if (mirrorId) await prisma.directMessage.update({ where: { id: mirrorId }, data: fields });
+          },
+        });
       }
     }
 
     if (!hasWorkOrderFieldUpdates(data)) {
-      const messages = await prisma.message.findMany({
+      const viewerLocale = await resolveAccountLocale(request, auth);
+      const messages = await decorateWorkOrderMessages(await prisma.message.findMany({
         where: { workOrderId: id },
         orderBy: { createdAt: 'asc' },
-      });
+      }), viewerLocale);
       return NextResponse.json({ ...current, messages });
     }
 

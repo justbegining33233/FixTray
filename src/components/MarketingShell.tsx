@@ -121,7 +121,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
             <ul className="mt-4 space-y-2 text-sm" style={{ color: "#cbd5e1" }}>
               <li><Link href="/help" className="hover:text-white">{say("Help Center")}</Link></li>
               <li><Link href="/contact" className="hover:text-white">{say("Email support")}</Link></li>
-              <li><Link href="/contact" className="hover:text-white">{say("Request a demo")}</Link></li>
+              <li><Link href="/contact" className="hover:text-white">{say("Contact us")}</Link></li>
             </ul>
           </div>
         </div>
@@ -139,7 +139,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
           <span> {say("2026 FixTray. All rights reserved.")}</span>
           <Link href="/privacy" className="hover:text-white">{say("Privacy Policy")}</Link>
           <Link href="/terms" className="hover:text-white">{say("Terms of Service")}</Link>
-          <span>{say("Built for owner-operators, growing shop teams, and multi-shop service groups.")}</span>
+          <span>{say("Free work orders for auto service, roadside and in the shop.")}</span>
         </div>
       </footer>
     </div>

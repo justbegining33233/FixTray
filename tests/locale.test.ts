@@ -141,15 +141,15 @@ describe('message catalogs', () => {
     expect(missing).toEqual([]);
   });
 
-  it('looks up homepage copy when the catalog stored a literal backslash-n', () => {
+  it('looks up a newline phrase when the catalog stored a literal backslash-n', () => {
     const index = JSON.parse(fs.readFileSync(path.join(root, 'src/lib/phraseIndex.json'), 'utf8')) as Record<string, string>;
-    const src = fs.readFileSync(path.join(root, 'src/app/page.tsx'), 'utf8');
-    const match = src.match(/say\("(FixTray now unifies[^"]*)"\)/);
+    const src = fs.readFileSync(path.join(root, 'src/app/shop/complete-profile/page.tsx'), 'utf8');
+    const match = src.match(/say\("(By signing, you confirm[^"]*)"\)/);
     expect(match).not.toBeNull();
     const runtime = (match?.[1] ?? '').replaceAll('\\n', '\n');
     expect(runtime.includes('\n')).toBe(true);
     const key = phraseIndexKey(runtime, index);
-    expect(key).toBe('fixtray_now_unifies_every_major_workflow_in_the_app_role_driven_portals_real_time_communications');
+    expect(key).toBe('by_signing_you_confirm_your_shop_details_are_accurate_you_are_authorized_to_operate_this_busines');
     const es = JSON.parse(fs.readFileSync(path.join(root, 'messages/es.json'), 'utf8'));
     const shown = presentPhrase(runtime, es.phrases[key]);
     expect(shown.includes('\n')).toBe(true);

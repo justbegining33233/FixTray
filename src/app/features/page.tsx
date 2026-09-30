@@ -18,9 +18,11 @@ export default function FeaturesPage() {
       <section className="mx-auto max-w-6xl px-6 pt-24 pb-16 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">{say("Features")}</p>
         <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
-          {say("The full stack for world-class work orders.")}{' '}</h1>
+          {say("Work orders for roadside and in the shop.")}{' '}</h1>
         <p className="mt-5 mx-auto max-w-2xl text-lg text-slate-300">
-          {say("FixTray covers the full operating loop: work orders, customer communication, team workflow, inventory, payroll, analytics, and multi-shop growth.")}{' '}</p>
+          {say("FixTray is a free work-order system for auto service. There is a shop account and a customer account. Role-based pages cover work orders, approvals, and customer-ready updates.")}{' '}</p>
+        <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">
+          {say("A shop can track parts inventory, run payroll from time entries, view work-order analytics, and switch between shops that share an email.")}{' '}</p>
         <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">
           {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -32,12 +34,12 @@ export default function FeaturesPage() {
       <section className="mx-auto max-w-6xl px-6 pb-20 text-center">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
-            { title: say("Work order control"), detail: say("Manage intake, assignment, approvals, estimates, payments, and closeout from one system.") },
+            { title: say("Work orders"), detail: say("Intake, assignment, approvals, estimates, payments, and closeout.") },
             { title: say("Driving directions"), detail: say("On a road call or assigned job, a technician follows turn-by-turn directions on the job screen in the browser.") },
             { title: say("Customer communication"), detail: say("Messages and updates stay in the workflow. A denied estimate carries a notification flag so a person can look. The flag does not approve, deny, or hand the job off.") },
-            { title: say("Mobile tech suite"), detail: say("Run time tracking, photos, inspections, and field updates from technician screens in the browser.") },
-            { title: say("Operational finance"), detail: say("Handle inventory, payroll, budget tracking, and reporting without separate back-office tooling.") },
-            { title: say("Multi-shop visibility"), detail: say("Owners can run more than one shop with shared oversight.") }
+            { title: say("Technician screens"), detail: say("Run time tracking, photos, inspections, and field updates from technician screens in the browser.") },
+            { title: say("Five roles"), detail: say("Platform owner, shop owner, manager, tech, and customer.") },
+            { title: say("Messages and GPS"), detail: say("Messaging, notifications, GPS, and team activity stay with the job.") }
           ].map((item) => (
             <div key={item.title} className="rounded-3xl p-6 text-center" style={glassCardStyle}>
               <p className="text-lg font-semibold text-white">{say(item.title)}</p>
@@ -74,7 +76,7 @@ export default function FeaturesPage() {
               {say("Techs can clock time, capture photos, complete inspections, message the shop, and keep jobs moving without paperwork.")}{' '}</p>
             <ul className="mt-6 space-y-3 text-sm text-slate-200">
               {[
-                say("Offline capture and sync"),
+                say("Save a job for offline use"),
                 say("Photos, inspections, and customer signatures on approvals"),
                 say("Road-call map, shared location, and the job on the tech's screen."),
                 say("Turn-by-turn directions on the job screen in the phone browser")

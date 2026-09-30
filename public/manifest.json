@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "FixTray - Work Order Management",
+  "name": "FixTray - Free work orders for auto service",
   "short_name": "FixTray",
-  "description": "Streamlined work order management for roadside and in-shop services",
+  "description": "FixTray is a free work-order system for auto service, roadside and in the shop, with shop and customer accounts for work orders, approvals, and updates. A mobile app is in development; until it ships, use the website, including a phone browser.",
   "start_url": "/auth/login",
   "scope": "/",
   "display": "standalone",

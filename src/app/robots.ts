@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { PUBLIC_SITE_ORIGIN } from "@/lib/publicMetadata";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -6,6 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://fixtray.app/sitemap.xml",
+    sitemap: `${PUBLIC_SITE_ORIGIN}/sitemap.xml`,
+    host: PUBLIC_SITE_ORIGIN,
   };
 }

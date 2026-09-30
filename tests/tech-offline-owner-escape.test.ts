@@ -78,7 +78,7 @@ describe('stale tech-offline page', () => {
     expect(sw).toContain("redirect: 'manual'");
     expect(sw).toContain('releaseStaleOfflineClients');
     expect(sw).toContain('client.navigate(client.url)');
-    expect(sw).toContain('fixtray-v9');
+    expect(sw).toContain('fixtray-v10');
     expect(sw).toContain('isTechWorkspaceNavigation');
     expect(sw).toContain('offlineDocument');
     expect(sw).toContain("request.mode === 'navigate'");

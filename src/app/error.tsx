@@ -3,8 +3,21 @@
 import { usePhrase } from '@/lib/usePhrase';
 import { FaExclamationCircle, FaRedo, FaHome } from 'react-icons/fa';
 import Link from 'next/link';
+import OfflineNotice, { useNetworkOnline } from '@/components/OfflineNotice';
 
 export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  const online = useNetworkOnline();
+  if (!online) return <OfflineNotice />;
+  return <OnlineError error={error} reset={reset} />;
+}
+
+function OnlineError({
   error,
   reset,
 }: {

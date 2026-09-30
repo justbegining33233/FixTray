@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
-import PasswordResetForm from '@/components/PasswordResetForm';
+import Link from 'next/link';
 import { getCsrfToken } from '@/lib/clientCsrf';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconUser, IconWrench } from '@/components/icons';
@@ -66,7 +66,6 @@ export default function LoginClient() {
   const [signupForm, setSignupForm] = useState({ fullName: '', username: '', email: '', password: '', confirmPassword: '', agreeToTerms: false });
   const [shopSignupForm, setShopSignupForm] = useState({ shopName: '', ownerName: '', address: '', city: '', state: '', zip: '', phone: '', email: '', username: '', password: '', confirmPassword: '', agreeToTerms: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showReset, setShowReset] = useState(false);
   const [regMsg, setRegMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
   const getPostLoginRoute = (fallback: string, allowedPrefixes?: string[]): Route => {
@@ -307,8 +306,6 @@ export default function LoginClient() {
     }
   };
 
-  const toggleReset = () => setShowReset(s => !s);
-
   if (introHold) {
     return <div style={{ position: 'fixed', inset: 0, background: '#020608' }} />;
   }
@@ -346,9 +343,8 @@ export default function LoginClient() {
                   <button type="submit" disabled={loading} className="btn-primary" style={{width:'100%'}}>{loading ? t('signingIn') : t('signIn')}</button>
                 </div>
                 <div style={{marginTop:8, textAlign:'center'}}>
-                  <button type="button" onClick={toggleReset} className="btn-link" style={{fontSize:13}}>{showReset ? t('hideReset') : t('forgotPassword')}</button>
+                  <Link href="/auth/reset" className="btn-link" style={{fontSize:13}}>{t('forgotPassword')}</Link>
                 </div>
-                {showReset && (<PasswordResetForm onClose={() => setShowReset(false)} />)}
               </form>
             )}
             {activeTab === 'signup' && (
@@ -400,7 +396,7 @@ export default function LoginClient() {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={signupForm.agreeToTerms} onChange={(e) => setSignupForm({ ...signupForm, agreeToTerms: e.target.checked })} />
                       <span style={{fontSize:12, color:'#b8beca'}}>
-                        {say('I agree to the')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms-of-service', '_blank')}>{say('Terms of Service')}</button> {say('and')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy-policy', '_blank')}>{say('Privacy Policy')}</button>
+                        {say('I agree to the')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms', '_blank')}>{say('Terms of Service')}</button> {say('and')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy', '_blank')}>{say('Privacy Policy')}</button>
                       </span>
                     </label>
                     {errors.agreeToTerms && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.agreeToTerms)}</p>)}
@@ -467,7 +463,7 @@ export default function LoginClient() {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={shopSignupForm.agreeToTerms} onChange={(e) => setShopSignupForm({ ...shopSignupForm, agreeToTerms: e.target.checked })} />
                       <span style={{fontSize:12, color:'#b8beca'}}>
-                        {say('I agree to the')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms-of-service', '_blank')}>{say('Terms of Service')}</button> {say('and')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy-policy', '_blank')}>{say('Privacy Policy')}</button>
+                        {say('I agree to the')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/terms', '_blank')}>{say('Terms of Service')}</button> {say('and')} <button type="button" className="btn-outline" style={{padding:'2px 6px'}} onClick={() => window.open('/privacy', '_blank')}>{say('Privacy Policy')}</button>
                       </span>
                     </label>
                     {errors.agreeToTerms && (<p style={{color:'#ff948d', fontSize:12, marginTop:4}}>{say(errors.agreeToTerms)}</p>)}

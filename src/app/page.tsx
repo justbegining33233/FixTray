@@ -64,7 +64,7 @@ const platformHighlights = [
   },
   {
     title: "Real-time operations",
-    detail: "Messaging, notifications, GPS tracking, and team activity flow through the same platform timeline.",
+    detail: "Messaging, notifications, GPS tracking, and team activity are part of the same platform.",
   },
   {
     title: "Business intelligence",
@@ -87,7 +87,7 @@ const roleCenters = [
   },
   {
     role: "Admin",
-    summary: "Shop approvals, customer and user oversight, revenue, backups, and command center operations.",
+    summary: "Shop approvals, customer and user oversight, revenue, backups, and day-to-day platform work.",
   },
   {
     role: "Shop Owner",
@@ -122,7 +122,7 @@ const reliability = [
   "JWT auth, CSRF controls, role-based route gating",
   "Session and security event pipelines with hardened fallbacks",
   "Rate limit support, health endpoints, and diagnostics",
-  "Offline-aware mobile patterns and native integration hooks",
+  "Technicians can save a job for offline use. The site runs in the browser, including on a phone.",
   "Production build + route scanning workflow for broken-link prevention",
 ];
 
@@ -161,8 +161,11 @@ export default function Home() {
         <p className="mx-auto mt-5 max-w-3xl text-lg text-slate-300">
           {say("FixTray now unifies every major workflow in the app: role-driven portals, real-time communications,\n          work order orchestration, payroll, inventory, analytics, customer lifecycle, and specialized shop services.")}{' '}</p>
 
+        <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-slate-300">
+          {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
+
         <div className="mt-9 flex flex-wrap justify-center gap-4">
-          <Link href="/auth/login" className="rounded-xl px-7 py-3 text-sm font-semibold transition hover:opacity-90" style={primaryBtn}>
+          <Link href="/get-started" className="rounded-xl px-7 py-3 text-sm font-semibold transition hover:opacity-90" style={primaryBtn}>
             {say("Open FixTray")}{' '}</Link>
           <Link href="/contact" className="rounded-xl px-7 py-3 text-sm font-semibold transition" style={ghostBtn}>
             {say("Talk to sales")}{' '}</Link>

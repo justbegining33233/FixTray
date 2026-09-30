@@ -5602,5 +5602,22 @@
   "No webhooks yet.": "no_webhooks_yet",
   "Redirecting to platform home...": "redirecting_to_platform_home",
   "Review devices that are signed in to this shop.": "review_devices_that_are_signed_in_to_this_shop",
-  "Turn on an authenticator code for this shop login.": "turn_on_an_authenticator_code_for_this_shop_login"
+  "Turn on an authenticator code for this shop login.": "turn_on_an_authenticator_code_for_this_shop_login",
+  "A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.": "a_mobile_app_is_in_development_until_then_fixtray_works_on_the_web_it_also_works_on_a_phone_you_",
+  "Dispatch and location": "dispatch_and_location",
+  "Run time tracking, photos, inspections, and field updates from technician screens in the browser.": "run_time_tracking_photos_inspections_and_field_updates_from_technician_screens_in_the_browser",
+  "Reminders and repeat work.": "reminders_and_repeat_work",
+  "Shops can turn on appointment reminders, review requests, overdue invoice notes, and recurring work orders. Approvals still wait for the customer.": "shops_can_turn_on_appointment_reminders_review_requests_overdue_invoice_notes_and_recurring_work",
+  "SLA timing for completed jobs": "sla_timing_for_completed_jobs",
+  "Email and text campaigns, plus reminder messages": "email_and_text_campaigns_plus_reminder_messages",
+  "On a phone": "on_a_phone",
+  "Photos, inspections, and customer signatures on approvals": "photos_inspections_and_customer_signatures_on_approvals",
+  "Road-call map, shared location, and the job on the tech's screen.": "road_call_map_shared_location_and_the_job_on_the_techs_screen",
+  "Search customers and their work orders": "search_customers_and_their_work_orders",
+  "Email support": "email_support",
+  "Request a demo": "request_a_demo",
+  "Create an account": "create_an_account",
+  "Choose a shop account or a customer account. Log in is only for people who already have one.": "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one",
+  "For a shop that runs jobs, estimates, and payments.": "for_a_shop_that_runs_jobs_estimates_and_payments",
+  "For someone booking service and following a job.": "for_someone_booking_service_and_following_a_job"
 }

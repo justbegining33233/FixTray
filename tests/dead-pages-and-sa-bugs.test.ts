@@ -28,6 +28,14 @@ describe('dead marketing and admin aliases', () => {
     expect(bySource['/register/success']).toBe('/auth/thank-you');
     expect(bySource['/register/canceled']).toBe('/auth/thank-you');
     expect(bySource['/admin/subscriptions']).toBe('/admin/home');
+    expect(bySource['/auth/forgot']).toBe('/auth/reset');
+    expect(bySource['/forgot-password']).toBe('/auth/reset');
+    expect(bySource['/auth/forgot-password']).toBe('/auth/reset');
+    expect(bySource['/reset-password']).toBe('/auth/reset');
+    expect(bySource['/auth/reset-password']).toBe('/auth/reset');
+    expect(bySource['/auth/password']).toBe('/auth/reset');
+    expect(bySource['/privacy-policy']).toBe('/privacy');
+    expect(bySource['/terms-of-service']).toBe('/terms');
   });
 });
 

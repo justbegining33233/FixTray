@@ -60,7 +60,7 @@ const platformHighlights = [
   },
   {
     title: "Work order lifecycle",
-    detail: "From intake and dispatch to approvals, invoicing, payment, and close-out with live status history.",
+    detail: "From intake and assignment to approvals, invoicing, payment, and close-out, with status history on the job.",
   },
   {
     title: "Real-time operations",
@@ -206,7 +206,7 @@ export default function Home() {
 
       <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-2" style={{ width: '100%', maxWidth: 1152, marginLeft: 'auto', marginRight: 'auto' }}>
         <div className="rounded-2xl p-7" style={glassCard}>
-          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Role command centers")}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Role-based pages")}</p>
           <h3 className="mt-3 text-2xl font-semibold text-white">{say("Every team works in context")}</h3>
           <div className="mt-6 grid gap-3">
             {roleCenters.map((entry) => (

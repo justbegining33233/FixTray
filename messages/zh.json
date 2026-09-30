@@ -5726,6 +5726,11 @@
     "create_an_account": "Create an account",
     "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one": "Choose a shop account or a customer account. Log in is only for people who already have one.",
     "for_a_shop_that_runs_jobs_estimates_and_payments": "For a shop that runs jobs, estimates, and payments.",
-    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job."
+    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job.",
+    "role_based_pages": "基于角色的页面",
+    "role_based_pages_for_work_orders_approvals_and_customer_ready_updates": "基于角色的工作订单、审批和客户就绪更新页面。",
+    "from_intake_and_assignment_to_approvals_invoicing_payment_and_close_out_with_status_history_on_t": "从接收和分配到批准、开具发票、付款和结账，都有工作状态历史记录。",
+    "fixtray_covers_the_full_operating_loop_work_orders_customer_communication_team_workflow_inventor": "FixTray 涵盖完整的运营循环：工作订单、客户沟通、团队工作流程、库存、工资、分析和多汽修厂增长。",
+    "driving_directions": "行车路线"
   }
 }

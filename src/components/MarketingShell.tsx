@@ -100,7 +100,7 @@ export default function MarketingShell({ children }: MarketingShellProps) {
           <div>
             <p style={{ fontWeight: 800, color: "#e5332a", fontSize: 18 }}>{say("FixTray")}</p>
             <p className="mt-3 text-sm" style={{ color: "#94a3b8" }}>
-              {say("The command center for modern work orders, approvals, and customer-ready updates.")}{' '}</p>
+              {say("Role-based pages for work orders, approvals, and customer-ready updates.")}{' '}</p>
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Product")}</p>

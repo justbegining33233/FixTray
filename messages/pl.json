@@ -5726,6 +5726,11 @@
     "create_an_account": "Create an account",
     "choose_a_shop_account_or_a_customer_account_log_in_is_only_for_people_who_already_have_one": "Choose a shop account or a customer account. Log in is only for people who already have one.",
     "for_a_shop_that_runs_jobs_estimates_and_payments": "For a shop that runs jobs, estimates, and payments.",
-    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job."
+    "for_someone_booking_service_and_following_a_job": "For someone booking service and following a job.",
+    "role_based_pages": "Strony oparte na rolach",
+    "role_based_pages_for_work_orders_approvals_and_customer_ready_updates": "Strony oparte na rolach dla zleceń pracy, zatwierdzeń i aktualizacji gotowych dla klientów.",
+    "from_intake_and_assignment_to_approvals_invoicing_payment_and_close_out_with_status_history_on_t": "Od przyjęcia i przydziału po zatwierdzenia, fakturowanie, płatność i zamknięcie, z historią statusu zadania.",
+    "fixtray_covers_the_full_operating_loop_work_orders_customer_communication_team_workflow_inventor": "FixTray obejmuje pełną pętlę operacyjną: zlecenia pracy, komunikację z klientem, przepływ pracy zespołu, zapasy, płace, analitykę i rozwój wielu warsztatów.",
+    "driving_directions": "Wskazówki dojazdu"
   }
 }

@@ -119,8 +119,8 @@ export default function MarketingShell({ children }: MarketingShellProps) {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Support")}</p>
             <ul className="mt-4 space-y-2 text-sm" style={{ color: "#cbd5e1" }}>
-              <li><Link href="/contact" className="hover:text-white">{say("Help Center")}</Link></li>
-              <li><Link href="/contact" className="hover:text-white">{say("Book a demo")}</Link></li>
+              <li><Link href="/contact" className="hover:text-white">{say("Email support")}</Link></li>
+              <li><Link href="/contact" className="hover:text-white">{say("Request a demo")}</Link></li>
             </ul>
           </div>
         </div>

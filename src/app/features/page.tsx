@@ -21,6 +21,8 @@ export default function FeaturesPage() {
           {say("The full stack for world-class work orders.")}{' '}</h1>
         <p className="mt-5 mx-auto max-w-2xl text-lg text-slate-300">
           {say("FixTray covers the full operating loop: work orders, dispatch, customer communication, team workflow, inventory, payroll, analytics, and multi-shop growth.")}{' '}</p>
+        <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed text-slate-300">
+          {say("A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.")}{' '}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/auth/login" className="rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30">
             {say("Get started")}{' '}</Link>
@@ -31,9 +33,9 @@ export default function FeaturesPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             { title: say("Work order control"), detail: say("Manage intake, assignment, approvals, estimates, payments, and closeout from one system.") },
-            { title: say("Dispatch + routing"), detail: say("Coordinate teams by role, availability, status, and location context.") },
+            { title: say("Dispatch and location"), detail: say("Coordinate teams by role, availability, status, and location context.") },
             { title: say("Customer communication"), detail: say("Send approvals, updates, documents, and messages from the same workflow.") },
-            { title: say("Mobile tech suite"), detail: say("Run time tracking, photos, inspections, and field updates from technician-ready screens.") },
+            { title: say("Mobile tech suite"), detail: say("Run time tracking, photos, inspections, and field updates from technician screens in the browser.") },
             { title: say("Operational finance"), detail: say("Handle inventory, payroll, budget tracking, and reporting without separate back-office tooling.") },
             { title: say("Multi-shop visibility"), detail: say("Owners can run more than one shop with shared oversight.") }
           ].map((item) => (
@@ -49,14 +51,14 @@ export default function FeaturesPage() {
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="rounded-3xl border border-white/10 bg-black p-8 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500">{say("Automation")}</p>
-            <h2 className="mt-4 text-2xl font-semibold text-white">{say("Let the workflow run itself.")}</h2>
+            <h2 className="mt-4 text-2xl font-semibold text-white">{say("Reminders and repeat work.")}</h2>
             <p className="mt-4 text-sm text-slate-300">
-              {say("Automate milestone-based updates, approvals, recurring work, reminders, and handoffs without manual chasing.")}{' '}</p>
+              {say("Shops can turn on appointment reminders, review requests, overdue invoice notes, and recurring work orders. Approvals still wait for the customer.")}{' '}</p>
             <ul className="mt-6 space-y-3 text-sm text-slate-200">
               {[
-                say("SLA alerts and escalation paths"),
+                say("SLA timing for completed jobs"),
                 say("Recurring work orders and reminder flows"),
-                say("Customer email and message sequences")
+                say("Email and text campaigns, plus reminder messages")
               ].map((item) => (
                 <li key={item} className="flex items-center justify-center gap-3">
                   <span className="h-2 w-2 rounded-full bg-cyan-400" />
@@ -66,15 +68,15 @@ export default function FeaturesPage() {
             </ul>
           </div>
           <div className="rounded-3xl border border-white/10 bg-black p-8 text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">{say("Mobile first")}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">{say("On a phone")}</p>
             <h2 className="mt-4 text-2xl font-semibold text-white">{say("Technicians stay in flow.")}</h2>
             <p className="mt-4 text-sm text-slate-300">
               {say("Techs can clock time, capture photos, complete inspections, message the shop, and keep jobs moving without paperwork.")}{' '}</p>
             <ul className="mt-6 space-y-3 text-sm text-slate-200">
               {[
                 say("Offline capture and sync"),
-                say("Photo, signature, and inspection capture"),
-                say("Live routing and field-ready job context")
+                say("Photos, inspections, and customer signatures on approvals"),
+                say("Road-call map, shared location, and the job on the tech's screen.")
               ].map((item) => (
                 <li key={item} className="flex items-center justify-center gap-3">
                   <span className="h-2 w-2 rounded-full bg-pink-400" />

@@ -5709,6 +5709,19 @@
     "all_synced": "All synced",
     "payments_approvals_estimates_and_pay_changes_need_a_connection": "Payments, approvals, estimates, and pay changes need a connection.",
     "sync_now": "Sync now",
-    "offline_jobs": "Offline jobs"
+    "offline_jobs": "Offline jobs",
+    "a_mobile_app_is_in_development_until_then_fixtray_works_on_the_web_it_also_works_on_a_phone_you_": "A mobile app is in development. Until then, FixTray works on the web. It also works on a phone you already have: open it in the phone's browser. On iPhone, use Safari and Add to Home Screen.",
+    "dispatch_and_location": "Dispatch and location",
+    "run_time_tracking_photos_inspections_and_field_updates_from_technician_screens_in_the_browser": "Run time tracking, photos, inspections, and field updates from technician screens in the browser.",
+    "reminders_and_repeat_work": "Reminders and repeat work.",
+    "shops_can_turn_on_appointment_reminders_review_requests_overdue_invoice_notes_and_recurring_work": "Shops can turn on appointment reminders, review requests, overdue invoice notes, and recurring work orders. Approvals still wait for the customer.",
+    "sla_timing_for_completed_jobs": "SLA timing for completed jobs",
+    "email_and_text_campaigns_plus_reminder_messages": "Email and text campaigns, plus reminder messages",
+    "on_a_phone": "On a phone",
+    "photos_inspections_and_customer_signatures_on_approvals": "Photos, inspections, and customer signatures on approvals",
+    "road_call_map_shared_location_and_the_job_on_the_techs_screen": "Road-call map, shared location, and the job on the tech's screen.",
+    "search_customers_and_their_work_orders": "Search customers and their work orders",
+    "email_support": "Email support",
+    "request_a_demo": "Request a demo"
   }
 }

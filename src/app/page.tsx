@@ -4,7 +4,6 @@ import { useLayoutEffect } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
 import dynamic from 'next/dynamic';
 import Link from "next/link";
-import Image from "next/image";
 import {
   decodeIntroClaims,
   installedShellBootstrapScript,
@@ -127,39 +126,6 @@ const reliability = [
   "Production build + route scanning workflow for broken-link prevention",
 ];
 
-const carouselSlides = [
-  {
-    src: "/images/landing-carousel/admin-home.jpg",
-    title: "Admin Command Center",
-    caption: "Daily platform oversight, approvals, and core operations in one view.",
-  },
-  {
-    src: "/images/landing-carousel/admin-user-management.jpg",
-    title: "User Management",
-    caption: "Central control over accounts, roles, and lifecycle actions.",
-  },
-  {
-    src: "/images/landing-carousel/admin-guide.jpg",
-    title: "Live Feature Guide",
-    caption: "A detailed map of active modules, routes, and operational coverage.",
-  },
-  {
-    src: "/images/landing-carousel/features-page.jpg",
-    title: "Features Overview",
-    caption: "Public-facing product breakdown of real workflow capabilities.",
-  },
-  {
-    src: "/images/landing-carousel/pricing-page.jpg",
-    title: "Capabilities",
-    caption: "Operational modules aligned to shop size, team growth, and multi-location scale.",
-  },
-  {
-    src: "/images/landing-carousel/contact-page.jpg",
-    title: "Contact & Onboarding",
-    caption: "Direct intake path for demos, onboarding, and rollout planning.",
-  },
-];
-
 export default function Home() {
   const say = usePhrase();
   useLayoutEffect(() => {
@@ -216,40 +182,6 @@ export default function Home() {
               </p>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-3 pb-24" style={{ width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
-        <div className="flex flex-col items-center text-center gap-3 px-3 sm:px-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: "#94a3b8" }}>{say("Visual product tour")}</p>
-          <h2 className="text-3xl font-semibold text-white">{say("Live dashboards and feature surfaces")}</h2>
-          <p className="max-w-3xl text-sm leading-relaxed" style={{ color: "#94a3b8" }}>
-            {say("Captured from the running app for clear, non-blurry previews of real admin and superadmin workflows.")}{' '}</p>
-        </div>
-
-        <div className="relative mt-10 overflow-x-auto rounded-2xl border" style={{ borderColor: "rgba(255,255,255,0.10)", background: "rgba(8,13,26,0.6)" }}>
-          <div className="flex w-max gap-4 p-4">
-            {carouselSlides.map((slide) => (
-              <article key={slide.src} className="w-[340px] sm:w-[420px] lg:w-[520px] shrink-0 overflow-hidden rounded-xl border" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(2,6,23,0.85)" }}>
-                <div className="relative h-[210px] sm:h-[260px] lg:h-[300px]">
-                  <Image
-                    className="carousel-shot"
-                    src={slide.src}
-                    alt={say(slide.title)}
-                    fill
-                    sizes="(max-width: 640px) 340px, (max-width: 1024px) 420px, 520px"
-                    style={{ objectFit: "cover", objectPosition: "left top" }}
-                    quality={75}
-                    priority
-                  />
-                </div>
-                <div className="px-4 py-3">
-                  <p className="text-sm font-semibold text-white">{say(slide.title)}</p>
-                  <p className="mt-1 text-xs" style={{ color: "#94a3b8" }}>{say(slide.caption)}</p>
-                </div>
-              </article>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -348,12 +280,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <style jsx global>{`
-        .carousel-shot {
-          clip-path: inset(0 14px 0 0);
-        }
-      `}</style>
     </MarketingShell>
     </>
   );

@@ -9,6 +9,7 @@ import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus
 import { money, vehicleLabel } from '@/components/mobile/format';
 import { chatMessageContent } from '@/lib/messageAttachment';
 import { useAuth } from '@/contexts/AuthContext';
+import TurnByTurnPanel from '@/components/TurnByTurnPanel';
 import { normalizeRole } from '@/lib/roleNav';
 import '@/components/mobile/phone-mock.css';
 
@@ -83,6 +84,7 @@ export function WorkOrderPhone({
         </div>
         <span className={`pm-badge ${toneClass(wo.status)}`}>{say(workOrderStatusLabel(wo.status))}</span>
       </div>
+      {(actor === 'tech' || actor === 'manager') ? <TurnByTurnPanel workOrderId={wo.id} /> : null}
       <div className="pm-card" style={{ padding: 12 }}>
         <h3>{say('Work Order Info')}</h3>
         <div className="pm-g2" style={{ marginTop: 8, rowGap: 6 }}>

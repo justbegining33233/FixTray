@@ -99,7 +99,7 @@ const roleCenters = [
   },
   {
     role: "Technician",
-    summary: "Roadside and in-shop jobs, diagnostics, photos, parts checks, time tracking, and customer communication.",
+    summary: "Roadside and in-shop jobs, turn-by-turn directions on the job screen in the browser, diagnostics, photos, parts checks, time tracking, and customer communication.",
   },
   {
     role: "Customer",
@@ -110,6 +110,7 @@ const roleCenters = [
 const operations = [
   "Work order creation, assignment, and status orchestration",
   "Messaging, unread counters, notifications, and customer communication",
+  "A notification flag when a customer denies an estimate. The flag needs a look and does not approve, deny, or move the job",
   "Shop scheduling, blocked dates, bays, and capacity control",
   "Inventory stock, low-stock logic, purchase orders, and vendor workflows",
   "Payroll schedules, attendance, overtime, pay periods, and paystubs",

@@ -16,6 +16,7 @@ import { appDocumentTitle } from '@/lib/phraseKey';
 import { appDesktopViewResetScript, installedShellBootstrapScript } from '@/lib/nativeIntro';
 import AppNavigationGuard from '@/components/AppNavigationGuard';
 import DesktopViewEscape from '@/components/DesktopViewEscape';
+import AttentionFlagBanner from '@/components/AttentionFlagBanner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -101,6 +102,7 @@ export default async function RootLayout({
                 <AppNavigationGuard />
                 <DesktopViewEscape />
                 {children}
+                <AttentionFlagBanner />
                 <OfflineBanner />
                 <TechOfflineBridge />
                 <FloatingSignOut />

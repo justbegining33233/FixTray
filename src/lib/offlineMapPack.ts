@@ -3,14 +3,15 @@
  * The OSMF tile usage policy forbids downloading an area of those tiles
  * for offline use, and the Google Maps JavaScript API forbids offline tile
  * caches. The offline job map stores OpenStreetMap data (ODbL) from one
- * small Overpass query and draws it locally. Turn-by-turn opens Google Maps
- * or Apple Maps, which ship their own offline maps.
+ * small Overpass query and draws it locally. Turn-by-turn on the job screen
+ * uses the public OSRM driving route. Google Maps and Apple Maps stay browser
+ * links, and their tiles are not cached.
  */
 
 export const OFFLINE_MAP_PROVIDER = {
   online: 'Leaflet + OpenStreetMap raster tiles (tile.openstreetmap.org), online only',
   offline: 'OpenStreetMap data via Overpass, drawn on this device (ODbL)',
-  turnByTurn: 'Google Maps and Apple Maps deep links. Their tiles are not cached.',
+  turnByTurn: 'OSRM steps on the job screen, plus Google Maps and Apple Maps links in the browser. Their tiles are not cached.',
   attribution: '© OpenStreetMap contributors',
 } as const;
 

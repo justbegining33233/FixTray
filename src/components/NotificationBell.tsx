@@ -13,6 +13,7 @@ import {
   showsSyntheticWorkOrderAlerts,
 } from '@/lib/notificationInbox';
 import { saveSeenWorkOrderIds, syncSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
+import { FlagMark } from '@/components/AttentionFlagBanner';
 
 type BellItem = {
   id: string;
@@ -21,7 +22,8 @@ type BellItem = {
   createdAt: string;
   read: boolean;
   workOrderId?: string;
-  kind: 'customer' | 'message' | 'workorder';
+  kind: 'customer' | 'message' | 'workorder' | 'attention';
+  flagged?: boolean;
 };
 
 type PendingWorkOrder = {
@@ -110,10 +112,24 @@ export default function NotificationBell() {
       }
 
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      const [messageRes, seen] = await Promise.all([
+      const [messageRes, seen, flagRes] = await Promise.all([
         fetch('/api/messages', { credentials: 'include', headers }),
         syncSeenWorkOrderIds(),
+        fetch('/api/notifications/flags', { credentials: 'include', headers }),
       ]);
+      const flagData = flagRes.ok ? await flagRes.json() : { flags: [] };
+      const flagRows = Array.isArray(flagData?.flags) ? flagData.flags : [];
+      const flagItems: BellItem[] = flagRows.map((row: { id: string; title: string; message: string; createdAt: string; workOrderId?: string }) => ({
+        id: row.id,
+        title: row.title,
+        message: row.message,
+        createdAt: row.createdAt || new Date().toISOString(),
+        read: false,
+        workOrderId: row.workOrderId,
+        kind: 'attention' as const,
+        flagged: true,
+      }));
+
       const messageData = messageRes.ok ? await messageRes.json() : { conversations: [] };
       const conversations = Array.isArray(messageData?.conversations) ? messageData.conversations : [];
       const messageItems: BellItem[] = conversations
@@ -163,7 +179,7 @@ export default function NotificationBell() {
             });
         }
       }
-      setItems([...messageItems, ...workOrderItems]);
+      setItems([...flagItems, ...messageItems, ...workOrderItems]);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
@@ -213,6 +229,7 @@ export default function NotificationBell() {
         await markCustomerRead(item.id);
         return;
       }
+      if (item.kind === 'attention') return;
       if (item.kind === 'workorder') {
         saveSeenWorkOrderIds([item.id]);
         return;
@@ -227,7 +244,8 @@ export default function NotificationBell() {
 
   const markAllRead = async () => {
     const previous = items;
-    setItems([]);
+    const flags = previous.filter(item => item.kind === 'attention');
+    setItems(flags);
     try {
       if (userRole === 'customer') {
         const res = await fetch(`/api/notifications?customerId=${userId}&action=markAllRead`, {
@@ -242,8 +260,8 @@ export default function NotificationBell() {
       const workOrderIds = previous.filter(item => item.kind === 'workorder').map(item => item.id);
       if (workOrderIds.length > 0) saveSeenWorkOrderIds(workOrderIds);
       const results = await Promise.all(previous.filter(item => item.kind === 'message').map(item => markMessageRead(item.id)));
-      if (results.some(ok => !ok)) setItems(previous.filter(item => item.kind === 'message'));
-      else setShowDropdown(false);
+      if (results.some(ok => !ok)) setItems([...flags, ...previous.filter(item => item.kind === 'message')]);
+      else if (flags.length === 0) setShowDropdown(false);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
       setItems(previous);
@@ -251,6 +269,23 @@ export default function NotificationBell() {
   };
 
   const deleteNotif = async (item: BellItem) => {
+    if (item.kind === 'attention') {
+      const previous = items;
+      setItems(prev => prev.filter(n => n.id !== item.id));
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/notifications/flags', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ id: item.id }),
+        });
+        if (!res.ok) setItems(previous);
+      } catch {
+        setItems(previous);
+      }
+      return;
+    }
     if (item.kind !== 'customer') {
       await dismissItem(item);
       return;
@@ -271,6 +306,11 @@ export default function NotificationBell() {
   };
 
   const handleNotifClick = (item: BellItem) => {
+    if (item.kind === 'attention') {
+      setShowDropdown(false);
+      if (item.workOrderId) router.push(`/workorders/${item.workOrderId}` as Route);
+      return;
+    }
     void dismissItem(item);
     setShowDropdown(false);
     if (item.workOrderId) {
@@ -294,6 +334,11 @@ export default function NotificationBell() {
         aria-label={say("Notifications")}
       >
         <FaBell />
+        {items.some((item) => item.flagged) && (
+          <span style={{ position: 'absolute', top: -10, left: -8 }}>
+            <FlagMark label={say('Flag')} />
+          </span>
+        )}
         {unreadCount > 0 && (
           <span style={{
             position:'absolute',
@@ -361,7 +406,10 @@ export default function NotificationBell() {
                   }}
                 >
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4}}>
-                    <div style={{fontWeight:600, fontSize:13, color:'#e5e7eb'}}>{say(notif.title)}</div>
+                    <div style={{fontWeight:600, fontSize:13, color:'#e5e7eb', display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+                      {notif.flagged ? <FlagMark label={say('Flag')} /> : null}
+                      {say(notif.title)}
+                    </div>
                     <button
                       aria-label={say("Dismiss")}
                       onClick={(e) => { e.stopPropagation(); void deleteNotif(notif); }}

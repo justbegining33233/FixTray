@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import crypto from 'crypto';
 import { customerEstimateDecision } from '@/lib/estimateAuthorization';
+import { estimateDeniedFlag, serializeAttentionFlag } from '@/lib/notificationFlags';
 
 export async function POST(
   request: NextRequest,
@@ -28,6 +29,7 @@ export async function POST(
       id: true,
       customerId: true,
       shopId: true,
+      assignedTechId: true,
       status: true,
       estimatedCost: true,
       estimate: true,
@@ -105,18 +107,43 @@ export async function POST(
     });
   }
 
-  await prisma.notification.create({
-    data: {
-      customerId: workOrder.customerId!,
-      type: 'estimate',
-      title: `Estimate ${decision.response === 'accepted' ? 'Accepted' : 'Denied'} by Customer`,
-      message: decision.response === 'accepted'
-        ? `Customer signed and accepted the estimate for work order ${id}.`
-        : `Customer signed and denied the estimate for work order ${id}. The quote is closed and no work authorization was created.`,
-      workOrderId: id,
-      deliveryMethod: 'in-app',
-    },
-  });
+  if (decision.response === 'denied') {
+    await prisma.notification.create({
+      data: {
+        customerId: workOrder.customerId!,
+        type: 'estimate',
+        title: 'You denied this estimate',
+        message: 'The quote is closed and no work authorization was created. The shop has been flagged to take a look. A person there decides what happens next.',
+        workOrderId: id,
+        deliveryMethod: 'in-app',
+      },
+    });
+    await prisma.notification.create({
+      data: {
+        customerId: workOrder.customerId!,
+        type: 'attention',
+        title: 'Customer denied an estimate',
+        message: 'Needs a look. This flag does not approve, deny, or move the job.',
+        workOrderId: id,
+        deliveryMethod: 'in-app',
+        metadata: serializeAttentionFlag(estimateDeniedFlag({
+          shopId: workOrder.shopId,
+          assignedTechId: workOrder.assignedTechId,
+        })),
+      },
+    });
+  } else {
+    await prisma.notification.create({
+      data: {
+        customerId: workOrder.customerId!,
+        type: 'estimate',
+        title: 'You accepted this estimate',
+        message: 'Your signature is saved and a work authorization was created. The shop continues the job from the work order.',
+        workOrderId: id,
+        deliveryMethod: 'in-app',
+      },
+    });
+  }
 
   return NextResponse.json({
     success: true,

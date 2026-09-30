@@ -22,6 +22,7 @@ import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { WorkOrderPhone } from '@/components/mobile/WorkOrderPhone';
+import TurnByTurnPanel from '@/components/TurnByTurnPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -747,6 +748,10 @@ export default function WorkOrderDetailPage() {
             </div>
           </Card>
         </div>
+
+        {(userRole === 'tech' || userRole === 'manager') && (
+          <TurnByTurnPanel workOrderId={wo.id} />
+        )}
 
         {userRole && ['shop', 'manager', 'admin', 'superadmin'].includes(userRole) && (
           <div style={{ marginTop: 16 }}>

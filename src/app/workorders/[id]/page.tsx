@@ -20,6 +20,8 @@ import { uploadChatImage } from '@/lib/uploadChatImage';
 import { captureNativePhotoFile } from '@/lib/nativePhoto';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { shopInspectionLabel, vehicleText } from '@/lib/optionalInspection';
+import { decodeToken } from '@/lib/auth-client';
+import { inventorySearchMatches, partsPickerRows, partsPickerShopId } from '@/lib/partStockUse';
 import type { Route } from 'next';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -31,14 +33,14 @@ import TurnByTurnPanel from '@/components/TurnByTurnPanel';
 type WOMessage = { id: string; sender: string; senderName: string; body: string; displayBody?: string | null; createdAt: string; attachmentUrl?: string | null; attachmentType?: string | null };
 type Vehicle   = { id: string; vehicleType: string; make?: string; model?: string; year?: number; vin?: string; licensePlate?: string };
 
-type LineItem = { _key: string; type: 'labor' | 'part' | 'misc'; description: string; partNumber: string; price: number; qty: number; status: 'new' | 'saved'; poId?: string; poCost?: number; };
+type LineItem = { _key: string; type: 'labor' | 'part' | 'misc'; description: string; partNumber: string; price: number; qty: number; status: 'new' | 'saved'; poId?: string; poCost?: number; inventoryItemId?: string; };
 
 type WorkOrder = {
   id: string; status: string; paymentStatus: string; amountPaid?: number | null;
   vehicleType: string; serviceLocation: string;
   issueDescription: string | Record<string, unknown>;
   bay?: number | null; estimatedCost?: number | null;
-  dueDate?: string | null; createdAt: string;
+  dueDate?: string | null; createdAt: string; shopId?: string;
   repairs?: unknown; maintenance?: unknown; partsMaterials?: unknown;
   partsUsed?: unknown; techLabor?: unknown; estimate?: unknown; location?: unknown;
   /** Live PlatformConfig fee (USD) attached by GET /api/workorders/[id]. */
@@ -82,6 +84,7 @@ function parseLineItems(wo: WorkOrder): LineItem[] {
           price: Number(item.unitPrice || item.price || 0),
           qty: Number(item.quantity || item.hours || 1),
           status: 'saved' as const,
+          ...(typeof item.inventoryItemId === 'string' && item.inventoryItemId ? { inventoryItemId: item.inventoryItemId } : {}),
         }));
       }
     }
@@ -94,7 +97,7 @@ function parseLineItems(wo: WorkOrder): LineItem[] {
   });
   // Parts from partsUsed
   toArr(wo.partsUsed).forEach(item => {
-    items.push({ _key: uid(), type: 'part', description: String(item.name || item.description || item.part || ''), partNumber: String(item.sku || item.partNumber || ''), price: Number(item.unitPrice || item.price || 0), qty: Number(item.quantity || item.qty || 1), status: 'saved' });
+    items.push({ _key: uid(), type: 'part', description: String(item.name || item.description || item.part || ''), partNumber: String(item.sku || item.partNumber || ''), price: Number(item.unitPrice || item.price || 0), qty: Number(item.quantity || item.qty || 1), status: 'saved', ...(typeof item.inventoryItemId === 'string' && item.inventoryItemId ? { inventoryItemId: item.inventoryItemId } : {}) });
   });
   // Misc from estimate.lineItems
   try {
@@ -352,6 +355,7 @@ export default function WorkOrderDetailPage() {
           unitPrice: li.price,
           kind: li.type,
           partNumber: li.partNumber,
+          inventoryItemId: li.inventoryItemId,
         })),
         0,
         '',
@@ -513,7 +517,14 @@ export default function WorkOrderDetailPage() {
     if (inventoryItems.length > 0 || shopServices.length > 0) return; // already loaded
     setModalLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const shopId2 = typeof window !== 'undefined' ? localStorage.getItem('shopId') : null;
+    const decoded = token ? decodeToken(token) : null;
+    const shopId2 = partsPickerShopId({
+      workOrderShopId: wo?.shopId,
+      role: decoded?.role || userRole,
+      tokenShopId: decoded?.shopId,
+      actorId: decoded?.id,
+      storedShopId: typeof window !== 'undefined' ? localStorage.getItem('shopId') : null,
+    });
     if (!shopId2) { setModalLoading(false); return; }
     try {
       const [invRes, svcRes, settingsRes] = await Promise.all([
@@ -521,7 +532,18 @@ export default function WorkOrderDetailPage() {
         fetch(`/api/services?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         fetch(`/api/shop/settings?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
       ]);
-      if (invRes.ok) { const d = await invRes.json(); setInventoryItems(d.items || []); }
+      if (invRes.ok) {
+        const d = await invRes.json();
+        setInventoryItems(partsPickerRows(d).map((row) => ({
+          id: row.id,
+          name: row.name,
+          sku: row.sku,
+          price: Number(row.price) || 0,
+          quantity: Number(row.quantity) || 0,
+          type: row.type || 'part',
+          rate: null,
+        })));
+      }
       if (svcRes.ok) { const d = await svcRes.json(); setShopServices(d.services || []); }
       if (settingsRes.ok) { const d = await settingsRes.json(); setShopMarkup(d.settings?.inventoryMarkup ?? 0.30); }
     } catch { /* ignore */ }
@@ -535,6 +557,7 @@ export default function WorkOrderDetailPage() {
       description: item.name, partNumber: item.sku || '',
       price: item.type === 'labor' ? (item.rate ?? item.price) : item.price,
       qty: 1, status: 'new',
+      ...(item.type === 'labor' ? {} : { inventoryItemId: item.id }),
     }]);
     setShowItemModal(false);
   };
@@ -1197,11 +1220,11 @@ export default function WorkOrderDetailPage() {
                       style={{ ...inputStyle, paddingLeft: 30 }} />
                   </div>
                   {inventoryItems
-                    .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()) || (it.sku || '').toLowerCase().includes(itemSearch.toLowerCase()))
+                    .filter(it => inventorySearchMatches(it, itemSearch))
                     .length === 0
                     ? <div style={{ textAlign: 'center', color: '#6b7280', padding: '28px 0', fontSize: 13 }}>{say("No inventory items found.")}</div>
                     : inventoryItems
-                        .filter(it => !itemSearch || it.name.toLowerCase().includes(itemSearch.toLowerCase()) || (it.sku || '').toLowerCase().includes(itemSearch.toLowerCase()))
+                        .filter(it => inventorySearchMatches(it, itemSearch))
                         .map(item => (
                           <div key={item.id} onClick={() => handleAddInventoryItem(item)}
                             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', marginBottom: 6, cursor: 'pointer' }}

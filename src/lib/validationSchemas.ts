@@ -29,6 +29,7 @@ export const workOrderUpdateSchema = z.object({
       total: z.number().min(0),
       kind: z.enum(['part', 'labor', 'misc']).optional(),
       partNumber: z.string().max(80).optional(),
+      inventoryItemId: z.string().min(1).max(80).optional(),
     })).optional(),
     subtotal: z.number().min(0).optional(),
     taxRate: z.number().min(0).max(100).optional(),
@@ -48,6 +49,7 @@ export const workOrderUpdateSchema = z.object({
     quantity: z.number().min(0),
     unitPrice: z.number().min(0).optional(),
     sku: z.string().optional(),
+    inventoryItemId: z.string().min(1).max(80).optional(),
   })).optional(),
 }).strict(); // Reject unknown fields
 

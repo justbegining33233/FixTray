@@ -13,6 +13,7 @@ export interface QuoteLineInput {
   total?: number;
   kind?: string;
   partNumber?: string;
+  inventoryItemId?: string;
 }
 
 export interface NormalizedQuoteLine {
@@ -22,6 +23,7 @@ export interface NormalizedQuoteLine {
   total: number;
   kind: EstimateLineKind;
   partNumber?: string;
+  inventoryItemId?: string;
 }
 
 export const SIGNED_AUTHORIZATION_STATUS = 'signed';
@@ -47,6 +49,7 @@ export function normalizeQuoteLines(lines: QuoteLineInput[]): NormalizedQuoteLin
     const safeQty = Number.isFinite(quantity) && quantity >= 0 ? quantity : 0;
     const safePrice = Number.isFinite(unitPrice) && unitPrice >= 0 ? unitPrice : 0;
     const partNumber = String(line.partNumber || '').trim();
+    const inventoryItemId = String(line.inventoryItemId || '').trim();
     return {
       description: String(line.description || '').trim(),
       quantity: safeQty,
@@ -54,6 +57,7 @@ export function normalizeQuoteLines(lines: QuoteLineInput[]): NormalizedQuoteLin
       total: round2(safeQty * safePrice),
       kind: normalizeKind(line.kind),
       ...(partNumber ? { partNumber } : {}),
+      ...(inventoryItemId ? { inventoryItemId } : {}),
     };
   });
 }
@@ -89,6 +93,7 @@ export function buildEstimateSave(lines: QuoteLineInput[], taxRate = 0, notes = 
         quantity: line.quantity,
         unitPrice: line.unitPrice,
         ...(line.partNumber ? { sku: line.partNumber } : {}),
+        ...(line.inventoryItemId ? { inventoryItemId: line.inventoryItemId } : {}),
       })),
   };
 }

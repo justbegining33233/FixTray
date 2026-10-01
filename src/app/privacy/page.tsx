@@ -1,9 +1,7 @@
 import Link from "next/link";
 import MarketingShell from "@/components/MarketingShell";
-import { fixtrayServiceFeeLabel } from "@/lib/publicFeeCopy";
 
 export default function PrivacyPage() {
-  const fee = fixtrayServiceFeeLabel();
   return (
     <MarketingShell>
       <article className="mx-auto max-w-3xl px-6 pb-24 pt-24 text-slate-300">
@@ -26,7 +24,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">Members and customers</h2>
             <p className="mt-2">
-              A member is a shop-side user: the shop owner and that shop&apos;s employees, including technicians and managers. FixTray is free for members. FixTray does not charge members a subscription. A customer is the shop&apos;s client. When a customer pays by card, the charge is the shop&apos;s quote plus a FixTray service fee when that fee applies. The fee named in the product is a flat {fee} per paid work order, unless the platform has configured a different amount. The amount shown at checkout is the amount charged. Payment details are below. The terms describe the charge.
+              A member is a shop-side user: the shop owner and that shop&apos;s employees, including technicians and managers. FixTray is free for members. FixTray does not charge members a subscription. A customer is the shop&apos;s client. When a customer pays by card, the charge is the shop&apos;s quote plus a FixTray service fee when that fee applies. The amount shown at checkout is the amount charged. Payment details are below. The terms describe the charge.
             </p>
           </section>
           <section>

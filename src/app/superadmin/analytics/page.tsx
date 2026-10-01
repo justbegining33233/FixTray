@@ -97,7 +97,7 @@ export default function SuperAdminAnalytics() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-white">{say("Platform Analytics")}</h1>
-            <p className="text-[#94a3b8] mt-1">{say("Platform-wide metrics &amp; insights")}</p>
+            <p className="text-[#94a3b8] mt-1">{say("Platform-wide metrics & insights")}</p>
           </div>
         </div>
 

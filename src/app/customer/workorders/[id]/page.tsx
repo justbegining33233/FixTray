@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TechLiveMap from '@/components/TechLiveMap';
 import CustomerMessaging from '@/components/CustomerMessaging';
-import WorkAuthorizationForm from '@/components/WorkAuthorizationForm';
 import { FaArrowLeft, FaCheckCircle, FaClock, FaLock, FaMapMarkerAlt, FaStore } from 'react-icons/fa';
 
 interface WorkOrderDetails {
@@ -304,9 +303,9 @@ export default function WorkOrderDetailsPage() {
                       ? 'Final Bill'
                       : 'Estimate'}
                 </h3>
-                <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom: workOrder.status === 'waiting-for-payment' && workOrder.paymentStatus !== 'paid' ? 20 : 0}}>
+                <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom: 20}}>
                   <div style={{display:'flex', justifyContent:'space-between', fontSize:14, color:'#e5e7eb'}}>
-                    <span>{say("Services &amp; Parts")}</span>
+                    <span>{say("Services & Parts")}</span>
                     <span>${workOrder.estimate.amount.toFixed(2)}</span>
                   </div>
                   {workOrder.estimate.serviceFee > 0 && (
@@ -320,7 +319,13 @@ export default function WorkOrderDetailsPage() {
                     <span>${workOrder.estimate.totalDue.toFixed(2)}</span>
                   </div>
                 </div>
-                {workOrder.status === 'waiting-for-payment' && workOrder.paymentStatus !== 'paid' && (
+                {workOrder.paymentStatus !== 'paid'
+                  && workOrder.status !== 'completed'
+                  && workOrder.status !== 'closed'
+                  && workOrder.status !== 'cancelled'
+                  && workOrder.status !== 'canceled'
+                  && workOrder.status !== 'denied-estimate'
+                  && workOrder.estimate.totalDue > 0 && (
                   <>
                     {payError && <div style={{color:'#ef4444',fontSize:13,marginBottom:12,padding:'8px 12px',background:'rgba(239,68,68,0.1)',borderRadius:6}}>{say(payError)}</div>}
                     <button
@@ -339,27 +344,12 @@ export default function WorkOrderDetailsPage() {
                         letterSpacing:'0.3px',
                       }}
                     >
-                      {paying ? say("Redirecting to Stripe...") : `Pay $${workOrder.estimate.totalDue.toFixed(2)} Securely`}
+                      {paying ? say("Redirecting to Stripe...") : `Pay $${workOrder.estimate.totalDue.toFixed(2)}`}
                     </button>
                     <div style={{textAlign:'center', marginTop:10, fontSize:12, color:'#6b7280'}}>
-                      <FaLock style={{marginRight:4}} /> {say("Powered by Stripe  Apple Pay &amp; Google Pay accepted")}{' '}</div>
+                      <FaLock style={{marginRight:4}} /> {say("Powered by Stripe. Apple Pay and Google Pay accepted.")}{' '}</div>
                   </>
                 )}
-              </div>
-            )}
-
-            {/* Work Authorization Section */}
-            {(workOrder.status === 'waiting-estimate' || workOrder.status === 'in-progress') && (
-              <div style={{marginTop:32}}>
-                <div style={{maxWidth:600}}>
-                  <WorkAuthorizationForm
-                    workOrderId={workOrder.id}
-                    customerName={userName}
-                    vehicleInfo={workOrder.vehicle ? `${workOrder.vehicle.year} ${workOrder.vehicle.make} ${workOrder.vehicle.model}` : 'Vehicle'}
-                    workDescription={workOrder.issueDescription}
-                    estimatedCost={workOrder.estimate && workOrder.estimate.totalDue > 0 ? `$${workOrder.estimate.totalDue.toFixed(2)}` : 'TBD'}
-                  />
-                </div>
               </div>
             )}
 

@@ -38,7 +38,6 @@ export default function TechHome() {
     openJobs: 0,
     completedToday: 0,
     partsOrdered: 0,
-    revenue: '$0'
   });
 
   // Fetch shop profile and set coordinates
@@ -179,9 +178,6 @@ export default function TechHome() {
 
       const openJobs = orders.filter((w: any) => ['assigned', 'in-progress'].includes(w.status)).length;
       const completedToday = orders.filter((w: any) => w.status === 'closed' && new Date(w.updatedAt) >= today).length;
-      const todayRevenue = orders
-        .filter((w: any) => w.status === 'closed' && w.paymentStatus === 'paid' && new Date(w.updatedAt) >= today)
-        .reduce((sum: number, w: any) => sum + (w.amountPaid || 0), 0);
 
       let partsOrdered = 0;
       if (purchaseOrdersResponse.ok) {
@@ -193,7 +189,6 @@ export default function TechHome() {
         openJobs,
         completedToday,
         partsOrdered,
-        revenue: `$${todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 0 })}`,
       });
       setShopStatsReady(true);
     } catch {
@@ -284,7 +279,6 @@ export default function TechHome() {
           openJobs={todayJobs.length}
           completedToday={shopStats.completedToday}
           partsOrdered={shopStats.partsOrdered}
-          revenue={shopStats.revenue}
           ready={shopStatsReady || !user.shopId}
           shopName={shopProfile?.shopName || shopProfile?.name || ''}
           shopCoords={shopCoords}
@@ -321,10 +315,6 @@ export default function TechHome() {
           <div style={{background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:20}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Parts Ordered")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#f59e0b'}}>{shopStatsReady ? shopStats.partsOrdered : '...'} </div>
-          </div>
-          <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
-            <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Today's Revenue")}</div>
-            <div style={{fontSize:32, fontWeight:700, color:'#22c55e'}}>{shopStatsReady ? shopStats.revenue : say("Syncing...")} </div>
           </div>
         </div>
 

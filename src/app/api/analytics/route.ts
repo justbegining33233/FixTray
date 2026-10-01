@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       avgTime: Number(stats.avgTime.toFixed(2)),
     }));
 
-    return NextResponse.json({
+    const payload = {
       summary: {
         totalOrders: workOrders.length,
         completedJobs: closedOrders.length,
@@ -171,7 +171,15 @@ export async function GET(request: NextRequest) {
         under1week: completionTimes.filter(t => t >= 48 && t < 168).length,
         over1week: completionTimes.filter(t => t >= 168).length,
       }
-    });
+    };
+    if (auth.role === 'manager') {
+      payload.summary.totalRevenue = 0;
+      payload.summary.averageJobValue = 0;
+      payload.charts.revenue = [];
+      payload.charts.techPerformance = payload.charts.techPerformance.map((row) => ({ ...row, revenue: 0 }));
+      payload.techPerformance = payload.techPerformance.map((row) => ({ ...row, revenue: 0 }));
+    }
+    return NextResponse.json(payload);
   } catch (error) {
     console.error('Error calculating analytics:', error);
     return NextResponse.json({ error: 'Failed to calculate analytics' }, { status: 500 });

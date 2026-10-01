@@ -13,12 +13,12 @@ export function ManagerDashboardPhone({
   alerts,
   stats,
   team,
-  finance,
+  outstanding,
 }: {
   alerts: Array<{ id?: string; title?: string; message?: string }>;
   stats: { activeJobs: number; pendingAssignments: number; overdueJobs: number; completedToday: number };
   team: Array<{ id?: string; name?: string; isActive?: boolean; completedJobs?: number; hoursToday?: number }>;
-  finance: { todayRevenue: number; weeklyRevenue: number; monthlyRevenue: number; outstandingInvoices: number };
+  outstanding?: number | null;
 }) {
   const say = usePhrase();
   const summary = alerts.length
@@ -28,7 +28,7 @@ export function ManagerDashboardPhone({
     <div className="pm">
       <div>
         <h1 className="pm-title">{say('Manager Dashboard')}</h1>
-        <div className="pm-sub">{say('Live shop jobs, team, and revenue.')}</div>
+        <div className="pm-sub">{say('Live shop jobs and team.')}</div>
       </div>
       <div className="pm-alert">
         <div className="pm-ico" style={{ width: 28, height: 28 }}>!</div>
@@ -70,13 +70,8 @@ export function ManagerDashboardPhone({
         })}
       </div>
       <div className="pm-card" style={{ padding: 12 }}>
-        <h3>{say('Financial Summary')}</h3>
-        <div className="pm-g2" style={{ marginTop: 6 }}>
-          <div className="pm-kv"><span>{say("Today's Revenue")}</span><b>{money(finance.todayRevenue, 0)}</b></div>
-          <div className="pm-kv"><span>{say('This Week')}</span><b>{money(finance.weeklyRevenue, 0)}</b></div>
-          <div className="pm-kv"><span>{say('This Month')}</span><b>{money(finance.monthlyRevenue, 0)}</b></div>
-          <div className="pm-kv"><span>{say('Outstanding')}</span><b>{money(finance.outstandingInvoices, 0)}</b></div>
-        </div>
+        <h3>{say('Outstanding')}</h3>
+        <div className="pm-kv" style={{ marginTop: 6 }}><span>{say('Outstanding')}</span><b>{money(outstanding ?? 0, 2)}</b></div>
       </div>
     </div>
   );

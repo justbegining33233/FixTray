@@ -179,7 +179,9 @@ export default function PaymentLinksPage() {
                         background: link.status === 'paid' ? '#052e16' : link.status === 'pending' ? '#422006' : '#1e293b',
                         color: link.status === 'paid' ? '#22c55e' : link.status === 'pending' ? '#eab308' : '#6b7280',
                       }}>{say(link.status)}</span>
+                      {' '}
                       <span style={{ marginLeft: 8 }}>{say("Created")}{' '}{new Date(link.createdAt).toLocaleDateString()}</span>
+                      {' '}
                       <span style={{ marginLeft: 8 }}>{say("Expires")}{' '}{new Date(link.expiresAt).toLocaleDateString()}</span>
                     </div>
                   </div>

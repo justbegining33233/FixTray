@@ -30,6 +30,9 @@ jest.mock('@/lib/prisma', () => ({
     notification: {
       create: jest.fn(),
     },
+    paymentLink: {
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
   },
 }));
 
@@ -148,7 +151,7 @@ describe('POST /api/payment/webhook', () => {
     expect(prisma.workOrder.update).not.toHaveBeenCalled();
   });
 
-  it('updates work order to closed/paid on payment_intent.succeeded', async () => {
+  it('records paid with the PaymentIntent id and does not close the job', async () => {
     const event = buildPaymentSucceededEvent('wo-001', 12500); // $125.00
     mockConstructEvent.mockReturnValue(event);
     (prisma.workOrder.update as jest.Mock).mockResolvedValue(mockWorkOrder);
@@ -160,12 +163,15 @@ describe('POST /api/payment/webhook', () => {
       expect.objectContaining({
         where: { id: 'wo-001' },
         data: expect.objectContaining({
-          status: 'closed',
           paymentStatus: 'paid',
-          amountPaid: 125, // amount / 100
+          amountPaid: 125,
+          paymentIntentId: 'pi_test_001',
         }),
       })
     );
+    const update = (prisma.workOrder.update as jest.Mock).mock.calls[0][0];
+    expect(update.data.status).toBeUndefined();
+    expect(update.data.completedAt).toBeUndefined();
   });
 
   it('sends a payment confirmation email after successful payment', async () => {

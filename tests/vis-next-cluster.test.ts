@@ -29,7 +29,8 @@ describe('VIS-024 platform health catalog', () => {
 
 describe('VIS-030 permission labels', () => {
   it('renders a readable label instead of raw JSON', () => {
-    expect(formatPermissionLabel('workorders.create')).toBe('Workorders · Create');
+    expect(formatPermissionLabel('workorders.create')).toBe('Work orders · Create');
+    expect(formatPermissionLabel('timeclock.view')).toBe('Time clock · View');
     expect(formatPermissionLabel('workorders.create')).not.toContain('{');
   });
 });

@@ -27,6 +27,20 @@ export async function getPlatformServiceFeeUsd(): Promise<number> {
   }
 }
 
+/**
+ * Fee used to charge a card. Returns null when PlatformConfig has no fee,
+ * so checkout fails closed instead of charging the public $5 fallback.
+ */
+export async function getConfiguredPlatformServiceFeeUsd(): Promise<number | null> {
+  try {
+    const config = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
+    if (typeof config?.serviceFee !== 'number' || !Number.isFinite(config.serviceFee)) return null;
+    return round2(Math.max(0, config.serviceFee) / 100);
+  } catch {
+    return null;
+  }
+}
+
 /** Convert a USD fee (e.g. from an invoice snapshot) to cents. */
 export function serviceFeeUsdToCents(usd: number): number {
   return Math.round(Math.max(0, usd) * 100);

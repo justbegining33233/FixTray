@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import stripe from '@/lib/stripe';
-import prisma from '@/lib/prisma';
 import Stripe from 'stripe';
 import { sendPaymentReceiptEmail } from '@/lib/emailService';
 import { pushPaymentConfirmed } from '@/lib/serverPush';
 import logger from '@/lib/logger';
+import { recordStripeWorkOrderPayment } from '@/lib/recordStripePayment';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -44,17 +44,17 @@ export async function POST(request: NextRequest) {
         if (!workOrderId) break;
 
 
-        const updatedWO = await prisma.workOrder.update({
-          where: { id: workOrderId },
-          data: {
-            paymentStatus: 'paid',
-            status: 'closed',
-            amountPaid: (session.amount_total ?? 0) / 100,
-          },
-          include: {
-            customer: { select: { email: true, firstName: true, lastName: true } },
-            shop: { select: { id: true, shopName: true } },
-          },
+        const paymentIntentId = typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id;
+        if (session.payment_status !== 'paid' || !paymentIntentId || !paymentIntentId.startsWith('pi_')) {
+          break;
+        }
+
+        const updatedWO = await recordStripeWorkOrderPayment({
+          workOrderId,
+          paymentIntentId,
+          amountCents: session.amount_total ?? 0,
         });
 
         // Send payment receipt email
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('?? [WEBHOOK] Error processing event:', error);
+    console.error('[WEBHOOK] Error processing event:', error);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }

@@ -723,13 +723,13 @@ export default function Estimates() {
                   {expandedId === estimate.id && (
                     <div style={{marginBottom:16}}>
                       {detailLoading === estimate.id ? (
-                        <div style={{padding:'10px 0', color:'#9aa3b2', fontSize:12, textAlign:'center'}}>{say("Loading messages &amp; photos…")}</div>
+                        <div style={{padding:'10px 0', color:'#9aa3b2', fontSize:12, textAlign:'center'}}>{say("Loading messages & photos…")}</div>
                       ) : expandedDetail[estimate.id] ? (
                         <>
                           {/* Work Photos / Videos */}
                           {expandedDetail[estimate.id].photos.length > 0 && (
                             <div style={{marginBottom:14, background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:14}}>
-                              <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>{say("Work Photos &amp; Videos")}</div>
+                              <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>{say("Work Photos & Videos")}</div>
                               <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
                                 {expandedDetail[estimate.id].photos.map(photo => {
                                   const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(photo.url);
@@ -1116,12 +1116,12 @@ export default function Estimates() {
 
                           {/* Photos & Messages */}
                           {detailLoading === estimate.id ? (
-                            <div style={{padding:'10px 0', color:'#9aa3b2', fontSize:12, textAlign:'center'}}>{say("Loading photos &amp; messages…")}</div>
+                            <div style={{padding:'10px 0', color:'#9aa3b2', fontSize:12, textAlign:'center'}}>{say("Loading photos & messages…")}</div>
                           ) : expandedDetail[estimate.id] ? (
                             <>
                               {expandedDetail[estimate.id].photos.length > 0 && (
                                 <div style={{marginBottom:14, background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:10, padding:14}}>
-                                  <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>{say("Work Photos &amp; Videos")}</div>
+                                  <div style={{fontSize:11, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8}}>{say("Work Photos & Videos")}</div>
                                   <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
                                     {expandedDetail[estimate.id].photos.map(photo => {
                                       const isVid = /\.(mp4|webm|mov|avi)(\?|$)/i.test(photo.url);

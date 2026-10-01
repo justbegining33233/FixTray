@@ -38,24 +38,30 @@ export async function GET(request: NextRequest) {
     });
 
     if (format === 'json') {
-      return NextResponse.json({ workOrders, exportedAt: new Date().toISOString(), total: workOrders.length });
+      const exported = auth.role === 'manager'
+        ? workOrders.map(({ estimatedCost: _estimatedCost, amountPaid: _amountPaid, ...row }) => row)
+        : workOrders;
+      return NextResponse.json({ workOrders: exported, exportedAt: new Date().toISOString(), total: exported.length });
     }
 
     // CSV export
-    const headers = ['ID', 'Status', 'Customer', 'Customer Email', 'Shop', 'Assigned Tech', 'Issue', 'Estimated Cost', 'Amount Paid', 'Created', 'Completed'];
-    const rows = workOrders.map(wo => [
-      wo.id,
-      wo.status,
-      wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : '',
-      wo.customer?.email || '',
-      wo.shop?.shopName || '',
-      wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : '',
-      `"${(wo.issueDescription || '').replace(/"/g, '""')}"`,
-      wo.estimatedCost?.toString() || '0',
-      wo.amountPaid?.toString() || '0',
-      wo.createdAt.toISOString(),
-      wo.completedAt?.toISOString() || '',
-    ]);
+    const hideIncome = auth.role === 'manager';
+    const headers = hideIncome
+      ? ['ID', 'Status', 'Customer', 'Customer Email', 'Shop', 'Assigned Tech', 'Issue', 'Created', 'Completed']
+      : ['ID', 'Status', 'Customer', 'Customer Email', 'Shop', 'Assigned Tech', 'Issue', 'Estimated Cost', 'Amount Paid', 'Created', 'Completed'];
+    const rows = workOrders.map(wo => {
+      const shared = [
+        wo.id,
+        wo.status,
+        wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : '',
+        wo.customer?.email || '',
+        wo.shop?.shopName || '',
+        wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : '',
+        `"${(wo.issueDescription || '').replace(/"/g, '""')}"`,
+      ];
+      const tail = [wo.createdAt.toISOString(), wo.completedAt?.toISOString() || ''];
+      return hideIncome ? [...shared, ...tail] : [...shared, wo.estimatedCost?.toString() || '0', wo.amountPaid?.toString() || '0', ...tail];
+    });
 
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 

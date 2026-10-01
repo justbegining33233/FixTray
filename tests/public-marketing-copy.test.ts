@@ -90,7 +90,9 @@ describe('public marketing copy', () => {
     expect(terms).toContain('Last updated September 30, 2026.');
     expect(privacy).toContain('free for members');
     expect(terms).toContain('free for members');
-    expect(terms).toContain('fixtrayServiceFeeLabel');
+    expect(terms).toContain('FixTray service fee');
+    expect(terms).not.toMatch(/\$\d/);
+    expect(privacy).not.toMatch(/\$\d/);
     expect(privacy).not.toContain('command center');
     expect(terms).not.toContain('command center');
     expect(demo).toContain('The 30 minutes start at your first login.');

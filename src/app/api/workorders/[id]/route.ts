@@ -11,6 +11,7 @@ import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
+import { customerWorkOrderUpdateForbidden } from '@/lib/customerWorkOrderUpdate';
 import { hasWorkOrderFieldUpdates, legacyMessagesToStore, workOrderDirectMessage } from '@/lib/workOrderMessagePersist';
 import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 import { quantityAfterUse, stockDeltasForPartUse } from '@/lib/partStockUse';
@@ -118,6 +119,10 @@ export async function PUT(
   try {
     id = (await params).id;
     const requestData = await request.json();
+    if (auth.role === 'customer') {
+      const forbidden = customerWorkOrderUpdateForbidden(requestData);
+      if (forbidden) return NextResponse.json({ error: forbidden }, { status: 403 });
+    }
     const legacyMessages = requestData?.messages;
     if (requestData && typeof requestData === 'object') delete requestData.messages;
     

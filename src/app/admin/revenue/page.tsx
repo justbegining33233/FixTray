@@ -245,9 +245,8 @@ export default function AdminRevenuePage() {
           </div>
 
           <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <div className="text-stone-400 text-sm mb-1">{say("Fee Per Paid Work Order")}</div>
+            <div className="text-stone-400 text-sm mb-1">{say("Fee per paid work order")}</div>
             <div className="text-3xl font-bold text-purple-400">{formatCurrency(workOrderFees.feePerWorkOrder)}</div>
-            <div className="text-stone-500 text-sm mt-1">{say("Configured platform service fee")}</div>
           </div>
         </div>
 

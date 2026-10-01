@@ -17,6 +17,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Shop ID is required' }, { status: 400 });
   }
 
+  // Managers keep outstanding bills for closeout. Shop income stays off this response.
+  if (user.role === 'manager') {
+    try {
+      const outstandingInvoices = await prisma.workOrder.aggregate({
+        where: {
+          shopId,
+          paymentStatus: 'unpaid',
+        },
+        _sum: {
+          estimatedCost: true,
+        },
+      });
+      return NextResponse.json({
+        summary: {
+          outstandingInvoices: outstandingInvoices._sum.estimatedCost || 0,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching outstanding invoices:', error);
+      return NextResponse.json({ error: 'Failed to fetch financial summary' }, { status: 500 });
+    }
+  }
+
   try {
     const today = new Date();
     const startOfToday = new Date(today.setHours(0, 0, 0, 0));

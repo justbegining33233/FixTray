@@ -584,7 +584,7 @@ export default function ShopHome() {
                   <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Ops Overview")}</h2>
                   <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
                     <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.16)', color:'#93c5fd', borderRadius:12, fontSize:11, fontWeight:700}}>
-                      {say("Roadcalls:")}{' '}{say(pendingRoadcalls.length)}
+                      {say("Road calls:")}{' '}{say(pendingRoadcalls.length)}
                     </span>
                     <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
                       {say("In-Shop Appointments:")}{' '}{say(pendingInShopAppointments.length)}
@@ -667,7 +667,7 @@ export default function ShopHome() {
                         {say("No customers waiting  -  nice work.")}{' '}</div>
                     )}
                     {[
-                      ...pendingRoadcalls.map(o => ({ order: o, config: { badgeLabel: 'Roadcall', badgeBackground: 'rgba(59,130,246,0.18)', badgeColor: '#93c5fd', defaultDestination: 'roadcall' as const, dispatchFallback: 'Roadcall' } })),
+                      ...pendingRoadcalls.map(o => ({ order: o, config: { badgeLabel: 'Road call', badgeBackground: 'rgba(59,130,246,0.18)', badgeColor: '#93c5fd', defaultDestination: 'roadcall' as const, dispatchFallback: 'Road call' } })),
                       ...pendingInShopAppointments.map(o => ({ order: o, config: { badgeLabel: 'Appointment', badgeBackground: 'rgba(229,51,42,0.18)', badgeColor: '#ff6b64', defaultDestination: 'bay' as const, dispatchFallback: 'Bay' } })),
                       ...pendingInShopWalkIns.map(o => ({ order: o, config: { badgeLabel: 'Walk-in', badgeBackground: 'rgba(245,158,11,0.18)', badgeColor: '#fbbf24', defaultDestination: 'bay' as const, dispatchFallback: 'Bay' } })),
                       ...pendingOther.map(o => ({ order: o, config: { badgeLabel: 'Other', badgeBackground: 'rgba(100,116,139,0.18)', badgeColor: '#94a3b8', defaultDestination: 'bay' as const, dispatchFallback: 'Bay' } })),
@@ -770,7 +770,7 @@ export default function ShopHome() {
                         minHeight: 120,
                       }}
                     >
-                      <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13, marginBottom:8}}><FaTruck style={{marginRight:4}} /> {say("Roadcall Queue")}</div>
+                      <div style={{color:'#e5e7eb', fontWeight:700, fontSize:13, marginBottom:8}}><FaTruck style={{marginRight:4}} /> {say("Road call queue")}</div>
                       <div style={{fontSize:12, color:'#9aa3b2'}}>{say("Drop a job here to place it in the roadcall queue")}</div>
                       {dragOverTarget === 'roadcall' && (
                         <div style={{marginTop:8, padding:'8px 10px', border:'1px dashed rgba(59,130,246,0.75)', borderRadius:8, background:'rgba(59,130,246,0.12)', color:'#60a5fa', fontSize:11, fontWeight:700}}>

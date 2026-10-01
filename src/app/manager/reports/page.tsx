@@ -6,13 +6,12 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { FaChartBar, FaUsers, FaClock, FaDollarSign, FaDownload } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaClock, FaDownload } from 'react-icons/fa';
 
 interface ReportData {
   totalWorkOrders: number;
   completedWorkOrders: number;
   avgCompletionTime: string;
-  totalRevenue: number;
   techPerformance: { name: string; completed: number; avgTime: string }[];
 }
 
@@ -37,7 +36,6 @@ export default function ManagerReportsPage() {
           totalWorkOrders: json.totalWorkOrders ?? 0,
           completedWorkOrders: json.completedWorkOrders ?? 0,
           avgCompletionTime: json.avgCompletionTime ?? 'N/A',
-          totalRevenue: json.totalRevenue ?? 0,
           techPerformance: json.techPerformance ?? [],
         });
       }
@@ -63,7 +61,6 @@ export default function ManagerReportsPage() {
   const cards = [
     { icon: <FaChartBar />, label: 'Total Work Orders', value: data?.totalWorkOrders ?? 0, color: '#e5332a' },
     { icon: <FaUsers />, label: 'Completed', value: data?.completedWorkOrders ?? 0, color: '#22c55e' },
-    { icon: <FaDollarSign />, label: 'Revenue', value: `$${(data?.totalRevenue ?? 0).toLocaleString()}`, color: '#f59e0b' },
     { icon: <FaClock />, label: 'Avg Completion', value: data?.avgCompletionTime ?? 'N/A', color: '#f97316' },
   ];
 

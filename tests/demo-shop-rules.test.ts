@@ -6,7 +6,7 @@ import {
   decideDemoLogin,
   demoAccessExpiresIn,
 } from '../src/lib/demoShopRules';
-import { fixtrayServiceFeeLabel, memberAndCustomerFeeCopy } from '../src/lib/publicFeeCopy';
+import { memberAndCustomerFeeCopy } from '../src/lib/publicFeeCopy';
 
 describe('demo shop clock', () => {
   const now = new Date('2026-09-30T15:00:00.000Z');
@@ -64,12 +64,12 @@ describe('demo login email', () => {
 });
 
 describe('public service fee copy', () => {
-  it('uses the flat fee named in the product', () => {
+  it('names a FixTray service fee without printing a dollar amount', () => {
     expect(FIXTRAY_SERVICE_FEE).toBe(5);
-    expect(fixtrayServiceFeeLabel()).toBe('$5.00');
     expect(memberAndCustomerFeeCopy()).toContain('no charge');
     expect(memberAndCustomerFeeCopy()).toContain('does not charge members a subscription');
-    expect(memberAndCustomerFeeCopy()).toContain('$5.00');
+    expect(memberAndCustomerFeeCopy()).toContain('FixTray service fee');
+    expect(memberAndCustomerFeeCopy()).not.toMatch(/\$\d/);
     expect(memberAndCustomerFeeCopy()).toContain('when that fee applies');
   });
 });

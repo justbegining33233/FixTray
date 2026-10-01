@@ -5,6 +5,9 @@ import { authenticateRequest } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   const auth = authenticateRequest(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (auth.role === 'manager') {
+    return NextResponse.json({ error: 'Shop income is not available to managers.' }, { status: 403 });
+  }
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
   if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
 

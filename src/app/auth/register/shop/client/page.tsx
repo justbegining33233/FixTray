@@ -13,6 +13,7 @@ export default function ShopRegistrationClientPage() {
         </Link>
         <div style={{ justifyContent: 'center' }}>
           <span style={{fontWeight:700, fontSize:18}}><SayText text="FixTray" /></span>
+          {' '}
           <span style={{marginLeft:8, color:'#9aa3b2'}}><SayText text="Shop setup and onboarding" /></span>
         </div>
       </header>

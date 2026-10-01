@@ -2,7 +2,7 @@
 import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { FaCheckCircle, FaClock, FaExclamationTriangle, FaHourglassHalf, FaLock, FaSmile, FaWrench } from 'react-icons/fa';
+import { FaCheckCircle, FaClock, FaExclamationTriangle, FaLock, FaWrench } from 'react-icons/fa';
 
 interface PaymentLink {
   id: string;
@@ -27,11 +27,6 @@ export default function CustomerPayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
-  const [paid, setPaid] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [name, setName] = useState('');
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -48,7 +43,6 @@ export default function CustomerPayPage() {
   }, [token]);
 
   const handlePay = async () => {
-    if (!cardNumber || !expiry || !cvv || !name) { setFormError('Please fill in all card fields.'); return; }
     setPaying(true);
     setFormError('');
     try {
@@ -58,24 +52,16 @@ export default function CustomerPayPage() {
         body: JSON.stringify({ action: 'pay', token }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setFormError(data.error || 'Payment could not be recorded.');
+      if (!response.ok || !data.url) {
+        setFormError(data.error || 'Checkout could not be started.');
+        setPaying(false);
         return;
       }
-      setLink(data);
-      setPaid(true);
+      window.location.href = data.url;
     } catch {
-      setFormError('Payment could not be recorded.');
-    } finally {
+      setFormError('Checkout could not be started.');
       setPaying(false);
     }
-  };
-
-  const formatCard = (v: string) => v.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
-  const formatExpiry = (v: string) => {
-    const clean = v.replace(/\D/g, '').slice(0, 4);
-    if (clean.length >= 2) return clean.slice(0, 2) + '/' + clean.slice(2);
-    return clean;
   };
 
   if (loading) return (
@@ -90,17 +76,6 @@ export default function CustomerPayPage() {
         <div style={{ fontSize: 64 }}><FaExclamationTriangle style={{marginRight:4}} /></div>
         <h2 style={{ color: '#f1f5f9', margin: '16px 0 8px' }}>{say("Payment Link Not Found")}</h2>
         <p style={{ color: '#94a3b8' }}>{say(error)}</p>
-      </div>
-    </div>
-  );
-
-  if (paid) return (
-    <div style={{ minHeight: "100vh", background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center', padding: 32 }}>
-        <div style={{ fontSize: 80 }}><FaSmile style={{marginRight:4}} /></div>
-        <h2 style={{ color: '#22c55e', margin: '16px 0 8px', fontSize: 26 }}>{say("Payment Successful!")}</h2>
-        <p style={{ color: '#94a3b8', marginBottom: 8 }}>{say("Thank you for your payment of")}{' '}<strong>${Number(link?.amount).toFixed(2)}</strong>.</p>
-        <p style={{ color: '#94a3b8' }}>{say("This work order is marked paid. The shop can now complete the job.")}</p>
       </div>
     </div>
   );
@@ -133,7 +108,7 @@ export default function CustomerPayPage() {
           {link?.description && <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.5, margin: '0 0 16px' }}>{say(link.description)}</p>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#e5e7eb' }}>
-              <span>{say("Services &amp; Parts")}</span>
+              <span>{say("Services & Parts")}</span>
               <span>${Number(link?.serviceCost ?? Math.max(0, Number(link?.amount) - Number(link?.serviceFee || 0))).toFixed(2)}</span>
             </div>
             {Number(link?.serviceFee) > 0 && (
@@ -152,39 +127,13 @@ export default function CustomerPayPage() {
         {/* Payment Form */}
         {!isExpired && !isAlreadyPaid && (
           <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 24 }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 17, color: '#f1f5f9' }}>{say("Card Information")}</h3>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>{say("Cardholder Name")}</label>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder={say("John Smith")}
-                style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>{say("Card Number")}</label>
-              <input value={cardNumber} onChange={e => setCardNumber(formatCard(e.target.value))} placeholder="1234 5678 9012 3456" maxLength={19}
-                style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box', letterSpacing: '0.05em' }} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
-              <div>
-                <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>{say("Expiry")}</label>
-                <input value={expiry} onChange={e => setExpiry(formatExpiry(e.target.value))} placeholder={say("MM/YY")} maxLength={5}
-                  style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 13, color: '#94a3b8', display: 'block', marginBottom: 6, fontWeight: 600 }}>{say("CVV")}</label>
-                <input value={cvv} onChange={e => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="123" type="password" maxLength={4}
-                  style={{ width: '100%', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '11px 14px', fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box' }} />
-              </div>
-            </div>
-
             {formError && <p style={{color:'#dc2626',fontSize:13,marginBottom:12,fontWeight:600}}>{say(formError)}</p>}
             <button onClick={handlePay} disabled={paying}
               style={{ width: '100%', background: paying ? '#9ca3af' : '#e5332a', color: '#fff', border: 'none', borderRadius: 10, padding: '15px 0', fontSize: 16, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer' }}>
-              {paying ? <><FaHourglassHalf style={{marginRight:4}} /> {say("Processing...")}</> : `Pay $${Number(link?.amount).toFixed(2)}`}
+              {paying ? say("Redirecting to Stripe...") : `Pay $${Number(link?.amount).toFixed(2)}`}
             </button>
-
             <p style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center', marginTop: 12 }}>
-              <FaLock style={{marginRight:4}} /> {say("Your payment is encrypted and secure. We never store your card details.")}{' '}</p>
+              <FaLock style={{marginRight:4}} /> {say("Pay opens Stripe Checkout. FixTray does not store your card.")}{' '}</p>
           </div>
         )}
       </div>

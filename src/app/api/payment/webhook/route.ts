@@ -5,6 +5,7 @@ import stripe from '@/lib/stripe';
 import { sendPaymentConfirmationEmail } from '@/lib/emailService';
 import logger from '@/lib/logger';
 import { asyncErrorHandler } from '@/lib/errorHandler';
+import { recordStripeWorkOrderPayment } from '@/lib/recordStripePayment';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,16 +38,14 @@ export async function POST(request: NextRequest) {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       const workOrderId = paymentIntent.metadata.workOrderId;
       
-      // Update work order
-      const workOrder = await prisma.workOrder.update({
-        where: { id: workOrderId },
-        data: {
-          status: 'closed',
-          paymentStatus: 'paid',
-          amountPaid: paymentIntent.amount / 100,
-          completedAt: new Date(),
-        },
-        include: { customer: true },
+      if (!workOrderId || !paymentIntent.id?.startsWith('pi_')) {
+        return NextResponse.json({ received: true });
+      }
+
+      const workOrder = await recordStripeWorkOrderPayment({
+        workOrderId,
+        paymentIntentId: paymentIntent.id,
+        amountCents: paymentIntent.amount,
       });
       
       // Send confirmation email (queue for retry if fails)

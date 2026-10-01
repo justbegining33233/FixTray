@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import MemberInstallPrompt from '@/components/MemberInstallPrompt';
 import { FIXTRAY_SHOP_PARTICIPATION_AGREEMENT } from '@/lib/fixtrayShopParticipationAgreement';
 import { enablePushNotifications } from '@/lib/nativeMobileService';
 
@@ -723,6 +724,7 @@ function ShopSettingsPageContent() {
       </div>
 
       <div style={{maxWidth:1200, margin:'0 auto', padding:32}}>
+        <MemberInstallPrompt />
         <div style={{display:'grid', gridTemplateColumns:'250px 1fr', gap:24}}>
           {/* Sidebar */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:16, height:'fit-content'}}>

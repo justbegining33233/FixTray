@@ -119,12 +119,12 @@ export default function Payments() {
           <div style={{ background: 'rgba(229,51,42,0.1)', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 12, padding: 24 }}>
             <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>{say("Total Paid")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#e5332a' }}>${summary.totalPaid.toFixed(2)}</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>{say(summary.paidCount)} transactions</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>{summary.paidCount} {summary.paidCount === 1 ? say("transaction") : say("transactions")}</div>
           </div>
           <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: 24 }}>
             <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>{say("Pending")}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#f59e0b' }}>${summary.totalPending.toFixed(2)}</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>{say(summary.pendingCount)} {say("payments due")}</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>{summary.pendingCount} {summary.pendingCount === 1 ? say("payment due") : say("payments due")}</div>
           </div>
           <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 24 }}>
             <div style={{ fontSize: 14, color: '#9aa3b2', marginBottom: 8 }}>{say("Total Work Orders")}</div>
@@ -150,7 +150,7 @@ export default function Payments() {
                     {payment.fixtrayFee > 0 && (
                       <div style={{ marginTop: 8, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#e5e7eb' }}>
-                          <span>{say("Services &amp; Parts")}</span>
+                          <span>{say("Services & Parts")}</span>
                           <span>${payment.serviceCost.toFixed(2)}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2' }}>

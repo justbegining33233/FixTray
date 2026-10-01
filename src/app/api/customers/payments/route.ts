@@ -67,7 +67,9 @@ export async function GET(request: NextRequest) {
           : 'Unknown Vehicle',
         date: wo.createdAt.toISOString(),
         paidAt: wo.updatedAt.toISOString(),
-        canPay: wo.status === 'waiting-for-payment' && wo.paymentStatus !== 'paid',
+        canPay: wo.paymentStatus !== 'paid'
+          && bill.total > 0
+          && !['denied-estimate', 'cancelled', 'canceled', 'completed', 'closed'].includes(wo.status),
       };
     });
 

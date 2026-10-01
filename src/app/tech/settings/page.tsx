@@ -3,6 +3,7 @@
 import { usePhrase } from '@/lib/usePhrase';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import MemberInstallPrompt from '@/components/MemberInstallPrompt';
 
 const LINKS = [
   { href: '/tech/settings/two-factor', label: 'Two-Factor Authentication', desc: 'Add a second step when you sign in' },
@@ -21,6 +22,7 @@ export default function TechSettingsHub() {
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <h1 style={{ color: '#e5e7eb', fontSize: 28, fontWeight: 700, marginBottom: 8 }}>{say("Technician Settings")}</h1>
         <p style={{ color: '#9aa3b2', marginBottom: 24 }}>{say("Choose a settings area. Two-factor is optional, not the only page.")}</p>
+        <MemberInstallPrompt />
         <div style={{ display: 'grid', gap: 12 }}>
           {LINKS.map((link) => (
             <Link

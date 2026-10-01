@@ -124,10 +124,13 @@ export async function GET(request: NextRequest) {
         : 0,
     })).sort((a, b) => b.completedJobs - a.completedJobs);
 
+    const visible = auth.role === 'manager'
+      ? techPerformance.map(({ revenue: _revenue, revenuePerHour: _revenuePerHour, ...row }) => row)
+      : techPerformance;
     return NextResponse.json({
       period: { days, since: since.toISOString() },
       shopsIncluded: shopIds.length,
-      techPerformance,
+      techPerformance: visible,
     });
   } catch (error) {
     console.error('Error fetching employee performance:', error);

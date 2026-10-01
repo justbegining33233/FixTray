@@ -31,6 +31,7 @@ import { billWithServiceFee } from '@/lib/serviceFeeBill';
 import { demoOutboundBlocked } from '@/lib/demoOutboundContext';
 import { isDemoShopId } from '@/lib/demoShopLookup';
 import { workOrderTextMatch } from '@/lib/workOrderSearch';
+import { assignedTechFilter, parseStatusList, waitingListSort } from '@/lib/waitingJobQueue';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -78,15 +79,21 @@ export async function GET(request: NextRequest) {
     const ALLOWED_SORT_FIELDS = ['createdAt', 'updatedAt', 'status', 'priority', 'dueDate'] as const;
     const sortByRaw = searchParams.get('sortBy') || 'createdAt';
     const sortBy: string = (ALLOWED_SORT_FIELDS as readonly string[]).includes(sortByRaw) ? sortByRaw : 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
+    const statuses = parseStatusList(status);
+    const sort = waitingListSort({
+      statuses,
+      sortBy,
+      sortOrder: searchParams.get('sortOrder'),
+    });
+    const assignedTo = searchParams.get('assignedTo');
     const includeMetrics = searchParams.get('includeMetrics') === '1';
 
     // Build cache key
-    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${serviceLocation}:${shopId}:${customerId}:${search}:${sortBy}:${sortOrder}:${includeMetrics ? 'metrics' : 'list'}:fee`;
+    const cacheKey = `workorders:${auth.id}:${auth.role}:${page}:${limit}:${status}:${serviceLocation}:${shopId}:${customerId}:${search}:${sort.sortBy}:${sort.sortOrder}:${assignedTo || ''}:${includeMetrics ? 'metrics' : 'list'}:fee`;
 
     // Skip cache for live ops queries (pending / active status filters) so the
     // shop ops board reflects new customer-created work orders immediately.
-    const isOpsQuery = !!status || serviceLocation === 'roadside' || serviceLocation === 'in-shop' || includeMetrics;
+    const isOpsQuery = !!status || !!assignedTo || serviceLocation === 'roadside' || serviceLocation === 'in-shop' || includeMetrics;
     if (!isOpsQuery) {
       const cachedResult = await queryCache.get(cacheKey);
       if (cachedResult) {
@@ -106,11 +113,18 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: any = { ...scoped.scope };
 
-    // Additional filters — support single value or comma-separated list
-    if (status) {
-      const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
+    // Additional filters — support single value or comma-separated list.
+    // Assignee is applied here, before skip/take, so a newest-first page of
+    // other shop jobs cannot hide an older job assigned to this tech.
+    if (statuses.length > 0) {
       where.status = statuses.length > 1 ? { in: statuses } : statuses[0];
     }
+    const assignedTechId = assignedTechFilter({
+      role: auth.role,
+      actorId: auth.id,
+      assignedTo,
+    });
+    if (assignedTechId) where.assignedTechId = assignedTechId;
     if (serviceLocation === 'roadside') {
       where.serviceLocation = { in: [...ROADSIDE_LOCATION_VALUES], mode: 'insensitive' };
     } else if (serviceLocation === 'in-shop') {
@@ -181,7 +195,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: { [sort.sortBy]: sort.sortOrder },
       skip: (page - 1) * limit,
       take: limit,
     });

@@ -8,6 +8,7 @@ import { Suspense } from 'react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { filterTechJobs, techJobsHref } from '@/lib/techJobs';
+import { historyJobsQuery, WAITING_FOR_WORK_STATUSES, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -25,13 +26,21 @@ function TechJobsList() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     const token = localStorage.getItem('token');
-    fetch('/api/workorders', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    const query = view === 'history'
+      ? historyJobsQuery({ assignedTo: user.id })
+      : waitingJobsQuery({ assignedTo: user.id, statuses: WAITING_FOR_WORK_STATUSES });
+    setOrders([]);
+    setLoading(true);
+    setError('');
+    fetch(`/api/workorders?${query}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to load jobs'))))
-      .then((data) => setOrders(unwrapWorkOrders(data)))
-      .catch(() => setError('Could not load your jobs.'))
-      .finally(() => setLoading(false));
-  }, [user]);
+      .then((data) => { if (!cancelled) setOrders(unwrapWorkOrders(data)); })
+      .catch(() => { if (!cancelled) setError('Could not load your jobs.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user, view]);
 
   if (isLoading) {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;

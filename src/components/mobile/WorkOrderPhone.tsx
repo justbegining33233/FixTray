@@ -37,6 +37,11 @@ export function WorkOrderPhone({
   paidDisabled,
   invoiceLabel,
   paidLabel,
+  inspectionStatus,
+  onStartInspection,
+  onSkipInspection,
+  inspectionBusy,
+  inspectionError,
 }: {
   wo: any;
   lineItems: Line[];
@@ -50,6 +55,11 @@ export function WorkOrderPhone({
   paidDisabled: boolean;
   invoiceLabel: string;
   paidLabel: string;
+  inspectionStatus?: string;
+  onStartInspection?: () => void;
+  onSkipInspection?: () => void;
+  inspectionBusy?: boolean;
+  inspectionError?: string;
 }) {
   const say = usePhrase();
   const { user } = useAuth();
@@ -85,6 +95,22 @@ export function WorkOrderPhone({
         <span className={`pm-badge ${toneClass(wo.status)}`}>{say(workOrderStatusLabel(wo.status))}</span>
       </div>
       {(actor === 'tech' || actor === 'manager') ? <TurnByTurnPanel workOrderId={wo.id} /> : null}
+      {onStartInspection ? (
+        <div className="pm-card" style={{ padding: 12 }}>
+          <h3>{say('Inspection')}</h3>
+          <p className="pm-sub" style={{ margin: '6px 0 10px' }}>{say('Optional, before the work. Do it or skip it. Skipping does not hold the job and is not a pass or a fail.')}</p>
+          {inspectionStatus && inspectionStatus !== 'none' ? (
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{say(inspectionStatus === 'skipped' ? 'Skipped' : inspectionStatus === 'done' ? 'Done' : inspectionStatus)}</div>
+          ) : null}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="pm-btn pm-btn-primary" style={{ flex: 1 }} onClick={onStartInspection}>{say('Start inspection')}</button>
+            {onSkipInspection ? (
+              <button type="button" className="pm-btn pm-btn-secondary" disabled={inspectionBusy || (inspectionStatus !== 'none' && inspectionStatus !== 'in-progress')} onClick={onSkipInspection}>{say('Skip')}</button>
+            ) : null}
+          </div>
+          {inspectionError ? <div style={{ color: '#fca5a5', fontSize: 12, marginTop: 8 }}>{say(inspectionError)}</div> : null}
+        </div>
+      ) : null}
       <div className="pm-card" style={{ padding: 12 }}>
         <h3>{say('Work Order Info')}</h3>
         <div className="pm-g2" style={{ marginTop: 8, rowGap: 6 }}>

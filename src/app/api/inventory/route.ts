@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { normalizeInventoryType, optionalInventoryText } from '@/lib/inventoryItem';
+import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 
 export async function GET(req: NextRequest) {
   const auth = requireRole(req, ['shop', 'manager', 'tech', 'admin']);
@@ -16,26 +17,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'shopId is required' }, { status: 400 });
     }
 
-    const where: any = { shopId };
-    if (lowStockOnly) {
-      // Items where quantity <= reorderPoint
-      where.reorderPoint = { not: null };
-      where.quantity = { lte: prisma.inventoryItem.fields.reorderPoint };
-    }
+    const stock = await prisma.inventoryItem.findMany({
+      where: { shopId },
+      orderBy: { updatedAt: 'desc' },
+    });
+    const items = lowStockOnly
+      ? stock.filter((item) => item.reorderPoint != null && item.quantity <= (item.reorderPoint ?? 0))
+      : stock;
 
-    // For lowStock, we need a raw approach since Prisma can't compare two columns directly
-    let items;
-    if (lowStockOnly) {
-      items = await prisma.inventoryItem.findMany({
-        where: { shopId },
-        orderBy: { updatedAt: 'desc' },
-      });
-      items = items.filter(item => item.reorderPoint != null && item.quantity <= (item.reorderPoint ?? 0));
-    } else {
-      items = await prisma.inventoryItem.findMany({
-        where: { shopId },
-        orderBy: { updatedAt: 'desc' },
-      });
+    try {
+      await syncLowStockReorderAsks(shopId, stock);
+    } catch (error) {
+      console.error('Failed to ask manager about low stock:', error);
     }
 
     return NextResponse.json({ inventory: items });
@@ -75,6 +68,12 @@ export async function POST(req: NextRequest) {
         notes: optionalInventoryText(notes) ?? null,
       },
     });
+
+    try {
+      await syncLowStockReorderAsks(shopId, [item]);
+    } catch (error) {
+      console.error('Failed to ask manager about low stock:', error);
+    }
 
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {

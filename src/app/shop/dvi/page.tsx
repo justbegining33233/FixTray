@@ -1,8 +1,12 @@
 'use client';
 import { usePhrase } from '@/lib/usePhrase';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import type { Route } from 'next';
 import useRequireAuth from '@/lib/useRequireAuth';
 import { FaCheckCircle, FaLink, FaSearch, FaTimes, FaUpload } from 'react-icons/fa';
+import { canAddLinesFromFindings, estimateAfterAddedLine, picturesOnInspection, shopInspectionLabel } from '@/lib/optionalInspection';
+import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 
 interface DVIInspection {
   id: string;
@@ -17,7 +21,7 @@ interface DVIInspection {
   createdAt: string;
   items: DVIItem[];
 }
-interface DVIItem { id: string; category: string; itemName: string; condition: string; notes?: string; estimatedCost?: number; approved: boolean; }
+interface DVIItem { id: string; category: string; itemName: string; condition: string; notes?: string; estimatedCost?: number; approved: boolean; photos?: string | null; }
 
 const conditionColor: Record<string, string> = { green: '#22c55e', yellow: '#f59e0b', red: '#e5332a' };
 const conditionBg: Record<string, string> = { green: 'rgba(34,197,94,0.1)', yellow: 'rgba(245,158,11,0.1)', red: 'rgba(229,51,42,0.1)' };
@@ -36,6 +40,9 @@ export default function DVIPage() {
   const [copied, setCopied] = useState('');
   const [_sentId, setSentId] = useState('');
   const [_sendError, setSendError] = useState('');
+  const [lineForm, setLineForm] = useState({ description: '', kind: 'labor', qty: '1', price: '' });
+  const [lineMsg, setLineMsg] = useState('');
+  const [addingLine, setAddingLine] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -141,6 +148,43 @@ export default function DVIPage() {
     else { const d = await r.json().catch(() => ({})); setSendError(d.error || 'Failed to send to customer.'); }
   };
 
+  const addLineFromFindings = async () => {
+    if (!selected?.workOrderId || !canAddLinesFromFindings(selected.status)) return;
+    const description = lineForm.description.trim();
+    const quantity = Number(lineForm.qty);
+    const unitPrice = Number(lineForm.price);
+    if (!description || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) {
+      setLineMsg('Enter a description, quantity, and price.');
+      return;
+    }
+    setAddingLine(true);
+    setLineMsg('');
+    const token = localStorage.getItem('token');
+    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+    const current = await fetch(`/api/workorders/${selected.workOrderId}`, { headers });
+    if (!current.ok) {
+      setLineMsg('Could not load the work order.');
+      setAddingLine(false);
+      return;
+    }
+    const payload = await current.json();
+    const workOrder = payload?.workOrder ?? payload;
+    const saved = estimateAfterAddedLine(workOrder?.estimate, {
+      description,
+      quantity,
+      unitPrice,
+      kind: lineForm.kind === 'part' ? 'part' : 'labor',
+    });
+    const savedRes = await fetch(`/api/workorders/${selected.workOrderId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(saved),
+    });
+    setLineMsg(savedRes.ok ? 'Added to the work order.' : 'Could not add that line.');
+    if (savedRes.ok) setLineForm({ description: '', kind: 'labor', qty: '1', price: '' });
+    setAddingLine(false);
+  };
+
   const copyLink = (token: string | undefined) => {
     if (!token) return;
     const url = `${window.location.origin}/customer/dvi/${token}`;
@@ -152,7 +196,8 @@ export default function DVIPage() {
   if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
   if (!user) return null;
 
-  const categories = selected ? [...new Set(selected.items.map(i => i.category))] : [];
+  const ratedItems = selected ? selected.items.filter((item) => item.condition === 'green' || item.condition === 'yellow' || item.condition === 'red') : [];
+  const categories = [...new Set(ratedItems.map(i => i.category))];
 
   return (
     <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
@@ -185,14 +230,17 @@ export default function DVIPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                       <div>
                         <div style={{ fontWeight: 700 }}>{insp.vehicleDesc || say("Vehicle")}</div>
-                        <div style={{ fontSize: 12, color: '#9ca3af' }}>{new Date(insp.createdAt).toLocaleDateString()}</div>
+                        <div style={{ fontSize: 12, color: '#9ca3af' }}>
+                          {new Date(insp.createdAt).toLocaleDateString()}
+                          {insp.workOrderId ? ` · ${shortWorkOrderLabel(insp.workOrderId)}` : ''}
+                        </div>
                       </div>
                       <span style={{
-                        background: insp.status === 'approved' ? 'rgba(34,197,94,0.2)' : insp.status === 'sent' ? 'rgba(96,165,250,0.2)' : 'rgba(245,158,11,0.2)',
-                        color: insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#ff6b64' : '#f59e0b',
-                        border: `1px solid ${insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#ff6b64' : '#f59e0b'}`,
-                        borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
-                      }}>{say(insp.status)}</span>
+                        background: insp.status === 'skipped' ? 'rgba(107,114,128,0.25)' : insp.status === 'done' ? 'rgba(96,165,250,0.2)' : insp.status === 'approved' ? 'rgba(34,197,94,0.2)' : insp.status === 'sent' ? 'rgba(96,165,250,0.2)' : 'rgba(245,158,11,0.2)',
+                        color: insp.status === 'skipped' ? '#e5e7eb' : insp.status === 'done' ? '#93c5fd' : insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#ff6b64' : '#f59e0b',
+                        border: `1px solid ${insp.status === 'skipped' ? '#6b7280' : insp.status === 'done' ? '#60a5fa' : insp.status === 'approved' ? '#22c55e' : insp.status === 'sent' ? '#ff6b64' : '#f59e0b'}`,
+                        borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                      }}>{say(shopInspectionLabel(insp.status))}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
                       {reds > 0 && <span style={{ color: '#e5332a' }}> {say(reds)} urgent</span>}
@@ -216,13 +264,59 @@ export default function DVIPage() {
               <button onClick={() => setSelected(null)} style={{ background: 'transparent', color: '#6b7280', border: 'none', cursor: 'pointer', fontSize: 18 }}><FaTimes style={{marginRight:4}} /></button>
             </div>
 
+            {selected.status === 'skipped' && (
+              <p style={{ color: '#d1d5db', fontSize: 14, lineHeight: 1.5, marginTop: 0 }}>
+                {say("Skipped. This is not a pass or a fail, and the job is not held.")}
+                {selected.workOrderId ? ` ${shortWorkOrderLabel(selected.workOrderId)}` : ''}
+              </p>
+            )}
+            {selected.status === 'done' && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{say("Comment")}</div>
+                <p style={{ margin: '0 0 12px', color: '#e5e7eb', fontSize: 14, whiteSpace: 'pre-wrap' }}>{selected.notes || say("No written comment.")}</p>
+                {picturesOnInspection(selected.items).length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                    {picturesOnInspection(selected.items).map((url) => (
+                      <a key={url} href={url} target="_blank" rel="noreferrer">
+                        <img src={url} alt="" style={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 8 }} />
+                      </a>
+                    ))}
+                  </div>
+                )}
+                <p style={{ margin: '0 0 10px', color: '#9ca3af', fontSize: 13 }}>{say("This comment and these pictures are in the customer messages for this job. Add a part or more labor from what was found.")}</p>
+                {selected.workOrderId && (
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    <input value={lineForm.description} onChange={e => setLineForm(p => ({ ...p, description: e.target.value }))} placeholder={say("Line description")}
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 10px', color: '#e5e7eb' }} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <select value={lineForm.kind} onChange={e => setLineForm(p => ({ ...p, kind: e.target.value }))}
+                        style={{ background: '#374151', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 10px' }}>
+                        <option value="labor">{say("Labor")}</option>
+                        <option value="part">{say("Part")}</option>
+                      </select>
+                      <input value={lineForm.qty} onChange={e => setLineForm(p => ({ ...p, qty: e.target.value }))} placeholder={say("Qty")}
+                        style={{ width: 70, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 10px', color: '#e5e7eb' }} />
+                      <input value={lineForm.price} onChange={e => setLineForm(p => ({ ...p, price: e.target.value }))} placeholder={say("Price")}
+                        style={{ width: 90, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 10px', color: '#e5e7eb' }} />
+                    </div>
+                    <button onClick={() => { void addLineFromFindings(); }} disabled={addingLine}
+                      style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontWeight: 700, cursor: 'pointer' }}>
+                      {addingLine ? say("Adding...") : say("Add line to the job")}
+                    </button>
+                    {lineMsg && <div style={{ fontSize: 13, color: '#e5e7eb' }}>{say(lineMsg)}</div>}
+                    <Link href={`/workorders/${selected.workOrderId}#line-items` as Route} style={{ color: '#93c5fd', fontSize: 13 }}>{say("Open the work order lines")}</Link>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Send / Copy Link */}
             {selected.status === 'in-progress' && (
               <button onClick={() => sendToCustomer(selected.id)}
                 style={{ width: '100%', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
                 <FaUpload style={{marginRight:4}} /> {say("Send to Customer for Approval")}{' '}</button>
             )}
-            {selected.approvalToken && (
+            {selected.approvalToken && selected.status !== 'skipped' && selected.status !== 'done' && (
               <button onClick={() => copyLink(selected.approvalToken)}
                 style={{ width: '100%', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid #e5332a', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}>
                 {copied === selected.approvalToken ? <><FaCheckCircle style={{marginRight:4}} /> {say("Link Copied!")}</> : <><FaLink style={{marginRight:4}} /> {say("Copy Customer Review Link")}</>}
@@ -233,7 +327,7 @@ export default function DVIPage() {
             {categories.map(cat => (
               <div key={cat} style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{say(cat)}</div>
-                {selected.items.filter(i => i.category === cat).map(item => (
+                {ratedItems.filter(i => i.category === cat).map(item => (
                   <div key={item.id} style={{ background: conditionBg[item.condition], border: `1px solid ${conditionColor[item.condition]}40`, borderRadius: 8, padding: '10px 14px', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{say(item.itemName)}</div>
@@ -252,19 +346,19 @@ export default function DVIPage() {
             ))}
 
             {/* Summary */}
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14, marginTop: 8 }}>
+            {ratedItems.length > 0 && <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14, marginTop: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{say("Inspection Summary")}</div>
               <div style={{ display: 'flex', gap: 16, fontSize: 13 }}>
-                <span style={{ color: '#22c55e' }}> {say(selected.items.filter(i => i.condition === 'green').length)} {say("Good")}</span>
-                <span style={{ color: '#f59e0b' }}> {say(selected.items.filter(i => i.condition === 'yellow').length)} {say("Advisory")}</span>
-                <span style={{ color: '#e5332a' }}> {say(selected.items.filter(i => i.condition === 'red').length)} {say("Urgent")}</span>
+                <span style={{ color: '#22c55e' }}> {say(ratedItems.filter(i => i.condition === 'green').length)} {say("Good")}</span>
+                <span style={{ color: '#f59e0b' }}> {say(ratedItems.filter(i => i.condition === 'yellow').length)} {say("Advisory")}</span>
+                <span style={{ color: '#e5332a' }}> {say(ratedItems.filter(i => i.condition === 'red').length)} {say("Urgent")}</span>
               </div>
               {selected.items.some(i => i.estimatedCost) && (
                 <div style={{ marginTop: 8, fontSize: 14, fontWeight: 700, color: '#f59e0b' }}>
                   {say("Upsell Opportunity: $")}{selected.items.reduce((s, i) => s + (i.estimatedCost || 0), 0).toFixed(2)}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         )}
       </div>

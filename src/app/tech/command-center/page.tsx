@@ -10,6 +10,7 @@ import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import MobileLayout from '@/components/MobileLayout';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { FaArrowRight, FaCar, FaClipboardList, FaExclamationCircle, FaRoad, FaTools } from 'react-icons/fa';
 
 interface Job {
@@ -78,8 +79,8 @@ export default function TechCommandCenter() {
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
       // Fetch pending work orders
-      const pendingRes = await fetch(`/api/workorders?shopId=${shopId}&status=pending`, { headers });
-      const activeRes = await fetch(`/api/workorders?shopId=${shopId}&status=assigned,in-progress,waiting-estimate,waiting-for-payment`, { headers });
+      const pendingRes = await fetch(`/api/workorders?shopId=${shopId}&${waitingJobsQuery({ statuses: ['pending'] })}`, { headers });
+      const activeRes = await fetch(`/api/workorders?shopId=${shopId}&${waitingJobsQuery({ statuses: ['assigned', 'in-progress', 'waiting-estimate', 'waiting-for-payment'] })}`, { headers });
       const scheduleRes = await fetch('/api/shop/schedule', { headers });
 
       // Process pending queue

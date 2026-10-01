@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCheck, FaClock, FaUsers } from 'react-icons/fa';
 import { OPEN_WORK_ORDER_STATUSES, isAwaitingClockIn, unwrapTechs, unwrapWorkOrders } from '@/lib/workOrderList';
+import { orderWaitingJobs, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { ManagerQueuePhone } from '@/components/mobile/ManagerPhone';
 
@@ -67,16 +68,14 @@ export default function AssignmentsPage() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const statusQuery = OPEN_WORK_ORDER_STATUSES.join(',');
-
       const [woResponse, techResponse] = await Promise.all([
-        fetch(`/api/workorders?limit=100&status=${encodeURIComponent(statusQuery)}`, { headers }),
+        fetch(`/api/workorders?${waitingJobsQuery({ statuses: OPEN_WORK_ORDER_STATUSES })}`, { headers }),
         fetch('/api/techs', { headers }),
       ]);
 
       if (woResponse.ok) {
         const woData = await woResponse.json();
-        setWorkOrders(unwrapWorkOrders(woData));
+        setWorkOrders(orderWaitingJobs(unwrapWorkOrders(woData)));
       } else {
         setWorkOrders([]);
         setLoadError('Could not load work orders.');

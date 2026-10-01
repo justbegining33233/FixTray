@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { fetchShopAgreementAccepted } from '@/lib/fixtrayAgreement';
+import { waitingJobsQuery } from '@/lib/waitingJobQueue';
 import {
   FaBox,
   FaBuilding,
@@ -338,7 +339,7 @@ export default function ShopAdminPage() {
     setLoadingWorkOrders(true);
     try {
       const token = localStorage.getItem('token');
-      const url = `/api/workorders?shopId=${id}&status=pending&limit=20${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`;
+      const url = `/api/workorders?shopId=${id}&${waitingJobsQuery({ statuses: ['pending'] })}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`;
       const response = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

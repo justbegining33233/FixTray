@@ -13,6 +13,7 @@ import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { isRoadsideLocation } from '@/lib/waitingRoomBoard';
+import { orderWaitingJobs, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { TechHomePhone } from '@/components/mobile/TechPhone';
 import { FaArrowRight, FaBook, FaBox, FaCamera, FaCar, FaChartBar, FaCheckCircle, FaCircle, FaClipboardList, FaCog, FaComments, FaExclamationCircle, FaMapMarkerAlt, FaRegCircle, FaSearch, FaStopwatch, FaSyncAlt, FaTools, FaUser, FaWrench } from 'react-icons/fa';
 
@@ -129,13 +130,14 @@ export default function TechHome() {
   const fetchTodayJobs = async (techId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/workorders?assignedTo=${techId}&status=in-progress,assigned`, {
+      const query = waitingJobsQuery({ assignedTo: techId, statuses: ['in-progress', 'assigned'] });
+      const response = await fetch(`/api/workorders?${query}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
       if (response.ok) {
         const { workOrders } = await response.json();
-        setTodayJobs(workOrders || []);
+        setTodayJobs(orderWaitingJobs(workOrders || []));
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -727,7 +729,8 @@ export default function TechHome() {
                               const token = localStorage.getItem('token');
                               const shopId = user?.shopId;
                               if (!shopId) { setHomeMsg({type:'error',text:'No shopId'}); return; }
-                              const res = await fetch(`/api/workorders?shopId=${shopId}&status=assigned,in-progress`, { headers: { Authorization: `Bearer ${token}` } });
+                              const query = waitingJobsQuery({ statuses: ['assigned', 'in-progress'] });
+                              const res = await fetch(`/api/workorders?shopId=${shopId}&serviceLocation=roadside&${query}`, { headers: { Authorization: `Bearer ${token}` } });
                               if (!res.ok) { setHomeMsg({type:'error',text:'Failed to fetch road calls'}); return; }
                               const data = await res.json();
                               const wos = (data.workOrders || []).filter((wo: any) => isRoadsideLocation(wo.serviceLocation));

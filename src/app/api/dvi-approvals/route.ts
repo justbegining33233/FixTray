@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { dviApprovalStatus, notesWithoutNextDue, readNextInspectionDue, vehicleLabel } from '@/lib/dviApproval';
+import { isOptionalInspectionRecord } from '@/lib/optionalInspection';
 
 function toApproval(row: {
   id: string;
@@ -37,13 +38,13 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const shopId = auth.role === 'shop' ? auth.id : auth.role === 'manager' ? auth.shopId : undefined;
 
-    const rows = await prisma.dVIInspection.findMany({
+    const rows = (await prisma.dVIInspection.findMany({
       where: shopId ? { shopId } : undefined,
       orderBy: { createdAt: 'desc' },
       take: 200,
-    });
+    })).filter((row: { status: string }) => !isOptionalInspectionRecord(row.status));
 
-    const approvals = rows.map(toApproval).filter((row) => {
+    const approvals = rows.map(toApproval).filter((row: { approvalStatus: string }) => {
       if (pending || status === 'pending') return row.approvalStatus === 'pending';
       if (status === 'approved' || status === 'rejected') return row.approvalStatus === status;
       return true;

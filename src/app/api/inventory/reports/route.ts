@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { usageQuantityFromOrders } from '@/lib/partStockUse';
 
 interface PartUsage {
   name?: string;
   sku?: string;
   quantity?: number;
   unitPrice?: number;
+  inventoryItemId?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -28,12 +30,10 @@ export async function GET(request: NextRequest) {
     });
 
     const workOrders = await prisma.workOrder.findMany({
-      where: {
-        shopId,
-        status: { in: ['waiting-for-payment', 'closed'] },
-      },
+      where: { shopId },
       select: {
         id: true,
+        status: true,
         createdAt: true,
         updatedAt: true,
         partsUsed: true,
@@ -44,9 +44,12 @@ export async function GET(request: NextRequest) {
 
     for (const order of workOrders) {
       const parts = Array.isArray(order.partsUsed) ? (order.partsUsed as unknown as PartUsage[]) : [];
+      const closed = order.status === 'closed' || order.status === 'waiting-for-payment';
       for (const part of parts) {
         const qty = Number(part.quantity) || 0;
         if (qty <= 0) continue;
+        const linked = typeof part.inventoryItemId === 'string' && part.inventoryItemId.trim().length > 0;
+        if (!linked && !closed) continue;
         const key = part.sku || part.name || 'unknown';
         const existing = usageMap.get(key) || {
           key,
@@ -93,7 +96,7 @@ export async function GET(request: NextRequest) {
       totalItems: stockLevels.length,
       lowStockItems: reorderRecommendations.length,
       totalInventoryValue: Number(stockLevels.reduce((sum, item) => sum + item.inventoryValue, 0).toFixed(2)),
-      totalUsageQuantity: usageStats.reduce((sum, item) => sum + item.quantity, 0),
+      totalUsageQuantity: usageQuantityFromOrders(workOrders),
       totalUsageValue: Number(usageStats.reduce((sum, item) => sum + item.totalValue, 0).toFixed(2)),
     };
 

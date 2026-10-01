@@ -4,6 +4,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import { FaStore } from 'react-icons/fa';
+import { waitingJobsQuery } from '@/lib/waitingJobQueue';
 
 interface WorkOrder {
   id: string;
@@ -68,7 +69,7 @@ export default function ShopBaysCard({ shopId }: ShopBaysCardProps) {
       setCapacity(shopCapacity);
 
       // Fetch active work orders with bay assignments
-      const workOrdersRes = await fetch(`/api/workorders?shopId=${shopId}&status=in_progress&status=pending&limit=100`, {
+      const workOrdersRes = await fetch(`/api/workorders?shopId=${shopId}&${waitingJobsQuery({ statuses: ['pending', 'in-progress'] })}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

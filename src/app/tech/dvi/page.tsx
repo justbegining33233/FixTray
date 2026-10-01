@@ -1,9 +1,13 @@
 'use client';
 import { usePhrase } from '@/lib/usePhrase';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
+import { useSearchParams } from 'next/navigation';
 import useRequireAuth from '@/lib/useRequireAuth';
-import { FaCheckCircle, FaClipboardList, FaWrench } from 'react-icons/fa';
+import { uploadChatImage } from '@/lib/uploadChatImage';
+import { shortWorkOrderLabel } from '@/lib/notificationCopy';
+import { FaCamera, FaCheckCircle, FaWrench } from 'react-icons/fa';
 
 const INSPECTION_TEMPLATE = [
   { category: 'Engine', itemName: 'Engine Oil Level & Condition' },
@@ -54,26 +58,48 @@ const conditionStyle: Record<Condition, { bg: string; border: string }> = {
 
 export default function TechDVIPage() {
   const say = usePhrase();
+  const searchParams = useSearchParams();
   const { user, isLoading } = useRequireAuth(['tech']);
   const [vehicleDesc, setVehicleDesc] = useState('');
   const [mileage, setMileage] = useState('');
   const [workOrderId, setWorkOrderId] = useState('');
+  const [comment, setComment] = useState('');
+  const [pictures, setPictures] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [items, setItems] = useState<InspectionItem[]>(
     INSPECTION_TEMPLATE.map(t => ({ ...t, condition: 'green', notes: '', estimatedCost: '' }))
   );
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [inspectionLink, setInspectionLink] = useState('');
+  const [saved, setSaved] = useState<'done' | 'skipped' | null>(null);
   const [activeCategory, setActiveCategory] = useState('Engine');
   const [dviError, setDviError] = useState('');
   const categories = [...new Set(INSPECTION_TEMPLATE.map(t => t.category))];
+
+  useEffect(() => {
+    const fromJob = searchParams.get('workOrderId') || '';
+    const vehicle = searchParams.get('vehicle') || '';
+    if (fromJob) setWorkOrderId(fromJob);
+    if (vehicle) setVehicleDesc(vehicle);
+  }, [searchParams]);
 
   const updateItem = (idx: number, field: keyof InspectionItem, value: string) => {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
   };
 
-  const submit = async () => {
-    if (!vehicleDesc) { setDviError('Please enter vehicle description.'); return; }
+  const postInspection = async (skip: boolean) => {
+    if (!vehicleDesc.trim() && !workOrderId.trim()) {
+      setDviError('Enter a vehicle or choose a work order.');
+      return;
+    }
+    if (skip && !workOrderId.trim()) {
+      setDviError('Open this from the work order to skip that inspection.');
+      return;
+    }
+    if (!skip && !comment.trim() && pictures.length === 0) {
+      setDviError('Add a comment or a picture, or skip the inspection.');
+      return;
+    }
+    setDviError('');
     setSaving(true);
     const token = localStorage.getItem('token');
     const r = await fetch('/api/dvi', {
@@ -83,24 +109,36 @@ export default function TechDVIPage() {
         vehicleDesc,
         mileage: mileage ? Number(mileage) : null,
         workOrderId: workOrderId || null,
-        items: items.map(i => ({ ...i, estimatedCost: i.estimatedCost ? Number(i.estimatedCost) : null })),
+        comment: skip ? '' : comment,
+        photoUrls: skip ? [] : pictures,
+        recordFindings: !skip,
+        skip,
+        items: skip ? [] : items.map(i => ({ ...i, estimatedCost: i.estimatedCost ? Number(i.estimatedCost) : null })),
       }),
     });
+    const data = await r.json().catch(() => ({}));
     if (r.ok) {
-      const data = await r.json();
-      setSaved(true);
-      if (data.approvalToken) setInspectionLink(`${window.location.origin}/customer/dvi/${data.approvalToken}`);
+      if (typeof data.workOrderId === 'string' && data.workOrderId) setWorkOrderId(data.workOrderId);
+      const status = String(data.status || '');
+      if (skip && status !== 'skipped') {
+        setDviError('This inspection was already done, so it was left as it is.');
+      } else {
+        setSaved(status === 'skipped' ? 'skipped' : 'done');
+      }
+    } else {
+      setDviError(data.error || 'Could not save the inspection.');
     }
     setSaving(false);
   };
 
-  const _sendToCustomer = async (id: string) => {
-    const token = localStorage.getItem('token');
-    await fetch(`/api/dvi/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ _action: 'send' }),
-    });
+  const addPicture = async (file: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    setDviError('');
+    const result = await uploadChatImage(file);
+    if ('error' in result) setDviError(result.error);
+    else setPictures((prev) => prev.includes(result.url) ? prev : [...prev, result.url]);
+    setUploading(false);
   };
 
   if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
@@ -108,17 +146,17 @@ export default function TechDVIPage() {
 
   if (saved) return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui,sans-serif' }}>
-      <div style={{ textAlign: 'center', maxWidth: 480 }}>
+      <div style={{ textAlign: 'center', maxWidth: 520, padding: 24 }}>
         <div style={{ fontSize: 72, marginBottom: 16 }}><FaCheckCircle style={{marginRight:4}} /></div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 8px' }}>{say("DVI Submitted!")}</h2>
-        <p style={{ color: '#9ca3af', marginBottom: 24 }}>{say("The inspection has been saved. Share the link below with the customer so they can review and approve recommended services.")}</p>
-        {inspectionLink && (
-          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 14, marginBottom: 20, wordBreak: 'break-all', fontSize: 13 }}>{say(inspectionLink)}</div>
-        )}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          {inspectionLink && <button onClick={() => { navigator.clipboard.writeText(inspectionLink); }} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}><FaClipboardList style={{marginRight:4}} /> {say("Copy Link")}</button>}
-          <button onClick={() => { setSaved(false); setVehicleDesc(''); setMileage(''); setWorkOrderId(''); setItems(INSPECTION_TEMPLATE.map(t => ({ ...t, condition: 'green', notes: '', estimatedCost: '' }))); }} style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 20px', fontSize: 14, cursor: 'pointer' }}>{say("New Inspection")}</button>
-          <Link href="/tech/dvi" style={{ background: '#e5332a', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>{say("View All DVIs")}</Link>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 8px' }}>{saved === 'skipped' ? say("Inspection skipped") : say("Inspection saved")}</h2>
+        <p style={{ color: '#9ca3af', marginBottom: 24 }}>
+          {saved === 'skipped'
+            ? say("This is not a pass or a fail. The job is not held, so you can start the work.")
+            : say("Your comment and pictures were posted to the customer messages for this job. The shop can add lines and labor from those findings.")}
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {workOrderId && <Link href={`/workorders/${workOrderId}` as Route} style={{ background: '#e5332a', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{say("Back to the job")}</Link>}
+          <button onClick={() => { setSaved(null); setComment(''); setPictures([]); }} style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 20px', fontSize: 14, cursor: 'pointer' }}>{say("Stay on this inspection")}</button>
         </div>
       </div>
     </div>
@@ -134,7 +172,7 @@ export default function TechDVIPage() {
     <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}><FaWrench style={{marginRight:4}} /> {say("Digital Vehicle Inspection")}</h1>
-        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 13 }}>{say("Rate each item green/yellow/red and add notes for any concerns")}</p>
+        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 13 }}>{say("Optional, before you start the work. Do it, or skip it. There is no required pass or fail.")}</p>
       </div>
 
       <div style={{ padding: '24px 28px', maxWidth: 800 }}>
@@ -143,7 +181,7 @@ export default function TechDVIPage() {
           <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>{say("Vehicle Information")}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <div>
-              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say("Vehicle *")}</label>
+              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say("Vehicle")}</label>
               <input placeholder={say("2019 Toyota Camry")} value={vehicleDesc} onChange={e => setVehicleDesc(e.target.value)}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
             </div>
@@ -153,9 +191,10 @@ export default function TechDVIPage() {
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
             </div>
             <div>
-              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say("Work Order ID")}</label>
-              <input placeholder={say("WO-001")} value={workOrderId} onChange={e => setWorkOrderId(e.target.value)}
+              <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 5 }}>{say("Work order")}</label>
+              <input placeholder={say("WO-R780NGUQ")} value={workOrderId} onChange={e => setWorkOrderId(e.target.value)}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '9px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box' }} />
+              {workOrderId && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{say(shortWorkOrderLabel(workOrderId) || workOrderId)}</div>}
             </div>
           </div>
         </div>
@@ -216,11 +255,40 @@ export default function TechDVIPage() {
           ))}
         </div>
 
+        <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 15 }}>{say("Pictures and comment")}</h3>
+          <p style={{ margin: '0 0 12px', color: '#9ca3af', fontSize: 13 }}>{say("These are posted to the customer messages for this job. The checklist below is optional and is not a pass or a fail.")}</p>
+          <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder={say("What did you see, or what should the customer know about the pictures?")} rows={4}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 12px', color: '#e5e7eb', fontSize: 14, boxSizing: 'border-box', marginBottom: 12 }} />
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontSize: 13 }}>
+            <FaCamera /> {uploading ? say("Uploading...") : say("Take or choose a picture")}
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }} disabled={uploading}
+              onChange={e => { void addPicture(e.target.files?.[0] || null); e.target.value = ''; }} />
+          </label>
+          {pictures.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+              {pictures.map((url) => (
+                <div key={url} style={{ position: 'relative' }}>
+                  <img src={url} alt="" style={{ width: 88, height: 66, objectFit: 'cover', borderRadius: 8 }} />
+                  <button type="button" onClick={() => setPictures((prev) => prev.filter((item) => item !== url))}
+                    style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', border: 'none', background: '#e5332a', color: '#fff', cursor: 'pointer' }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {dviError && <p style={{color:'#ef4444',fontSize:13,margin:'0 0 12px',fontWeight:600}}>{say(dviError)}</p>}
-        <button onClick={submit} disabled={saving}
-          style={{ width: '100%', background: '#e5332a', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 0', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-          {saving ? say("Submitting...") : <><FaCheckCircle style={{marginRight:4}} /> {say("Submit Inspection")}</>}
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button onClick={() => { void postInspection(false); }} disabled={saving}
+            style={{ flex: 1, minWidth: 180, background: '#e5332a', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 12px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+            {saving ? say("Saving...") : say("Save inspection")}
+          </button>
+          <button onClick={() => { void postInspection(true); }} disabled={saving}
+            style={{ flex: 1, minWidth: 180, background: 'transparent', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '14px 12px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+            {say("Skip inspection")}
+          </button>
+        </div>
       </div>
     </div>
   );

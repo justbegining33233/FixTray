@@ -19,6 +19,8 @@ import ChatMessageBody from '@/components/ChatMessageBody';
 import { uploadChatImage } from '@/lib/uploadChatImage';
 import { captureNativePhotoFile } from '@/lib/nativePhoto';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
+import { shopInspectionLabel, vehicleText } from '@/lib/optionalInspection';
+import type { Route } from 'next';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { WorkOrderPhone } from '@/components/mobile/WorkOrderPhone';
@@ -234,6 +236,9 @@ export default function WorkOrderDetailPage() {
   const [clockLoading, setClockLoading] = useState(false);
   const [clockMsg,     setClockMsg]     = useState('');
   const [clockTimer,   setClockTimer]   = useState('');
+  const [inspectionStatus, setInspectionStatus] = useState('none');
+  const [inspectionBusy, setInspectionBusy] = useState(false);
+  const [inspectionError, setInspectionError] = useState('');
 
   // Load work order + read userRole/userId/shopId from localStorage
   useEffect(() => {
@@ -298,6 +303,18 @@ export default function WorkOrderDetailPage() {
         .catch(() => {});
     }
   }, [id]);
+
+  useEffect(() => {
+    if (userRole !== 'tech' || !id) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    fetch('/api/dvi', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((rows) => {
+        const match = (Array.isArray(rows) ? rows : []).find((row: { workOrderId?: string }) => row.workOrderId === id);
+        setInspectionStatus(match?.status || 'none');
+      })
+      .catch(() => undefined);
+  }, [userRole, id]);
 
   // Scroll messages to bottom when new ones arrive
   useEffect(() => {
@@ -659,6 +676,34 @@ export default function WorkOrderDetailPage() {
   const thStyle: React.CSSProperties = { fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', padding: '4px 6px', textAlign: 'left' };
   const tdStyle: React.CSSProperties = { padding: '4px 4px', verticalAlign: 'middle' };
 
+  const startInspection = () => {
+    const vehicle = vehicleText(wo);
+    const query = new URLSearchParams({ workOrderId: wo.id });
+    if (vehicle) query.set('vehicle', vehicle);
+    router.push(`/tech/dvi?${query.toString()}` as Route);
+  };
+
+  const skipInspection = async () => {
+    if (inspectionBusy) return;
+    setInspectionBusy(true);
+    setInspectionError('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const response = await fetch('/api/dvi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ skip: true, workOrderId: wo.id, vehicleDesc: vehicleText(wo) || undefined }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) setInspectionError(data.error || 'Could not skip the inspection.');
+      else setInspectionStatus(String(data.status || 'skipped'));
+    } catch {
+      setInspectionError('Could not skip the inspection.');
+    } finally {
+      setInspectionBusy(false);
+    }
+  };
+
   if (isMobile) {
     return (
       <WorkOrderPhone
@@ -674,6 +719,11 @@ export default function WorkOrderDetailPage() {
         paidDisabled={!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid'}
         invoiceLabel={closeoutBusy === 'invoice' ? say('Requesting…') : say('Invoice / Request payment')}
         paidLabel={closeoutBusy === 'paid' ? say('Saving…') : say('Mark paid')}
+        inspectionStatus={userRole === 'tech' ? inspectionStatus : undefined}
+        onStartInspection={userRole === 'tech' ? startInspection : undefined}
+        onSkipInspection={userRole === 'tech' ? () => { void skipInspection(); } : undefined}
+        inspectionBusy={inspectionBusy}
+        inspectionError={inspectionError}
       />
     );
   }
@@ -748,6 +798,36 @@ export default function WorkOrderDetailPage() {
             </div>
           </Card>
         </div>
+
+        {userRole === 'tech' && (
+          <div style={{ marginTop: 16 }}>
+            <Card title={say("Inspection")} icon={<FaSearch />}>
+              <p style={{ margin: '0 0 12px', fontSize: 13, color: '#9aa3b2', lineHeight: 1.5 }}>
+                {say("Optional, before you start the work. You can do it or skip it. Skipping does not hold the job and does not record a pass or a fail.")}
+              </p>
+              {inspectionStatus !== 'none' && (
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>{say(shopInspectionLabel(inspectionStatus))}</div>
+              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button type="button" onClick={startInspection}
+                  style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer' }}>
+                  {say("Start inspection")}
+                </button>
+                <button type="button" onClick={() => { void skipInspection(); }} disabled={inspectionBusy || (inspectionStatus !== 'none' && inspectionStatus !== 'in-progress')}
+                  style={{ background: 'transparent', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer' }}>
+                  {inspectionBusy ? say("Saving…") : say("Skip inspection")}
+                </button>
+              </div>
+              {inspectionStatus === 'skipped' && (
+                <p style={{ margin: '10px 0 0', fontSize: 13, color: '#d1d5db' }}>{say("Skipped. You can start the work.")}</p>
+              )}
+              {inspectionStatus === 'done' && (
+                <p style={{ margin: '10px 0 0', fontSize: 13, color: '#d1d5db' }}>{say("Done. The comment and pictures are in the customer messages for this job.")}</p>
+              )}
+              {inspectionError && <div style={{ marginTop: 8, fontSize: 13, color: '#fca5a5' }}>{say(inspectionError)}</div>}
+            </Card>
+          </div>
+        )}
 
         {(userRole === 'tech' || userRole === 'manager') && (
           <TurnByTurnPanel workOrderId={wo.id} />

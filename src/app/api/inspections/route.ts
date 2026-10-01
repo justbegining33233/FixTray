@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
+import { dviInspectionListStatus } from '@/lib/optionalInspection';
 
 export async function GET(req: NextRequest) {
   const auth = authenticateRequest(req);
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
       ...dviInspections.map(d => ({
         id: d.id,
         vehicleInfo: d.vehicleDesc || 'Unknown Vehicle',
-        status: d.status === 'approved' ? 'passed' : d.status === 'declined' ? 'failed' : 'pending',
+        status: dviInspectionListStatus(d.status),
         date: d.createdAt.toISOString(),
         inspector: d.techId || 'Unassigned',
         notes: d.notes || undefined,

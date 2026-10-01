@@ -12,6 +12,7 @@ import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
 import { hasWorkOrderFieldUpdates, legacyMessagesToStore, workOrderDirectMessage } from '@/lib/workOrderMessagePersist';
+import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 import { decorateWorkOrderMessages, resolveAccountLocale, stampOutgoingTranslation } from '@/lib/chatTranslationStore';
 
 export async function GET(
@@ -410,6 +411,7 @@ export async function PUT(
     // Auto-deduct inventory when a work order is closed with parts usage.
     const partsUsed = (Array.isArray(data.partsUsed) ? data.partsUsed : []) as any[];
     if (data.status === 'closed' && current.status !== 'closed' && partsUsed.length > 0) {
+      const touchedStock: Array<{ id: string; name: string; quantity: number; reorderPoint: number | null }> = [];
       try {
         await prisma.$transaction(async (tx) => {
           for (const part of partsUsed) {
@@ -429,14 +431,26 @@ export async function PUT(
 
             if (!inventoryItem) continue;
 
+            const quantity = Math.max(0, inventoryItem.quantity - qty);
             await tx.inventoryItem.update({
               where: { id: inventoryItem.id },
-              data: {
-                quantity: Math.max(0, inventoryItem.quantity - qty),
-              },
+              data: { quantity },
+            });
+            touchedStock.push({
+              id: inventoryItem.id,
+              name: inventoryItem.name,
+              quantity,
+              reorderPoint: inventoryItem.reorderPoint,
             });
           }
         });
+        if (touchedStock.length > 0) {
+          try {
+            await syncLowStockReorderAsks(current.shopId, touchedStock);
+          } catch (err) {
+            logger.error('Failed to ask manager about low stock', { error: err instanceof Error ? err.message : String(err), workOrderId: id, shopId: current.shopId });
+          }
+        }
       } catch (err) {
         logger.error('Failed to deduct inventory for closed work order', { error: err instanceof Error ? err.message : String(err), workOrderId: id, shopId: current.shopId });
       }

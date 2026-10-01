@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 
 // GET /api/inventory/shared — view inventory across multiple shops
 export async function GET(request: NextRequest) {
@@ -107,6 +108,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Insufficient stock. Available: ${sourceItem.quantity}` }, { status: 400 });
     }
 
+    const sourceRemaining = sourceItem.quantity - quantity;
+
     // Deduct from source
     await prisma.inventoryItem.update({
       where: { id: itemId },
@@ -117,6 +120,7 @@ export async function POST(request: NextRequest) {
     let targetItem = await prisma.inventoryItem.findFirst({
       where: { shopId: toShopId, name: sourceItem.name, sku: sourceItem.sku },
     });
+    const targetQuantity = (targetItem?.quantity || 0) + quantity;
 
     if (targetItem) {
       await prisma.inventoryItem.update({
@@ -136,6 +140,23 @@ export async function POST(request: NextRequest) {
           rate: sourceItem.rate,
         },
       });
+    }
+
+    try {
+      await syncLowStockReorderAsks(fromShopId, [{
+        id: sourceItem.id,
+        name: sourceItem.name,
+        quantity: sourceRemaining,
+        reorderPoint: sourceItem.reorderPoint,
+      }]);
+      await syncLowStockReorderAsks(toShopId, [{
+        id: targetItem.id,
+        name: targetItem.name,
+        quantity: targetQuantity,
+        reorderPoint: targetItem.reorderPoint,
+      }]);
+    } catch (error) {
+      console.error('Failed to ask manager about low stock:', error);
     }
 
     // Log the transfer as an activity

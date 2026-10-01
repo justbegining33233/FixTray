@@ -6,6 +6,7 @@ import { validateRequest, inventoryUpdateSchema } from '@/lib/validation';
 import logger from '@/lib/logger';
 import { sanitizeObject } from '@/lib/sanitize';
 import { normalizeInventoryType, optionalInventoryText } from '@/lib/inventoryItem';
+import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 
 // GET - Get single inventory item
 export async function GET(
@@ -114,6 +115,12 @@ export async function PUT(
         notes: optionalInventoryText(data.notes),
       },
     });
+
+    try {
+      await syncLowStockReorderAsks(updated.shopId, [updated]);
+    } catch (error) {
+      console.error('Failed to ask manager about low stock:', error);
+    }
 
     return NextResponse.json({ item: updated });
   } catch (error) {

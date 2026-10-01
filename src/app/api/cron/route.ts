@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendSms } from '@/lib/smsService';
 import { sendEmail, sendLowStockAlert } from '@/lib/emailService';
+import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 import { APPOINTMENT_OPEN_STATUSES, APPOINTMENT_OVERDUE_GRACE_MS } from '@/lib/appointmentValidation';
 
 // Cron secret to prevent unauthorized access
@@ -175,6 +176,19 @@ export async function GET(request: NextRequest) {
       }
       alertCount++;
     }
+
+    const stockByShop = new Map<string, typeof lowStockItems>();
+    for (const item of lowStockItems) {
+      const rows = stockByShop.get(item.shopId) || [];
+      rows.push(item);
+      stockByShop.set(item.shopId, rows);
+    }
+    for (const [shopId, rows] of stockByShop) {
+      await syncLowStockReorderAsks(shopId, rows).catch((error) => {
+        console.error('Failed to ask manager about low stock:', error);
+      });
+    }
+
     results.lowStockAlerts = { shopsNotified: alertCount, totalLowItems: needsReorder.length };
   } catch (error) {
     console.error('Low stock alerts error:', error);

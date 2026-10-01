@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { WorkOrder } from '../../../types/workorder';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { orderWaitingJobs, WAITING_FOR_WORK_STATUSES, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { workOrderTitle } from '@/lib/workOrderMetrics';
 import NotificationBell from '../../../components/NotificationBell';
 import { useRequireAuth } from '../../../contexts/AuthContext';
@@ -33,7 +34,7 @@ function TechPortalEnhancedContent() {
   const fetchWorkOrders = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/workorders', {
+      const res = await fetch(`/api/workorders?${waitingJobsQuery({ statuses: WAITING_FOR_WORK_STATUSES })}`, {
         credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -78,6 +79,7 @@ function TechPortalEnhancedContent() {
         : '';
     return !assignee || assignee === user.id || raw.assignedTechId === user.id || assignee === techName;
   });
+  const visibleJobs = orderWaitingJobs(assigned);
 
   return (
     <div className="sos-wrap">
@@ -126,7 +128,7 @@ function TechPortalEnhancedContent() {
           </div>
 
           <div className="sos-pane" style={{padding:28}}>
-            {activeTab === 'assignments' && <AssignmentsTab workOrders={assigned} onRefresh={fetchWorkOrders} />}
+            {activeTab === 'assignments' && <AssignmentsTab workOrders={visibleJobs} onRefresh={fetchWorkOrders} />}
             {activeTab === 'location' && <LocationTab location={location} techName={techName} />}
             {activeTab === 'messages' && <MessagesTab techName={techName} />}
             {activeTab === 'photos' && <PhotosTab />}

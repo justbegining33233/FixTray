@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '../../../contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { orderWaitingJobs, WAITING_FOR_WORK_STATUSES, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { workOrderTitle } from '@/lib/workOrderMetrics';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { formatEstimateMoney } from '@/lib/estimateMoney';
@@ -69,13 +70,13 @@ function ManagerEstimatesContent() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const listRes = await fetch('/api/workorders?limit=100', { headers });
+      const listRes = await fetch(`/api/workorders?${waitingJobsQuery({ statuses: WAITING_FOR_WORK_STATUSES })}`, { headers });
       if (listRes.ok) {
         const listData = await listRes.json();
         rememberFee(listData.fixtrayServiceFee);
-        const open = unwrapWorkOrders(listData).filter((wo: any) =>
+        const open = orderWaitingJobs(unwrapWorkOrders(listData).filter((wo: any) =>
           !['closed', 'cancelled', 'completed'].includes(String(wo.status || ''))
-        );
+        ));
         setWorkOrders(open);
 
         const preferredId = workOrderId || selectedWorkOrderId || open[0]?.id || '';

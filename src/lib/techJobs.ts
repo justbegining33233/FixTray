@@ -1,3 +1,5 @@
+import { orderWaitingJobs } from './waitingJobQueue';
+
 const CLOSED = new Set(['closed', 'completed', 'cancelled', 'canceled', 'paid']);
 
 export function isClosedJobStatus(status: unknown): boolean {
@@ -10,16 +12,17 @@ export function techOwnsJob(order: { assignedTechId?: string | null; assignedTo?
   return order?.assignedTo?.id === techId;
 }
 
-export function filterTechJobs<T extends { assignedTechId?: string | null; assignedTo?: { id?: string | null } | null; status?: unknown }>(
+export function filterTechJobs<T extends { assignedTechId?: string | null; assignedTo?: { id?: string | null } | null; status?: unknown; createdAt?: unknown }>(
   orders: T[],
   techId: string,
   view: 'active' | 'history',
 ): T[] {
-  return orders.filter((order) => {
+  const mine = orders.filter((order) => {
     if (!techOwnsJob(order, techId)) return false;
     const closed = isClosedJobStatus(order.status);
     return view === 'history' ? closed : !closed;
   });
+  return view === 'history' ? mine : orderWaitingJobs(mine);
 }
 
 export function techJobsHref(view: 'active' | 'history'): string {

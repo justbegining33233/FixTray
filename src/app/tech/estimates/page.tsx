@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import { FaClipboardList } from 'react-icons/fa';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
+import { orderWaitingJobs, WAITING_FOR_WORK_STATUSES, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { issueSummary } from '@/lib/waitingRoomBoard';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 import Sidebar from '@/components/Sidebar';
@@ -37,13 +38,13 @@ export default function TechEstimatesPage() {
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('token');
-    fetch('/api/workorders?limit=100', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`/api/workorders?${waitingJobsQuery({ statuses: WAITING_FOR_WORK_STATUSES })}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => response.ok ? response.json() : Promise.reject())
       .then((data) => {
         if (typeof data?.fixtrayServiceFee === 'number' && Number.isFinite(data.fixtrayServiceFee)) {
           setServiceFeeUsd(data.fixtrayServiceFee);
         }
-        const open = unwrapWorkOrders(data).filter((wo) => !CLOSED.has(String(wo.status || ''))) as TechJob[];
+        const open = orderWaitingJobs(unwrapWorkOrders(data).filter((wo) => !CLOSED.has(String(wo.status || '')))) as TechJob[];
         setJobs(open);
       })
       .catch(() => setError('Unable to load work orders for this shop.'))

@@ -8,6 +8,7 @@ import type { Route } from 'next';
 import { FaPlus, FaRoad } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { portalDashboardHref, techJobCreateHref } from '@/lib/portalHome';
+import { orderWaitingJobs, WAITING_FOR_WORK_STATUSES, waitingJobsQuery } from '@/lib/waitingJobQueue';
 
 type RoadsideJob = {
   id: string;
@@ -69,7 +70,7 @@ export default function RoadsideJobsQueuePage() {
       setLoadError('');
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/workorders?limit=100&serviceLocation=roadside', {
+        const response = await fetch(`/api/workorders?serviceLocation=roadside&${waitingJobsQuery({ statuses: WAITING_FOR_WORK_STATUSES })}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           cache: 'no-store',
         });
@@ -78,7 +79,7 @@ export default function RoadsideJobsQueuePage() {
           return;
         }
         const data = await response.json();
-        if (!cancelled) setJobs(Array.isArray(data.workOrders) ? data.workOrders : []);
+        if (!cancelled) setJobs(orderWaitingJobs(Array.isArray(data.workOrders) ? data.workOrders : []));
       } catch {
         if (!cancelled) setLoadError('Could not load roadside jobs.');
       } finally {
@@ -111,7 +112,7 @@ export default function RoadsideJobsQueuePage() {
             <h1 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 8px' }}>
               <FaRoad style={{ marginRight: 8 }} />
               {say("Roadside Jobs")}{' '}</h1>
-            <p style={{ margin: 0, color: '#9aa3b2' }}>{say("Open and recent roadside work orders for this shop.")}</p>
+            <p style={{ margin: 0, color: '#9aa3b2' }}>{say("Open roadside work orders, oldest waiting job first.")}</p>
           </div>
           <Link
             href={newHref}

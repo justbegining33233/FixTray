@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { filterTechJobs, techJobsHref } from '@/lib/techJobs';
+import { WAITING_FOR_WORK_STATUSES, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { workOrderTitle } from '@/lib/workOrderMetrics';
 import { FaArrowLeft, FaClipboardList } from 'react-icons/fa';
 
@@ -19,7 +20,7 @@ function TechWorkOrders() {
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('token');
-    fetch('/api/workorders?limit=100', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    fetch(`/api/workorders?${waitingJobsQuery({ assignedTo: user.id, statuses: WAITING_FOR_WORK_STATUSES })}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to load work orders'))))
       .then((data) => setOrders(unwrapWorkOrders(data)))
       .catch(() => setError('Could not load work orders.'))

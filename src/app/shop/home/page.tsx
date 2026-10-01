@@ -16,6 +16,7 @@ import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { ACTIVE_WORK_ORDER_STATUSES } from '@/lib/workOrderMetrics';
+import { waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { unwrapWorkOrders } from '@/lib/workOrderList';
 import { ShopOpsPhone } from '@/components/mobile/ShopPhone';
 
@@ -111,7 +112,7 @@ export default function ShopHome() {
 
     let generation = 0;
     let alive = true;
-    const inServiceStatuses = ACTIVE_WORK_ORDER_STATUSES.filter((status) => status !== 'pending').join(',');
+    const inServiceStatuses = ACTIVE_WORK_ORDER_STATUSES.filter((status) => status !== 'pending');
 
     const fetchDashboard = async () => {
       const gen = ++generation;
@@ -119,7 +120,7 @@ export default function ShopHome() {
         const [statsRes, finRes, activeWoRes, teamRes, scheduleRes] = await Promise.all([
           fetch(`/api/shop/workorder-stats?shopId=${id}`, { headers }),
           fetch(`/api/shop/financial-summary?shopId=${id}`, { headers }),
-          fetch(`/api/workorders?limit=100&status=${encodeURIComponent(inServiceStatuses)}`, { headers }),
+          fetch(`/api/workorders?${waitingJobsQuery({ statuses: inServiceStatuses })}`, { headers }),
           fetch(`/api/shop/team?shopId=${id}`, { headers }),
           fetch('/api/shop/schedule', { headers }),
         ]);

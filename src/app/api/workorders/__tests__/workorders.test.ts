@@ -333,4 +333,40 @@ describe('GET /api/workorders', () => {
     const whereArg = (prisma.workOrder.findMany as jest.Mock).mock.calls[0][0].where;
     expect(whereArg.customerId).toBe('cust-001');
   });
+
+  it('keeps an unfiltered list newest first', async () => {
+    (prisma.workOrder.count as jest.Mock).mockResolvedValue(0);
+    (prisma.workOrder.findMany as jest.Mock).mockResolvedValue([]);
+    const token = makeToken({ id: 'shop-001', role: 'shop' });
+    const res = await listWorkOrders(makeGetRequest('http://localhost/api/workorders', token));
+    expect(res.status).toBe(200);
+    const args = (prisma.workOrder.findMany as jest.Mock).mock.calls[0][0];
+    expect(args.orderBy).toEqual({ createdAt: 'desc' });
+    expect(args.where.assignedTechId).toBeUndefined();
+  });
+
+  it('orders a waiting-status list oldest first', async () => {
+    (prisma.workOrder.count as jest.Mock).mockResolvedValue(0);
+    (prisma.workOrder.findMany as jest.Mock).mockResolvedValue([]);
+    const token = makeToken({ id: 'shop-001', role: 'shop' });
+    const res = await listWorkOrders(makeGetRequest('http://localhost/api/workorders?status=assigned,in-progress', token));
+    expect(res.status).toBe(200);
+    const args = (prisma.workOrder.findMany as jest.Mock).mock.calls[0][0];
+    expect(args.orderBy).toEqual({ createdAt: 'asc' });
+    expect(args.where.status).toEqual({ in: ['assigned', 'in-progress'] });
+  });
+
+  it('filters assignedTo before the page is taken', async () => {
+    (prisma.workOrder.count as jest.Mock).mockResolvedValue(1);
+    (prisma.workOrder.findMany as jest.Mock).mockResolvedValue([]);
+    const token = makeToken({ id: 'tech-1', role: 'tech', shopId: 'shop-001' });
+    const res = await listWorkOrders(makeGetRequest('http://localhost/api/workorders?assignedTo=tech-2&status=assigned&limit=20', token));
+    expect(res.status).toBe(200);
+    const args = (prisma.workOrder.findMany as jest.Mock).mock.calls[0][0];
+    expect(args.where.shopId).toBe('shop-001');
+    expect(args.where.assignedTechId).toBe('tech-1');
+    expect(args.where.status).toBe('assigned');
+    expect(args.take).toBe(20);
+    expect(args.orderBy).toEqual({ createdAt: 'asc' });
+  });
 });

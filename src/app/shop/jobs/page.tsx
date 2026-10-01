@@ -8,6 +8,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { isClosedJobStatus } from '@/lib/techJobs';
 import { unwrapWorkOrders, workOrderDetailPath } from '@/lib/workOrderList';
 import { workOrderTitle } from '@/lib/workOrderMetrics';
+import { historyJobsQuery, orderWaitingJobs, WAITING_FOR_WORK_STATUSES, waitingJobsQuery } from '@/lib/waitingJobQueue';
 
 type ShopJob = {
   id: string;
@@ -34,16 +35,28 @@ export default function ShopJobsPage() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     const token = localStorage.getItem('token');
-    fetch('/api/workorders?limit=100', {
+    const query = view === 'history'
+      ? historyJobsQuery()
+      : waitingJobsQuery({ statuses: WAITING_FOR_WORK_STATUSES });
+    setOrders([]);
+    setLoading(true);
+    setError('');
+    fetch(`/api/workorders?${query}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       cache: 'no-store',
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to load jobs'))))
-      .then((data) => setOrders(unwrapWorkOrders(data) as ShopJob[]))
-      .catch(() => setError('Could not load work orders.'))
-      .finally(() => setLoading(false));
-  }, [user]);
+      .then((data) => {
+        if (cancelled) return;
+        const rows = unwrapWorkOrders(data) as ShopJob[];
+        setOrders(view === 'history' ? rows : orderWaitingJobs(rows));
+      })
+      .catch(() => { if (!cancelled) setError('Could not load work orders.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user, view]);
 
   if (isLoading) {
     return (

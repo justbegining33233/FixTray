@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole, AuthUser } from '@/lib/auth';
+import { MAX_WORK_ORDER_LIST_LIMIT } from '@/lib/workOrderList';
 import {
   activeWorkOrderWhere,
   completedTodayWhere,
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
       prisma.workOrder.findMany({
         where: pendingWhere,
         orderBy: { createdAt: 'asc' },
-        take: 100,
+        take: MAX_WORK_ORDER_LIST_LIMIT,
         include: {
           customer: { select: { firstName: true, lastName: true } },
           assignedTo: { select: { firstName: true, lastName: true } },

@@ -32,6 +32,24 @@ export function resolveShopId(
   return usableShopId(tokenShopId) || '';
 }
 
+/**
+ * Shop id for a manager or tech inventory read.
+ * Their shop lives on the session token. A stored id from another login
+ * must not replace it, or the page queries a shop that has no stock.
+ */
+export function shopIdForStaffInventory(options: {
+  role?: string | null;
+  tokenShopId?: string | null;
+  storedShopId?: string | null;
+}): string {
+  const role = (options.role || '').trim().toLowerCase();
+  if (role === 'manager' || role === 'tech') {
+    const fromToken = usableShopId(options.tokenShopId);
+    if (fromToken) return fromToken;
+  }
+  return usableShopId(options.storedShopId) || '';
+}
+
 /** Query values like "null", "undefined", and "current" are not shop ids. */
 export function usableShopId(value: unknown): string | null {
   if (typeof value !== 'string') return null;

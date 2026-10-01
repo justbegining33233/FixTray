@@ -1,9 +1,7 @@
 import Link from "next/link";
 import MarketingShell from "@/components/MarketingShell";
-import { fixtrayServiceFeeLabel } from "@/lib/publicFeeCopy";
 
 export default function TermsPage() {
-  const fee = fixtrayServiceFeeLabel();
   return (
     <MarketingShell>
       <article className="mx-auto max-w-3xl px-6 pb-24 pt-24 text-slate-300">
@@ -32,7 +30,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white">What a customer pays</h2>
             <p className="mt-2">
-              A customer is the shop&apos;s client, not a member. When a customer pays by card, the charge is the shop&apos;s quote plus a FixTray service fee when that fee applies. The fee named in the product is a flat {fee} per paid work order. That amount is charged when the platform has not configured a different fee. The fee, if any, is shown on the invoice and at checkout before the customer pays, and the amount shown is the amount charged. No service fee is added when the quote is zero or the configured fee is zero. The shop receives the quote on its connected Stripe account. FixTray retains the service fee. If the shop has not connected Stripe, FixTray does not charge that invoice. Card payments are processed by Stripe. Members are not charged this fee.
+              A customer is the shop&apos;s client, not a member. When a customer pays by card, the charge is the shop&apos;s quote plus a FixTray service fee when that fee applies. The fee, if any, is shown on the invoice and at checkout before the customer pays, and the amount shown is the amount charged. No service fee is added when the quote is zero or the configured fee is zero. The shop receives the quote on its connected Stripe account. FixTray retains the service fee. If the shop has not connected Stripe, FixTray does not charge that invoice. Card payments are processed by Stripe. Members are not charged this fee.
             </p>
           </section>
           <section>

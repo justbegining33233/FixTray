@@ -395,6 +395,7 @@ export default function ShopRegistrationForm() {
         <div className="sos-header">
           <div className="sos-brand">
             <span className="mark">{say("FixTray")}</span>
+            {' '}
             <span className="sub">{say("Shop Registration")}</span>
           </div>
           <div style={{fontSize:13, color:'#9aa3b2'}}>{say("Step")}{' '}{say(step)} {say("of 5")}</div>

@@ -25,7 +25,6 @@ export function TechHomePhone({
   openJobs,
   completedToday,
   partsOrdered,
-  revenue,
   ready,
   shopName,
   shopCoords,
@@ -37,7 +36,6 @@ export function TechHomePhone({
   openJobs: number;
   completedToday: number;
   partsOrdered: number;
-  revenue: string;
   ready: boolean;
   shopName: string;
   shopCoords: { latitude: number; longitude: number } | null;
@@ -83,7 +81,6 @@ export function TechHomePhone({
         <div className="pm-stat pm-t-red"><span className="lbl">{say('My Open Jobs')}</span><span className="val">{count(openJobs)}</span></div>
         <div className="pm-stat pm-t-green"><span className="lbl">{say('Completed Today')}</span><span className="val">{ready ? count(completedToday) : '…'}</span></div>
         <div className="pm-stat pm-t-amber"><span className="lbl">{say('Parts Ordered')}</span><span className="val">{ready ? count(partsOrdered) : '…'}</span></div>
-        <div className="pm-stat"><span className="lbl">{say("Today's Revenue")}</span><span className="val" style={{ fontSize: 21 }}>{ready ? (revenue || '$0') : '…'}</span></div>
       </div>
       <div className="pm-card" style={{ padding: 12 }}>
         <h3 style={{ marginBottom: 10 }}>{say('Technician tools')}</h3>

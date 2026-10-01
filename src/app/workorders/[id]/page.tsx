@@ -736,12 +736,9 @@ export default function WorkOrderDetailPage() {
         grandTotal={grandTotal}
         canClose={Boolean(userRole && ['shop', 'manager', 'admin', 'superadmin'].includes(userRole))}
         onInvoice={() => { void handleCloseout('invoice'); }}
-        onPaid={() => { void handleCloseout('paid'); }}
         onAddItem={() => { void handleOpenItemModal(); }}
         invoiceDisabled={!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)}
-        paidDisabled={!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid'}
         invoiceLabel={closeoutBusy === 'invoice' ? say('Requesting…') : say('Invoice / Request payment')}
-        paidLabel={closeoutBusy === 'paid' ? say('Saving…') : say('Mark paid')}
         inspectionStatus={userRole === 'tech' ? inspectionStatus : undefined}
         onStartInspection={userRole === 'tech' ? startInspection : undefined}
         onSkipInspection={userRole === 'tech' ? () => { void skipInspection(); } : undefined}
@@ -884,7 +881,7 @@ export default function WorkOrderDetailPage() {
                   <div style={{ marginBottom: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
                     <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8, fontWeight: 600 }}>Final bill</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#e5e7eb', marginBottom: 6 }}>
-                      <span>Services &amp; Parts</span>
+                      <span>Services & Parts</span>
                       <span>{fmt(quote)}</span>
                     </div>
                     {fee > 0 && (
@@ -907,13 +904,6 @@ export default function WorkOrderDetailPage() {
                   style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)) ? 0.45 : 1 }}
                 >
                   {closeoutBusy === 'invoice' ? say("Requesting…") : say("Invoice / Request payment")}
-                </button>
-                <button
-                  onClick={() => handleCloseout('paid')}
-                  disabled={!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid'}
-                  style={{ background: 'rgba(245,158,11,0.18)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', opacity: (!!closeoutBusy || wo.status !== 'waiting-for-payment' || wo.paymentStatus === 'paid') ? 0.45 : 1 }}
-                >
-                  {closeoutBusy === 'paid' ? say("Saving…") : say("Mark paid")}
                 </button>
                 <button
                   onClick={() => handleCloseout('complete')}
@@ -1317,7 +1307,7 @@ export default function WorkOrderDetailPage() {
                   )}
                   <button onClick={handleAddPartPickup} disabled={!poPartName.trim() || !poVendor.trim() || poCost <= 0}
                     style={{ padding: '10px 16px', background: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'rgba(255,255,255,0.04)' : 'rgba(229,51,42,0.18)', border: `1px solid ${(!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'rgba(255,255,255,0.08)' : 'rgba(229,51,42,0.3)'}`, color: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? '#4b5563' : '#e5332a', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: (!poPartName.trim() || !poVendor.trim() || poCost <= 0) ? 'not-allowed' : 'pointer' }}>
-                    {say("Add Part Pickup &amp; Create PO")}{' '}</button>
+                    {say("Add Part Pickup & Create PO")}{' '}</button>
                 </div>
               ) : (
                 /* Custom line item */

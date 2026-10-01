@@ -99,10 +99,11 @@ export default function ReportsAnalytics() {
   };
 
   // customerMetrics are derived from live stats
+  const hideShopIncome = (user?.role || userRole) === 'manager';
   const customerMetrics: { metric: string; value: string | number; change: string }[] = [
     { metric: 'Total Work Orders', value: stats.totalJobs, change: '' },
     { metric: 'Completion Rate', value: `${stats.completionRate}%`, change: '' },
-    { metric: 'Avg Job Value', value: `$${stats.avgJobValue.toFixed(2)}`, change: '' },
+    ...(hideShopIncome ? [] : [{ metric: 'Avg Job Value', value: `$${stats.avgJobValue.toFixed(2)}`, change: '' }]),
   ];
 
   return (
@@ -133,21 +134,25 @@ export default function ReportsAnalytics() {
       <div style={{maxWidth:1600, margin:'0 auto', padding:32}}>
         {/* Key Metrics */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:20, marginBottom:32}}>
+          {!hideShopIncome && (
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Total Revenue")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#22c55e', marginBottom:4}}>${stats.totalRevenue.toLocaleString()}</div>
             <div style={{fontSize:12, color:'#22c55e'}}><FaArrowUp style={{marginRight:4}} /> {say("12% from last period")}</div>
           </div>
+          )}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Total Jobs")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#e5332a', marginBottom:4}}>{say(stats.totalJobs)}</div>
             <div style={{fontSize:12, color:'#e5332a'}}><FaArrowUp style={{marginRight:4}} /> {say("8% from last period")}</div>
           </div>
+          {!hideShopIncome && (
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Avg Job Value")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#f59e0b', marginBottom:4}}>${say(stats.avgJobValue)}</div>
             <div style={{fontSize:12, color:'#f59e0b'}}><FaArrowUp style={{marginRight:4}} /> {say("5% from last period")}</div>
           </div>
+          )}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:12, padding:24}}>
             <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Completion Rate")}</div>
             <div style={{fontSize:32, fontWeight:700, color:'#8b5cf6', marginBottom:4}}>{say(stats.completionRate)}%</div>
@@ -166,7 +171,7 @@ export default function ReportsAnalytics() {
         </div>
 
         <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:24, marginBottom:24}}>
-          {/* Revenue Chart */}
+          {!hideShopIncome && (
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
             <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>{say("Revenue Trend")}</h2>
             <div style={{display:'flex', flexDirection:'column', gap:12}}>
@@ -188,6 +193,7 @@ export default function ReportsAnalytics() {
               })}
             </div>
           </div>
+          )}
 
           {/* Top Services */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
@@ -197,7 +203,7 @@ export default function ReportsAnalytics() {
                 <div key={idx} style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:16}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
                     <div style={{fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{say(service.service)}</div>
-                    <div style={{fontSize:16, fontWeight:700, color:'#22c55e'}}>${say(service.revenue)}</div>
+                    {!hideShopIncome && <div style={{fontSize:16, fontWeight:700, color:'#22c55e'}}>${say(service.revenue)}</div>}
                   </div>
                   <div style={{fontSize:12, color:'#9aa3b2'}}>{say(service.jobs)} {say("jobs completed")}</div>
                 </div>
@@ -215,7 +221,7 @@ export default function ReportsAnalytics() {
                 <tr style={{textAlign:'left'}}>
                   <th style={{padding:'12px 16px', color:'#9aa3b2', fontSize:12, fontWeight:700, textTransform:'uppercase'}}>{say("Technician")}</th>
                   <th style={{padding:'12px 16px', color:'#9aa3b2', fontSize:12, fontWeight:700, textTransform:'uppercase'}}>{say("Jobs")}</th>
-                  <th style={{padding:'12px 16px', color:'#9aa3b2', fontSize:12, fontWeight:700, textTransform:'uppercase'}}>{say("Revenue")}</th>
+                  {!hideShopIncome && <th style={{padding:'12px 16px', color:'#9aa3b2', fontSize:12, fontWeight:700, textTransform:'uppercase'}}>{say("Revenue")}</th>}
                   <th style={{padding:'12px 16px', color:'#9aa3b2', fontSize:12, fontWeight:700, textTransform:'uppercase'}}>{say("Rating")}</th>
                   <th style={{padding:'12px 16px', color:'#9aa3b2', fontSize:12, fontWeight:700, textTransform:'uppercase'}}>{say("Efficiency")}</th>
                 </tr>
@@ -225,7 +231,7 @@ export default function ReportsAnalytics() {
                   <tr key={idx} style={{background:'rgba(255,255,255,0.05)', borderRadius:8}}>
                     <td style={{padding:'16px', fontSize:14, fontWeight:700, color:'#e5e7eb'}}>{say(tech.name)}</td>
                     <td style={{padding:'16px', fontSize:14, color:'#e5332a', fontWeight:600}}>{say(tech.jobs)}</td>
-                    <td style={{padding:'16px', fontSize:14, color:'#22c55e', fontWeight:600}}>${tech.revenue.toLocaleString()}</td>
+                    {!hideShopIncome && <td style={{padding:'16px', fontSize:14, color:'#22c55e', fontWeight:600}}>${tech.revenue.toLocaleString()}</td>}
                     <td style={{padding:'16px', fontSize:14, color:'#f59e0b', fontWeight:600}}><FaStar style={{marginRight:4}} /> {say(tech.rating)}</td>
                     <td style={{padding:'16px'}}>
                       <div style={{display:'flex', alignItems:'center', gap:8}}>

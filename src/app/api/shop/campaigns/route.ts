@@ -31,6 +31,7 @@ async function deliverCampaign(campaign: {
         const sent = await sendEmail({
           to: customer.email,
           shopId: campaign.shopId,
+          audience: 'mass',
           subject: campaign.subject || `${shopName} Update`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

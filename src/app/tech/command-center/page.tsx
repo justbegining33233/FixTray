@@ -203,7 +203,7 @@ export default function TechCommandCenter() {
   };
 
   const renderPendingCard = (order: Job) => {
-    const badgeLabel = order.serviceLocation === 'road-call' ? 'Roadcall' : order.isAppointment ? 'Appointment' : 'Walk-in';
+    const badgeLabel = order.serviceLocation === 'road-call' ? 'Road call' : order.isAppointment ? 'Appointment' : 'Walk-in';
     const badgeBackground = order.serviceLocation === 'road-call' ? 'rgba(59,130,246,0.18)' : order.isAppointment ? 'rgba(229,51,42,0.18)' : 'rgba(245,158,11,0.18)';
     const badgeColor = order.serviceLocation === 'road-call' ? '#93c5fd' : order.isAppointment ? '#ff6b64' : '#fbbf24';
 
@@ -286,7 +286,7 @@ export default function TechCommandCenter() {
               <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say("Ops Overview")}</h2>
               <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
                 <span style={{padding:'4px 10px', background:'rgba(59,130,246,0.16)', color:'#93c5fd', borderRadius:12, fontSize:11, fontWeight:700}}>
-                  {say("Roadcalls:")}{' '}{dashboardSettled ? stats.roadcalls : '…'}
+                  {say("Road calls:")}{' '}{dashboardSettled ? stats.roadcalls : '…'}
                 </span>
                 <span style={{padding:'4px 10px', background:'rgba(229,51,42,0.16)', color:'#ff6b64', borderRadius:12, fontSize:11, fontWeight:700}}>
                   {say("In-Shop Appointments:")}{' '}{dashboardSettled ? stats.appointments : '…'}

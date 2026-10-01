@@ -118,29 +118,7 @@ export function closeoutTransition(
   }
 
   if (action === 'paid') {
-    if (paymentStatus === 'paid' && status === 'waiting-for-payment') {
-      return {
-        ok: true,
-        action: 'paid',
-        status: 'waiting-for-payment',
-        paymentStatus: 'paid',
-        quoteAmount: quote,
-        serviceFee,
-        amount,
-      };
-    }
-    if (status !== 'waiting-for-payment') {
-      return { ok: false, error: 'Request payment before marking this job paid.' };
-    }
-    return {
-      ok: true,
-      action: 'paid',
-      status: 'waiting-for-payment',
-      paymentStatus: 'paid',
-      quoteAmount: quote,
-      serviceFee,
-      amount,
-    };
+    return { ok: false, error: 'Paid is recorded only after a Stripe charge.' };
   }
 
   if (paymentStatus !== 'paid') {

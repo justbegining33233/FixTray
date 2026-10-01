@@ -88,7 +88,7 @@ export default function SuperAdminDeployments() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-white">{say("Deployments")}</h1>
-            <p className="text-[#94a3b8] mt-1">{say("Release history &amp; deployment status")}</p>
+            <p className="text-[#94a3b8] mt-1">{say("Release history & deployment status")}</p>
           </div>
           <button
             onClick={fetchDeployments}

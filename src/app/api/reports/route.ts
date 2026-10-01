@@ -52,19 +52,21 @@ export async function GET(request: NextRequest) {
       if (snapshot?.frozenAt) {
         const revenueByMonth = await buildMonthlyTrend(shopId, year);
         const techPerformance = await buildTechPerformance(shopId, monthStart, monthEnd);
+        const hideIncome = auth.role === 'manager';
+        const topServices = (() => { try { return JSON.parse(snapshot.topServicesJson); } catch { return []; } })();
         return NextResponse.json({
           success: true,
           source: 'snapshot',
           report: {
             year, month,
-            totalRevenue:  snapshot.totalRevenue,
+            totalRevenue: hideIncome ? 0 : snapshot.totalRevenue,
             totalJobs:     snapshot.totalJobs,
             completedJobs: snapshot.completedJobs,
             pendingJobs:   snapshot.pendingJobs,
-            avgJobValue:   snapshot.avgJobValue,
-            topServices:   (() => { try { return JSON.parse(snapshot.topServicesJson); } catch { return []; } })(),
-            revenueByMonth,
-            techPerformance,
+            avgJobValue: hideIncome ? 0 : snapshot.avgJobValue,
+            topServices: hideIncome ? topServices.map((row: { revenue?: number }) => ({ ...row, revenue: 0 })) : topServices,
+            revenueByMonth: hideIncome ? revenueByMonth.map((row) => ({ ...row, revenue: 0 })) : revenueByMonth,
+            techPerformance: hideIncome ? techPerformance.map((row) => ({ ...row, revenue: 0 })) : techPerformance,
           },
         });
       }
@@ -134,15 +136,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const hideIncome = auth.role === 'manager';
     return NextResponse.json({
       success: true,
       source: 'live',
       report: {
         year, month,
-        totalRevenue, totalJobs, completedJobs, pendingJobs, avgJobValue,
-        topServices,
-        revenueByMonth,
-        techPerformance,
+        totalRevenue: hideIncome ? 0 : totalRevenue,
+        totalJobs, completedJobs, pendingJobs,
+        avgJobValue: hideIncome ? 0 : avgJobValue,
+        topServices: hideIncome ? topServices.map((row) => ({ ...row, revenue: 0 })) : topServices,
+        revenueByMonth: hideIncome ? revenueByMonth.map((row) => ({ ...row, revenue: 0 })) : revenueByMonth,
+        techPerformance: hideIncome ? techPerformance.map((row) => ({ ...row, revenue: 0 })) : techPerformance,
       },
     });
   } catch (err) {

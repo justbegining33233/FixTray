@@ -31,12 +31,9 @@ export function WorkOrderPhone({
   grandTotal,
   canClose,
   onInvoice,
-  onPaid,
   onAddItem,
   invoiceDisabled,
-  paidDisabled,
   invoiceLabel,
-  paidLabel,
   inspectionStatus,
   onStartInspection,
   onSkipInspection,
@@ -49,12 +46,9 @@ export function WorkOrderPhone({
   grandTotal: number;
   canClose: boolean;
   onInvoice: () => void;
-  onPaid: () => void;
   onAddItem: () => void;
   invoiceDisabled: boolean;
-  paidDisabled: boolean;
   invoiceLabel: string;
-  paidLabel: string;
   inspectionStatus?: string;
   onStartInspection?: () => void;
   onSkipInspection?: () => void;
@@ -153,7 +147,6 @@ export function WorkOrderPhone({
           <button type="button" className="pm-btn pm-btn-primary" style={{ flex: 1 }} disabled={invoiceDisabled} onClick={onInvoice}>
             <FaDollarSign /> {invoiceLabel}
           </button>
-          <button type="button" className="pm-btn pm-btn-secondary" disabled={paidDisabled} onClick={onPaid}>{paidLabel}</button>
         </div>
       ) : null}
       <div className="pm-card" style={{ padding: 12 }}>

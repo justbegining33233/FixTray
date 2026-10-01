@@ -40,12 +40,7 @@ export default function ManagerHome() {
     overdueJobs: 0,
     completedToday: 0,
   });
-  const [financialSummary, setFinancialSummary] = useState({
-    todayRevenue: 0,
-    weeklyRevenue: 0,
-    monthlyRevenue: 0,
-    outstandingInvoices: 0,
-  });
+  const [outstandingInvoices, setOutstandingInvoices] = useState(0);
   const [teamSchedule, setTeamSchedule] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
@@ -107,26 +102,19 @@ export default function ManagerHome() {
     }
   }
 
-  async function fetchFinancialSummary(shop?: string) {
+  async function fetchOutstanding(shop?: string) {
     if (!shop) return;
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/shop/financial-summary?shopId=${shop}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
       if (response.ok) {
         const { summary } = await response.json();
-        setFinancialSummary({
-          todayRevenue: 0,
-          weeklyRevenue: 0,
-          monthlyRevenue: 0,
-          outstandingInvoices: 0,
-          ...(summary || {}),
-        });
+        setOutstandingInvoices(Number(summary?.outstandingInvoices) || 0);
       }
     } catch (error) {
-      console.error('Error fetching financial summary:', error);
+      console.error('Error fetching outstanding invoices:', error);
     }
   }
 
@@ -193,7 +181,7 @@ export default function ManagerHome() {
         fetchInventoryRequests(currentShopId),
         fetchTeamPerformance(currentShopId),
         fetchWorkOrderStats(currentShopId),
-        fetchFinancialSummary(currentShopId),
+        fetchOutstanding(currentShopId),
         fetchTeamSchedule(currentShopId),
         fetchRecentActivity(currentShopId),
         fetchUrgentAlerts(currentShopId),
@@ -252,7 +240,7 @@ export default function ManagerHome() {
           alerts={urgentAlerts}
           stats={workOrderStats}
           team={teamPerformance}
-          finance={financialSummary}
+          outstanding={outstandingInvoices}
         />
       </MobilePageFrame>
     );
@@ -491,26 +479,11 @@ export default function ManagerHome() {
 
                 {/* Right Column */}
                 <div style={{display:'grid', gap:24}}>
-                  {/* Financial Summary */}
                   <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
-                    <h3 style={{color:'#e5e7eb', marginBottom:16, fontSize:18}}><FaDollarSign style={{marginRight:4}} /> {say("Financial Summary")}</h3>
-                    <div style={{display:'grid', gap:12}}>
-                      <div style={{background:'rgba(34,197,94,0.1)', borderRadius:8, padding:12}}>
-                        <div style={{color:'#22c55e', fontSize:12, marginBottom:4}}>{say("Today's Revenue")}</div>
-                        <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${(financialSummary.todayRevenue ?? 0).toFixed(2)}</div>
-                      </div>
-                      <div style={{background:'rgba(229,51,42,0.1)', borderRadius:8, padding:12}}>
-                        <div style={{color:'#e5332a', fontSize:12, marginBottom:4}}>{say("This Week")}</div>
-                        <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${(financialSummary.weeklyRevenue ?? 0).toFixed(2)}</div>
-                      </div>
-                      <div style={{background:'rgba(168,85,247,0.1)', borderRadius:8, padding:12}}>
-                        <div style={{color:'#a855f7', fontSize:12, marginBottom:4}}>{say("This Month")}</div>
-                        <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${(financialSummary.monthlyRevenue ?? 0).toFixed(2)}</div>
-                      </div>
-                      <div style={{background:'rgba(245,158,11,0.1)', borderRadius:8, padding:12}}>
-                        <div style={{color:'#f59e0b', fontSize:12, marginBottom:4}}>{say("Outstanding")}</div>
-                        <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${(financialSummary.outstandingInvoices ?? 0).toFixed(2)}</div>
-                      </div>
+                    <h3 style={{color:'#e5e7eb', marginBottom:16, fontSize:18}}>{say("Outstanding")}</h3>
+                    <div style={{background:'rgba(245,158,11,0.1)', borderRadius:8, padding:12}}>
+                      <div style={{color:'#f59e0b', fontSize:12, marginBottom:4}}>{say("Outstanding")}</div>
+                      <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${outstandingInvoices.toFixed(2)}</div>
                     </div>
                   </div>
 

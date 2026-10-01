@@ -84,6 +84,7 @@ export default function ManagerWorkAuthorizationsPage() {
                           {s === 'signed' ? <FaCheckCircle style={{ marginRight: 4 }} /> : <FaHourglassHalf style={{ marginRight: 4 }} />}
                           {say(sc.text)}
                         </span>
+                        {' '}
                         <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(a.workSummary)}</span>
                       </div>
                       {a.workOrderId ? (

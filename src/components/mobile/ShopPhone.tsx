@@ -66,7 +66,7 @@ export function ShopOpsPhone({
       <div>
         <h1 className="pm-title">{say('Ops Overview')}</h1>
         <div className="pm-sub">
-          {say('Roadcalls')}: {roadcalls} · {say('In-Shop Appointments')}: {appointments} · {say('In-Shop Walk-ins')}: {walkIns}
+          {say('Road calls')}: {roadcalls} · {say('In-Shop Appointments')}: {appointments} · {say('In-Shop Walk-ins')}: {walkIns}
         </div>
       </div>
       <div className="pm-g3">

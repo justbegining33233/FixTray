@@ -100,6 +100,9 @@ export async function GET(request: NextRequest) {
       statusCounts[wo.status] = (statusCounts[wo.status] || 0) + 1;
     }
 
+    const visibleTech = auth.role === 'manager'
+      ? techPerformance.map(({ revenue: _revenue, ...row }) => row)
+      : techPerformance;
     return NextResponse.json({
       period: { days, since: since.toISOString() },
       overview: {
@@ -111,7 +114,7 @@ export async function GET(request: NextRequest) {
         lateCount: withDueDate.length - onTime.length,
       },
       statusBreakdown: statusCounts,
-      techPerformance,
+      techPerformance: visibleTech,
     });
   } catch (error) {
     console.error('Error fetching SLA metrics:', error);

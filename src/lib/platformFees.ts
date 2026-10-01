@@ -4,7 +4,7 @@ export function feePerPaidWorkOrder(serviceFeeCents: number | null | undefined):
   const cents = typeof serviceFeeCents === 'number' && Number.isFinite(serviceFeeCents)
     ? serviceFeeCents
     : DEFAULT_SERVICE_FEE_CENTS;
-  return Math.max(0, cents) / 100;
+  return Math.round(Math.max(0, cents)) / 100;
 }
 
 export function platformFeeForPaidOrders(paidCount: number, serviceFeeCents: number | null | undefined): number {

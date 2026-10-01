@@ -9,6 +9,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaCog } from 'react-icons/fa';
 import Link from 'next/link';
 import type { Route } from 'next';
+import MemberInstallPrompt from '@/components/MemberInstallPrompt';
 
 const settingsLinks = [
   { label: 'Permissions', href: '/manager/settings/permissions', description: 'Manage team permissions and access levels' },
@@ -31,6 +32,7 @@ export default function ManagerSettingsPage() {
         <main style={{ flex: 1, padding: 24, maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <Breadcrumbs />
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb', margin: '16px 0 24px' }}><FaCog style={{ marginRight: 8 }} />{say("Settings")}</h1>
+          <MemberInstallPrompt />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {settingsLinks.map(s => (
               <Link key={s.href} href={s.href as Route} style={{ textDecoration: 'none' }}>

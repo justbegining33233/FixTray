@@ -142,7 +142,7 @@ export default function ManagerRecurringWorkOrdersPage() {
                 <div key={r.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <div>
-                      <span style={{ background: r.active ? 'rgba(34,197,94,0.15)' : 'rgba(107,114,128,0.15)', color: r.active ? '#22c55e' : '#9ca3af', padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, marginRight: 8 }}>{r.active ? say("Active") : say("Paused")}</span>
+                      <span style={{ background: r.active ? 'rgba(34,197,94,0.15)' : 'rgba(107,114,128,0.15)', color: r.active ? '#22c55e' : '#9ca3af', padding: '3px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, marginRight: 8 }}>{r.active ? say("Active") : say("Paused")}{' '}</span>
                       <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{say(r.title)}</span>
                     </div>
                     <span style={{ color: '#9aa3b2', fontSize: 13 }}><FaSyncAlt style={{ marginRight: 4 }} />{FREQ_LABELS[r.frequency] || r.frequency}</span>

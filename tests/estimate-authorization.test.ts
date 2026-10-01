@@ -131,7 +131,7 @@ describe('work order closeout', () => {
     });
 
     const paid = closeoutTransition({ ...quoted, status: 'waiting-for-payment' }, 'paid', fee);
-    expect(paid).toMatchObject({ ok: true, status: 'waiting-for-payment', paymentStatus: 'paid', amount: 6.08 });
+    expect(paid.ok).toBe(false);
   });
 
   it('uses the superadmin-configured fee amount on the invoice total', () => {

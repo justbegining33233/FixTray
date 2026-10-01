@@ -42,7 +42,7 @@ export default function OfflineBanner() {
 
   const pending = detail.pending || 0;
   const techOffline = pending > 0 || !!detail.syncing || !!detail.needsReauth || (detail.conflicts || 0) > 0 || (detail.failed || 0) > 0;
-  if (!offline && !techOffline) return null;
+  if (!offline) return null;
 
   const syncNow = () => {
     const engine = (window as Window & { FixTrayOffline?: { syncNow?: () => void } }).FixTrayOffline;

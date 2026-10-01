@@ -7,6 +7,7 @@ import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { paymentLinkFeeBreakdown } from '@/lib/serviceFeeBill';
+import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
 
 async function invoiceBreakdown(link: {
   amount: number;
@@ -52,37 +53,23 @@ async function publicPaymentLink(link: {
   };
 }
 
-async function settlePaymentLink(token: string) {
+async function startPaymentLinkCheckout(token: string) {
   if (!token) return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
   const link = await prisma.paymentLink.findUnique({ where: { token } });
   if (!link) return NextResponse.json({ error: 'Payment link not found' }, { status: 404 });
-  if (link.expiresAt && link.expiresAt < new Date() && link.status !== 'paid') {
+  if (link.status === 'paid') {
+    return NextResponse.json({ error: 'This invoice has already been paid.' }, { status: 400 });
+  }
+  if (link.expiresAt && link.expiresAt < new Date()) {
     return NextResponse.json({ error: 'This payment link has expired.' }, { status: 410 });
   }
-
-  if (link.status !== 'paid') {
-    const breakdown = await invoiceBreakdown(link);
-    await prisma.paymentLink.update({
-      where: { id: link.id },
-      data: { status: 'paid', paidAt: new Date(), amount: breakdown.amount },
-    });
-    if (link.workOrderId) {
-      const workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
-      if (workOrder && workOrder.status !== 'completed' && workOrder.status !== 'closed') {
-        await prisma.workOrder.update({
-          where: { id: workOrder.id },
-          data: {
-            paymentStatus: 'paid',
-            amountPaid: breakdown.amount,
-            status: workOrder.status === 'waiting-for-payment' ? 'waiting-for-payment' : workOrder.status,
-          },
-        });
-      }
-    }
+  if (!link.workOrderId) {
+    return NextResponse.json({ error: 'This payment link is not tied to a work order.' }, { status: 400 });
   }
-
-  const paid = await prisma.paymentLink.findUnique({ where: { token } });
-  return NextResponse.json(await publicPaymentLink(paid!));
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
+  const result = await createWorkOrderCheckoutSession({ workOrderId: link.workOrderId, appUrl });
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  return NextResponse.json({ url: result.url });
 }
 
 export async function GET(req: NextRequest) {
@@ -109,7 +96,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   if (body?.action === 'pay') {
-    return settlePaymentLink(typeof body.token === 'string' ? body.token : '');
+    return startPaymentLinkCheckout(typeof body.token === 'string' ? body.token : '');
   }
 
   const auth = authenticateRequest(req);

@@ -62,7 +62,7 @@ export default function ManagerPayrollPage() {
                 <div key={e.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                   <div>
                     <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 16 }}>{say(e.firstName)} {say(e.lastName)}</span>
-                    <span style={{ color: '#9aa3b2', fontSize: 13, marginLeft: 12 }}>{say(e.role)}</span>
+                    <span style={{ color: '#9aa3b2', fontSize: 13, marginLeft: 12 }}>{say(e.role)}{' '}</span>
                     <span style={{ marginLeft: 8, background: e.available ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: e.available ? '#22c55e' : '#ef4444', padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>{e.available ? say("Active") : say("Inactive")}</span>
                   </div>
                   <div style={{ color: '#9aa3b2', fontSize: 14 }}>

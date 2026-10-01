@@ -212,7 +212,8 @@ export async function PATCH(request: NextRequest) {
         approvedShop.email,
         approvedShop.shopName,
         approvedShop.username || newUsername,
-        plainPassword
+        plainPassword,
+        approvedShop.id,
       ).catch(console.error);
 
       return NextResponse.json({ 

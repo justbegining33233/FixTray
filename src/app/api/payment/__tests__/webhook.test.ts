@@ -180,7 +180,8 @@ describe('POST /api/payment/webhook', () => {
     expect(sendPaymentConfirmationEmail).toHaveBeenCalledWith(
       'bob@test.com',
       mockWorkOrder.id,
-      50
+      50,
+      'shop-001',
     );
   });
 

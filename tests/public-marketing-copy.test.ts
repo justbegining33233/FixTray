@@ -28,6 +28,7 @@ const marketingFiles = [
   'src/app/features/page.tsx',
   'src/app/about/page.tsx',
   'src/app/contact/page.tsx',
+  'src/app/demo/page.tsx',
   'src/app/security/page.tsx',
   'src/app/privacy/page.tsx',
   'src/app/terms/page.tsx',
@@ -81,6 +82,26 @@ describe('public marketing copy', () => {
     expect(features).not.toContain('Operational finance');
     expect(about).not.toContain('operating system');
     expect(contact).toContain('Expect a response within one business day.');
+    const privacy = fs.readFileSync(path.join(root, 'src/app/privacy/page.tsx'), 'utf8');
+    const terms = fs.readFileSync(path.join(root, 'src/app/terms/page.tsx'), 'utf8');
+    const demo = fs.readFileSync(path.join(root, 'src/app/demo/page.tsx'), 'utf8');
+    const shell = fs.readFileSync(path.join(root, 'src/components/MarketingShell.tsx'), 'utf8');
+    expect(privacy).toContain('Last updated September 30, 2026.');
+    expect(terms).toContain('Last updated September 30, 2026.');
+    expect(privacy).toContain('free for members');
+    expect(terms).toContain('free for members');
+    expect(terms).toContain('fixtrayServiceFeeLabel');
+    expect(privacy).not.toContain('command center');
+    expect(terms).not.toContain('command center');
+    expect(demo).toContain('The 30 minutes start at your first login.');
+    expect(demo).toContain('It is not your shop.');
+    expect(demo).toContain('the password resets and any changes made in the demo shop reset too.');
+    expect(demo).toContain('This is not a meeting');
+    expect(demo).not.toContain('Book a demo');
+    expect(demo).not.toContain('Request a demo');
+    expect(shell).toContain('Try the demo shop');
+    expect(home).toContain('Try the demo shop');
+    expect(home).toContain('memberAndCustomerFeeCopy');
   });
 
   it('shows a real apostrophe on the 404 page', () => {

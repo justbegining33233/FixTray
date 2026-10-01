@@ -30,6 +30,7 @@ async function deliverCampaign(campaign: {
       if ((campaign.type === 'email' || campaign.type === 'both') && customer.email) {
         const sent = await sendEmail({
           to: customer.email,
+          shopId: campaign.shopId,
           subject: campaign.subject || `${shopName} Update`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -46,7 +47,7 @@ async function deliverCampaign(campaign: {
 
       if ((campaign.type === 'sms' || campaign.type === 'both') && customer.phone) {
         const plainText = campaign.body.replace(/<[^>]*>/g, '').substring(0, 160);
-        const sent = await sendSms(customer.phone, `${shopName}: ${plainText}`);
+        const sent = await sendSms(customer.phone, `${shopName}: ${plainText}`, campaign.shopId);
         if (sent) sentCount++;
         else failedCount++;
       }

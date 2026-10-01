@@ -42,7 +42,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rol
     }
 
     const viewerLocale = await resolveAccountLocale(req, auth);
-    const msg = await addPortalMessage(role as PortalRole, sender, body, channelId, viewerLocale);
+    const shopId = auth.shopId || (auth.role === 'shop' ? auth.id : null);
+    const msg = await addPortalMessage(role as PortalRole, sender, body, channelId, viewerLocale, {
+      shopId,
+      actorId: auth.id,
+    });
     return NextResponse.json(msg, { status: 201 });
   } catch (err) {
     console.error('Error posting portal message', err);

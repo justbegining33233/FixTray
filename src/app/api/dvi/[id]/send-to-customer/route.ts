@@ -103,6 +103,7 @@ export async function PUT(
 
     await sendEmail({
       to: customer.email,
+      shopId: dvi.shopId,
       subject: `Vehicle Inspection Ready for Review - ${dvi.vehicleDesc || 'Your Vehicle'}`,
       html: emailBody,
     });

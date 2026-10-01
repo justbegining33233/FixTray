@@ -6,6 +6,10 @@ interface EmailOptions {
   subject: string;
   html: string;
   from?: string;
+  /** When set, a demo shop never sends this message. */
+  shopId?: string;
+  /** `demo-login` is the one email a demo is allowed to send. */
+  purpose?: 'demo-login';
 }
 
 // Email templates
@@ -211,8 +215,16 @@ export const emailTemplates = {
 };
 
 // Send email function (configure with your email service)
-export async function sendEmail({ to, subject, html, from }: EmailOptions): Promise<boolean> {
+export async function sendEmail({ to, subject, html, from, shopId, purpose }: EmailOptions): Promise<boolean> {
   try {
+    const { demoOutboundBlocked, shouldBlockOutbound } = await import('@/lib/demoOutboundContext');
+    const { isDemoShopId } = await import('@/lib/demoShopLookup');
+    const shopIsDemo = shopId ? await isDemoShopId(shopId) : false;
+    if (shouldBlockOutbound({ purpose, demoContext: demoOutboundBlocked(), shopIsDemo })) {
+      console.warn('[emailService] demo shop outbound email blocked:', subject);
+      return false;
+    }
+
     // For Resend
     if (process.env.RESEND_API_KEY) {
       const response = await fetch('https://api.resend.com/emails', {
@@ -252,11 +264,13 @@ export async function sendInventoryRequestNotification(
   shopName: string,
   itemName: string,
   quantity: number,
-  urgency: string
+  urgency: string,
+  shopId?: string,
 ) {
   const template = emailTemplates.inventoryRequestCreated(shopName, itemName, quantity, urgency);
   return sendEmail({
     to: shopEmail,
+    shopId,
     ...template,
   });
 }
@@ -266,7 +280,8 @@ export async function sendInventoryApprovalNotification(
   itemName: string,
   quantity: number,
   approved: boolean,
-  reason?: string
+  reason?: string,
+  shopId?: string,
 ) {
   const template = approved
     ? emailTemplates.inventoryRequestApproved(itemName, quantity)
@@ -274,6 +289,7 @@ export async function sendInventoryApprovalNotification(
   
   return sendEmail({
     to: techEmail,
+    shopId,
     ...template,
   });
 }
@@ -282,12 +298,14 @@ export async function sendLowStockAlert(
   shopEmail: string,
   itemName: string,
   quantity: number,
-  reorderPoint: number
+  reorderPoint: number,
+  shopId?: string,
 ) {
   const template = emailTemplates.lowStockAlert(itemName, quantity, reorderPoint);
   
   return sendEmail({
     to: shopEmail,
+    shopId,
     ...template,
   });
 }
@@ -300,10 +318,11 @@ export async function sendEstimateReadyEmail(
   serviceFee: number,
   totalDue: number,
   shopName: string,
-  description: string
+  description: string,
+  shopId?: string,
 ) {
   const template = emailTemplates.estimateReady(customerName, workOrderId, serviceAmount, serviceFee, totalDue, shopName, description);
-  return sendEmail({ to: customerEmail, ...template });
+  return sendEmail({ to: customerEmail, shopId, ...template });
 }
 
 export async function sendJobCompletedEmail(
@@ -313,10 +332,11 @@ export async function sendJobCompletedEmail(
   totalDue: number,
   shopName: string,
   description: string,
-  serviceFee = 0
+  serviceFee = 0,
+  shopId?: string,
 ) {
   const template = emailTemplates.jobCompleted(customerName, workOrderId, totalDue, shopName, description, serviceFee);
-  return sendEmail({ to: customerEmail, ...template });
+  return sendEmail({ to: customerEmail, shopId, ...template });
 }
 
 export async function sendPaymentReceiptEmail(
@@ -325,20 +345,22 @@ export async function sendPaymentReceiptEmail(
   workOrderId: string,
   amountPaid: number,
   shopName: string,
-  description: string
+  description: string,
+  shopId?: string,
 ) {
   const template = emailTemplates.paymentReceipt(customerName, workOrderId, amountPaid, shopName, description);
-  return sendEmail({ to: customerEmail, ...template });
+  return sendEmail({ to: customerEmail, shopId, ...template });
 }
 
 export async function sendShopApprovedEmail(
   shopEmail: string,
   shopName: string,
   username: string,
-  tempPassword?: string | null
+  tempPassword?: string | null,
+  shopId?: string,
 ) {
   const template = emailTemplates.shopApproved(shopName, shopEmail, username, tempPassword);
-  return sendEmail({ to: shopEmail, ...template });
+  return sendEmail({ to: shopEmail, shopId, ...template });
 }
 
 export async function sendRecurringApprovalEmail(
@@ -346,7 +368,8 @@ export async function sendRecurringApprovalEmail(
   customerName: string,
   serviceName: string,
   shopName: string,
-  estimatedCost?: number | null
+  estimatedCost?: number | null,
+  shopId?: string,
 ) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app';
   const reviewUrl = `${appUrl}/customer/recurring-approvals`;
@@ -384,7 +407,7 @@ export async function sendRecurringApprovalEmail(
       </div>
     </div>
   `;
-  return sendEmail({ to: customerEmail, subject, html });
+  return sendEmail({ to: customerEmail, subject, html, shopId });
 }
 // Recurring service reminders (14-day and 7-day advance notice)
 export async function sendRecurringReminderEmail(
@@ -431,7 +454,7 @@ export async function sendRecurringReminderEmail(
     </div>
   `;
 
-  return sendEmail({ to: customerEmail, subject, html });
+  return sendEmail({ to: customerEmail, subject, html, shopId });
 }
 // ---------------------------------------------------------------------------
 // Simple wrappers — replacements for the legacy nodemailer-based email.ts
@@ -446,29 +469,32 @@ export async function sendWelcomeEmail(toEmail: string, name: string): Promise<b
   });
 }
 
-export async function sendWorkOrderCreatedEmail(toEmail: string, workOrderId: string): Promise<boolean> {
+export async function sendWorkOrderCreatedEmail(toEmail: string, workOrderId: string, shopId?: string): Promise<boolean> {
   const url = `${process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app'}/customer/workorders/${workOrderId}`;
   return sendEmail({
     to: toEmail,
+    shopId,
     subject: 'Work Order Created — FixTray',
     html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;border-radius:10px;overflow:hidden;"><div style="background:#e5332a;padding:32px;text-align:center;"><h1 style="color:white;margin:0;font-size:28px;font-weight:900;">FixTray</h1></div><div style="padding:32px;"><h2 style="color:#111827;">Work Order Received</h2><p style="color:#6b7280;">Your work order <strong>#${workOrderId.slice(-8).toUpperCase()}</strong> has been created. You'll be notified when the shop reviews it.</p><a href="${url}" style="display:inline-block;background:#e5332a;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:700;">View Work Order</a></div></div>`,
   });
 }
 
-export async function sendStatusUpdateEmail(toEmail: string, workOrderId: string, status: string): Promise<boolean> {
+export async function sendStatusUpdateEmail(toEmail: string, workOrderId: string, status: string, shopId?: string): Promise<boolean> {
   const url = `${process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app'}/customer/workorders/${workOrderId}`;
   const label = status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   return sendEmail({
     to: toEmail,
+    shopId,
     subject: `Work Order Status Updated — ${label}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;border-radius:10px;overflow:hidden;"><div style="background:#e5332a;padding:32px;text-align:center;"><h1 style="color:white;margin:0;font-size:28px;font-weight:900;">FixTray</h1></div><div style="padding:32px;"><h2 style="color:#111827;">Work Order Update</h2><p style="color:#6b7280;">Work order <strong>#${workOrderId.slice(-8).toUpperCase()}</strong> is now: <strong style="color:#e5332a;">${label}</strong></p><a href="${url}" style="display:inline-block;background:#e5332a;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:700;">View Work Order</a></div></div>`,
   });
 }
 
-export async function sendPaymentConfirmationEmail(toEmail: string, workOrderId: string, amount: number): Promise<boolean> {
+export async function sendPaymentConfirmationEmail(toEmail: string, workOrderId: string, amount: number, shopId?: string): Promise<boolean> {
   const url = `${process.env.NEXT_PUBLIC_APP_URL || 'https://fixtray.app'}/customer/workorders/${workOrderId}`;
   return sendEmail({
     to: toEmail,
+    shopId,
     subject: `Payment Confirmation — $${amount.toFixed(2)}`,
     html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;border-radius:10px;overflow:hidden;"><div style="background:#e5332a;padding:32px;text-align:center;"><h1 style="color:white;margin:0;font-size:28px;font-weight:900;">FixTray</h1></div><div style="padding:32px;"><h2 style="color:#22c55e;">Payment Confirmed</h2><p style="color:#6b7280;">Payment of <strong>$${amount.toFixed(2)}</strong> received for work order <strong>#${workOrderId.slice(-8).toUpperCase()}</strong>.</p><a href="${url}" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:700;">View Invoice</a></div></div>`,
   });

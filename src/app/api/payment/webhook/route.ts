@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
         () => sendPaymentConfirmationEmail(
           workOrder.customer.email,
           workOrder.id,
-          workOrder.amountPaid!
+          workOrder.amountPaid!,
+          workOrder.shopId,
         ),
         {
           context: 'sendPaymentConfirmationEmail',

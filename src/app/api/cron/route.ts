@@ -36,6 +36,14 @@ export async function GET(request: NextRequest) {
   const results: Record<string, any> = {};
   const now = new Date();
 
+  try {
+    const { sweepExpiredDemos } = await import('@/lib/demoShop');
+    results.demoShopsReset = await sweepExpiredDemos(now);
+  } catch (error) {
+    console.error('Demo shop reset error:', error);
+    results.demoShopsReset = { error: 'Failed' };
+  }
+
   // VIS-019: open appointments become overdue 15 minutes after their start time.
   try {
     const overdueCutoff = new Date(now.getTime() - APPOINTMENT_OVERDUE_GRACE_MS);
@@ -97,7 +105,8 @@ export async function GET(request: NextRequest) {
         const dateStr = new Date(appt.scheduledDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
         sendSms(
           appt.customer.phone,
-          `FixTray: Reminder — your appointment at ${appt.shop.shopName} is tomorrow (${dateStr}) for ${appt.serviceType}. Reply HELP for info.`
+          `FixTray: Reminder — your appointment at ${appt.shop.shopName} is tomorrow (${dateStr}) for ${appt.serviceType}. Reply HELP for info.`,
+          appt.shopId,
         ).catch(() => {});
       }
 
@@ -162,7 +171,7 @@ export async function GET(request: NextRequest) {
       });
       const first = data.items[0];
       if (data.email && first) {
-        await sendLowStockAlert(data.email, summary, first.quantity, first.reorderPoint ?? 0).catch(() => {});
+        await sendLowStockAlert(data.email, summary, first.quantity, first.reorderPoint ?? 0, shopId).catch(() => {});
       }
       alertCount++;
     }
@@ -205,7 +214,8 @@ export async function GET(request: NextRequest) {
       if (rec.customer.phone) {
         sendSms(
           rec.customer.phone,
-          `FixTray: Your recurring service "${rec.title || 'Scheduled Maintenance'}" at ${rec.shop.shopName} has been created. Log in at fixtray.app/customer to review.`
+          `FixTray: Your recurring service "${rec.title || 'Scheduled Maintenance'}" at ${rec.shop.shopName} has been created. Log in at fixtray.app/customer to review.`,
+          rec.shopId,
         ).catch(() => {});
       }
 
@@ -309,7 +319,7 @@ export async function GET(request: NextRequest) {
 
           if (rule.channel === 'sms' || rule.channel === 'both') {
             if (appt.customer.phone) {
-              const smsSent = await sendSms(appt.customer.phone, stripHtml(message).slice(0, 320));
+              const smsSent = await sendSms(appt.customer.phone, stripHtml(message).slice(0, 320), rule.shopId);
               sent = sent && smsSent;
             } else {
               sent = false;
@@ -318,7 +328,7 @@ export async function GET(request: NextRequest) {
 
           if (rule.channel === 'email' || rule.channel === 'both') {
             if (appt.customer.email) {
-              const emailSent = await sendEmail({ to: appt.customer.email, subject, html: `<p>${message}</p>` });
+              const emailSent = await sendEmail({ to: appt.customer.email, subject, html: `<p>${message}</p>`, shopId: rule.shopId });
               sent = sent && emailSent;
             } else {
               sent = false;
@@ -384,7 +394,7 @@ export async function GET(request: NextRequest) {
           let sent = true;
           if (rule.channel === 'sms' || rule.channel === 'both') {
             if (wo.customer.phone) {
-              const smsSent = await sendSms(wo.customer.phone, stripHtml(message).slice(0, 320));
+              const smsSent = await sendSms(wo.customer.phone, stripHtml(message).slice(0, 320), rule.shopId);
               sent = sent && smsSent;
             } else {
               sent = false;
@@ -393,7 +403,7 @@ export async function GET(request: NextRequest) {
 
           if (rule.channel === 'email' || rule.channel === 'both') {
             if (wo.customer.email) {
-              const emailSent = await sendEmail({ to: wo.customer.email, subject, html: `<p>${message}</p>` });
+              const emailSent = await sendEmail({ to: wo.customer.email, subject, html: `<p>${message}</p>`, shopId: rule.shopId });
               sent = sent && emailSent;
             } else {
               sent = false;
@@ -452,7 +462,7 @@ export async function GET(request: NextRequest) {
           let sent = true;
           if (rule.channel === 'sms' || rule.channel === 'both') {
             if (wo.customer.phone) {
-              const smsSent = await sendSms(wo.customer.phone, stripHtml(message).slice(0, 320));
+              const smsSent = await sendSms(wo.customer.phone, stripHtml(message).slice(0, 320), rule.shopId);
               sent = sent && smsSent;
             } else {
               sent = false;
@@ -461,7 +471,7 @@ export async function GET(request: NextRequest) {
 
           if (rule.channel === 'email' || rule.channel === 'both') {
             if (wo.customer.email) {
-              const emailSent = await sendEmail({ to: wo.customer.email, subject, html: `<p>${message}</p>` });
+              const emailSent = await sendEmail({ to: wo.customer.email, subject, html: `<p>${message}</p>`, shopId: rule.shopId });
               sent = sent && emailSent;
             } else {
               sent = false;

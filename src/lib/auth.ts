@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { noteDemoActor } from '@/lib/demoOutboundContext';
 
 // Lazy JWT secret — never evaluate at module-load time because Vercel's
 // build-time "Collecting page data" step imports every route module but
@@ -38,8 +39,8 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateAccessToken(payload: Record<string, unknown>): string {
-  const options: SignOptions = { expiresIn: ACCESS_TOKEN_EXPIRES_IN as any };
+export function generateAccessToken(payload: Record<string, unknown>, expiresIn?: SignOptions['expiresIn']): string {
+  const options: SignOptions = { expiresIn: expiresIn ?? (ACCESS_TOKEN_EXPIRES_IN as SignOptions['expiresIn']) };
   return jwt.sign(payload, getJwtSecret(), options);
 }
 
@@ -59,6 +60,9 @@ export function generateRandomToken(bytes = 48): string {
 export function verifyToken(token: string): any {
   try {
     const decoded = jwt.verify(token, getJwtSecret());
+    if (decoded && typeof decoded === 'object') {
+      noteDemoActor(decoded as { demo?: boolean; role?: string; username?: string });
+    }
     return decoded;
   } catch {
     return null;
@@ -107,6 +111,7 @@ export interface AuthUser {
   shopId?: string;
   isSuperAdmin?: boolean;
   isOwner?: boolean;
+  demo?: boolean;
 }
 
 export function getAuthToken(request: NextRequest): string | null {

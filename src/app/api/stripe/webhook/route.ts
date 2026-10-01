@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
           },
           include: {
             customer: { select: { email: true, firstName: true, lastName: true } },
-            shop: { select: { shopName: true } },
+            shop: { select: { id: true, shopName: true } },
           },
         });
 
@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
             workOrderId,
             (session.amount_total ?? 0) / 100,
             updatedWO.shop?.shopName || 'Your Shop',
-            updatedWO.issueDescription || 'Vehicle Service'
+            updatedWO.issueDescription || 'Vehicle Service',
+            updatedWO.shop?.id,
           ).catch(console.error);
         }
 

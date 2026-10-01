@@ -123,6 +123,14 @@ export async function POST(request: NextRequest) {
     // Successful login - reset rate limit
     resetRateLimit(rateLimitKey);
 
+    // A demo shop's clock is started by the shop login, not by a technician.
+    // Once it has ended, the technician password no longer opens the shop.
+    const { demoLoginWindow } = await import('@/lib/demoShop');
+    const demoWindow = await demoLoginWindow(tech.shopId, false);
+    if (demoWindow.blocked) {
+      return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+    }
+
     // Check if shop requires 2FA for team members
     const { ensureProductionColumns } = await import('@/lib/ensureProductionColumns');
     await ensureProductionColumns();
@@ -149,12 +157,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ requires2FA: true, tempToken }, { status: 200 });
     }
 
-    // Issue tokens
-    const accessToken = generateAccessToken({ id: tech.id, email: tech.email, role: tech.role, shopId: tech.shopId });
+    // Issue tokens. Inside a running demo, the token ends when the demo ends.
+    const accessToken = generateAccessToken(
+      {
+        id: tech.id,
+        email: tech.email,
+        role: tech.role,
+        shopId: tech.shopId,
+        ...(demoWindow.demo ? { demo: true } : {}),
+      },
+      demoWindow.expiresIn,
+    );
 
     const refreshRaw = generateRandomToken(48);
     const refreshHash = await bcrypt.hash(refreshRaw, 12);
-    const expiresAt = refreshExpiryDate();
+    const expiresAt = demoWindow.sessionExpiresAt ?? refreshExpiryDate();
     const userIp = request.headers.get('x-forwarded-for') || request.headers.get('host') || '';
     const userAgent = request.headers.get('user-agent') || '';
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
@@ -204,7 +221,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
       path: '/',
-      maxAge: 60 * 15,
+      maxAge: demoWindow.expiresIn ?? 60 * 15,
     });
 
     // Fire-and-forget activity log

@@ -124,12 +124,18 @@ export async function notifyStatusChange(
   // Send SMS to customer if they have a phone number on file
   try {
     const prisma = (await import('@/lib/prisma')).default;
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
-      select: { phone: true },
-    });
+    const [customer, order] = await Promise.all([
+      prisma.customer.findUnique({
+        where: { id: customerId },
+        select: { phone: true },
+      }),
+      prisma.workOrder.findUnique({
+        where: { id: workOrderId },
+        select: { shopId: true },
+      }),
+    ]);
     if (customer?.phone) {
-      sendStatusUpdateSms(customer.phone, workOrderId, newStatus).catch(() => {});
+      sendStatusUpdateSms(customer.phone, workOrderId, newStatus, order?.shopId).catch(() => {});
     }
   } catch {
     // SMS failure must never break the notification flow

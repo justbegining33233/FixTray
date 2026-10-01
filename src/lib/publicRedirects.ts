@@ -3,7 +3,6 @@ export const PUBLIC_AND_ADMIN_REDIRECTS: Array<{ source: string; destination: st
   { source: '/admin/manage-users', destination: '/admin/user-management', permanent: false },
   { source: '/capabilities', destination: '/features', permanent: false },
   { source: '/help-center', destination: '/help', permanent: false },
-  { source: '/demo', destination: '/contact', permanent: false },
   { source: '/signup', destination: '/get-started', permanent: false },
   { source: '/auth/register', destination: '/get-started', permanent: false },
   { source: '/register/shop', destination: '/auth/register/shop', permanent: false },

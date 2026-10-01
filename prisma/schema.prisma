@@ -1556,9 +1556,15 @@ model PortalChatMessage {
   body         String
   sourceLocale String?
   translations String?
+  /// Shop that posted this message. Global chat is included so a demo reset can delete it.
+  shopId       String?
+  /// Account id of the poster (shop or tech). Used when shopId was not stored.
+  actorId      String?
   timestamp    DateTime @default(now())
 
   @@index([role, channelId])
+  @@index([shopId])
+  @@index([actorId])
   @@map("portal_chat_messages")
 }
 
@@ -1831,4 +1837,20 @@ model LoginAttempt {
   @@index([userId])
   @@index([userId, createdAt])
   @@map("login_attempts")
+}
+
+/// One row per emailed demo-shop login. The clock starts at first shop login.
+model DemoSession {
+  id             String    @id @default(cuid())
+  email          String
+  shopId         String    @unique
+  seedCustomerId String?
+  firstLoginAt   DateTime?
+  expiresAt      DateTime?
+  resetAt        DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("demo_sessions")
 }

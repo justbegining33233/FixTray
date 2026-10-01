@@ -5,8 +5,14 @@ describe('production column ensure', () => {
 
   it('only adds columns and is safe to re-run', () => {
     for (const statement of PRODUCTION_COLUMN_STATEMENTS) {
-      expect(statement.startsWith('ALTER TABLE ')).toBe(true);
-      expect(statement).toContain('ADD COLUMN IF NOT EXISTS');
+      const idempotent = statement.startsWith('ALTER TABLE ')
+        || statement.startsWith('CREATE TABLE IF NOT EXISTS ')
+        || statement.startsWith('CREATE INDEX IF NOT EXISTS ')
+        || statement.startsWith('CREATE UNIQUE INDEX IF NOT EXISTS ');
+      expect(idempotent).toBe(true);
+      if (statement.startsWith('ALTER TABLE ')) {
+        expect(statement).toContain('ADD COLUMN IF NOT EXISTS');
+      }
       expect(statement.toLowerCase()).not.toContain('drop ');
     }
   });

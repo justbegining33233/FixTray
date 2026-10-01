@@ -62,7 +62,30 @@ export async function POST(request: NextRequest) {
 
     const newRaw = (await import('@/lib/auth')).generateRandomToken(48);
     const newHash = await bcrypt.hash(newRaw, 12);
-    const newExpires = (await import('@/lib/auth')).refreshExpiryDate();
+    let newExpires = (await import('@/lib/auth')).refreshExpiryDate();
+    let demoExpiresIn: number | undefined;
+    let demoClaim = false;
+    if (!record.adminId && record.metadata) {
+      let meta: { customerId?: string; shopId?: string; techId?: string } = {};
+      try { meta = JSON.parse(record.metadata) as typeof meta; } catch { meta = {}; }
+      let shopId = meta.shopId;
+      if (!shopId && meta.techId) {
+        const tech = await prisma.tech.findUnique({ where: { id: meta.techId }, select: { shopId: true } });
+        shopId = tech?.shopId;
+      }
+      if (shopId) {
+        const { demoLoginWindow } = await import('@/lib/demoShop');
+        const demoWindow = await demoLoginWindow(shopId, false);
+        if (demoWindow.blocked) {
+          return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+        }
+        if (demoWindow.demo) demoClaim = true;
+        if (demoWindow.sessionExpiresAt) {
+          newExpires = demoWindow.sessionExpiresAt;
+          demoExpiresIn = demoWindow.expiresIn;
+        }
+      }
+    }
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
 
     if (record.adminId) {
@@ -117,15 +140,27 @@ export async function POST(request: NextRequest) {
       } else if (meta.shopId) {
         const s = await prisma.shop.findUnique({ where: { id: meta.shopId } });
         if (!s) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-        payload = { id: s.id, shopId: s.id, username: s.username, role: 'shop' };
+        payload = {
+          id: s.id,
+          shopId: s.id,
+          username: s.username,
+          role: 'shop',
+          ...(demoClaim ? { demo: true } : {}),
+        };
       } else if (meta.techId) {
         const t = await prisma.tech.findUnique({ where: { id: meta.techId } });
         if (!t) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-        payload = { id: t.id, shopId: t.shopId, username: t.email, role: t.role };
+        payload = {
+          id: t.id,
+          shopId: t.shopId,
+          username: t.email,
+          role: t.role,
+          ...(demoClaim ? { demo: true } : {}),
+        };
       }
     }
 
-    const accessToken = (await import('@/lib/auth')).generateAccessToken(payload);
+    const accessToken = (await import('@/lib/auth')).generateAccessToken(payload, demoExpiresIn);
 
     const response = NextResponse.json({ accessToken });
     // set new refresh cookie
@@ -157,7 +192,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 15,
+      maxAge: demoExpiresIn ?? 60 * 15,
     });
     return response;
   } catch (error) {

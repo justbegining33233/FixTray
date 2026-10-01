@@ -88,6 +88,13 @@ export async function POST(request: NextRequest) {
     // Reset rate limit counter on successful login
     resetRateLimit(rateLimitKey);
 
+    // Demo shops: the 30 minutes start at this first successful shop login.
+    const { demoLoginWindow } = await import('@/lib/demoShop');
+    const demoWindow = await demoLoginWindow(shop.id, true);
+    if (demoWindow.blocked) {
+      return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+    }
+
     // If 2FA is enabled, issue a short-lived challenge token — UI must complete
     // the second factor via POST /api/auth/2fa/challenge
     if (shop.twoFactorEnabled) {
@@ -95,15 +102,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ requires2FA: true, tempToken }, { status: 200 });
     }
 
-    // Generate access token
-    const accessToken = generateAccessToken({ id: shop.id, shopId: shop.id, username: shop.username, role: 'shop' });
+    // Generate access token. A running demo expires with the demo, not the normal session.
+    const accessToken = generateAccessToken(
+      {
+        id: shop.id,
+        shopId: shop.id,
+        username: shop.username,
+        role: 'shop',
+        ...(demoWindow.demo ? { demo: true } : {}),
+      },
+      demoWindow.expiresIn,
+    );
 
     // Refresh token — httpOnly cookies for silent renewal
     const refreshRaw = generateRandomToken(48);
     const bcryptMod2 = await import('bcrypt');
     const bcrypt2 = (bcryptMod2.default ?? bcryptMod2) as typeof import('bcrypt');
     const refreshHash = await bcrypt2.hash(refreshRaw, 12);
-    const expiresAt = refreshExpiryDate();
+    const expiresAt = demoWindow.sessionExpiresAt ?? refreshExpiryDate();
     const userIp = request.headers.get('x-forwarded-for') || '';
     const userAgent = request.headers.get('user-agent') || '';
     const csrf = (await import('@/lib/csrf')).generateCsrfToken();
@@ -163,7 +179,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
       path: '/',
-      maxAge: 60 * 15,
+      maxAge: demoWindow.expiresIn ?? 60 * 15,
     });
 
     // Fire-and-forget activity log

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { demoOutboundBlocked } from '@/lib/demoOutboundContext';
+import { isDemoShopId } from '@/lib/demoShopLookup';
 
 // GET /api/shop/customers/[id]/crm — Get customer CRM data (notes, tags, history, spend)
 export async function GET(
@@ -106,6 +108,10 @@ export async function PUT(
   }
 
   const { id } = await params;
+  const shopId = auth.role === 'shop' ? auth.id : auth.shopId;
+  if (demoOutboundBlocked() || (shopId && await isDemoShopId(shopId))) {
+    return NextResponse.json({ error: 'A demo shop cannot change a customer account.' }, { status: 403 });
+  }
 
   try {
     const body = await request.json();

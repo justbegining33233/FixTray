@@ -236,7 +236,7 @@ export async function PUT(
       });
       
       // Send status update email (basic)
-      sendStatusUpdateEmail(current.customer.email, id, data.status).catch((err) => {
+      sendStatusUpdateEmail(current.customer.email, id, data.status, current.shopId).catch((err) => {
         logger.error('Failed to send status update email', { error: err instanceof Error ? err.message : String(err), workOrderId: id, status: data.status });
       });
 
@@ -251,7 +251,8 @@ export async function PUT(
           totalDue,
           current.shop?.shopName || 'Your Shop',
           current.issueDescription || 'Vehicle Service',
-          completedBill.serviceFee
+          completedBill.serviceFee,
+          current.shopId,
         ).catch((err) => {
           logger.error('Failed to send job completed email', { error: err instanceof Error ? err.message : String(err), workOrderId: id, totalDue });
         });
@@ -299,7 +300,8 @@ export async function PUT(
         estimateBill.serviceFee,
         totalDue,
         current.shop?.shopName || 'Your Shop',
-        current.issueDescription || 'Vehicle Service'
+        current.issueDescription || 'Vehicle Service',
+        current.shopId,
       ).catch((err) => {
         logger.error('Failed to send estimate ready email', { error: err instanceof Error ? err.message : String(err), workOrderId: id, estimatedCost: data.estimatedCost });
       });
@@ -314,7 +316,8 @@ export async function PUT(
           : '';
         sendSms(
           current.customer.phone,
-          `FixTray: Your estimate is ready — $${totalDue.toFixed(2)}${feeNote} for "${current.issueDescription?.slice(0, 40) || 'Vehicle Service'}". Review at fixtray.app/customer (WO: ...${id.slice(-6)})`
+          `FixTray: Your estimate is ready — $${totalDue.toFixed(2)}${feeNote} for "${current.issueDescription?.slice(0, 40) || 'Vehicle Service'}". Review at fixtray.app/customer (WO: ...${id.slice(-6)})`,
+          current.shopId,
         ).catch((err) => {
           logger.warn('Failed to send estimate ready SMS', { workOrderId: id, phone: current.customer.phone });
         });
@@ -376,6 +379,7 @@ export async function PUT(
 
       sendEmail({
         to: current.customer.email,
+        shopId: current.shopId,
         subject: `How was your experience at ${shopName}?`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -395,7 +399,8 @@ export async function PUT(
       if (current.customer.phone) {
         sendSms(
           current.customer.phone,
-          `Thank you for your visit to ${shopName}! We'd love your feedback: ${reviewLink}`
+          `Thank you for your visit to ${shopName}! We'd love your feedback: ${reviewLink}`,
+          current.shopId,
         ).catch((err) => {
           logger.warn('Failed to send review request SMS', { workOrderId: id, customerId: current.customerId });
         });

@@ -270,7 +270,8 @@ export async function POST(request: NextRequest) {
       const dateStr = new Date(scheduledDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
       sendSms(
         appointment.customer.phone,
-        `FixTray: Your appointment at ${appointment.shop.shopName} is confirmed for ${dateStr}. Service: ${serviceType}.`
+        `FixTray: Your appointment at ${appointment.shop.shopName} is confirmed for ${dateStr}. Service: ${serviceType}.`,
+        shopId,
       ).catch(() => {});
     }
 

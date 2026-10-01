@@ -92,7 +92,18 @@ export async function POST(request: NextRequest) {
       if (!shop || shop.status !== 'approved') {
         return NextResponse.json({ error: 'Account not active' }, { status: 403 });
       }
-      accessToken = generateAccessToken({ id: shop.id, shopId: shop.id, username: shop.username, role: 'shop' });
+      const { demoLoginWindow } = await import('@/lib/demoShop');
+      const demoWindow = await demoLoginWindow(shop.id, true);
+      if (demoWindow.blocked) {
+        return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+      }
+      accessToken = generateAccessToken({
+        id: shop.id,
+        shopId: shop.id,
+        username: shop.username,
+        role: 'shop',
+        ...(demoWindow.demo ? { demo: true } : {}),
+      }, demoWindow.expiresIn);
       userPayload = { id: shop.id, email: shop.email, username: shop.username, shopName: shop.shopName, role: 'shop' };
     } else if (userType === 'tech') {
       const tech = await prisma.tech.findUnique({
@@ -102,7 +113,18 @@ export async function POST(request: NextRequest) {
       if (!tech) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
-      accessToken = generateAccessToken({ id: tech.id, email: tech.email, role: tech.role, shopId: tech.shopId });
+      const { demoLoginWindow } = await import('@/lib/demoShop');
+      const demoWindow = await demoLoginWindow(tech.shopId, false);
+      if (demoWindow.blocked) {
+        return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+      }
+      accessToken = generateAccessToken({
+        id: tech.id,
+        email: tech.email,
+        role: tech.role,
+        shopId: tech.shopId,
+        ...(demoWindow.demo ? { demo: true } : {}),
+      }, demoWindow.expiresIn);
       userPayload = { id: tech.id, email: tech.email, name: `${tech.firstName} ${tech.lastName}`, role: tech.role, shopId: tech.shopId };
     } else {
       const customer = await prisma.customer.findUnique({

@@ -34,6 +34,10 @@ export const PRODUCTION_COLUMN_STATEMENTS = [
   `ALTER TABLE "customer_messages" ADD COLUMN IF NOT EXISTS "translations" TEXT`,
   `ALTER TABLE "portal_chat_messages" ADD COLUMN IF NOT EXISTS "sourceLocale" TEXT`,
   `ALTER TABLE "portal_chat_messages" ADD COLUMN IF NOT EXISTS "translations" TEXT`,
+  `ALTER TABLE "portal_chat_messages" ADD COLUMN IF NOT EXISTS "shopId" TEXT`,
+  `ALTER TABLE "portal_chat_messages" ADD COLUMN IF NOT EXISTS "actorId" TEXT`,
+  `CREATE INDEX IF NOT EXISTS "portal_chat_messages_shopId_idx" ON "portal_chat_messages"("shopId")`,
+  `CREATE INDEX IF NOT EXISTS "portal_chat_messages_actorId_idx" ON "portal_chat_messages"("actorId")`,
   `CREATE TABLE IF NOT EXISTS "demo_sessions" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,

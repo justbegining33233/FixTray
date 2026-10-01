@@ -118,7 +118,8 @@ export async function POST(request: NextRequest) {
           shop.shopName,
           itemName,
           quantity,
-          urgency || 'normal'
+          urgency || 'normal',
+          shopId,
         );
       }
     } catch (emailError) {
@@ -206,7 +207,7 @@ export async function PATCH(request: NextRequest) {
           // Send email notification for low stock
           const shop = await prisma.shop.findUnique({ where: { id: inventoryRequest.shopId }, select: { email: true } });
           if (shop?.email) {
-            await sendLowStockAlert(shop.email, inventoryItem.itemName, newQuantity, inventoryItem.reorderPoint);
+            await sendLowStockAlert(shop.email, inventoryItem.itemName, newQuantity, inventoryItem.reorderPoint, inventoryRequest.shopId);
           }
         }
       }
@@ -231,7 +232,8 @@ export async function PATCH(request: NextRequest) {
             inventoryRequest.itemName,
             inventoryRequest.quantity,
             status === 'approved',
-            orderDetails
+            orderDetails,
+            inventoryRequest.shopId,
           );
         }
       } catch (emailError) {

@@ -1556,9 +1556,15 @@ model PortalChatMessage {
   body         String
   sourceLocale String?
   translations String?
+  /// Shop that posted this message. Global chat is included so a demo reset can delete it.
+  shopId       String?
+  /// Account id of the poster (shop or tech). Used when shopId was not stored.
+  actorId      String?
   timestamp    DateTime @default(now())
 
   @@index([role, channelId])
+  @@index([shopId])
+  @@index([actorId])
   @@map("portal_chat_messages")
 }
 

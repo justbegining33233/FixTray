@@ -104,7 +104,13 @@ export async function POST(request: NextRequest) {
 
     // Generate access token. A running demo expires with the demo, not the normal session.
     const accessToken = generateAccessToken(
-      { id: shop.id, shopId: shop.id, username: shop.username, role: 'shop' },
+      {
+        id: shop.id,
+        shopId: shop.id,
+        username: shop.username,
+        role: 'shop',
+        ...(demoWindow.demo ? { demo: true } : {}),
+      },
       demoWindow.expiresIn,
     );
 

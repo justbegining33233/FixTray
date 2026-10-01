@@ -9,6 +9,31 @@ export const DEMO_DURATION_MS = 30 * 60 * 1000;
 /** Reserved shop username prefix. Customer shop lists hide these accounts. */
 export const DEMO_USERNAME_PREFIX = 'fixtraydemo';
 
+export function isDemoUsername(username: string | null | undefined): boolean {
+  return typeof username === 'string' && username.startsWith(DEMO_USERNAME_PREFIX);
+}
+
+/** Sample customer created with the demo shop. Not a real customer's address. */
+export function isDemoSeedCustomerEmail(email: string | null | undefined): boolean {
+  return typeof email === 'string' && /^demo-customer\+[^@]+@fixtray\.app$/i.test(email);
+}
+
+/**
+ * A customer who already existed is detached and kept.
+ * A customer created for the demo is deleted once nothing outside the demo still points at them.
+ */
+export function decideCustomerReset(input: {
+  createdAt: Date;
+  sessionCreatedAt: Date;
+  isSeed: boolean;
+  otherShopTies: number;
+}): 'delete' | 'detach' {
+  const preExisting = !input.isSeed && input.createdAt.getTime() < input.sessionCreatedAt.getTime();
+  if (preExisting) return 'detach';
+  if (input.otherShopTies > 0) return 'detach';
+  return 'delete';
+}
+
 export const DEMO_SHOP_NAME = 'FixTray Demo Shop';
 
 export const DEMO_FROM_EMAIL = 'FixTray <noreply@fixtray.app>';

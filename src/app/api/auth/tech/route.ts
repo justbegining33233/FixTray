@@ -159,7 +159,13 @@ export async function POST(request: NextRequest) {
 
     // Issue tokens. Inside a running demo, the token ends when the demo ends.
     const accessToken = generateAccessToken(
-      { id: tech.id, email: tech.email, role: tech.role, shopId: tech.shopId },
+      {
+        id: tech.id,
+        email: tech.email,
+        role: tech.role,
+        shopId: tech.shopId,
+        ...(demoWindow.demo ? { demo: true } : {}),
+      },
       demoWindow.expiresIn,
     );
 

@@ -91,7 +91,8 @@ export async function POST(request: NextRequest) {
             customerName,
             schedule.title,
             schedule.shop.shopName,
-            schedule.estimatedCost
+            schedule.estimatedCost,
+            schedule.shopId,
           ).catch(console.error);
           await pushRecurringServiceDue(schedule.customerId, schedule.title).catch(console.error);
         } else {
@@ -179,7 +180,8 @@ export async function GET(request: NextRequest) {
             customerName,
             schedule.title,
             schedule.shop.shopName,
-            schedule.estimatedCost
+            schedule.estimatedCost,
+            schedule.shopId,
           ).catch(console.error);
           await pushRecurringServiceDue(schedule.customerId, schedule.title).catch(console.error);
         }

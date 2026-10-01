@@ -62,8 +62,10 @@ export async function POST(request: NextRequest) {
     }
     const accessToken = generateAccessToken({
       id: shop.id,
+      shopId: shop.id,
       username: shop.username,
       role: 'shop',
+      ...(demoWindow.demo ? { demo: true } : {}),
     }, demoWindow.expiresIn);
 
     return NextResponse.json({

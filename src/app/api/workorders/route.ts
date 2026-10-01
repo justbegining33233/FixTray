@@ -28,6 +28,8 @@ import {
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { demoOutboundBlocked } from '@/lib/demoOutboundContext';
+import { isDemoShopId } from '@/lib/demoShopLookup';
 import { workOrderTextMatch } from '@/lib/workOrderSearch';
 
 export async function GET(request: NextRequest) {
@@ -347,6 +349,7 @@ export async function POST(request: NextRequest) {
         const bcrypt = await import('bcrypt');
         const tempPassword = await bcrypt.hash(crypto.randomUUID(), 10);
 
+        const demoShop = demoOutboundBlocked() || await isDemoShopId(shopId);
         const customer = await prisma.customer.upsert({
           where: { email: sanitizedData.customerEmail },
           create: {
@@ -356,7 +359,7 @@ export async function POST(request: NextRequest) {
             phone: sanitizedData.customerPhone || null,
             password: tempPassword,
           },
-          update: {
+          update: demoShop ? {} : {
             ...(sanitizedData.customerPhone ? { phone: sanitizedData.customerPhone } : {}),
           },
         });
@@ -423,7 +426,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send email notification
-sendWorkOrderCreatedEmail(workOrder.customer.email, workOrder.id).catch((err) => {
+sendWorkOrderCreatedEmail(workOrder.customer.email, workOrder.id, workOrder.shopId).catch((err) => {
         logger.warn('Failed to send work order created email', { workOrderId: workOrder.id, customerId: workOrder.customerId });
       });
 

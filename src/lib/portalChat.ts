@@ -40,6 +40,7 @@ export async function addPortalMessage(
   body: string,
   channelId = 'global',
   sourceLocale?: string | null,
+  attribution?: { shopId?: string | null; actorId?: string | null },
 ): Promise<PortalChatMessage> {
   const row = await prisma.portalChatMessage.create({
     data: {
@@ -48,6 +49,8 @@ export async function addPortalMessage(
       sender,
       body,
       sourceLocale: sourceLocale || null,
+      shopId: attribution?.shopId || null,
+      actorId: attribution?.actorId || null,
     },
   });
   return {

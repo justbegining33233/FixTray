@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { generateNumericOTP, generateTokenHex, hashTokenSha256 } from '@/lib/verification';
 import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
 import logger from '@/lib/logger';
+import { isDemoSeedCustomerEmail, isDemoUsername } from '@/lib/demoShopRules';
 
 /**
  * CRITICAL FIX: Add constant-time delay to prevent timing attacks
@@ -33,6 +34,40 @@ async function sendByEmail(email: string, raw: string, siteUrl: string) {
     logger.error('RESEND_API_KEY not configured — cannot send reset email');
   }
   return false;
+}
+
+async function isDemoPasswordResetTarget(input: {
+  shopUsername: string | null;
+  techShopId: string | null;
+  customerId: string | null;
+  customerEmail: string | null;
+}): Promise<boolean> {
+  if (isDemoUsername(input.shopUsername)) return true;
+  if (input.techShopId) {
+    const shop = await prisma.shop.findUnique({
+      where: { id: input.techShopId },
+      select: { username: true },
+    });
+    if (isDemoUsername(shop?.username)) return true;
+  }
+  if (!input.customerId) return false;
+  if (isDemoSeedCustomerEmail(input.customerEmail)) return true;
+  const [orders, appointments, recurring] = await Promise.all([
+    prisma.workOrder.findMany({
+      where: { customerId: input.customerId },
+      select: { shop: { select: { username: true } } },
+    }),
+    prisma.appointment.findMany({
+      where: { customerId: input.customerId },
+      select: { shop: { select: { username: true } } },
+    }),
+    prisma.recurringWorkOrder.findMany({
+      where: { customerId: input.customerId },
+      select: { shop: { select: { username: true } } },
+    }),
+  ]);
+  const usernames = [...orders, ...appointments, ...recurring].map((row) => row.shop.username);
+  return usernames.length > 0 && usernames.every((username) => isDemoUsername(username));
 }
 
 async function sendBySms(phone: string, raw: string) {
@@ -109,6 +144,18 @@ export async function POST(request: NextRequest) {
       }});
     } catch {
       // still continue to attempt delivery (dev fallback will log the raw token)
+    }
+
+    // A demo shop must not text or email a reset code. The response stays generic.
+    const demoTarget = await isDemoPasswordResetTarget({
+      shopUsername: shopUser && user.id === shopUser.id ? shopUser.username : null,
+      techShopId: techUser && user.id === techUser.id ? techUser.shopId : null,
+      customerId: customerUser && user.id === customerUser.id ? customerUser.id : null,
+      customerEmail: customerUser && user.id === customerUser.id ? customerUser.email : null,
+    });
+    if (demoTarget) {
+      logger.info('[demo] password reset delivery skipped');
+      return NextResponse.json({ success: true });
     }
 
     // Send the token via configured provider or console fallback

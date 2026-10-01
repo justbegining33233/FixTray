@@ -70,6 +70,7 @@ export async function POST(
     // Send email with invoice details
     const sent = await sendEmail({
       to: workOrder.customer.email,
+      shopId: workOrder.shopId,
       subject: `Invoice from ${shopName} — Work Order ${id.slice(0, 8)}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

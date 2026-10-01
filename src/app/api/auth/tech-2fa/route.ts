@@ -111,15 +111,26 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Issue full tokens
+      // Issue full tokens. A technician login does not start the demo clock.
       const { generateAccessToken, generateRandomToken, refreshExpiryDate } = await import('@/lib/auth');
+      const { demoLoginWindow } = await import('@/lib/demoShop');
+      const demoWindow = await demoLoginWindow(tech.shopId, false);
+      if (demoWindow.blocked) {
+        return NextResponse.json({ error: demoWindow.message }, { status: 403 });
+      }
       const shop = await prisma.shop.findUnique({ where: { id: tech.shopId }, select: { shopName: true } });
-      const accessToken = generateAccessToken({ id: tech.id, email: tech.email, role: tech.role, shopId: tech.shopId });
+      const accessToken = generateAccessToken({
+        id: tech.id,
+        email: tech.email,
+        role: tech.role,
+        shopId: tech.shopId,
+        ...(demoWindow.demo ? { demo: true } : {}),
+      }, demoWindow.expiresIn);
       const bcryptMod = await import('bcrypt');
       const bcrypt = (bcryptMod.default ?? bcryptMod) as typeof import('bcrypt');
       const refreshRaw = generateRandomToken(48);
       const refreshHash = await bcrypt.hash(refreshRaw, 12);
-      const expiresAt = refreshExpiryDate();
+      const expiresAt = demoWindow.sessionExpiresAt ?? refreshExpiryDate();
       const csrf = (await import('@/lib/csrf')).generateCsrfToken();
       await enforceSingleActiveSession(prisma, { techId: tech.id });
       const refresh = await prisma.refreshToken.create({
@@ -154,7 +165,7 @@ export async function POST(request: NextRequest) {
       response.cookies.set('refresh_id', refresh.id, cookieOpts);
       response.cookies.set('refresh_sig', refreshRaw, cookieOpts);
       response.cookies.set('csrf_token', csrf, { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: cookieOpts.maxAge });
-      response.cookies.set('sos_auth', accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: 60 * 15 });
+      response.cookies.set('sos_auth', accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: demoWindow.expiresIn ?? 60 * 15 });
 
       return response;
     }

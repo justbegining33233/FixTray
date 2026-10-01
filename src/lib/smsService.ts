@@ -34,7 +34,15 @@ async function getClient() {
  * Returns `true` on success, `false` if not configured or if sending fails.
  * Prefers TWILIO_MESSAGING_SERVICE_SID when set; falls back to TWILIO_FROM_NUMBER.
  */
-export async function sendSms(to: string, body: string): Promise<boolean> {
+export async function sendSms(to: string, body: string, shopId?: string): Promise<boolean> {
+  const { demoOutboundBlocked, shouldBlockOutbound } = await import('@/lib/demoOutboundContext');
+  const { isDemoShopId } = await import('@/lib/demoShopLookup');
+  const shopIsDemo = shopId ? await isDemoShopId(shopId) : false;
+  if (shouldBlockOutbound({ demoContext: demoOutboundBlocked(), shopIsDemo })) {
+    logger.warn('[sms] demo shop outbound text blocked');
+    return false;
+  }
+
   const client = await getClient();
   if (!client || !to) return false;
 
@@ -70,6 +78,7 @@ export async function sendStatusUpdateSms(
   phone: string,
   workOrderId: string,
   newStatus: string,
+  shopId?: string,
 ): Promise<boolean> {
   const statusMessages: Record<string, string> = {
     'in-progress':         'FixTray: A tech has started working on your vehicle.',
@@ -80,7 +89,7 @@ export async function sendStatusUpdateSms(
   const message = statusMessages[newStatus];
   if (!message) return false;
   const tag = ` (WO: ...${workOrderId.slice(-6)})`;
-  return sendSms(phone, message + tag);
+  return sendSms(phone, message + tag, shopId);
 }
 
 /**

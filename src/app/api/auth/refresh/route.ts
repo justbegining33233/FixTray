@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     const newHash = await bcrypt.hash(newRaw, 12);
     let newExpires = (await import('@/lib/auth')).refreshExpiryDate();
     let demoExpiresIn: number | undefined;
+    let demoClaim = false;
     if (!record.adminId && record.metadata) {
       let meta: { customerId?: string; shopId?: string; techId?: string } = {};
       try { meta = JSON.parse(record.metadata) as typeof meta; } catch { meta = {}; }
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
         if (demoWindow.blocked) {
           return NextResponse.json({ error: demoWindow.message }, { status: 403 });
         }
+        if (demoWindow.demo) demoClaim = true;
         if (demoWindow.sessionExpiresAt) {
           newExpires = demoWindow.sessionExpiresAt;
           demoExpiresIn = demoWindow.expiresIn;
@@ -138,11 +140,23 @@ export async function POST(request: NextRequest) {
       } else if (meta.shopId) {
         const s = await prisma.shop.findUnique({ where: { id: meta.shopId } });
         if (!s) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-        payload = { id: s.id, shopId: s.id, username: s.username, role: 'shop' };
+        payload = {
+          id: s.id,
+          shopId: s.id,
+          username: s.username,
+          role: 'shop',
+          ...(demoClaim ? { demo: true } : {}),
+        };
       } else if (meta.techId) {
         const t = await prisma.tech.findUnique({ where: { id: meta.techId } });
         if (!t) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-        payload = { id: t.id, shopId: t.shopId, username: t.email, role: t.role };
+        payload = {
+          id: t.id,
+          shopId: t.shopId,
+          username: t.email,
+          role: t.role,
+          ...(demoClaim ? { demo: true } : {}),
+        };
       }
     }
 

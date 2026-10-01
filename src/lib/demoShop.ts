@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { sendEmail } from '@/lib/emailService';
 import logger from '@/lib/logger';
+import { rememberDemoShop } from '@/lib/demoShopLookup';
 import {
   DEMO_DURATION_MS,
   DEMO_ENDED_MESSAGE,
@@ -9,6 +10,7 @@ import {
   DEMO_SHOP_NAME,
   DEMO_USERNAME_PREFIX,
   buildDemoLoginEmail,
+  decideCustomerReset,
   decideDemoLogin,
   demoAccessExpiresIn,
   type DemoSessionClock,
@@ -31,6 +33,10 @@ const DEMO_TABLE_STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "demo_sessions_shopId_key" ON "demo_sessions"("shopId")`,
   `CREATE INDEX IF NOT EXISTS "demo_sessions_email_idx" ON "demo_sessions"("email")`,
   `CREATE INDEX IF NOT EXISTS "demo_sessions_expiresAt_idx" ON "demo_sessions"("expiresAt")`,
+  `ALTER TABLE "portal_chat_messages" ADD COLUMN IF NOT EXISTS "shopId" TEXT`,
+  `ALTER TABLE "portal_chat_messages" ADD COLUMN IF NOT EXISTS "actorId" TEXT`,
+  `CREATE INDEX IF NOT EXISTS "portal_chat_messages_shopId_idx" ON "portal_chat_messages"("shopId")`,
+  `CREATE INDEX IF NOT EXISTS "portal_chat_messages_actorId_idx" ON "portal_chat_messages"("actorId")`,
 ] as const;
 
 let tableReady: Promise<void> | null = null;
@@ -54,7 +60,7 @@ async function applyDemoSessionTable(): Promise<void> {
 
 export type DemoLoginWindow =
   | { blocked: true; message: string }
-  | { blocked: false; expiresIn?: number; sessionExpiresAt?: Date };
+  | { blocked: false; demo?: boolean; expiresIn?: number; sessionExpiresAt?: Date };
 
 /**
  * Open or close the demo window for a shop login.
@@ -97,13 +103,15 @@ export async function demoLoginWindow(shopId: string, startClock: boolean, now =
     });
     return {
       blocked: false,
+      demo: true,
       expiresIn: demoAccessExpiresIn(decision.expiresAt, now),
       sessionExpiresAt: decision.expiresAt,
     };
   }
-  if (!decision.expiresAt) return { blocked: false };
+  if (!decision.expiresAt) return { blocked: false, demo: true };
   return {
     blocked: false,
+    demo: true,
     expiresIn: demoAccessExpiresIn(decision.expiresAt, now),
     sessionExpiresAt: decision.expiresAt,
   };
@@ -199,17 +207,106 @@ async function revokeDemoSessions(shopId: string): Promise<void> {
   }
 }
 
+function addId(target: Set<string>, id: string | null | undefined) {
+  if (id) target.add(id);
+}
+
+async function collectDemoCustomerIds(shopId: string, seedCustomerId: string | null): Promise<{
+  customerIds: Set<string>;
+  workOrderIds: string[];
+  appointmentIds: string[];
+}> {
+  const [
+    workOrders,
+    appointments,
+    reviews,
+    favorites,
+    recurring,
+    referrals,
+    paymentLinks,
+    inspections,
+    dvis,
+    reports,
+  ] = await Promise.all([
+    prisma.workOrder.findMany({ where: { shopId }, select: { id: true, customerId: true } }),
+    prisma.appointment.findMany({ where: { shopId }, select: { id: true, customerId: true } }),
+    prisma.review.findMany({ where: { shopId }, select: { customerId: true } }),
+    prisma.favoriteShop.findMany({ where: { shopId }, select: { customerId: true } }),
+    prisma.recurringWorkOrder.findMany({ where: { shopId }, select: { customerId: true } }),
+    prisma.referral.findMany({ where: { shopId }, select: { referrerCustomerId: true, referredCustomerId: true } }),
+    prisma.paymentLink.findMany({ where: { shopId }, select: { customerId: true } }),
+    prisma.stateInspection.findMany({ where: { shopId }, select: { customerId: true } }),
+    prisma.dVIInspection.findMany({ where: { shopId }, select: { customerId: true } }),
+    prisma.vehicleConditionReport.findMany({ where: { shopId }, select: { customerId: true } }),
+  ]);
+
+  const customerIds = new Set<string>();
+  addId(customerIds, seedCustomerId);
+  for (const row of workOrders) addId(customerIds, row.customerId);
+  for (const row of appointments) addId(customerIds, row.customerId);
+  for (const row of reviews) addId(customerIds, row.customerId);
+  for (const row of favorites) addId(customerIds, row.customerId);
+  for (const row of recurring) addId(customerIds, row.customerId);
+  for (const row of referrals) {
+    addId(customerIds, row.referrerCustomerId);
+    addId(customerIds, row.referredCustomerId);
+  }
+  for (const row of paymentLinks) addId(customerIds, row.customerId);
+  for (const row of inspections) addId(customerIds, row.customerId);
+  for (const row of dvis) addId(customerIds, row.customerId);
+  for (const row of reports) addId(customerIds, row.customerId);
+
+  return {
+    customerIds,
+    workOrderIds: workOrders.map((row) => row.id),
+    appointmentIds: appointments.map((row) => row.id),
+  };
+}
+
 async function wipeDemoShop(shopId: string, sessionCreatedAt: Date, seedCustomerId: string | null): Promise<boolean> {
-  const workOrders = await prisma.workOrder.findMany({
-    where: { shopId },
-    select: { id: true, customerId: true },
-  }).catch(() => []);
-  const workOrderIds = workOrders.map((row) => row.id);
-  const customerIds = new Set(workOrders.map((row) => row.customerId));
-  if (seedCustomerId) customerIds.add(seedCustomerId);
+  let linked: { customerIds: Set<string>; workOrderIds: string[]; appointmentIds: string[] };
+  try {
+    linked = await collectDemoCustomerIds(shopId, seedCustomerId);
+  } catch (error) {
+    logger.error('[demo] could not list demo customers', {
+      shopId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+  const { customerIds, workOrderIds, appointmentIds } = linked;
 
   const techs = await prisma.tech.findMany({ where: { shopId }, select: { id: true } }).catch(() => []);
   const techIds = techs.map((row) => row.id);
+
+  let requiredOk = true;
+  try {
+    const actorIds = [shopId, ...techIds];
+    await prisma.portalChatMessage.deleteMany({
+      where: {
+        OR: [
+          { shopId },
+          { actorId: { in: actorIds } },
+        ],
+      },
+    });
+    const noteOr: Array<{ workOrderId?: { in: string[] }; appointmentId?: { in: string[] } }> = [];
+    if (workOrderIds.length > 0) noteOr.push({ workOrderId: { in: workOrderIds } });
+    if (appointmentIds.length > 0) noteOr.push({ appointmentId: { in: appointmentIds } });
+    if (noteOr.length > 0) {
+      await prisma.notification.deleteMany({ where: { OR: noteOr } });
+    }
+    if (workOrderIds.length > 0) {
+      await prisma.customerDocument.deleteMany({ where: { workOrderId: { in: workOrderIds } } });
+    }
+    await prisma.favoriteShop.deleteMany({ where: { shopId } });
+  } catch (error) {
+    requiredOk = false;
+    logger.error('[demo] required demo cleanup failed', {
+      shopId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   if (workOrderIds.length > 0) {
     await bestEffort('refunds', () => prisma.refund.deleteMany({ where: { workOrderId: { in: workOrderIds } } }));
@@ -263,24 +360,79 @@ async function wipeDemoShop(shopId: string, sessionCreatedAt: Date, seedCustomer
     }
   }
 
-  await deleteDemoCustomers([...customerIds], sessionCreatedAt, seedCustomerId);
-  return shopRemoved;
+  const customersOk = await resetDemoCustomers([...customerIds], sessionCreatedAt, seedCustomerId);
+  return shopRemoved && requiredOk && customersOk;
 }
 
-async function deleteDemoCustomers(customerIds: string[], sessionCreatedAt: Date, seedCustomerId: string | null): Promise<void> {
-  for (const id of customerIds) {
-    const customer = await prisma.customer.findUnique({
-      where: { id },
-      select: { id: true, createdAt: true },
-    }).catch(() => null);
-    if (!customer) continue;
-    const isSeed = customer.id === seedCustomerId;
-    const createdDuringDemo = customer.createdAt.getTime() >= sessionCreatedAt.getTime() - 60_000;
-    if (!isSeed && !createdDuringDemo) continue;
-    const remainingJobs = await prisma.workOrder.count({ where: { customerId: id } }).catch(() => 1);
-    if (remainingJobs > 0) continue;
-    await bestEffort('reward claims', () => prisma.rewardClaim.deleteMany({ where: { customerId: id } }));
-    await bestEffort('demo customer', () => prisma.customer.delete({ where: { id } }));
+async function otherShopTies(customerId: string): Promise<number> {
+  const [jobs, appointments, favorites, reviews, recurring, referrals, links] = await Promise.all([
+    prisma.workOrder.count({ where: { customerId } }),
+    prisma.appointment.count({ where: { customerId } }),
+    prisma.favoriteShop.count({ where: { customerId } }),
+    prisma.review.count({ where: { customerId } }),
+    prisma.recurringWorkOrder.count({ where: { customerId } }),
+    prisma.referral.count({
+      where: { OR: [{ referrerCustomerId: customerId }, { referredCustomerId: customerId }] },
+    }),
+    prisma.paymentLink.count({ where: { customerId } }),
+  ]);
+  return jobs + appointments + favorites + reviews + recurring + referrals + links;
+}
+
+async function detachDemoVehicles(customerId: string, sessionCreatedAt: Date): Promise<void> {
+  const vehicles = await prisma.vehicle.findMany({
+    where: { customerId, createdAt: { gte: sessionCreatedAt } },
+    select: { id: true },
+  });
+  for (const vehicle of vehicles) {
+    const [jobs, appointments, recurring] = await Promise.all([
+      prisma.workOrder.count({ where: { vehicleId: vehicle.id } }),
+      prisma.appointment.count({ where: { vehicleId: vehicle.id } }),
+      prisma.recurringWorkOrder.count({ where: { vehicleId: vehicle.id } }),
+    ]);
+    if (jobs === 0 && appointments === 0 && recurring === 0) {
+      await prisma.vehicle.delete({ where: { id: vehicle.id } });
+    }
+  }
+}
+
+/**
+ * Delete customers that exist only for this demo.
+ * A customer created before the demo is detached (demo vehicles only) and kept.
+ * A failed delete leaves the session unfinished so the sweep tries again.
+ */
+async function resetDemoCustomers(
+  customerIds: string[],
+  sessionCreatedAt: Date,
+  seedCustomerId: string | null,
+): Promise<boolean> {
+  try {
+    for (const id of customerIds) {
+      const customer = await prisma.customer.findUnique({
+        where: { id },
+        select: { id: true, createdAt: true },
+      });
+      if (!customer) continue;
+      const ties = await otherShopTies(id);
+      const decision = decideCustomerReset({
+        createdAt: customer.createdAt,
+        sessionCreatedAt,
+        isSeed: customer.id === seedCustomerId,
+        otherShopTies: ties,
+      });
+      if (decision === 'detach') {
+        await detachDemoVehicles(id, sessionCreatedAt);
+        continue;
+      }
+      await prisma.rewardClaim.deleteMany({ where: { customerId: id } });
+      await prisma.customer.delete({ where: { id } });
+    }
+    return true;
+  } catch (error) {
+    logger.error('[demo] customer reset failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
   }
 }
 
@@ -312,6 +464,7 @@ export async function createDemoShopLogin(email: string): Promise<void> {
       approvedAt: new Date(),
     },
   });
+  rememberDemoShop(shop.id);
 
   const session = await prisma.demoSession.create({
     data: { email, shopId: shop.id },
@@ -372,6 +525,8 @@ export async function createDemoShopLogin(email: string): Promise<void> {
     from: DEMO_FROM_EMAIL,
     subject: message.subject,
     html: message.html,
+    shopId: shop.id,
+    purpose: 'demo-login',
   });
   if (!sent) {
     await endDemoShop(shop.id).catch(() => undefined);

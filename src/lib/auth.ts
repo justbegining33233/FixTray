@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { noteDemoActor } from '@/lib/demoOutboundContext';
 
 // Lazy JWT secret — never evaluate at module-load time because Vercel's
 // build-time "Collecting page data" step imports every route module but
@@ -59,6 +60,9 @@ export function generateRandomToken(bytes = 48): string {
 export function verifyToken(token: string): any {
   try {
     const decoded = jwt.verify(token, getJwtSecret());
+    if (decoded && typeof decoded === 'object') {
+      noteDemoActor(decoded as { demo?: boolean; role?: string; username?: string });
+    }
     return decoded;
   } catch {
     return null;
@@ -107,6 +111,7 @@ export interface AuthUser {
   shopId?: string;
   isSuperAdmin?: boolean;
   isOwner?: boolean;
+  demo?: boolean;
 }
 
 export function getAuthToken(request: NextRequest): string | null {

@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { countApprovedShops, isApprovedShop } from '@/lib/shopCensus';
 
 function parseSessionMetadata(raw: string | null): { shopId?: string } {
   if (!raw) return {};
@@ -179,7 +180,7 @@ export async function GET(request: NextRequest) {
     const totalShops = shops.length;
     const activeShops = formattedShops.filter(s => s.activityStatus === 'active').length;
     const inactiveShops = formattedShops.filter(s => s.activityStatus === 'inactive').length;
-    const approvedShops = shops.filter(s => s.status === 'approved').length;
+    const approvedShops = countApprovedShops(shops);
     const pendingShops = shops.filter(s => s.status === 'pending').length;
     const suspendedShops = shops.filter(s => s.status === 'suspended').length;
     
@@ -194,7 +195,7 @@ export async function GET(request: NextRequest) {
 
     // Approval rate (last 30 days)
     const recentShops = shops.filter(s => new Date(s.createdAt) >= thirtyDaysAgo);
-    const recentApproved = recentShops.filter(s => s.status === 'approved').length;
+    const recentApproved = recentShops.filter((shop) => isApprovedShop(shop)).length;
     const approvalRate = recentShops.length > 0 
       ? Math.round((recentApproved / recentShops.length) * 100) 
       : 0;
@@ -217,7 +218,7 @@ export async function GET(request: NextRequest) {
 
     // Top performing shops (by revenue)
     const topShops = [...formattedShops]
-      .filter(s => s.status === 'approved')
+      .filter((shop) => isApprovedShop(shop))
       .sort((a, b) => b.totalRevenue - a.totalRevenue)
       .slice(0, 5);
 

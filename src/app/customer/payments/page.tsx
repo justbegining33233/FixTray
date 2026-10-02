@@ -20,6 +20,7 @@ interface Payment {
   date: string;
   paidAt: string;
   canPay: boolean;
+  cardPaymentMessage?: string | null;
 }
 
 interface Summary {
@@ -184,7 +185,7 @@ export default function Payments() {
                     cursor: 'pointer',
                   }}>
                     {say("View Work Order")}{' '}</Link>
-                  {payment.canPay && (
+                  {payment.canPay ? (
                     <button
                       onClick={() => handlePay(payment.id)}
                       disabled={paying === payment.id}
@@ -201,7 +202,9 @@ export default function Payments() {
                     >
                       {paying === payment.id ? say("Redirecting...") : `Pay $${payment.amount.toFixed(2)} Securely`}
                     </button>
-                  )}
+                  ) : payment.cardPaymentMessage ? (
+                    <span style={{ fontSize: 13, color: '#f59e0b', alignSelf: 'center' }}>{say("This shop cannot take card payment yet.")}</span>
+                  ) : null}
                 </div>
               </div>
             ))}

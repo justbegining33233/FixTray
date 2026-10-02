@@ -1,8 +1,11 @@
 import { describe, it, expect } from '@jest/globals';
 import {
   APPOINTMENT_OVERDUE_GRACE_MS,
+  appointmentStatusUpdates,
+  customerFacingAppointmentStatus,
   isAppointmentOverdue,
   isUpcomingAppointment,
+  summarizeAppointments,
 } from '../src/lib/appointmentValidation';
 import { formatInventoryType, normalizeInventoryType, optionalInventoryText } from '../src/lib/inventoryItem';
 import { isServiceOfferedForChannel, mapShopServiceOptions } from '../src/lib/shopServiceOptions';
@@ -34,6 +37,34 @@ describe('VIS-019 past appointments', () => {
     expect(isAppointmentOverdue('scheduled', start, laterThatEvening)).toBe(true);
     expect(isAppointmentOverdue('SCHEDULED', start, laterThatEvening)).toBe(true);
     expect(isUpcomingAppointment('scheduled', start, laterThatEvening)).toBe(false);
+  });
+
+  it('counts a future appointment as upcoming even when the stored status says overdue', () => {
+    const now = new Date('2026-10-02T16:00:00.000Z');
+    const future = '2026-10-20T15:00:00.000Z';
+    const past = '2026-09-01T15:00:00.000Z';
+    expect(customerFacingAppointmentStatus('overdue', future, now)).toBe('scheduled');
+    expect(isUpcomingAppointment('overdue', future, now)).toBe(true);
+    expect(isAppointmentOverdue('scheduled', future, now)).toBe(false);
+    expect(customerFacingAppointmentStatus('overdue', past, now)).toBe('overdue');
+    expect(isUpcomingAppointment('scheduled', past, now)).toBe(false);
+    expect(customerFacingAppointmentStatus('completed', future, now)).toBe('completed');
+
+    const summary = summarizeAppointments([
+      { status: 'overdue', scheduledDate: future },
+      { status: 'overdue', scheduledDate: past },
+      { status: 'overdue', scheduledDate: '2026-09-02T15:00:00.000Z' },
+      { status: 'overdue', scheduledDate: '2026-09-03T15:00:00.000Z' },
+    ], now);
+    expect(summary.total).toBe(4);
+    expect(summary.upcoming).toBe(1);
+    expect(appointmentStatusUpdates([
+      { id: 'future', status: 'overdue', scheduledDate: future },
+      { id: 'past', status: 'scheduled', scheduledDate: past },
+    ], now)).toEqual([
+      { id: 'future', status: 'scheduled' },
+      { id: 'past', status: 'overdue' },
+    ]);
   });
 
   it('leaves recent, future, and closed appointments alone', () => {

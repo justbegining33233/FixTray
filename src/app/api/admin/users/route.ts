@@ -379,6 +379,7 @@ export async function GET(request: NextRequest) {
           firstName: 'FixTray',
           lastName: admin.isSuperAdmin ? 'Owner' : 'Admin',
           role: 'admin' as const,
+          isSuperAdmin: Boolean(admin.isSuperAdmin),
           status: activityStatus,
           accountStatus: 'active',
           activityStatus,

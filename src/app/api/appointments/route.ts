@@ -4,7 +4,27 @@ import { requireAuth } from '@/lib/middleware';
 import { AuthUser } from '@/lib/auth';
 import { sendSms } from '@/lib/smsService';
 import { findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
-import { hasAppointmentVehicle, isScheduledDateInPast, APPOINTMENT_OVERDUE_GRACE_MS, APPOINTMENT_OPEN_STATUSES } from '@/lib/appointmentValidation';
+import { hasAppointmentVehicle, isScheduledDateInPast, appointmentStatusUpdates } from '@/lib/appointmentValidation';
+
+async function reconcileAppointmentStatuses<T extends {
+  id: string;
+  status?: string | null;
+  scheduledDate?: Date | string | null;
+}>(appointments: T[]): Promise<T[]> {
+  const updates = appointmentStatusUpdates(appointments);
+  if (updates.length === 0) return appointments;
+  await Promise.all(updates.map((update) => prisma.appointment.update({
+    where: { id: update.id },
+    data: { status: update.status },
+  }).catch((error) => {
+    console.error('Appointment status reconcile error:', error);
+  })));
+  const statusById = new Map(updates.map((update) => [update.id, update.status]));
+  return appointments.map((row) => {
+    const status = statusById.get(row.id);
+    return status ? { ...row, status } : row;
+  });
+}
 
 // GET - Get appointments
 export async function GET(request: NextRequest) {
@@ -34,20 +54,6 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       where.status = status;
-    }
-
-    const overdueCutoff = new Date(Date.now() - APPOINTMENT_OVERDUE_GRACE_MS);
-    const overdueShopId = where.shopId || (user.role === 'shop' ? user.id : undefined);
-    if (where.customerId || overdueShopId) {
-      await prisma.appointment.updateMany({
-        where: {
-          ...(where.customerId ? { customerId: where.customerId } : {}),
-          ...(overdueShopId ? { shopId: overdueShopId } : {}),
-          status: { in: [...APPOINTMENT_OPEN_STATUSES, 'Scheduled', 'Confirmed'] },
-          scheduledDate: { lt: overdueCutoff },
-        },
-        data: { status: 'overdue' },
-      });
     }
 
     const appointments = await prisma.appointment.findMany({
@@ -87,7 +93,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ appointments });
+    const presented = await reconcileAppointmentStatuses(appointments);
+    return NextResponse.json({ appointments: presented });
   } catch (error) {
     console.error('Error fetching appointments:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

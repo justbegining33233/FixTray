@@ -116,6 +116,68 @@ function vehicleName(wo: WaitingRoomWorkOrderLike): string {
   return fromInfo || fromRecord || (wo.vehicleType ? String(wo.vehicleType) : 'Vehicle');
 }
 
+/**
+ * Lobby order is the appointment time (soonest first).
+ * Jobs waiting for work stay oldest-created-first in `orderWaitingJobs`.
+ * This board does not use that queue, and it does not sort clock labels as text
+ * ("12:00 PM" would otherwise come before "9:00 AM").
+ */
+export function orderWaitingRoomOrders<T extends {
+  dueDate?: string | Date | null;
+  estimatedCompletion?: string | null;
+  createdAt?: string | Date | null;
+}>(orders: T[]): T[] {
+  return [...orders].sort((a, b) => {
+    const aKey = appointmentSortMillis(a.dueDate ?? a.estimatedCompletion) ?? timestampMillis(a.createdAt);
+    const bKey = appointmentSortMillis(b.dueDate ?? b.estimatedCompletion) ?? timestampMillis(b.createdAt);
+    if (aKey == null && bKey == null) return 0;
+    if (aKey == null) return 1;
+    if (bKey == null) return -1;
+    if (aKey !== bKey) return aKey - bKey;
+    const aCreated = timestampMillis(a.createdAt);
+    const bCreated = timestampMillis(b.createdAt);
+    if (aCreated == null && bCreated == null) return 0;
+    if (aCreated == null) return 1;
+    if (bCreated == null) return -1;
+    return aCreated - bCreated;
+  });
+}
+
+function appointmentSortMillis(value: unknown): number | null {
+  if (value instanceof Date) return timestampMillis(value);
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const clock = clockLabelMillis(trimmed);
+  if (clock != null) return clock;
+  return timestampMillis(trimmed);
+}
+
+/** "9:00 AM" is 09:00 and "12:00 PM" is 12:00. Text order is not clock order. */
+function clockLabelMillis(value: string): number | null {
+  const match = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const second = match[3] ? Number(match[3]) : 0;
+  const meridiem = match[4]?.toLowerCase();
+  if (minute > 59 || second > 59) return null;
+  if (meridiem) {
+    if (hour < 1 || hour > 12) return null;
+    if (meridiem === 'am') hour = hour === 12 ? 0 : hour;
+    else hour = hour === 12 ? 12 : hour + 12;
+  } else if (hour > 23) {
+    return null;
+  }
+  return ((hour * 60 + minute) * 60 + second) * 1000;
+}
+
+function timestampMillis(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const time = value instanceof Date ? value.getTime() : Date.parse(String(value));
+  return Number.isFinite(time) ? time : null;
+}
+
 export function toWaitingRoomCard(wo: WaitingRoomWorkOrderLike): WaitingRoomCard {
   const service = issueSummary(wo.issueDescription) || 'Service';
   const name = vehicleName(wo);

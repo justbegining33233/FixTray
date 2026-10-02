@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { summarizeAppointments } from '@/lib/appointmentValidation';
+import { customerFacingAppointmentStatus, summarizeAppointments } from '@/lib/appointmentValidation';
 import { unwrapVehicles } from '@/lib/workOrderList';
 import { FaArrowLeft, FaCalendarAlt, FaComments, FaMapMarkerAlt } from 'react-icons/fa';
 
@@ -277,7 +277,9 @@ export default function CustomerAppointmentsPage() {
                 {say("Book Appointment")}{' '}</button>
             </div>
           ) : (
-            appointments.map((apt) => (
+            appointments.map((apt) => {
+              const shownStatus = customerFacingAppointmentStatus(apt.status, apt.scheduledDate);
+              return (
               <div key={apt.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div>
@@ -289,11 +291,11 @@ export default function CustomerAppointmentsPage() {
                     borderRadius: 6,
                     fontSize: 12,
                     fontWeight: 700,
-                    background: apt.status === 'completed' ? 'rgba(16,185,129,0.2)' : apt.status === 'overdue' ? 'rgba(239,68,68,0.2)' : apt.status === 'confirmed' ? 'rgba(229,51,42,0.2)' : apt.status === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
-                    color: apt.status === 'completed' ? '#10b981' : apt.status === 'overdue' ? '#fca5a5' : apt.status === 'confirmed' ? '#ff6b64' : apt.status === 'cancelled' ? '#e5332a' : '#f59e0b',
+                    background: shownStatus === 'completed' ? 'rgba(16,185,129,0.2)' : shownStatus === 'overdue' ? 'rgba(239,68,68,0.2)' : shownStatus === 'confirmed' ? 'rgba(229,51,42,0.2)' : shownStatus === 'cancelled' ? 'rgba(229,51,42,0.2)' : 'rgba(245,158,11,0.2)',
+                    color: shownStatus === 'completed' ? '#10b981' : shownStatus === 'overdue' ? '#fca5a5' : shownStatus === 'confirmed' ? '#ff6b64' : shownStatus === 'cancelled' ? '#e5332a' : '#f59e0b',
                     height: 'fit-content'
                   }}>
-                    {apt.status.toUpperCase()}
+                    {shownStatus.toUpperCase()}
                   </div>
                 </div>
 
@@ -341,7 +343,8 @@ export default function CustomerAppointmentsPage() {
                     <FaComments style={{marginRight:4}} /> {say("Message")}{' '}</button>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

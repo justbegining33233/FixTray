@@ -17,6 +17,28 @@ export type DirectMessageParty = {
 };
 
 const SHOP_STAFF = new Set(['shop', 'manager', 'tech']);
+const PLATFORM_STAFF_ROLES = ['admin', 'superadmin'] as const;
+
+export function isPlatformStaffRole(role: unknown): boolean {
+  return (PLATFORM_STAFF_ROLES as readonly string[]).includes(String(role || '').trim().toLowerCase());
+}
+
+/** Token role is `admin` even when the stored message says `superadmin`. */
+function selfRoles(viewer: MessageViewer): string[] {
+  if (isPlatformStaffRole(viewer.role)) return [...PLATFORM_STAFF_ROLES];
+  return [viewer.role];
+}
+
+export function viewerIsParty(
+  message: { senderId: string; senderRole: string; receiverId: string; receiverRole: string },
+  viewer: MessageViewer,
+  side: 'sender' | 'receiver',
+): boolean {
+  const id = side === 'sender' ? message.senderId : message.receiverId;
+  const role = side === 'sender' ? message.senderRole : message.receiverRole;
+  if (id !== viewer.id) return false;
+  return selfRoles(viewer).includes(role);
+}
 
 /** Shop inbox id for a shop owner, manager, or tech. Customers have none. */
 export function mailboxShopId(viewer: MessageViewer): string | null {
@@ -27,10 +49,11 @@ export function mailboxShopId(viewer: MessageViewer): string | null {
 
 /** Prisma OR clauses: the viewer's own threads plus their shop's mailbox. */
 export function participantOrClauses(viewer: MessageViewer): Array<Record<string, string>> {
-  const clauses: Array<Record<string, string>> = [
-    { senderId: viewer.id, senderRole: viewer.role },
-    { receiverId: viewer.id, receiverRole: viewer.role },
-  ];
+  const clauses: Array<Record<string, string>> = [];
+  for (const role of selfRoles(viewer)) {
+    clauses.push({ senderId: viewer.id, senderRole: role });
+    clauses.push({ receiverId: viewer.id, receiverRole: role });
+  }
   const shopId = mailboxShopId(viewer);
   if (shopId && viewer.role !== 'shop') {
     clauses.push(
@@ -62,9 +85,11 @@ export function threadAccessWhere(viewer: MessageViewer, contactId: string, cont
     : { senderId: contactId };
 
   const or: Array<Record<string, unknown>> = [
-    { AND: [{ senderId: viewer.id, senderRole: viewer.role }, toContact] },
     { AND: [{ receiverId: { in: markReadReceiverIds(viewer) } }, fromContact] },
   ];
+  for (const role of selfRoles(viewer)) {
+    or.push({ AND: [{ senderId: viewer.id, senderRole: role }, toContact] });
+  }
   if (shopId) {
     or.push({ AND: [{ senderId: shopId, senderRole: 'shop' }, toContact] });
   }
@@ -73,9 +98,11 @@ export function threadAccessWhere(viewer: MessageViewer, contactId: string, cont
 
 /** Prisma filter matching isUnreadForViewer, including the shop mailbox. */
 export function unreadWhere(viewer: MessageViewer): { OR: Array<Record<string, unknown>> } {
-  const or: Array<Record<string, unknown>> = [
-    { receiverId: viewer.id, receiverRole: viewer.role, isRead: false },
-  ];
+  const or: Array<Record<string, unknown>> = selfRoles(viewer).map((role) => ({
+    receiverId: viewer.id,
+    receiverRole: role,
+    isRead: false,
+  }));
   const shopId = mailboxShopId(viewer);
   if (shopId && shopId !== viewer.id) {
     or.push({ receiverId: shopId, receiverRole: 'shop', isRead: false });
@@ -85,7 +112,7 @@ export function unreadWhere(viewer: MessageViewer): { OR: Array<Record<string, u
 
 export function isUnreadForViewer(message: DirectMessageParty, viewer: MessageViewer): boolean {
   if (message.isRead) return false;
-  if (message.receiverId === viewer.id && message.receiverRole === viewer.role) return true;
+  if (viewerIsParty(message, viewer, 'receiver')) return true;
   const shopId = mailboxShopId(viewer);
   return Boolean(shopId && message.receiverRole === 'shop' && message.receiverId === shopId);
 }

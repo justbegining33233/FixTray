@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { OWNER_ADD_USER_HREF } from '@/lib/ownerShell';
+import { accountRoleLabel, isPlatformStaffAccount, managedRoleCounts } from '@/lib/platformUserCensus';
 import { FaArrowLeft, FaBuilding, FaEnvelope, FaHourglassHalf, FaUsers } from 'react-icons/fa';
 
 type User = {
@@ -17,7 +18,8 @@ type User = {
   lastName?: string;
   name: string;
   email: string;
-  role: 'admin' | 'shop' | 'customer' | 'tech' | 'manager';
+  role: 'admin' | 'shop' | 'customer' | 'tech' | 'manager' | 'superadmin' | 'staff';
+  isSuperAdmin?: boolean;
   status: 'active' | 'inactive' | 'suspended' | 'pending';
   activityStatus?: 'active' | 'inactive';
   hasActiveSession?: boolean;
@@ -61,6 +63,7 @@ export default function UserManagement() {
           name: [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.username || u.email || 'Unknown User',
           email: u.email || '',
           role: (u.role === 'technician' ? 'tech' : u.role) || 'customer',
+          isSuperAdmin: Boolean(u.isSuperAdmin),
           status: u.status || 'active',
           activityStatus: u.activityStatus || ((u.status === 'active' || u.status === 'approved') ? 'active' : 'inactive'),
           hasActiveSession: Boolean(u.hasActiveSession),
@@ -81,6 +84,8 @@ export default function UserManagement() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return '#e5332a';
+      case 'superadmin': return '#e5332a';
+      case 'staff': return '#e5332a';
       case 'shop': return '#22c55e';
       case 'manager': return '#e5332a';
       case 'tech': return '#8b5cf6';
@@ -255,7 +260,8 @@ export default function UserManagement() {
   }
 
   let filteredUsers = users;
-  if (filterRole !== 'all') filteredUsers = filteredUsers.filter(u => u.role === filterRole);
+  if (filterRole === 'staff') filteredUsers = filteredUsers.filter(u => isPlatformStaffAccount(u));
+  else if (filterRole !== 'all') filteredUsers = filteredUsers.filter(u => u.role === filterRole && !isPlatformStaffAccount(u));
   if (filterStatus !== 'all') {
     filteredUsers = filteredUsers.filter(u => {
       if (filterStatus === 'active' || filterStatus === 'inactive') {
@@ -265,15 +271,7 @@ export default function UserManagement() {
     });
   }
 
-  const userStats = {
-    total: users.length,
-    admin: users.filter(u => u.role === 'admin').length,
-    shop: users.filter(u => u.role === 'shop').length,
-    manager: users.filter(u => u.role === 'manager').length,
-    technician: users.filter(u => u.role === 'tech').length,
-    customer: users.filter(u => u.role === 'customer').length,
-    active: users.filter(u => (u.activityStatus || 'inactive') === 'active').length,
-  };
+  const userStats = managedRoleCounts(users);
 
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>
@@ -304,9 +302,17 @@ export default function UserManagement() {
             <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Admins")}</div>
             <div style={{fontSize:24, fontWeight:700, color:'#e5332a'}}>{say(userStats.admin)}</div>
           </div>
+          <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:16}}>
+            <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Staff")}</div>
+            <div style={{fontSize:24, fontWeight:700, color:'#e5332a'}}>{say(userStats.staff)}</div>
+          </div>
           <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:16}}>
             <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Shops")}</div>
             <div style={{fontSize:24, fontWeight:700, color:'#22c55e'}}>{say(userStats.shop)}</div>
+          </div>
+          <div style={{background:'rgba(229,51,42,0.1)', border:'1px solid rgba(229,51,42,0.3)', borderRadius:12, padding:16}}>
+            <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Managers")}</div>
+            <div style={{fontSize:24, fontWeight:700, color:'#e5332a'}}>{say(userStats.manager)}</div>
           </div>
           <div style={{background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:12, padding:16}}>
             <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Technicians")}</div>
@@ -316,6 +322,12 @@ export default function UserManagement() {
             <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Customers")}</div>
             <div style={{fontSize:24, fontWeight:700, color:'#f59e0b'}}>{say(userStats.customer)}</div>
           </div>
+          {userStats.other > 0 && (
+            <div style={{background:'rgba(156,163,175,0.1)', border:'1px solid rgba(156,163,175,0.3)', borderRadius:12, padding:16}}>
+              <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Other")}</div>
+              <div style={{fontSize:24, fontWeight:700, color:'#9aa3b2'}}>{say(userStats.other)}</div>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -329,6 +341,7 @@ export default function UserManagement() {
             >
               <option value="all">{say("All Roles")}</option>
               <option value="admin">{say("Admin")}</option>
+              <option value="staff">{say("Staff")}</option>
               <option value="shop">{say("Shop")}</option>
               <option value="manager">{say("Manager")}</option>
               <option value="tech">{say("Technician")}</option>
@@ -371,7 +384,7 @@ export default function UserManagement() {
                   <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
                     <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb'}}>{say(user.name)}</h3>
                     <span style={{padding:'4px 12px', background:`${getRoleColor(user.role)}20`, color:getRoleColor(user.role), borderRadius:8, fontSize:11, fontWeight:600}}>
-                      {user.role.toUpperCase()}
+                      {accountRoleLabel(user) === 'Super Admin' ? say("Super Admin") : accountRoleLabel(user)}
                     </span>
                     <span style={{padding:'4px 12px', background:`${getStatusColor(user.status)}20`, color:getStatusColor(user.status), borderRadius:8, fontSize:11, fontWeight:600}}>
                       {say("ACCOUNT:")}{' '}{user.status.toUpperCase()}

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { countApprovedShops, isApprovedShop } from '@/lib/shopCensus';
 
 interface UserData {
   id: string;
@@ -380,7 +381,7 @@ export function useAdminData() {
         const shopsData: AdminShopsPayload = await adminShopsRes.json();
         if (shopsData?.success && Array.isArray(shopsData.shops)) {
           const allShops = shopsData.shops;
-          const approved = allShops.filter((shop) => shop.status === 'approved');
+          const approved = allShops.filter((shop) => isApprovedShop(shop));
           const pending = allShops.filter((shop) => shop.status === 'pending');
 
           // Keep full lists for downstream cards/tables; do not truncate to a preview subset.
@@ -411,7 +412,7 @@ export function useAdminData() {
             totalShops: sourceMetrics?.totalShops ?? allShops.length,
             activeShops: sourceMetrics?.activeShops ?? allShops.filter((shop) => shop.activityStatus === 'active').length,
             inactiveShops: sourceMetrics?.inactiveShops ?? allShops.filter((shop) => (shop.activityStatus || 'inactive') === 'inactive').length,
-            approvedShops: sourceMetrics?.approvedShops ?? approved.length,
+            approvedShops: countApprovedShops(allShops),
             pendingShops: sourceMetrics?.pendingShops ?? pending.length,
             suspendedShops: sourceMetrics?.suspendedShops ?? allShops.filter((shop) => shop.status === 'suspended').length,
             newShopsThisMonth: sourceMetrics?.newShopsThisMonth ?? 0,

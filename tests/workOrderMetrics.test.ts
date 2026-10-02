@@ -6,6 +6,7 @@ import {
   activeWorkOrderWhere,
   pendingQueueWhere,
   resolveShopId,
+  managerReportWorkOrders,
   summarizeWorkOrders,
   unassignedWorkOrderWhere,
   workOrderScope,
@@ -78,6 +79,37 @@ describe('shared work order counters', () => {
     expect(workOrderScope({ id: 'cust-1', role: 'customer' })).toEqual({ scope: { customerId: 'cust-1' } });
     expect(workOrderScope({ id: 'manager-1', role: 'manager', shopId: 'shop-1' }, 'stale-shop')).toEqual({
       scope: { shopId: 'shop-1' },
+    });
+  });
+});
+
+describe('manager report job counts', () => {
+  it('uses the manager home active and overdue counts, not the analytics total the reports page read as zero', () => {
+    const analyticsBody = {
+      totalWorkOrders: undefined as number | undefined,
+      summary: { totalOrders: 0, totalRevenue: 900 },
+    };
+    const homeStats = {
+      openJobs: 5,
+      activeJobs: 5,
+      overdueJobs: 3,
+      unassigned: 1,
+      pendingAssignments: 1,
+      completedToday: 2,
+    };
+    expect(analyticsBody.totalWorkOrders ?? 0).toBe(0);
+    expect(managerReportWorkOrders(homeStats)).toEqual({
+      activeJobs: 5,
+      overdueJobs: 3,
+      awaitingClockIn: 1,
+      completedToday: 2,
+    });
+    expect(managerReportWorkOrders(homeStats)).not.toHaveProperty('totalRevenue');
+    expect(managerReportWorkOrders(null)).toEqual({
+      activeJobs: 0,
+      overdueJobs: 0,
+      awaitingClockIn: 0,
+      completedToday: 0,
     });
   });
 });

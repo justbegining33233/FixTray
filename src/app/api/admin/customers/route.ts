@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { getPlatformConfig } from '@/lib/platformConfig';
 import { feePerPaidWorkOrder } from '@/lib/platformFees';
+import { platformFeeHeadline } from '@/lib/platformRevenue';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
@@ -127,15 +128,17 @@ export async function GET(request: NextRequest) {
     const workOrderRevenueThisMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.revenueThisMonth, 0);
     const workOrderRevenueLastMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.revenueLastMonth, 0);
 
-    const totalFixtrayFees = formattedCustomers.reduce((sum: number, c: any) => sum + c.totalFixtrayFees, 0);
-    const fixtrayFeesThisMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.feesThisMonth, 0);
     const fixtrayFeesLastMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.feesLastMonth, 0);
     const totalPaidWorkOrders = formattedCustomers.reduce((sum: number, c: any) => sum + c.paidWorkOrders, 0);
     const paidWorkOrdersThisMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.paidWorkOrdersThisMonth, 0);
-
-    const feeGrowth = fixtrayFeesLastMonth > 0
-      ? Math.round(((fixtrayFeesThisMonth - fixtrayFeesLastMonth) / fixtrayFeesLastMonth) * 100)
-      : fixtrayFeesThisMonth > 0 ? 100 : 0;
+    const paidStamps = customers.flatMap((customer: any) =>
+      (customer.workOrders || [])
+        .filter((workOrder: any) => workOrder.paymentStatus === 'paid')
+        .map((workOrder: any) => ({ amountPaid: workOrder.amountPaid, createdAt: workOrder.createdAt }))
+    );
+    const feeHeadline = platformFeeHeadline(paidStamps, feePerWorkOrder, now);
+    const totalFixtrayFees = feeHeadline.collected;
+    const fixtrayFeesThisMonth = feeHeadline.periodFees;
 
     const totalJobs = formattedCustomers.reduce((sum: number, c: any) => sum + c.totalJobs, 0);
     const totalJobsThisMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.jobsThisMonth, 0);
@@ -219,7 +222,8 @@ export async function GET(request: NextRequest) {
         totalFixtrayFees,
         fixtrayFeesThisMonth,
         fixtrayFeesLastMonth,
-        feeGrowth: `${feeGrowth >= 0 ? '+' : ''}${feeGrowth}%`,
+        feePeriodLabel: feeHeadline.periodLabel,
+        feeGrowth: feeHeadline.changeLabel,
         totalPaidWorkOrders,
         paidWorkOrdersThisMonth,
         avgLifetimeMonths: Math.round(avgLifetimeMonths),

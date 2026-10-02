@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { headlinePaidMonth } from '@/lib/platformRevenue';
+import { managedUserTotal } from '@/lib/platformUserCensus';
 
 function formatCurrency(value: number) {
   return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -57,11 +59,14 @@ export async function GET(request: NextRequest) {
       paidWorkOrdersLast3Months,
       reviewsCount,
       avgRating,
-      revenueThisMonth,
       revenueLastMonth,
       paidWorkOrdersForTrend,
       approvedShopsForWeeklyTrend,
       activeRefreshSessions,
+      customerCount,
+      shopMemberCount,
+      shopCount,
+      staffCount,
     ] = await Promise.all([
       prisma.shop.count({ where: { status: 'approved' } }),
       prisma.shop.count({ where: { status: 'pending' } }),
@@ -95,10 +100,6 @@ export async function GET(request: NextRequest) {
       prisma.review.aggregate({ _avg: { rating: true } }),
       prisma.workOrder.aggregate({
         _sum: { amountPaid: true },
-        where: { paymentStatus: 'paid', createdAt: { gte: startOfThisMonth } },
-      }),
-      prisma.workOrder.aggregate({
-        _sum: { amountPaid: true },
         where: { paymentStatus: 'paid', createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } },
       }),
       prisma.workOrder.findMany({
@@ -125,6 +126,10 @@ export async function GET(request: NextRequest) {
           metadata: true,
         },
       }),
+      prisma.customer.count(),
+      prisma.tech.count(),
+      prisma.shop.count(),
+      prisma.admin.count(),
     ]);
 
     const activeUserOwnerKeys = new Set<string>();
@@ -147,9 +152,10 @@ export async function GET(request: NextRequest) {
     const totalRevenue = paidWorkOrders.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
     const totalIncomeLast3Months = paidWorkOrdersLast3Months.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
 
-    const currentMonthRevenue = revenueThisMonth._sum.amountPaid || 0;
+    const headline = headlinePaidMonth(paidWorkOrders, now);
+    const currentMonthRevenue = headline.revenue;
     const lastMonthRevenue = revenueLastMonth._sum.amountPaid || 0;
-    const revenueGrowthRaw = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+    const revenueChangeLabel = headline.changeLabel;
 
     const recentActivity = recentWorkOrders.map((wo) => ({
       type: 'workorder',
@@ -197,7 +203,14 @@ export async function GET(request: NextRequest) {
       activeUsers,
       pendingShops,
       systemHealth,
+      totalUsers: managedUserTotal({
+        customers: customerCount,
+        shopMembers: shopMemberCount,
+        shops: shopCount,
+        staff: staffCount,
+      }),
       monthlyRevenue: formatCurrency(currentMonthRevenue),
+      revenueMonthLabel: headline.label,
       recentActivity,
       weeklyOverview: {
         weekStart: startOfWeek.toISOString(),
@@ -215,8 +228,9 @@ export async function GET(request: NextRequest) {
       },
       liveMetrics: {
         revenueTrend,
-        revenueGrowth: `${revenueGrowthRaw >= 0 ? '+' : ''}${revenueGrowthRaw.toFixed(1)}%`,
-        monthOverMonthGrowth: `${revenueGrowthRaw >= 0 ? '+' : ''}${revenueGrowthRaw.toFixed(1)}%`,
+        revenueGrowth: revenueChangeLabel,
+        monthOverMonthGrowth: revenueChangeLabel,
+        revenueMonthLabel: headline.label,
         currentMonthRevenue,
         lastMonthRevenue,
         avgRating: avgRating._avg.rating?.toFixed(1) || '0.0',

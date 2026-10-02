@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { sendSms } from '@/lib/smsService';
 import { sendEmail, sendLowStockAlert } from '@/lib/emailService';
 import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
-import { APPOINTMENT_OPEN_STATUSES, APPOINTMENT_OVERDUE_GRACE_MS } from '@/lib/appointmentValidation';
+import { APPOINTMENT_OPEN_STATUSES, appointmentStatusUpdates } from '@/lib/appointmentValidation';
 
 // Cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -46,16 +46,20 @@ export async function GET(request: NextRequest) {
   }
 
   // VIS-019: open appointments become overdue 15 minutes after their start time.
+  // A future start time is not overdue, even if an older sweep stored that status.
   try {
-    const overdueCutoff = new Date(now.getTime() - APPOINTMENT_OVERDUE_GRACE_MS);
-    const marked = await prisma.appointment.updateMany({
+    const openAppointments = await prisma.appointment.findMany({
       where: {
-        status: { in: [...APPOINTMENT_OPEN_STATUSES, 'Scheduled', 'Confirmed'] },
-        scheduledDate: { lt: overdueCutoff },
+        status: { in: [...APPOINTMENT_OPEN_STATUSES, 'Scheduled', 'Confirmed', 'overdue'] },
       },
-      data: { status: 'overdue' },
+      select: { id: true, status: true, scheduledDate: true },
     });
-    results.appointmentsMarkedOverdue = marked.count;
+    const updates = appointmentStatusUpdates(openAppointments, now);
+    await Promise.all(updates.map((update) => prisma.appointment.update({
+      where: { id: update.id },
+      data: { status: update.status },
+    })));
+    results.appointmentsMarkedOverdue = updates.filter((update) => update.status === 'overdue').length;
   } catch (error) {
     console.error('Appointment overdue update error:', error);
     results.appointmentsMarkedOverdue = { error: 'Failed' };

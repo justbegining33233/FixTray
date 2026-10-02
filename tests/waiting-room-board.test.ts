@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { generateAccessToken } from '../src/lib/auth';
 import {
   isWaitingRoomCandidate,
+  orderWaitingRoomOrders,
   toWaitingBoardStatus,
   toWaitingRoomCard,
   waitingRoomWorkOrderWhere,
@@ -56,6 +57,25 @@ describe('waiting room board selection', () => {
     expect(card.vehicle).toContain('Honda');
     expect(card.customerInitial).toBe('A.');
     expect(card.ticketNumber).toBe('DRUPXM');
+  });
+
+  it('puts 9:00 AM before 12:00 PM even when the noon visit was created first', () => {
+    const ordered = orderWaitingRoomOrders([
+      { id: 'noon', dueDate: '12:00 PM', createdAt: '2026-10-02T08:00:00.000Z' },
+      { id: 'nine', dueDate: '9:00 AM', createdAt: '2026-10-02T11:00:00.000Z' },
+    ]);
+    expect(ordered.map((row) => row.id)).toEqual(['nine', 'noon']);
+    expect('12:00 PM' < '9:00 AM').toBe(true);
+  });
+
+  it('orders stored appointment instants soonest first and leaves untimed jobs oldest first', () => {
+    const ordered = orderWaitingRoomOrders([
+      { id: 'noon', dueDate: new Date('2026-10-02T16:00:00.000Z'), createdAt: '2026-10-01T08:00:00.000Z' },
+      { id: 'nine', dueDate: new Date('2026-10-02T13:00:00.000Z'), createdAt: '2026-10-02T12:00:00.000Z' },
+      { id: 'older-walkin', createdAt: '2026-10-01T07:00:00.000Z' },
+      { id: 'newer-walkin', createdAt: '2026-10-01T09:00:00.000Z' },
+    ]);
+    expect(ordered.map((row) => row.id)).toEqual(['older-walkin', 'newer-walkin', 'nine', 'noon']);
   });
 
   it('queries pending in-shop work together with active statuses', () => {
@@ -171,5 +191,36 @@ describe('GET /api/waiting-room', () => {
     expect(body.orders[1].status).toBe('in_progress');
     expect(body.orders[1].tech).toBe('Rio Tech');
     expect(body.orders[1].vehicle).toContain('Brake Service');
+  });
+
+  it('returns the 9:00 AM appointment before the 12:00 PM one', async () => {
+    mockedPrisma.workOrder.findMany.mockResolvedValue([
+      {
+        id: 'wo-noon',
+        status: 'pending',
+        serviceLocation: 'in-shop',
+        issueDescription: 'Appointment: Brake Service',
+        dueDate: new Date('2026-10-02T16:00:00.000Z'),
+        createdAt: new Date('2026-10-01T08:00:00.000Z'),
+        customer: { firstName: 'Noon' },
+        assignedTo: null,
+        vehicle: null,
+      },
+      {
+        id: 'wo-nine',
+        status: 'pending',
+        serviceLocation: 'in-shop',
+        issueDescription: 'Appointment: Oil Change',
+        dueDate: new Date('2026-10-02T13:00:00.000Z'),
+        createdAt: new Date('2026-10-02T12:00:00.000Z'),
+        customer: { firstName: 'Nine' },
+        assignedTo: null,
+        vehicle: null,
+      },
+    ]);
+
+    const res = await GET(new NextRequest('http://localhost/api/waiting-room?shopId=shop-1'));
+    const body = await res.json();
+    expect(body.orders.map((order: { id: string }) => order.id)).toEqual(['wo-nine', 'wo-noon']);
   });
 });

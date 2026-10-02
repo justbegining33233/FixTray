@@ -273,6 +273,32 @@ export function workOrderScope(
   return { error: 'Forbidden', status: 403 };
 }
 
+export type ManagerHomeWorkOrderStats = {
+  openJobs?: number | null;
+  activeJobs?: number | null;
+  overdueJobs?: number | null;
+  unassigned?: number | null;
+  pendingAssignments?: number | null;
+  completedToday?: number | null;
+};
+
+/**
+ * Manager reports show the same job counts as manager home.
+ * Those counts are active jobs and overdue work, not a date-window total and not money.
+ */
+export function managerReportWorkOrders(stats: ManagerHomeWorkOrderStats | null | undefined) {
+  return {
+    activeJobs: numberOrZero(stats?.openJobs ?? stats?.activeJobs),
+    overdueJobs: numberOrZero(stats?.overdueJobs),
+    awaitingClockIn: numberOrZero(stats?.unassigned ?? stats?.pendingAssignments),
+    completedToday: numberOrZero(stats?.completedToday),
+  };
+}
+
+function numberOrZero(value: number | null | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
 export function workOrderTitle(workOrder: { issueDescription?: unknown; serviceType?: unknown }): string {
   if (typeof workOrder.serviceType === 'string' && workOrder.serviceType.trim()) {
     return workOrder.serviceType.trim().split('\n')[0];

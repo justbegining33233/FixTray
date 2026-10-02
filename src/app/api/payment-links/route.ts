@@ -8,6 +8,7 @@ import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { paymentLinkFeeBreakdown } from '@/lib/serviceFeeBill';
 import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
+import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 
 async function invoiceBreakdown(link: {
   amount: number;
@@ -39,6 +40,14 @@ async function publicPaymentLink(link: {
   workOrderId: string | null;
 }) {
   const breakdown = await invoiceBreakdown(link);
+  let cardPaymentAvailable = false;
+  if (link.workOrderId && link.status !== 'paid') {
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: link.workOrderId },
+      select: { shop: { select: { stripeAccountId: true } } },
+    });
+    cardPaymentAvailable = (await cardPaymentOfferForShop(workOrder?.shop?.stripeAccountId)).available;
+  }
   return {
     id: link.id,
     token: link.token,
@@ -50,6 +59,7 @@ async function publicPaymentLink(link: {
     paidAt: link.paidAt,
     expiresAt: link.expiresAt,
     workOrderId: link.workOrderId,
+    cardPaymentAvailable,
   };
 }
 

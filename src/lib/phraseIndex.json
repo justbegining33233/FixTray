@@ -5674,5 +5674,18 @@
   "Messaging, notifications, GPS, and team activity.": "messaging_notifications_gps_and_team_activity",
   "Driving directions on the job screen in the browser.": "driving_directions_on_the_job_screen_in_the_browser",
   "SLA timing on completed jobs.": "sla_timing_on_completed_jobs",
-  "Email and text campaigns.": "email_and_text_campaigns"
+  "Email and text campaigns.": "email_and_text_campaigns",
+  "Messages to staff": "messages_to_staff",
+  "Shop alerts are not messages to staff.": "shop_alerts_are_not_messages_to_staff",
+  "Inventory alert": "inventory_alert",
+  "Work order thread": "work_order_thread",
+  "Shop message": "shop_message",
+  "Reply": "reply",
+  "Type a reply": "type_a_reply",
+  "No messages in this thread": "no_messages_in_this_thread",
+  "Staff": "staff",
+  "No owner": "no_owner",
+  "Not scored": "not_scored",
+  "Other": "other",
+  "This shop cannot take card payment yet.": "this_shop_cannot_take_card_payment_yet"
 }

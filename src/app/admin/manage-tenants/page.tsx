@@ -4,6 +4,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { listedMoney, tenantBoardStats, tenantHealthScore, tenantOwnerText } from '@/lib/tenantBoard';
 import { FaArrowLeft, FaBuilding, FaChartBar, FaHourglassHalf, FaMapMarkerAlt, FaStore, FaTimes } from 'react-icons/fa';
 
 type Tenant = {
@@ -22,7 +23,9 @@ type Tenant = {
   completionRate: number;
   totalRevenue: number;
   revenueThisMonth: number;
+  revenueLastMonth?: number;
   jobsThisMonth: number;
+  jobsLastMonth?: number;
   rating: number;
   reviewCount: number;
   // Team
@@ -81,14 +84,7 @@ export default function ManageTenants() {
   const [showDetails, setShowDetails] = useState(false);
   const [tenantMsg, setTenantMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => listedMoney(amount);
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -151,6 +147,10 @@ export default function ManageTenants() {
     return '#e5332a';
   };
 
+  const board = tenantBoardStats(tenants);
+  const selectedHealth = selectedTenant ? tenantHealthScore(selectedTenant.healthScore) : null;
+  const selectedOwner = selectedTenant ? tenantOwnerText(selectedTenant.ownerName) : '';
+
   return (
     <div style={{minHeight:'100vh', background: 'transparent'}}>
       <div style={{background:'rgba(0,0,0,0.3)', borderBottom:'1px solid rgba(59,130,246,0.3)', padding:'20px 32px'}}>
@@ -164,36 +164,40 @@ export default function ManageTenants() {
 
       <div style={{maxWidth:1400, margin:'0 auto', padding:32}}>
         {/* Live Metrics Overview */}
-        {liveMetrics && (
+        {!loading && (
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:16, marginBottom:24}}>
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
                 <div>
                   <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Total Tenants")}</div>
-                  <div style={{fontSize:28, fontWeight:700, color:'#22c55e'}}>{say(liveMetrics.totalCustomers)}</div>
+                  <div style={{fontSize:28, fontWeight:700, color:'#22c55e'}}>{say(board.count)}</div>
                 </div>
-                <span style={{padding:'4px 8px', background:'rgba(34,197,94,0.2)', color:'#22c55e', borderRadius:6, fontSize:11, fontWeight:600}}>
-                  {say(liveMetrics.customerGrowth)}
-                </span>
+                {board.countLabel ? (
+                  <span style={{padding:'4px 8px', background:'rgba(34,197,94,0.2)', color:'#22c55e', borderRadius:6, fontSize:11, fontWeight:600}}>
+                    {board.countLabel}
+                  </span>
+                ) : null}
               </div>
-              <MiniLineChart data={liveMetrics.customerTrend} color="#22c55e" height={30} />
+              {liveMetrics ? <MiniLineChart data={liveMetrics.customerTrend} color="#22c55e" height={30} /> : null}
             </div>
             
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:12, padding:20}}>
               <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Total Revenue")}</div>
-              <div style={{fontSize:28, fontWeight:700, color:'#8b5cf6'}}>{formatCurrency(liveMetrics.totalWorkOrderRevenue)}</div>
-              <MiniLineChart data={liveMetrics.revenueTrend} color="#8b5cf6" height={30} />
+              <div style={{fontSize:28, fontWeight:700, color:'#8b5cf6'}}>{formatCurrency(board.revenue)}</div>
+              {liveMetrics ? <MiniLineChart data={liveMetrics.revenueTrend} color="#8b5cf6" height={30} /> : null}
             </div>
             
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(6,182,212,0.3)', borderRadius:12, padding:20}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
                 <div>
                   <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Total Jobs")}</div>
-                  <div style={{fontSize:28, fontWeight:700, color:'#06b6d4'}}>{say(liveMetrics.totalJobs)}</div>
+                  <div style={{fontSize:28, fontWeight:700, color:'#06b6d4'}}>{say(board.jobs)}</div>
                 </div>
-                <span style={{padding:'4px 8px', background:'rgba(6,182,212,0.2)', color:'#06b6d4', borderRadius:6, fontSize:11, fontWeight:600}}>
-                  {say(liveMetrics.jobsGrowth)}
-                </span>
+                {board.jobsLabel ? (
+                  <span style={{padding:'4px 8px', background:'rgba(6,182,212,0.2)', color:'#06b6d4', borderRadius:6, fontSize:11, fontWeight:600}}>
+                    {board.jobsLabel}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -211,7 +215,11 @@ export default function ManageTenants() {
           </div>
         ) : (
           <div style={{display:'grid', gap:16}}>
-            {tenants.map((tenant) => (
+            {tenants.map((tenant) => {
+            const health = tenantHealthScore(tenant.healthScore);
+            const healthColor = health === null ? '#9aa3b2' : getHealthColor(health);
+            const ownerText = tenantOwnerText(tenant.ownerName);
+            return (
             <div key={tenant.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:24}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16}}>
                 <div>
@@ -219,16 +227,16 @@ export default function ManageTenants() {
                     <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say(tenant.name)}</h2>
                     <span style={{
                       padding:'4px 12px', 
-                      background:`${getHealthColor(tenant.healthScore)}20`, 
-                      color:getHealthColor(tenant.healthScore), 
+                      background:`${healthColor}20`, 
+                      color:healthColor, 
                       borderRadius:8, 
                       fontSize:11, 
                       fontWeight:600
                     }}>
-                      {say("Health:")}{' '}{say(tenant.healthScore)}
+                      {say("Health:")}{' '}{health === null ? say("Not scored") : health}
                     </span>
                   </div>
-                  <div style={{fontSize:14, color:'#9aa3b2'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say(tenant.location)} {say("- Owner:")}{' '}{say(tenant.ownerName)}</div>
+                  <div style={{fontSize:14, color:'#9aa3b2'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say(tenant.location)} {say("- Owner:")}{' '}{ownerText === 'No owner' ? say("No owner") : ownerText}</div>
                 </div>
               </div>
 
@@ -262,7 +270,8 @@ export default function ManageTenants() {
                   {say("View Details")}{' '}</button>
               </div>
             </div>
-          ))}
+            );
+          })}
           </div>
         )}
       </div>
@@ -282,7 +291,7 @@ export default function ManageTenants() {
                 <h3 style={{fontSize:16, fontWeight:600, color:'#e5e7eb', marginBottom:12}}><FaStore style={{marginRight:4}} /> {say("Business Info")}</h3>
                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
                   <div><span style={{color:'#6b7280'}}>{say("Shop Name:")}</span> <span style={{color:'#e5e7eb', fontWeight:600}}>{say(selectedTenant.name)}</span></div>
-                  <div><span style={{color:'#6b7280'}}>{say("Owner:")}</span> <span style={{color:'#e5e7eb', fontWeight:600}}>{say(selectedTenant.ownerName)}</span></div>
+                  <div><span style={{color:'#6b7280'}}>{say("Owner:")}</span> <span style={{color:'#e5e7eb', fontWeight:600}}>{selectedOwner === 'No owner' ? say("No owner") : selectedOwner}</span></div>
                   <div><span style={{color:'#6b7280'}}>{say("Email:")}</span> <span style={{color:'#e5e7eb', fontWeight:600}}>{say(selectedTenant.email)}</span></div>
                   <div><span style={{color:'#6b7280'}}>{say("Phone:")}</span> <span style={{color:'#e5e7eb', fontWeight:600}}>{say(selectedTenant.phone)}</span></div>
                   <div><span style={{color:'#6b7280'}}>{say("Location:")}</span> <span style={{color:'#e5e7eb', fontWeight:600}}>{say(selectedTenant.location)}</span></div>
@@ -306,8 +315,8 @@ export default function ManageTenants() {
                     <div style={{fontSize:24, fontWeight:700, color:'#8b5cf6'}}>{say(selectedTenant.completionRate)}%</div>
                     <div style={{fontSize:11, color:'#9aa3b2'}}>{say("Completion")}</div>
                   </div>
-                  <div style={{textAlign:'center', padding:12, background:`${getHealthColor(selectedTenant.healthScore)}15`, borderRadius:8}}>
-                    <div style={{fontSize:24, fontWeight:700, color:getHealthColor(selectedTenant.healthScore)}}>{say(selectedTenant.healthScore)}</div>
+                  <div style={{textAlign:'center', padding:12, background:`${selectedHealth === null ? '#9aa3b2' : getHealthColor(selectedHealth)}15`, borderRadius:8}}>
+                    <div style={{fontSize:24, fontWeight:700, color:selectedHealth === null ? '#9aa3b2' : getHealthColor(selectedHealth)}}>{selectedHealth === null ? say("Not scored") : selectedHealth}</div>
                     <div style={{fontSize:11, color:'#9aa3b2'}}>{say("Health")}</div>
                   </div>
                 </div>

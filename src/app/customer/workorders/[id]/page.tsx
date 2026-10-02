@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import TechLiveMap from '@/components/TechLiveMap';
 import CustomerMessaging from '@/components/CustomerMessaging';
+import { customerSeesPayButton } from '@/lib/customerCardPay';
 import { FaArrowLeft, FaCheckCircle, FaClock, FaLock, FaMapMarkerAlt, FaStore } from 'react-icons/fa';
 
 interface WorkOrderDetails {
@@ -45,6 +46,7 @@ interface WorkOrderDetails {
     totalDue: number;
     status?: string | null;
   } | null;
+  cardPaymentAvailable?: boolean;
 }
 
 export default function WorkOrderDetailsPage() {
@@ -319,13 +321,12 @@ export default function WorkOrderDetailsPage() {
                     <span>${workOrder.estimate.totalDue.toFixed(2)}</span>
                   </div>
                 </div>
-                {workOrder.paymentStatus !== 'paid'
-                  && workOrder.status !== 'completed'
-                  && workOrder.status !== 'closed'
-                  && workOrder.status !== 'cancelled'
-                  && workOrder.status !== 'canceled'
-                  && workOrder.status !== 'denied-estimate'
-                  && workOrder.estimate.totalDue > 0 && (
+                {customerSeesPayButton({
+                  paymentStatus: workOrder.paymentStatus,
+                  status: workOrder.status,
+                  totalDue: workOrder.estimate.totalDue,
+                  cardPaymentAvailable: workOrder.cardPaymentAvailable === true,
+                }) ? (
                   <>
                     {payError && <div style={{color:'#ef4444',fontSize:13,marginBottom:12,padding:'8px 12px',background:'rgba(239,68,68,0.1)',borderRadius:6}}>{say(payError)}</div>}
                     <button
@@ -349,7 +350,17 @@ export default function WorkOrderDetailsPage() {
                     <div style={{textAlign:'center', marginTop:10, fontSize:12, color:'#6b7280'}}>
                       <FaLock style={{marginRight:4}} /> {say("Powered by Stripe. Apple Pay and Google Pay accepted.")}{' '}</div>
                   </>
-                )}
+                ) : workOrder.paymentStatus !== 'paid'
+                  && workOrder.status !== 'completed'
+                  && workOrder.status !== 'closed'
+                  && workOrder.status !== 'cancelled'
+                  && workOrder.status !== 'canceled'
+                  && workOrder.status !== 'denied-estimate'
+                  && workOrder.estimate.totalDue > 0 ? (
+                  <div style={{color:'#f59e0b',fontSize:14,padding:'12px 14px',background:'rgba(245,158,11,0.1)',borderRadius:8}}>
+                    {say("This shop cannot take card payment yet.")}
+                  </div>
+                ) : null}
               </div>
             )}
 

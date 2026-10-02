@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     // Return all approved shops from the database
     const approvedShops = await prisma.shop.findMany({
       where: {
-        status: 'approved'
+        status: { equals: 'approved', mode: 'insensitive' },
       },
       orderBy: {
         createdAt: 'desc'

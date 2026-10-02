@@ -47,6 +47,7 @@ type LiveMetrics = {
   totalFixtrayFees: number;
   fixtrayFeesThisMonth: number;
   fixtrayFeesLastMonth: number;
+  feePeriodLabel?: string;
   feeGrowth: string;
   totalPaidWorkOrders: number;
   paidWorkOrdersThisMonth: number;
@@ -216,8 +217,11 @@ export default function ManageCustomers() {
               </div>
 
               <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 12, padding: 20 }}>
-                <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>{say("FixTray Fees This Month")}</div>
+                <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>{say("FixTray Fees")}</div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: '#8b5cf6' }}>{formatCurrency(liveMetrics.fixtrayFeesThisMonth)}</div>
+                {liveMetrics.feePeriodLabel ? (
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>{liveMetrics.feePeriodLabel}</div>
+                ) : null}
                 <MiniLineChart data={liveMetrics.feeTrend} color="#8b5cf6" height={30} />
               </div>
 
@@ -246,7 +250,7 @@ export default function ManageCustomers() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                   <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#22c55e' }}>{formatCurrency(liveMetrics.fixtrayFeesThisMonth)}</div>
-                    <div style={{ fontSize: 10, color: '#9aa3b2' }}>{say("This Month Fees")}</div>
+                    <div style={{ fontSize: 10, color: '#9aa3b2' }}>{liveMetrics.feePeriodLabel || say("This Month Fees")}</div>
                   </div>
                   <div style={{ background: 'rgba(139,92,246,0.1)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#8b5cf6' }}>{formatCurrency(liveMetrics.totalFixtrayFees)}</div>

@@ -430,12 +430,9 @@ export default function WorkOrderDetailPage() {
       if (data.invoice) {
         setInvoiceBill({
           quoteAmount: Number(data.invoice.quoteAmount) || 0,
-          serviceFee: Number(data.invoice.serviceFee) || platformFee,
+          serviceFee: Number(data.invoice.serviceFee) || 0,
           totalDue: Number(data.invoice.totalDue) || 0,
         });
-        if (typeof data.invoice.serviceFee === 'number') {
-          setPlatformFee(data.invoice.serviceFee);
-        }
       }
       if (data.paymentLink?.url && typeof window !== 'undefined') {
         const url = `${window.location.origin}${data.paymentLink.url}`;
@@ -810,7 +807,7 @@ export default function WorkOrderDetailPage() {
               <Field label={say("Est. Cost")}        value={wo.estimatedCost != null ? `$${wo.estimatedCost.toFixed(2)}` : null} />
               {platformFee > 0 && typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 && (
                 <>
-                  <Field label={say(FIXTRAY_SERVICE_FEE_LABEL)} value={fmt(platformFee)} />
+                  <Field label={say(FIXTRAY_SERVICE_FEE_LABEL)} value={fmt(billWithServiceFee(wo.estimatedCost, platformFee).serviceFee)} />
                   <Field label="Estimate Total" value={fmt(billWithServiceFee(wo.estimatedCost, platformFee).total)} />
                 </>
               )}
@@ -874,8 +871,9 @@ export default function WorkOrderDetailPage() {
               {(() => {
                 const quote = invoiceBill?.quoteAmount
                   ?? (typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 ? wo.estimatedCost : grandTotal);
-                const fee = invoiceBill?.serviceFee ?? platformFee;
-                const totalDue = invoiceBill?.totalDue ?? (quote > 0 ? Math.round((quote + fee) * 100) / 100 : 0);
+                const liveBill = billWithServiceFee(quote, platformFee);
+                const fee = invoiceBill?.serviceFee ?? liveBill.serviceFee;
+                const totalDue = invoiceBill?.totalDue ?? liveBill.total;
                 if (quote <= 0 && !invoiceBill) return null;
                 return (
                   <div style={{ marginBottom: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>

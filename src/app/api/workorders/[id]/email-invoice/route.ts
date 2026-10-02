@@ -5,7 +5,7 @@ import { generateInvoicePDF } from '@/lib/pdf';
 import { sendEmail } from '@/lib/emailService';
 import logger from '@/lib/logger';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
-import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { estimateBillForOrder } from '@/lib/customerLedger';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 
 export async function POST(
@@ -64,7 +64,14 @@ export async function POST(
     const laborTotal = labor.reduce((sum: number, l: any) => sum + (l.hours || 0) * (l.ratePerHour || 0), 0);
     const chargesTotal = charges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
     const parsedSubtotal = partsTotal + laborTotal + chargesTotal;
-    const bill = billWithServiceFee(parsedSubtotal > 0 ? parsedSubtotal : quoteAmount(workOrder), serviceFee);
+    const bill = estimateBillForOrder(
+      {
+        paymentStatus: workOrder.paymentStatus,
+        amountPaid: workOrder.amountPaid,
+        estimatedCost: parsedSubtotal > 0 ? parsedSubtotal : quoteAmount(workOrder),
+      },
+      serviceFee,
+    );
     const totalDue = bill.total;
 
     // Send email with invoice details

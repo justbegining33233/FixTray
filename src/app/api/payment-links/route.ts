@@ -6,13 +6,14 @@ import { validatePaymentLink } from '@/lib/shopFormValidation';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
-import { paymentLinkFeeBreakdown } from '@/lib/serviceFeeBill';
+import { paymentLinkFeeBreakdown, unpaidInvoiceDisplay } from '@/lib/serviceFeeBill';
 import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 
 async function invoiceBreakdown(link: {
   amount: number;
   workOrderId: string | null;
+  status?: string | null;
 }) {
   const amount = Number(link.amount) || 0;
   let quote = 0;
@@ -21,7 +22,9 @@ async function invoiceBreakdown(link: {
     if (workOrder) quote = quoteAmount(workOrder);
   }
   const platformFee = amount > 0 ? await getPlatformServiceFeeUsd() : 0;
-  const bill = paymentLinkFeeBreakdown(amount, quote, platformFee);
+  const bill = link.status === 'paid'
+    ? paymentLinkFeeBreakdown(amount, quote, platformFee)
+    : unpaidInvoiceDisplay(amount, quote, platformFee);
   return {
     serviceCost: bill.serviceCost,
     serviceFee: bill.serviceFee,

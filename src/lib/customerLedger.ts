@@ -6,7 +6,7 @@
  * platform fee, and that due amount is not added onto a payment already recorded.
  */
 
-import { customerPaymentBill, roundMoney } from '@/lib/serviceFeeBill';
+import { billWithServiceFee, customerPaymentBill, roundMoney, type ServiceFeeBill } from '@/lib/serviceFeeBill';
 
 const COMPLETED_STATUSES = new Set(['closed', 'completed']);
 
@@ -83,6 +83,21 @@ export interface CustomerLedgerSummary {
   servicesCompleted: number;
   totalPending: number;
   pendingCount: number;
+}
+
+/**
+ * Estimate and invoice rows. A recorded payment keeps the fee that was charged.
+ * An open bill uses the customer-facing fee for that shop quote.
+ */
+export function estimateBillForOrder(order: CustomerLedgerOrder, savedFeeUsd: number): ServiceFeeBill {
+  const quote = typeof order.estimatedCost === 'number' && Number.isFinite(order.estimatedCost)
+    ? roundMoney(Math.max(0, order.estimatedCost))
+    : 0;
+  if (isPaidRecord(order) && recordedPaidUsd(order) > 0) {
+    const charge = customerChargeDisplay({ ...order, estimatedCost: quote }, savedFeeUsd);
+    return { subtotal: charge.serviceCost, serviceFee: charge.fixtrayFee, total: charge.amount };
+  }
+  return billWithServiceFee(quote, savedFeeUsd);
 }
 
 /** Spent and paid are the same recorded payments. Pending is unpaid bills only. */

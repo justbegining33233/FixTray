@@ -18,28 +18,28 @@ describe('Connect destination split', () => {
     expect(split.ok).toBe(true);
     if (!split.ok) return;
 
-    expect(bill).toEqual({ quoteAmount: 1.08, serviceFee: 10, amount: 11.08 });
+    expect(bill).toEqual({ quoteAmount: 1.08, serviceFee: 10.64, amount: 11.72 });
     expect(split.quoteCents).toBe(108);
-    expect(split.applicationFeeCents).toBe(1000);
+    expect(split.applicationFeeCents).toBe(1064);
     expect(split.shopPayoutCents).toBe(108);
-    expect(split.chargeCents).toBe(1108);
+    expect(split.chargeCents).toBe(1172);
     expect(split.applicationFeeCents + split.shopPayoutCents).toBe(split.chargeCents);
     expect(split.paymentIntentData).toEqual({
-      application_fee_amount: 1000,
+      application_fee_amount: 1064,
       transfer_data: { destination: 'acct_shop_123' },
     });
     expect(split.paymentIntentData.transfer_data).not.toHaveProperty('amount');
 
     const params = destinationChargeParams(split, { workOrderId: 'wo_1' });
-    expect(params.amount).toBe(1108);
+    expect(params.amount).toBe(1172);
     expect(params.currency).toBe('usd');
-    expect(params.application_fee_amount).toBe(1000);
+    expect(params.application_fee_amount).toBe(1064);
     expect(params.transfer_data).toEqual({ destination: 'acct_shop_123' });
     expect(params.application_fee_amount).not.toBe(params.amount);
     expect(params.amount - params.application_fee_amount).toBe(split.shopPayoutCents);
     expect(params.metadata).toMatchObject({
       workOrderId: 'wo_1',
-      fixtrayServiceFeeCents: '1000',
+      fixtrayServiceFeeCents: '1064',
       shopPayoutCents: '108',
     });
   });

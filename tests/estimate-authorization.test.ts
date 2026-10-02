@@ -85,13 +85,13 @@ describe('invoice FixTray fee', () => {
     expect(quoteAmount({ estimatedCost: 100 })).toBe(100);
     expect(invoiceTotal({ estimatedCost: 100 }, 5)).toEqual({
       quoteAmount: 100,
-      serviceFee: 5,
-      amount: 105,
+      serviceFee: 8.44,
+      amount: 108.44,
     });
     expect(invoiceTotal({ estimatedCost: 100 }, 7.5)).toEqual({
       quoteAmount: 100,
-      serviceFee: 7.5,
-      amount: 107.5,
+      serviceFee: 11.02,
+      amount: 111.02,
     });
   });
 
@@ -120,14 +120,14 @@ describe('work order closeout', () => {
 
   it('requests payment on the authorized job without marking it complete', () => {
     const invoiced = closeoutTransition({ ...quoted, status: 'in-progress' }, 'invoice', fee);
-    // Final bill = quote ($1.08) + configured FixTray service fee
+    // Final bill = quote ($1.08) + customer-facing fee for a saved $5
     expect(invoiced).toMatchObject({
       ok: true,
       status: 'waiting-for-payment',
       paymentStatus: 'unpaid',
       quoteAmount: 1.08,
-      serviceFee: fee,
-      amount: 6.08,
+      serviceFee: 5.49,
+      amount: 6.57,
     });
 
     const paid = closeoutTransition({ ...quoted, status: 'waiting-for-payment' }, 'paid', fee);
@@ -138,8 +138,8 @@ describe('work order closeout', () => {
     const invoiced = closeoutTransition({ ...quoted, status: 'in-progress' }, 'invoice', 3.25);
     expect(invoiced).toMatchObject({
       ok: true,
-      serviceFee: 3.25,
-      amount: 4.33,
+      serviceFee: 3.69,
+      amount: 4.77,
     });
   });
 

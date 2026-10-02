@@ -23,7 +23,7 @@ export default stripe;
 
 /**
  * Destination charge for a work order.
- * The platform keeps only the live service fee (application_fee_amount).
+ * The platform receives the customer-facing service fee (application_fee_amount).
  * The rest transfers to the connected shop. Callers must pass a split that
  * already has a connected account — this does not create a platform-only charge.
  */

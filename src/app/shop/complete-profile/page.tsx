@@ -363,7 +363,7 @@ export default function CompleteProfile() {
             <p style={{color:'#9aa3b2', fontSize:15, marginBottom:8, lineHeight:1.6}}>
               {say("Connect your Stripe account to receive customer payments directly into your bank account. You can do this later from your settings.")}{' '}</p>
             <p style={{color:'#9aa3b2', fontSize:14, marginBottom:32, lineHeight:1.6}}>
-              When a customer pays a work order, Stripe charges the invoice total. Labor, parts, and shop fees transfer to this account. FixTray keeps only the FixTray Service Fee from platform settings, and does not keep the shop payment for the work. Customers cannot pay in Stripe until this account can receive transfers.
+              When a customer pays a work order, Stripe charges the invoice total. Labor, parts, and shop fees transfer to this account. FixTray keeps only the FixTray Service Fee shown on the invoice, and does not keep the shop payment for the work. Customers cannot pay in Stripe until this account can receive transfers.
             </p>
             <div style={{ textAlign: 'left', marginBottom: 12 }}>
               <ShopStripeConnectCard origin="onboarding" />

@@ -1,8 +1,10 @@
 /**
- * FixTray platform service fee (per work order).
+ * Saved FixTray platform fee (per work order).
  *
  * Source of truth: PlatformConfig.serviceFee (cents), edited by superadmin
- * via /superadmin/settings and /api/admin/settings.
+ * via /superadmin/settings and /api/admin/settings. This is what the platform
+ * nets after Stripe. Checkout grosses it up into the customer-facing fee.
+ * Do not write the customer-facing amount back here.
  * FIXTRAY_SERVICE_FEE_CENTS is only the fallback when no config row exists.
  */
 

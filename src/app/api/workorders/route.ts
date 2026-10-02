@@ -27,7 +27,7 @@ import {
 } from '@/lib/workOrderMetrics';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
-import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { estimateBillForOrder } from '@/lib/customerLedger';
 import { demoOutboundBlocked } from '@/lib/demoOutboundContext';
 import { isDemoShopId } from '@/lib/demoShopLookup';
 import { workOrderTextMatch } from '@/lib/workOrderSearch';
@@ -207,7 +207,10 @@ export async function GET(request: NextRequest) {
     // techLabor, partsUsed, workPhotos, completion) are now Prisma Json? — returned
     // as native JS objects/arrays, no JSON.parse needed.
     const workOrders = rawWorkOrders.map(wo => {
-      const estimateBill = billWithServiceFee(quoteAmount(wo), fixtrayServiceFee);
+      const estimateBill = estimateBillForOrder(
+        { ...wo, estimatedCost: quoteAmount(wo) },
+        fixtrayServiceFee,
+      );
       return {
       ...wo,
       services: wo.repairs || wo.maintenance ? {

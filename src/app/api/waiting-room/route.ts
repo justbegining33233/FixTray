@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
 import {
   isWaitingRoomCandidate,
-  orderWaitingRoomOrders,
+  orderWaitingRoomBoard,
   toWaitingRoomCard,
   waitingRoomWorkOrderWhere,
 } from '@/lib/waitingRoomBoard';
@@ -36,13 +36,17 @@ export async function GET(req: NextRequest) {
       customer: { select: { firstName: true } },
       assignedTo: { select: { firstName: true, lastName: true } },
       vehicle: { select: { year: true, make: true, model: true } },
+      statusHistory: {
+        select: { fromStatus: true, toStatus: true, createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      },
     },
     orderBy: { createdAt: 'asc' },
     take: 40,
   });
 
   const bays = await prisma.bay.findMany({ where: { shopId } });
-  const boardOrders = orderWaitingRoomOrders(orders.filter((wo) => isWaitingRoomCandidate(wo)))
+  const boardOrders = orderWaitingRoomBoard(orders.filter((wo) => isWaitingRoomCandidate(wo)))
     .map((wo) => toWaitingRoomCard(wo));
 
   return NextResponse.json({

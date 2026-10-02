@@ -6,6 +6,7 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { generateAccessToken } from '@/lib/auth';
 import { isOwnerAdmin } from '@/lib/owner-access';
+import { adminLoginUsername } from '@/lib/adminAccessLogin';
 import logger from '@/lib/logger';
 
 const adminLoginSchema = z.object({
@@ -29,9 +30,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { username, password } = validation.data;
+    const { password } = validation.data;
+    const username = adminLoginUsername(validation.data.username);
 
-    // Find admin
+    // Find admin. The username is case-sensitive on purpose.
     const admin = await prisma.admin.findUnique({
       where: { username },
     });

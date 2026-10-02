@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { getConfiguredPlatformServiceFeeUsd, getPlatformServiceFeeUsd } from '@/lib/platformFee';
-import { customerPaymentBill } from '@/lib/serviceFeeBill';
 import { customerSeesPayButton, type ConnectAccountSnapshot } from '@/lib/customerCardPay';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
+import { customerChargeDisplay, customerLedgerSummary, isPaidRecord } from '@/lib/customerLedger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,12 +48,8 @@ export async function GET(request: NextRequest) {
     const accountCache = new Map<string, ConnectAccountSnapshot | null>();
 
     const payments = await Promise.all(workOrders.map(async (wo) => {
-      // Quote stays services-only. The bill total always adds the live platform fee.
-      const bill = customerPaymentBill({
-        estimatedCost: wo.estimatedCost,
-        amountPaid: wo.amountPaid,
-        serviceFeeUsd: fixtrayFee,
-      });
+      // Paid rows use the recorded charge. Open invoices still add the live fee.
+      const charge = customerChargeDisplay(wo, fixtrayFee);
 
       const offer = await cardPaymentOfferForShop(wo.shop?.stripeAccountId, {
         serviceFeeUsd: configuredFee,
@@ -62,16 +58,16 @@ export async function GET(request: NextRequest) {
       const invoiceOpen = customerSeesPayButton({
         paymentStatus: wo.paymentStatus,
         status: wo.status,
-        totalDue: bill.total,
+        totalDue: charge.amount,
         cardPaymentAvailable: true,
       });
       return {
         id: wo.id,
-        status: wo.paymentStatus === 'paid' ? 'Paid' : 'Pending',
+        status: isPaidRecord(wo) ? 'Paid' : 'Pending',
         workOrderStatus: wo.status,
-        amount: bill.total,
-        serviceCost: bill.subtotal,
-        fixtrayFee: bill.serviceFee,
+        amount: charge.amount,
+        serviceCost: charge.serviceCost,
+        fixtrayFee: charge.fixtrayFee,
         amountPaid: wo.amountPaid || 0,
         service: wo.issueDescription || 'Vehicle Service',
         shop: wo.shop?.shopName || 'Unknown Shop',
@@ -86,22 +82,16 @@ export async function GET(request: NextRequest) {
       };
     }));
 
-    const totalPaid = payments
-      .filter((p) => p.status === 'Paid')
-      .reduce((sum, p) => sum + p.amount, 0);
-
-    const totalPending = payments
-      .filter((p) => p.status === 'Pending')
-      .reduce((sum, p) => sum + p.amount, 0);
+    const ledger = customerLedgerSummary(workOrders, fixtrayFee);
 
     return NextResponse.json({
       success: true,
       payments,
       summary: {
-        totalPaid,
-        totalPending,
-        paidCount: payments.filter((p) => p.status === 'Paid').length,
-        pendingCount: payments.filter((p) => p.status === 'Pending').length,
+        totalPaid: ledger.totalPaid,
+        totalPending: ledger.totalPending,
+        paidCount: ledger.paidCount,
+        pendingCount: ledger.pendingCount,
       },
     });
   } catch (error) {

@@ -3,6 +3,8 @@ import { NextRequest } from 'next/server';
 import { generateAccessToken } from '../src/lib/auth';
 import {
   isWaitingRoomCandidate,
+  orderWaitingForService,
+  orderWaitingRoomBoard,
   orderWaitingRoomOrders,
   toWaitingBoardStatus,
   toWaitingRoomCard,
@@ -59,13 +61,65 @@ describe('waiting room board selection', () => {
     expect(card.ticketNumber).toBe('DRUPXM');
   });
 
-  it('puts 9:00 AM before 12:00 PM even when the noon visit was created first', () => {
+  it('keeps in-progress jobs at 9:00 AM before 12:00 PM even when noon was created first', () => {
     const ordered = orderWaitingRoomOrders([
       { id: 'noon', dueDate: '12:00 PM', createdAt: '2026-10-02T08:00:00.000Z' },
       { id: 'nine', dueDate: '9:00 AM', createdAt: '2026-10-02T11:00:00.000Z' },
     ]);
     expect(ordered.map((row) => row.id)).toEqual(['nine', 'noon']);
     expect('12:00 PM' < '9:00 AM').toBe(true);
+  });
+
+  it('keeps a later appointment that arrived first above an earlier appointment that arrived later', () => {
+    const ordered = orderWaitingForService([
+      {
+        id: 'nine',
+        status: 'pending',
+        dueDate: new Date('2026-10-02T13:00:00.000Z'),
+        createdAt: '2026-10-02T18:00:00.000Z',
+      },
+      {
+        id: 'noon',
+        status: 'pending',
+        dueDate: '12:00 PM',
+        createdAt: '2026-10-02T14:00:00.000Z',
+      },
+    ]);
+    expect(ordered.map((row) => row.id)).toEqual(['noon', 'nine']);
+  });
+
+  it('uses waiting-list entry time when the job was not created already waiting', () => {
+    const ordered = orderWaitingForService([
+      {
+        id: 'early-appointment',
+        status: 'pending',
+        dueDate: new Date('2026-10-02T13:00:00.000Z'),
+        createdAt: '2026-10-01T08:00:00.000Z',
+        statusHistory: [
+          { fromStatus: 'assigned', toStatus: 'pending', createdAt: '2026-10-02T20:00:00.000Z' },
+        ],
+      },
+      {
+        id: 'later-appointment',
+        status: 'pending',
+        dueDate: new Date('2026-10-02T16:00:00.000Z'),
+        createdAt: '2026-10-02T15:00:00.000Z',
+      },
+    ]);
+    expect(ordered.map((row) => row.id)).toEqual(['later-appointment', 'early-appointment']);
+  });
+
+  it('orders Waiting for Service by arrival and leaves In Progress on appointment time', () => {
+    const ordered = orderWaitingRoomBoard([
+      { id: 'noon-progress', status: 'in-progress', dueDate: new Date('2026-10-02T16:00:00.000Z'), createdAt: '2026-10-01T08:00:00.000Z' },
+      { id: 'nine-progress', status: 'assigned', dueDate: new Date('2026-10-02T13:00:00.000Z'), createdAt: '2026-10-02T12:00:00.000Z' },
+      { id: 'noon-wait', status: 'pending', dueDate: new Date('2026-10-02T16:00:00.000Z'), createdAt: '2026-10-02T10:00:00.000Z' },
+      { id: 'nine-wait', status: 'pending', dueDate: new Date('2026-10-02T13:00:00.000Z'), createdAt: '2026-10-02T11:00:00.000Z' },
+    ]);
+    const progress = ordered.filter((row) => toWaitingBoardStatus(row.status) === 'in_progress');
+    const waiting = ordered.filter((row) => toWaitingBoardStatus(row.status) === 'pending');
+    expect(progress.map((row) => row.id)).toEqual(['nine-progress', 'noon-progress']);
+    expect(waiting.map((row) => row.id)).toEqual(['noon-wait', 'nine-wait']);
   });
 
   it('orders stored appointment instants soonest first and leaves untimed jobs oldest first', () => {
@@ -185,15 +239,17 @@ describe('GET /api/waiting-room', () => {
     const res = await GET(new NextRequest('http://localhost/api/waiting-room?shopId=shop-1'));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.orders.map((order: { id: string }) => order.id)).toEqual(['wo-inshop', 'wo-bay']);
-    expect(body.orders[0].status).toBe('pending');
-    expect(body.orders[0].vehicle).toContain('Oil Change');
-    expect(body.orders[1].status).toBe('in_progress');
-    expect(body.orders[1].tech).toBe('Rio Tech');
-    expect(body.orders[1].vehicle).toContain('Brake Service');
+    expect(body.orders.map((order: { id: string }) => order.id)).toEqual(['wo-bay', 'wo-inshop']);
+    const waiting = body.orders.find((order: { id: string }) => order.id === 'wo-inshop');
+    const working = body.orders.find((order: { id: string }) => order.id === 'wo-bay');
+    expect(waiting.status).toBe('pending');
+    expect(waiting.vehicle).toContain('Oil Change');
+    expect(working.status).toBe('in_progress');
+    expect(working.tech).toBe('Rio Tech');
+    expect(working.vehicle).toContain('Brake Service');
   });
 
-  it('returns the 9:00 AM appointment before the 12:00 PM one', async () => {
+  it('returns the later appointment first when it entered the waiting list first', async () => {
     mockedPrisma.workOrder.findMany.mockResolvedValue([
       {
         id: 'wo-noon',
@@ -221,6 +277,6 @@ describe('GET /api/waiting-room', () => {
 
     const res = await GET(new NextRequest('http://localhost/api/waiting-room?shopId=shop-1'));
     const body = await res.json();
-    expect(body.orders.map((order: { id: string }) => order.id)).toEqual(['wo-nine', 'wo-noon']);
+    expect(body.orders.map((order: { id: string }) => order.id)).toEqual(['wo-noon', 'wo-nine']);
   });
 });

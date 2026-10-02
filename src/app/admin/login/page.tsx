@@ -2,13 +2,13 @@
 
 import { usePhrase } from '@/lib/usePhrase';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Route } from 'next';
 import { FaLock } from 'react-icons/fa';
+import { useAuth } from '@/contexts/AuthContext';
+import { adminAccessSession, adminLoginUsername } from '@/lib/adminAccessLogin';
 
 export default function AdminLoginPage() {
   const say = usePhrase();
-  const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -25,32 +25,32 @@ export default function AdminLoginPage() {
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        credentials: 'include',
+        body: JSON.stringify({
+          username: adminLoginUsername(formData.username),
+          password: formData.password,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Store admin credentials
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userRole', 'admin');
-        // Keep legacy admin keys and populate shared user keys for AuthContext
-        localStorage.setItem('adminId', data.admin.id);
-        localStorage.setItem('adminUsername', data.admin.username);
-        localStorage.setItem('isSuperAdmin', data.admin.isSuperAdmin.toString());
-        if (data.admin?.isOwner) localStorage.setItem('isOwner', 'true');
-        else localStorage.removeItem('isOwner');
-
-        // Also set shared user keys so the AuthContext picks up the admin as an authenticated user
-        localStorage.setItem('userId', data.admin.id);
-        localStorage.setItem('userName', data.admin.username);
-
-        // Redirect to super-admin portal if flagged, otherwise admin dashboard
-        if (data.admin?.isSuperAdmin) {
-          router.push('/admin/home' as Route);
-        } else {
-          router.push('/admin/home' as Route);
+        const session = adminAccessSession(data);
+        if (!session) {
+          setError('Login failed');
+          return;
         }
+        login({
+          token: session.token,
+          role: session.role,
+          name: session.name,
+          id: session.id,
+          isSuperAdmin: session.isSuperAdmin,
+          isOwner: session.isOwner,
+        });
+        localStorage.setItem('adminId', session.id);
+        localStorage.setItem('adminUsername', session.name);
+        window.location.assign(session.destination);
       } else {
         setError(data.error || 'Login failed');
       }

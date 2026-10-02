@@ -7,7 +7,7 @@ import {
   managedRoleCounts,
   roleCountsMatchList,
 } from '../src/lib/platformUserCensus';
-import { listedMoney, listedTotalChange, tenantBoardStats, tenantHealthScore, tenantOwnerText } from '../src/lib/tenantBoard';
+import { listedMoney, listedTotalChange, tenantBoardStats, tenantHealthScore, tenantOwnerLine, tenantOwnerText } from '../src/lib/tenantBoard';
 
 const now = new Date('2026-10-02T16:00:00.000Z');
 
@@ -121,6 +121,11 @@ describe('manage tenants board', () => {
     expect(tenantOwnerText('   ')).toBe('No owner');
     expect(tenantOwnerText('N/A')).toBe('No owner');
     expect(tenantOwnerText('Ada Lovelace')).toBe('Ada Lovelace');
+    expect(tenantOwnerLine('N/A', '')).toBe('No owner');
+    expect(tenantOwnerLine('N/A', 'N/A')).toBe('No owner');
+    expect(tenantOwnerLine('N/A', null)).not.toContain('N/A');
+    expect(tenantOwnerLine('N/A', 'Ada Lovelace')).toBe('Ada Lovelace');
+    expect(tenantOwnerLine('Austin, TX', 'Ada Lovelace')).toBe('Austin, TX - Owner: Ada Lovelace');
     expect(tenantHealthScore(0)).toBe(0);
     expect(tenantHealthScore(undefined)).toBeNull();
     expect(tenantHealthScore(null)).toBeNull();

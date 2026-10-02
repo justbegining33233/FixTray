@@ -116,11 +116,84 @@ function vehicleName(wo: WaitingRoomWorkOrderLike): string {
   return fromInfo || fromRecord || (wo.vehicleType ? String(wo.vehicleType) : 'Vehicle');
 }
 
+export interface WaitingListHistoryEntry {
+  fromStatus?: string | null;
+  toStatus?: string | null;
+  createdAt?: string | Date | null;
+}
+
+/** Waiting for Service is the lobby's pending bucket, not Currently Working On. */
+export function isWaitingForServiceStatus(status?: string | null): boolean {
+  return toWaitingBoardStatus(status) === 'pending';
+}
+
 /**
- * Lobby order is the appointment time (soonest first).
- * Jobs waiting for work stay oldest-created-first in `orderWaitingJobs`.
- * This board does not use that queue, and it does not sort clock labels as text
- * ("12:00 PM" would otherwise come before "9:00 AM").
+ * When the job entered Waiting for Service.
+ * A job created already waiting uses its create time. A job that became
+ * waiting later uses that status change. Appointment time is not arrival.
+ */
+export function waitingListArrivalMillis(order: {
+  status?: string | null;
+  createdAt?: string | Date | null;
+  statusHistory?: WaitingListHistoryEntry[] | null;
+}): number | null {
+  const history = [...(order.statusHistory || [])].sort((a, b) => {
+    const aTime = timestampMillis(a.createdAt) ?? Number.POSITIVE_INFINITY;
+    const bTime = timestampMillis(b.createdAt) ?? Number.POSITIVE_INFINITY;
+    return aTime - bTime;
+  });
+  const originalStatus = history.length > 0 ? history[0].fromStatus : order.status;
+  if (isWaitingForServiceStatus(originalStatus)) return timestampMillis(order.createdAt);
+  for (const entry of history) {
+    if (isWaitingForServiceStatus(entry.toStatus)) return timestampMillis(entry.createdAt);
+  }
+  return timestampMillis(order.createdAt);
+}
+
+/**
+ * Waiting for Service is first come, first served.
+ * The earlier arrival is first. Appointment time, including a clock label,
+ * does not change that order.
+ */
+export function orderWaitingForService<T extends {
+  status?: string | null;
+  createdAt?: string | Date | null;
+  statusHistory?: WaitingListHistoryEntry[] | null;
+}>(orders: T[]): T[] {
+  return [...orders].sort((a, b) => {
+    const aKey = waitingListArrivalMillis(a);
+    const bKey = waitingListArrivalMillis(b);
+    if (aKey == null && bKey == null) return 0;
+    if (aKey == null) return 1;
+    if (bKey == null) return -1;
+    return aKey - bKey;
+  });
+}
+
+/**
+ * In Progress and Ready stay in appointment order.
+ * Waiting for Service is ordered on its own, by arrival.
+ */
+export function orderWaitingRoomBoard<T extends {
+  status?: string | null;
+  dueDate?: string | Date | null;
+  estimatedCompletion?: string | null;
+  createdAt?: string | Date | null;
+  statusHistory?: WaitingListHistoryEntry[] | null;
+}>(orders: T[]): T[] {
+  const waiting: T[] = [];
+  const rest: T[] = [];
+  for (const order of orders) {
+    if (isWaitingForServiceStatus(order.status)) waiting.push(order);
+    else rest.push(order);
+  }
+  return [...orderWaitingRoomOrders(rest), ...orderWaitingForService(waiting)];
+}
+
+/**
+ * Appointment order for jobs that are not Waiting for Service (soonest first).
+ * Clock labels are times of day, not text ("12:00 PM" is not before "9:00 AM").
+ * Waiting for Service does not use this order.
  */
 export function orderWaitingRoomOrders<T extends {
   dueDate?: string | Date | null;

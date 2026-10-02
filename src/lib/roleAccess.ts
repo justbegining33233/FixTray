@@ -27,6 +27,7 @@ export type RouteActor = {
   role?: string | null;
   isOwner?: boolean;
   isSuperAdmin?: boolean;
+  username?: string | null;
 };
 
 /**

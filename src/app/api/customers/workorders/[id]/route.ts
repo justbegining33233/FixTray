@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
-import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { estimateBillForOrder } from '@/lib/customerLedger';
 import { decorateWorkOrderMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 
@@ -89,7 +89,14 @@ export async function GET(
     const quoteAmount = Number(
       estimate?.amount ?? estimate?.total ?? workOrder.estimatedCost ?? 0
     ) || 0;
-    const bill = billWithServiceFee(quoteAmount, await getPlatformServiceFeeUsd());
+    const bill = estimateBillForOrder(
+      {
+        paymentStatus: workOrder.paymentStatus,
+        amountPaid: workOrder.amountPaid,
+        estimatedCost: quoteAmount,
+      },
+      await getPlatformServiceFeeUsd(),
+    );
     const shownMessages = await decorateWorkOrderMessages(
       workOrder.messages || [],
       await resolveAccountLocale(request, { id: payload.id, role: payload.role }),

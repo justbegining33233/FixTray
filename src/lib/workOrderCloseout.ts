@@ -2,9 +2,9 @@
  * Work-order closeout: invoice (payment link for this job) → paid → complete.
  * Marking paid does not complete the job.
  *
- * Invoice totals include the FixTray service fee from PlatformConfig
- * (superadmin settings). Pass the current fee into closeoutTransition /
- * invoiceTotal — do not hardcode it here.
+ * Invoice totals include one customer-facing FixTray fee. Pass the saved
+ * PlatformConfig fee (what the platform nets after Stripe) into
+ * closeoutTransition / invoiceTotal — do not hardcode it here.
  */
 
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
@@ -27,7 +27,7 @@ export type CloseoutResult =
       paymentStatus: string;
       /** Quote / services subtotal (excludes FixTray fee) */
       quoteAmount: number;
-      /** FixTray platform service fee included on the final bill */
+      /** Customer-facing FixTray fee on the final bill */
       serviceFee: number;
       /** Total charged to the customer (quote + service fee) */
       amount: number;
@@ -58,8 +58,8 @@ export function quoteAmount(workOrder: CloseoutWorkOrder): number {
 }
 
 /**
- * Final bill total: quote subtotal + current FixTray service fee.
- * @param serviceFeeUsd fee from PlatformConfig (USD), not a hardcoded constant
+ * Final bill total: shop quote plus the customer-facing FixTray fee.
+ * @param serviceFeeUsd saved PlatformConfig fee in USD (net after Stripe), not a hardcoded constant
  */
 export function invoiceTotal(
   workOrder: CloseoutWorkOrder,

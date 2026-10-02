@@ -25,18 +25,18 @@ describe('customer insights and payments use the same payment records', () => {
     expect(ledger.totalPaid).toBe(1.08);
     expect(ledger.paidCount).toBe(1);
     expect(ledger.servicesCompleted).toBe(1);
-    expect(ledger.totalPending).toBe(23.5);
+    expect(ledger.totalPending).toBe(24.51);
     expect(ledger.pendingCount).toBe(1);
 
     const paid = customerChargeDisplay(orders[0], 10);
     expect(paid.amount).toBe(1.08);
     expect(paid.fixtrayFee).toBe(0);
-    expect(paid.amount).not.toBe(11.08);
+    expect(paid.amount).not.toBe(11.72);
 
     const open = customerChargeDisplay(orders[1], 10);
-    expect(open.amount).toBe(23.5);
+    expect(open.amount).toBe(24.51);
     expect(open.serviceCost).toBe(13.5);
-    expect(open.fixtrayFee).toBe(10);
+    expect(open.fixtrayFee).toBe(11.01);
   });
 
   it('keeps a recorded charge that already includes the fee', () => {

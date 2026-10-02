@@ -1,22 +1,24 @@
 /**
  * Stripe Connect destination charge for a work-order payment.
  *
- * The customer is charged quote + the live FixTray service fee.
- * FixTray keeps only that fee (application_fee_amount).
- * Labor, parts, and other shop charges transfer to the shop's connected account.
+ * The customer is charged the shop bill plus one customer-facing FixTray fee.
+ * Pass that fee as serviceFeeUsd. It is application_fee_amount, so the platform
+ * receives it and Stripe's card fee comes out of it. The connected shop receives
+ * only the shop bill. Do not pass the saved PlatformConfig net and do not add a
+ * second processing line.
  *
  * A charge is never shaped for the platform alone. If the shop has no Connect
  * destination, callers must refuse the payment instead of retaining shop funds.
  */
 
-import { roundMoney } from '@/lib/serviceFeeBill';
+import { usdToCents } from '@/lib/serviceFeeBill';
 
 export interface ConnectDestinationSplit {
   ok: true;
   destination: string;
   /** Shop services, parts, labor, and shop fees, in cents. */
   quoteCents: number;
-  /** Live platform fee in cents. Zero is omitted from Stripe (the API rejects 0). */
+  /** Customer-facing FixTray fee in cents. Zero is omitted from Stripe (the API rejects 0). */
   applicationFeeCents: number;
   /** Amount the customer pays, in cents. */
   chargeCents: number;
@@ -37,10 +39,6 @@ export interface ConnectDestinationSplit {
 export type ConnectSplitResult =
   | ConnectDestinationSplit
   | { ok: false; status: 400 | 409; error: string };
-
-function usdToCents(usd: number): number {
-  return Math.round(roundMoney(Math.max(0, Number(usd) || 0)) * 100);
-}
 
 export function buildConnectDestinationSplit(input: {
   quoteUsd: number;

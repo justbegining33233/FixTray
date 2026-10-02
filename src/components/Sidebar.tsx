@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { normalizeRole } from '@/lib/roleNav';
 import { isPlatformActor } from '@/lib/platformOwnerScope';
 import { filterMenuGroups, type MenuIcon, type SidebarRole } from '@/lib/roleMenus';
+import { useSessionUsername } from '@/lib/useSessionUsername';
 
 interface SidebarProps {
   role: 'shop' | 'manager' | 'tech' | 'admin' | 'superadmin';
@@ -56,6 +57,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
   const say = usePhrase();
   const pathname = usePathname();
   const { user } = useAuth();
+  const { username } = useSessionUsername();
   const linkRole = normalizeRole(user?.role) || role;
   const platformActor = isPlatformActor({
     role: user?.role || (role === 'admin' || role === 'superadmin' ? role : undefined),
@@ -67,7 +69,7 @@ export default function Sidebar({ role, isOpen = true, onClose, onSelectTab, act
   const [isCompactDesktop, setIsCompactDesktop] = useState(false);
   const [currentHash, setCurrentHash] = useState('');
 
-  const filteredGroups = filterMenuGroups(role as SidebarRole, linkRole, platformActor).map((group) => ({
+  const filteredGroups = filterMenuGroups(role as SidebarRole, linkRole, platformActor, username).map((group) => ({
     ...group,
     icon: menuIcon(group.icon),
     items: group.items.map((item) => ({ ...item, icon: menuIcon(item.icon) })),

@@ -22,7 +22,8 @@ function paymentIntentIdFromSession(session: Stripe.Checkout.Session): string | 
 
 /**
  * Stripe Checkout for a work-order invoice.
- * Destination charge: shop receives the quote, FixTray keeps the configured fee.
+ * Destination charge: shop receives the quote. The application fee is the
+ * customer-facing FixTray fee. Stripe's card cost comes out of that fee.
  * Does not mark the invoice paid. Refuses when the shop cannot receive transfers.
  */
 export async function createWorkOrderCheckoutSession(input: {

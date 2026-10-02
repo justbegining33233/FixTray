@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { billWithServiceFee, customerPaymentBill, paymentLinkFeeBreakdown } from '../src/lib/serviceFeeBill';
+import { billWithServiceFee, customerPaymentBill, paymentLinkFeeBreakdown, unpaidInvoiceDisplay } from '../src/lib/serviceFeeBill';
 
 jest.mock('../src/lib/prisma', () => ({
   __esModule: true,
@@ -39,8 +39,8 @@ describe('billWithServiceFee', () => {
   it('adds the live platform fee to a quote and to a paid bill', () => {
     expect(billWithServiceFee(1.08, 10)).toEqual({
       subtotal: 1.08,
-      serviceFee: 10,
-      total: 11.08,
+      serviceFee: 10.64,
+      total: 11.72,
     });
     expect(customerPaymentBill({
       estimatedCost: 1.08,
@@ -48,8 +48,8 @@ describe('billWithServiceFee', () => {
       serviceFeeUsd: 10,
     })).toEqual({
       subtotal: 1.08,
-      serviceFee: 10,
-      total: 11.08,
+      serviceFee: 10.64,
+      total: 11.72,
     });
   });
 
@@ -64,10 +64,15 @@ describe('billWithServiceFee', () => {
       serviceFee: 10,
       amount: 11.08,
     });
+    expect(unpaidInvoiceDisplay(11.08, 1.08, 10)).toMatchObject({
+      serviceCost: 1.08,
+      serviceFee: 10.64,
+      amount: 11.72,
+    });
     expect(paymentLinkFeeBreakdown(1.08, 1.08, 10)).toMatchObject({
       serviceCost: 1.08,
-      serviceFee: 10,
-      amount: 11.08,
+      serviceFee: 10.64,
+      amount: 11.72,
     });
     expect(paymentLinkFeeBreakdown(50, 0, 10)).toMatchObject({
       serviceCost: 40,

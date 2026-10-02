@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import { WorkOrder } from '@/types/workorder';
 import { quoteAmount } from '@/lib/workOrderCloseout';
-import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { estimateBillForOrder } from '@/lib/customerLedger';
 
 export function generateInvoicePDF(workOrder: WorkOrder, serviceFeeUsd: number) {
   const doc = new jsPDF();
@@ -73,9 +73,14 @@ export function generateInvoicePDF(workOrder: WorkOrder, serviceFeeUsd: number) 
   doc.line(140, y, 190, y);
   y += 7;
   
-  const bill = billWithServiceFee(
-    quoteAmount(workOrder) || Number(workOrder.estimate?.amount) || 0,
-    serviceFeeUsd
+  const record = workOrder as WorkOrder & { paymentStatus?: string | null; amountPaid?: number | null };
+  const bill = estimateBillForOrder(
+    {
+      paymentStatus: record.paymentStatus,
+      amountPaid: record.amountPaid,
+      estimatedCost: quoteAmount(record) || Number(workOrder.estimate?.amount) || 0,
+    },
+    serviceFeeUsd,
   );
   const subtotal = bill.subtotal;
   const serviceFee = bill.serviceFee;

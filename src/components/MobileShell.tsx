@@ -13,6 +13,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { usePhrase } from '@/lib/usePhrase';
 import { OWNER_ADD_SHOP_HREF, OWNER_ADD_USER_HREF } from '@/lib/ownerShell';
 import { mobileNavForActor } from '@/lib/mobileRoleNav';
+import { useSessionUsername } from '@/lib/useSessionUsername';
 import RoleTabBar from '@/components/RoleTabBar';
 import { FaBell, FaSearch } from 'react-icons/fa';
 
@@ -676,6 +677,7 @@ export default function MobileShell({
   const t = useTranslations('chrome');
   const say = usePhrase();
   const { user } = useAuth();
+  const { username } = useSessionUsername();
   const isNative = useIsNative();
   const isMobile = useIsMobile();
   const [inApp, setInApp] = useState(isNative);
@@ -810,7 +812,7 @@ export default function MobileShell({
   const actorRole = normalizeRole(user?.role) || role;
   const cfg = roleConfigForActor(ROLES[role], actorRole);
   const accent = cfg.accentColor;
-  const nav = mobileNavForActor(role, { role: user?.role, isSuperAdmin: user?.isSuperAdmin, isOwner: user?.isOwner });
+  const nav = mobileNavForActor(role, { role: user?.role, isSuperAdmin: user?.isSuperAdmin, isOwner: user?.isOwner, username });
   const brandHref = nav?.homeHref ?? homePathByRole[role];
   const initials = (userName || user?.name || nav?.roleLabel || 'FT')
     .split(/\s+/)

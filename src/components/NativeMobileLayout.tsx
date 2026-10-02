@@ -9,6 +9,7 @@ import { offlineStorageService } from '@/lib/offlineStorageService';
 import { useAuth } from '@/contexts/AuthContext';
 import RoleTabBar from '@/components/RoleTabBar';
 import { mobileNavForActor, type ShellRole } from '@/lib/mobileRoleNav';
+import { useSessionUsername } from '@/lib/useSessionUsername';
 
 interface NativeMobileLayoutProps {
   children: React.ReactNode;
@@ -41,10 +42,12 @@ export default function NativeMobileLayout({
 }: NativeMobileLayoutProps) {
   const say = usePhrase();
   const { user } = useAuth();
+  const { username } = useSessionUsername();
   const roleNav = mobileNavForActor(userRole, {
     role: user?.role ?? userRole,
     isSuperAdmin: user?.isSuperAdmin,
     isOwner: user?.isOwner,
+    username,
   });
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState(offlineStorageService.getSyncStatus());

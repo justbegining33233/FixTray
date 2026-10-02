@@ -5686,5 +5686,6 @@
   "Staff": "staff",
   "No owner": "no_owner",
   "Not scored": "not_scored",
-  "Other": "other"
+  "Other": "other",
+  "This shop cannot take card payment yet.": "this_shop_cannot_take_card_payment_yet"
 }

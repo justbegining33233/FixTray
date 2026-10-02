@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
 import { decorateWorkOrderMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
+import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 
 export async function GET(
   request: NextRequest,
@@ -34,6 +35,7 @@ export async function GET(
             shopName: true,
             phone: true,
             address: true,
+            stripeAccountId: true,
           },
         },
         assignedTo: {
@@ -92,6 +94,7 @@ export async function GET(
       workOrder.messages || [],
       await resolveAccountLocale(request, { id: payload.id, role: payload.role }),
     );
+    const cardPayment = await cardPaymentOfferForShop(workOrder.shop?.stripeAccountId);
     const response = {
       id: workOrder.id,
       issueDescription: workOrder.issueDescription,
@@ -102,7 +105,14 @@ export async function GET(
       dueDate: workOrder.dueDate?.toISOString() || null,
       serviceLocation: workOrder.serviceLocation || null,
       createdAt: workOrder.createdAt.toISOString(),
-      shop: workOrder.shop,
+      cardPaymentAvailable: cardPayment.available,
+      shop: workOrder.shop
+        ? {
+            shopName: workOrder.shop.shopName,
+            phone: workOrder.shop.phone,
+            address: workOrder.shop.address,
+          }
+        : null,
       assignedTo: workOrder.assignedTo,
       vehicle: workOrder.vehicle,
       tracking: workOrder.tracking || null,

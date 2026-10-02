@@ -15,6 +15,7 @@ interface PaymentLink {
   paidAt?: string;
   expiresAt?: string;
   workOrderId?: string;
+  cardPaymentAvailable?: boolean;
   customerName?: string;
   customerEmail?: string;
 }
@@ -125,7 +126,7 @@ export default function CustomerPayPage() {
         </div>
 
         {/* Payment Form */}
-        {!isExpired && !isAlreadyPaid && (
+        {!isExpired && !isAlreadyPaid && link?.cardPaymentAvailable === true && (
           <div style={{ background: 'rgba(10,16,32,0.68)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 24 }}>
             {formError && <p style={{color:'#dc2626',fontSize:13,marginBottom:12,fontWeight:600}}>{say(formError)}</p>}
             <button onClick={handlePay} disabled={paying}
@@ -134,6 +135,11 @@ export default function CustomerPayPage() {
             </button>
             <p style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center', marginTop: 12 }}>
               <FaLock style={{marginRight:4}} /> {say("Pay opens Stripe Checkout. FixTray does not store your card.")}{' '}</p>
+          </div>
+        )}
+        {!isExpired && !isAlreadyPaid && link?.cardPaymentAvailable !== true && (
+          <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10, padding: 14, color: '#fcd34d', fontWeight: 600 }}>
+            {say("This shop cannot take card payment yet.")}
           </div>
         )}
       </div>

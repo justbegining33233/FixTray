@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
-import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { getConfiguredPlatformServiceFeeUsd, getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { customerPaymentBill } from '@/lib/serviceFeeBill';
+import { customerSeesPayButton, type ConnectAccountSnapshot } from '@/lib/customerCardPay';
+import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         shop: {
-          select: { shopName: true, address: true, phone: true },
+          select: { shopName: true, address: true, phone: true, stripeAccountId: true },
         },
         vehicle: {
           select: { make: true, model: true, year: true },
@@ -42,8 +44,10 @@ export async function GET(request: NextRequest) {
     });
 
     const fixtrayFee = await getPlatformServiceFeeUsd();
+    const configuredFee = await getConfiguredPlatformServiceFeeUsd();
+    const accountCache = new Map<string, ConnectAccountSnapshot | null>();
 
-    const payments = workOrders.map((wo) => {
+    const payments = await Promise.all(workOrders.map(async (wo) => {
       // Quote stays services-only. The bill total always adds the live platform fee.
       const bill = customerPaymentBill({
         estimatedCost: wo.estimatedCost,
@@ -51,6 +55,16 @@ export async function GET(request: NextRequest) {
         serviceFeeUsd: fixtrayFee,
       });
 
+      const offer = await cardPaymentOfferForShop(wo.shop?.stripeAccountId, {
+        serviceFeeUsd: configuredFee,
+        cache: accountCache,
+      });
+      const invoiceOpen = customerSeesPayButton({
+        paymentStatus: wo.paymentStatus,
+        status: wo.status,
+        totalDue: bill.total,
+        cardPaymentAvailable: true,
+      });
       return {
         id: wo.id,
         status: wo.paymentStatus === 'paid' ? 'Paid' : 'Pending',
@@ -67,11 +81,10 @@ export async function GET(request: NextRequest) {
           : 'Unknown Vehicle',
         date: wo.createdAt.toISOString(),
         paidAt: wo.updatedAt.toISOString(),
-        canPay: wo.paymentStatus !== 'paid'
-          && bill.total > 0
-          && !['denied-estimate', 'cancelled', 'canceled', 'completed', 'closed'].includes(wo.status),
+        canPay: invoiceOpen && offer.available,
+        cardPaymentMessage: invoiceOpen && !offer.available ? offer.message : null,
       };
-    });
+    }));
 
     const totalPaid = payments
       .filter((p) => p.status === 'Paid')

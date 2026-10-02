@@ -1,7 +1,6 @@
 import fs from 'fs';
 import { NextRequest } from 'next/server';
 import { generateAccessToken } from '../src/lib/auth';
-import { DEMO_FROM_EMAIL } from '../src/lib/demoShopRules';
 import { allMobileNavHrefs, MOBILE_ROLE_NAVS, mobileNavForActor } from '../src/lib/mobileRoleNav';
 import {
   isPlatformEmailAccount,
@@ -106,11 +105,12 @@ describe('platform mailbox', () => {
     jest.restoreAllMocks();
   });
 
-  it('uses the two FixTray from addresses already in the app', () => {
+  it('sends only from support@fixtray.app', () => {
     expect(platformFromHeader('support@fixtray.app')).toBe('FixTray Support <support@fixtray.app>');
-    expect(platformFromHeader('noreply@fixtray.app')).toBe(DEMO_FROM_EMAIL);
+    expect(platformFromHeader('FixTray Support <support@fixtray.app>')).toBe('FixTray Support <support@fixtray.app>');
+    expect(platformFromHeader('noreply@fixtray.app')).toBeNull();
+    expect(platformFromHeader('FixTray <noreply@fixtray.app>')).toBeNull();
     expect(platformFromHeader('onboarding@resend.dev')).toBeNull();
-    expect(platformFromHeader('other@fixtray.app')).toBeNull();
     const prepared = preparePlatformSend({
       from: 'noreply@fixtray.app',
       to: 'person@example.com',
@@ -118,8 +118,12 @@ describe('platform mailbox', () => {
       text: 'Body',
       requestId: REQUEST_ID,
     });
-    expect(prepared.ok).toBe(true);
-    if (prepared.ok) expect(prepared.data.from).toBe(DEMO_FROM_EMAIL);
+    expect(prepared.ok).toBe(false);
+    const page = fs.readFileSync('src/app/admin/emails/page.tsx', 'utf8');
+    const access = fs.readFileSync('src/lib/platformEmailAccess.ts', 'utf8');
+    expect(page).not.toContain('noreply@fixtray.app');
+    expect(access).not.toContain('noreply@fixtray.app');
+    expect(page).toContain('support@fixtray.app');
   });
 
   it('sends through the existing Resend endpoint and keeps the key out of the result', async () => {
@@ -156,7 +160,7 @@ describe('platform mailbox', () => {
         json: async () => ({
           data: [{
             id: 'email_123',
-            from: DEMO_FROM_EMAIL,
+            from: 'FixTray <noreply@fixtray.app>',
             to: ['person@example.com'],
             subject: 'Hi',
             created_at: '2026-01-01T00:00:00.000Z',
@@ -168,7 +172,7 @@ describe('platform mailbox', () => {
         ok: true,
         json: async () => ({
           id: 'email_123',
-          from: DEMO_FROM_EMAIL,
+          from: 'FixTray <noreply@fixtray.app>',
           to: ['person@example.com'],
           subject: 'Hi',
           created_at: '2026-01-01T00:00:00.000Z',

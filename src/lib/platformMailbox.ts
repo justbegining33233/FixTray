@@ -1,4 +1,3 @@
-import { DEMO_FROM_EMAIL } from '@/lib/demoShopRules';
 import { platformFromHeader } from '@/lib/platformEmailAccess';
 
 const RESEND_EMAILS = 'https://api.resend.com/emails';
@@ -96,10 +95,7 @@ export function preparePlatformSend(input: SendInput): MailboxResult<{
   idempotencyKey: string;
 }> {
   const from = platformFromHeader(input.from);
-  if (!from) return { ok: false, status: 400, error: 'Choose a FixTray from address' };
-  if (from.includes('noreply@fixtray.app') && from !== DEMO_FROM_EMAIL) {
-    return { ok: false, status: 400, error: 'Choose a FixTray from address' };
-  }
+  if (!from) return { ok: false, status: 400, error: 'Messages send from support@fixtray.app' };
   const to = typeof input.to === 'string' ? input.to.trim() : '';
   if (!TO_ADDRESS.test(to) || to.length > 320) {
     return { ok: false, status: 400, error: 'Enter one email address' };

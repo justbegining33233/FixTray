@@ -156,7 +156,7 @@ export default function PlatformEmailsPage() {
             Emails
           </h1>
           <p style={{ color: '#9ca3af', margin: '0 0 24px', fontSize: 14 }}>
-            Recent mail sent from FixTray, and a message you can send from the same addresses.
+            Recent mail sent from FixTray, and a message you can send from support@fixtray.app.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>

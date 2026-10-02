@@ -9,7 +9,6 @@ export const PLATFORM_EMAIL_HREF = '/admin/emails';
 
 export const PLATFORM_FROM_CHOICES = [
   { address: 'support@fixtray.app', from: 'FixTray Support <support@fixtray.app>' },
-  { address: 'noreply@fixtray.app', from: 'FixTray <noreply@fixtray.app>' },
 ] as const;
 
 export function isPlatformEmailAccount(username: unknown): boolean {
@@ -21,7 +20,7 @@ export function isPlatformEmailPath(pathname: string): boolean {
   return path === PLATFORM_EMAIL_HREF || path.startsWith(`${PLATFORM_EMAIL_HREF}/`);
 }
 
-/** Accept only the two FixTray addresses already used for mail. */
+/** The Emails page sends only from support@fixtray.app. */
 export function platformFromHeader(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const raw = value.trim();

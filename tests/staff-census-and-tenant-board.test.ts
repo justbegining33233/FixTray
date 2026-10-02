@@ -7,7 +7,7 @@ import {
   managedRoleCounts,
   roleCountsMatchList,
 } from '../src/lib/platformUserCensus';
-import { listedMoney, listedTotalChange, tenantBoardStats, tenantHealthScore, tenantOwnerLine, tenantOwnerText } from '../src/lib/tenantBoard';
+import { listedCountLabel, listedMoney, listedTotalChange, tenantBoardStats, tenantHealthScore, tenantOwnerLine, tenantOwnerText } from '../src/lib/tenantBoard';
 
 const now = new Date('2026-10-02T16:00:00.000Z');
 
@@ -112,6 +112,48 @@ describe('user management role counts', () => {
     expect(roleCountsMatchList(counts)).toBe(true);
     expect(accountRoleLabel(users[5])).toBe('Super Admin');
     expect(accountRoleLabel({ role: 'manager', isSuperAdmin: false })).toBe('MANAGER');
+  });
+});
+
+describe('customer total on the customers page', () => {
+  it('does not put a -100% tag on an all-time count when this month has no signups', () => {
+    const created = Array.from({ length: 10 }, (_, index) => ({
+      createdAt: `2026-09-${String(index + 1).padStart(2, '0')}T15:00:00.000Z`,
+    }));
+    const startOfOctober = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfSeptember = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const thisMonth = created.filter((row) => new Date(row.createdAt) >= startOfOctober).length;
+    const lastMonth = created.filter((row) => {
+      const createdAt = new Date(row.createdAt);
+      return createdAt >= startOfSeptember && createdAt < startOfOctober;
+    }).length;
+    const oldGrowth = Math.round(((thisMonth - lastMonth) / lastMonth) * 100);
+    expect(created).toHaveLength(10);
+    expect(thisMonth).toBe(0);
+    expect(lastMonth).toBe(10);
+    expect(oldGrowth).toBe(-100);
+
+    const label = listedCountLabel(created, now);
+    expect(label).toBe('Sep 2026');
+    expect(label).not.toContain('100');
+    expect(label).not.toContain('%');
+  });
+});
+
+describe('shop fee revenue collected total', () => {
+  it('does not put a -100% tag on fees already collected when this month is empty', () => {
+    const totalFees = 20;
+    const feesThisMonth = 0;
+    const feesLastMonth = 20;
+    const oldGrowth = Number((((feesThisMonth - feesLastMonth) / feesLastMonth) * 100).toFixed(1));
+    expect(totalFees).toBe(20);
+    expect(feesThisMonth).toBe(0);
+    expect(feesLastMonth).toBe(20);
+    expect(oldGrowth).toBeCloseTo(-100);
+
+    const label = listedTotalChange(totalFees, feesThisMonth, feesLastMonth, now);
+    expect(label).toBe('Sep 2026');
+    expect(label).not.toContain('100');
   });
 });
 

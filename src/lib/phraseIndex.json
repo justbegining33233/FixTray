@@ -5682,5 +5682,9 @@
   "Shop message": "shop_message",
   "Reply": "reply",
   "Type a reply": "type_a_reply",
-  "No messages in this thread": "no_messages_in_this_thread"
+  "No messages in this thread": "no_messages_in_this_thread",
+  "Staff": "staff",
+  "No owner": "no_owner",
+  "Not scored": "not_scored",
+  "Other": "other"
 }

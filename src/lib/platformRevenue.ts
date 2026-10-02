@@ -100,3 +100,47 @@ export function canViewPlatformRevenue(actor: { role?: string | null } | null | 
 export function revenueLoginRedirect(status: number): '/auth/login' | null {
   return status === 401 ? '/auth/login' : null;
 }
+
+export type FeeHeadline = {
+  /** All paid orders times the saved fee. Same figure as Financial Reports platform fees. */
+  collected: number;
+  /** Fees in the same month Financial Reports uses for that fee total. */
+  periodFees: number;
+  periodLabel: string;
+  /** Month name, or a percent when that month is the current month and the prior month was higher. */
+  changeLabel: string;
+};
+
+/**
+ * Customers was labeling the all-time fee total with this calendar month
+ * versus last month. An empty new month became -100% beside a collected
+ * amount that had not dropped.
+ */
+export function platformFeeHeadline(orders: PaidOrderStamp[], feePerOrder: number, now = new Date()): FeeHeadline {
+  const fee = typeof feePerOrder === 'number' && Number.isFinite(feePerOrder) ? Math.max(0, feePerOrder) : 0;
+  const collected = orders.length * fee;
+  const months = paidMonths(orders, now);
+  const latest = months[months.length - 1];
+  if (!latest) {
+    const label = monthLabel(monthKey(now));
+    return { collected, periodFees: 0, periodLabel: label, changeLabel: label };
+  }
+  const periodFees = latest.count * fee;
+  if (latest.key !== monthKey(now)) {
+    return { collected, periodFees, periodLabel: latest.label, changeLabel: latest.label };
+  }
+  const [year, month] = latest.key.split('-').map(Number);
+  const previousDate = new Date(year, month - 2, 1);
+  const previous = months.find((entry) => entry.key === monthKey(previousDate));
+  if (!previous || previous.count <= 0) {
+    return { collected, periodFees, periodLabel: latest.label, changeLabel: latest.label };
+  }
+  const previousFees = previous.count * fee;
+  const raw = ((periodFees - previousFees) / previousFees) * 100;
+  return {
+    collected,
+    periodFees,
+    periodLabel: latest.label,
+    changeLabel: `${raw >= 0 ? '+' : ''}${raw.toFixed(1)}%`,
+  };
+}

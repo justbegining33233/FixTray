@@ -5,6 +5,7 @@ import { useIsNative } from '@/context/NativeContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import RoleTabBar from '@/components/RoleTabBar';
 import { mobileNavForActor, type ShellRole } from '@/lib/mobileRoleNav';
+import { useSessionUsername } from '@/lib/useSessionUsername';
 
 interface MobileNavProps {
   role: ShellRole;
@@ -17,6 +18,7 @@ interface MobileNavProps {
  */
 export default function MobileNav({ role }: MobileNavProps) {
   const { user } = useAuth();
+  const { username } = useSessionUsername();
   const isMobile = useIsMobile();
   const isNative = useIsNative();
   if (!isMobile && !isNative) return null;
@@ -25,6 +27,7 @@ export default function MobileNav({ role }: MobileNavProps) {
     role: user?.role,
     isSuperAdmin: user?.isSuperAdmin,
     isOwner: user?.isOwner,
+    username,
   });
   if (!nav) return null;
   return <RoleTabBar nav={nav} />;

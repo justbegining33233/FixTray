@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
 import { PLATFORM_HOME, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
+import { isPlatformEmailAccount, isPlatformEmailPath } from './lib/platformEmailAccess';
 import { portalAccessDecision, roleHome } from './lib/roleMenus';
 
 function getJwtSecret(): string {
@@ -227,6 +228,7 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
     role,
     isOwner: payload?.isOwner === true,
     isSuperAdmin: payload?.isSuperAdmin === true,
+    username: typeof payload?.username === 'string' ? payload.username : undefined,
   };
   const decision = portalAccessDecision(pathname, actor);
   if (decision === 'home') {
@@ -241,6 +243,9 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
   if (isRouteAllowed(pathname, actor)) {
     if (pathname.startsWith('/admin/owner') && payload?.isOwner !== true) {
       return NextResponse.redirect(new URL('/admin/home', request.url));
+    }
+    if (isPlatformEmailPath(pathname) && !isPlatformEmailAccount(payload?.username)) {
+      return NextResponse.redirect(new URL(roleHome(role), request.url));
     }
     return null;
   }

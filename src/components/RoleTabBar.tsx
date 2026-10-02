@@ -25,6 +25,8 @@ import {
   type MobileLink,
   type MobileRoleNav,
 } from '@/lib/mobileRoleNav';
+import { isPlatformEmailAccount, isPlatformEmailPath } from '@/lib/platformEmailAccess';
+import { useSessionUsername } from '@/lib/useSessionUsername';
 
 const ICONS: Record<MobileIconName, typeof IconHome> = {
   home: IconHome,
@@ -75,6 +77,7 @@ export default function RoleTabBar({
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { user } = useAuth();
+  const { username } = useSessionUsername();
   const native = useIsNative();
   const [inApp, setInApp] = useState(native);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -121,12 +124,14 @@ export default function RoleTabBar({
 
   const tabIndex = activePrimaryTabIndex(nav, pathname);
   const filtered = useMemo(() => {
-    const ownerOnly = (item: MobileLink) => item.label === 'Owner Tools' || item.href.startsWith('/admin/owner');
-    const source = user?.isOwner
-      ? nav.more
-      : nav.more
-          .map((group) => ({ ...group, items: group.items.filter((item) => !ownerOnly(item)) }))
-          .filter((group) => group.items.length > 0);
+    const hidden = (item: MobileLink) => {
+      if (isPlatformEmailPath(item.href) && !isPlatformEmailAccount(username)) return true;
+      if (!user?.isOwner && (item.label === 'Owner Tools' || item.href.startsWith('/admin/owner'))) return true;
+      return false;
+    };
+    const source = nav.more
+      .map((group) => ({ ...group, items: group.items.filter((item) => !hidden(item)) }))
+      .filter((group) => group.items.length > 0);
     const needle = query.trim().toLowerCase();
     if (!needle) return source;
     return source
@@ -135,7 +140,7 @@ export default function RoleTabBar({
         items: group.items.filter((item) => item.label.toLowerCase().includes(needle) || item.href.toLowerCase().includes(needle)),
       }))
       .filter((group) => group.items.length > 0);
-  }, [nav.more, query, user?.isOwner]);
+  }, [nav.more, query, user?.isOwner, username]);
 
   const go = (href: string) => {
     if (href.startsWith('/tech-offline')) {

@@ -9,6 +9,7 @@ import { ROLE_HOME } from './roleConfig';
 import { isRouteAllowed, type RouteActor } from './roleAccess';
 import { normalizeRole, shellHrefForRole } from './roleNav';
 import { isPlatformActor, isShopScopedPath, isStaticAssetPath } from './platformOwnerScope';
+import { isPlatformEmailAccount, PLATFORM_EMAIL_HREF, isPlatformEmailPath } from './platformEmailAccess';
 import { isShopEdgeSensitivePath } from './shopRestrictedRoutes';
 
 export type MenuRole = 'superadmin' | 'shop' | 'manager' | 'tech' | 'customer';
@@ -462,10 +463,29 @@ export function menuRoleForSidebar(role: SidebarRole): MenuRole {
   return role === 'admin' || role === 'superadmin' ? 'superadmin' : role;
 }
 
+function withPlatformEmailItem(groups: RoleMenuGroup[], menuRole: MenuRole, username?: string | null): RoleMenuGroup[] {
+  if (menuRole !== 'superadmin' || !isPlatformEmailAccount(username)) return groups;
+  const item: RoleMenuItem = { icon: 'bell', label: 'Emails', href: PLATFORM_EMAIL_HREF };
+  let placed = false;
+  const next = groups.map((group) => {
+    if (group.label !== 'Communications') return group;
+    if (group.items.some((entry) => entry.href === item.href)) return group;
+    placed = true;
+    return { ...group, items: [...group.items, item] };
+  });
+  if (placed) return next;
+  return [...next, { label: 'Communications', icon: 'bell', defaultOpen: false, items: [item] }];
+}
+
 /** Computer sidebar groups after the same filters the sidebar applies. */
-export function filterMenuGroups(sidebarRole: SidebarRole, actorRole: string, platformActor: boolean): RoleMenuGroup[] {
+export function filterMenuGroups(
+  sidebarRole: SidebarRole,
+  actorRole: string,
+  platformActor: boolean,
+  username?: string | null,
+): RoleMenuGroup[] {
   const menuRole = menuRoleForSidebar(sidebarRole);
-  return ROLE_MENUS[menuRole]
+  const groups = ROLE_MENUS[menuRole]
     .map((group) => ({
       ...group,
       items: group.items
@@ -475,10 +495,16 @@ export function filterMenuGroups(sidebarRole: SidebarRole, actorRole: string, pl
         .map((item) => ({ ...item, href: shellHrefForRole(item.href, actorRole) })),
     }))
     .filter((group) => group.items.length > 0);
+  return withPlatformEmailItem(groups, menuRole, username);
 }
 
-export function renderedMenuHrefs(sidebarRole: SidebarRole, actorRole: string, platformActor: boolean): string[] {
-  return filterMenuGroups(sidebarRole, actorRole, platformActor).flatMap((group) => group.items.map((item) => item.href));
+export function renderedMenuHrefs(
+  sidebarRole: SidebarRole,
+  actorRole: string,
+  platformActor: boolean,
+  username?: string | null,
+): string[] {
+  return filterMenuGroups(sidebarRole, actorRole, platformActor, username).flatMap((group) => group.items.map((item) => item.href));
 }
 
 function isPortal(path: string): boolean {
@@ -568,6 +594,10 @@ export function portalAccessDecision(pathname: string, actor: string | RouteActo
   const adminArea = path === '/admin' || path.startsWith('/admin/');
   if (adminArea && normalized !== 'admin' && normalized !== 'superadmin') return 'forbidden';
   if (isPlatformActor({ role: normalized }) && isShopScopedPath(path)) return 'home';
+  if (isPlatformEmailPath(path)) {
+    const username = typeof actor === 'object' && actor ? actor.username : undefined;
+    return isPlatformEmailAccount(username) ? 'allow' : 'home';
+  }
   const allowed = isRouteAllowed(path, typeof actor === 'string' ? actor : (actor ?? null));
   if (canOpenMenuPath(menuRole, path) && allowed) return 'allow';
   if (!isPortal(path)) return allowed ? 'allow' : 'skip';

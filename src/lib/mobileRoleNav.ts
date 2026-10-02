@@ -8,6 +8,7 @@
 import { normalizeRole } from '@/lib/roleNav';
 import { isShopScopedHref } from '@/lib/platformOwnerScope';
 import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
+import { isPlatformEmailAccount, PLATFORM_EMAIL_HREF } from '@/lib/platformEmailAccess';
 import { ROLE_MENUS, TOP_BAR, menuHrefs, type MenuRole } from '@/lib/roleMenus';
 
 export type MobileIconName =
@@ -66,7 +67,23 @@ export interface MobileRoleNav {
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin' | 'superadmin';
 
-type Actor = { role?: string | null; isSuperAdmin?: boolean | null; isOwner?: boolean | null } | null | undefined;
+type Actor = { role?: string | null; isSuperAdmin?: boolean | null; isOwner?: boolean | null; username?: string | null } | null | undefined;
+
+function withPlatformEmailLink(nav: MobileRoleNav, username?: string | null): MobileRoleNav {
+  if (!isPlatformEmailAccount(username)) return nav;
+  const item: MobileLink = { label: 'Emails', href: PLATFORM_EMAIL_HREF, icon: 'bell' };
+  let placed = false;
+  const more = nav.more.map((group) => {
+    if (group.title !== 'Communications') return group;
+    if (group.items.some((entry) => entry.href === item.href)) return group;
+    placed = true;
+    return { ...group, items: [...group.items, item] };
+  });
+  return {
+    ...nav,
+    more: placed ? more : [...more, { title: 'Communications', items: [item] }],
+  };
+}
 
 /** Owner tools stay in the catalog so the page is reachable, but only the platform owner sees them. */
 export function withoutOwnerOnlyLinks(nav: MobileRoleNav, isOwner: boolean): MobileRoleNav {
@@ -228,7 +245,10 @@ export function shellRoleForActor(actor: Actor): ShellRole | null {
 export function mobileNavForActor(shellRole: ShellRole, actor: Actor): MobileRoleNav | null {
   if (shellRole === 'admin' || shellRole === 'superadmin') {
     if (!isSuperAdminActor(actor)) return null;
-    return withoutShopLinks(withoutOwnerOnlyLinks(MOBILE_ROLE_NAVS.superadmin, actor?.isOwner === true));
+    return withPlatformEmailLink(
+      withoutShopLinks(withoutOwnerOnlyLinks(MOBILE_ROLE_NAVS.superadmin, actor?.isOwner === true)),
+      actor?.username,
+    );
   }
   return MOBILE_ROLE_NAVS[shellRole] ?? null;
 }

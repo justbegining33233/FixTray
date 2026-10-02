@@ -7,9 +7,22 @@
 export const PLATFORM_EMAIL_ACCOUNT = 'SupAdm1006';
 export const PLATFORM_EMAIL_HREF = '/admin/emails';
 
+export const SUPPORT_INBOX = 'support@fixtray.app';
+
 export const PLATFORM_FROM_CHOICES = [
-  { address: 'support@fixtray.app', from: 'FixTray Support <support@fixtray.app>' },
+  { address: SUPPORT_INBOX, from: 'FixTray Support <support@fixtray.app>' },
 ] as const;
+
+export function emailAddress(value: string): string {
+  const bracket = value.match(/<([^>]+)>/);
+  return (bracket ? bracket[1] : value).trim().toLowerCase();
+}
+
+/** True when the message was addressed to the support inbox. */
+export function isSupportInboxRecipient(value: unknown): boolean {
+  const list = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
+  return list.some((item) => typeof item === 'string' && emailAddress(item) === SUPPORT_INBOX);
+}
 
 export function isPlatformEmailAccount(username: unknown): boolean {
   return typeof username === 'string' && username.trim() === PLATFORM_EMAIL_ACCOUNT;

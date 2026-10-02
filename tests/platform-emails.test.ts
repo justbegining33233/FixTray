@@ -8,9 +8,10 @@ import {
   PLATFORM_EMAIL_HREF,
 } from '../src/lib/platformEmailAccess';
 import {
-  listRecentPlatformMail,
+  listReceivedSupportMail,
+  mergeSupportInbox,
   preparePlatformSend,
-  readPlatformMail,
+  readReceivedSupportMail,
   sendPlatformMail,
 } from '../src/lib/platformMailbox';
 import { menuHrefs, portalAccessDecision, renderedMenuHrefs } from '../src/lib/roleMenus';
@@ -152,42 +153,55 @@ describe('platform mailbox', () => {
     expect(JSON.stringify(result)).not.toContain('re_test_secret_value');
   });
 
-  it('lists and reads recent mail without returning the key or raw html', async () => {
+  it('lists and reads the support inbox and skips other recipients', async () => {
     process.env.RESEND_API_KEY = 're_test_secret_value';
     const fetchMock = jest.spyOn(global, 'fetch')
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          data: [{
-            id: 'email_123',
-            from: 'FixTray <noreply@fixtray.app>',
-            to: ['person@example.com'],
-            subject: 'Hi',
-            created_at: '2026-01-01T00:00:00.000Z',
-            last_event: 'delivered',
-          }],
+          data: [
+            {
+              id: 'email_123',
+              from: 'Customer <person@example.com>',
+              to: ['FixTray Support <support@fixtray.app>'],
+              subject: 'Hi',
+              created_at: '2026-01-02T00:00:00.000Z',
+            },
+            {
+              id: 'email_other',
+              from: 'Customer <person@example.com>',
+              to: ['noreply@fixtray.app'],
+              subject: 'Skip me',
+              created_at: '2026-01-03T00:00:00.000Z',
+            },
+          ],
         }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           id: 'email_123',
-          from: 'FixTray <noreply@fixtray.app>',
-          to: ['person@example.com'],
+          from: 'Customer <person@example.com>',
+          to: ['support@fixtray.app'],
           subject: 'Hi',
-          created_at: '2026-01-01T00:00:00.000Z',
-          last_event: 'delivered',
+          created_at: '2026-01-02T00:00:00.000Z',
           html: '<p>Hello <b>there</b></p><script>secret</script>',
           text: '',
         }),
       } as Response);
-    const listed = await listRecentPlatformMail();
-    const read = await readPlatformMail('email_123');
-    expect(listed.ok && listed.data[0].subject).toBe('Hi');
+    const listed = await listReceivedSupportMail();
+    const read = await readReceivedSupportMail('email_123');
+    expect(listed.ok && listed.data.map((item) => item.subject)).toEqual(['Hi']);
     expect(read.ok && read.data.text).toBe('Hello there');
     expect(JSON.stringify(read)).not.toContain('<script>');
     expect(JSON.stringify(read)).not.toContain('re_test_secret_value');
-    expect(fetchMock.mock.calls[0][0]).toBe('https://api.resend.com/emails?limit=20');
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.resend.com/emails/receiving?limit=20');
+    expect(fetchMock.mock.calls[1][0]).toBe('https://api.resend.com/emails/receiving/email_123');
+    const merged = mergeSupportInbox(
+      [{ id: 'email_saved', from: 'a@b.com', to: ['support@fixtray.app'], subject: 'Saved', createdAt: '2026-01-01T00:00:00.000Z', lastEvent: 'received' }],
+      listed.ok ? listed.data : [],
+    );
+    expect(merged.map((item) => item.id)).toEqual(['email_123', 'email_saved']);
   });
 
   it('stops when the server key is missing and never prints a provider key', async () => {
@@ -197,7 +211,7 @@ describe('platform mailbox', () => {
       status: 401,
       json: async () => ({ message: 'bad key re_test_secret_value' }),
     } as Response);
-    const missing = await listRecentPlatformMail();
+    const missing = await listReceivedSupportMail();
     expect(missing).toEqual({ ok: false, status: 503, error: 'Email is not configured' });
     expect(fetchMock).not.toHaveBeenCalled();
 
@@ -221,11 +235,16 @@ describe('platform mailbox', () => {
       'src/app/api/admin/emails/route.ts',
       'src/app/api/admin/emails/[id]/route.ts',
       'src/app/admin/emails/page.tsx',
+      'src/lib/resendWebhook.ts',
+      'src/app/api/resend/webhook/route.ts',
+      'src/lib/supportInboxStore.ts',
     ];
     for (const file of files) {
       const src = fs.readFileSync(file, 'utf8');
       expect(src).not.toMatch(/re_[A-Za-z0-9]{8,}/);
       expect(src).not.toMatch(/RESEND_API_KEY\s*[:=]\s*['"]/);
+      expect(src).not.toMatch(/RESEND_WEBHOOK_SECRET\s*[:=]\s*['"]/);
+      expect(src).not.toMatch(/whsec_/);
       expect(src).not.toMatch(/\$\d/);
     }
   });

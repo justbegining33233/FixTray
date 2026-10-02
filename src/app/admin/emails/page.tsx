@@ -72,26 +72,34 @@ export default function PlatformEmailsPage() {
   useEffect(() => {
     if (!allowed) return;
     let cancelled = false;
-    setLoadingList(true);
-    setListError('');
-    fetch('/api/admin/emails', { credentials: 'include', headers: authHeaders() })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Could not load mail');
-        return body;
-      })
-      .then((body) => {
-        if (cancelled) return;
-        setEmails(Array.isArray(body.emails) ? body.emails : []);
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) setListError(error instanceof Error ? error.message : 'Could not load mail');
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingList(false);
-      });
+    const load = (first: boolean) => {
+      if (first) {
+        setLoadingList(true);
+        setListError('');
+      }
+      fetch('/api/admin/emails', { credentials: 'include', headers: authHeaders() })
+        .then(async (response) => {
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Could not load mail');
+          return body;
+        })
+        .then((body) => {
+          if (cancelled) return;
+          setEmails(Array.isArray(body.emails) ? body.emails : []);
+          if (!first) setListError('');
+        })
+        .catch((error: unknown) => {
+          if (!cancelled && first) setListError(error instanceof Error ? error.message : 'Could not load mail');
+        })
+        .finally(() => {
+          if (!cancelled && first) setLoadingList(false);
+        });
+    };
+    load(true);
+    const timer = window.setInterval(() => load(false), 15000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, [allowed]);
 
@@ -156,16 +164,16 @@ export default function PlatformEmailsPage() {
             Emails
           </h1>
           <p style={{ color: '#9ca3af', margin: '0 0 24px', fontSize: 14 }}>
-            Recent mail sent from FixTray, and a message you can send from support@fixtray.app.
+            Inbox for support@fixtray.app, and a message you can send from that address. New mail appears here after it arrives.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
             <section style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-              <h2 style={{ fontSize: 16, color: '#e5e7eb', margin: '0 0 12px' }}>Recent mail</h2>
+              <h2 style={{ fontSize: 16, color: '#e5e7eb', margin: '0 0 12px' }}>Inbox</h2>
               {loadingList && <p style={{ color: '#9ca3af' }}>Loading mail...</p>}
               {listError && <p style={{ color: '#fca5a5' }}>{listError}</p>}
               {!loadingList && !listError && emails.length === 0 && (
-                <p style={{ color: '#9ca3af' }}>No recent mail.</p>
+                <p style={{ color: '#9ca3af' }}>No mail in the support@fixtray.app inbox.</p>
               )}
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {emails.map((email) => (
@@ -186,7 +194,7 @@ export default function PlatformEmailsPage() {
                     >
                       <div style={{ fontWeight: 700 }}>{email.subject || '(no subject)'}</div>
                       <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                        {email.to.join(', ') || 'No recipient'} · {email.lastEvent || 'sent'}
+                        From {email.from || 'unknown'}
                       </div>
                     </button>
                   </li>

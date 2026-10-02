@@ -52,6 +52,12 @@ export async function GET(request: NextRequest) {
       status: process.env.RESEND_FROM_EMAIL ? 'ok' : 'warning',
       hint: 'From address for emails',
     },
+    {
+      name: 'RESEND_WEBHOOK_SECRET',
+      category: 'Email',
+      status: process.env.RESEND_WEBHOOK_SECRET ? 'ok' : 'warning',
+      hint: 'Resend webhook signing secret for inbound support mail',
+    },
     // SMS
     {
       name: 'TWILIO_ACCOUNT_SID',

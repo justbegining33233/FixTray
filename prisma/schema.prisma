@@ -1854,3 +1854,19 @@ model DemoSession {
   @@index([expiresAt])
   @@map("demo_sessions")
 }
+
+/// Copy of a support@fixtray.app message saved when Resend sends email.received.
+/// The live inbox is still Resend's receiving list. This row lets the open page
+/// show a message the webhook just confirmed.
+model SupportInboxMessage {
+  id         String   @id
+  sender     String
+  recipients String
+  subject    String   @default("")
+  bodyText   String   @db.Text
+  receivedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([receivedAt])
+  @@map("support_inbox_messages")
+}

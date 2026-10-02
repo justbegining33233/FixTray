@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { isPlatformEmailAccount } from '@/lib/platformEmailAccess';
-import { listRecentPlatformMail, sendPlatformMail } from '@/lib/platformMailbox';
+import { listReceivedSupportMail, mergeSupportInbox, sendPlatformMail } from '@/lib/platformMailbox';
+import { listRememberedSupportInbox } from '@/lib/supportInboxStore';
 import { rateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 
 function requireMailbox(request: NextRequest) {
@@ -17,9 +18,16 @@ export async function GET(request: NextRequest) {
   const auth = requireMailbox(request);
   if (auth instanceof NextResponse) return auth;
 
-  const result = await listRecentPlatformMail(20);
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  return NextResponse.json({ emails: result.data });
+  const [live, stored] = await Promise.all([
+    listReceivedSupportMail(20),
+    listRememberedSupportInbox(),
+  ]);
+  if (!live.ok && stored.length === 0) {
+    return NextResponse.json({ error: live.error }, { status: live.status });
+  }
+  return NextResponse.json({
+    emails: mergeSupportInbox(stored, live.ok ? live.data : []),
+  });
 }
 
 export async function POST(request: NextRequest) {

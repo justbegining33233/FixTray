@@ -9,21 +9,28 @@ jest.mock('@/lib/auth', () => ({
   requireRole: jest.fn(),
 }));
 
+jest.mock('@/lib/supportInboxStore', () => ({
+  listRememberedSupportInbox: jest.fn().mockResolvedValue([]),
+  readRememberedSupportMail: jest.fn().mockResolvedValue(null),
+  rememberSupportInboxMessage: jest.fn(),
+}));
+
 jest.mock('@/lib/platformMailbox', () => ({
-  listRecentPlatformMail: jest.fn(),
+  listReceivedSupportMail: jest.fn(),
+  mergeSupportInbox: (stored: unknown[], live: unknown[]) => [...(live || []), ...(stored || [])],
   sendPlatformMail: jest.fn(),
-  readPlatformMail: jest.fn(),
+  readReceivedSupportMail: jest.fn(),
 }));
 
 import { requireRole } from '../src/lib/auth';
-import { listRecentPlatformMail, readPlatformMail, sendPlatformMail } from '../src/lib/platformMailbox';
+import { listReceivedSupportMail, readReceivedSupportMail, sendPlatformMail } from '../src/lib/platformMailbox';
 import { GET, POST } from '../src/app/api/admin/emails/route';
 import { GET as GET_ONE } from '../src/app/api/admin/emails/[id]/route';
 
 const requireRoleMock = requireRole as jest.Mock;
-const listMock = listRecentPlatformMail as jest.Mock;
+const listMock = listReceivedSupportMail as jest.Mock;
 const sendMock = sendPlatformMail as jest.Mock;
-const readMock = readPlatformMail as jest.Mock;
+const readMock = readReceivedSupportMail as jest.Mock;
 
 describe('platform email routes', () => {
   beforeEach(() => {

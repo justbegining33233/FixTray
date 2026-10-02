@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { platformFeeForPaidOrders } from '@/lib/platformFees';
 import { getPlatformConfig } from '@/lib/platformConfig';
+import { paidMonths } from '@/lib/platformRevenue';
 
 export async function GET(req: NextRequest) {
   const auth = requireRole(req, ['admin', 'superadmin']);
@@ -51,57 +52,15 @@ export async function GET(req: NextRequest) {
     // Calculate average transaction
     const averageTransaction = workOrders.length > 0 ? totalRevenue / workOrders.length : 0;
 
-    // Get monthly revenue for last 6 months
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const monthlyRevenue = await prisma.workOrder.groupBy({
-      by: ['createdAt'],
-      where: {
-        paymentStatus: 'paid',
-        createdAt: {
-          gte: sixMonthsAgo,
-        },
-      },
-      _sum: {
-        amountPaid: true,
-      },
-    });
-
-    const paidCountByMonth: { [key: string]: number } = {};
-    for (const wo of workOrders) {
-      if (wo.createdAt < sixMonthsAgo) continue;
-      const date = new Date(wo.createdAt);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      paidCountByMonth[monthKey] = (paidCountByMonth[monthKey] || 0) + 1;
-    }
-
-    // Group by month
-    const monthlyData: { [key: string]: { revenue: number; count: number } } = {};
-    monthlyRevenue.forEach((item) => {
-      const date = new Date(item.createdAt);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const bucket = monthlyData[monthKey] || { revenue: 0, count: 0 };
-      bucket.revenue += item._sum?.amountPaid || 0;
-      bucket.count = paidCountByMonth[monthKey] || 0;
-      monthlyData[monthKey] = bucket;
-    });
-
-    // Format monthly data
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const formattedMonthlyData = Object.entries(monthlyData).map(([key, bucket]) => {
-      const [year, month] = key.split('-');
-      const monthName = months[parseInt(month) - 1];
-      const payouts = bucket.revenue;
+    const formattedMonthlyData = paidMonths(workOrders).slice(-6).map((bucket) => {
       const fees = platformFeeForPaidOrders(bucket.count, serviceFeeCents);
-      
       return {
-        month: `${monthName} ${year}`,
+        month: bucket.label,
         revenue: `$${bucket.revenue.toFixed(2)}`,
-        payouts: `$${payouts.toFixed(2)}`,
+        payouts: `$${bucket.revenue.toFixed(2)}`,
         fees: `$${fees.toFixed(2)}`,
       };
-    }).slice(-6); // Last 6 months
+    });
 
     // Get top earning shops
     const shopRevenue = await prisma.workOrder.groupBy({

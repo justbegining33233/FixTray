@@ -3,13 +3,14 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { getPlatformConfig } from '@/lib/platformConfig';
 import { feePerPaidWorkOrder } from '@/lib/platformFees';
+import { canViewPlatformRevenue } from '@/lib/platformRevenue';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
-  if (!auth.isOwner) {
-    return NextResponse.json({ error: 'Only FixTray Owner can access platform revenue.' }, { status: 403 });
+  if (!canViewPlatformRevenue(auth)) {
+    return NextResponse.json({ error: 'Platform revenue is limited to platform staff.' }, { status: 403 });
   }
 
   try {

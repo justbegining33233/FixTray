@@ -22,6 +22,36 @@ interface Conversation {
   unreadCount: number;
   lastMessageAt: string;
   isRead: boolean;
+  replyTo?: ReplyTarget;
+  canReply?: boolean;
+  messages?: ThreadMessage[];
+}
+
+interface ThreadMessage {
+  id: string;
+  senderId: string;
+  senderName?: string;
+  senderRole?: string;
+  body?: string;
+  createdAt: string;
+}
+
+interface ReplyTarget {
+  id: string;
+  role: string;
+  name: string;
+}
+
+interface ShopAlert {
+  id: string;
+  kind: string;
+  label: string;
+  senderName: string;
+  receiverName: string;
+  subject?: string | null;
+  preview: string;
+  lastMessageAt: string;
+  canReply: false;
 }
 
 interface MessageStats {
@@ -30,6 +60,7 @@ interface MessageStats {
   activeUsers: number;
   messagesSent24h: number;
   avgResponseTime: number;
+  shopAlerts?: number;
 }
 
 export default function AdminMessagingPage() {
@@ -41,6 +72,10 @@ export default function AdminMessagingPage() {
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filterUnread, setFilterUnread] = useState(false);
+  const [alerts, setAlerts] = useState<ShopAlert[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reply, setReply] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -60,6 +95,7 @@ export default function AdminMessagingPage() {
       const data = await res.json();
       
       setConversations(data.conversations || []);
+      setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
       setStats(data.stats || null);
       setError(null);
     } catch (err) {
@@ -72,6 +108,38 @@ export default function AdminMessagingPage() {
   const filteredConversations = filterUnread
     ? conversations.filter(c => c.unreadCount > 0)
     : conversations;
+  const selected = conversations.find((conversation) => conversation.id === selectedId) || null;
+
+  const sendReply = async () => {
+    if (!selected?.replyTo || !reply.trim()) return;
+    setSending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          receiverId: selected.replyTo.id,
+          receiverRole: selected.replyTo.role,
+          receiverName: selected.replyTo.name,
+          messageBody: reply.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Reply was not sent');
+      }
+      setReply('');
+      await loadMessages();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Reply was not sent');
+    } finally {
+      setSending(false);
+    }
+  };
 
   const roleColors: Record<string, string> = {
     shop: '#3b82f6',
@@ -150,12 +218,16 @@ export default function AdminMessagingPage() {
             <div style={{ textAlign: 'center', padding: 60, background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
               {say("No conversations")}{' '}</div>
           ) : (
+            <>
+            <h2 style={{ color: '#e5e7eb', fontSize: 18, margin: '0 0 12px' }}>{say("Messages to staff")}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filteredConversations.map(conv => (
-                <div
+                <button
                   key={conv.id}
+                  type="button"
+                  onClick={() => setSelectedId(conv.id)}
                   style={{
-                    background: 'rgba(0,0,0,0.3)',
+                    background: selectedId === conv.id ? 'rgba(229,51,42,0.12)' : 'rgba(0,0,0,0.3)',
                     border: `1px solid rgba(255,255,255,0.1)`,
                     borderLeft: conv.unreadCount > 0 ? '4px solid #e5332a' : '4px solid transparent',
                     borderRadius: 8,
@@ -165,6 +237,9 @@ export default function AdminMessagingPage() {
                     alignItems: 'center',
                     flexWrap: 'wrap',
                     gap: 12,
+                    width: '100%',
+                    textAlign: 'left',
+                    cursor: 'pointer',
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 200 }}>
@@ -225,9 +300,64 @@ export default function AdminMessagingPage() {
                       {new Date(conv.lastMessageAt).toLocaleString()}
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
+            </>
+          )}
+
+          {selected && (
+            <section style={{ marginTop: 24, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20 }}>
+              <h2 style={{ color: '#e5e7eb', fontSize: 18, margin: '0 0 12px' }}>{say(selected.senderName)}</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                {(selected.messages || []).length === 0 ? (
+                  <div style={{ color: '#9ca3af' }}>{say("No messages in this thread")}</div>
+                ) : (selected.messages || []).map((message) => (
+                  <div key={message.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
+                    <div style={{ color: '#e5e7eb', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                      {say(message.senderName || '')}{' '}
+                      <span style={{ color: '#6b7280', fontWeight: 500 }}>{message.senderRole}</span>
+                    </div>
+                    <div style={{ color: '#d1d5db', fontSize: 14, whiteSpace: 'pre-wrap' }}>{message.body}</div>
+                  </div>
+                ))}
+              </div>
+              {selected.canReply !== false && selected.replyTo && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <label style={{ color: '#9ca3af', fontSize: 13 }}>{say("Reply")}</label>
+                  <textarea
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                    placeholder={say("Type a reply")}
+                    rows={3}
+                    style={{ width: '100%', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: '#000', color: '#e5e7eb', padding: 12, fontSize: 14 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={sendReply}
+                    disabled={sending || !reply.trim()}
+                    style={{ alignSelf: 'flex-start', padding: '10px 16px', borderRadius: 8, border: 'none', background: '#e5332a', color: 'white', fontWeight: 700, cursor: sending || !reply.trim() ? 'not-allowed' : 'pointer' }}
+                  >
+                    {say("Send Message")}
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
+
+          {alerts.length > 0 && (
+            <section style={{ marginTop: 32 }}>
+              <h2 style={{ color: '#e5e7eb', fontSize: 18, margin: '0 0 8px' }}>{say("Shop alerts are not messages to staff.")}</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {alerts.map((alert) => (
+                  <div key={alert.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 16 }}>
+                    <div style={{ color: '#f59e0b', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{say(alert.label)}</div>
+                    <div style={{ color: '#e5e7eb', fontWeight: 600, marginBottom: 4 }}>{say(alert.senderName)} to {say(alert.receiverName)}</div>
+                    <div style={{ color: '#9ca3af', fontSize: 13 }}>{alert.preview}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
         </main>
       </div>

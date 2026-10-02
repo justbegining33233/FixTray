@@ -44,6 +44,7 @@ interface LiveMetrics {
   totalShopsEver: number;
   conversionRate: string;
   monthOverMonthGrowth: string;
+  revenueMonthLabel?: string;
   weeklyConversionTrend: { label: string; value: number }[];
 }
 
@@ -98,7 +99,7 @@ export function DashboardTab({
       change: liveMetrics.monthOverMonthGrowth !== 'Unavailable' ? liveMetrics.monthOverMonthGrowth : 'Current month',
       trend: revenueTrend,
       accent: 'emerald' as const,
-      caption: 'Paid work orders this month'
+      caption: liveMetrics.revenueMonthLabel || 'Paid work orders this month'
     },
     {
       title: 'Total Shops',

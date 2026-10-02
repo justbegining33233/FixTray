@@ -9,6 +9,7 @@ import {
   FaArrowLeft, FaDatabase, FaMemory, FaMicrochip,
   FaCheckCircle, FaExclamationTriangle, FaSyncAlt,
 } from 'react-icons/fa';
+import { environmentWarnings, RUNTIME_BULLET } from '@/lib/platformHealthDisplay';
 
 type RuntimeHealth = {
   status?: string;
@@ -140,7 +141,7 @@ export default function SuperAdminInfrastructure() {
                 {systemOk ? say("All Systems Operational") : say("System Issues Detected")}
               </h2>
               <p className="text-sm text-[#94a3b8]">
-                {say("Runtime:")}{' '}{runtimeOk ? say("OK") : say("Unavailable")} {say("&bull; Uptime:")}{' '}{formatUptime(runtimeHealth?.uptimeSeconds)}
+                {say("Runtime:")}{' '}{runtimeOk ? say("OK") : say("Unavailable")} {RUNTIME_BULLET} {say("Server Uptime")}{': '}{formatUptime(runtimeHealth?.uptimeSeconds)}
               </p>
             </div>
           </div>
@@ -161,6 +162,11 @@ export default function SuperAdminInfrastructure() {
             <p className="text-xs text-gray-400 mt-1">
               {envHealth?.summary?.ok ?? 0} {say("ok,")}{' '}{say(warningChecks)} warnings
             </p>
+            {environmentWarnings(envHealth?.checks).map((check) => (
+              <p key={check.name} className="text-xs text-amber-300 mt-2">
+                {say("Warning")}: {check.name}{check.hint ? ` — ${check.hint}` : ''}
+              </p>
+            ))}
           </div>
           <div className="rounded-2xl p-6" style={{background:"rgba(10,16,32,0.68)",border:"1px solid rgba(255,255,255,0.08)"}}>
             <div className="flex items-center gap-3 mb-3">

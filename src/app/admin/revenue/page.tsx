@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { revenueLoginRedirect } from '@/lib/platformRevenue';
 import { FaArrowLeft, FaChartBar, FaChartLine, FaCreditCard, FaDollarSign, FaStore, FaUniversity, FaWrench } from 'react-icons/fa';
 
 interface StripeLinks {
@@ -105,8 +106,9 @@ export default function AdminRevenuePage() {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (res.status === 401 || res.status === 403) {
-        router.push('/auth/login' as Route);
+      const loginRedirect = revenueLoginRedirect(res.status);
+      if (loginRedirect) {
+        router.push(loginRedirect as Route);
         return;
       }
       const data = await res.json();
@@ -155,23 +157,6 @@ export default function AdminRevenuePage() {
       <div className="min-h-screen bg-[#000000] flex items-center justify-center">
         <div className="bg-[#000000] border border-[#1f2937] rounded-lg px-6 py-4 text-stone-400 text-sm">
           {say("Redirecting to login...")}{' '}</div>
-      </div>
-    );
-  }
-
-  if (!user.isOwner) {
-    return (
-      <div className="min-h-screen bg-[#000000] text-stone-100 flex items-center justify-center px-6">
-        <div className="max-w-xl w-full bg-[#000000] border border-[#1f2937] rounded-xl p-6 text-center">
-          <h1 className="text-xl font-semibold mb-2">{say("Owner Access Required")}</h1>
-          <p className="text-stone-400 text-sm mb-5">
-            {say("Platform revenue and FixTray earnings are visible only to the FixTray Owner account.")}{' '}</p>
-          <Link
-            href="/admin/home"
-            className="inline-flex items-center gap-2 bg-[#e5332a] hover:bg-[#c62822] text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            <FaArrowLeft style={{marginRight:4}} /> {say("Back to Dashboard")}{' '}</Link>
-        </div>
       </div>
     );
   }

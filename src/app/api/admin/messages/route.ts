@@ -2,80 +2,70 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { decorateDirectMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
+import { partitionStaffInbox } from '@/lib/staffInbox';
 
 /**
  * GET /api/admin/messages
- * Returns platform-wide messaging overview
+ * Staff conversations are messages to or from platform staff.
+ * Shop, work-order, and inventory alerts stay in `alerts` and are not conversations.
  */
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Get all direct messages
     const stored = await prisma.directMessage.findMany({
       orderBy: { createdAt: 'desc' },
       take: 500,
     });
     const viewerLocale = await resolveAccountLocale(request, auth);
     const messages = await decorateDirectMessages(stored, viewerLocale);
+    const { conversations, alerts } = partitionStaffInbox(messages);
 
-    // Get unread count
-    const unreadCount = await prisma.directMessage.count({
-      where: { isRead: false },
-    });
-
-    // Group into conversations
-    const conversationMap = new Map<string, any>();
-    messages.forEach(msg => {
-      const key = [msg.senderId, msg.receiverId].sort().join('_');
-      if (!conversationMap.has(key)) {
-        conversationMap.set(key, {
-          id: msg.threadId || key,
-          senderId: msg.senderId,
-          senderName: msg.senderName,
-          senderRole: msg.senderRole,
-          receiverId: msg.receiverId,
-          receiverName: msg.receiverName,
-          receiverRole: msg.receiverRole,
-          subject: msg.subject,
-          body: msg.body,
-          displayBody: msg.displayBody,
-          originalBody: msg.originalBody,
-          lastMessageAt: msg.createdAt,
-          unreadCount: msg.isRead ? 0 : 1,
-          isRead: msg.isRead,
-        });
-      } else {
-        const conv = conversationMap.get(key);
-        if (!msg.isRead) conv.unreadCount += 1;
-      }
-    });
-
-    const conversations = Array.from(conversationMap.values());
-
-    // Get unique senders/receivers
+    const unreadMessages = conversations.reduce((sum, conversation) => sum + conversation.unreadCount, 0);
     const userIds = new Set<string>();
-    messages.forEach(m => {
-      userIds.add(m.senderId);
-      userIds.add(m.receiverId);
-    });
-
-    // Count messages sent in last 24h
-    const messagesSent24h = await prisma.directMessage.count({
-      where: {
-        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      },
-    });
+    for (const conversation of conversations) {
+      userIds.add(conversation.member.id);
+    }
+    const messagesSent24h = messages.filter((message) => {
+      const created = new Date(message.createdAt).getTime();
+      return Number.isFinite(created) && created >= Date.now() - 24 * 60 * 60 * 1000;
+    }).length;
 
     return NextResponse.json({
-      conversations: conversations.slice(0, 100),
+      conversations: conversations.slice(0, 100).map((conversation) => ({
+        id: conversation.id,
+        senderId: conversation.member.id,
+        senderName: conversation.member.name,
+        senderRole: conversation.member.role,
+        receiverId: conversation.id,
+        receiverName: conversation.staffName,
+        receiverRole: 'admin',
+        subject: conversation.subject,
+        body: conversation.preview,
+        displayBody: conversation.preview,
+        unreadCount: conversation.unreadCount,
+        lastMessageAt: conversation.lastMessageAt,
+        isRead: conversation.unreadCount === 0,
+        replyTo: conversation.member,
+        canReply: conversation.canReply,
+        messages: conversation.messages.map((message) => ({
+          id: message.id,
+          senderId: message.senderId,
+          senderName: message.senderName,
+          senderRole: message.senderRole,
+          body: message.displayBody || message.body,
+          createdAt: message.createdAt,
+        })),
+      })),
+      alerts: alerts.slice(0, 100),
       stats: {
-        totalConversations: conversationMap.size,
-        unreadMessages: unreadCount,
+        totalConversations: conversations.length,
+        unreadMessages,
         activeUsers: userIds.size,
         messagesSent24h,
-        avgResponseTime: 0, // Would require more complex calculation
+        avgResponseTime: 0,
+        shopAlerts: alerts.length,
       },
     });
   } catch (error) {

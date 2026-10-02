@@ -162,7 +162,7 @@ function AdminHomeContent() {
 
   const quickLinks = [
     { href: '/admin/messaging', label: ' Messages', icon: 'messages', highlight: true },
-    ...(isOwnerProfile ? [{ href: '/admin/revenue', label: ' Revenue & Payouts', icon: 'money' }] : []),
+    { href: '/admin/revenue', label: ' Revenue & Payouts', icon: 'money' },
     { href: '/admin/pending-shops', label: 'Pending Approvals', badge: pendingApprovalsCount, icon: 'clock' },
     { href: '/admin/accepted-shops', label: ' Accepted Shops', icon: 'shops' },
     { href: '/admin/shops', label: ' Manage Shops', icon: 'shops' },
@@ -189,7 +189,7 @@ function AdminHomeContent() {
   const actionButtons = [
     { label: 'Approve shops', href: '/admin/pending-shops' },
     { label: 'Manage customers', href: '/admin/manage-customers' },
-    ...(isOwnerProfile ? [{ label: 'Revenue & payouts', href: '/admin/revenue' }] : []),
+    { label: 'Revenue & payouts', href: '/admin/revenue' },
   ];
 
   const renderContent = () => {
@@ -264,7 +264,7 @@ function AdminHomeContent() {
               {[
                 { label: say("Overview"), action: () => handleSectionSelect('dashboard'), key: 'D' },
                 { label: say("Customers"), action: () => handleSectionSelect('users'), key: 'U' },
-                ...(isOwnerProfile ? [{ label: say("Revenue"), action: () => { router.push('/admin/revenue' as Route); setSearchOpen(false); }, key: 'R' }] : []),
+                { label: say("Revenue"), action: () => { router.push('/admin/revenue' as Route); setSearchOpen(false); }, key: 'R' },
                 { label: say("Shops"), action: () => handleSectionSelect('hierarchy'), key: 'S' },
                 { label: say("Pending Approvals"), action: () => { router.push('/admin/pending-shops' as Route); setSearchOpen(false); }, key: 'P' },
                 { label: say("Accepted Shops"), action: () => { router.push('/admin/accepted-shops' as Route); setSearchOpen(false); }, key: '' },

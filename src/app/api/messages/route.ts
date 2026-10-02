@@ -3,10 +3,12 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import {
   counterpartyForViewer,
+  isPlatformStaffRole,
   isUnreadForViewer,
   markReadReceiverIds,
   participantOrClauses,
   threadAccessWhere,
+  viewerIsParty,
   type MessageViewer,
 } from '@/lib/directMessageAccess';
 import { messageListPreview, resolveChatAttachment } from '@/lib/messageAttachment';
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
     messages.forEach((msg) => {
       // Shop staff see customer↔shop mailbox messages as a thread with the customer.
       const mailboxParty = counterpartyForViewer(msg, viewer);
-      const isRecipient = msg.receiverId === userId && msg.receiverRole === userRole;
+      const isRecipient = viewerIsParty(msg, viewer, 'receiver');
       let otherId = mailboxParty?.otherId ?? (isRecipient ? msg.senderId : msg.receiverId);
       let otherRole = mailboxParty?.otherRole ?? (isRecipient ? msg.senderRole : msg.receiverRole);
       let otherName = mailboxParty?.otherName ?? (isRecipient ? msg.senderName : msg.receiverName);
@@ -90,7 +92,7 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      const conversationKey = `${otherRole}_${otherId}`;
+      const conversationKey = isPlatformStaffRole(otherRole) ? `staff_${otherId}` : `${otherRole}_${otherId}`;
       
       if (!conversations.has(conversationKey)) {
         conversations.set(conversationKey, {
@@ -106,6 +108,7 @@ export async function GET(request: NextRequest) {
       }
       
       const conv = conversations.get(conversationKey);
+      if (isPlatformStaffRole(otherRole) && otherRole === 'superadmin') conv.contactRole = 'superadmin';
       conv.messages.push(msg);
       
       if (isUnreadForViewer(msg, viewer)) {
@@ -200,7 +203,7 @@ export async function POST(request: NextRequest) {
     const trimmedBody = resolved.value.body;
 
     const senderId = decoded.id;
-    const senderRole = decoded.role;
+    let senderRole = decoded.role;
     const staffRoles = ['admin', 'superadmin'];
     const shopScopedRoles = ['shop', 'manager', 'tech'];
     const isSenderStaff = staffRoles.includes(senderRole);
@@ -238,10 +241,11 @@ export async function POST(request: NextRequest) {
     } else if (senderRole === 'admin' || senderRole === 'superadmin') {
       const admin = await prisma.admin.findUnique({
         where: { id: senderId },
-        select: { username: true },
+        select: { username: true, isSuperAdmin: true },
       });
       if (admin) {
         senderName = admin.username;
+        if (admin.isSuperAdmin) senderRole = 'superadmin';
       }
     }
 

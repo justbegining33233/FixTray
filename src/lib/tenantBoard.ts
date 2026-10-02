@@ -59,6 +59,25 @@ export function tenantOwnerText(ownerName: unknown): string {
   return name;
 }
 
+function isBlankPlace(location: unknown): boolean {
+  const place = typeof location === 'string' ? location.trim() : '';
+  return !place || /^n\/?a$/i.test(place) || place === '-' || place === '—';
+}
+
+/**
+ * Card line for a tenant. A missing location is not printed as "N/A - Owner:".
+ * No owner with no place is "No owner". A real owner name is still shown.
+ */
+export function tenantOwnerLine(location: unknown, ownerName: unknown): string {
+  const owner = tenantOwnerText(ownerName);
+  const place = typeof location === 'string' ? location.trim() : '';
+  if (owner === 'No owner') {
+    return isBlankPlace(location) ? 'No owner' : `${place} - Owner: No owner`;
+  }
+  if (isBlankPlace(location)) return owner;
+  return `${place} - Owner: ${owner}`;
+}
+
 /** A finite score, including zero. Missing and NaN are not a health of zero. */
 export function tenantHealthScore(score: unknown): number | null {
   if (typeof score !== 'number' || !Number.isFinite(score)) return null;

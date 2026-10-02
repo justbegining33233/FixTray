@@ -4,7 +4,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { listedMoney, tenantBoardStats, tenantHealthScore, tenantOwnerText } from '@/lib/tenantBoard';
+import { listedMoney, tenantBoardStats, tenantHealthScore, tenantOwnerLine, tenantOwnerText } from '@/lib/tenantBoard';
 import { FaArrowLeft, FaBuilding, FaChartBar, FaHourglassHalf, FaMapMarkerAlt, FaStore, FaTimes } from 'react-icons/fa';
 
 type Tenant = {
@@ -218,7 +218,6 @@ export default function ManageTenants() {
             {tenants.map((tenant) => {
             const health = tenantHealthScore(tenant.healthScore);
             const healthColor = health === null ? '#9aa3b2' : getHealthColor(health);
-            const ownerText = tenantOwnerText(tenant.ownerName);
             return (
             <div key={tenant.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:24}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16}}>
@@ -236,7 +235,7 @@ export default function ManageTenants() {
                       {say("Health:")}{' '}{health === null ? say("Not scored") : health}
                     </span>
                   </div>
-                  <div style={{fontSize:14, color:'#9aa3b2'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say(tenant.location)} {say("- Owner:")}{' '}{ownerText === 'No owner' ? say("No owner") : ownerText}</div>
+                  <div style={{fontSize:14, color:'#9aa3b2'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say(tenantOwnerLine(tenant.location, tenant.ownerName))}</div>
                 </div>
               </div>
 

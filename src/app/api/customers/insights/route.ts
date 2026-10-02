@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { loyaltyPointsFromOrders } from '@/lib/rewardPayload';
 import { workOrderTitle } from '@/lib/workOrderMetrics';
+import { customerLedgerSummary, isCompletedService, recordedPaidUsd } from '@/lib/customerLedger';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['customer']);
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         status: true,
+        paymentStatus: true,
         amountPaid: true,
         estimatedCost: true,
         createdAt: true,
@@ -31,10 +33,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const completed = workOrders.filter(w =>
-      ['closed', 'completed', 'Completed'].includes(w.status)
-    );
-    const recentCompleted = completed.filter(w => w.createdAt >= ninetyDaysAgo);
+    const completed = workOrders.filter(w => isCompletedService(w.status));
+    const recent = workOrders.filter(w => w.createdAt >= ninetyDaysAgo);
 
     // Fetch reviews left by customer
     const reviews = await prisma.review.findMany({
@@ -42,9 +42,12 @@ export async function GET(request: NextRequest) {
       select: { rating: true, createdAt: true },
     });
 
-    // Calculate metrics
-    const totalSpent = completed.reduce((sum, w) => sum + (w.amountPaid || w.estimatedCost || 0), 0);
-    const last90Spent = recentCompleted.reduce((sum, w) => sum + (w.amountPaid || w.estimatedCost || 0), 0);
+    // Spent is the recorded payment, the same figure as Payments "Total Paid".
+    const ledger = customerLedgerSummary(workOrders, 0);
+    const recentLedger = customerLedgerSummary(recent, 0);
+    const totalSpent = ledger.totalSpent;
+    const last90Spent = recentLedger.totalSpent;
+    const paidCount = ledger.paidCount;
     const avgRating = reviews.length
       ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
       : null;
@@ -60,7 +63,7 @@ export async function GET(request: NextRequest) {
         value: `$${totalSpent.toFixed(2)}`,
         trend: totalSpent > 0 ? ' Active customer' : ' No spend yet',
         color: '#22c55e',
-        description: `You have spent a total of $${totalSpent.toFixed(2)} across ${completed.length} completed service${completed.length !== 1 ? 's' : ''}.`,
+        description: `You have paid a total of $${totalSpent.toFixed(2)} across ${paidCount} paid service${paidCount !== 1 ? 's' : ''}. ${completed.length} service${completed.length !== 1 ? 's are' : ' is'} completed.`,
         href: '/customer/insights/total-spent',
       },
       {
@@ -69,7 +72,7 @@ export async function GET(request: NextRequest) {
         value: `$${last90Spent.toFixed(2)}`,
         trend: last90Spent > 0 ? ' Recent activity' : ' No recent spend',
         color: '#e5332a',
-        description: `You have completed ${recentCompleted.length} service${recentCompleted.length !== 1 ? 's' : ''} in the last 90 days totalling $${last90Spent.toFixed(2)}.`,
+        description: `You have paid $${last90Spent.toFixed(2)} on ${recentLedger.paidCount} paid service${recentLedger.paidCount !== 1 ? 's' : ''} in the last 90 days.`,
         href: '/customer/insights/last-90-days',
       },
       {
@@ -107,7 +110,7 @@ export async function GET(request: NextRequest) {
       id: order.id,
       service: workOrderTitle(order),
       shop: order.shop?.shopName || 'Shop',
-      amount: order.amountPaid || order.estimatedCost || 0,
+      amount: recordedPaidUsd(order),
       date: (order.completedAt || order.createdAt).toISOString(),
     }));
 

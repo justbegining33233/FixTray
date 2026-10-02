@@ -73,15 +73,60 @@ export function isAppointmentOverdue(
   return when.getTime() < now.getTime() - APPOINTMENT_OVERDUE_GRACE_MS;
 }
 
+const APPOINTMENT_CLOSED_STATUSES = ['completed', 'cancelled', 'canceled', 'no-show'] as const;
+
+/**
+ * Status the customer should see from the stored start time.
+ * A persisted `overdue` flag is not kept when that start time is still upcoming.
+ * A start time that is actually past the grace window stays overdue.
+ */
+export function customerFacingAppointmentStatus(
+  status: unknown,
+  scheduledDate: Date | string | null | undefined,
+  now = new Date()
+): string {
+  const normalized = normalizeAppointmentStatus(status);
+  if ((APPOINTMENT_CLOSED_STATUSES as readonly string[]).includes(normalized)) return normalized;
+  const when = appointmentInstant(scheduledDate);
+  if (when == null) return normalized;
+  if (isAppointmentOverdue('scheduled', when, now)) {
+    if (normalized === 'scheduled' || normalized === 'confirmed' || normalized === 'overdue') return 'overdue';
+    return normalized;
+  }
+  if (normalized === 'overdue') return 'scheduled';
+  return normalized;
+}
+
 /** Upcoming means still open and not yet past the overdue grace window. */
 export function isUpcomingAppointment(
   status: unknown,
   scheduledDate: Date | string,
   now = new Date()
 ): boolean {
-  const normalized = normalizeAppointmentStatus(status);
-  if (!(APPOINTMENT_OPEN_STATUSES as readonly string[]).includes(normalized)) return false;
-  return !isAppointmentOverdue(status, scheduledDate, now);
+  const facing = customerFacingAppointmentStatus(status, scheduledDate, now);
+  return facing === 'scheduled' || facing === 'confirmed';
+}
+
+export function appointmentStatusUpdates<T extends {
+  id: string;
+  status?: unknown;
+  scheduledDate?: Date | string | null;
+}>(rows: T[], now = new Date()): { id: string; status: string }[] {
+  const updates: { id: string; status: string }[] = [];
+  for (const row of rows) {
+    const current = normalizeAppointmentStatus(row.status);
+    const next = customerFacingAppointmentStatus(row.status, row.scheduledDate, now);
+    if (!next || next === current) continue;
+    if (next !== 'scheduled' && next !== 'confirmed' && next !== 'overdue') continue;
+    updates.push({ id: row.id, status: next });
+  }
+  return updates;
+}
+
+function appointmentInstant(value: Date | string | null | undefined): Date | null {
+  if (value == null || value === '') return null;
+  const when = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(when.getTime()) ? null : when;
 }
 
 export type AppointmentLike = {

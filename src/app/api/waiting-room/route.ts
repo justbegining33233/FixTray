@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
 import {
   isWaitingRoomCandidate,
+  orderWaitingRoomOrders,
   toWaitingRoomCard,
   waitingRoomWorkOrderWhere,
 } from '@/lib/waitingRoomBoard';
@@ -41,8 +42,7 @@ export async function GET(req: NextRequest) {
   });
 
   const bays = await prisma.bay.findMany({ where: { shopId } });
-  const boardOrders = orders
-    .filter((wo) => isWaitingRoomCandidate(wo))
+  const boardOrders = orderWaitingRoomOrders(orders.filter((wo) => isWaitingRoomCandidate(wo)))
     .map((wo) => toWaitingRoomCard(wo));
 
   return NextResponse.json({

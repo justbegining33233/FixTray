@@ -6,12 +6,14 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { FaChartBar, FaUsers, FaClock, FaDownload } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaClock, FaExclamationCircle, FaDownload } from 'react-icons/fa';
+import { managerReportWorkOrders } from '@/lib/workOrderMetrics';
 
 interface ReportData {
-  totalWorkOrders: number;
-  completedWorkOrders: number;
-  avgCompletionTime: string;
+  activeJobs: number;
+  overdueJobs: number;
+  awaitingClockIn: number;
+  completedToday: number;
   techPerformance: { name: string; completed: number; avgTime: string }[];
 }
 
@@ -27,24 +29,40 @@ export default function ManagerReportsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const shopId = user?.shopId || '';
+      const statsUrl = shopId
+        ? `/api/shop/workorder-stats?shopId=${encodeURIComponent(shopId)}`
+        : '/api/shop/workorder-stats';
       const endDate = new Date().toISOString();
       const startDate = new Date(Date.now() - parseInt(dateRange) * 86400000).toISOString();
-      const res = await fetch(`/api/analytics?startDate=${startDate}&endDate=${endDate}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) {
-        const json = await res.json();
-        setData({
-          totalWorkOrders: json.totalWorkOrders ?? 0,
-          completedWorkOrders: json.completedWorkOrders ?? 0,
-          avgCompletionTime: json.avgCompletionTime ?? 'N/A',
-          techPerformance: json.techPerformance ?? [],
-        });
+      const [statsRes, analyticsRes] = await Promise.all([
+        fetch(statsUrl, { headers }),
+        fetch(`/api/analytics?startDate=${startDate}&endDate=${endDate}`, { headers }),
+      ]);
+      const counts = statsRes.ok
+        ? managerReportWorkOrders((await statsRes.json()).stats)
+        : managerReportWorkOrders(null);
+      let techPerformance: ReportData['techPerformance'] = [];
+      if (analyticsRes.ok) {
+        const json = await analyticsRes.json();
+        const rows = Array.isArray(json.techPerformance) ? json.techPerformance : [];
+        techPerformance = rows.map((row: { name?: string; completed?: number; avgTime?: string | number }) => ({
+          name: row.name || 'Unassigned',
+          completed: row.completed || 0,
+          avgTime: String(row.avgTime ?? ''),
+        }));
       }
+      setData({
+        ...counts,
+        techPerformance,
+      });
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [dateRange]);
+  }, [dateRange, user?.shopId]);
 
   useEffect(() => {
     if (!user) return;
@@ -59,9 +77,10 @@ export default function ManagerReportsPage() {
   if (!user) return null;
 
   const cards = [
-    { icon: <FaChartBar />, label: 'Total Work Orders', value: data?.totalWorkOrders ?? 0, color: '#e5332a' },
-    { icon: <FaUsers />, label: 'Completed', value: data?.completedWorkOrders ?? 0, color: '#22c55e' },
-    { icon: <FaClock />, label: 'Avg Completion', value: data?.avgCompletionTime ?? 'N/A', color: '#f97316' },
+    { icon: <FaChartBar />, label: 'Active Jobs', value: data?.activeJobs ?? 0, color: '#e5332a' },
+    { icon: <FaExclamationCircle />, label: 'Overdue', value: data?.overdueJobs ?? 0, color: '#ef4444' },
+    { icon: <FaUsers />, label: 'Awaiting Clock-In', value: data?.awaitingClockIn ?? 0, color: '#f59e0b' },
+    { icon: <FaClock />, label: 'Completed Today', value: data?.completedToday ?? 0, color: '#22c55e' },
   ];
 
   return (

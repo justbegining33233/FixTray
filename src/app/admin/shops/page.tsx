@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { countApprovedShops, isApprovedShop, normalizeShopStatus, shopStatusLabel } from '@/lib/shopCensus';
 import { FaArrowRight, FaBuilding, FaChartLine, FaUsers, FaCheckCircle, FaClock, FaExclamationTriangle } from 'react-icons/fa';
 
 interface Shop {
@@ -41,11 +42,14 @@ interface ShopStats {
   revenueGrowth: number;
 }
 
-const statusStyles = {
-  approved: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', text: 'Approved' },
-  pending: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', text: 'Pending' },
-  suspended: { bg: 'rgba(229,51,42,0.15)', color: '#e5332a', text: 'Suspended' },
-};
+function shopStatusStyle(status: string) {
+  const text = shopStatusLabel(status);
+  const normalized = text.toLowerCase();
+  if (normalized === 'approved') return { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', text };
+  if (normalized === 'pending') return { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', text };
+  if (normalized === 'suspended' || normalized === 'denied') return { bg: 'rgba(229,51,42,0.15)', color: '#e5332a', text };
+  return { bg: 'rgba(148,163,184,0.15)', color: '#cbd5e1', text };
+}
 
 const activityStyles = {
   active: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', icon: <FaCheckCircle /> },
@@ -92,7 +96,8 @@ export default function AdminShopsPage() {
 
   const filteredShops = shops.filter(shop => {
     if (filterStatus === 'all') return true;
-    return shop.status === filterStatus;
+    if (filterStatus === 'approved') return isApprovedShop(shop);
+    return normalizeShopStatus(shop.status) === filterStatus;
   });
 
   const sortedShops = [...filteredShops].sort((a, b) => {
@@ -132,6 +137,7 @@ export default function AdminShopsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
               {[
                 { label: say("Total Shops"), value: stats.totalShops, color: '#3b82f6' },
+                { label: say("Approved"), value: countApprovedShops(shops), color: '#22c55e' },
                 { label: say("Active"), value: stats.activeShops, color: '#22c55e' },
                 { label: say("Inactive"), value: stats.inactiveShops, color: '#9ca3af' },
                 { label: say("Pending"), value: stats.pendingShops, color: '#f59e0b' },
@@ -219,7 +225,7 @@ export default function AdminShopsPage() {
                 </thead>
                 <tbody>
                   {sortedShops.map(shop => {
-                    const statusStyle = statusStyles[shop.status as keyof typeof statusStyles] || statusStyles.approved;
+                    const statusStyle = shopStatusStyle(shop.status);
                     const activityStyle = activityStyles[shop.activityStatus];
                     return (
                       <tr key={shop.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

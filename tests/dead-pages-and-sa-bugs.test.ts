@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { PUBLIC_AND_ADMIN_REDIRECTS } from '../src/lib/publicRedirects';
 import { actorMayAccessShop, resolveShopId } from '../src/lib/shopAccess';
-import { ownerShopHeadline } from '../src/lib/shopCensus';
+import { countApprovedShops, ownerShopHeadline, shopStatusLabel } from '../src/lib/shopCensus';
 import { loyaltyPointsFromRewards } from '../src/lib/rewardPayload';
 import { displayEmployeeLabel, displayPersonName, latestShopName, platformUserLabel } from '../src/lib/platformUserLabel';
 import { describeUserUpdate, presentAuditDetails } from '../src/lib/auditDetails';
@@ -64,6 +64,26 @@ describe('owner shop census', () => {
       approvedShops: 3,
       activeUsage: 0,
     });
+  });
+
+  it('counts the same approved shops the management list keeps, and labels the other one', () => {
+    const shops = [
+      { id: 'a', status: 'approved' },
+      { id: 'b', status: 'approved' },
+      { id: 'c', status: 'Approved' },
+      { id: 'd', status: 'active' },
+    ];
+    expect(countApprovedShops(shops)).toBe(3);
+    expect(shops).toHaveLength(4);
+    expect(shops.map((shop) => shopStatusLabel(shop.status))).toEqual([
+      'Approved',
+      'Approved',
+      'Approved',
+      'Active',
+    ]);
+    expect(shopStatusLabel('active')).not.toBe('Approved');
+    expect(shopStatusLabel('demo-ended')).toBe('Demo ended');
+    expect(shopStatusLabel('pending')).toBe('Pending');
   });
 });
 

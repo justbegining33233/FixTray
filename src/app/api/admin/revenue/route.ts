@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth';
 import { getPlatformConfig } from '@/lib/platformConfig';
 import { feePerPaidWorkOrder } from '@/lib/platformFees';
 import { canViewPlatformRevenue } from '@/lib/platformRevenue';
+import { listedTotalChange } from '@/lib/tenantBoard';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
@@ -137,6 +138,7 @@ export async function GET(request: NextRequest) {
         feesThisMonth: workOrderFeesThisMonth,
         feesLastMonth: workOrderFeesLastMonth,
         feesLast3Months: workOrderFeesLast3Months,
+        totalFeesLabel: listedTotalChange(totalWorkOrderFees, workOrderFeesThisMonth, workOrderFeesLastMonth, now),
         momGrowth,
         totalPaidWorkOrders: paidWorkOrders.length,
         paidWorkOrdersToday: paidTodayCount,

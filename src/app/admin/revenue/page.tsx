@@ -24,6 +24,7 @@ interface WorkOrderFees {
   feesThisMonth: number;
   feesLastMonth: number;
   feesLast3Months: number;
+  totalFeesLabel?: string;
   momGrowth: number;
   totalPaidWorkOrders: number;
   paidWorkOrdersToday: number;
@@ -140,9 +141,7 @@ export default function AdminRevenuePage() {
     });
   };
 
-  const momLabel = workOrderFees
-    ? `${workOrderFees.momGrowth >= 0 ? '+' : ''}${workOrderFees.momGrowth.toFixed(1)}%`
-    : '0.0%';
+  const totalFeesLabel = workOrderFees?.totalFeesLabel || '';
 
   if (authLoading || loading) {
     return (
@@ -204,11 +203,13 @@ export default function AdminRevenuePage() {
           <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
             <div className="flex items-center justify-between mb-2">
               <div className="text-stone-400 text-sm">{say("Total Shop Fees Collected")}</div>
+              {totalFeesLabel ? (
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  workOrderFees.momGrowth >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                  totalFeesLabel.startsWith('-') ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'
                 }`}>
-                  {say(momLabel)}
+                  {say(totalFeesLabel)}
                 </span>
+              ) : null}
             </div>
             <div className="text-3xl font-bold text-green-400">
               {formatCurrency(workOrderFees.totalFees)}

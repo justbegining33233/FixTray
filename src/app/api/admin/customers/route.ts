@@ -6,6 +6,7 @@ import { requireRole } from '@/lib/auth';
 import { getPlatformConfig } from '@/lib/platformConfig';
 import { feePerPaidWorkOrder } from '@/lib/platformFees';
 import { platformFeeHeadline } from '@/lib/platformRevenue';
+import { listedCountLabel } from '@/lib/tenantBoard';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
@@ -120,9 +121,10 @@ export async function GET(request: NextRequest) {
       const createdAt = new Date(c.createdAt);
       return createdAt >= startOfLastMonth && createdAt < endOfLastMonth;
     }).length;
-    const customerGrowth = newCustomersLastMonth > 0
-      ? Math.round(((newCustomersThisMonth - newCustomersLastMonth) / newCustomersLastMonth) * 100)
-      : newCustomersThisMonth > 0 ? 100 : 0;
+    const customerGrowth = listedCountLabel(
+      customers.map((customer: { createdAt?: string | Date | null }) => ({ createdAt: customer.createdAt })),
+      now,
+    );
 
     const totalWorkOrderRevenue = formattedCustomers.reduce((sum: number, c: any) => sum + c.totalRevenue, 0);
     const workOrderRevenueThisMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.revenueThisMonth, 0);
@@ -217,7 +219,7 @@ export async function GET(request: NextRequest) {
         totalCustomers,
         newCustomersThisMonth,
         newCustomersLastMonth,
-        customerGrowth: `${customerGrowth >= 0 ? '+' : ''}${customerGrowth}%`,
+        customerGrowth,
         feePerWorkOrder,
         totalFixtrayFees,
         fixtrayFeesThisMonth,

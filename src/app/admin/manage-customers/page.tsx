@@ -203,9 +203,11 @@ export default function ManageCustomers() {
                     <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>{say("Total Customers")}</div>
                     <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{say(liveMetrics.totalCustomers)}</div>
                   </div>
-                  <span style={{ padding: '4px 8px', background: 'rgba(34,197,94,0.2)', color: '#22c55e', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                    {say(liveMetrics.customerGrowth)}
-                  </span>
+                  {liveMetrics.customerGrowth ? (
+                    <span style={{ padding: '4px 8px', background: 'rgba(34,197,94,0.2)', color: '#22c55e', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+                      {say(liveMetrics.customerGrowth)}
+                    </span>
+                  ) : null}
                 </div>
                 <MiniLineChart data={liveMetrics.customerTrend} color="#22c55e" height={30} />
               </div>

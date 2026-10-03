@@ -59,7 +59,8 @@ export async function handleResendWebhook(payload: string, headers: ResendWebhoo
 
   const data = verified.event.data;
   const record = data && typeof data === 'object' ? data as Record<string, unknown> : {};
-  if (!isSupportInboxRecipient(record.to)) {
+  const addressedToSupport = [record.to, record.cc, record.bcc, record.received_for].some((field) => isSupportInboxRecipient(field));
+  if (!addressedToSupport) {
     return { status: 200, body: { received: true } };
   }
 

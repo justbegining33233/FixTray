@@ -89,6 +89,15 @@ describe('resend inbound webhook', () => {
     expect(ignored.status).toBe(200);
     expect(fetchMock).not.toHaveBeenCalled();
 
+    const forwarded = JSON.stringify({
+      type: 'email.received',
+      data: { email_id: 'email_123', to: ['shop@example.com'], received_for: ['support@fixtray.app'] },
+    });
+    const forwardedResult = await handleResendWebhook(forwarded, signed(forwarded));
+    expect(forwardedResult.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith('https://api.resend.com/emails/receiving/email_123', expect.any(Object));
+
+    fetchMock.mockClear();
     const sent = JSON.stringify({ type: 'email.sent', data: { email_id: 'email_123' } });
     const skipped = await handleResendWebhook(sent, signed(sent));
     expect(skipped.status).toBe(200);

@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { addressList } from '@/lib/platformEmailAccess';
 import type { PlatformMailDetail, PlatformMailSummary } from '@/lib/platformMailbox';
 
 type StoredMessage = {
@@ -14,7 +15,7 @@ function toSummary(row: StoredMessage): PlatformMailSummary {
   return {
     id: row.id,
     from: row.sender,
-    to: row.recipients.split(',').map((item) => item.trim()).filter(Boolean),
+    to: addressList(row.recipients),
     subject: row.subject,
     createdAt: row.receivedAt.toISOString(),
     lastEvent: 'received',
@@ -40,6 +41,34 @@ export async function rememberSupportInboxMessage(message: PlatformMailDetail): 
         recipients: message.to.join(', '),
         subject: message.subject,
         bodyText: message.text,
+      },
+    });
+  } catch (error) {
+    console.error('[supportInbox] could not store message', error instanceof Error ? error.message : '');
+  }
+}
+
+/** Keep a listed message without erasing a body the webhook or an open already saved. */
+export async function rememberSupportInboxSummary(message: PlatformMailSummary): Promise<void> {
+  const receivedAt = message.createdAt && !Number.isNaN(Date.parse(message.createdAt))
+    ? new Date(message.createdAt)
+    : new Date();
+  try {
+    await prisma.supportInboxMessage.upsert({
+      where: { id: message.id },
+      create: {
+        id: message.id,
+        sender: message.from,
+        recipients: message.to.join(', '),
+        subject: message.subject,
+        bodyText: '',
+        receivedAt,
+      },
+      update: {
+        sender: message.from,
+        recipients: message.to.join(', '),
+        subject: message.subject,
+        receivedAt,
       },
     });
   } catch (error) {

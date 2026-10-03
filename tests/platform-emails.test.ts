@@ -204,6 +204,106 @@ describe('platform mailbox', () => {
     expect(merged.map((item) => item.id)).toEqual(['email_123', 'email_saved']);
   });
 
+  it('shows support mail Resend already received, including mail past the first page', async () => {
+    process.env.RESEND_API_KEY = 're_test_secret_value';
+    const robinId = 'a39999a6-88e3-48b1-888b-beaabcde1b33';
+    const gomezId = 'b39999a6-88e3-48b1-888b-beaabcde1b44';
+    const otherId = 'c39999a6-88e3-48b1-888b-beaabcde1b55';
+    const robinSubject = 'Re: Action Transmission Specialists, want a free way to run your shop?';
+    const fetchMock = jest.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          object: 'list',
+          has_more: true,
+          data: [{
+            id: otherId,
+            from: 'Spam <junk@example.com>',
+            to: ['other@fixtray.app'],
+            subject: 'Not support',
+            created_at: '2026-10-03T19:00:00.000Z',
+          }],
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          object: 'list',
+          has_more: false,
+          data: [
+            {
+              id: robinId,
+              from: 'Robin Sidbury <sales@transmission-repair-jacksonville.com>',
+              to: ['support@fixtray.app'],
+              cc: [],
+              subject: robinSubject,
+              created_at: '2026-10-03T18:05:00.000Z',
+              message_id: '<robin@mail.example>',
+            },
+            {
+              id: gomezId,
+              from: 'Gomez Repairs <202andrescelle@gmail.com>',
+              to: ['support@fixtray.app'],
+              subject: 'Gomez Repairs',
+              created_at: '2026-10-03T02:00:00.000Z',
+              message_id: '<gomez@mail.example>',
+            },
+          ],
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          object: 'email',
+          id: robinId,
+          from: 'Robin Sidbury <sales@transmission-repair-jacksonville.com>',
+          to: ['support@fixtray.app'],
+          subject: robinSubject,
+          created_at: '2026-10-03T18:05:00.000Z',
+          text: 'Unsubscribe',
+          html: null,
+        }),
+      } as Response);
+
+    const listed = await listReceivedSupportMail();
+    expect(listed.ok).toBe(true);
+    if (!listed.ok) return;
+    expect(listed.data.map((item) => item.id)).toEqual([robinId, gomezId]);
+    expect(listed.data[0].subject).toBe(robinSubject);
+    expect(listed.data[0].from).toBe('Robin Sidbury <sales@transmission-repair-jacksonville.com>');
+    expect(listed.data[1].from).toBe('Gomez Repairs <202andrescelle@gmail.com>');
+    expect(listed.data.every((item) => item.to.some((address) => address.includes('support@fixtray.app')))).toBe(true);
+
+    const opened = await readReceivedSupportMail(robinId);
+    expect(opened.ok && opened.data.text).toBe('Unsubscribe');
+    expect(opened.ok && opened.data.subject).toBe(robinSubject);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.resend.com/emails/receiving?limit=20');
+    expect(fetchMock.mock.calls[1][0]).toBe(`https://api.resend.com/emails/receiving?limit=20&after=${otherId}`);
+    expect(fetchMock.mock.calls[2][0]).toBe(`https://api.resend.com/emails/receiving/${robinId}`);
+    expect(JSON.stringify({ listed, opened })).not.toContain('re_test_secret_value');
+  });
+
+  it('keeps a clear message when the inbox is empty or cannot be loaded', async () => {
+    const page = fs.readFileSync('src/app/admin/emails/page.tsx', 'utf8');
+    expect(page).toContain('No mail in the support@fixtray.app inbox.');
+
+    process.env.RESEND_API_KEY = 're_test_secret_value';
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ message: 'not allowed' }),
+    } as Response);
+    const failed = await listReceivedSupportMail();
+    expect(failed).toEqual({ ok: false, status: 502, error: 'The support inbox could not be loaded.' });
+
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ object: 'list', has_more: false, data: [] }),
+    } as Response);
+    const empty = await listReceivedSupportMail();
+    expect(empty).toEqual({ ok: true, data: [] });
+  });
+
   it('stops when the server key is missing and never prints a provider key', async () => {
     delete process.env.RESEND_API_KEY;
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({

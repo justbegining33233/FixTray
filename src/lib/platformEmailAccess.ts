@@ -18,10 +18,45 @@ export function emailAddress(value: string): string {
   return (bracket ? bracket[1] : value).trim().toLowerCase();
 }
 
+/** Split a header without breaking a display name that contains a comma. */
+function splitAddressHeader(value: string): string[] {
+  const parts: string[] = [];
+  let current = '';
+  let depth = 0;
+  for (const char of value) {
+    if (char === '<') depth += 1;
+    if (char === '>') depth = Math.max(0, depth - 1);
+    if (char === ',' && depth === 0) {
+      if (current.trim()) parts.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts;
+}
+
+/** Addresses from a Resend to, cc, bcc, or received_for field. */
+export function addressList(value: unknown): string[] {
+  const raw = Array.isArray(value) ? value : value == null || value === '' ? [] : [value];
+  const addresses: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string') {
+      addresses.push(...splitAddressHeader(item));
+      continue;
+    }
+    if (!item || typeof item !== 'object') continue;
+    const record = item as Record<string, unknown>;
+    const email = typeof record.email === 'string' ? record.email : typeof record.address === 'string' ? record.address : '';
+    if (email.trim()) addresses.push(email.trim());
+  }
+  return addresses;
+}
+
 /** True when the message was addressed to the support inbox. */
 export function isSupportInboxRecipient(value: unknown): boolean {
-  const list = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
-  return list.some((item) => typeof item === 'string' && emailAddress(item) === SUPPORT_INBOX);
+  return addressList(value).some((item) => emailAddress(item) === SUPPORT_INBOX);
 }
 
 export function isPlatformEmailAccount(username: unknown): boolean {

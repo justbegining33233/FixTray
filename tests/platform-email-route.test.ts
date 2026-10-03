@@ -13,6 +13,7 @@ jest.mock('@/lib/supportInboxStore', () => ({
   listRememberedSupportInbox: jest.fn().mockResolvedValue([]),
   readRememberedSupportMail: jest.fn().mockResolvedValue(null),
   rememberSupportInboxMessage: jest.fn(),
+  rememberSupportInboxSummary: jest.fn(),
 }));
 
 jest.mock('@/lib/platformMailbox', () => ({
@@ -62,6 +63,7 @@ describe('platform email routes', () => {
       body: JSON.stringify({ from: 'support@fixtray.app', to: 'a@b.com', subject: 'Hi', text: 'Hello', requestId: '11111111-1111-4111-8111-111111111111' }),
     }));
     const one = await GET_ONE(new NextRequest('http://localhost/api/admin/emails/email_1'), { params: Promise.resolve({ id: 'email_1' }) });
+    expect(listMock).toHaveBeenCalledWith(100);
     expect(listed.status).toBe(200);
     expect(sent.status).toBe(200);
     expect(one.status).toBe(200);

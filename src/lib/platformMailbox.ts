@@ -1,4 +1,4 @@
-import { isSupportInboxRecipient, platformFromHeader } from '@/lib/platformEmailAccess';
+import { addressList, emailAddress, isSupportInboxRecipient, platformFromHeader, SUPPORT_INBOX } from '@/lib/platformEmailAccess';
 
 const RESEND_EMAILS = 'https://api.resend.com/emails';
 const RESEND_RECEIVING = 'https://api.resend.com/emails/receiving';
@@ -38,21 +38,34 @@ function redact(message: string, key: string): string {
   return key ? message.split(key).join('[redacted]') : message;
 }
 
-function asStringList(value: unknown): string[] {
-  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
-  if (typeof value === 'string' && value.trim()) return [value.trim()];
-  return [];
+function recipientAddresses(row: Record<string, unknown>): string[] {
+  const seen = new Set<string>();
+  const addresses: string[] = [];
+  for (const field of [row.to, row.cc, row.bcc, row.received_for]) {
+    for (const item of addressList(field)) {
+      const key = emailAddress(item);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      addresses.push(item);
+    }
+  }
+  return addresses;
 }
 
 function summaryFrom(row: Record<string, unknown>): PlatformMailSummary | null {
-  const id = typeof row.id === 'string' ? row.id : '';
+  const id = typeof row.id === 'string' ? row.id : typeof row.email_id === 'string' ? row.email_id : '';
   if (!EMAIL_ID.test(id)) return null;
+  const createdAt = typeof row.created_at === 'string'
+    ? row.created_at
+    : typeof row.createdAt === 'string'
+      ? row.createdAt
+      : '';
   return {
     id,
     from: typeof row.from === 'string' ? row.from : '',
-    to: asStringList(row.to),
+    to: recipientAddresses(row),
     subject: typeof row.subject === 'string' ? row.subject : '',
-    createdAt: typeof row.created_at === 'string' ? row.created_at : '',
+    createdAt,
     lastEvent: typeof row.last_event === 'string' ? row.last_event : '',
   };
 }
@@ -126,13 +139,25 @@ export function preparePlatformSend(input: SendInput): MailboxResult<{
   };
 }
 
-async function resendRequest(path: string, init?: RequestInit): Promise<MailboxResult<Record<string, unknown>>> {
+const INBOX_UNAVAILABLE = 'The support inbox could not be loaded.';
+const SEND_UNAVAILABLE = 'Email could not be reached';
+
+function requestFailure(error: string, status = 502): MailboxResult<never> {
+  return { ok: false, status, error };
+}
+
+async function resendRequest(
+  path: string,
+  init?: RequestInit,
+  failure: string = SEND_UNAVAILABLE,
+): Promise<MailboxResult<Record<string, unknown>>> {
   const key = resendKey();
   if (!key) return { ok: false, status: 503, error: 'Email is not configured' };
   let response: Response;
   try {
     response = await fetch(path, {
       ...init,
+      cache: 'no-store',
       headers: {
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
@@ -141,7 +166,7 @@ async function resendRequest(path: string, init?: RequestInit): Promise<MailboxR
     });
   } catch (error) {
     console.error('[platformMailbox] request failed', redact(error instanceof Error ? error.message : '', key));
-    return { ok: false, status: 502, error: 'Email could not be reached' };
+    return requestFailure(failure);
   }
   const body = await response.json().catch(() => null);
   if (!response.ok || !body || typeof body !== 'object') {
@@ -149,7 +174,7 @@ async function resendRequest(path: string, init?: RequestInit): Promise<MailboxR
       ? (body as { message: string }).message
       : '';
     console.error('[platformMailbox] resend error', response.status, redact(message, key));
-    return { ok: false, status: 502, error: 'Email could not be reached' };
+    return requestFailure(failure);
   }
   return { ok: true, data: body as Record<string, unknown> };
 }
@@ -162,9 +187,31 @@ export function mergeSupportInbox(stored: PlatformMailSummary[], live: PlatformM
   for (const item of live) {
     if (!isSupportInboxRecipient(item.to)) continue;
     const previous = byId.get(item.id);
-    byId.set(item.id, previous ? { ...previous, ...item, id: item.id } : item);
+    byId.set(item.id, previous ? {
+      ...previous,
+      ...item,
+      id: item.id,
+      from: item.from || previous.from,
+      subject: item.subject || previous.subject,
+      to: item.to.length > 0 ? item.to : previous.to,
+      createdAt: item.createdAt || previous.createdAt,
+    } : item);
   }
   return [...byId.values()].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+}
+
+function listPage(body: Record<string, unknown>): { rows: unknown[]; hasMore: boolean } {
+  if (Array.isArray(body.data)) {
+    return { rows: body.data, hasMore: body.has_more === true };
+  }
+  const nested = body.data;
+  if (nested && typeof nested === 'object') {
+    const record = nested as Record<string, unknown>;
+    if (Array.isArray(record.data)) {
+      return { rows: record.data, hasMore: record.has_more === true };
+    }
+  }
+  return { rows: [], hasMore: false };
 }
 
 function receivedSummaries(rows: unknown[]): PlatformMailSummary[] {
@@ -174,26 +221,69 @@ function receivedSummaries(rows: unknown[]): PlatformMailSummary[] {
     .filter((row): row is PlatformMailSummary => row !== null && isSupportInboxRecipient(row.to));
 }
 
-/** Inbox for support@fixtray.app from Resend inbound, not the sent-mail log. */
+function sortInbox(rows: PlatformMailSummary[]): PlatformMailSummary[] {
+  const byId = new Map<string, PlatformMailSummary>();
+  for (const row of rows) byId.set(row.id, row);
+  return [...byId.values()].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+}
+
+/**
+ * Inbox for support@fixtray.app from Resend inbound, not the sent-mail log.
+ * The receiving list is every address on the domain, newest first. Support
+ * mail is kept across later pages so a full first page of other recipients
+ * cannot hide it.
+ */
 export async function listReceivedSupportMail(limit = 20): Promise<MailboxResult<PlatformMailSummary[]>> {
-  const capped = Math.min(50, Math.max(1, Math.floor(Number.isFinite(limit) ? limit : 20)));
-  const result = await resendRequest(`${RESEND_RECEIVING}?limit=${capped}`);
-  if (!result.ok) return result;
-  const rows = Array.isArray(result.data.data) ? result.data.data : [];
-  return { ok: true, data: receivedSummaries(rows) };
+  const pageSize = Math.min(100, Math.max(1, Math.floor(Number.isFinite(limit) ? limit : 20)));
+  const found: PlatformMailSummary[] = [];
+  let after = '';
+  for (let page = 0; page < 5; page += 1) {
+    const query = new URLSearchParams({ limit: String(pageSize) });
+    if (after) query.set('after', after);
+    const result = await resendRequest(`${RESEND_RECEIVING}?${query.toString()}`, undefined, INBOX_UNAVAILABLE);
+    if (!result.ok) return found.length > 0 ? { ok: true, data: sortInbox(found) } : result;
+    const pageBody = listPage(result.data);
+    const rows = pageBody.rows;
+    found.push(...receivedSummaries(rows));
+    const hasMore = pageBody.hasMore;
+    const last = rows.length > 0 && rows[rows.length - 1] && typeof rows[rows.length - 1] === 'object'
+      ? (rows[rows.length - 1] as Record<string, unknown>).id
+      : '';
+    if (!hasMore || typeof last !== 'string' || !EMAIL_ID.test(last) || last === after) break;
+    after = last;
+  }
+  return { ok: true, data: sortInbox(found) };
 }
 
 export async function readReceivedSupportMail(id: string): Promise<MailboxResult<PlatformMailDetail>> {
   if (!EMAIL_ID.test(id)) return { ok: false, status: 400, error: 'Unknown message' };
-  const result = await resendRequest(`${RESEND_RECEIVING}/${encodeURIComponent(id)}`);
+  const result = await resendRequest(`${RESEND_RECEIVING}/${encodeURIComponent(id)}`, undefined, INBOX_UNAVAILABLE);
   if (!result.ok) return result;
   const summary = summaryFrom(result.data);
-  if (!summary || !isSupportInboxRecipient(summary.to)) {
+  if (!summary || !summary.to.some((item) => emailAddress(item) === SUPPORT_INBOX)) {
     return { ok: false, status: 404, error: 'Unknown message' };
   }
   const text = typeof result.data.text === 'string' ? result.data.text.trim() : '';
   const html = typeof result.data.html === 'string' ? result.data.html : '';
-  return { ok: true, data: { ...summary, lastEvent: summary.lastEvent || 'received', text: text || plainFromHtml(html) } };
+  return { ok: true, data: { ...summary, lastEvent: summary.lastEvent || 'received', text: text || plainFromHtml(htmlBody(html)) } };
+}
+
+function htmlBody(html: string): string {
+  const base64 = html.match(/^data:text\/html(?:;charset=[^;,]+)?;base64,([\s\S]+)$/i);
+  if (base64) {
+    try {
+      return Buffer.from(base64[1], 'base64').toString('utf8');
+    } catch {
+      return html;
+    }
+  }
+  const encoded = html.match(/^data:text\/html(?:;charset=[^;,]+)?,([\s\S]+)$/i);
+  if (!encoded) return html;
+  try {
+    return decodeURIComponent(encoded[1]);
+  } catch {
+    return encoded[1];
+  }
 }
 
 export async function sendPlatformMail(input: SendInput): Promise<MailboxResult<{ id: string }>> {

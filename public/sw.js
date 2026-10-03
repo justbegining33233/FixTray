@@ -4,7 +4,7 @@
 importScripts('/offline-access.js?v=10', '/offline-session.js?v=10');
 
 const CACHE_NAME = 'fixtray-v10';
-const API_CACHE   = 'fixtray-api-v3';
+const API_CACHE   = 'fixtray-api-v4';
 const PAGE_CACHE = self.FixTrayOfflineAccess.PAGE_CACHE;
 const OFFLINE_DOCUMENT = self.FixTrayOfflineAccess.OFFLINE_DOCUMENT;
 
@@ -242,6 +242,12 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/__fixtray_page__')) {
     event.respondWith(new Response('', { status: 404 }));
+    return;
+  }
+
+  // The support inbox must not replay a cached empty list as a successful load.
+  if (url.pathname === '/api/admin/emails' || url.pathname.startsWith('/api/admin/emails/')) {
+    event.respondWith(fetch(request));
     return;
   }
 

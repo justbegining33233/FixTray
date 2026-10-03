@@ -1,5 +1,8 @@
 import fs from 'fs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { NextRequest } from 'next/server';
+import { SupportInboxList } from '../src/app/admin/emails/SupportInboxList';
 import { generateAccessToken } from '../src/lib/auth';
 import { allMobileNavHrefs, MOBILE_ROLE_NAVS, mobileNavForActor } from '../src/lib/mobileRoleNav';
 import {
@@ -283,10 +286,84 @@ describe('platform mailbox', () => {
     expect(JSON.stringify({ listed, opened })).not.toContain('re_test_secret_value');
   });
 
-  it('keeps a clear message when the inbox is empty or cannot be loaded', async () => {
-    const page = fs.readFileSync('src/app/admin/emails/page.tsx', 'utf8');
-    expect(page).toContain('No mail in the support@fixtray.app inbox.');
+  it('shows the newest receiving page in the inbox and keeps an empty or failed load obvious', async () => {
+    process.env.RESEND_API_KEY = 're_test_secret_value';
+    const fixture = JSON.parse(fs.readFileSync('tests/fixtures/receiving-list-newest-page.json', 'utf8'));
+    const robinSubject = 'Re: Action Transmission Specialists, want a free way to run your shop?';
+    const gomezSubject = 'Re: Gomez Repairs, want a free way to run your shop?';
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('after=')) {
+        return { ok: true, json: async () => ({ object: 'list', has_more: false, data: [] }) } as Response;
+      }
+      return { ok: true, json: async () => fixture } as Response;
+    });
 
+    const listed = await listReceivedSupportMail(100);
+    expect(listed.ok).toBe(true);
+    if (!listed.ok) return;
+    expect(listed.data.map((item) => item.subject)).toEqual(expect.arrayContaining([robinSubject, gomezSubject]));
+    expect(listed.data[0].subject).toBe(robinSubject);
+    expect(listed.data[0].from).toBe('sales@transmission-repair-jacksonville.com');
+    expect(listed.data.find((item) => item.subject === gomezSubject)?.from).toBe('202andrescelle@gmail.com');
+    expect(listed.data.every((item) => item.to.some((address) => address.toLowerCase() === 'support@fixtray.app'))).toBe(true);
+    const subjects = listed.data.map((item) => item.subject);
+    expect(subjects).not.toContain('Launch your checkout experience');
+    expect(subjects).not.toContain('Continue setting up your Stripe account');
+    expect(subjects).not.toContain('Join the "FixTray" account on Stripe');
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.resend.com/emails/receiving?limit=100');
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('after=');
+
+    const html = renderToStaticMarkup(createElement(SupportInboxList, {
+      emails: listed.data,
+      loaded: true,
+      error: '',
+      selectedId: null,
+      onOpen: () => {},
+    }));
+    expect(html).toContain(robinSubject);
+    expect(html).toContain(gomezSubject);
+    expect(html).toContain('sales@transmission-repair-jacksonville.com');
+    expect(html).toContain('202andrescelle@gmail.com');
+    expect(html).not.toContain('Launch your checkout experience');
+    expect(html).not.toContain('Continue setting up your Stripe account');
+    expect(html).not.toContain('No mail in the support@fixtray.app inbox.');
+
+    const loading = renderToStaticMarkup(createElement(SupportInboxList, {
+      emails: [],
+      loaded: false,
+      error: '',
+      selectedId: null,
+      onOpen: () => {},
+    }));
+    expect(loading).toContain('Loading mail...');
+    expect(loading).not.toContain('No mail in the support@fixtray.app inbox.');
+
+    const failed = renderToStaticMarkup(createElement(SupportInboxList, {
+      emails: [],
+      loaded: false,
+      error: 'The support inbox could not be loaded.',
+      selectedId: null,
+      onOpen: () => {},
+    }));
+    expect(failed).toContain('The support inbox could not be loaded.');
+    expect(failed).not.toContain('No mail in the support@fixtray.app inbox.');
+
+    const empty = renderToStaticMarkup(createElement(SupportInboxList, {
+      emails: [],
+      loaded: true,
+      error: '',
+      selectedId: null,
+      onOpen: () => {},
+    }));
+    expect(empty).toContain('No mail in the support@fixtray.app inbox.');
+
+    const page = fs.readFileSync('src/app/admin/emails/page.tsx', 'utf8');
+    expect(page).toContain('cache: \'no-store\'');
+    expect(page).toMatch(/const \[listLoaded, setListLoaded\] = useState\(false\)/);
+  });
+
+  it('keeps a clear message when the inbox is empty or cannot be loaded', async () => {
     process.env.RESEND_API_KEY = 're_test_secret_value';
     jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: false,

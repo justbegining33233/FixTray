@@ -4,6 +4,9 @@ import { isPlatformEmailAccount } from '@/lib/platformEmailAccess';
 import { readReceivedSupportMail } from '@/lib/platformMailbox';
 import { readRememberedSupportMail, rememberSupportInboxMessage } from '@/lib/supportInboxStore';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;

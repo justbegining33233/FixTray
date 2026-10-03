@@ -7,6 +7,7 @@ import { FaEnvelope } from 'react-icons/fa';
 import Sidebar from '@/components/Sidebar';
 import TopNavBar from '@/components/TopNavBar';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { EmailsLayout } from '@/app/admin/emails/EmailsLayout';
 import { PLATFORM_FROM_CHOICES, isPlatformEmailAccount } from '@/lib/platformEmailAccess';
 import { useSessionUsername } from '@/lib/useSessionUsername';
 
@@ -56,6 +57,7 @@ export default function PlatformEmailsPage() {
   const [sendError, setSendError] = useState('');
   const [sendNotice, setSendNotice] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
   const requestId = useRef<string | null>(null);
   const allowed = isPlatformEmailAccount(session.username);
 
@@ -167,7 +169,51 @@ export default function PlatformEmailsPage() {
             Inbox for support@fixtray.app, and a message you can send from that address. New mail appears here after it arrives.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+          <EmailsLayout
+            sendOpen={sendOpen}
+            onToggleSend={() => setSendOpen((open) => !open)}
+            form={(
+              <form onSubmit={send} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
+                  From
+                  <select aria-label="From" value={from} onChange={(event) => setFrom(event.target.value)} style={{ ...fieldStyle, marginTop: 6 }}>
+                    {PLATFORM_FROM_CHOICES.map((choice) => (
+                      <option key={choice.address} value={choice.from}>{choice.from}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
+                  To
+                  <input aria-label="To" type="email" required value={to} onChange={(event) => setTo(event.target.value)} style={{ ...fieldStyle, marginTop: 6 }} />
+                </label>
+                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
+                  Subject
+                  <input aria-label="Subject" required value={subject} onChange={(event) => setSubject(event.target.value)} style={{ ...fieldStyle, marginTop: 6 }} />
+                </label>
+                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
+                  Message
+                  <textarea aria-label="Message" required value={text} onChange={(event) => setText(event.target.value)} rows={8} style={{ ...fieldStyle, marginTop: 6, resize: 'vertical' }} />
+                </label>
+                {sendError && <p style={{ color: '#fca5a5', margin: 0 }}>{sendError}</p>}
+                {sendNotice && <p style={{ color: '#86efac', margin: 0 }}>{sendNotice}</p>}
+                <button
+                  type="submit"
+                  disabled={sending}
+                  style={{
+                    background: '#e5332a',
+                    color: '#fff',
+                    border: 0,
+                    borderRadius: 8,
+                    padding: '12px 16px',
+                    fontWeight: 700,
+                    cursor: sending ? 'wait' : 'pointer',
+                  }}
+                >
+                  {sending ? 'Sending...' : 'Send'}
+                </button>
+              </form>
+            )}
+            inbox={(
             <section style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
               <h2 style={{ fontSize: 16, color: '#e5e7eb', margin: '0 0 12px' }}>Inbox</h2>
               {loadingList && <p style={{ color: '#9ca3af' }}>Loading mail...</p>}
@@ -210,50 +256,8 @@ export default function PlatformEmailsPage() {
                 </article>
               )}
             </section>
-
-            <section style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-              <h2 style={{ fontSize: 16, color: '#e5e7eb', margin: '0 0 12px' }}>Send a message</h2>
-              <form onSubmit={send} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
-                  From
-                  <select aria-label="From" value={from} onChange={(event) => setFrom(event.target.value)} style={{ ...fieldStyle, marginTop: 6 }}>
-                    {PLATFORM_FROM_CHOICES.map((choice) => (
-                      <option key={choice.address} value={choice.from}>{choice.from}</option>
-                    ))}
-                  </select>
-                </label>
-                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
-                  To
-                  <input aria-label="To" type="email" required value={to} onChange={(event) => setTo(event.target.value)} style={{ ...fieldStyle, marginTop: 6 }} />
-                </label>
-                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
-                  Subject
-                  <input aria-label="Subject" required value={subject} onChange={(event) => setSubject(event.target.value)} style={{ ...fieldStyle, marginTop: 6 }} />
-                </label>
-                <label style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600 }}>
-                  Message
-                  <textarea aria-label="Message" required value={text} onChange={(event) => setText(event.target.value)} rows={8} style={{ ...fieldStyle, marginTop: 6, resize: 'vertical' }} />
-                </label>
-                {sendError && <p style={{ color: '#fca5a5', margin: 0 }}>{sendError}</p>}
-                {sendNotice && <p style={{ color: '#86efac', margin: 0 }}>{sendNotice}</p>}
-                <button
-                  type="submit"
-                  disabled={sending}
-                  style={{
-                    background: '#e5332a',
-                    color: '#fff',
-                    border: 0,
-                    borderRadius: 8,
-                    padding: '12px 16px',
-                    fontWeight: 700,
-                    cursor: sending ? 'wait' : 'pointer',
-                  }}
-                >
-                  {sending ? 'Sending...' : 'Send'}
-                </button>
-              </form>
-            </section>
-          </div>
+            )}
+          />
         </main>
       </div>
     </div>

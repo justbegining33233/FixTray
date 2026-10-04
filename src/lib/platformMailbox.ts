@@ -139,6 +139,22 @@ export function preparePlatformSend(input: SendInput): MailboxResult<{
   };
 }
 
+/** Reply stays the support address, the sender, and a reply subject. The typed body is added later. */
+export function replyToReceivedMessage(message: { from: string; subject: string }): {
+  from: string;
+  to: string;
+  subject: string;
+} | null {
+  const from = platformFromHeader(SUPPORT_INBOX);
+  if (!from) return null;
+  const to = emailAddress(typeof message.from === 'string' ? message.from : '');
+  if (!TO_ADDRESS.test(to) || to.length > 320) return null;
+  const raw = typeof message.subject === 'string' ? message.subject.trim() : '';
+  const subject = (/^re:/i.test(raw) ? raw : `Re: ${raw}`).trim().slice(0, 200);
+  if (!subject) return null;
+  return { from, to, subject };
+}
+
 const INBOX_UNAVAILABLE = 'The support inbox could not be loaded.';
 const SEND_UNAVAILABLE = 'Email could not be reached';
 

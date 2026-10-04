@@ -158,6 +158,7 @@ async function resendRequest(
     response = await fetch(path, {
       ...init,
       cache: 'no-store',
+      next: { revalidate: 0 },
       headers: {
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',

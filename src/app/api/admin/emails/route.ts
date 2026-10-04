@@ -5,6 +5,9 @@ import { listReceivedSupportMail, mergeSupportInbox, sendPlatformMail } from '@/
 import { listRememberedSupportInbox, rememberSupportInboxSummary } from '@/lib/supportInboxStore';
 import { rateLimit, rateLimitConfigs } from '@/lib/rateLimit';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function requireMailbox(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
   if (auth instanceof NextResponse) return auth;
@@ -22,10 +25,10 @@ export async function GET(request: NextRequest) {
     listReceivedSupportMail(100),
     listRememberedSupportInbox(),
   ]);
-  if (!live.ok && stored.length === 0) {
+  const emails = mergeSupportInbox(stored, live.ok ? live.data : []);
+  if (!live.ok && emails.length === 0) {
     return NextResponse.json({ error: live.error }, { status: live.status });
   }
-  const emails = mergeSupportInbox(stored, live.ok ? live.data : []);
   if (live.ok) {
     await Promise.all(live.data.map((message) => rememberSupportInboxSummary(message)));
   }

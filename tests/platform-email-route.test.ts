@@ -16,15 +16,19 @@ jest.mock('@/lib/supportInboxStore', () => ({
   rememberSupportInboxSummary: jest.fn(),
 }));
 
-jest.mock('@/lib/platformMailbox', () => ({
-  listReceivedSupportMail: jest.fn(),
-  mergeSupportInbox: (stored: unknown[], live: unknown[]) => [...(live || []), ...(stored || [])],
-  sendPlatformMail: jest.fn(),
-  readReceivedSupportMail: jest.fn(),
-}));
+jest.mock('@/lib/platformMailbox', () => {
+    const actual = jest.requireActual('@/lib/platformMailbox');
+  return {
+    ...actual,
+    listReceivedSupportMail: jest.fn(),
+    sendPlatformMail: jest.fn(),
+    readReceivedSupportMail: jest.fn(),
+  };
+});
 
 import { requireRole } from '../src/lib/auth';
 import { listReceivedSupportMail, readReceivedSupportMail, sendPlatformMail } from '../src/lib/platformMailbox';
+import { listRememberedSupportInbox } from '../src/lib/supportInboxStore';
 import { GET, POST } from '../src/app/api/admin/emails/route';
 import { GET as GET_ONE } from '../src/app/api/admin/emails/[id]/route';
 
@@ -32,10 +36,12 @@ const requireRoleMock = requireRole as jest.Mock;
 const listMock = listReceivedSupportMail as jest.Mock;
 const sendMock = sendPlatformMail as jest.Mock;
 const readMock = readReceivedSupportMail as jest.Mock;
+const rememberedMock = listRememberedSupportInbox as jest.Mock;
 
 describe('platform email routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    rememberedMock.mockResolvedValue([]);
   });
 
   it('refuses every login except SupAdm1006', async () => {
@@ -69,6 +75,24 @@ describe('platform email routes', () => {
     expect(one.status).toBe(200);
     expect(JSON.stringify(await listed.json())).not.toMatch(/re_[A-Za-z0-9]{8,}/);
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ from: 'support@fixtray.app', to: 'a@b.com' }));
+  });
+
+  it('does not report an empty inbox when the receiving list failed', async () => {
+    requireRoleMock.mockReturnValue({ id: '1', role: 'superadmin', username: 'SupAdm1006' });
+    listMock.mockResolvedValue({ ok: false, status: 503, error: 'Email is not configured' });
+    rememberedMock.mockResolvedValue([
+      {
+        id: '4662afdc-db61-45d2-b730-07146b7410a6',
+        from: 'notifications@stripe.com',
+        to: ['important@fixtray.app'],
+        subject: 'Continue setting up your Stripe account',
+        createdAt: '2026-10-03T14:17:57.597Z',
+        lastEvent: 'received',
+      },
+    ]);
+    const listed = await GET(new NextRequest('http://localhost/api/admin/emails'));
+    expect(listed.status).toBe(503);
+    expect(await listed.json()).toEqual({ error: 'Email is not configured' });
   });
 
   it('passes through an unsigned request', async () => {

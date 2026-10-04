@@ -8,6 +8,7 @@ import Sidebar from '@/components/Sidebar';
 import TopNavBar from '@/components/TopNavBar';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { EmailsLayout } from '@/app/admin/emails/EmailsLayout';
+import { SupportInboxList } from '@/app/admin/emails/SupportInboxList';
 import { PLATFORM_FROM_CHOICES, isPlatformEmailAccount } from '@/lib/platformEmailAccess';
 import { useSessionUsername } from '@/lib/useSessionUsername';
 
@@ -49,7 +50,7 @@ export default function PlatformEmailsPage() {
   const [emails, setEmails] = useState<MailRow[]>([]);
   const [selected, setSelected] = useState<MailDetail | null>(null);
   const [listError, setListError] = useState('');
-  const [loadingList, setLoadingList] = useState(false);
+  const [listLoaded, setListLoaded] = useState(false);
   const [from, setFrom] = useState<string>(PLATFORM_FROM_CHOICES[0].from);
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
@@ -74,31 +75,33 @@ export default function PlatformEmailsPage() {
   useEffect(() => {
     if (!allowed) return;
     let cancelled = false;
-    const load = (first: boolean) => {
-      if (first) {
-        setLoadingList(true);
-        setListError('');
-      }
-      fetch('/api/admin/emails', { credentials: 'include', headers: authHeaders() })
+    const load = () => {
+      fetch('/api/admin/emails', { cache: 'no-store', credentials: 'include', headers: authHeaders() })
         .then(async (response) => {
-          const body = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Could not load mail');
-          return body;
+          const body = await response.json().catch(() => null);
+          if (!response.ok) {
+            const message = body && typeof body.error === 'string' ? body.error : 'The support inbox could not be loaded.';
+            throw new Error(message);
+          }
+          if (!body || !Array.isArray(body.emails)) {
+            throw new Error('The support inbox could not be loaded.');
+          }
+          return body.emails as MailRow[];
         })
-        .then((body) => {
+        .then((rows) => {
           if (cancelled) return;
-          setEmails(Array.isArray(body.emails) ? body.emails : []);
-          if (!first) setListError('');
+          setEmails(rows);
+          setListError('');
+          setListLoaded(true);
         })
         .catch((error: unknown) => {
-          if (!cancelled && first) setListError(error instanceof Error ? error.message : 'Could not load mail');
-        })
-        .finally(() => {
-          if (!cancelled && first) setLoadingList(false);
+          if (cancelled) return;
+          const serverMessage = error instanceof Error && !(error instanceof TypeError) ? error.message : '';
+          setListError(serverMessage || 'The support inbox could not be loaded.');
         });
     };
-    load(true);
-    const timer = window.setInterval(() => load(false), 15000);
+    load();
+    const timer = window.setInterval(load, 15000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
@@ -107,7 +110,7 @@ export default function PlatformEmailsPage() {
 
   const openMail = (id: string) => {
     setSelected(null);
-    fetch(`/api/admin/emails/${encodeURIComponent(id)}`, { credentials: 'include', headers: authHeaders() })
+    fetch(`/api/admin/emails/${encodeURIComponent(id)}`, { cache: 'no-store', credentials: 'include', headers: authHeaders() })
       .then(async (response) => {
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Could not open that message');
@@ -137,9 +140,13 @@ export default function PlatformEmailsPage() {
       setSubject('');
       setText('');
       setSendNotice('Message sent.');
-      const refresh = await fetch('/api/admin/emails', { credentials: 'include', headers: authHeaders() });
-      const listed = await refresh.json().catch(() => ({}));
-      if (refresh.ok && Array.isArray(listed.emails)) setEmails(listed.emails);
+      const refresh = await fetch('/api/admin/emails', { cache: 'no-store', credentials: 'include', headers: authHeaders() });
+      const listed = await refresh.json().catch(() => null);
+      if (refresh.ok && listed && Array.isArray(listed.emails)) {
+        setEmails(listed.emails);
+        setListError('');
+        setListLoaded(true);
+      }
     } catch (error) {
       setSendError(error instanceof Error ? error.message : 'Could not send the message');
     } finally {
@@ -216,36 +223,13 @@ export default function PlatformEmailsPage() {
             inbox={(
             <section style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
               <h2 style={{ fontSize: 16, color: '#e5e7eb', margin: '0 0 12px' }}>Inbox</h2>
-              {loadingList && <p style={{ color: '#9ca3af' }}>Loading mail...</p>}
-              {listError && <p style={{ color: '#fca5a5' }}>{listError}</p>}
-              {!loadingList && !listError && emails.length === 0 && (
-                <p style={{ color: '#9ca3af' }}>No mail in the support@fixtray.app inbox.</p>
-              )}
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {emails.map((email) => (
-                  <li key={email.id}>
-                    <button
-                      type="button"
-                      onClick={() => openMail(email.id)}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        background: selected?.id === email.id ? 'rgba(229,51,42,0.18)' : 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 8,
-                        color: '#e5e7eb',
-                        padding: 12,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div style={{ fontWeight: 700 }}>{email.subject || '(no subject)'}</div>
-                      <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                        From {email.from || 'unknown'}
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <SupportInboxList
+                emails={emails}
+                loaded={listLoaded}
+                error={listError}
+                selectedId={selected?.id ?? null}
+                onOpen={openMail}
+              />
               {selected && (
                 <article style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                   <h3 style={{ color: '#e5e7eb', fontSize: 16, margin: '0 0 8px' }}>{selected.subject || '(no subject)'}</h3>

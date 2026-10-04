@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { FaEnvelope } from 'react-icons/fa';
@@ -8,8 +9,10 @@ import Sidebar from '@/components/Sidebar';
 import TopNavBar from '@/components/TopNavBar';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { EmailsLayout } from '@/app/admin/emails/EmailsLayout';
+import { MailScreen } from '@/app/admin/emails/MailScreen';
 import { SupportInboxList } from '@/app/admin/emails/SupportInboxList';
 import { PLATFORM_FROM_CHOICES, isPlatformEmailAccount } from '@/lib/platformEmailAccess';
+import { replyToReceivedMessage } from '@/lib/platformMailbox';
 import { useSessionUsername } from '@/lib/useSessionUsername';
 
 type MailRow = {
@@ -48,7 +51,13 @@ export default function PlatformEmailsPage() {
   const [ready, setReady] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [emails, setEmails] = useState<MailRow[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [selected, setSelected] = useState<MailDetail | null>(null);
+  const [openError, setOpenError] = useState('');
+  const [composing, setComposing] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [replyError, setReplyError] = useState('');
+  const [replySending, setReplySending] = useState(false);
   const [listError, setListError] = useState('');
   const [listLoaded, setListLoaded] = useState(false);
   const [from, setFrom] = useState<string>(PLATFORM_FROM_CHOICES[0].from);
@@ -60,6 +69,8 @@ export default function PlatformEmailsPage() {
   const [sending, setSending] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const requestId = useRef<string | null>(null);
+  const replyRequestId = useRef<string | null>(null);
+  const openRequest = useRef(0);
   const allowed = isPlatformEmailAccount(session.username);
 
   useEffect(() => {
@@ -108,16 +119,93 @@ export default function PlatformEmailsPage() {
     };
   }, [allowed]);
 
-  const openMail = (id: string) => {
+  const closeMail = () => {
+    openRequest.current += 1;
+    setOpenId(null);
     setSelected(null);
+    setOpenError('');
+    setComposing(false);
+    setReplyText('');
+    setReplyError('');
+    setReplySending(false);
+    replyRequestId.current = null;
+  };
+
+  useEffect(() => {
+    if (!openId) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMail();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openId]);
+
+  const openMail = (id: string) => {
+    const request = openRequest.current + 1;
+    openRequest.current = request;
+    setOpenId(id);
+    setSelected(null);
+    setOpenError('');
+    setComposing(false);
+    setReplyText('');
+    setReplyError('');
+    replyRequestId.current = null;
     fetch(`/api/admin/emails/${encodeURIComponent(id)}`, { cache: 'no-store', credentials: 'include', headers: authHeaders() })
       .then(async (response) => {
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Could not open that message');
         return body.email as MailDetail;
       })
-      .then((email) => setSelected(email))
-      .catch((error: unknown) => setListError(error instanceof Error ? error.message : 'Could not open that message'));
+      .then((email) => {
+        if (openRequest.current !== request) return;
+        setSelected(email);
+      })
+      .catch((error: unknown) => {
+        if (openRequest.current !== request) return;
+        setOpenError(error instanceof Error ? error.message : 'Could not open that message');
+      });
+  };
+
+  const sendReply = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!selected) return;
+    const draft = replyToReceivedMessage(selected);
+    if (!draft) {
+      setReplyError('This message has no address to reply to.');
+      return;
+    }
+    if (!replyRequestId.current) replyRequestId.current = crypto.randomUUID();
+    setReplySending(true);
+    setReplyError('');
+    try {
+      const response = await fetch('/api/admin/emails', {
+        method: 'POST',
+        credentials: 'include',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          from: draft.from,
+          to: draft.to,
+          subject: draft.subject,
+          text: replyText,
+          requestId: replyRequestId.current,
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Could not send the message');
+      replyRequestId.current = null;
+      closeMail();
+      const refresh = await fetch('/api/admin/emails', { cache: 'no-store', credentials: 'include', headers: authHeaders() });
+      const listed = await refresh.json().catch(() => null);
+      if (refresh.ok && listed && Array.isArray(listed.emails)) {
+        setEmails(listed.emails);
+        setListError('');
+        setListLoaded(true);
+      }
+    } catch (error) {
+      setReplyError(error instanceof Error ? error.message : 'Could not send the message');
+    } finally {
+      setReplySending(false);
+    }
   };
 
   const send = async (event: FormEvent) => {
@@ -227,23 +315,30 @@ export default function PlatformEmailsPage() {
                 emails={emails}
                 loaded={listLoaded}
                 error={listError}
-                selectedId={selected?.id ?? null}
+                selectedId={openId}
                 onOpen={openMail}
               />
-              {selected && (
-                <article style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <h3 style={{ color: '#e5e7eb', fontSize: 16, margin: '0 0 8px' }}>{selected.subject || '(no subject)'}</h3>
-                  <p style={{ color: '#9ca3af', fontSize: 13, margin: '0 0 8px' }}>
-                    From {selected.from || 'FixTray'} to {selected.to.join(', ') || 'unknown'}
-                  </p>
-                  <p style={{ color: '#e5e7eb', whiteSpace: 'pre-wrap', margin: 0 }}>{selected.text || 'This message has no text body.'}</p>
-                </article>
-              )}
             </section>
             )}
           />
         </main>
       </div>
+      {openId && typeof document !== 'undefined' ? createPortal(
+        <MailScreen
+          message={selected && selected.id === openId ? selected : null}
+          loading={!selected && !openError}
+          openError={openError}
+          composing={composing}
+          replyText={replyText}
+          replyError={replyError}
+          sending={replySending}
+          onClose={closeMail}
+          onReply={() => setComposing(true)}
+          onReplyText={setReplyText}
+          onSend={sendReply}
+        />,
+        document.body,
+      ) : null}
     </div>
   );
 }

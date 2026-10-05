@@ -30,6 +30,16 @@ interface TrackingOrder {
   } | null;
   estimatedArrival?: string | null;
   isInShop?: boolean;
+  job?: {
+    vehicle: string;
+    services: string[];
+    estimateUsd: number | null;
+    invoiceUsd: number | null;
+    feeUsd: number | null;
+    paymentStanding: string;
+    notes: string[];
+    timeline: Array<{ at: string; label: string }>;
+  };
 }
 
 export default function LiveTracking() {
@@ -210,6 +220,19 @@ export default function LiveTracking() {
                   <h3 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:8}}>{say(order.issueDescription)}</h3>
                   <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>{say("Work Order -")}{' '}{say(order.workOrderId)}</div>
                   <div style={{fontSize:16, color:'#e5332a', fontWeight:600, marginBottom:12}}>{say(order.status)}</div>
+                  {order.job && (
+                    <div style={{ fontSize: 13, color: '#d1d5db', marginBottom: 12, display: 'grid', gap: 4 }}>
+                      <div>Vehicle: {order.job.vehicle}</div>
+                      <div>Services: {order.job.services.length ? order.job.services.join(', ') : 'None listed yet'}</div>
+                      <div>Estimate: {order.job.estimateUsd == null ? 'Not issued' : `$${order.job.estimateUsd.toFixed(2)}`}</div>
+                      <div>Invoice: {order.job.invoiceUsd == null ? 'Not issued' : `$${order.job.invoiceUsd.toFixed(2)}`}</div>
+                      <div>Fee: {order.job.feeUsd == null ? 'None' : `$${order.job.feeUsd.toFixed(2)}`}</div>
+                      <div>Payment: {order.job.paymentStanding}</div>
+                      {order.job.timeline.slice(-4).map((step) => (
+                        <div key={`${step.at}-${step.label}`}>{step.label}</div>
+                      ))}
+                    </div>
+                  )}
 
                   {order.tech && (
                     <div style={{fontSize:14, color:'#9aa3b2', marginBottom:4}}>

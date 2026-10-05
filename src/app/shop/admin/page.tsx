@@ -57,6 +57,13 @@ export default function ShopAdminPage() {
 
   // Inventory management
   const [inventoryStock, setInventoryStock] = useState<any[]>([]);
+  const [inventoryPage, setInventoryPage] = useState<{
+    totalItems: number;
+    totalUnits: number;
+    totalInventoryValue: number;
+    lowStockItems: number;
+    rows: Array<{ id: string; name: string; sku?: string | null; quantity: number; low: boolean }>;
+  } | null>(null);
   const [inventoryRequests, setInventoryRequests] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
   const [poForm, setPoForm] = useState({ vendor: '', itemName: '', quantity: 1, unitCost: 0, workOrderId: '' });
@@ -179,7 +186,8 @@ export default function ShopAdminPage() {
     fetchSettings(resolvedShopId);
     fetchShopStats(resolvedShopId);
     fetchBudgetData(id || '');
-    fetchInventoryStock(id || '');
+    fetchInventoryStock(resolvedShopId);
+    fetchInventoryPage(resolvedShopId);
     fetchInventoryRequests(id || '');
     fetchPurchaseOrders(id || '');
     fetchWorkOrderOptions(id || '', '');
@@ -316,6 +324,34 @@ export default function ShopAdminPage() {
       }
     } catch (error) {
       console.error('Error fetching inventory stock:', error);
+    }
+  };
+
+  const fetchInventoryPage = async (id: string) => {
+    if (!id) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/inventory/reports?shopId=${encodeURIComponent(id)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      const levels = Array.isArray(data.stockLevels) ? data.stockLevels : [];
+      setInventoryPage({
+        totalItems: Number(data.summary?.totalItems) || 0,
+        totalUnits: levels.reduce((sum: number, item: { quantity?: number }) => sum + (Number(item.quantity) || 0), 0),
+        totalInventoryValue: Number(data.summary?.totalInventoryValue) || 0,
+        lowStockItems: Number(data.summary?.lowStockItems) || 0,
+        rows: levels.slice(0, 8).map((item: { id: string; name?: string; sku?: string | null; quantity?: number; isLowStock?: boolean }) => ({
+          id: item.id,
+          name: item.name || 'Item',
+          sku: item.sku,
+          quantity: Number(item.quantity) || 0,
+          low: Boolean(item.isLowStock),
+        })),
+      });
+    } catch (error) {
+      console.error('Error fetching inventory page totals:', error);
     }
   };
 
@@ -663,7 +699,7 @@ export default function ShopAdminPage() {
   const weeklyRevenue = shopStats?.revenue?.week ?? 0;
   const teamCount = shopStats?.team?.total ?? 0;
   const clockedInCount = shopStats?.team?.clockedIn ?? 0;
-  const inventoryCount = inventoryStock?.length ?? 0;
+  const inventoryCount = inventoryPage?.totalItems ?? inventoryStock?.length ?? 0;
   const pendingActions = (shopStats?.workOrders?.pendingApprovals ?? 0) + (shopStats?.inventory?.pendingRequests ?? 0);
   const totalPipeline = openWorkOrders + completedThisWeek;
   const completionRate = totalPipeline > 0 ? Math.round((completedThisWeek / totalPipeline) * 100) : 0;
@@ -789,6 +825,7 @@ export default function ShopAdminPage() {
               <OverviewTab
                 shopStats={shopStats}
                 inventoryStock={inventoryStock}
+                inventoryPage={inventoryPage}
                 budgetData={budgetData}
                 userId={userId}
                 shopId={shopId}

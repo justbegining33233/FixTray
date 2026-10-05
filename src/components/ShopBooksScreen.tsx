@@ -39,9 +39,15 @@ interface BooksPayload {
     shopReceivedCents: number;
   };
   monthClose: { readyToSync: boolean; warnings: string[] };
-  inventory: Array<{ id: string; name: string; onHand: number; unitCostCents: number; sellUnitCents: number }>;
   tickets: Array<{ workOrderId: string; sync: { synced: boolean; issues: string[] }; taxLines: Array<{ kind: string; baseCents: number; taxCents: number }> }>;
   qbMap: Record<string, string>;
+  inventory: Array<{ id: string; name: string; sku?: string | null; onHand: number; unitCostCents: number; sellUnitCents: number }>;
+  fixtrayOwed?: {
+    owedCents: number;
+    weekLabel: string;
+    week: { owedCents: number; accruedCents: number; settledCents: number };
+    feeDeductedFromShop: false;
+  };
 }
 
 function money(cents: number): string {
@@ -63,6 +69,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   const [depositAmount, setDepositAmount] = useState('');
   const [depositDate, setDepositDate] = useState('');
   const [partId, setPartId] = useState('');
+  const [partQuery, setPartQuery] = useState('');
   const [partQty, setPartQty] = useState('1');
   const [partReason, setPartReason] = useState('');
 
@@ -182,16 +189,61 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <button type="button" onClick={() => post('deposit', { workOrderId: depositJob, amountCents: Number(depositAmount), depositAt: depositDate })}>Record deposit</button>
       </section>
       <section>
+        <h2>FixTray owed this week</h2>
+        <p>
+          Week of {books.fixtrayOwed?.weekLabel || 'this week'}: {money(books.fixtrayOwed?.week.owedCents || 0)} from in-person payments.
+          The shop kept the full job. This fee is owed to FixTray and is not a shop expense.
+        </p>
+        <p>Open balance across weeks: {money(books.fixtrayOwed?.owedCents || 0)}.</p>
+        <button type="button" onClick={async () => {
+          const response = await fetch('/api/shop/books', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ action: 'fee-invoice' }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            setError(body.error || 'Could not send the FixTray invoice');
+            return;
+          }
+          setNotice(body.sent ? 'FixTray invoice emailed' : 'Invoice prepared. Email was not sent.');
+        }}>Email FixTray invoice</button>
+        <button type="button" onClick={async () => {
+          const response = await fetch('/api/shop/books', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ action: 'pay-fixtray' }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok || !body.url) {
+            setError(body.error || 'Could not start FixTray payment');
+            return;
+          }
+          window.location.href = body.url;
+        }}>Pay FixTray</button>
+      </section>
+      <section>
         <h2>Parts</h2>
-        {books.inventory.map((item) => (
-          <p key={item.id}>{item.name}: {item.onHand} on hand, cost {money(item.unitCostCents)}, sell {money(item.sellUnitCents)}</p>
-        ))}
-        <input placeholder="Part id" value={partId} onChange={(event) => setPartId(event.target.value)} />
+        <input placeholder="Search name or SKU" value={partQuery} onChange={(event) => setPartQuery(event.target.value)} />
+        <select value={partId} onChange={(event) => setPartId(event.target.value)}>
+          <option value="">Choose a stock part</option>
+          {books.inventory
+            .filter((item) => {
+              const query = partQuery.trim().toLowerCase();
+              if (!query) return true;
+              return item.name.toLowerCase().includes(query) || (item.sku || '').toLowerCase().includes(query);
+            })
+            .map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}{item.sku ? ` (${item.sku})` : ''} — {item.onHand} on hand
+              </option>
+            ))}
+        </select>
         <input placeholder="Qty" value={partQty} onChange={(event) => setPartQty(event.target.value)} />
-        <input placeholder="Adjust reason" value={partReason} onChange={(event) => setPartReason(event.target.value)} />
+        <input placeholder="Reason (required for return and adjust)" value={partReason} onChange={(event) => setPartReason(event.target.value)} />
         <button type="button" onClick={() => post('part', { itemId: partId, kind: 'use', qty: Number(partQty) })}>Use</button>
-        <button type="button" onClick={() => post('part', { itemId: partId, kind: 'return', qty: Number(partQty) })}>Return</button>
-        <button type="button" onClick={() => post('part', { itemId: partId, kind: 'adjust', qty: Number(partQty), reason: partReason })}>Adjust</button>
+        <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'return', qty: Number(partQty), reason: partReason })}>Return</button>
+        <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'adjust', qty: Number(partQty), reason: partReason })}>Adjust</button>
       </section>
       <section>
         <h2>Tickets</h2>

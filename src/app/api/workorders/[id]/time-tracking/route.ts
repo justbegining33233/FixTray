@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
+import { resolveActorClockTech } from '@/lib/ownerClock';
+import { workClockClose } from '@/lib/books/clocks';
+import { usdToCents } from '@/lib/books/money';
 
 /**
  * Work Order Time Tracking API
@@ -94,7 +97,9 @@ export async function POST(
   try {
     const resolved = await params;
     id = resolved.id;
-    const { action, techId, notes } = await request.json();
+    const body = await request.json();
+    const { action, notes } = body;
+    let { techId } = body;
 
     if (!action || !techId) {
       return NextResponse.json(
@@ -106,7 +111,7 @@ export async function POST(
     // Verify work order exists
     const workOrder = await prisma.workOrder.findUnique({
       where: { id },
-      select: { id: true, shopId: true, assignedTechId: true, status: true },
+      select: { id: true, shopId: true, assignedTechId: true, status: true, estimatedCost: true },
     });
 
     if (!workOrder) {
@@ -123,8 +128,15 @@ export async function POST(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    if (auth.role === 'tech' && techId !== auth.id) {
-      return NextResponse.json({ error: 'Technicians can only clock themselves in' }, { status: 403 });
+    if (auth.role === 'shop' || auth.role === 'tech' || auth.role === 'manager') {
+      const clockActor = await resolveActorClockTech({
+        role: auth.role,
+        actorId: auth.id,
+        requestedTechId: techId,
+        shopId: shopId || workOrder.shopId,
+      });
+      if (!clockActor.ok) return NextResponse.json({ error: clockActor.error }, { status: 400 });
+      techId = clockActor.techId;
     }
 
     if (action === 'clock-in') {
@@ -165,9 +177,9 @@ export async function POST(
       if (!workOrder.assignedTechId) {
         const clockingTech = await prisma.tech.findFirst({
           where: { id: techId, shopId: workOrder.shopId },
-          select: { id: true },
+          select: { id: true, role: true },
         });
-        if (clockingTech) {
+        if (clockingTech && clockingTech.role !== 'owner') {
           assignmentUpdate.assignedTechId = techId;
         }
       }
@@ -212,14 +224,18 @@ export async function POST(
       }
 
       const clockOut = new Date();
-      const hoursSpent = (clockOut.getTime() - activeEntry.clockIn.getTime()) / (1000 * 60 * 60);
+      const closed = workClockClose({
+        menuPriceCents: usdToCents(workOrder.estimatedCost),
+        clockIn: activeEntry.clockIn,
+        clockOut,
+      });
 
-      // Update entry with clock out
+      // Hours are labor tracking. closed.jobPriceCents stays the menu price and is not saved.
       const updatedEntry = await prisma.workOrderTimeEntry.update({
         where: { id: activeEntry.id },
         data: {
           clockOut,
-          hoursSpent: parseFloat(hoursSpent.toFixed(2)),
+          hoursSpent: closed.hoursSpent,
           status: 'completed',
         },
         include: {

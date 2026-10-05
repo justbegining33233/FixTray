@@ -12,8 +12,10 @@ interface FeeYear {
   refundedCents: number;
   netCents: number;
   shopRevenueIncluded: boolean;
+  inPersonOwedCents?: number;
+  weekLabel?: string;
   history: Array<{ id: string; shopId: string; kind: string; feeCents: number; at: string }>;
-  perShop: Array<{ shopId: string; shopName?: string; collectedCents: number; refundedCents: number; netCents: number }>;
+  perShop: Array<{ shopId: string; shopName?: string; collectedCents: number; refundedCents: number; netCents: number; inPersonOwedCents?: number }>;
 }
 
 function money(cents: number): string {
@@ -56,10 +58,14 @@ export default function FeeYearEndPage() {
       <h1 style={{ marginTop: 0 }}>Platform fee year-end</h1>
       <p>Fees collected {money(year.collectedCents)}. Fee refunds {money(year.refundedCents)}. Net fees {money(year.netCents)}.</p>
       <p>Shop bay revenue is not on this page.</p>
+      <p>
+        In-person fees shops still owe FixTray for the week of {year.weekLabel || 'this week'}: {money(year.inPersonOwedCents || 0)}.
+        Card fees above were already collected. This owed amount is not a shop expense.
+      </p>
       {error && <p>{error}</p>}
       <h2>Per shop</h2>
       {year.perShop.map((shop) => (
-        <p key={shop.shopId}>{shop.shopName || shop.shopId}: collected {money(shop.collectedCents)}, refunded {money(shop.refundedCents)}, net {money(shop.netCents)}</p>
+        <p key={shop.shopId}>{shop.shopName || shop.shopId}: collected {money(shop.collectedCents)}, refunded {money(shop.refundedCents)}, net {money(shop.netCents)}, in-person owed this week {money(shop.inPersonOwedCents || 0)}</p>
       ))}
       <h2>History</h2>
       {year.history.map((row) => (

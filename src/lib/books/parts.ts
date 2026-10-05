@@ -122,26 +122,88 @@ export function ticketTax(lines: TicketLine[], rule: TicketTaxRule): {
   return { taxLines, taxCents: tax, shopJobCents: pretax + tax };
 }
 
+/**
+ * Match is true only when an invoice exists and estimate, invoice, and payment
+ * are the same shop cents. Otherwise the issues name what is missing.
+ */
+export function ticketWasInvoiced(status?: string | null, paymentStatus?: string | null): boolean {
+  const jobStatus = String(status || '').toLowerCase();
+  const payment = String(paymentStatus || '').toLowerCase();
+  if (jobStatus === 'waiting-for-payment' || jobStatus === 'completed' || jobStatus === 'closed') return true;
+  return payment === 'paid' || payment === 'pending' || payment === 'refunded';
+}
+
 export function ticketSync(input: {
   estimateCents: number;
-  invoiceCents: number;
+  invoiceCents: number | null;
   paidJobCents: number;
   standing: PaymentStanding;
+  invoiced?: boolean;
 }): { synced: boolean; issues: string[] } {
+  const invoiced = input.invoiced === true && input.invoiceCents != null;
+  const invoiceCents = invoiced ? input.invoiceCents as number : null;
   const issues: string[] = [];
-  if (input.invoiceCents !== input.estimateCents) {
-    issues.push('Invoice does not match the estimate shop total');
+  if (!invoiced) issues.push('Missing invoice');
+  const unpaid = input.paidJobCents <= 0 || input.standing === 'unpaid' || input.standing === 'reversed';
+  if (unpaid) issues.push('Unpaid');
+  if (
+    invoiced
+    && invoiceCents != null
+    && input.standing === 'paid'
+    && input.paidJobCents === input.estimateCents
+    && input.paidJobCents === invoiceCents
+  ) {
+    return { synced: true, issues: [] };
   }
-  if (input.standing === 'paid' && input.paidJobCents !== input.estimateCents) {
-    issues.push('Paid job amount does not match the estimate');
+  if (invoiced && invoiceCents != null && invoiceCents !== input.estimateCents) {
+    issues.push('Estimate, invoice, and payment do not match');
+  } else if (invoiced && !unpaid && input.paidJobCents !== input.estimateCents) {
+    issues.push('Estimate, invoice, and payment do not match');
+  } else if (invoiced && !unpaid && invoiceCents != null && input.paidJobCents !== invoiceCents) {
+    issues.push('Estimate, invoice, and payment do not match');
   }
-  if (input.standing === 'partial' && !(input.paidJobCents > 0 && input.paidJobCents < input.estimateCents)) {
-    issues.push('Partial payment does not match the estimate');
+  return { synced: false, issues: [...new Set(issues)] };
+}
+
+export interface StockPartChoice {
+  id: string;
+  name: string;
+  sku?: string | null;
+  onHand: number;
+}
+
+/** Pick a real inventory_stock row. A SKU is not an id. */
+export function pickStockPart(
+  items: StockPartChoice[],
+  selectedId: string,
+): { ok: true; part: StockPartChoice } | { ok: false; error: string } {
+  const id = selectedId.trim();
+  if (!id) return { ok: false, error: 'Choose a part from the list' };
+  const part = items.find((item) => item.id === id);
+  if (!part) return { ok: false, error: 'Choose a part from the list' };
+  return { ok: true, part };
+}
+
+export function filterStockParts(items: StockPartChoice[], query: string): StockPartChoice[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter((item) =>
+    item.name.toLowerCase().includes(q)
+    || (item.sku || '').toLowerCase().includes(q)
+    || item.id.toLowerCase() === q);
+}
+
+/** Return and adjust both need a reason. Use does not. */
+export function preparePartMove(input: {
+  kind: 'use' | 'return' | 'adjust';
+  qty: number;
+  reason?: string;
+  onHand: number;
+}): ReturnType<typeof applyQty> {
+  if ((input.kind === 'return' || input.kind === 'adjust') && !String(input.reason || '').trim()) {
+    return { ok: false, error: 'A reason is required' };
   }
-  if ((input.standing === 'unpaid' || input.standing === 'reversed') && input.paidJobCents !== 0) {
-    issues.push('Unpaid ticket still has a job payment');
-  }
-  return { synced: issues.length === 0, issues };
+  return applyQty(input.onHand, { kind: input.kind, qty: input.qty, reason: input.reason });
 }
 
 function lineKind(value: unknown): TicketLineKind {
@@ -202,6 +264,7 @@ export function ticketPreview(input: {
   paidJobCents: number;
   standing: PaymentStanding;
   storedEstimateCents?: number | null;
+  invoiced?: boolean;
 }): {
   taxLines: TicketTaxLine[];
   taxCents: number;
@@ -217,9 +280,10 @@ export function ticketPreview(input: {
     : computed;
   const sync = ticketSync({
     estimateCents: estimate,
-    invoiceCents: computed,
+    invoiceCents: input.invoiced ? computed : null,
     paidJobCents: input.paidJobCents,
     standing: input.standing,
+    invoiced: input.invoiced === true,
   });
   if (input.storedEstimateCents != null && input.storedEstimateCents !== computed) {
     sync.issues.push(`Stored estimate ${centsToUsd(input.storedEstimateCents)} does not match ticket lines ${centsToUsd(computed)}`);

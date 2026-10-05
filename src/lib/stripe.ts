@@ -80,9 +80,55 @@ export async function setDefaultPaymentMethod(customerId: string, paymentMethodI
 }
 
 export async function refundPayment(paymentIntentId: string, amount?: number) {
-  const refundData: any = { payment_intent: paymentIntentId };
+  const refundData: Stripe.RefundCreateParams = { payment_intent: paymentIntentId };
   if (amount) refundData.amount = Math.round(amount * 100);
   return stripe.refunds.create(refundData);
+}
+
+/**
+ * Refund a destination charge without taking the shop's job out of FixTray.
+ * The transfer is reversed for the exact job cents when Stripe has a transfer
+ * id. The application fee is refunded only for the fee cents. If those ids
+ * are missing, the refund itself carries reverse_transfer and
+ * refund_application_fee so the default platform-funded refund is not used.
+ */
+export async function refundDestinationCharge(input: {
+  paymentIntentId: string;
+  amountCents: number;
+  jobCents: number;
+  feeCents: number;
+  reverseTransfer: boolean;
+  refundApplicationFee: boolean;
+}) {
+  let reversedJob = input.jobCents <= 0;
+  let reversedFee = input.feeCents <= 0;
+  try {
+    const intent = await stripe.paymentIntents.retrieve(input.paymentIntentId, { expand: ['latest_charge'] });
+    const latest = intent.latest_charge;
+    const charge = latest && typeof latest !== 'string'
+      ? latest
+      : typeof latest === 'string'
+        ? await stripe.charges.retrieve(latest)
+        : null;
+    const transferId = charge && typeof charge.transfer === 'string' ? charge.transfer : null;
+    const feeId = charge && typeof charge.application_fee === 'string' ? charge.application_fee : null;
+    if (input.jobCents > 0 && transferId) {
+      await stripe.transfers.createReversal(transferId, { amount: input.jobCents });
+      reversedJob = true;
+    }
+    if (input.feeCents > 0 && feeId) {
+      await stripe.applicationFees.createRefund(feeId, { amount: input.feeCents });
+      reversedFee = true;
+    }
+  } catch (error) {
+    console.error('Exact Connect reversal failed; falling back to refund flags for the part that did not reverse', error);
+  }
+  return stripe.refunds.create({
+    payment_intent: input.paymentIntentId,
+    amount: input.amountCents,
+    reverse_transfer: reversedJob ? false : input.reverseTransfer,
+    refund_application_fee: reversedFee ? false : input.refundApplicationFee,
+  });
 }
 
 /**

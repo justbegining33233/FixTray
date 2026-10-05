@@ -34,7 +34,7 @@ describe('customer fees and financial reports', () => {
     expect(oldGrowth).toBeCloseTo(-100);
 
     const collected = platformFeeForPaidOrders(septemberOrders.length, 500);
-    const headline = platformFeeHeadline(septemberOrders, fee, now);
+    const headline = platformFeeHeadline(septemberOrders.map((order) => ({ feeCents: 500, at: order.createdAt })), now);
     const revenue = septemberOrders.reduce((sum, order) => sum + order.amountPaid, 0);
     expect(collected).toBe(20);
     expect(headline.collected).toBe(20);
@@ -51,7 +51,7 @@ describe('customer fees and financial reports', () => {
       { amountPaid: 10, createdAt: '2026-09-16T15:00:00.000Z' },
       { amountPaid: 10, createdAt: '2026-10-01T15:00:00.000Z' },
     ];
-    const headline = platformFeeHeadline(orders, 5, now);
+    const headline = platformFeeHeadline(orders.map((order) => ({ feeCents: 500, at: order.createdAt })), now);
     expect(headline.collected).toBe(15);
     expect(headline.periodFees).toBe(5);
     expect(headline.changeLabel).toBe('-50.0%');

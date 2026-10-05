@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { WorkOrder } from '@/types/workorder';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { estimateBillForOrder } from '@/lib/customerLedger';
+import { frozenCustomerFeeUsd } from '@/lib/feeSnapshot';
 
 export function generateInvoicePDF(workOrder: WorkOrder, serviceFeeUsd: number) {
   const doc = new jsPDF();
@@ -73,12 +74,14 @@ export function generateInvoicePDF(workOrder: WorkOrder, serviceFeeUsd: number) 
   doc.line(140, y, 190, y);
   y += 7;
   
-  const record = workOrder as WorkOrder & { paymentStatus?: string | null; amountPaid?: number | null };
+  const record = workOrder as WorkOrder & { paymentStatus?: string | null; amountPaid?: number | null; completion?: unknown };
+  const quote = quoteAmount(record) || Number(workOrder.estimate?.amount) || 0;
   const bill = estimateBillForOrder(
     {
       paymentStatus: record.paymentStatus,
       amountPaid: record.amountPaid,
-      estimatedCost: quoteAmount(record) || Number(workOrder.estimate?.amount) || 0,
+      estimatedCost: quote,
+      frozenCustomerFeeUsd: frozenCustomerFeeUsd(record.completion, quote),
     },
     serviceFeeUsd,
   );

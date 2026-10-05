@@ -6,7 +6,8 @@ import { validatePaymentLink } from '@/lib/shopFormValidation';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
-import { paymentLinkFeeBreakdown, unpaidInvoiceDisplay } from '@/lib/serviceFeeBill';
+import { paymentLinkFeeBreakdown, unpaidInvoiceDisplay, usdToCents } from '@/lib/serviceFeeBill';
+import { billFromFrozenFee, readFeeSnapshot } from '@/lib/feeSnapshot';
 import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 
@@ -17,11 +18,22 @@ async function invoiceBreakdown(link: {
 }) {
   const amount = Number(link.amount) || 0;
   let quote = 0;
+  let workOrder: Awaited<ReturnType<typeof prisma.workOrder.findUnique>> = null;
   if (amount > 0 && link.workOrderId) {
-    const workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
+    workOrder = await prisma.workOrder.findUnique({ where: { id: link.workOrderId } });
     if (workOrder) quote = quoteAmount(workOrder);
   }
-  const platformFee = amount > 0 ? await getPlatformServiceFeeUsd() : 0;
+  const snapshot = readFeeSnapshot(workOrder?.completion);
+  const quoteCents = usdToCents(quote);
+  if (snapshot && snapshot.quoteCents === quoteCents) {
+    const frozen = billFromFrozenFee(quoteCents, snapshot.customerFacingFeeCents);
+    return {
+      serviceCost: frozen.subtotal,
+      serviceFee: frozen.serviceFee,
+      amount: frozen.total,
+    };
+  }
+  const platformFee = amount > 0 ? (await getPlatformServiceFeeUsd()) ?? 0 : 0;
   const bill = link.status === 'paid'
     ? paymentLinkFeeBreakdown(amount, quote, platformFee)
     : unpaidInvoiceDisplay(amount, quote, platformFee);

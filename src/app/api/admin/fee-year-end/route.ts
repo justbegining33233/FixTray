@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, isPlatformFeeYearAccount } from '@/lib/books/access';
 import { accountantFeeCsv } from '@/lib/books/money';
+import { loadFeeYearDrill } from '@/lib/books/loadDrill';
 import { loadPlatformFeeYear } from '@/lib/books/loadShopBooks';
 
 export async function GET(request: NextRequest) {
@@ -22,5 +23,7 @@ export async function GET(request: NextRequest) {
       },
     });
   }
-  return NextResponse.json(year);
+  const requested = Number(url.searchParams.get('year'));
+  const drill = await loadFeeYearDrill(Number.isInteger(requested) ? requested : null);
+  return NextResponse.json({ ...year, drill });
 }

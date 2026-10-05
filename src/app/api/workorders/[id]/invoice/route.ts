@@ -4,6 +4,8 @@ import { requireAuth } from '@/lib/middleware';
 import logger from '@/lib/logger';
 import { generateInvoicePDF } from '@/lib/pdf';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { frozenCustomerFeeUsd } from '@/lib/feeSnapshot';
+import { quoteAmount } from '@/lib/workOrderCloseout';
 
 export async function GET(
   request: NextRequest,
@@ -39,7 +41,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
-    const serviceFee = await getPlatformServiceFeeUsd();
+    const quote = quoteAmount(workOrder);
+    const serviceFee = frozenCustomerFeeUsd(workOrder.completion, quote) ?? await getPlatformServiceFeeUsd();
+    if (serviceFee == null) {
+      return NextResponse.json({ error: 'The platform service fee is not configured.' }, { status: 409 });
+    }
     const pdf = generateInvoicePDF(workOrder as any, serviceFee);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
     

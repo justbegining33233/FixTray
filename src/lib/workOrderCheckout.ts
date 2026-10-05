@@ -1,8 +1,7 @@
 import Stripe from 'stripe';
 import prisma from '@/lib/prisma';
 import stripe, { shopConnectPayoutReady } from '@/lib/stripe';
-import { getConfiguredPlatformServiceFeeUsd } from '@/lib/platformFee';
-import { invoiceTotal } from '@/lib/workOrderCloseout';
+import { freezeWorkOrderCheckoutFee } from '@/lib/freezeWorkOrderFee';
 import { buildConnectDestinationSplit } from '@/lib/stripeConnectSplit';
 
 const BLOCKED_STATUSES = new Set(['denied-estimate', 'cancelled', 'canceled']);
@@ -34,11 +33,6 @@ export async function createWorkOrderCheckoutSession(input: {
     return { ok: false, status: 503, error: 'Card payments are not configured.' };
   }
 
-  const serviceFeeUsd = await getConfiguredPlatformServiceFeeUsd();
-  if (serviceFeeUsd === null) {
-    return { ok: false, status: 503, error: 'The platform service fee is not configured.' };
-  }
-
   const workOrder = await prisma.workOrder.findUnique({
     where: { id: input.workOrderId },
     include: { customer: true, shop: true },
@@ -52,9 +46,10 @@ export async function createWorkOrderCheckoutSession(input: {
     return { ok: false, status: 400, error: 'This work order cannot be paid.' };
   }
 
-  const bill = invoiceTotal(workOrder, serviceFeeUsd);
+  const bill = await freezeWorkOrderCheckoutFee(workOrder);
+  if (!bill.ok) return { ok: false, status: bill.status, error: bill.error };
   const split = buildConnectDestinationSplit({
-    quoteUsd: bill.quoteAmount,
+    quoteUsd: bill.subtotal,
     serviceFeeUsd: bill.serviceFee,
     connectedAccountId: workOrder.shop?.stripeAccountId,
   });

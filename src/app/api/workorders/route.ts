@@ -201,7 +201,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Live platform fee so estimate lists cannot render a quote-only total.
-    const fixtrayServiceFee = await getPlatformServiceFeeUsd();
+    const fixtrayServiceFee = (await getPlatformServiceFeeUsd()) ?? 0;
 
     // Fields (repairs, maintenance, partsMaterials, pictures, location, estimate,
     // techLabor, partsUsed, workPhotos, completion) are now Prisma Json? — returned

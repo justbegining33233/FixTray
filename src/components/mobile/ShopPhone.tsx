@@ -37,6 +37,7 @@ export function ShopOpsPhone({
   pendingApprovals,
   todayRevenue,
   weekRevenue,
+  showRevenue = true,
   activeTechs,
   roadcalls,
   appointments,
@@ -50,6 +51,7 @@ export function ShopOpsPhone({
   pendingApprovals: number;
   todayRevenue: string;
   weekRevenue: string;
+  showRevenue?: boolean;
   activeTechs: number;
   roadcalls: number;
   appointments: number;
@@ -73,8 +75,8 @@ export function ShopOpsPhone({
         <div className="pm-stat pm-t-red"><span className="lbl">{say('Open Jobs')}</span><span className="val">{count(openJobs)}</span></div>
         <div className="pm-stat pm-t-green"><span className="lbl">{say('Completed Today')}</span><span className="val">{count(completedToday)}</span></div>
         <div className="pm-stat pm-t-amber"><span className="lbl">{say('Pending Approvals')}</span><span className="val">{count(pendingApprovals)}</span></div>
-        <div className="pm-stat"><span className="lbl">{say("Today's Revenue")}</span><span className="val" style={{ fontSize: 19 }}>{todayRevenue || '$0'}</span></div>
-        <div className="pm-stat"><span className="lbl">{say('This Week')}</span><span className="val" style={{ fontSize: 19 }}>{weekRevenue || '$0'}</span></div>
+        {showRevenue ? <div className="pm-stat"><span className="lbl">{say("Today's Revenue")}</span><span className="val" style={{ fontSize: 19 }}>{todayRevenue}</span></div> : null}
+        {showRevenue ? <div className="pm-stat"><span className="lbl">{say('This Week')}</span><span className="val" style={{ fontSize: 19 }}>{weekRevenue}</span></div> : null}
         <div className="pm-stat pm-t-purple"><span className="lbl">{say('Active Techs')}</span><span className="val">{count(activeTechs)}</span></div>
       </div>
       <div className="pm-card" style={{ padding: 12 }}>

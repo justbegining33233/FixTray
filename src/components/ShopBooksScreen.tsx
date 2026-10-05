@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
+import type { ShopYearReport } from '@/lib/books/shopDrill';
+import ShopYearDrill from '@/components/books/ShopYearDrill';
+import { pageStyle } from '@/components/books/drillChrome';
 
 type Standing = 'unpaid' | 'partial' | 'paid' | 'reversed';
 
@@ -44,8 +47,14 @@ interface BooksPayload {
   inventory: Array<{ id: string; name: string; sku?: string | null; onHand: number; unitCostCents: number; sellUnitCents: number }>;
   fixtrayOwed?: {
     owedCents: number;
+    openLines?: Array<{ workOrderId: string; feeCents: number }>;
     weekLabel: string;
-    week: { owedCents: number; accruedCents: number; settledCents: number };
+    week: {
+      owedCents: number;
+      accruedCents: number;
+      settledCents: number;
+      openLines?: Array<{ workOrderId: string; feeCents: number }>;
+    };
     feeDeductedFromShop: false;
   };
 }
@@ -72,6 +81,8 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   const [partQuery, setPartQuery] = useState('');
   const [partQty, setPartQty] = useState('1');
   const [partReason, setPartReason] = useState('');
+  const [drill, setDrill] = useState<ShopYearReport | null>(null);
+  const [reportYear, setReportYear] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -84,10 +95,22 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     setBooks(body);
   }, [month]);
 
+  const loadDrill = useCallback(async (year?: number) => {
+    const query = year ? `?view=drill&year=${year}` : '?view=drill';
+    const response = await fetch(`/api/shop/books${query}`, { headers: authHeaders() });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(body.error || 'Could not load the books report');
+      return;
+    }
+    setDrill(body);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     load().catch(() => setError('Could not load the shop ledger'));
-  }, [user, load]);
+    loadDrill(reportYear || undefined).catch(() => setError('Could not load the books report'));
+  }, [user, load, loadDrill, reportYear]);
 
   async function post(action: string, extra: Record<string, unknown>) {
     setNotice('');
@@ -133,12 +156,13 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     setNotice('QuickBooks handoff downloaded');
   }
 
-  if (isLoading) return <div style={{ padding: 32, color: '#e5e7eb' }}>Loading...</div>;
-  if (!user || !books) return <div style={{ padding: 32, color: '#e5e7eb' }}>{error || 'Loading...'}</div>;
+  if (isLoading) return <div style={pageStyle}>Loading...</div>;
+  if (!user || !books) return <div style={pageStyle}>{error || 'Loading...'}</div>;
 
   const ledger = books.ledger;
+  const showRevenue = role === 'shop' && drill?.revenueVisible !== false;
   return (
-    <div style={{ minHeight: '100vh', color: '#e5e7eb', padding: 24, fontFamily: 'system-ui,sans-serif' }}>
+    <div style={pageStyle}>
       <h1 style={{ marginTop: 0 }}>Shop books</h1>
       <p>{books.copy}</p>
       <p>{books.quickBooksOwnsBooks}</p>
@@ -148,6 +172,12 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
       </label>
       {error && <p style={{ color: '#fca5a5' }}>{error}</p>}
       {notice && <p style={{ color: '#86efac' }}>{notice}</p>}
+      {drill ? (
+        <ShopYearDrill report={drill} onYear={setReportYear} />
+      ) : (
+        <p>Loading the year report...</p>
+      )}
+      {showRevenue && (
       <section>
         <h2>Ledger</h2>
         <p>Customer paid {money(ledger.customerPaidJobCents)}. Shop received {money(ledger.shopReceivedCents)}. Shop total {money(ledger.shopTotalCents)}.</p>
@@ -175,11 +205,12 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
           </tbody>
         </table>
       </section>
+      )}
       <section>
         <h2>Month close</h2>
         <p>{books.monthClose.readyToSync ? 'Ready to sync.' : 'Not ready to sync.'}</p>
         {books.monthClose.warnings.map((warning) => <p key={warning}>{warning}</p>)}
-        <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>
+        {role === 'shop' && <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>}
       </section>
       <section>
         <h2>Deposit</h2>
@@ -194,7 +225,27 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
           Week of {books.fixtrayOwed?.weekLabel || 'this week'}: {money(books.fixtrayOwed?.week.owedCents || 0)} from in-person payments.
           The shop kept the full job. This fee is owed to FixTray and is not a shop expense.
         </p>
+        {(books.fixtrayOwed?.week.openLines || []).length === 0 ? (
+          <p>No open in-person fees this week.</p>
+        ) : (
+          <ul>
+            {(books.fixtrayOwed?.week.openLines || []).map((line) => (
+              <li key={line.workOrderId}>
+                Work order {line.workOrderId}: {money(line.feeCents)} still open
+              </li>
+            ))}
+          </ul>
+        )}
         <p>Open balance across weeks: {money(books.fixtrayOwed?.owedCents || 0)}.</p>
+        {(books.fixtrayOwed?.openLines || []).length > 0 && (
+          <ul>
+            {(books.fixtrayOwed?.openLines || []).map((line) => (
+              <li key={`open-${line.workOrderId}`}>
+                Work order {line.workOrderId}: {money(line.feeCents)} open balance
+              </li>
+            ))}
+          </ul>
+        )}
         <button type="button" onClick={async () => {
           const response = await fetch('/api/shop/books', {
             method: 'POST',

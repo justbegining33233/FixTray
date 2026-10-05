@@ -5,6 +5,8 @@ import { getConfiguredPlatformServiceFeeUsd, getPlatformServiceFeeUsd } from '@/
 import { customerSeesPayButton, type ConnectAccountSnapshot } from '@/lib/customerCardPay';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 import { customerChargeDisplay, customerLedgerSummary, isPaidRecord } from '@/lib/customerLedger';
+import { frozenCustomerFeeUsd } from '@/lib/feeSnapshot';
+import { quoteAmount } from '@/lib/workOrderCloseout';
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,12 +45,19 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const fixtrayFee = await getPlatformServiceFeeUsd();
+    const fixtrayFee = (await getPlatformServiceFeeUsd()) ?? 0;
     const configuredFee = await getConfiguredPlatformServiceFeeUsd();
     const accountCache = new Map<string, ConnectAccountSnapshot | null>();
 
-    const payments = await Promise.all(workOrders.map(async (wo) => {
-      // Paid rows use the recorded charge. Open invoices still add the live fee.
+    const ledgerOrders = workOrders.map((wo) => {
+      const quote = quoteAmount(wo);
+      const frozen = frozenCustomerFeeUsd(wo.completion, quote);
+      if (frozen == null) return wo;
+      return { ...wo, estimatedCost: quote, frozenCustomerFeeUsd: frozen };
+    });
+
+    const payments = await Promise.all(ledgerOrders.map(async (wo) => {
+      // Paid rows use the recorded charge. Open invoices use the checkout snapshot when one exists.
       const charge = customerChargeDisplay(wo, fixtrayFee);
 
       const offer = await cardPaymentOfferForShop(wo.shop?.stripeAccountId, {
@@ -82,7 +91,7 @@ export async function GET(request: NextRequest) {
       };
     }));
 
-    const ledger = customerLedgerSummary(workOrders, fixtrayFee);
+    const ledger = customerLedgerSummary(ledgerOrders, fixtrayFee);
 
     return NextResponse.json({
       success: true,

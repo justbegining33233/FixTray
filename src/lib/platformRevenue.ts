@@ -101,42 +101,56 @@ export function revenueLoginRedirect(status: number): '/auth/login' | null {
   return status === 401 ? '/auth/login' : null;
 }
 
+export type StoredFeeStamp = {
+  feeCents: number;
+  at: Date | string;
+};
+
 export type FeeHeadline = {
-  /** All paid orders times the saved fee. Same figure as Financial Reports platform fees. */
+  /** Stored collected fee lines, in dollars. Not a job count times the current fee. */
   collected: number;
-  /** Fees in the same month Financial Reports uses for that fee total. */
+  /** Stored fees in the same month Financial Reports uses for that fee total. */
   periodFees: number;
   periodLabel: string;
   /** Month name, or a percent when that month is the current month and the prior month was higher. */
   changeLabel: string;
 };
 
+function storedFeeDollars(lines: StoredFeeStamp[]): number {
+  const cents = lines.reduce((sum, line) => {
+    const value = Number(line.feeCents);
+    return sum + (Number.isFinite(value) ? value : 0);
+  }, 0);
+  return cents / 100;
+}
+
 /**
  * Customers was labeling the all-time fee total with this calendar month
  * versus last month. An empty new month became -100% beside a collected
- * amount that had not dropped.
+ * amount that had not dropped. The dollars are the stored fee lines.
  */
-export function platformFeeHeadline(orders: PaidOrderStamp[], feePerOrder: number, now = new Date()): FeeHeadline {
-  const fee = typeof feePerOrder === 'number' && Number.isFinite(feePerOrder) ? Math.max(0, feePerOrder) : 0;
-  const collected = orders.length * fee;
-  const months = paidMonths(orders, now);
+export function platformFeeHeadline(lines: StoredFeeStamp[], now = new Date()): FeeHeadline {
+  const collected = storedFeeDollars(lines);
+  const months = paidMonths(lines.map((line) => ({
+    amountPaid: (Number(line.feeCents) || 0) / 100,
+    createdAt: line.at,
+  })), now);
   const latest = months[months.length - 1];
   if (!latest) {
     const label = monthLabel(monthKey(now));
     return { collected, periodFees: 0, periodLabel: label, changeLabel: label };
   }
-  const periodFees = latest.count * fee;
+  const periodFees = latest.revenue;
   if (latest.key !== monthKey(now)) {
     return { collected, periodFees, periodLabel: latest.label, changeLabel: latest.label };
   }
   const [year, month] = latest.key.split('-').map(Number);
   const previousDate = new Date(year, month - 2, 1);
   const previous = months.find((entry) => entry.key === monthKey(previousDate));
-  if (!previous || previous.count <= 0) {
+  if (!previous || previous.revenue <= 0) {
     return { collected, periodFees, periodLabel: latest.label, changeLabel: latest.label };
   }
-  const previousFees = previous.count * fee;
-  const raw = ((periodFees - previousFees) / previousFees) * 100;
+  const raw = ((periodFees - previous.revenue) / previous.revenue) * 100;
   return {
     collected,
     periodFees,

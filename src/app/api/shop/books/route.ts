@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
+import { loadShopYearDrill } from '@/lib/books/loadDrill';
+import { hideShopRevenue } from '@/lib/books/shopDrill';
 import { findShopJob, loadShopBooks, saveQbMap } from '@/lib/books/loadShopBooks';
 import { inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
 import { createFeeSettlementCheckout } from '@/lib/feeSettlementCheckout';
@@ -23,7 +25,13 @@ export async function GET(request: NextRequest) {
   }
   const shopId = shopIdForBooks(auth);
   if (!shopId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const month = new URL(request.url).searchParams.get('month');
+  const url = new URL(request.url);
+  if (url.searchParams.get('view') === 'drill') {
+    const requested = Number(url.searchParams.get('year'));
+    const drill = await loadShopYearDrill(shopId, Number.isInteger(requested) ? requested : null);
+    return NextResponse.json(booksAccess(auth.role).shopRevenue ? drill : hideShopRevenue(drill));
+  }
+  const month = url.searchParams.get('month');
   const books = await loadShopBooks(shopId, month);
   return NextResponse.json(books);
 }

@@ -12,8 +12,8 @@ import { writeAudit } from '@/lib/books/persist';
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager']);
   if (auth instanceof NextResponse) return auth;
-  if (!booksAccess(auth.role).quickBooks) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!booksAccess(auth.role).quickBooks || !booksAccess(auth.role).shopRevenue) {
+    return NextResponse.json({ error: 'Shop revenue export is limited to the shop owner.' }, { status: 403 });
   }
   const shopId = shopIdForBooks(auth);
   if (!shopId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

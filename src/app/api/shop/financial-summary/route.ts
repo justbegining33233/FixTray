@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole, AuthUser } from '@/lib/auth';
+import { shopJobReceiptCents } from '@/lib/books/money';
+import { addDays, dayKey, mondayKey, zonedDayStart } from '@/lib/books/periods';
+import { reportZone } from '@/lib/books/storedFeeReport';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
@@ -41,72 +44,39 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const today = new Date();
-    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const zone = await reportZone();
+    const todayKey = dayKey(new Date(), zone);
+    const startOfToday = zonedDayStart(todayKey, zone);
+    const startOfWeek = zonedDayStart(mondayKey(todayKey), zone);
+    const startOfMonth = zonedDayStart(`${todayKey.slice(0, 7)}-01`, zone);
+    const startOfTomorrow = zonedDayStart(addDays(todayKey, 1), zone);
 
-    // Get financial data
-    const [todayRevenue, weeklyRevenue, monthlyRevenue, outstandingInvoices] = await Promise.all([
-      // Today's revenue (completed work orders)
-      prisma.workOrder.aggregate({
-        where: {
-          shopId,
-          status: 'closed',
-          updatedAt: {
-            gte: startOfToday,
-          },
-        },
-        _sum: {
-          amountPaid: true,
-        },
+    const rangeStart = startOfWeek < startOfMonth ? startOfWeek : startOfMonth;
+    const [closedOrders, outstandingInvoices] = await Promise.all([
+      prisma.workOrder.findMany({
+        where: { shopId, status: 'closed', updatedAt: { gte: rangeStart } },
+        select: { amountPaid: true, estimatedCost: true, paymentStatus: true, updatedAt: true },
       }),
-
-      // Weekly revenue
       prisma.workOrder.aggregate({
-        where: {
-          shopId,
-          status: 'closed',
-          updatedAt: {
-            gte: startOfWeek,
-          },
-        },
-        _sum: {
-          amountPaid: true,
-        },
-      }),
-
-      // Monthly revenue
-      prisma.workOrder.aggregate({
-        where: {
-          shopId,
-          status: 'closed',
-          updatedAt: {
-            gte: startOfMonth,
-          },
-        },
-        _sum: {
-          amountPaid: true,
-        },
-      }),
-
-      // Outstanding invoices (unpaid work orders)
-      prisma.workOrder.aggregate({
-        where: {
-          shopId,
-          paymentStatus: 'unpaid',
-        },
-        _sum: {
-          estimatedCost: true,
-        },
+        where: { shopId, paymentStatus: 'unpaid' },
+        _sum: { estimatedCost: true },
       }),
     ]);
 
+    const receipt = (order: { amountPaid: number | null; estimatedCost: number | null; paymentStatus: string | null }) =>
+      shopJobReceiptCents(order) / 100;
+    const sumSince = (from: Date, until?: Date) => closedOrders.reduce((sum, order) => {
+      if (!order.updatedAt || order.updatedAt < from) return sum;
+      if (until && order.updatedAt >= until) return sum;
+      return sum + receipt(order);
+    }, 0);
+
     const summary = {
-      todayRevenue: todayRevenue._sum.amountPaid || 0,
-      weeklyRevenue: weeklyRevenue._sum.amountPaid || 0,
-      monthlyRevenue: monthlyRevenue._sum.amountPaid || 0,
+      todayRevenue: sumSince(startOfToday, startOfTomorrow),
+      weeklyRevenue: sumSince(startOfWeek),
+      monthlyRevenue: sumSince(startOfMonth),
       outstandingInvoices: outstandingInvoices._sum.estimatedCost || 0,
+      revenueVisible: true,
     };
 
     return NextResponse.json({ summary });

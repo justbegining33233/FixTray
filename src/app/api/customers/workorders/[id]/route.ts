@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { estimateBillForOrder } from '@/lib/customerLedger';
+import { frozenCustomerFeeUsd } from '@/lib/feeSnapshot';
+import { quoteAmount as closeoutQuote } from '@/lib/workOrderCloseout';
 import { decorateWorkOrderMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
 
@@ -86,7 +88,7 @@ export async function GET(
 
     // Format the response
     const estimate = workOrder.estimate as any;
-    const quoteAmount = Number(
+    const quoteAmount = closeoutQuote(workOrder) || Number(
       estimate?.amount ?? estimate?.total ?? workOrder.estimatedCost ?? 0
     ) || 0;
     const bill = estimateBillForOrder(
@@ -94,6 +96,7 @@ export async function GET(
         paymentStatus: workOrder.paymentStatus,
         amountPaid: workOrder.amountPaid,
         estimatedCost: quoteAmount,
+        frozenCustomerFeeUsd: frozenCustomerFeeUsd(workOrder.completion, quoteAmount),
       },
       await getPlatformServiceFeeUsd(),
     );

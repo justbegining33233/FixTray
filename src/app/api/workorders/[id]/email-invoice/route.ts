@@ -7,6 +7,7 @@ import logger from '@/lib/logger';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { estimateBillForOrder } from '@/lib/customerLedger';
 import { quoteAmount } from '@/lib/workOrderCloseout';
+import { frozenCustomerFeeUsd } from '@/lib/feeSnapshot';
 
 export async function POST(
   request: NextRequest,
@@ -64,11 +65,13 @@ export async function POST(
     const laborTotal = labor.reduce((sum: number, l: any) => sum + (l.hours || 0) * (l.ratePerHour || 0), 0);
     const chargesTotal = charges.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
     const parsedSubtotal = partsTotal + laborTotal + chargesTotal;
+    const shopQuote = parsedSubtotal > 0 ? parsedSubtotal : quoteAmount(workOrder);
     const bill = estimateBillForOrder(
       {
         paymentStatus: workOrder.paymentStatus,
         amountPaid: workOrder.amountPaid,
-        estimatedCost: parsedSubtotal > 0 ? parsedSubtotal : quoteAmount(workOrder),
+        estimatedCost: shopQuote,
+        frozenCustomerFeeUsd: frozenCustomerFeeUsd(workOrder.completion, shopQuote),
       },
       serviceFee,
     );

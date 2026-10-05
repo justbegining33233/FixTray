@@ -44,8 +44,14 @@ interface BooksPayload {
   inventory: Array<{ id: string; name: string; sku?: string | null; onHand: number; unitCostCents: number; sellUnitCents: number }>;
   fixtrayOwed?: {
     owedCents: number;
+    openLines?: Array<{ workOrderId: string; feeCents: number }>;
     weekLabel: string;
-    week: { owedCents: number; accruedCents: number; settledCents: number };
+    week: {
+      owedCents: number;
+      accruedCents: number;
+      settledCents: number;
+      openLines?: Array<{ workOrderId: string; feeCents: number }>;
+    };
     feeDeductedFromShop: false;
   };
 }
@@ -194,7 +200,27 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
           Week of {books.fixtrayOwed?.weekLabel || 'this week'}: {money(books.fixtrayOwed?.week.owedCents || 0)} from in-person payments.
           The shop kept the full job. This fee is owed to FixTray and is not a shop expense.
         </p>
+        {(books.fixtrayOwed?.week.openLines || []).length === 0 ? (
+          <p>No open in-person fees this week.</p>
+        ) : (
+          <ul>
+            {(books.fixtrayOwed?.week.openLines || []).map((line) => (
+              <li key={line.workOrderId}>
+                Work order {line.workOrderId}: {money(line.feeCents)} still open
+              </li>
+            ))}
+          </ul>
+        )}
         <p>Open balance across weeks: {money(books.fixtrayOwed?.owedCents || 0)}.</p>
+        {(books.fixtrayOwed?.openLines || []).length > 0 && (
+          <ul>
+            {(books.fixtrayOwed?.openLines || []).map((line) => (
+              <li key={`open-${line.workOrderId}`}>
+                Work order {line.workOrderId}: {money(line.feeCents)} open balance
+              </li>
+            ))}
+          </ul>
+        )}
         <button type="button" onClick={async () => {
           const response = await fetch('/api/shop/books', {
             method: 'POST',

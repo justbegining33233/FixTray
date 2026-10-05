@@ -7,6 +7,7 @@ import {
   feeMovements,
   inMonth,
   inPersonFeeOwed,
+  inPersonOwedReport,
   monthClose,
   platformFeeYear,
   shopLedger,
@@ -234,20 +235,54 @@ export async function loadPlatformFeeYear(month?: string | null) {
     createdAt: entry.createdAt,
   }));
   const week = utcWeekRange(new Date());
-  const byShopOwed = new Map<string, number>();
-  for (const order of orders) {
-    const mine = owedRows.filter((row) => row.workOrderId === order.id);
-    const owed = inPersonFeeOwed(mine, week);
-    byShopOwed.set(order.shopId, (byShopOwed.get(order.shopId) || 0) + owed.owedCents);
-  }
+  const owedReport = inPersonOwedReport(
+    orders.map((order) => ({ id: order.id, shopId: order.shopId })),
+    owedRows,
+    week,
+  );
+  const owedByShop = new Map(owedReport.byShop.map((shop) => [shop.shopId, shop]));
+  const seen = new Set(year.perShop.map((row) => row.shopId));
+  const perShop = [
+    ...year.perShop.map((row) => {
+      const owed = owedByShop.get(row.shopId);
+      return {
+        ...row,
+        shopName: names.get(row.shopId) || row.shopId,
+        inPersonOwedCents: owed?.owedCents || 0,
+        inPersonLines: (owed?.lines || []).map((line) => ({
+          workOrderId: line.workOrderId,
+          feeCents: line.feeCents,
+          at: line.at,
+        })),
+      };
+    }),
+    ...owedReport.byShop
+      .filter((shop) => !seen.has(shop.shopId) && shop.lines.length > 0)
+      .map((shop) => ({
+        shopId: shop.shopId,
+        shopName: names.get(shop.shopId) || shop.shopId,
+        collectedCents: 0,
+        refundedCents: 0,
+        netCents: 0,
+        inPersonOwedCents: shop.owedCents,
+        inPersonLines: shop.lines.map((line) => ({
+          workOrderId: line.workOrderId,
+          feeCents: line.feeCents,
+          at: line.at,
+        })),
+        })),
+  ].sort((a, b) => a.shopId.localeCompare(b.shopId));
   return {
     ...year,
-    perShop: year.perShop.map((row) => ({
-      ...row,
-      shopName: names.get(row.shopId) || row.shopId,
-      inPersonOwedCents: byShopOwed.get(row.shopId) || 0,
+    perShop,
+    inPersonOwedCents: owedReport.owedCents,
+    inPersonLines: owedReport.lines.map((line) => ({
+      shopId: line.shopId,
+      shopName: names.get(line.shopId) || line.shopId,
+      workOrderId: line.workOrderId,
+      feeCents: line.feeCents,
+      at: line.at,
     })),
-    inPersonOwedCents: [...byShopOwed.values()].reduce((sum, cents) => sum + cents, 0),
     weekLabel: week.label,
     shopRevenueIncluded: false,
   };

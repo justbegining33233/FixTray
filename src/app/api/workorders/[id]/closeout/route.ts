@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { closeoutTransition } from '@/lib/workOrderCloseout';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { freezeWorkOrderCheckoutFee } from '@/lib/freezeWorkOrderFee';
 
 const CLOSEOUT_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
 
@@ -55,18 +56,22 @@ export async function POST(
     }
 
     if (transition.action === 'invoice') {
+      const frozen = await freezeWorkOrderCheckoutFee(workOrder);
+      if (!frozen.ok) {
+        return NextResponse.json({ error: frozen.error }, { status: frozen.status });
+      }
       const existing = await prisma.paymentLink.findFirst({
         where: { workOrderId: workOrder.id, status: 'pending' },
         orderBy: { createdAt: 'desc' },
         select: PAYMENT_LINK_SELECT,
       });
-      // Always store the final bill (quote + FixTray fee). Refresh pending links
-      // so earlier amounts that omitted the fee do not stick around.
+      // Store the frozen bill (quote + customer fee fixed at this invoice).
+      // A later PlatformConfig change does not rewrite this amount.
       const link = existing
         ? await prisma.paymentLink.update({
             where: { id: existing.id },
             data: {
-              amount: transition.amount,
+              amount: frozen.total,
               description: `Invoice for work order ${workOrder.id}`,
             },
             select: PAYMENT_LINK_SELECT,
@@ -77,7 +82,7 @@ export async function POST(
               workOrderId: workOrder.id,
               customerId: workOrder.customerId,
               token: crypto.randomBytes(24).toString('hex'),
-              amount: transition.amount,
+              amount: frozen.total,
               description: `Invoice for work order ${workOrder.id}`,
               status: 'pending',
               expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -91,14 +96,14 @@ export async function POST(
       return NextResponse.json({
         workOrder: updated,
         invoice: {
-          quoteAmount: transition.quoteAmount,
-          serviceFee: transition.serviceFee,
-          totalDue: transition.amount,
+          quoteAmount: frozen.subtotal,
+          serviceFee: frozen.serviceFee,
+          totalDue: frozen.total,
         },
         paymentLink: {
           ...link,
-          quoteAmount: transition.quoteAmount,
-          serviceFee: transition.serviceFee,
+          quoteAmount: frozen.subtotal,
+          serviceFee: frozen.serviceFee,
           url: `/customer/pay/${link.token}`,
         },
       });

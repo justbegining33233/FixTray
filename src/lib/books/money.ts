@@ -822,8 +822,9 @@ export interface InPersonPlan {
 
 /**
  * Counter payment. The shop keeps the full job cents collected.
- * The FixTray fee uses the same card gross-up as a Stripe charge of that job
- * and is written appliesTo=fee. It is not subtracted from the shop.
+ * The FixTray fee is written appliesTo=fee and is not subtracted from the shop.
+ * Pass customerFacingFeeCents to record the fee frozen at checkout. When that
+ * is omitted, the fee is the card gross-up of savedFeeCents (older callers).
  * A partial tender records no fee until the job is paid in full.
  */
 export function planInPersonPayment(input: {
@@ -833,6 +834,8 @@ export function planInPersonPayment(input: {
   alreadyReceivedCents: number;
   tenderedCents: number;
   savedFeeCents: number;
+  /** Exact customer fee from the checkout snapshot. Not recomputed. */
+  customerFacingFeeCents?: number | null;
   method: InPersonMethod;
   feeAlreadyRecorded: boolean;
   actorId: string;
@@ -852,7 +855,9 @@ export function planInPersonPayment(input: {
   const shopReceived = already + tendered;
   const standing = standingFor({ jobCents: job, shopReceivedCents: shopReceived, hadJobReversal: false });
   const platformFee = standing === 'paid' && !input.feeAlreadyRecorded
-    ? customerFacingServiceFeeCents(job, savedFee)
+    ? (input.customerFacingFeeCents == null
+      ? customerFacingServiceFeeCents(job, savedFee)
+      : cents(input.customerFacingFeeCents, 'customer fee'))
     : 0;
   const entries: BooksEntryDraft[] = [
     {
@@ -915,7 +920,10 @@ export interface InPersonFeeOwed {
   accruedCents: number;
   settledCents: number;
   owedCents: number;
+  /** Gross in-person fee rows. Settlements are not netted here. */
   lines: InPersonFeeLine[];
+  /** Per work order, fee cents still open after settlements in the same window. */
+  openLines: InPersonFeeLine[];
   feeDeductedFromShop: false;
 }
 
@@ -936,6 +944,7 @@ export function inPersonFeeOwed(
   range?: { start: Date; end: Date },
 ): InPersonFeeOwed {
   const lines: InPersonFeeLine[] = [];
+  const byOrder = new Map<string, InPersonFeeLine & { accrued: number; settled: number }>();
   let accrued = 0;
   let settled = 0;
   for (const row of rows) {
@@ -945,24 +954,97 @@ export function inPersonFeeOwed(
     const amount = cents(row.amountCents, 'fee');
     if (row.kind === 'job_payment') {
       accrued += amount;
-      lines.push({
+      const line: InPersonFeeLine = {
         id: row.id,
         shopId: row.shopId || '',
         workOrderId: row.workOrderId,
         feeCents: amount,
         at: iso(row.createdAt) || '',
         note: null,
-      });
+      };
+      lines.push(line);
+      const slot = byOrder.get(row.workOrderId) || { ...line, accrued: 0, settled: 0 };
+      slot.accrued += amount;
+      if (!slot.at) slot.at = line.at;
+      byOrder.set(row.workOrderId, slot);
     } else if (row.kind === 'fee_settlement') {
       settled += amount;
+      const slot = byOrder.get(row.workOrderId) || {
+        id: row.id,
+        shopId: row.shopId || '',
+        workOrderId: row.workOrderId,
+        feeCents: 0,
+        at: iso(row.createdAt) || '',
+        note: null,
+        accrued: 0,
+        settled: 0,
+      };
+      slot.settled += amount;
+      byOrder.set(row.workOrderId, slot);
     }
   }
+  const openLines = [...byOrder.values()]
+    .map((slot) => ({
+      id: slot.id,
+      shopId: slot.shopId,
+      workOrderId: slot.workOrderId,
+      feeCents: Math.max(0, slot.accrued - slot.settled),
+      at: slot.at,
+      note: null,
+    }))
+    .filter((line) => line.feeCents > 0)
+    .sort((a, b) => a.workOrderId.localeCompare(b.workOrderId) || a.id.localeCompare(b.id));
   return {
     accruedCents: accrued,
     settledCents: settled,
     owedCents: Math.max(0, accrued - settled),
     lines,
+    openLines,
     feeDeductedFromShop: false,
+  };
+}
+
+export interface InPersonOwedReportLine {
+  shopId: string;
+  workOrderId: string;
+  feeCents: number;
+  at: string;
+}
+
+/** Per-shop and per-work-order in-person fees still open. Card fees are excluded. */
+export function inPersonOwedReport(
+  orders: Array<{ id: string; shopId: string }>,
+  rows: BooksRow[],
+  range?: { start: Date; end: Date },
+): {
+  owedCents: number;
+  lines: InPersonOwedReportLine[];
+  byShop: Array<{ shopId: string; owedCents: number; lines: InPersonOwedReportLine[] }>;
+} {
+  const byShop = new Map<string, { owedCents: number; lines: InPersonOwedReportLine[] }>();
+  const lines: InPersonOwedReportLine[] = [];
+  for (const order of orders) {
+    const owed = inPersonFeeOwed(rows.filter((row) => row.workOrderId === order.id), range);
+    const shop = byShop.get(order.shopId) || { owedCents: 0, lines: [] };
+    shop.owedCents += owed.owedCents;
+    for (const line of owed.openLines) {
+      const entry = {
+        shopId: line.shopId || order.shopId,
+        workOrderId: line.workOrderId,
+        feeCents: line.feeCents,
+        at: line.at,
+      };
+      shop.lines.push(entry);
+      lines.push(entry);
+    }
+    byShop.set(order.shopId, shop);
+  }
+  return {
+    owedCents: [...byShop.values()].reduce((sum, shop) => sum + shop.owedCents, 0),
+    lines: lines.sort((a, b) => a.workOrderId.localeCompare(b.workOrderId) || a.shopId.localeCompare(b.shopId)),
+    byShop: [...byShop.entries()]
+      .map(([shopId, value]) => ({ shopId, owedCents: value.owedCents, lines: value.lines }))
+      .sort((a, b) => a.shopId.localeCompare(b.shopId)),
   };
 }
 
@@ -972,9 +1054,10 @@ export function inPersonFeeInvoice(input: {
   owed: InPersonFeeOwed;
 }): { subject: string; text: string } {
   const dollars = (input.owed.owedCents / 100).toFixed(2);
-  const detail = input.owed.lines.length === 0
+  const openLines = input.owed.openLines ?? input.owed.lines;
+  const detail = openLines.length === 0
     ? 'No open in-person fee rows.'
-    : input.owed.lines.map((line) => `${line.workOrderId}: $${(line.feeCents / 100).toFixed(2)}`).join('\n');
+    : openLines.map((line) => `${line.workOrderId}: $${(line.feeCents / 100).toFixed(2)}`).join('\n');
   return {
     subject: `FixTray fee invoice ${input.weekLabel}`,
     text: [

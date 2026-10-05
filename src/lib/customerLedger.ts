@@ -16,6 +16,8 @@ export interface CustomerLedgerOrder {
   amountPaid?: number | null;
   estimatedCost?: number | null;
   createdAt?: string | Date | null;
+  /** Customer-facing fee frozen at checkout, in USD. Unpaid bills use this instead of the live platform fee. */
+  frozenCustomerFeeUsd?: number | null;
 }
 
 export function isCompletedService(status?: string | null): boolean {
@@ -45,7 +47,8 @@ export interface CustomerChargeDisplay {
 
 /**
  * Paid rows show the recorded charge. The live fee is not added again.
- * Unpaid rows show the open bill: quote plus the current platform fee.
+ * Unpaid rows show the open bill: quote plus the fee frozen at checkout,
+ * or the current platform fee when checkout has not fixed one yet.
  */
 export function customerChargeDisplay(
   order: CustomerLedgerOrder,
@@ -62,6 +65,16 @@ export function customerChargeDisplay(
       };
     }
     return { amount: recorded, serviceCost: recorded, fixtrayFee: 0 };
+  }
+
+  if (typeof order.frozenCustomerFeeUsd === 'number' && Number.isFinite(order.frozenCustomerFeeUsd)) {
+    const quote = roundMoney(Math.max(0, Number(order.estimatedCost) || 0));
+    const fee = roundMoney(Math.max(0, order.frozenCustomerFeeUsd));
+    return {
+      amount: roundMoney(quote + fee),
+      serviceCost: quote,
+      fixtrayFee: fee,
+    };
   }
 
   const bill = customerPaymentBill({
@@ -96,6 +109,10 @@ export function estimateBillForOrder(order: CustomerLedgerOrder, savedFeeUsd: nu
   if (isPaidRecord(order) && recordedPaidUsd(order) > 0) {
     const charge = customerChargeDisplay({ ...order, estimatedCost: quote }, savedFeeUsd);
     return { subtotal: charge.serviceCost, serviceFee: charge.fixtrayFee, total: charge.amount };
+  }
+  if (typeof order.frozenCustomerFeeUsd === 'number' && Number.isFinite(order.frozenCustomerFeeUsd)) {
+    const fee = roundMoney(Math.max(0, order.frozenCustomerFeeUsd));
+    return { subtotal: quote, serviceFee: fee, total: roundMoney(quote + fee) };
   }
   return billWithServiceFee(quote, savedFeeUsd);
 }

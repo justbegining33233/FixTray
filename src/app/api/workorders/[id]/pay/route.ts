@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { planInPersonPayment, usdToCents, type InPersonMethod } from '@/lib/books/money';
 import { findShopJob } from '@/lib/books/loadShopBooks';
 import { writeBooksEntries } from '@/lib/books/persist';
-import { getConfiguredPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { embeddedFeeCents, readCheckoutFeeForInPerson, readFeeSnapshot } from '@/lib/feeSnapshot';
+import { quoteAmount } from '@/lib/workOrderCloseout';
 import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
 
 const PAY_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
@@ -41,11 +43,30 @@ export async function POST(
     return NextResponse.json({ ok: true, method: 'card', url: session.url });
   }
 
-  const savedFeeUsd = await getConfiguredPlatformServiceFeeUsd();
-  if (savedFeeUsd === null) {
-    return NextResponse.json({ error: 'The platform service fee is not configured.' }, { status: 503 });
+  const jobCents = usdToCents(quoteAmount(workOrder));
+  const link = await prisma.paymentLink.findFirst({
+    where: {
+      workOrderId: id,
+      description: { startsWith: 'Invoice for work order' },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { amount: true },
+  });
+  const at = new Date().toISOString();
+  const frozen = readCheckoutFeeForInPerson({
+    completion: workOrder.completion,
+    quoteCents: jobCents,
+    embeddedFeeCents: embeddedFeeCents(link?.amount, jobCents),
+    now: at,
+  });
+  if (!frozen.ok) return NextResponse.json({ error: frozen.error }, { status: 409 });
+  const previous = readFeeSnapshot(workOrder.completion);
+  if (!previous || previous.customerFacingFeeCents !== frozen.snapshot.customerFacingFeeCents || previous.quoteCents !== frozen.snapshot.quoteCents) {
+    await prisma.workOrder.update({
+      where: { id },
+      data: { completion: frozen.completion as Prisma.InputJsonValue },
+    });
   }
-  const jobCents = usdToCents(workOrder.estimatedCost);
   const job = await findShopJob(workOrder.shopId, id);
   const alreadyReceivedCents = job?.shopReceivedCents || 0;
   const feeAlreadyRecorded = (job?.platformFeeCents || 0) > 0;
@@ -57,11 +78,12 @@ export async function POST(
     jobCents,
     alreadyReceivedCents: Math.max(0, alreadyReceivedCents),
     tenderedCents: tendered,
-    savedFeeCents: Math.round(savedFeeUsd * 100),
+    savedFeeCents: 0,
+    customerFacingFeeCents: frozen.snapshot.customerFacingFeeCents,
     method: method as InPersonMethod,
     feeAlreadyRecorded,
     actorId: auth.id,
-    at: new Date().toISOString(),
+    at,
   });
   if (!planned.ok) return NextResponse.json({ error: planned.error }, { status: 400 });
   await writeBooksEntries({

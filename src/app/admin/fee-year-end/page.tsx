@@ -7,6 +7,14 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { useSessionUsername } from '@/lib/useSessionUsername';
 import { isPlatformFeeYearAccount } from '@/lib/books/access';
 
+interface InPersonLine {
+  workOrderId: string;
+  feeCents: number;
+  at?: string;
+  shopId?: string;
+  shopName?: string;
+}
+
 interface FeeYear {
   collectedCents: number;
   refundedCents: number;
@@ -14,8 +22,17 @@ interface FeeYear {
   shopRevenueIncluded: boolean;
   inPersonOwedCents?: number;
   weekLabel?: string;
+  inPersonLines?: InPersonLine[];
   history: Array<{ id: string; shopId: string; kind: string; feeCents: number; at: string }>;
-  perShop: Array<{ shopId: string; shopName?: string; collectedCents: number; refundedCents: number; netCents: number; inPersonOwedCents?: number }>;
+  perShop: Array<{
+    shopId: string;
+    shopName?: string;
+    collectedCents: number;
+    refundedCents: number;
+    netCents: number;
+    inPersonOwedCents?: number;
+    inPersonLines?: InPersonLine[];
+  }>;
 }
 
 function money(cents: number): string {
@@ -62,10 +79,35 @@ export default function FeeYearEndPage() {
         In-person fees shops still owe FixTray for the week of {year.weekLabel || 'this week'}: {money(year.inPersonOwedCents || 0)}.
         Card fees above were already collected. This owed amount is not a shop expense.
       </p>
+      <h2>In-person owed this week</h2>
+      {(year.inPersonLines || []).length === 0 ? (
+        <p>No open in-person fees this week.</p>
+      ) : (
+        <ul>
+          {(year.inPersonLines || []).map((line) => (
+            <li key={`${line.shopId || ''}-${line.workOrderId}`}>
+              {line.shopName || line.shopId}: work order {line.workOrderId} {money(line.feeCents)}
+            </li>
+          ))}
+        </ul>
+      )}
       {error && <p>{error}</p>}
       <h2>Per shop</h2>
       {year.perShop.map((shop) => (
-        <p key={shop.shopId}>{shop.shopName || shop.shopId}: collected {money(shop.collectedCents)}, refunded {money(shop.refundedCents)}, net {money(shop.netCents)}, in-person owed this week {money(shop.inPersonOwedCents || 0)}</p>
+        <details key={shop.shopId} open>
+          <summary>
+            {shop.shopName || shop.shopId}: collected {money(shop.collectedCents)}, refunded {money(shop.refundedCents)}, net {money(shop.netCents)}, in-person owed this week {money(shop.inPersonOwedCents || 0)}
+          </summary>
+          {(shop.inPersonLines || []).length === 0 ? (
+            <p>No open in-person work orders this week.</p>
+          ) : (
+            <ul>
+              {(shop.inPersonLines || []).map((line) => (
+                <li key={line.workOrderId}>Work order {line.workOrderId}: {money(line.feeCents)}</li>
+              ))}
+            </ul>
+          )}
+        </details>
       ))}
       <h2>History</h2>
       {year.history.map((row) => (

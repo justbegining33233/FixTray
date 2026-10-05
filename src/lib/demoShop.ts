@@ -308,6 +308,9 @@ async function wipeDemoShop(shopId: string, sessionCreatedAt: Date, seedCustomer
     });
   }
 
+  await bestEffort('books entries', () => prisma.booksEntry.deleteMany({ where: { shopId } }));
+  await bestEffort('clock corrections', () => prisma.clockCorrection.deleteMany({ where: { shopId } }));
+
   if (workOrderIds.length > 0) {
     await bestEffort('refunds', () => prisma.refund.deleteMany({ where: { workOrderId: { in: workOrderIds } } }));
     await bestEffort('photos', () => prisma.photo.deleteMany({ where: { workOrderId: { in: workOrderIds } } }));

@@ -134,6 +134,8 @@ model Shop {
   workOrderTemplates  WorkOrderTemplate[]
   branding            ShopBranding?
   inventoryStocks     InventoryStock[]
+  booksEntries        BooksEntry[]
+  clockCorrections    ClockCorrection[]
 
   @@map("shops")
 }
@@ -322,6 +324,7 @@ model WorkOrder {
   tracking           TechTracking?
   timeEntries        TimeEntry[]
   workOrderTimeEntries WorkOrderTimeEntry[]
+  booksEntries       BooksEntry[]
   assignedTo         Tech?               @relation(fields: [assignedTechId], references: [id])
   customer           Customer            @relation(fields: [customerId], references: [id])
   shop               Shop                @relation(fields: [shopId], references: [id])
@@ -857,6 +860,50 @@ model Refund {
   @@index([status])
   @@index([createdAt])
   @@map("refunds")
+}
+
+/// Shop job payments, deposits, refunds, and chargebacks. The fee rows are platform-only.
+model BooksEntry {
+  id                    String    @id @default(cuid())
+  shopId                String
+  workOrderId           String
+  kind                  String
+  appliesTo             String
+  amountCents           Int
+  status                String    @default("posted")
+  sourceId              String?
+  stripePaymentIntentId String?
+  idempotencyKey        String?   @unique
+  depositAt             DateTime?
+  actorId               String
+  note                  String?
+  createdAt             DateTime  @default(now())
+  shop                  Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  workOrder             WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, createdAt])
+  @@index([workOrderId])
+  @@index([stripePaymentIntentId])
+  @@map("books_entries")
+}
+
+/// Reason captured when someone changes staff or work-clock minutes.
+model ClockCorrection {
+  id            String   @id @default(cuid())
+  shopId        String
+  personId      String
+  clock         String
+  entryId       String
+  reason        String
+  beforeMinutes Int
+  afterMinutes  Int
+  actorId       String
+  createdAt     DateTime @default(now())
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, createdAt])
+  @@index([entryId])
+  @@map("clock_corrections")
 }
 
 model PageView {

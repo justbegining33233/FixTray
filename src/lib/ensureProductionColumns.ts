@@ -52,6 +52,42 @@ export const PRODUCTION_COLUMN_STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "demo_sessions_shopId_key" ON "demo_sessions"("shopId")`,
   `CREATE INDEX IF NOT EXISTS "demo_sessions_email_idx" ON "demo_sessions"("email")`,
   `CREATE INDEX IF NOT EXISTS "demo_sessions_expiresAt_idx" ON "demo_sessions"("expiresAt")`,
+  `CREATE TABLE IF NOT EXISTS "books_entries" (
+    "id" TEXT NOT NULL,
+    "shopId" TEXT NOT NULL,
+    "workOrderId" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "appliesTo" TEXT NOT NULL,
+    "amountCents" INTEGER NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'posted',
+    "sourceId" TEXT,
+    "stripePaymentIntentId" TEXT,
+    "idempotencyKey" TEXT,
+    "depositAt" TIMESTAMP(3),
+    "actorId" TEXT NOT NULL,
+    "note" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "books_entries_pkey" PRIMARY KEY ("id")
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "books_entries_idempotencyKey_key" ON "books_entries"("idempotencyKey")`,
+  `CREATE INDEX IF NOT EXISTS "books_entries_shopId_createdAt_idx" ON "books_entries"("shopId", "createdAt")`,
+  `CREATE INDEX IF NOT EXISTS "books_entries_workOrderId_idx" ON "books_entries"("workOrderId")`,
+  `CREATE INDEX IF NOT EXISTS "books_entries_stripePaymentIntentId_idx" ON "books_entries"("stripePaymentIntentId")`,
+  `CREATE TABLE IF NOT EXISTS "clock_corrections" (
+    "id" TEXT NOT NULL,
+    "shopId" TEXT NOT NULL,
+    "personId" TEXT NOT NULL,
+    "clock" TEXT NOT NULL,
+    "entryId" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "beforeMinutes" INTEGER NOT NULL,
+    "afterMinutes" INTEGER NOT NULL,
+    "actorId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "clock_corrections_pkey" PRIMARY KEY ("id")
+  )`,
+  `CREATE INDEX IF NOT EXISTS "clock_corrections_shopId_createdAt_idx" ON "clock_corrections"("shopId", "createdAt")`,
+  `CREATE INDEX IF NOT EXISTS "clock_corrections_entryId_idx" ON "clock_corrections"("entryId")`,
 ] as const;
 
 let pending: Promise<void> | null = null;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
 import { PLATFORM_HOME, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
 import { isPlatformEmailAccount, isPlatformEmailPath } from './lib/platformEmailAccess';
+import { isPlatformFeeYearAccount, isPlatformFeeYearPath } from './lib/books/access';
 import { isPlatformVisitsPath } from './lib/platformVisits';
 import { portalAccessDecision, roleHome } from './lib/roleMenus';
 
@@ -246,6 +247,9 @@ export async function gateCrossRole(request: NextRequest): Promise<NextResponse 
       return NextResponse.redirect(new URL('/admin/home', request.url));
     }
     if ((isPlatformEmailPath(pathname) || isPlatformVisitsPath(pathname)) && !isPlatformEmailAccount(payload?.username)) {
+      return NextResponse.redirect(new URL(roleHome(role), request.url));
+    }
+    if (isPlatformFeeYearPath(pathname) && !isPlatformFeeYearAccount(payload?.username)) {
       return NextResponse.redirect(new URL(roleHome(role), request.url));
     }
     return null;

@@ -26,6 +26,7 @@ import {
   type MobileRoleNav,
 } from '@/lib/mobileRoleNav';
 import { isPlatformEmailAccount, isPlatformEmailPath } from '@/lib/platformEmailAccess';
+import { isPlatformFeeYearAccount, isPlatformFeeYearPath } from '@/lib/books/access';
 import { isPlatformVisitsPath } from '@/lib/platformVisits';
 import { useSessionUsername } from '@/lib/useSessionUsername';
 
@@ -127,6 +128,7 @@ export default function RoleTabBar({
   const filtered = useMemo(() => {
     const hidden = (item: MobileLink) => {
       if ((isPlatformEmailPath(item.href) || isPlatformVisitsPath(item.href)) && !isPlatformEmailAccount(username)) return true;
+      if (isPlatformFeeYearPath(item.href) && !isPlatformFeeYearAccount(username)) return true;
       if (!user?.isOwner && (item.label === 'Owner Tools' || item.href.startsWith('/admin/owner'))) return true;
       return false;
     };

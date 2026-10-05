@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { refundPayment } from '@/lib/stripe';
+import { planAllocatedReversal, usdToCents } from '@/lib/books/money';
+import { findShopJob } from '@/lib/books/loadShopBooks';
+import { ensureOpeningBalance, writeBooksEntries } from '@/lib/books/persist';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 
@@ -79,11 +82,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const jobBooks = await findShopJob(workOrder.shopId, workOrder.id);
+    const appliesTo = body.appliesTo === 'fee' || body.appliesTo === 'job' ? body.appliesTo : 'auto';
+    const jobRemainingCents = jobBooks?.shopReceivedCents ?? usdToCents(workOrder.estimatedCost);
+    const feeRemainingCents = jobBooks?.platformFeeCents ?? Math.max(0, usdToCents(workOrder.amountPaid) - usdToCents(workOrder.estimatedCost));
+
     // Process refund with Stripe
     const stripeRefund = await refundPayment(validated.paymentIntentId, refundAmount);
 
     if (!stripeRefund.id) {
       throw new Error('Stripe refund failed');
+    }
+
+    const posted = planAllocatedReversal({
+      kind: 'refund',
+      amountCents: usdToCents(refundAmount),
+      jobRemainingCents,
+      feeRemainingCents,
+      appliesTo,
+      status: 'posted',
+      sourceId: stripeRefund.id,
+      workOrderId: workOrder.id,
+      shopId: workOrder.shopId,
+      actorId: auth.id,
+      at: new Date().toISOString(),
+    });
+    if (posted.ok) {
+      if (jobBooks) {
+        await ensureOpeningBalance({
+          shopId: workOrder.shopId,
+          job: jobBooks,
+          actorId: auth.id,
+          at: new Date().toISOString(),
+        });
+      }
+      await writeBooksEntries({
+        shopId: workOrder.shopId,
+        workOrderId: workOrder.id,
+        entries: posted.entries,
+        audit: posted.audit,
+      });
+      await prisma.refund.create({
+        data: {
+          workOrderId: workOrder.id,
+          stripeRefundId: stripeRefund.id,
+          amount: refundAmount,
+          reason: validated.reason || 'Manual refund',
+          status: 'refunded',
+          processedBy: auth.id,
+          processedAt: new Date(),
+          notes: `job delta ${posted.shopDeltaCents}; fee delta ${posted.feeDeltaCents}`,
+        },
+      }).catch(() => {});
     }
 
     // Create audit trail entry

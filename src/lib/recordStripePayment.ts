@@ -1,4 +1,7 @@
 import prisma from '@/lib/prisma';
+import { planCardPayment, usdToCents } from '@/lib/books/money';
+import { writeBooksEntries } from '@/lib/books/persist';
+import { quoteAmount } from '@/lib/workOrderCloseout';
 
 /**
  * Record a real Stripe charge on a work order.
@@ -30,5 +33,22 @@ export async function recordStripeWorkOrderPayment(input: {
     where: { workOrderId: input.workOrderId, status: { not: 'paid' } },
     data: { status: 'paid', paidAt: new Date(), amount: amountPaid },
   });
+  const plan = planCardPayment({
+    paymentIntentId: input.paymentIntentId,
+    workOrderId: updated.id,
+    shopId: updated.shopId,
+    jobCents: usdToCents(quoteAmount(updated)),
+    chargedCents: Math.round(input.amountCents),
+    actorId: 'stripe',
+    at: new Date().toISOString(),
+  });
+  if (plan.ok) {
+    await writeBooksEntries({
+      shopId: updated.shopId,
+      workOrderId: updated.id,
+      entries: plan.entries,
+      audit: plan.audit,
+    });
+  }
   return updated;
 }

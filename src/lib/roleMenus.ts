@@ -10,6 +10,7 @@ import { isRouteAllowed, type RouteActor } from './roleAccess';
 import { normalizeRole, shellHrefForRole } from './roleNav';
 import { isPlatformActor, isShopScopedPath, isStaticAssetPath } from './platformOwnerScope';
 import { isPlatformEmailAccount, PLATFORM_EMAIL_HREF, isPlatformEmailPath } from './platformEmailAccess';
+import { isPlatformFeeYearAccount, isPlatformFeeYearPath, PLATFORM_FEE_YEAR_HREF } from './books/access';
 import { PLATFORM_VISITS_HREF, isPlatformVisitsPath } from './platformVisits';
 import { isShopEdgeSensitivePath } from './shopRestrictedRoutes';
 
@@ -200,6 +201,7 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
         { icon: 'settings', label: 'Permissions', href: '/shop/settings/permissions' },
         { icon: 'dollar', label: 'Payroll', href: '/shop/payroll' },
         { icon: 'clock', label: 'Time Clock', href: '/shop/timeclock' },
+        { icon: 'clock', label: 'Staff Clocks', href: '/shop/clocks' },
         { icon: 'calendar', label: 'Schedule', href: '/shop/settings/schedule' },
       ],
     },
@@ -236,6 +238,7 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
       defaultOpen: false,
       items: [
         { icon: 'chart', label: 'Reports', href: '/shop/analytics' },
+        { icon: 'dollar', label: 'Books', href: '/shop/books' },
         { icon: 'file', label: 'EOD Report', href: '/shop/eod-report' },
         { icon: 'clock', label: 'SLA Metrics', href: '/shop/analytics/sla' },
         { icon: 'user', label: 'Employee Perf', href: '/shop/analytics/performance' },
@@ -310,6 +313,7 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
         { icon: 'file', label: 'Leave Requests', href: '/manager/leave-requests' },
         { icon: 'dollar', label: 'Payroll', href: '/manager/payroll' },
         { icon: 'clock', label: 'Time Clock', href: '/manager/timeclock' },
+        { icon: 'clock', label: 'Staff Clocks', href: '/manager/clocks' },
         { icon: 'inventory', label: 'Inventory', href: '/manager/inventory' },
       ],
     },
@@ -319,6 +323,7 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
       defaultOpen: false,
       items: [
         { icon: 'chart', label: 'Reports', href: '/manager/reports' },
+        { icon: 'dollar', label: 'Books', href: '/manager/books' },
       ],
     },
     {
@@ -350,6 +355,7 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
       defaultOpen: true,
       items: [
         { icon: 'clock', label: 'Time Clock', href: '/tech/timeclock' },
+        { icon: 'clock', label: 'My Clocks', href: '/tech/clocks' },
         { icon: 'clock', label: 'Timesheet', href: '/tech/timesheet' },
         { icon: 'file', label: 'Leave Requests', href: '/tech/leave-requests' },
         { icon: 'clipboard', label: 'Command Center', href: '/tech/command-center' },
@@ -482,6 +488,19 @@ function withPlatformEmailItem(groups: RoleMenuGroup[], menuRole: MenuRole, user
   return appendPlatformOwnerItem(withEmail, { icon: 'chart', label: 'Visits', href: PLATFORM_VISITS_HREF });
 }
 
+function withPlatformFeeYearItem(groups: RoleMenuGroup[], menuRole: MenuRole, username?: string | null): RoleMenuGroup[] {
+  if (menuRole !== 'superadmin' || !isPlatformFeeYearAccount(username)) return groups;
+  let placed = false;
+  const next = groups.map((group) => {
+    if (group.label !== 'Financial & Reporting') return group;
+    if (group.items.some((entry) => entry.href === PLATFORM_FEE_YEAR_HREF)) return group;
+    placed = true;
+    return { ...group, items: [...group.items, { icon: 'dollar' as const, label: 'Fee Year-End', href: PLATFORM_FEE_YEAR_HREF }] };
+  });
+  if (placed) return next;
+  return [...next, { label: 'Financial & Reporting', icon: 'chart', defaultOpen: false, items: [{ icon: 'dollar', label: 'Fee Year-End', href: PLATFORM_FEE_YEAR_HREF }] }];
+}
+
 /** Computer sidebar groups after the same filters the sidebar applies. */
 export function filterMenuGroups(
   sidebarRole: SidebarRole,
@@ -500,7 +519,7 @@ export function filterMenuGroups(
         .map((item) => ({ ...item, href: shellHrefForRole(item.href, actorRole) })),
     }))
     .filter((group) => group.items.length > 0);
-  return withPlatformEmailItem(groups, menuRole, username);
+  return withPlatformFeeYearItem(withPlatformEmailItem(groups, menuRole, username), menuRole, username);
 }
 
 export function renderedMenuHrefs(
@@ -602,6 +621,10 @@ export function portalAccessDecision(pathname: string, actor: string | RouteActo
   if (isPlatformEmailPath(path) || isPlatformVisitsPath(path)) {
     const username = typeof actor === 'object' && actor ? actor.username : undefined;
     return isPlatformEmailAccount(username) ? 'allow' : 'home';
+  }
+  if (isPlatformFeeYearPath(path)) {
+    const username = typeof actor === 'object' && actor ? actor.username : undefined;
+    return isPlatformFeeYearAccount(username) ? 'allow' : 'home';
   }
   const allowed = isRouteAllowed(path, typeof actor === 'string' ? actor : (actor ?? null));
   if (canOpenMenuPath(menuRole, path) && allowed) return 'allow';

@@ -9,6 +9,7 @@ import { normalizeRole } from '@/lib/roleNav';
 import { isShopScopedHref } from '@/lib/platformOwnerScope';
 import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
 import { isPlatformEmailAccount, PLATFORM_EMAIL_HREF } from '@/lib/platformEmailAccess';
+import { isPlatformFeeYearAccount, PLATFORM_FEE_YEAR_HREF } from '@/lib/books/access';
 import { PLATFORM_VISITS_HREF } from '@/lib/platformVisits';
 import { ROLE_MENUS, TOP_BAR, menuHrefs, type MenuRole } from '@/lib/roleMenus';
 
@@ -88,6 +89,21 @@ function withPlatformEmailLink(nav: MobileRoleNav, username?: string | null): Mo
   if (!isPlatformEmailAccount(username)) return nav;
   const withEmail = appendPlatformOwnerLink(nav, { label: 'Emails', href: PLATFORM_EMAIL_HREF, icon: 'bell' });
   return appendPlatformOwnerLink(withEmail, { label: 'Visits', href: PLATFORM_VISITS_HREF, icon: 'chart' });
+}
+
+function withPlatformFeeYearLink(nav: MobileRoleNav, username?: string | null): MobileRoleNav {
+  if (!isPlatformFeeYearAccount(username)) return nav;
+  let placed = false;
+  const more = nav.more.map((group) => {
+    if (group.title !== 'Financial & Reporting') return group;
+    if (group.items.some((entry) => entry.href === PLATFORM_FEE_YEAR_HREF)) return group;
+    placed = true;
+    return { ...group, items: [...group.items, { label: 'Fee Year-End', href: PLATFORM_FEE_YEAR_HREF, icon: 'dollar' as const }] };
+  });
+  return {
+    ...nav,
+    more: placed ? more : [...more, { title: 'Financial & Reporting', items: [{ label: 'Fee Year-End', href: PLATFORM_FEE_YEAR_HREF, icon: 'dollar' }] }],
+  };
 }
 
 /** Owner tools stay in the catalog so the page is reachable, but only the platform owner sees them. */
@@ -250,8 +266,11 @@ export function shellRoleForActor(actor: Actor): ShellRole | null {
 export function mobileNavForActor(shellRole: ShellRole, actor: Actor): MobileRoleNav | null {
   if (shellRole === 'admin' || shellRole === 'superadmin') {
     if (!isSuperAdminActor(actor)) return null;
-    return withPlatformEmailLink(
-      withoutShopLinks(withoutOwnerOnlyLinks(MOBILE_ROLE_NAVS.superadmin, actor?.isOwner === true)),
+    return withPlatformFeeYearLink(
+      withPlatformEmailLink(
+        withoutShopLinks(withoutOwnerOnlyLinks(MOBILE_ROLE_NAVS.superadmin, actor?.isOwner === true)),
+        actor?.username,
+      ),
       actor?.username,
     );
   }

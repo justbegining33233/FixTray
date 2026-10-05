@@ -1,0 +1,158 @@
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { requireRole } from '@/lib/auth';
+import { booksAccess, shopIdForBooks } from '@/lib/books/access';
+import { findShopJob, loadShopBooks, saveQbMap } from '@/lib/books/loadShopBooks';
+import { planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
+import { ensureOpeningBalance, writeAudit, writeBooksEntries } from '@/lib/books/persist';
+import { applyQty, partMoveAudit, partValue } from '@/lib/books/parts';
+
+function processorId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const id = value.trim();
+  return /^(dp_|re_|ch_|pi_)[A-Za-z0-9]+$/.test(id) ? id : null;
+}
+
+export async function GET(request: NextRequest) {
+  const auth = requireRole(request, ['shop', 'manager']);
+  if (auth instanceof NextResponse) return auth;
+  if (!booksAccess(auth.role).shopLedger) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  const shopId = shopIdForBooks(auth);
+  if (!shopId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const month = new URL(request.url).searchParams.get('month');
+  const books = await loadShopBooks(shopId, month);
+  return NextResponse.json(books);
+}
+
+export async function POST(request: NextRequest) {
+  const auth = requireRole(request, ['shop', 'manager']);
+  if (auth instanceof NextResponse) return auth;
+  const access = booksAccess(auth.role);
+  if (!access.shopLedger) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const shopId = shopIdForBooks(auth);
+  if (!shopId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+  }
+  const action = String((body as { action?: string }).action || '');
+  const at = new Date().toISOString();
+
+  if (action === 'deposit') {
+    const workOrderId = String((body as { workOrderId?: string }).workOrderId || '');
+    const job = await findShopJob(shopId, workOrderId);
+    if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    const planned = planDeposit({
+      workOrderId,
+      shopId,
+      amountCents: Number((body as { amountCents?: number }).amountCents),
+      depositAt: String((body as { depositAt?: string }).depositAt || ''),
+      actorId: auth.id,
+      at,
+    });
+    if (!planned.ok) return NextResponse.json({ error: planned.error }, { status: 400 });
+    await writeBooksEntries({ shopId, workOrderId, entries: [planned.entry], audit: planned.audit });
+    return NextResponse.json({ ok: true, audit: planned.audit });
+  }
+
+  if (action === 'chargeback') {
+    const workOrderId = String((body as { workOrderId?: string }).workOrderId || '');
+    const sourceId = processorId((body as { sourceId?: string }).sourceId);
+    if (!sourceId) {
+      return NextResponse.json({ error: 'A Stripe dispute, refund, charge, or payment id is required' }, { status: 400 });
+    }
+    const job = await findShopJob(shopId, workOrderId);
+    if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    const appliesTo = (body as { appliesTo?: string }).appliesTo === 'fee' ? 'fee' : 'job';
+    const status = (body as { status?: string }).status === 'open' ? 'open' : 'posted';
+    const planned = planAllocatedReversal({
+      kind: 'chargeback',
+      amountCents: Number((body as { amountCents?: number }).amountCents),
+      jobRemainingCents: appliesTo === 'fee' ? 0 : job.shopReceivedCents,
+      feeRemainingCents: appliesTo === 'job' ? 0 : job.platformFeeCents,
+      appliesTo,
+      status,
+      sourceId,
+      workOrderId,
+      shopId,
+      actorId: auth.id,
+      at,
+    });
+    if (!planned.ok) return NextResponse.json({ error: planned.error }, { status: 400 });
+    await ensureOpeningBalance({ shopId, job, actorId: auth.id, at });
+    await writeBooksEntries({ shopId, workOrderId, entries: planned.entries, audit: planned.audit });
+    if (status === 'posted') {
+      const nextReceived = Math.max(0, job.shopReceivedCents + planned.shopDeltaCents);
+      const nextFee = Math.max(0, job.platformFeeCents + planned.feeDeltaCents);
+      const fullyReversed = nextReceived === 0 && planned.shopDeltaCents < 0;
+      await prisma.workOrder.update({
+        where: { id: workOrderId },
+        data: {
+          amountPaid: (nextReceived + nextFee) / 100,
+          paymentStatus: nextReceived === job.jobCents && job.jobCents > 0
+            ? 'paid'
+            : nextReceived > 0
+              ? 'pending'
+              : fullyReversed
+                ? 'refunded'
+                : 'unpaid',
+        },
+      });
+    }
+    return NextResponse.json({ ok: true, audit: planned.audit, shopDeltaCents: planned.shopDeltaCents, feeDeltaCents: planned.feeDeltaCents });
+  }
+
+  if (action === 'qb-map') {
+    const map = await saveQbMap(shopId, (body as { map?: Record<string, unknown> }).map || {});
+    await writeAudit({
+      actorId: auth.id,
+      at,
+      action: 'books.qb_map',
+      targetType: 'integration',
+      targetId: shopId,
+      shopId,
+      details: 'QuickBooks account map saved',
+    });
+    return NextResponse.json({ ok: true, qbMap: map });
+  }
+
+  if (action === 'part') {
+    if (!access.parts) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const itemId = String((body as { itemId?: string }).itemId || '');
+    const kind = String((body as { kind?: string }).kind || '');
+    if (kind !== 'use' && kind !== 'return' && kind !== 'adjust') {
+      return NextResponse.json({ error: 'Unknown part action' }, { status: 400 });
+    }
+    const item = await prisma.inventoryStock.findFirst({ where: { id: itemId, shopId } });
+    if (!item) return NextResponse.json({ error: 'Part not found' }, { status: 404 });
+    const moved = applyQty(item.quantity, {
+      kind,
+      qty: Number((body as { qty?: number }).qty),
+      reason: typeof (body as { reason?: string }).reason === 'string' ? (body as { reason: string }).reason : undefined,
+    });
+    if (!moved.ok) return NextResponse.json({ error: moved.error }, { status: 400 });
+    await prisma.inventoryStock.update({ where: { id: item.id }, data: { quantity: moved.onHand } });
+    const audit = partMoveAudit({
+      itemId: item.id,
+      shopId,
+      kind,
+      delta: moved.delta,
+      onHand: moved.onHand,
+      reason: (body as { reason?: string }).reason,
+      actorId: auth.id,
+      at,
+    });
+    await writeAudit(audit);
+    return NextResponse.json({
+      ok: true,
+      onHand: moved.onHand,
+      value: partValue(moved.onHand, usdToCents(item.unitCost), usdToCents(item.sellingPrice)),
+      audit,
+    });
+  }
+
+  return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+}

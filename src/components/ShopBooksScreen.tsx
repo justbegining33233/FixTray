@@ -42,7 +42,33 @@ interface BooksPayload {
   inventory: Array<{ id: string; name: string; onHand: number; unitCostCents: number; sellUnitCents: number }>;
   tickets: Array<{ workOrderId: string; sync: { synced: boolean; issues: string[] }; taxLines: Array<{ kind: string; baseCents: number; taxCents: number }> }>;
   qbMap: Record<string, string>;
+  quickBooksSync?: string;
 }
+
+interface QboStatus {
+  connected: boolean;
+  realmId: string | null;
+  mapSaved: boolean;
+  qbMap: Record<string, string>;
+  lastSyncAt: string | null;
+  configured: boolean;
+  missing: string[];
+}
+
+interface QboAccount {
+  id: string;
+  name: string;
+  accountType: string;
+}
+
+const MAP_FIELDS: Array<[string, string]> = [
+  ['sales', 'Sales'],
+  ['payments', 'Payments'],
+  ['refunds', 'Refunds'],
+  ['labor', 'Labor'],
+  ['parts', 'Parts'],
+  ['tax', 'Tax'],
+];
 
 function money(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -65,6 +91,10 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   const [partId, setPartId] = useState('');
   const [partQty, setPartQty] = useState('1');
   const [partReason, setPartReason] = useState('');
+  const [qbo, setQbo] = useState<QboStatus | null>(null);
+  const [accounts, setAccounts] = useState<QboAccount[]>([]);
+  const [mapDraft, setMapDraft] = useState<Record<string, string>>({});
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     setError('');
@@ -77,10 +107,31 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     setBooks(body);
   }, [month]);
 
+  const loadQuickBooks = useCallback(async () => {
+    if (role !== 'shop') return;
+    const response = await fetch('/api/shop/quickbooks/status', { headers: authHeaders(), credentials: 'include' });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) return;
+    const status = body as QboStatus;
+    setQbo(status);
+    setMapDraft(status.qbMap || {});
+    if (!status.connected) return;
+    const accountsResponse = await fetch('/api/shop/quickbooks/accounts', { headers: authHeaders(), credentials: 'include' });
+    const accountsBody = await accountsResponse.json().catch(() => ({}));
+    if (accountsResponse.ok && Array.isArray(accountsBody.accounts)) setAccounts(accountsBody.accounts);
+  }, [role]);
+
   useEffect(() => {
     if (!user) return;
-    load().catch(() => setError('Could not load the shop ledger'));
-  }, [user, load]);
+    load()
+      .catch(() => setError('Could not load the shop ledger'))
+      .finally(() => {
+        const flag = new URLSearchParams(window.location.search).get('quickbooks');
+        if (flag === 'connected') setNotice('QuickBooks Online connected');
+        if (flag === 'error') setError('QuickBooks Online did not connect. Start again from this page.');
+      });
+    loadQuickBooks().catch(() => setError('Could not load QuickBooks Online'));
+  }, [user, load, loadQuickBooks]);
 
   async function post(action: string, extra: Record<string, unknown>) {
     setNotice('');
@@ -123,7 +174,62 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     link.download = `fixtray-quickbooks-${month}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    setNotice('QuickBooks handoff downloaded');
+    setNotice('Optional CSV downloaded');
+  }
+
+  async function connectQuickBooks() {
+    setNotice('');
+    setError('');
+    const response = await fetch('/api/shop/quickbooks/connect', { headers: authHeaders(), credentials: 'include' });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || typeof body.url !== 'string') {
+      const missing = Array.isArray(body.missing) ? ` Missing ${body.missing.join(', ')}.` : '';
+      setError((body.error || 'Could not start QuickBooks Online') + missing);
+      return;
+    }
+    window.location.href = body.url;
+  }
+
+  async function saveQuickBooksMap() {
+    setNotice('');
+    setError('');
+    const response = await fetch('/api/shop/quickbooks/map', {
+      method: 'POST',
+      headers: authHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ map: mapDraft }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(body.error || 'Could not save the account map');
+      return;
+    }
+    setNotice('QuickBooks accounts saved');
+    await loadQuickBooks();
+  }
+
+  async function syncQuickBooks() {
+    setNotice('');
+    setError('');
+    setSyncing(true);
+    const response = await fetch('/api/shop/quickbooks/sync', {
+      method: 'POST',
+      headers: authHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ month }),
+    });
+    const body = await response.json().catch(() => ({}));
+    setSyncing(false);
+    if (response.status === 409) {
+      setError((body.warnings || ['Month is not ready to sync']).join(' '));
+      return;
+    }
+    if (!response.ok) {
+      setError(body.error || 'QuickBooks sync failed');
+      return;
+    }
+    setNotice('Synced to QuickBooks Online');
+    await loadQuickBooks();
   }
 
   if (isLoading) return <div style={{ padding: 32, color: '#e5e7eb' }}>Loading...</div>;
@@ -134,7 +240,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     <div style={{ minHeight: '100vh', color: '#e5e7eb', padding: 24, fontFamily: 'system-ui,sans-serif' }}>
       <h1 style={{ marginTop: 0 }}>Shop books</h1>
       <p>{books.copy}</p>
-      <p>{books.quickBooksOwnsBooks}</p>
+      <p>{books.quickBooksSync || 'Sync sends shop sales, payments, refunds, and labor to QuickBooks Online. The FixTray fee stays on the platform and is not a shop expense.'}</p>
       <label>
         Month{' '}
         <input value={month} onChange={(event) => setMonth(event.target.value)} type="month" />
@@ -172,7 +278,48 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <h2>Month close</h2>
         <p>{books.monthClose.readyToSync ? 'Ready to sync.' : 'Not ready to sync.'}</p>
         {books.monthClose.warnings.map((warning) => <p key={warning}>{warning}</p>)}
-        <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>
+        {role === 'shop' ? (
+          <div>
+            {qbo?.connected ? (
+              <p>QuickBooks Online is connected{qbo.realmId ? ` for company ${qbo.realmId}` : ''}{qbo.lastSyncAt ? `. Last sync ${qbo.lastSyncAt.slice(0, 16).replace('T', ' ')}` : ''}.</p>
+            ) : (
+              <p>Connect QuickBooks Online once, then map accounts and sync this month.</p>
+            )}
+            {qbo && !qbo.configured && <p>Production still needs {qbo.missing.join(', ')}.</p>}
+            {!qbo?.connected && <button type="button" onClick={connectQuickBooks}>Connect QuickBooks Online</button>}
+            {qbo?.connected && (
+              <div>
+                <h3>Account map</h3>
+                <p>Map sales, payments, refunds, labor, parts, and tax. Do not map the FixTray fee. It is not a shop expense.</p>
+                {MAP_FIELDS.map(([key, label]) => (
+                  <label key={key} style={{ display: 'block', marginBottom: 8 }}>
+                    {label}{' '}
+                    <select
+                      aria-label={label}
+                      value={mapDraft[key] || ''}
+                      onChange={(event) => setMapDraft((current) => ({ ...current, [key]: event.target.value }))}
+                    >
+                      <option value="">Select {label.toLowerCase()} account</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>{account.name}</option>
+                      ))}
+                      {mapDraft[key] && !accounts.some((account) => account.id === mapDraft[key]) ? (
+                        <option value={mapDraft[key]}>{mapDraft[key]}</option>
+                      ) : null}
+                    </select>
+                  </label>
+                ))}
+                <button type="button" onClick={saveQuickBooksMap}>Save account map</button>
+                <button type="button" onClick={syncQuickBooks} disabled={!books.monthClose.readyToSync || !qbo.mapSaved || syncing}>
+                  {syncing ? 'Syncing...' : 'Sync to QuickBooks Online'}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p>The shop owner connects QuickBooks Online and syncs from the shop login.</p>
+        )}
+        <button type="button" onClick={exportBooks}>Optional CSV download</button>
       </section>
       <section>
         <h2>Deposit</h2>

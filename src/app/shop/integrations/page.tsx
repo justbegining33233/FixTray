@@ -5,10 +5,10 @@ import useRequireAuth from '@/lib/useRequireAuth';
 import { canConnectIntegration, integrationFieldsComplete } from '@/lib/integrationConnect';
 import { normalizeIntegrationConfig, type IntegrationConfigView } from '@/lib/integrationConfigShape';
 import ShopStripeConnectCard from '@/components/ShopStripeConnectCard';
-import { FaBriefcase, FaCalendarAlt, FaCar, FaChartBar, FaCircle, FaCog, FaEnvelope, FaMobileAlt, FaPlug, FaRegCircle, FaWrench } from 'react-icons/fa';
+import ShopQuickBooksCard from '@/components/ShopQuickBooksCard';
+import { FaBriefcase, FaCalendarAlt, FaCar, FaCircle, FaCog, FaEnvelope, FaMobileAlt, FaPlug, FaRegCircle, FaWrench } from 'react-icons/fa';
 
 const PROVIDERS = [
-  { key: 'quickbooks', name: 'QuickBooks Online', icon: <FaChartBar style={{marginRight:4}} />, description: 'Shop Books hands off sales, payments, refunds, and labor. QuickBooks still owns the full books. The FixTray fee is not a shop expense.', color: '#2CA01C', fields: [{ k: 'clientId', label: 'Client ID' }, { k: 'clientSecret', label: 'Client Secret', type: 'password' }, { k: 'realmId', label: 'Realm ID' }] },
   { key: 'xero', name: 'Xero', icon: <FaBriefcase style={{marginRight:4}} />, description: 'Export invoices and contacts to Xero accounting', color: '#1AB4D7', fields: [{ k: 'clientId', label: 'Client ID' }, { k: 'clientSecret', label: 'Client Secret', type: 'password' }] },
   { key: 'google_calendar', name: 'Google Calendar', icon: <FaCalendarAlt style={{marginRight:4}} />, description: 'Sync appointments with Google Calendar', color: '#4285F4', fields: [{ k: 'calendarId', label: 'Calendar ID' }, { k: 'serviceAccountJson', label: 'Service Account JSON', type: 'password' }] },
   { key: 'twilio', name: 'Twilio', icon: <FaMobileAlt style={{marginRight:4}} />, description: 'Send SMS notifications and reminders', color: '#F22F46', fields: [{ k: 'accountSid', label: 'Account SID' }, { k: 'authToken', label: 'Auth Token', type: 'password' }, { k: 'fromNumber', label: 'From Number' }] },
@@ -91,6 +91,7 @@ export default function IntegrationsPage() {
         {loading ? <div style={{ color: '#6b7280' }}>{say("Loading...")}</div> : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
             <ShopStripeConnectCard origin="integrations" />
+            <ShopQuickBooksCard />
             {PROVIDERS.map(prov => {
               const config = configs.find(c => c.provider === prov.key);
               const isEnabled = config?.isEnabled || false;

@@ -1,6 +1,9 @@
 import prisma from '@/lib/prisma';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
-import { qbAccounts, SHOP_PAID_IN_FULL_COPY, QUICKBOOKS_OWNS_BOOKS_COPY, type QbMap } from '@/lib/books/quickbooks';
+import { qbAccounts, SHOP_PAID_IN_FULL_COPY, QUICKBOOKS_OWNS_BOOKS_COPY, type QbLabor, type QbMap } from '@/lib/books/quickbooks';
+import { QBO_SYNC_COPY } from '@/lib/books/qbo';
+import { minutesFromHours } from '@/lib/books/clocks';
+import { payableHours } from '@/lib/timesheetPeriod';
 import {
   assembleShopJobs,
   centsToUsd,
@@ -70,6 +73,29 @@ export async function saveQbMap(shopId: string, map: Record<string, unknown>): P
   return clean;
 }
 
+export async function loadShopLabor(shopId: string, month?: string | null): Promise<QbLabor[]> {
+  const entries = await prisma.timeEntry.findMany({
+    where: { shopId },
+    select: { techId: true, clockIn: true, clockOut: true, hoursWorked: true, tech: { select: { hourlyRate: true } } },
+  });
+  const filtered = month ? entries.filter((entry) => inMonth(entry.clockIn, month)) : entries;
+  const grouped = new Map<string, { entries: typeof filtered; rate: number }>();
+  for (const entry of filtered) {
+    const current = grouped.get(entry.techId) || { entries: [], rate: entry.tech?.hourlyRate || 0 };
+    current.entries.push(entry);
+    if (entry.tech?.hourlyRate) current.rate = entry.tech.hourlyRate;
+    grouped.set(entry.techId, current);
+  }
+  return [...grouped.entries()].map(([personId, group]) => {
+    const hours = payableHours(group.entries, { clockedIn: group.entries.some((entry) => !entry.clockOut) });
+    return {
+      personId,
+      minutes: minutesFromHours(hours),
+      hourlyRateCents: usdToCents(group.rate),
+    };
+  });
+}
+
 export async function loadShopBooks(shopId: string, month?: string | null) {
   await ensureProductionColumns();
   const range = month ? monthRange(month) : null;
@@ -131,14 +157,16 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
   };
   const tickets = orders.map((order) => {
     const job = jobs.find((item) => item.id === order.id);
+    const lines = linesFromWorkOrder({
+      estimate: order.estimate,
+      partsUsed: order.partsUsed,
+      techLabor: order.techLabor,
+    });
     return {
       workOrderId: order.id,
+      partCents: lines.filter((line) => line.kind === 'part').reduce((sum, line) => sum + line.amountCents, 0),
       ...ticketPreview({
-        lines: linesFromWorkOrder({
-          estimate: order.estimate,
-          partsUsed: order.partsUsed,
-          techLabor: order.techLabor,
-        }),
+        lines,
         rule,
         paidJobCents: job?.shopReceivedCents || 0,
         standing: job?.standing || 'unpaid',
@@ -154,6 +182,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
   return {
     copy: SHOP_PAID_IN_FULL_COPY,
     quickBooksOwnsBooks: QUICKBOOKS_OWNS_BOOKS_COPY,
+    quickBooksSync: QBO_SYNC_COPY,
     month: month || null,
     ledger,
     report,
@@ -172,6 +201,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       .filter((row) => row.kind === 'refund' || row.kind === 'chargeback')
       .map((row) => ({
         id: row.id,
+        workOrderId: row.workOrderId,
         appliesTo: row.appliesTo === 'fee' ? 'fee' as const : 'job' as const,
         kind: row.kind === 'chargeback' ? 'chargeback' as const : 'refund' as const,
         amountCents: row.amountCents,

@@ -33,6 +33,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (provider === 'quickbooks') {
+    return NextResponse.json(
+      { error: 'QuickBooks Online connects with OAuth. Choose Connect QuickBooks Online. Do not paste the Intuit client secret.' },
+      { status: 400 },
+    );
+  }
+
   const write = integrationWriteFromBody(body);
   const config = await prisma.integrationConfig.upsert({
     where: { shopId_provider: { shopId, provider } },

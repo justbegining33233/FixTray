@@ -50,6 +50,7 @@ export interface QbReversal {
   amountCents: number;
   at: string;
   status?: string | null;
+  workOrderId?: string | null;
 }
 
 export interface QbLabor {

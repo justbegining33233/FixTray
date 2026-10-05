@@ -21,6 +21,8 @@ export interface BooksAccess {
   ownClock: boolean;
   parts: boolean;
   quickBooks: boolean;
+  /** OAuth connect, account mapping, and sync. Shop owner only. */
+  quickBooksConnect: boolean;
   platformFeeYear: boolean;
 }
 
@@ -34,6 +36,7 @@ export function booksAccess(role: string | null | undefined, username?: unknown)
     ownClock: clockRole,
     parts: shopStaff,
     quickBooks: shopStaff,
+    quickBooksConnect: normalized === 'shop',
     platformFeeYear: isPlatformFeeYearAccount(username)
       && (normalized === 'admin' || normalized === 'superadmin'),
   };

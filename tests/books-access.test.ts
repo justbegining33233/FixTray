@@ -23,8 +23,8 @@ describe('books access', () => {
   });
 
   it('gives shops and managers the ledger and techs only their clock', () => {
-    expect(booksAccess('shop')).toMatchObject({ shopLedger: true, staffTotals: true, quickBooks: true, ownClock: true });
-    expect(booksAccess('manager')).toMatchObject({ shopLedger: true, parts: true });
+    expect(booksAccess('shop')).toMatchObject({ shopLedger: true, staffTotals: true, quickBooks: true, quickBooksConnect: true, ownClock: true });
+    expect(booksAccess('manager')).toMatchObject({ shopLedger: true, parts: true, quickBooks: true, quickBooksConnect: false });
     expect(booksAccess('tech')).toMatchObject({ shopLedger: false, staffTotals: false, ownClock: true, platformFeeYear: false });
     expect(booksAccess('customer')).toMatchObject({ shopLedger: false, ownClock: false, platformFeeYear: false });
     expect(shopIdForBooks({ role: 'shop', id: 'shop-1' })).toBe('shop-1');

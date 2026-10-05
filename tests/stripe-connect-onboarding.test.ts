@@ -188,7 +188,7 @@ describe('integration config shape', () => {
   it('reads enabled and JSON settings so a saved integration is not stuck Disabled', () => {
     const view = normalizeIntegrationConfig({
       id: 'cfg_1',
-      provider: 'quickbooks',
+      provider: 'xero',
       enabled: true,
       settings: JSON.stringify({ clientId: 'abc', clientSecret: 'secret' }),
       lastSyncAt: '2026-09-01T00:00:00.000Z',
@@ -211,5 +211,16 @@ describe('integration config shape', () => {
     });
     expect(view.settings).toEqual({});
     expect(view.accountId).toBeNull();
+  });
+
+  it('does not echo pasted QuickBooks client secrets back to the shop UI', () => {
+    const view = normalizeIntegrationConfig({
+      provider: 'quickbooks',
+      enabled: true,
+      settings: JSON.stringify({ clientId: 'abc', clientSecret: 'secret' }),
+      accountId: '1234567890',
+    });
+    expect(view.settings).toEqual({});
+    expect(view.accountId).toBe('1234567890');
   });
 });

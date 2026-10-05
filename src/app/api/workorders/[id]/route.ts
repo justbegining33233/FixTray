@@ -228,7 +228,13 @@ export async function PUT(
       return NextResponse.json({ ...current, messages });
     }
 
-    const platformFeeUsd = await getPlatformServiceFeeUsd();
+    const configuredFee = await getPlatformServiceFeeUsd();
+    const quotesCustomer = (data.status as string) === 'waiting-for-payment'
+      || Boolean(data.estimatedCost && !current.estimatedCost);
+    if (quotesCustomer && configuredFee == null) {
+      return NextResponse.json({ error: 'The platform service fee is not configured.' }, { status: 409 });
+    }
+    const platformFeeUsd = configuredFee ?? 0;
     
     // Track status change
     if (data.status && data.status !== current.status) {

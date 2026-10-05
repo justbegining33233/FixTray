@@ -20,6 +20,8 @@ interface InPersonLine {
 
 interface FeeYear {
   collectedCents: number;
+  accruedCents?: number;
+  owedCents?: number;
   refundedCents: number;
   netCents: number;
   shopRevenueIncluded: boolean;
@@ -75,7 +77,11 @@ export default function FeeYearEndPage() {
   return (
     <div style={pageStyle}>
       <h1 style={{ marginTop: 0 }}>Platform fee year-end</h1>
-      <p>Fees collected {money(year.collectedCents)}. Fee refunds {money(year.refundedCents)}. Net fees {money(year.netCents)}.</p>
+      <p>
+        Fees collected {money(year.collectedCents)} from card fees and shop settlements.
+        In-person fees accrued {money(year.accruedCents || 0)}. Still owed {money(year.owedCents || 0)}.
+        Fee refunds {money(year.refundedCents)}. Net collected {money(year.netCents)}.
+      </p>
       <p>Shop bay revenue is not on this page.</p>
       <p>
         In-person fees shops still owe FixTray for the week of {year.weekLabel || 'this week'}: {money(year.inPersonOwedCents || 0)}.

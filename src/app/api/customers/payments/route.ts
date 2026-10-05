@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const fixtrayFee = await getPlatformServiceFeeUsd();
+    const fixtrayFee = (await getPlatformServiceFeeUsd()) ?? 0;
     const configuredFee = await getConfiguredPlatformServiceFeeUsd();
     const accountCache = new Map<string, ConnectAccountSnapshot | null>();
 

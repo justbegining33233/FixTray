@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { getPlatformConfig } from '@/lib/platformConfig';
-import { feePerPaidWorkOrder } from '@/lib/platformFees';
 import { isOwnerAdmin } from '@/lib/owner-access';
+import { centsToDollars, loadFeeMovements, reportZone } from '@/lib/books/storedFeeReport';
+import { addDays, dayKey, mondayKey, zonedDayStart } from '@/lib/books/periods';
+import { platformFeeYear, shopJobReceiptCents } from '@/lib/books/money';
 import logger from '@/lib/logger';
 import { displayPersonName } from '@/lib/platformUserLabel';
 
@@ -18,18 +19,11 @@ export async function GET(request: NextRequest) {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
-    const platformConfig = await getPlatformConfig();
-    const feePerWorkOrder = feePerPaidWorkOrder(platformConfig?.serviceFee);
-
     const [
       clockedInEmployees,
       workOrdersByStatus,
       todayWorkOrders,
       overdueWorkOrders,
-      todayPayments,
-      weekRevenue,
       pendingPayments,
       pendingShops,
       pendingShopsCount,
@@ -62,8 +56,6 @@ export async function GET(request: NextRequest) {
       prisma.workOrder.groupBy({ by: ['status'], _count: { id: true } }),
       prisma.workOrder.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.workOrder.count({ where: { dueDate: { lt: now }, status: { notIn: ['completed', 'cancelled', 'closed'] } } }),
-      prisma.workOrder.aggregate({ where: { paymentStatus: 'paid', updatedAt: { gte: todayStart } }, _sum: { amountPaid: true } }),
-      prisma.workOrder.aggregate({ where: { paymentStatus: 'paid', updatedAt: { gte: weekAgo } }, _sum: { amountPaid: true } }),
       prisma.workOrder.aggregate({ where: { paymentStatus: 'pending', status: 'completed' }, _sum: { estimatedCost: true }, _count: { id: true } }),
       prisma.shop.findMany({ where: { status: 'pending' }, take: 10, orderBy: { createdAt: 'desc' } }),
       prisma.shop.count({ where: { status: 'pending' } }),
@@ -90,6 +82,8 @@ export async function GET(request: NextRequest) {
           createdAt: true,
           updatedAt: true,
           amountPaid: true,
+          estimatedCost: true,
+          paymentStatus: true,
           issueDescription: true,
           shop: { select: { id: true, shopName: true } },
           customer: { select: { firstName: true, lastName: true } },
@@ -241,36 +235,60 @@ export async function GET(request: NextRequest) {
     const totalShopsCreated = await prisma.shop.count();
     const shopsByStatus = await prisma.shop.groupBy({ by: ['status'], _count: { id: true } });
 
+    const zone = await reportZone();
+    const todayKey = dayKey(now, zone);
+    const reportMonthKey = todayKey.slice(0, 7);
+    const reportLastMonthKey = addDays(`${reportMonthKey}-01`, -1).slice(0, 7);
+    const reportWeekStart = mondayKey(todayKey);
+    const reportWeekEnd = addDays(reportWeekStart, 7);
+    const todayStartNy = zonedDayStart(todayKey, zone);
+    const weekStartNy = zonedDayStart(reportWeekStart, zone);
+    const jobReceipt = (order: { amountPaid?: number | null; estimatedCost?: number | null; paymentStatus?: string | null }) =>
+      shopJobReceiptCents(order) / 100;
+    const todayRevenue = paidWorkOrders
+      .filter((order) => order.updatedAt >= todayStartNy)
+      .reduce((sum, order) => sum + jobReceipt(order), 0);
+    const weekJobRevenue = paidWorkOrders
+      .filter((order) => order.updatedAt >= weekStartNy)
+      .reduce((sum, order) => sum + jobReceipt(order), 0);
+
     const paidTodayCount = paidWorkOrders.filter((wo) => wo.createdAt >= todayStart).length;
     const paidWeekCount = paidWorkOrders.filter((wo) => wo.createdAt >= weekAgo).length;
     const paidMonthCount = paidWorkOrders.filter((wo) => wo.createdAt >= monthStart).length;
-    const paidLastMonthCount = paidWorkOrders.filter((wo) => wo.createdAt >= lastMonthStart && wo.createdAt < lastMonthEnd).length;
 
+    const movements = canViewPlatformFinancials ? await loadFeeMovements() : [];
+    const allFees = platformFeeYear(movements);
+    const collectedOf = (rows: typeof movements) => centsToDollars(platformFeeYear(rows).collectedCents);
+    const monthRows = movements.filter((row) => dayKey(new Date(row.at), zone).startsWith(reportMonthKey));
+    const lastMonthRows = movements.filter((row) => dayKey(new Date(row.at), zone).startsWith(reportLastMonthKey));
+    const feesThisMonth = collectedOf(monthRows);
+    const feesLastMonth = collectedOf(lastMonthRows);
+    const feeMoMGrowth = feesLastMonth > 0 ? Number((((feesThisMonth - feesLastMonth) / feesLastMonth) * 100).toFixed(1)) : 0;
+    const shopNames = new Map(paidWorkOrders.map((order) => [order.shop?.id || '', order.shop?.shopName || 'Shop']));
     const feesByShopMap: Record<string, { shopName: string; count: number; fees: number }> = {};
-    for (const wo of paidWorkOrders) {
-      const shopId = wo.shop?.id || 'unknown';
-      const shopName = wo.shop?.shopName || 'Unknown Shop';
+    for (const row of movements) {
+      if (row.kind !== 'collected' && row.kind !== 'settled') continue;
+      const shopId = row.shopId || 'unknown';
       if (!feesByShopMap[shopId]) {
-        feesByShopMap[shopId] = { shopName, count: 0, fees: 0 };
+        feesByShopMap[shopId] = { shopName: shopNames.get(shopId) || 'Shop', count: 0, fees: 0 };
       }
       feesByShopMap[shopId].count += 1;
-      feesByShopMap[shopId].fees += feePerWorkOrder;
+      feesByShopMap[shopId].fees += centsToDollars(row.feeCents);
     }
-
     const feesByShop = Object.values(feesByShopMap).sort((a, b) => b.fees - a.fees);
-    const feesThisMonth = paidMonthCount * feePerWorkOrder;
-    const feesLastMonth = paidLastMonthCount * feePerWorkOrder;
-    const feeMoMGrowth = feesLastMonth > 0 ? Number((((feesThisMonth - feesLastMonth) / feesLastMonth) * 100).toFixed(1)) : 0;
-
-    const recentFeeTransactions = paidWorkOrders.slice(0, 10).map((wo) => ({
-      id: wo.id,
-      shopName: wo.shop?.shopName || 'Unknown Shop',
-      customerName: wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : 'Unknown',
-      description: wo.issueDescription || 'Service',
-      amountPaid: wo.amountPaid || 0,
-      fee: feePerWorkOrder,
-      date: wo.createdAt,
-    }));
+    const recentFeeTransactions = movements
+      .slice()
+      .sort((a, b) => b.at.localeCompare(a.at))
+      .slice(0, 10)
+      .map((row) => ({
+        id: row.id,
+        shopName: shopNames.get(row.shopId) || 'Shop',
+        customerName: row.kind,
+        description: row.workOrderId,
+        amountPaid: 0,
+        fee: centsToDollars(row.kind === 'refund' || row.kind === 'chargeback' ? -row.feeCents : row.feeCents),
+        date: row.at,
+      }));
 
     return NextResponse.json({
       success: true,
@@ -294,8 +312,8 @@ export async function GET(request: NextRequest) {
         noShowsThisWeek,
       },
       financials: {
-        todayRevenue: todayPayments._sum.amountPaid || 0,
-        weekRevenue: weekRevenue._sum.amountPaid || 0,
+        todayRevenue,
+        weekRevenue: weekJobRevenue,
         pendingPayments: {
           count: pendingPayments._count.id,
           amount: pendingPayments._sum.estimatedCost || 0,
@@ -351,10 +369,13 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {} as Record<string, number>),
       workOrderFees: {
-        feePerWorkOrder: canViewPlatformFinancials ? feePerWorkOrder : 0,
-        totalFees: canViewPlatformFinancials ? paidWorkOrders.length * feePerWorkOrder : 0,
-        feesToday: canViewPlatformFinancials ? paidTodayCount * feePerWorkOrder : 0,
-        feesThisWeek: canViewPlatformFinancials ? paidWeekCount * feePerWorkOrder : 0,
+        feesOwed: canViewPlatformFinancials ? centsToDollars(allFees.owedCents) : 0,
+        totalFees: canViewPlatformFinancials ? centsToDollars(allFees.collectedCents) : 0,
+        feesToday: canViewPlatformFinancials ? collectedOf(movements.filter((row) => dayKey(new Date(row.at), zone) === todayKey)) : 0,
+        feesThisWeek: canViewPlatformFinancials ? collectedOf(movements.filter((row) => {
+          const key = dayKey(new Date(row.at), zone);
+          return key >= reportWeekStart && key < reportWeekEnd;
+        })) : 0,
         feesThisMonth: canViewPlatformFinancials ? feesThisMonth : 0,
         feesLastMonth: canViewPlatformFinancials ? feesLastMonth : 0,
         momGrowth: canViewPlatformFinancials ? feeMoMGrowth : 0,

@@ -49,8 +49,12 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const { readFeeSnapshot } = await import('@/lib/feeSnapshot');
     const serviceFeeUsd = await getPlatformServiceFeeUsd();
-    const transition = closeoutTransition(workOrder, body.action, serviceFeeUsd);
+    if ((body.action === 'invoice' || body.action === 'paid') && serviceFeeUsd == null && !readFeeSnapshot(workOrder.completion)) {
+      return NextResponse.json({ error: 'The platform service fee is not configured.' }, { status: 409 });
+    }
+    const transition = closeoutTransition(workOrder, body.action, serviceFeeUsd ?? 0);
     if (!transition.ok) {
       return NextResponse.json({ error: transition.error }, { status: 400 });
     }

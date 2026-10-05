@@ -33,7 +33,7 @@ async function invoiceBreakdown(link: {
       amount: frozen.total,
     };
   }
-  const platformFee = amount > 0 ? await getPlatformServiceFeeUsd() : 0;
+  const platformFee = amount > 0 ? (await getPlatformServiceFeeUsd()) ?? 0 : 0;
   const bill = link.status === 'paid'
     ? paymentLinkFeeBreakdown(amount, quote, platformFee)
     : unpaidInvoiceDisplay(amount, quote, platformFee);

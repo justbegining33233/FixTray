@@ -43,7 +43,7 @@ type LiveMetrics = {
   newCustomersThisMonth: number;
   newCustomersLastMonth: number;
   customerGrowth: string;
-  feePerWorkOrder: number;
+  feesOwed: number;
   totalFixtrayFees: number;
   fixtrayFeesThisMonth: number;
   fixtrayFeesLastMonth: number;
@@ -232,8 +232,8 @@ export default function ManageCustomers() {
               </div>
 
               <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: 20 }}>
-                <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>{say("Fee Per Paid Work Order")}</div>
-                <div style={{ fontSize: 28, fontWeight: 700, color: '#f59e0b' }}>{formatCurrency(liveMetrics.feePerWorkOrder)}</div>
+                <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 4 }}>{say("Fees still owed")}</div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: '#f59e0b' }}>{formatCurrency(liveMetrics.feesOwed)}</div>
                 <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>{say("Paid this month:")}{' '}{say(liveMetrics.paidWorkOrdersThisMonth)}</div>
               </div>
 
@@ -257,8 +257,8 @@ export default function ManageCustomers() {
                     <div style={{ fontSize: 10, color: '#9aa3b2' }}>{say("All-Time Fees")}</div>
                   </div>
                   <div style={{ background: 'rgba(245,158,11,0.1)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>{formatCurrency(liveMetrics.feePerWorkOrder)}</div>
-                    <div style={{ fontSize: 10, color: '#9aa3b2' }}>{say("Fee Per Job")}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>{formatCurrency(liveMetrics.feesOwed)}</div>
+                    <div style={{ fontSize: 10, color: '#9aa3b2' }}>{say("Fees still owed")}</div>
                   </div>
                 </div>
               </div>

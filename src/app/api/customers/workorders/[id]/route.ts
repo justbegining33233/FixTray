@@ -98,7 +98,7 @@ export async function GET(
         estimatedCost: quoteAmount,
         frozenCustomerFeeUsd: frozenCustomerFeeUsd(workOrder.completion, quoteAmount),
       },
-      await getPlatformServiceFeeUsd(),
+      (await getPlatformServiceFeeUsd()) ?? 0,
     );
     const shownMessages = await decorateWorkOrderMessages(
       workOrder.messages || [],

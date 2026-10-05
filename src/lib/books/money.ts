@@ -97,6 +97,7 @@ export interface BooksRow {
   sourceId?: string | null;
   depositAt?: string | Date | null;
   createdAt?: string | Date | null;
+  note?: string | null;
 }
 
 export interface MonthCloseIssue {
@@ -115,7 +116,9 @@ export interface MonthClose {
 export interface FeeMovement {
   id: string;
   shopId: string;
-  kind: 'collected' | 'refund' | 'chargeback';
+  workOrderId: string;
+  /** collected = card fee or legacy opening balance. settled = shop paid FixTray. accrued = in-person fee not yet paid. */
+  kind: 'collected' | 'accrued' | 'settled' | 'refund' | 'chargeback';
   feeCents: number;
   at: string;
 }
@@ -128,8 +131,16 @@ export interface PerShopFees {
 }
 
 export interface PlatformFeeYear {
+  /** Card fees, legacy opening balances, and shop settlements. Not in-person cash before the shop pays. */
   collectedCents: number;
+  /** In-person fees recorded at checkout. Not cash FixTray has received. */
+  accruedCents: number;
+  /** Shop settlements. Also included in collectedCents. */
+  settledCents: number;
+  /** accruedCents minus settledCents. Not clamped, so a later settlement can be negative. */
+  owedCents: number;
   refundedCents: number;
+  /** collectedCents minus fee refunds and chargebacks. */
   netCents: number;
   history: FeeMovement[];
   perShop: PerShopFees[];
@@ -705,6 +716,22 @@ function movementAt(value: string | Date | null | undefined): string {
   return iso(value) || new Date(0).toISOString();
 }
 
+/**
+ * Cash FixTray has actually received is a card fee, a legacy opening balance,
+ * or a shop settlement. An in-person fee is accrued until the shop pays it.
+ */
+export function classifyFeeRow(row: Pick<BooksRow, 'kind' | 'appliesTo' | 'status' | 'note'>): FeeMovement['kind'] | null {
+  if (row.appliesTo !== 'fee') return null;
+  if (String(row.status || 'posted') === 'open') return null;
+  const opening = String(row.note || '').toLowerCase().includes('opening balance');
+  if (row.kind === 'card_payment') return 'collected';
+  if (row.kind === 'fee_settlement') return 'settled';
+  if (row.kind === 'job_payment') return opening ? 'collected' : 'accrued';
+  if (row.kind === 'refund') return 'refund';
+  if (row.kind === 'chargeback') return 'chargeback';
+  return null;
+}
+
 /** Live fee movements. Shop job cents are not copied onto these rows. */
 export function feeMovements(orders: OrderInput[], rows: BooksRow[]): FeeMovement[] {
   const movements: FeeMovement[] = [];
@@ -716,6 +743,7 @@ export function feeMovements(orders: OrderInput[], rows: BooksRow[]): FeeMovemen
         movements.push({
           id: `${order.id}:legacy-fee`,
           shopId: order.shopId,
+          workOrderId: order.id,
           kind: 'collected',
           feeCents: legacy.fee,
           at: movementAt(order.createdAt),
@@ -726,38 +754,29 @@ export function feeMovements(orders: OrderInput[], rows: BooksRow[]): FeeMovemen
     for (const row of mine) {
       if (row.appliesTo !== 'fee') continue;
       if (String(row.status || 'posted') === 'open') continue;
-      if (row.kind === 'card_payment' || row.kind === 'job_payment') {
-        movements.push({
-          id: row.id,
-          shopId: order.shopId,
-          kind: 'collected',
-          feeCents: row.amountCents,
-          at: movementAt(row.createdAt || order.createdAt),
-        });
-      } else if (row.kind === 'refund') {
-        movements.push({
-          id: row.id,
-          shopId: order.shopId,
-          kind: 'refund',
-          feeCents: row.amountCents,
-          at: movementAt(row.createdAt || order.createdAt),
-        });
-      } else if (row.kind === 'chargeback') {
-        movements.push({
-          id: row.id,
-          shopId: order.shopId,
-          kind: 'chargeback',
-          feeCents: row.amountCents,
-          at: movementAt(row.createdAt || order.createdAt),
-        });
-      }
+      const kind = classifyFeeRow(row);
+      if (!kind) continue;
+      movements.push({
+        id: row.id,
+        shopId: order.shopId,
+        workOrderId: order.id,
+        kind,
+        feeCents: row.amountCents,
+        at: movementAt(row.createdAt || order.createdAt),
+      });
     }
   }
   return movements;
 }
 
+function receivedFee(kind: FeeMovement['kind']): boolean {
+  return kind === 'collected' || kind === 'settled';
+}
+
 export function platformFeeYear(movements: FeeMovement[]): PlatformFeeYear {
   let collected = 0;
+  let accrued = 0;
+  let settled = 0;
   let refunded = 0;
   const byShop = new Map<string, PerShopFees>();
   for (const movement of movements) {
@@ -767,9 +786,12 @@ export function platformFeeYear(movements: FeeMovement[]): PlatformFeeYear {
       refundedCents: 0,
       netCents: 0,
     };
-    if (movement.kind === 'collected') {
+    if (receivedFee(movement.kind)) {
       collected += movement.feeCents;
       row.collectedCents += movement.feeCents;
+      if (movement.kind === 'settled') settled += movement.feeCents;
+    } else if (movement.kind === 'accrued') {
+      accrued += movement.feeCents;
     } else {
       refunded += movement.feeCents;
       row.refundedCents += movement.feeCents;
@@ -780,11 +802,28 @@ export function platformFeeYear(movements: FeeMovement[]): PlatformFeeYear {
   const history = movements.slice().sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
   return {
     collectedCents: collected,
+    accruedCents: accrued,
+    settledCents: settled,
+    owedCents: accrued - settled,
     refundedCents: refunded,
     netCents: collected - refunded,
     history,
     perShop: [...byShop.values()].sort((a, b) => a.shopId.localeCompare(b.shopId)),
   };
+}
+
+/** Shop receipt. A card charge stores the customer fee on top of the job in amountPaid. */
+export function shopJobReceiptCents(input: {
+  amountPaid?: number | null;
+  estimatedCost?: number | null;
+  paymentStatus?: string | null;
+}): number {
+  const job = usdToCents(input.estimatedCost);
+  const charged = usdToCents(input.amountPaid);
+  const status = String(input.paymentStatus || '').trim().toLowerCase();
+  if (charged <= 0 || status === 'unpaid' || status === 'refunded') return 0;
+  if (job > 0 && charged > job) return job;
+  return charged;
 }
 
 export function accountantFeeCsv(year: PlatformFeeYear): string {

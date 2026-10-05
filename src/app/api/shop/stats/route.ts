@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { activeWorkOrderWhere, pendingApprovalWhere, resolveShopId } from '@/lib/workOrderMetrics';
+import { shopJobReceiptCents } from '@/lib/books/money';
+import { addDays, dayKey, mondayKey, zonedDayStart } from '@/lib/books/periods';
+import { reportZone } from '@/lib/books/storedFeeReport';
 
 // GET - Get shop dashboard stats
 export async function GET(request: NextRequest) {
@@ -38,14 +41,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Shop access only' }, { status: 403 });
     }
 
-    // Get all work orders for the shop
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    const zone = await reportZone();
+    const todayKey = dayKey(new Date(), zone);
+    const today = zonedDayStart(todayKey, zone);
+    const tomorrow = zonedDayStart(addDays(todayKey, 1), zone);
+    const weekAgo = zonedDayStart(mondayKey(todayKey), zone);
+    const showRevenue = decoded.role === 'shop' || decoded.role === 'admin' || decoded.role === 'superadmin';
 
     // Work order stats
     const [openJobs, completedToday, weekJobs, allJobs] = await Promise.all([
@@ -70,19 +71,22 @@ export async function GET(request: NextRequest) {
         select: {
           status: true,
           amountPaid: true,
+          estimatedCost: true,
+          paymentStatus: true,
           completedAt: true,
         },
       }),
     ]);
 
-    // Calculate revenue
+    const receipt = (job: { amountPaid: number | null; estimatedCost: number | null; paymentStatus: string | null }) =>
+      shopJobReceiptCents(job) / 100;
     const todayRevenue = allJobs
       .filter(j => j.completedAt && j.completedAt >= today && j.completedAt < tomorrow)
-      .reduce((sum, j) => sum + (j.amountPaid || 0), 0);
+      .reduce((sum, j) => sum + receipt(j), 0);
 
     const weekRevenue = allJobs
       .filter(j => j.completedAt && j.completedAt >= weekAgo)
-      .reduce((sum, j) => sum + (j.amountPaid || 0), 0);
+      .reduce((sum, j) => sum + receipt(j), 0);
 
     // Get team stats
     const [totalTechs, activeTechs, clockedInNow] = await Promise.all([
@@ -126,10 +130,9 @@ export async function GET(request: NextRequest) {
         completedThisWeek: weekJobs,
         pendingApprovals,
       },
-      revenue: {
-        today: todayRevenue,
-        week: weekRevenue,
-      },
+      revenue: showRevenue
+        ? { today: todayRevenue, week: weekRevenue, revenueVisible: true }
+        : { revenueVisible: false },
       team: {
         total: totalTechs,
         active: activeTechs,

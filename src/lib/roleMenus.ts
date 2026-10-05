@@ -136,7 +136,7 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
       defaultOpen: false,
       items: [
         { icon: 'chart', label: 'Analytics', href: '/admin/platform-analytics' },
-        { icon: 'dollar', label: 'Revenue & Payouts', href: '/admin/revenue' },
+        { icon: 'dollar', label: 'Fee Revenue', href: '/admin/revenue' },
         { icon: 'file', label: 'Financial Reports', href: '/admin/financial-reports' },
       ],
     },

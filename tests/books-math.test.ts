@@ -15,6 +15,7 @@ import {
   planSourceReversal,
   platformFeeYear,
   reportsMatchLedger,
+  shopJobReceiptCents,
   shopLedger,
   shopReport,
   usdToCents,
@@ -48,6 +49,8 @@ import {
   SHOP_PAID_IN_FULL_COPY,
 } from '../src/lib/books/quickbooks';
 import { memberAndCustomerFeeCopy } from '../src/lib/publicFeeCopy';
+import { destinationChargeRefundPlan } from '../src/lib/stripeRefund';
+import { weeklyFeeInvoiceWindow } from '../src/lib/books/weeklyFeeInvoice';
 
 const AT = '2026-10-05T15:00:00.000Z';
 const ACTOR = 'owner-1';
@@ -308,6 +311,85 @@ describe('platform fee year', () => {
     expect(csv).not.toContain('revenue');
     expect(csv).not.toContain('100000');
     expect(csv).toContain(`total,,net,${year.netCents}`);
+  });
+
+  it('keeps in-person fees accrued until the shop settles them', () => {
+    const accrued = platformFeeYear(feeMovements(
+      [order({ id: 'job-1', shopId: 'shop-a', estimatedCost: 100 })],
+      [
+        row({
+          id: 'ip',
+          workOrderId: 'job-1',
+          kind: 'job_payment',
+          appliesTo: 'fee',
+          amountCents: 2500,
+          note: 'cash at the counter',
+          createdAt: '2026-10-02T16:00:00.000Z',
+        }),
+      ],
+    ));
+    expect(accrued.collectedCents).toBe(0);
+    expect(accrued.accruedCents).toBe(2500);
+    expect(accrued.owedCents).toBe(2500);
+    expect(accrued.netCents).toBe(0);
+
+    const settled = platformFeeYear(feeMovements(
+      [order({ id: 'job-1', shopId: 'shop-a', estimatedCost: 100 })],
+      [
+        row({ id: 'ip', workOrderId: 'job-1', kind: 'job_payment', appliesTo: 'fee', amountCents: 2500, createdAt: '2026-10-02T16:00:00.000Z' }),
+        row({ id: 'set', workOrderId: 'job-1', kind: 'fee_settlement', appliesTo: 'fee', amountCents: 2500, createdAt: '2026-10-08T16:00:00.000Z' }),
+        row({ id: 'back', workOrderId: 'job-1', kind: 'refund', appliesTo: 'fee', amountCents: 500, sourceId: 're_fee', createdAt: '2026-10-09T16:00:00.000Z' }),
+      ],
+    ));
+    expect(settled.collectedCents).toBe(2500);
+    expect(settled.settledCents).toBe(2500);
+    expect(settled.accruedCents).toBe(2500);
+    expect(settled.owedCents).toBe(0);
+    expect(settled.refundedCents).toBe(500);
+    expect(settled.netCents).toBe(2000);
+  });
+});
+
+describe('shop job receipt and destination refunds', () => {
+  it('drops the customer fee from a card receipt and keeps an in-person job amount', () => {
+    expect(shopJobReceiptCents({ amountPaid: 110.47, estimatedCost: 100, paymentStatus: 'paid' })).toBe(10_000);
+    expect(shopJobReceiptCents({ amountPaid: 80, estimatedCost: 100, paymentStatus: 'pending' })).toBe(8_000);
+    expect(shopJobReceiptCents({ amountPaid: 110.47, estimatedCost: 100, paymentStatus: 'refunded' })).toBe(0);
+  });
+
+  it('reverses the shop transfer for a job refund and the application fee only when the fee is refunded', () => {
+    const jobOnly = destinationChargeRefundPlan({
+      amountCents: 5_000,
+      jobRemainingCents: 10_000,
+      feeRemainingCents: 1_047,
+      appliesTo: 'job',
+    });
+    expect(jobOnly.ok).toBe(true);
+    if (!jobOnly.ok) return;
+    expect(jobOnly.plan.reverseTransfer).toBe(true);
+    expect(jobOnly.plan.refundApplicationFee).toBe(false);
+    expect(jobOnly.plan.jobCents).toBe(5_000);
+    expect(jobOnly.plan.feeCents).toBe(0);
+
+    const full = destinationChargeRefundPlan({
+      amountCents: 11_047,
+      jobRemainingCents: 10_000,
+      feeRemainingCents: 1_047,
+    });
+    expect(full.ok).toBe(true);
+    if (!full.ok) return;
+    expect(full.plan.reverseTransfer).toBe(true);
+    expect(full.plan.refundApplicationFee).toBe(true);
+    expect(full.plan.amountCents).toBe(11_047);
+  });
+
+  it('emails the prior week only on Monday in New York', () => {
+    const thursday = weeklyFeeInvoiceWindow(new Date('2026-10-08T15:00:00.000Z'), 'America/New_York');
+    expect(thursday.due).toBe(false);
+    const monday = weeklyFeeInvoiceWindow(new Date('2026-10-05T15:00:00.000Z'), 'America/New_York');
+    expect(monday.due).toBe(true);
+    if (!monday.due) return;
+    expect(monday.weekLabel).toBe('2026-09-28');
   });
 });
 

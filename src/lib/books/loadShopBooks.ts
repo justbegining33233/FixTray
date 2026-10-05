@@ -221,6 +221,7 @@ export async function loadPlatformFeeYear(month?: string | null) {
     amountCents: entry.amountCents,
     status: entry.status,
     sourceId: entry.sourceId,
+    note: entry.note,
     createdAt: entry.createdAt,
   }))));
   const names = new Map(orders.map((order) => [order.shopId, order.shop?.shopName || order.shopId]));

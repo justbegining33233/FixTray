@@ -709,7 +709,9 @@ export default function ShopAdminPage() {
 
   const statCards = [
     { label: 'Open Work Orders', value: String(openWorkOrders), sub: `${completedThisWeek} completed this week`, color: '#e5332a', icon: <FaClock /> },
-    { label: 'Weekly Revenue', value: `$${Number(weeklyRevenue).toFixed(2)}`, sub: `${completionRate}% weekly completion rate`, color: '#22c55e', icon: <FaDollarSign /> },
+    ...(user?.role === 'shop' && shopStats?.revenue?.revenueVisible !== false
+      ? [{ label: 'Weekly Revenue', value: `$${Number(weeklyRevenue).toFixed(2)}`, sub: `${completionRate}% weekly completion rate`, color: '#22c55e', icon: <FaDollarSign /> }]
+      : []),
     { label: 'Team Coverage', value: `${clockedInCount}/${teamCount}`, sub: 'Clocked in right now', color: '#f59e0b', icon: <FaUsers /> },
     { label: 'Inventory Health', value: String(inventoryCount), sub: `${pendingActions} pending admin actions`, color: '#a855f7', icon: <FaBox /> },
   ];

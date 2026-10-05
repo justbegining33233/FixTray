@@ -5,28 +5,22 @@
  * via /superadmin/settings and /api/admin/settings. This is what the platform
  * nets after Stripe. Checkout grosses it up into the customer-facing fee.
  * Do not write the customer-facing amount back here.
- * FIXTRAY_SERVICE_FEE_CENTS is only the fallback when no config row exists.
+ * A missing PlatformConfig row does not fall back to $5. Money paths fail closed.
  */
 
 import prisma from '@/lib/prisma';
-import { FIXTRAY_SERVICE_FEE_CENTS } from '@/lib/constants';
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-/** Current FixTray fee in USD, read from PlatformConfig. */
-export async function getPlatformServiceFeeUsd(): Promise<number> {
-  try {
-    const config = await prisma.platformConfig.findUnique({ where: { id: 'global' } });
-    const cents =
-      typeof config?.serviceFee === 'number' && Number.isFinite(config.serviceFee)
-        ? config.serviceFee
-        : FIXTRAY_SERVICE_FEE_CENTS;
-    return round2(Math.max(0, cents) / 100);
-  } catch {
-    return round2(FIXTRAY_SERVICE_FEE_CENTS / 100);
-  }
+/**
+ * Current FixTray fee in USD, read from PlatformConfig.
+ * Null when the row is missing or the database cannot be read. Callers must
+ * not substitute the old $5 public default.
+ */
+export async function getPlatformServiceFeeUsd(): Promise<number | null> {
+  return getConfiguredPlatformServiceFeeUsd();
 }
 
 /**

@@ -10,6 +10,7 @@ import { isRouteAllowed, type RouteActor } from './roleAccess';
 import { normalizeRole, shellHrefForRole } from './roleNav';
 import { isPlatformActor, isShopScopedPath, isStaticAssetPath } from './platformOwnerScope';
 import { isPlatformEmailAccount, PLATFORM_EMAIL_HREF, isPlatformEmailPath } from './platformEmailAccess';
+import { PLATFORM_VISITS_HREF, isPlatformVisitsPath } from './platformVisits';
 import { isShopEdgeSensitivePath } from './shopRestrictedRoutes';
 
 export type MenuRole = 'superadmin' | 'shop' | 'manager' | 'tech' | 'customer';
@@ -463,9 +464,7 @@ export function menuRoleForSidebar(role: SidebarRole): MenuRole {
   return role === 'admin' || role === 'superadmin' ? 'superadmin' : role;
 }
 
-function withPlatformEmailItem(groups: RoleMenuGroup[], menuRole: MenuRole, username?: string | null): RoleMenuGroup[] {
-  if (menuRole !== 'superadmin' || !isPlatformEmailAccount(username)) return groups;
-  const item: RoleMenuItem = { icon: 'bell', label: 'Emails', href: PLATFORM_EMAIL_HREF };
+function appendPlatformOwnerItem(groups: RoleMenuGroup[], item: RoleMenuItem): RoleMenuGroup[] {
   let placed = false;
   const next = groups.map((group) => {
     if (group.label !== 'Communications') return group;
@@ -475,6 +474,12 @@ function withPlatformEmailItem(groups: RoleMenuGroup[], menuRole: MenuRole, user
   });
   if (placed) return next;
   return [...next, { label: 'Communications', icon: 'bell', defaultOpen: false, items: [item] }];
+}
+
+function withPlatformEmailItem(groups: RoleMenuGroup[], menuRole: MenuRole, username?: string | null): RoleMenuGroup[] {
+  if (menuRole !== 'superadmin' || !isPlatformEmailAccount(username)) return groups;
+  const withEmail = appendPlatformOwnerItem(groups, { icon: 'bell', label: 'Emails', href: PLATFORM_EMAIL_HREF });
+  return appendPlatformOwnerItem(withEmail, { icon: 'chart', label: 'Visits', href: PLATFORM_VISITS_HREF });
 }
 
 /** Computer sidebar groups after the same filters the sidebar applies. */
@@ -594,7 +599,7 @@ export function portalAccessDecision(pathname: string, actor: string | RouteActo
   const adminArea = path === '/admin' || path.startsWith('/admin/');
   if (adminArea && normalized !== 'admin' && normalized !== 'superadmin') return 'forbidden';
   if (isPlatformActor({ role: normalized }) && isShopScopedPath(path)) return 'home';
-  if (isPlatformEmailPath(path)) {
+  if (isPlatformEmailPath(path) || isPlatformVisitsPath(path)) {
     const username = typeof actor === 'object' && actor ? actor.username : undefined;
     return isPlatformEmailAccount(username) ? 'allow' : 'home';
   }

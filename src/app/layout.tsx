@@ -18,6 +18,7 @@ import { appDesktopViewResetScript, installedShellBootstrapScript } from '@/lib/
 import AppNavigationGuard from '@/components/AppNavigationGuard';
 import DesktopViewEscape from '@/components/DesktopViewEscape';
 import AttentionFlagBanner from '@/components/AttentionFlagBanner';
+import PageViewTracker from '@/components/PageViewTracker';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -102,6 +103,7 @@ export default async function RootLayout({
               <ClientAuthProvider>
                 <NativeStatusBar />
                 <AppNavigationGuard />
+                <PageViewTracker />
                 <DesktopViewEscape />
                 {children}
                 <AttentionFlagBanner />

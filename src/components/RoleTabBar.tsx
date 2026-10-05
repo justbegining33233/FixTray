@@ -26,6 +26,7 @@ import {
   type MobileRoleNav,
 } from '@/lib/mobileRoleNav';
 import { isPlatformEmailAccount, isPlatformEmailPath } from '@/lib/platformEmailAccess';
+import { isPlatformVisitsPath } from '@/lib/platformVisits';
 import { useSessionUsername } from '@/lib/useSessionUsername';
 
 const ICONS: Record<MobileIconName, typeof IconHome> = {
@@ -125,7 +126,7 @@ export default function RoleTabBar({
   const tabIndex = activePrimaryTabIndex(nav, pathname);
   const filtered = useMemo(() => {
     const hidden = (item: MobileLink) => {
-      if (isPlatformEmailPath(item.href) && !isPlatformEmailAccount(username)) return true;
+      if ((isPlatformEmailPath(item.href) || isPlatformVisitsPath(item.href)) && !isPlatformEmailAccount(username)) return true;
       if (!user?.isOwner && (item.label === 'Owner Tools' || item.href.startsWith('/admin/owner'))) return true;
       return false;
     };

@@ -399,8 +399,10 @@ describe('drill screens', () => {
     expect(feeRoute).toContain('loadFeeYearDrill');
     expect(feePage).toContain('FeeYearDrill');
     expect(feePage).toContain('inPersonLines');
+    const exportRoute = readFileSync(join(root, 'src/app/api/shop/books/export/route.ts'), 'utf8');
     expect(booksRoute).toContain('hideShopRevenue');
     expect(booksRoute).toContain('shopRevenue');
+    expect(exportRoute).toContain('shopRevenue');
     expect(books).toContain('revenueVisible');
     expect(books).toContain('ShopYearDrill');
   });

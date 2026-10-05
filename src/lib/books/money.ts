@@ -1,3 +1,5 @@
+import { customerFacingServiceFeeCents } from '@/lib/serviceFeeBill';
+
 /**
  * Shop job money and the platform fee ledger.
  *
@@ -22,7 +24,7 @@ export interface BooksAuditEvent {
 }
 
 export interface BooksEntryDraft {
-  kind: 'card_payment' | 'job_payment' | 'deposit' | 'refund' | 'chargeback';
+  kind: 'card_payment' | 'job_payment' | 'deposit' | 'refund' | 'chargeback' | 'fee_settlement';
   appliesTo: 'job' | 'fee';
   amountCents: number;
   status: 'posted' | 'open';
@@ -308,9 +310,20 @@ export function planDeposit(input: {
   depositAt: string;
   actorId: string;
   at: string;
+  /** Shop receipt already on the job. Required for a deposit that can close. */
+  shopReceivedCents?: number;
 }): { ok: true; entry: BooksEntryDraft; audit: BooksAuditEvent } | { ok: false; error: string } {
   const amount = cents(input.amountCents, 'deposit');
   if (amount <= 0) return { ok: false, error: 'Deposit amount must be greater than zero' };
+  if (input.shopReceivedCents != null) {
+    const received = cents(input.shopReceivedCents, 'shop receipt');
+    if (received <= 0) {
+      return { ok: false, error: 'Record the customer payment before depositing it' };
+    }
+    if (amount !== received) {
+      return { ok: false, error: 'Deposit must match the shop receipt' };
+    }
+  }
   const when = new Date(input.depositAt);
   if (Number.isNaN(when.getTime())) return { ok: false, error: 'Deposit date is required' };
   const depositAt = when.toISOString();
@@ -783,4 +796,236 @@ export function accountantFeeCsv(year: PlatformFeeYear): string {
   lines.push(`total,,refunded,${year.refundedCents}`);
   lines.push(`total,,net,${year.netCents}`);
   return `${lines.join('\n')}\n`;
+}
+
+export type InPersonMethod = 'cash' | 'check' | 'other';
+
+/** Work-order paymentStatus the rest of the app already writes. Partial is pending. */
+export function paymentStatusForStanding(standing: PaymentStanding): 'paid' | 'pending' | 'unpaid' | 'refunded' {
+  if (standing === 'paid') return 'paid';
+  if (standing === 'partial') return 'pending';
+  if (standing === 'reversed') return 'refunded';
+  return 'unpaid';
+}
+
+export interface InPersonPlan {
+  ok: true;
+  entries: BooksEntryDraft[];
+  customerPaidJobCents: number;
+  shopReceivedCents: number;
+  platformFeeCents: number;
+  standing: PaymentStanding;
+  paymentStatus: 'paid' | 'pending' | 'unpaid';
+  feeDeductedFromShop: false;
+  audit: BooksAuditEvent;
+}
+
+/**
+ * Counter payment. The shop keeps the full job cents collected.
+ * The FixTray fee uses the same card gross-up as a Stripe charge of that job
+ * and is written appliesTo=fee. It is not subtracted from the shop.
+ * A partial tender records no fee until the job is paid in full.
+ */
+export function planInPersonPayment(input: {
+  workOrderId: string;
+  shopId?: string | null;
+  jobCents: number;
+  alreadyReceivedCents: number;
+  tenderedCents: number;
+  savedFeeCents: number;
+  method: InPersonMethod;
+  feeAlreadyRecorded: boolean;
+  actorId: string;
+  at: string;
+}): InPersonPlan | { ok: false; error: string } {
+  const job = cents(input.jobCents, 'job');
+  const already = cents(input.alreadyReceivedCents, 'already received');
+  const tendered = cents(input.tenderedCents, 'tender');
+  const savedFee = cents(input.savedFeeCents, 'saved fee');
+  if (job <= 0) return { ok: false, error: 'The shop job amount is missing' };
+  if (already > job) return { ok: false, error: 'This job is already paid past the shop total' };
+  if (tendered <= 0) return { ok: false, error: 'Enter the amount the customer paid' };
+  const remaining = job - already;
+  if (tendered > remaining) {
+    return { ok: false, error: 'That amount is more than the shop still has coming' };
+  }
+  const shopReceived = already + tendered;
+  const standing = standingFor({ jobCents: job, shopReceivedCents: shopReceived, hadJobReversal: false });
+  const platformFee = standing === 'paid' && !input.feeAlreadyRecorded
+    ? customerFacingServiceFeeCents(job, savedFee)
+    : 0;
+  const entries: BooksEntryDraft[] = [
+    {
+      kind: 'job_payment',
+      appliesTo: 'job',
+      amountCents: tendered,
+      status: 'posted',
+      idempotencyKey: `inperson:${input.workOrderId}:job:${shopReceived}`,
+      sourceId: null,
+      depositAt: null,
+      note: `in-person ${input.method}`,
+    },
+  ];
+  if (platformFee > 0) {
+    entries.push({
+      kind: 'job_payment',
+      appliesTo: 'fee',
+      amountCents: platformFee,
+      status: 'posted',
+      idempotencyKey: `inperson:${input.workOrderId}:fee`,
+      sourceId: null,
+      depositAt: null,
+      note: `in-person ${input.method}; platform fee; not a shop expense`,
+    });
+  }
+  return {
+    ok: true,
+    entries,
+    customerPaidJobCents: shopReceived,
+    shopReceivedCents: shopReceived,
+    platformFeeCents: platformFee,
+    standing,
+    paymentStatus: (() => {
+      const status = paymentStatusForStanding(standing);
+      return status === 'refunded' ? 'unpaid' : status;
+    })(),
+    feeDeductedFromShop: false,
+    audit: auditEvent({
+      actorId: input.actorId,
+      at: input.at,
+      action: 'books.in_person_payment',
+      targetType: 'work_order',
+      targetId: input.workOrderId,
+      shopId: input.shopId,
+      details: `in-person ${input.method}; job ${tendered} cents; shop received ${shopReceived} cents; platform fee ${platformFee} cents; fee not deducted from shop`,
+    }),
+  };
+}
+
+export interface InPersonFeeLine {
+  id: string;
+  shopId: string;
+  workOrderId: string;
+  feeCents: number;
+  at: string;
+  note: string | null;
+}
+
+export interface InPersonFeeOwed {
+  accruedCents: number;
+  settledCents: number;
+  owedCents: number;
+  lines: InPersonFeeLine[];
+  feeDeductedFromShop: false;
+}
+
+function inRange(value: string | Date | null | undefined, range?: { start: Date; end: Date }): boolean {
+  if (!range) return true;
+  const date = value instanceof Date ? value : value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return false;
+  return date.getTime() >= range.start.getTime() && date.getTime() < range.end.getTime();
+}
+
+/**
+ * FixTray amount the shop still owes from in-person fee rows.
+ * Card fees are already collected on the Stripe charge and are not owed again.
+ * Settlements reduce the open amount. Nothing here is a shop expense.
+ */
+export function inPersonFeeOwed(
+  rows: BooksRow[],
+  range?: { start: Date; end: Date },
+): InPersonFeeOwed {
+  const lines: InPersonFeeLine[] = [];
+  let accrued = 0;
+  let settled = 0;
+  for (const row of rows) {
+    if (row.appliesTo !== 'fee') continue;
+    if (String(row.status || 'posted') === 'open') continue;
+    if (!inRange(row.createdAt, range)) continue;
+    const amount = cents(row.amountCents, 'fee');
+    if (row.kind === 'job_payment') {
+      accrued += amount;
+      lines.push({
+        id: row.id,
+        shopId: row.shopId || '',
+        workOrderId: row.workOrderId,
+        feeCents: amount,
+        at: iso(row.createdAt) || '',
+        note: null,
+      });
+    } else if (row.kind === 'fee_settlement') {
+      settled += amount;
+    }
+  }
+  return {
+    accruedCents: accrued,
+    settledCents: settled,
+    owedCents: Math.max(0, accrued - settled),
+    lines,
+    feeDeductedFromShop: false,
+  };
+}
+
+export function inPersonFeeInvoice(input: {
+  shopName: string;
+  weekLabel: string;
+  owed: InPersonFeeOwed;
+}): { subject: string; text: string } {
+  const dollars = (input.owed.owedCents / 100).toFixed(2);
+  const detail = input.owed.lines.length === 0
+    ? 'No open in-person fee rows.'
+    : input.owed.lines.map((line) => `${line.workOrderId}: $${(line.feeCents / 100).toFixed(2)}`).join('\n');
+  return {
+    subject: `FixTray fee invoice ${input.weekLabel}`,
+    text: [
+      `${input.shopName} owes FixTray $${dollars} for the week of ${input.weekLabel}.`,
+      'These were in-person payments. The shop was paid the full job. This fee is owed to FixTray and is not a shop expense.',
+      detail,
+    ].join('\n'),
+  };
+}
+
+/** Monday 00:00 UTC through the next Monday. Callers pass the instant they care about. */
+export function utcWeekRange(at: Date): { start: Date; end: Date; label: string } {
+  const day = at.getUTCDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const start = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate() + mondayOffset));
+  const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const label = start.toISOString().slice(0, 10);
+  return { start, end, label };
+}
+
+export function planFeeSettlement(input: {
+  workOrderId: string;
+  shopId?: string | null;
+  amountCents: number;
+  paymentIntentId: string;
+  actorId: string;
+  at: string;
+}): { ok: true; entry: BooksEntryDraft; audit: BooksAuditEvent } | { ok: false; error: string } {
+  const amount = cents(input.amountCents, 'settlement');
+  if (amount <= 0) return { ok: false, error: 'Settlement amount must be greater than zero' };
+  if (!input.paymentIntentId.startsWith('pi_')) return { ok: false, error: 'A PaymentIntent id is required' };
+  return {
+    ok: true,
+    entry: {
+      kind: 'fee_settlement',
+      appliesTo: 'fee',
+      amountCents: amount,
+      status: 'posted',
+      idempotencyKey: `settle:${input.paymentIntentId}:${input.workOrderId}`,
+      sourceId: input.paymentIntentId,
+      depositAt: null,
+      note: `shop paid FixTray fee ${input.paymentIntentId}`,
+    },
+    audit: auditEvent({
+      actorId: input.actorId,
+      at: input.at,
+      action: 'books.fee_settlement',
+      targetType: 'work_order',
+      targetId: input.workOrderId,
+      shopId: input.shopId,
+      details: `fee settlement ${amount} cents via ${input.paymentIntentId}; not a shop expense`,
+    }),
+  };
 }

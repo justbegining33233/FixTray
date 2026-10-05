@@ -533,6 +533,7 @@ describe('parts, tax, and ticket sync', () => {
       paidJobCents: 10_000,
       standing: 'paid',
       storedEstimateCents: 10_000,
+      invoiced: true,
     });
     expect(preview.sync.synced).toBe(true);
     expect(preview.invoiceCents).toBe(preview.estimateCents);
@@ -541,13 +542,22 @@ describe('parts, tax, and ticket sync', () => {
       invoiceCents: 10_000 + 4047,
       paidJobCents: 10_000,
       standing: 'paid',
+      invoiced: true,
     }).synced).toBe(false);
     expect(ticketSync({
       estimateCents: 10_000,
       invoiceCents: 10_000,
       paidJobCents: 4_000,
       standing: 'partial',
-    }).synced).toBe(true);
+      invoiced: true,
+    }).synced).toBe(false);
+    expect(ticketSync({
+      estimateCents: 10_000,
+      invoiceCents: null,
+      paidJobCents: 0,
+      standing: 'unpaid',
+      invoiced: false,
+    }).issues).toEqual(expect.arrayContaining(['Missing invoice', 'Unpaid']));
     expect(usdToCents(100.005)).toBe(10001);
   });
 });

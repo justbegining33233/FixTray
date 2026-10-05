@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { getSocketServer } from '@/lib/socket-server';
 import { customerTrackingWhere } from '@/lib/customerTracking';
+import { customerJobTrack } from '@/lib/customerJobTrack';
 
 // GET /api/customers/tracking - Get real-time tech location for active work order
 export async function GET(request: Request) {
@@ -46,6 +47,8 @@ export async function GET(request: Request) {
             address: true,
           },
         },
+        vehicle: { select: { year: true, make: true, model: true, licensePlate: true } },
+        statusHistory: { orderBy: { createdAt: 'asc' } },
         tracking: true,
       },
     });
@@ -80,6 +83,7 @@ export async function GET(request: Request) {
         location: isInShop ? { shopAddress } : (wo.tracking || null),
         estimatedArrival: isInShop ? wo.dueDate?.toISOString() || null : wo.tracking?.estimatedArrival || null,
         isInShop,
+        job: customerJobTrack(wo),
       };
     });
 

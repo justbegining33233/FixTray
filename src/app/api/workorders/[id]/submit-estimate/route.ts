@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
@@ -48,9 +49,18 @@ export async function POST(
 
   // Update work order status to estimate-submitted.
   // A pending authorization is not created here. Customer accept + signature does that.
+  // Walk-ins have no login, so the counter token opens /sign on this device or by link.
+  const priorEstimate = workOrder.estimate && typeof workOrder.estimate === 'object'
+    ? workOrder.estimate as Record<string, unknown>
+    : {};
+  const existingToken = typeof priorEstimate.counterSignToken === 'string' ? priorEstimate.counterSignToken : '';
+  const counterSignToken = existingToken.length >= 16 ? existingToken : crypto.randomBytes(24).toString('hex');
   await prisma.workOrder.update({
     where: { id },
-    data: { status: 'estimate-submitted' },
+    data: {
+      status: 'estimate-submitted',
+      estimate: { ...priorEstimate, counterSignToken },
+    },
   });
 
   await prisma.workAuthorization.deleteMany({
@@ -71,5 +81,9 @@ export async function POST(
     });
   }
 
-  return NextResponse.json({ success: true, message: 'Estimate submitted to customer' });
+  return NextResponse.json({
+    success: true,
+    message: 'Estimate submitted to customer',
+    signPath: `/sign/${counterSignToken}`,
+  });
 }

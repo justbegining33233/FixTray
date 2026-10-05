@@ -12,6 +12,7 @@ import { FaArrowLeft, FaCalendarAlt, FaComments, FaMapMarkerAlt } from 'react-ic
 
 interface Appointment {
   id: string;
+  workOrderId: string;
   scheduledDate: string;
   serviceType: string;
   status: string;
@@ -331,8 +332,7 @@ export default function CustomerAppointmentsPage() {
                 )}
 
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {/* Track button - goes to shop page */}
-                  <Link href={`/customer/findshops/${apt.shop.id}`} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
+                  <Link href={`/customer/jobs/${apt.workOrderId}/track`} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
                     <FaMapMarkerAlt style={{marginRight:4}} /> {say("Track")}{' '}</Link>
 
                   {/* Message button - opens modal for this appointment */}

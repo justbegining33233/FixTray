@@ -49,6 +49,7 @@ export default function ShopNewInShopJob() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
+  const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -154,8 +155,17 @@ export default function ShopNewInShopJob() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
     if (serviceOptions.length === 0) {
-      console.error('Cannot create in-shop work order without configured shop services');
+      setFormError('This shop has no services configured. Add services before creating a work order.');
+      return;
+    }
+    if (!formData.customerEmail.trim()) {
+      setFormError('Customer email is required.');
+      return;
+    }
+    if (formData.services.length === 0) {
+      setFormError('Choose at least one service.');
       return;
     }
     try {
@@ -193,12 +203,15 @@ export default function ShopNewInShopJob() {
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        console.error('Failed to create work order', err);
+        const invalid = Array.isArray(err.invalidServices) && err.invalidServices.length
+          ? ` ${err.invalidServices.join(', ')}`
+          : '';
+        setFormError((err.error || 'Could not create the work order.') + invalid);
         return;
       }
       router.push(portalDashboardHref(user.role) as Route);
-    } catch (err) {
-      console.error('Error creating work order', err);
+    } catch {
+      setFormError('Could not create the work order.');
     }
   };
 
@@ -254,6 +267,11 @@ export default function ShopNewInShopJob() {
 
       <div style={{maxWidth:900, margin:'0 auto', padding:32}}>
         <form onSubmit={handleSubmit}>
+          {formError && (
+            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#fecaca', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+              {formError}
+            </div>
+          )}
           {/* Customer Information */}
           <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24, marginBottom:24}}>
             <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:20}}>{say("Customer Information")}</h2>
@@ -373,9 +391,10 @@ export default function ShopNewInShopJob() {
                 />
               </div>
               <div style={{gridColumn:'1 / -1'}}>
-                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Email")}</label>
+                <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Email *")}</label>
                 <input
                   type="email"
+                  required
                   value={formData.customerEmail}
                   onChange={(e) => setFormData({...formData, customerEmail: e.target.value})}
                   style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}}

@@ -62,6 +62,75 @@ export function sumWorkMinutes(entries: ClockEntry[]): number {
 }
 
 /**
+ * The shop price stays the menu price. Work-clock minutes are labor tracking
+ * and do not reprice the job.
+ */
+export function jobPriceAfterWorkClock(menuPriceCents: number, workClockMinutes: number): number {
+  if (!Number.isInteger(menuPriceCents) || menuPriceCents < 0) {
+    throw new Error('job price must be cents');
+  }
+  if (!Number.isInteger(workClockMinutes) || workClockMinutes < 0) {
+    throw new Error('work minutes must be a non-negative integer');
+  }
+  return menuPriceCents;
+}
+
+export function workClockClose(input: {
+  menuPriceCents: number;
+  clockIn: Date;
+  clockOut: Date;
+}): { hoursSpent: number; jobPriceCents: number } {
+  const elapsed = input.clockOut.getTime() - input.clockIn.getTime();
+  const hoursSpent = Math.max(0, Math.round((elapsed / (1000 * 60 * 60)) * 100) / 100);
+  const minutes = Math.max(0, Math.round(elapsed / (1000 * 60)));
+  return {
+    hoursSpent,
+    jobPriceCents: jobPriceAfterWorkClock(input.menuPriceCents, minutes),
+  };
+}
+
+export interface StaffPunch {
+  clockIn: string | Date;
+  clockOut?: string | Date | null;
+  hoursWorked?: number | null;
+  breakMinutes?: number | null;
+}
+
+/**
+ * Closed punches use the stored hours when a correction set them.
+ * Open punches count through `now`.
+ */
+export function staffPunchMinutes(entry: StaffPunch, now: Date): number {
+  if (entry.clockOut && typeof entry.hoursWorked === 'number' && Number.isFinite(entry.hoursWorked) && entry.hoursWorked >= 0) {
+    return Math.round(entry.hoursWorked * 60);
+  }
+  const start = new Date(entry.clockIn).getTime();
+  const end = entry.clockOut ? new Date(entry.clockOut).getTime() : now.getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 0;
+  const breakMs = Math.max(0, Number(entry.breakMinutes) || 0) * 60 * 1000;
+  return Math.max(0, Math.round((end - start - breakMs) / 60000));
+}
+
+/** Shop owners clock on their owner tech profile, never on the shop id. */
+export function resolveClockTechId(input: {
+  role: string;
+  requestedTechId: string;
+  actorId: string;
+  ownerTechId?: string | null;
+}): { ok: true; techId: string } | { ok: false; error: string } {
+  if (input.role === 'shop') {
+    if (!input.ownerTechId) return { ok: false, error: 'Shop owner clock profile is missing' };
+    return { ok: true, techId: input.ownerTechId };
+  }
+  if (input.role === 'tech' && input.requestedTechId && input.requestedTechId !== input.actorId) {
+    return { ok: false, error: 'Technicians can only clock themselves in' };
+  }
+  const techId = input.requestedTechId || input.actorId;
+  if (!techId) return { ok: false, error: 'Missing tech' };
+  return { ok: true, techId };
+}
+
+/**
  * Replace one work-clock entry. The staff list is returned unchanged.
  * A work entry id that also appears on the staff list still does not edit staff.
  */

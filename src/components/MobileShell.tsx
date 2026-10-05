@@ -129,10 +129,10 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         ],
       },
       {
-        match: ['/shop/analytics', '/shop/profit-margins', '/shop/customer-reports'],
+        match: ['/shop/analytics', '/shop/books', '/shop/profit-margins', '/shop/customer-reports'],
         tabs: [
           { ico: '📊', label: 'Reports', href: '/shop/analytics' },
-          { ico: '📈', label: 'Analytics', href: '/shop/analytics' },
+          { ico: '📒', label: 'Books', href: '/shop/books' },
           { ico: '💰', label: 'Margins', href: '/shop/profit-margins' },
           { ico: '👤', label: 'Customers', href: '/shop/customer-reports' },
         ],
@@ -185,6 +185,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         title: 'Finance',
         items: [
           { ico: '📊', label: 'Reports', href: '/shop/analytics' },
+          { ico: '📒', label: 'Books', href: '/shop/books' },
           { ico: '📈', label: 'Analytics', href: '/shop/analytics' },
           { ico: '💰', label: 'Profit Margins', href: '/shop/profit-margins' },
         ],
@@ -446,10 +447,10 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         ],
       },
       {
-        match: ['/manager/reports', '/manager/templates', '/manager/inventory', '/manager/estimates'],
+        match: ['/manager/reports', '/manager/books', '/manager/templates', '/manager/inventory', '/manager/estimates'],
         tabs: [
           { ico: '📊', label: 'Reports', href: '/manager/reports' },
-          { ico: '📋', label: 'Templates', href: '/manager/templates' },
+          { ico: '📒', label: 'Books', href: '/manager/books' },
           { ico: '📦', label: 'Inventory', href: '/manager/inventory' },
           { ico: '💰', label: 'Estimates', href: '/manager/estimates' },
         ],
@@ -492,6 +493,7 @@ const ROLES: Record<ShellRole, RoleConfig> = {
         title: 'Reports',
         items: [
           { ico: '📊', label: 'Reports', href: '/manager/reports' },
+          { ico: '📒', label: 'Books', href: '/manager/books' },
           { ico: '📋', label: 'Templates', href: '/manager/templates' },
           { ico: '📦', label: 'Inventory', href: '/manager/inventory' },
         ],

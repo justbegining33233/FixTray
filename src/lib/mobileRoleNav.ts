@@ -9,6 +9,7 @@ import { normalizeRole } from '@/lib/roleNav';
 import { isShopScopedHref } from '@/lib/platformOwnerScope';
 import { isShopEdgeSensitivePath } from '@/lib/shopRestrictedRoutes';
 import { isPlatformEmailAccount, PLATFORM_EMAIL_HREF } from '@/lib/platformEmailAccess';
+import { PLATFORM_VISITS_HREF } from '@/lib/platformVisits';
 import { ROLE_MENUS, TOP_BAR, menuHrefs, type MenuRole } from '@/lib/roleMenus';
 
 export type MobileIconName =
@@ -69,9 +70,7 @@ export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin' | 'su
 
 type Actor = { role?: string | null; isSuperAdmin?: boolean | null; isOwner?: boolean | null; username?: string | null } | null | undefined;
 
-function withPlatformEmailLink(nav: MobileRoleNav, username?: string | null): MobileRoleNav {
-  if (!isPlatformEmailAccount(username)) return nav;
-  const item: MobileLink = { label: 'Emails', href: PLATFORM_EMAIL_HREF, icon: 'bell' };
+function appendPlatformOwnerLink(nav: MobileRoleNav, item: MobileLink): MobileRoleNav {
   let placed = false;
   const more = nav.more.map((group) => {
     if (group.title !== 'Communications') return group;
@@ -83,6 +82,12 @@ function withPlatformEmailLink(nav: MobileRoleNav, username?: string | null): Mo
     ...nav,
     more: placed ? more : [...more, { title: 'Communications', items: [item] }],
   };
+}
+
+function withPlatformEmailLink(nav: MobileRoleNav, username?: string | null): MobileRoleNav {
+  if (!isPlatformEmailAccount(username)) return nav;
+  const withEmail = appendPlatformOwnerLink(nav, { label: 'Emails', href: PLATFORM_EMAIL_HREF, icon: 'bell' });
+  return appendPlatformOwnerLink(withEmail, { label: 'Visits', href: PLATFORM_VISITS_HREF, icon: 'chart' });
 }
 
 /** Owner tools stay in the catalog so the page is reachable, but only the platform owner sees them. */

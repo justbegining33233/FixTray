@@ -3,22 +3,26 @@ import path from 'path';
 import { customerFacingServiceFeeCents } from '../src/lib/serviceFeeBill';
 import { freezeFeeSnapshot } from '../src/lib/feeSnapshot';
 import { planCounterPayment } from '../src/lib/books/counterPay';
-import { inPersonFeeOwed, type BooksRow, type InPersonMethod } from '../src/lib/books/money';
-import { shopDayRange, shopWeekRange } from '../src/lib/books/periods';
-import { arAging, positionJob, rangeSnapshot, type ShopJobFacts } from '../src/lib/books/truth';
+import { assembleShopJobs, inPersonFeeOwed, monthClose, owedFeeBreakdown, planInPersonPayment, type BooksRow, type InPersonMethod } from '../src/lib/books/money';
+import { booksDayKey, shopDayRange, shopWeekRange } from '../src/lib/books/periods';
+import { arAging, isStillOpenStatus, jobBalance, positionJob, rangeSnapshot, type ShopJobFacts } from '../src/lib/books/truth';
 import {
   balanceSheetBalances,
+  balanceSheetView,
   isFeeAccountKey,
+  postInventoryAdjustment,
   postPartsCogs,
   postVendorBill,
   statementTotals,
   trialBalance,
 } from '../src/lib/books/journal';
-import { journalForFacts } from '../src/lib/books/statements';
+import { cashBasisIncome, journalForFacts } from '../src/lib/books/statements';
 import { invoiceTax } from '../src/lib/books/shopTax';
-import { jobProfit, receiveInventory } from '../src/lib/books/floor';
+import { allocateTechRevenue, jobProfit, partsCostFromUsage, receiveInventory } from '../src/lib/books/floor';
 import { booksAccess, shopIdForBooks } from '../src/lib/books/access';
-import { portalAccessDecision } from '../src/lib/roleMenus';
+import { menuHrefs, portalAccessDecision } from '../src/lib/roleMenus';
+import { buildShopYear } from '../src/lib/books/shopDrill';
+import { mergeWorkOrderView } from '../src/lib/workOrderView';
 import { buildQboBooksPush, fullQboMap, postQboEntities, qboTotalsMatchBooks } from '../src/lib/books/qboPush';
 
 const ZONE = 'America/New_York';
@@ -243,12 +247,24 @@ describe('accountant access', () => {
     '/shop/ar-aging',
     '/shop/accounting/ap',
     '/shop/accounting/tax',
+    '/shop/accounting/pl',
+    '/shop/accounting/balance-sheet',
+    '/shop/accounting/chart',
+    '/shop/accounting/productivity',
+    '/shop/accounting/quickbooks',
+    '/shop/profit-margins',
   ];
 
   it('opens only this shop\'s books pages', () => {
     for (const page of allowed) expect(portalAccessDecision(page, 'accountant')).toBe('allow');
     expect(portalAccessDecision('/shop/jobs', 'accountant')).toBe('home');
-    expect(portalAccessDecision('/shop/profit-margins', 'accountant')).toBe('home');
+    for (const page of ['/shop/accounting/pl', '/shop/accounting/balance-sheet', '/shop/accounting/chart', '/shop/accounting/tax', '/shop/accounting/ap', '/shop/profit-margins', '/shop/accounting/productivity', '/shop/accounting/quickbooks']) {
+      expect(menuHrefs('shop')).toContain(page);
+      expect(menuHrefs('accountant')).toContain(page);
+      expect(menuHrefs('manager')).not.toContain(page);
+      expect(menuHrefs('tech')).not.toContain(page);
+      expect(menuHrefs('customer')).not.toContain(page);
+    }
     expect(portalAccessDecision('/admin/home', 'accountant')).toBe('forbidden');
     expect(portalAccessDecision('/admin/fee-year-end', 'accountant')).toBe('forbidden');
     expect(portalAccessDecision('/superadmin/dashboard', 'accountant')).toBe('home');
@@ -332,5 +348,248 @@ describe('QuickBooks push', () => {
     });
     expect(again.ok).toBe(true);
     expect(calls.length).toBe(2);
+  });
+});
+
+describe('preview books disagreements', () => {
+  const week = shopWeekRange(new Date('2026-10-06T16:00:00.000Z'), ZONE);
+
+  it('counts an Oct 5 date-only payment inside the Oct 5 week', () => {
+    expect(booksDayKey(new Date('2026-10-05T00:00:00.000Z'), ZONE)).toBe('2026-10-05');
+    const report = buildShopYear({
+      year: 2026,
+      timeZone: ZONE,
+      invoices: [],
+      payments: [
+        { id: 'wo8', workOrderId: 'wo-08', at: '2026-10-05T00:00:00.000Z', cents: 8999, method: 'card' },
+        { id: 'wo10', workOrderId: 'wo-10', at: '2026-10-05T00:00:00.000Z', cents: 4999, method: 'cash' },
+        { id: 'wo9', workOrderId: 'wo-09', at: '2026-10-05T00:00:00.000Z', cents: 3000, method: 'cash' },
+      ],
+      fixtray: [],
+      deposits: [
+        { id: 'd8', workOrderId: 'wo-08', at: '2026-10-05T00:00:00.000Z', cents: 8999, matched: true },
+        { id: 'd10', workOrderId: 'wo-10', at: '2026-10-05T00:00:00.000Z', cents: 4999, matched: true },
+        { id: 'd9', workOrderId: 'wo-09', at: '2026-10-05T00:00:00.000Z', cents: 3000, matched: true },
+      ],
+      missingDeposits: [],
+      parts: [],
+      purchases: [],
+      staffPunches: [],
+      workPunches: [],
+    });
+    const october = report.months.find((month) => month.id === '2026-10');
+    const slice = october?.weeks.find((item) => item.id.startsWith('2026-10-05'));
+    expect(slice?.money.paidCents).toBe(8999 + 4999 + 3000);
+    expect(slice?.money.depositsMatchedCents).toBe(16998);
+    const snap = rangeSnapshot([
+      job({
+        id: 'wo-08',
+        invoiceCents: null,
+        events: [{ id: 'p8', workOrderId: 'wo-08', at: '2026-10-05T00:00:00.000Z', kind: 'payment', cents: 8999, method: 'card' }],
+      }),
+    ], week.start, week.end, ZONE);
+    expect(snap.paidCents).toBe(8999);
+  });
+
+  it('keeps AR and customer credit apart', () => {
+    const report = buildShopYear({
+      year: 2026,
+      timeZone: ZONE,
+      invoices: [{ workOrderId: 'open-ar', at: '2026-10-06T16:00:00.000Z', cents: 3799 }],
+      payments: [{ id: 'seed', workOrderId: 'seeded', at: '2026-10-05T00:00:00.000Z', cents: 52493, method: 'card' }],
+      fixtray: [],
+      deposits: [],
+      missingDeposits: [],
+      parts: [],
+      purchases: [],
+      staffPunches: [],
+      workPunches: [],
+    });
+    expect(report.totals.money.unpaidCents).toBe(3799);
+    expect(report.totals.money.customerCreditCents).toBe(52493);
+    const october = report.months.find((month) => month.id === '2026-10');
+    expect(october?.money.unpaidCents).toBe(3799);
+    expect(october?.money.customerCreditCents).toBe(52493);
+    const facts = [
+      job({ id: 'open-ar', invoiceCents: 3799, events: [{ id: 'inv', workOrderId: 'open-ar', at: '2026-10-06T16:00:00.000Z', kind: 'invoice', cents: 3799 }] }),
+      job({ id: 'seeded', invoiceCents: null, events: [{ id: 'pay', workOrderId: 'seeded', at: '2026-10-05T00:00:00.000Z', kind: 'payment', cents: 52493, method: 'card' }] }),
+    ];
+    const positions = facts.map(positionJob);
+    expect(positions.reduce((sum, row) => sum + row.arCents, 0)).toBe(3799);
+    expect(positions.reduce((sum, row) => sum + row.customerCreditCents, 0)).toBe(52493);
+  });
+
+  it('uses shop payments for job profit and tech revenue, and inventory cost for parts', () => {
+    expect(partsCostFromUsage({
+      partsUsed: [{ id: 'filter', quantity: 2 }],
+      catalog: [{ id: 'filter', costCents: 450 }],
+    })).toBe(900);
+    const revenue = allocateTechRevenue([
+      { techId: 'tony', cents: 8999 },
+      { techId: 'tony', cents: 4999 },
+      { techId: 'maria', cents: 0 },
+    ]);
+    expect(revenue.find((row) => row.techId === 'tony')?.revenueCents).toBe(13998);
+    expect(revenue.find((row) => row.techId === 'maria')?.revenueCents).toBe(0);
+    expect(revenue.reduce((sum, row) => sum + row.revenueCents, 0)).not.toBe(61492 + 3799);
+  });
+
+  it('uses open AR for what is still owed and does not count a completed job as open', () => {
+    const facts = [
+      job({ id: 'real', invoiceCents: 3799, events: [{ id: 'inv', workOrderId: 'real', at: AT, kind: 'invoice', cents: 3799 }] }),
+      job({ id: 'seed', invoiceCents: null, events: [{ id: 'pay', workOrderId: 'seed', at: AT, kind: 'payment', cents: 13500, method: 'cash' }] }),
+    ];
+    const outstanding = facts.map(positionJob).reduce((sum, row) => sum + row.arCents, 0);
+    expect(outstanding).toBe(3799);
+    expect(isStillOpenStatus('completed')).toBe(false);
+    expect(isStillOpenStatus('closed')).toBe(false);
+    expect(isStillOpenStatus('in-progress')).toBe(true);
+  });
+
+  it('applies an earlier deposit to a job paid off later and does not leave that job unpaid', () => {
+    const report = buildShopYear({
+      year: 2026,
+      timeZone: ZONE,
+      invoices: [
+        { workOrderId: 'wo-09', at: '2026-10-06T16:00:00.000Z', cents: 4999 },
+        { workOrderId: 'other', at: '2026-10-06T16:00:00.000Z', cents: 3799 },
+      ],
+      payments: [
+        { id: 'dep-pay', workOrderId: 'wo-09', at: '2026-10-05T00:00:00.000Z', cents: 3000, method: 'cash' },
+        { id: 'rest', workOrderId: 'wo-09', at: '2026-10-06T16:00:00.000Z', cents: 1999, method: 'cash' },
+      ],
+      fixtray: [],
+      deposits: [{ id: 'd', workOrderId: 'wo-09', at: '2026-10-05T00:00:00.000Z', cents: 3000, matched: false }],
+      missingDeposits: [],
+      parts: [],
+      purchases: [],
+      staffPunches: [],
+      workPunches: [],
+    });
+    const october = report.months.find((month) => month.id === '2026-10');
+    const slice = october?.weeks.find((item) => item.id.startsWith('2026-10-05'));
+    const sixth = slice?.days.find((day) => day.id === '2026-10-06');
+    expect(slice?.money.paidCents).toBe(4999);
+    expect(sixth?.money.unpaidCents).toBe(3799);
+    expect(report.totals.money.unpaidCents).toBe(3799);
+    const balance = jobBalance({ invoiceCents: 4999, paidCents: 4999, refundCents: 0, chargebackCents: 0, depositCents: 3000 });
+    expect(balance.arCents).toBe(0);
+    const planned = planInPersonPayment({
+      workOrderId: 'wo-09',
+      shopId: 'shop',
+      jobCents: 4999,
+      alreadyReceivedCents: 3000,
+      tenderedCents: 1999,
+      savedFeeCents: 1000,
+      customerFacingFeeCents: customerFacingServiceFeeCents(4999, 1000),
+      method: 'cash',
+      feeAlreadyRecorded: false,
+      actorId: 'owner',
+      at: '2026-10-06T16:00:00.000Z',
+    });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok) return;
+    const deposit = planned.entries.find((entry) => entry.kind === 'deposit');
+    expect(deposit?.amountCents).toBe(4999);
+    const rows: BooksRow[] = [
+      { id: 'prior', workOrderId: 'wo-09', kind: 'job_payment', appliesTo: 'job', amountCents: 3000, createdAt: '2026-10-05T00:00:00.000Z' },
+      { id: 'old', workOrderId: 'wo-09', kind: 'deposit', appliesTo: 'job', amountCents: 3000, depositAt: '2026-10-05T00:00:00.000Z', createdAt: '2026-10-05T00:00:00.000Z' },
+      ...planned.entries.map((entry, index) => ({
+        id: `new-${index}`,
+        workOrderId: 'wo-09',
+        kind: entry.kind,
+        appliesTo: entry.appliesTo,
+        amountCents: entry.amountCents,
+        depositAt: entry.depositAt,
+        createdAt: '2026-10-06T16:00:00.000Z',
+      })),
+    ];
+    const [assembled] = assembleShopJobs(
+      [{ id: 'wo-09', shopId: 'shop', estimatedCost: 49.99, amountPaid: 49.99, paymentStatus: 'paid', createdAt: '2026-10-06T16:00:00.000Z' }],
+      rows,
+    );
+    expect(monthClose([assembled]).unmatchedDeposits.map((issue) => issue.reason)).not.toContain('deposit_amount_mismatch');
+  });
+
+  it('states cash-basis income as Books revenue and shows a balancing sheet', () => {
+    const facts = [
+      job({
+        id: 'open-ar',
+        invoiceCents: 3799,
+        events: [{ id: 'inv', workOrderId: 'open-ar', at: '2026-10-06T15:00:00.000Z', kind: 'invoice', cents: 3799 }],
+      }),
+      job({
+        id: 'collected',
+        invoiceCents: null,
+        events: [{ id: 'pay', workOrderId: 'collected', at: '2026-10-05T00:00:00.000Z', kind: 'payment', cents: 21997, method: 'card' }],
+      }),
+    ];
+    const span = { start: shopDayRange('2026-10-01', ZONE).start, end: shopDayRange('2026-10-06', ZONE).end };
+    const books = rangeSnapshot(facts, span.start, span.end, ZONE);
+    const cash = cashBasisIncome({ revenueCents: books.revenueCents, cogsCents: 0, payrollCents: 0, shopSuppliesCents: 0 });
+    expect(cash.basis).toBe('cash');
+    expect(cash.revenueCents).toBe(books.revenueCents);
+    expect(cash.revenueCents).toBe(21997);
+    expect(cash.netIncomeCents).toBe(21997);
+    expect(cash.netIncomeCents).not.toBe(books.invoicedCents);
+    const entries = journalForFacts(facts, new Date('2000-01-01T00:00:00.000Z'), span.end, { ratePercent: 0, laborTaxable: false, partsTaxable: false }, ZONE);
+    entries.push(postInventoryAdjustment({ id: 'stock', date: '2026-10-06', amountCents: 5000, direction: 'increase' }));
+    const sheet = balanceSheetView(entries);
+    expect(sheet.lines.map((line) => line.key)).toEqual(expect.arrayContaining(['undeposited', 'bank', 'ar', 'inventory', 'credit', 'equity']));
+    expect(sheet.lines.find((line) => line.key === 'undeposited')?.cents).toBeGreaterThan(0);
+    expect(sheet.lines.find((line) => line.key === 'inventory')?.cents).toBe(5000);
+    expect(sheet.balanced).toBe(true);
+    expect(sheet.assetsCents).toBe(sheet.liabilitiesCents + sheet.equityCents);
+  });
+
+  it('keeps the customer, vehicle, and tech when a complete response has none', () => {
+    const previous = {
+      id: 'wo-09',
+      status: 'in-progress',
+      customerId: 'cust-1',
+      vehicleId: 'veh-1',
+      assignedTechId: 'tech-1',
+      customer: { firstName: 'Week', lastName: 'Sim' },
+      vehicle: { make: 'Ford', model: 'F-150' },
+      assignedTo: { firstName: 'Tony', lastName: 'Tech' },
+    };
+    const next = mergeWorkOrderView(previous, {
+      id: 'wo-09',
+      status: 'completed',
+      paymentStatus: 'paid',
+      customer: null,
+      vehicle: null,
+      assignedTo: null,
+    });
+    expect(next?.customer).toEqual(previous.customer);
+    expect(next?.vehicle).toEqual(previous.vehicle);
+    expect(next?.assignedTo).toEqual(previous.assignedTo);
+    expect(next?.customerId).toBe('cust-1');
+    const closeout = fs.readFileSync(path.join(process.cwd(), 'src/app/api/workorders/[id]/closeout/route.ts'), 'utf8');
+    expect(closeout).not.toMatch(/customerId:\s*null/);
+    expect(closeout).not.toMatch(/assignedTechId:\s*null/);
+    expect(closeout).toContain('completedAt: new Date()');
+  });
+
+  it('owes the gross-up on the full job, not the cash remainder', () => {
+    const jobCents = 4999;
+    const platformNetCents = 1000;
+    const cashPortionCents = 1999;
+    const fee = customerFacingServiceFeeCents(jobCents, platformNetCents);
+    const line = owedFeeBreakdown({
+      jobCents,
+      platformNetCents,
+      storedFeeCents: fee,
+      cashPortionCents,
+    });
+    expect(fee).toBe(1210);
+    expect(line.matchesFullJob).toBe(true);
+    expect(line.customerFeeCents).toBe(customerFacingServiceFeeCents(line.jobCents, line.platformNetCents));
+    expect(line.jobCents).toBe(4999);
+    expect(line.cashPortionFeeCents).not.toBe(line.customerFeeCents);
+    const screen = fs.readFileSync(path.join(process.cwd(), 'src/components/ShopBooksScreen.tsx'), 'utf8');
+    expect(screen).toContain('gross-up on the full job');
+    const columns = fs.readFileSync(path.join(process.cwd(), 'src/lib/ensureProductionColumns.ts'), 'utf8');
+    expect(columns).toContain("NEXT_PHASE === 'phase-production-build'");
   });
 });

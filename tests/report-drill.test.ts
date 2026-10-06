@@ -82,7 +82,7 @@ function addFee(target: FeeTotals, source: FeeTotals) {
   for (const field of FEE_FIELDS) target[field] += source[field];
 }
 
-const DERIVED_MONEY = new Set<keyof ShopMoneyTotals>(['unpaidCents', 'customerCreditCents', 'paidCents']);
+const DERIVED_MONEY = new Set<keyof ShopMoneyTotals>(['paidCents']);
 
 function expectActivitySums(parent: ShopMoneyTotals, children: ShopMoneyTotals[]) {
   const sum = emptyMoney();
@@ -91,9 +91,8 @@ function expectActivitySums(parent: ShopMoneyTotals, children: ShopMoneyTotals[]
     if (DERIVED_MONEY.has(field)) continue;
     expect(sum[field]).toBe(parent[field]);
   }
-  const raw = parent.invoicedCents - parent.paidCents + parent.refundCents + parent.chargebackCents;
-  expect(parent.unpaidCents).toBe(Math.max(0, raw));
-  expect(parent.customerCreditCents).toBe(Math.max(0, -raw));
+  expect(parent.unpaidCents).toBe(children.reduce((total, child) => total + child.unpaidCents, 0));
+  expect(parent.customerCreditCents).toBe(children.reduce((total, child) => total + child.customerCreditCents, 0));
   expect(parent.unpaidCents).toBeGreaterThanOrEqual(0);
   expect(parent.paidCents).toBe(parent.cardCents + parent.cashCents + parent.checkCents + parent.otherCents);
 }
@@ -326,7 +325,7 @@ describe('shop books drill', () => {
     expect(september?.money.invoicedCents).toBe(10000);
     expect(october?.money.invoicedCents).toBe(5000);
     expect(september?.money.paidCents).toBe(10000);
-    expect(october?.money.unpaidCents).toBe(3000);
+    expect(october?.money.unpaidCents).toBe(3400);
     expect(november?.money.refundCents).toBe(400);
     expect(october?.money.refundCents).toBe(0);
     expect(report.totals.money.refundCents).toBe(400);

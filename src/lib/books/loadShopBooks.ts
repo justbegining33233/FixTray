@@ -12,13 +12,15 @@ import {
   platformFeeYear,
   shopLedger,
   shopReport,
+  owedFeeBreakdown,
   usdToCents,
   utcWeekRange,
   type BooksRow,
   type OrderInput,
 } from '@/lib/books/money';
 import { bpsFromPercent, linesFromWorkOrder, ticketPreview, ticketWasInvoiced } from '@/lib/books/parts';
-import { shopWeekRange } from '@/lib/books/periods';
+import { booksDayKey, shopWeekRange } from '@/lib/books/periods';
+import { readFeeSnapshot } from '@/lib/feeSnapshot';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
 import { positionJobs } from '@/lib/books/truth';
 
@@ -92,6 +94,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       estimate: true,
       partsUsed: true,
       techLabor: true,
+      completion: true,
     },
     orderBy: { createdAt: 'asc' },
   });
@@ -123,7 +126,15 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
     createdAt: entry.createdAt,
   }));
   const jobs = assembleShopJobs(orderInputs, booksRows);
+  const zone = await shopTimeZone(shopId);
   const ledger = shopLedger(jobs);
+  const ledgerView = {
+    ...ledger,
+    jobs: ledger.jobs.map((job) => ({
+      ...job,
+      depositDay: job.depositAt ? booksDayKey(new Date(job.depositAt), zone) : null,
+    })),
+  };
   const report = shopReport(ledger);
   const close = monthClose(jobs);
   const taxRule = await prisma.taxRule.findFirst({
@@ -163,7 +174,8 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
     copy: SHOP_PAID_IN_FULL_COPY,
     quickBooksOwnsBooks: QUICKBOOKS_OWNS_BOOKS_COPY,
     month: month || null,
-    ledger,
+    ledger: ledgerView,
+    timeZone: zone,
     report,
     monthClose: close,
     tickets,
@@ -190,7 +202,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
     feeYearExcluded: true,
     shopReceivedUsd: centsToUsd(ledger.shopReceivedCents),
     figures: await shopPosition(shopId),
-    fixtrayOwed: await shopOwed(shopId, booksRows),
+    fixtrayOwed: await shopOwed(shopId, booksRows, orders),
   };
 }
 
@@ -203,15 +215,32 @@ async function shopPosition(shopId: string) {
     customerCreditCents: positions.reduce((sum, job) => sum + job.customerCreditCents, 0),
     revenueCents: positions.reduce((sum, job) => sum + job.revenueCents, 0),
     flags: [...new Set(positions.flatMap((job) => job.flags))],
+    missingInvoices: positions
+      .filter((job) => job.flags.includes('missing_invoice'))
+      .map((job) => ({ workOrderId: job.workOrderId, flags: job.flags })),
   };
 }
 
-async function shopOwed(shopId: string, booksRows: BooksRow[]) {
+async function shopOwed(shopId: string, booksRows: BooksRow[], orders: Array<{ id: string; estimatedCost: number | null; completion: unknown }>) {
   const zone = await shopTimeZone(shopId);
   const week = shopWeekRange(new Date(), zone);
+  const owed = inPersonFeeOwed(booksRows);
+  const weekOwed = inPersonFeeOwed(booksRows, week);
+  const decorate = <T extends { workOrderId: string; feeCents: number }>(line: T) => {
+    const order = orders.find((item) => item.id === line.workOrderId);
+    const snap = readFeeSnapshot(order?.completion);
+    const jobCents = usdToCents(order?.estimatedCost || 0);
+    const breakdown = owedFeeBreakdown({
+      jobCents,
+      platformNetCents: snap?.platformFeeCents || 0,
+      storedFeeCents: line.feeCents,
+    });
+    return { ...line, ...breakdown };
+  };
   return {
-    ...inPersonFeeOwed(booksRows),
-    week: inPersonFeeOwed(booksRows, week),
+    ...owed,
+    openLines: owed.openLines.map(decorate),
+    week: { ...weekOwed, openLines: weekOwed.openLines.map(decorate) },
     weekLabel: week.label,
   };
 }

@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     const scopedShop = typeof where.shopId === 'string' ? where.shopId : '';
     const facts = scopedShop ? await loadShopFacts(scopedShop) : [];
     const snap = span && facts.length >= 0
-      ? rangeSnapshot(facts, span.start, span.end)
+      ? rangeSnapshot(facts, span.start, span.end, zone)
       : null;
     const totalRevenue = snap ? snap.revenueCents / 100 : closedOrders.reduce((sum, wo) => sum + (wo.estimatedCost || 0), 0);
     const completedInRange = snap ? snap.completedCount : closedOrders.length;

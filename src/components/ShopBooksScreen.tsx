@@ -8,6 +8,16 @@ import { pageStyle } from '@/components/books/drillChrome';
 
 type Standing = 'unpaid' | 'partial' | 'paid' | 'reversed';
 
+interface FeeLine {
+  workOrderId: string;
+  feeCents: number;
+  jobCents?: number;
+  platformNetCents?: number;
+  customerFeeCents?: number;
+  formulaFeeCents?: number;
+  matchesFullJob?: boolean;
+}
+
 interface JobRow {
   id: string;
   jobCents: number;
@@ -16,6 +26,7 @@ interface JobRow {
   platformFeeCents: number;
   depositCents: number | null;
   depositAt: string | null;
+  depositDay?: string | null;
   standing: Standing;
 }
 
@@ -50,18 +61,19 @@ interface BooksPayload {
     customerCreditCents: number;
     revenueCents: number;
     flags: string[];
+    missingInvoices?: Array<{ workOrderId: string; flags: string[] }>;
   };
   qbMap: Record<string, string>;
   inventory: Array<{ id: string; name: string; sku?: string | null; onHand: number; unitCostCents: number; sellUnitCents: number }>;
   fixtrayOwed?: {
     owedCents: number;
-    openLines?: Array<{ workOrderId: string; feeCents: number }>;
+    openLines?: FeeLine[];
     weekLabel: string;
     week: {
       owedCents: number;
       accruedCents: number;
       settledCents: number;
-      openLines?: Array<{ workOrderId: string; feeCents: number }>;
+      openLines?: FeeLine[];
     };
     feeDeductedFromShop: false;
   };
@@ -197,6 +209,16 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         {(books.figures?.flags || []).length > 0 && (
           <p>Needs a look: {books.figures?.flags.join(', ').replaceAll('_', ' ')}.</p>
         )}
+        {(books.figures?.missingInvoices || []).map((row) => (
+          <p key={row.workOrderId}>
+            {row.workOrderId} is missing an invoice. The payment is still flagged.
+            {!readOnly && (
+              <button type="button" style={{ marginLeft: 8 }} onClick={() => post('create-invoice', { workOrderId: row.workOrderId })}>
+                Create invoice for this paid job
+              </button>
+            )}
+          </p>
+        ))}
         <table>
           <thead>
             <tr>
@@ -210,7 +232,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
                 <td>{money(job.jobCents)}</td>
                 <td>{money(job.customerPaidJobCents)}</td>
                 <td>{money(job.shopReceivedCents)}</td>
-                <td>{job.depositAt ? `${money(job.depositCents || 0)} ${job.depositAt.slice(0, 10)}` : 'Missing'}</td>
+                <td>{job.depositAt ? `${money(job.depositCents || 0)} ${job.depositDay || job.depositAt.slice(0, 10)}` : 'Missing'}</td>
                 <td>{job.standing}</td>
               </tr>
             ))}
@@ -243,7 +265,8 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
           <ul>
             {(books.fixtrayOwed?.week.openLines || []).map((line) => (
               <li key={line.workOrderId}>
-                Work order {line.workOrderId}: {money(line.feeCents)} still open
+                Work order {line.workOrderId}: {money(line.customerFeeCents ?? line.feeCents)} still open.
+                {' '}Job {money(line.jobCents || 0)}. Platform net {money(line.platformNetCents || 0)}. Customer fee {money(line.customerFeeCents ?? line.feeCents)} is the gross-up on the full job{line.matchesFullJob ? '' : ' (stored snapshot)'}.
               </li>
             ))}
           </ul>
@@ -253,7 +276,8 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
           <ul>
             {(books.fixtrayOwed?.openLines || []).map((line) => (
               <li key={`open-${line.workOrderId}`}>
-                Work order {line.workOrderId}: {money(line.feeCents)} open balance
+                Work order {line.workOrderId}: {money(line.customerFeeCents ?? line.feeCents)} open balance.
+                {' '}Job {money(line.jobCents || 0)}. Platform net {money(line.platformNetCents || 0)}. Customer fee {money(line.customerFeeCents ?? line.feeCents)} is the gross-up on the full job{line.matchesFullJob ? '' : ' (stored snapshot)'}.
               </li>
             ))}
           </ul>

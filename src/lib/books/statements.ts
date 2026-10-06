@@ -3,7 +3,8 @@
  * Sales tax is its own payable. The FixTray fee is not a line.
  */
 
-import { dayKey } from '@/lib/books/periods';
+import { booksDayKey } from '@/lib/books/periods';
+import { civilInRange, type ShopJobFacts } from '@/lib/books/truth';
 import {
   postInvoice,
   postPayment,
@@ -11,7 +12,6 @@ import {
   type JournalDraft,
 } from '@/lib/books/journal';
 import { taxForInvoice, type ShopTaxSettings } from '@/lib/books/shopTax';
-import type { ShopJobFacts } from '@/lib/books/truth';
 
 export function journalForFacts(
   facts: ShopJobFacts[],
@@ -22,7 +22,7 @@ export function journalForFacts(
 ): JournalDraft[] {
   const entries: JournalDraft[] = [];
   for (const job of facts) {
-    const invoice = job.events.find((event) => event.kind === 'invoice' && new Date(event.at) >= start && new Date(event.at) < end);
+    const invoice = job.events.find((event) => event.kind === 'invoice' && civilInRange(event.at, start, end, timeZone));
     let open = 0;
     if (invoice && invoice.cents > 0) {
       const tax = taxForInvoice({
@@ -33,7 +33,7 @@ export function journalForFacts(
       });
       entries.push(postInvoice({
         workOrderId: job.id,
-        date: dayKey(new Date(invoice.at), timeZone),
+        date: booksDayKey(new Date(invoice.at), timeZone),
         laborCents: tax.laborBaseCents,
         partsCents: tax.partsBaseCents,
         taxCents: tax.taxCents,
@@ -41,13 +41,12 @@ export function journalForFacts(
       open = tax.laborBaseCents + tax.partsBaseCents + tax.taxCents;
     }
     for (const event of job.events) {
-      const when = new Date(event.at);
-      if (when < start || when >= end) continue;
+      if (!civilInRange(event.at, start, end, timeZone)) continue;
       if (event.kind === 'payment' && event.cents > 0) {
         entries.push(postPayment({
           id: event.id,
           workOrderId: job.id,
-          date: dayKey(when, timeZone),
+          date: booksDayKey(new Date(event.at), timeZone),
           amountCents: event.cents,
           openArCents: open,
           hasInvoice: job.invoiceCents != null,
@@ -58,11 +57,43 @@ export function journalForFacts(
         entries.push(postRefund({
           id: event.id,
           workOrderId: job.id,
-          date: dayKey(when, timeZone),
+          date: booksDayKey(new Date(event.at), timeZone),
           amountCents: event.cents,
         }));
       }
     }
   }
   return entries;
+}
+
+export const CASH_BASIS_NOTE = 'Cash basis. Shop money collected in these dates. The FixTray fee is not included.';
+
+/** Profit and loss that matches Books revenue for the same dates. */
+export function cashBasisIncome(input: {
+  revenueCents: number;
+  cogsCents: number;
+  payrollCents: number;
+  shopSuppliesCents: number;
+}): {
+  basis: 'cash';
+  revenueCents: number;
+  cogsCents: number;
+  payrollCents: number;
+  shopSuppliesCents: number;
+  netIncomeCents: number;
+  note: string;
+} {
+  const revenueCents = Math.round(input.revenueCents);
+  const cogsCents = Math.max(0, Math.round(input.cogsCents));
+  const payrollCents = Math.max(0, Math.round(input.payrollCents));
+  const shopSuppliesCents = Math.max(0, Math.round(input.shopSuppliesCents));
+  return {
+    basis: 'cash',
+    revenueCents,
+    cogsCents,
+    payrollCents,
+    shopSuppliesCents,
+    netIncomeCents: revenueCents - cogsCents - payrollCents - shopSuppliesCents,
+    note: CASH_BASIS_NOTE,
+  };
 }

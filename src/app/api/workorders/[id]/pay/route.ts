@@ -110,6 +110,11 @@ export async function POST(
       amountPaid: planned.shopReceivedCents / 100,
       paymentStatus: planned.paymentStatus,
     },
+    include: {
+      customer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, company: true } },
+      vehicle: { select: { id: true, vehicleType: true, make: true, model: true, year: true, vin: true, licensePlate: true } },
+      assignedTo: { select: { id: true, firstName: true, lastName: true } },
+    },
   });
   return NextResponse.json({
     ok: true,

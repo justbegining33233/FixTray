@@ -1,8 +1,9 @@
 /**
  * Shop books drill-down. Money is integer cents. Clock time is whole minutes.
  *
- * Unpaid in a bucket is invoiced minus payments plus refunds and chargebacks
- * in that same bucket. It is not a remaining balance, so the days add up.
+ * Unpaid is each job's open accounts receivable, placed on the invoice day.
+ * Customer credit is that job's own overpayment, placed on its last payment.
+ * The two are added up. They are never netted against each other.
  *
  * Tips and voids have no ledger. They stay 0.
  * Historical on-hand value is not snapshotted. Start and end stay 0.
@@ -11,14 +12,15 @@
 
 import { staffPunchMinutes, type StaffPunch } from '@/lib/books/clocks';
 import {
+  booksDayKey,
   buildYearCalendar,
-  dayKey,
   splitMinutesAcrossDays,
   WEEK_SPLIT_RULE,
   type CalendarDay,
   type CalendarMonth,
   type CalendarWeek,
 } from '@/lib/books/periods';
+import { jobBalance } from '@/lib/books/truth';
 
 export const TIPS_EMPTY = 'Tips are not recorded. This is 0, not an estimate.';
 export const VOIDS_EMPTY = 'Voids are not recorded. This is 0, not an estimate.';
@@ -231,12 +233,11 @@ export function emptyMoney(): ShopMoneyTotals {
 
 function finishMoney(money: ShopMoneyTotals): ShopMoneyTotals {
   const paidCents = money.cardCents + money.cashCents + money.checkCents + money.otherCents;
-  const raw = money.invoicedCents - paidCents + money.refundCents + money.chargebackCents;
   return {
     ...money,
     paidCents,
-    unpaidCents: Math.max(0, raw),
-    customerCreditCents: Math.max(0, -raw),
+    unpaidCents: money.unpaidCents,
+    customerCreditCents: money.customerCreditCents,
     tipsCents: 0,
     voidCents: 0,
   };
@@ -246,7 +247,6 @@ export function addMoney(left: ShopMoneyTotals, right: ShopMoneyTotals): ShopMon
   return finishMoney({
     invoicedCents: left.invoicedCents + right.invoicedCents,
     paidCents: 0,
-    unpaidCents: 0,
     cardCents: left.cardCents + right.cardCents,
     cashCents: left.cashCents + right.cashCents,
     checkCents: left.checkCents + right.checkCents,
@@ -259,7 +259,8 @@ export function addMoney(left: ShopMoneyTotals, right: ShopMoneyTotals): ShopMon
     depositsMatchedCents: left.depositsMatchedCents + right.depositsMatchedCents,
     depositsUnmatchedCents: left.depositsUnmatchedCents + right.depositsUnmatchedCents,
     missingDepositCents: left.missingDepositCents + right.missingDepositCents,
-    customerCreditCents: 0,
+    unpaidCents: left.unpaidCents + right.unpaidCents,
+    customerCreditCents: left.customerCreditCents + right.customerCreditCents,
   });
 }
 
@@ -372,6 +373,83 @@ function bucketMoney(bucket: DayBucket): ShopMoneyTotals {
   return finishMoney({ ...bucket.money, fixtrayOwedCents });
 }
 
+/**
+ * Put each job's open AR on its invoice day and its own customer credit on
+ * its last money day. A later refund stays on that job. It does not reduce
+ * another job's credit, and a credit does not wipe another job's AR.
+ */
+function attributeJobBalances(
+  invoices: ShopInvoice[],
+  payments: ShopPayment[],
+  deposits: ShopDeposit[],
+  place: (at: string) => DayBucket | null,
+) {
+  type Acc = {
+    invoiceCents: number;
+    invoiceAt: string | null;
+    paid: number;
+    refund: number;
+    chargeback: number;
+    deposit: number;
+    lastAt: string | null;
+  };
+  const jobs = new Map<string, Acc>();
+  const slot = (id: string): Acc => {
+    const existing = jobs.get(id);
+    if (existing) return existing;
+    const created: Acc = {
+      invoiceCents: 0,
+      invoiceAt: null,
+      paid: 0,
+      refund: 0,
+      chargeback: 0,
+      deposit: 0,
+      lastAt: null,
+    };
+    jobs.set(id, created);
+    return created;
+  };
+  for (const invoice of invoices) {
+    const row = slot(invoice.workOrderId);
+    if (!row.invoiceAt || invoice.at < row.invoiceAt) {
+      row.invoiceAt = invoice.at;
+      row.invoiceCents = Math.round(invoice.cents);
+    }
+  }
+  for (const payment of payments) {
+    const row = slot(payment.workOrderId);
+    const amount = Math.round(payment.cents);
+    if (payment.method === 'refund') row.refund += amount;
+    else if (payment.method === 'chargeback') row.chargeback += amount;
+    else row.paid += amount;
+    if (!row.lastAt || payment.at > row.lastAt) row.lastAt = payment.at;
+  }
+  for (const deposit of deposits) {
+    const row = slot(deposit.workOrderId);
+    row.deposit += Math.round(deposit.cents);
+    if (!row.lastAt || deposit.at > row.lastAt) row.lastAt = deposit.at;
+  }
+  for (const row of jobs.values()) {
+    const balance = jobBalance({
+      invoiceCents: row.invoiceAt ? row.invoiceCents : null,
+      paidCents: row.paid,
+      refundCents: row.refund,
+      chargebackCents: row.chargeback,
+      depositCents: row.deposit,
+    });
+    if (balance.arCents > 0 && row.invoiceAt) {
+      const bucket = place(row.invoiceAt);
+      if (bucket) bucket.money.unpaidCents += balance.arCents;
+    }
+    if (balance.customerCreditCents > 0) {
+      const at = row.lastAt || row.invoiceAt;
+      if (!at) continue;
+      const bucket = place(at);
+      if (bucket) bucket.money.customerCreditCents += balance.customerCreditCents;
+    }
+  }
+}
+
 export function buildShopYear(input: {
   year: number;
   timeZone: string;
@@ -398,7 +476,7 @@ export function buildShopYear(input: {
   const place = (at: string) => {
     const instant = new Date(at);
     if (Number.isNaN(instant.getTime())) return null;
-    const key = dayKey(instant, calendar.timeZone);
+    const key = booksDayKey(instant, calendar.timeZone);
     if (!key.startsWith(`${input.year}-`)) return null;
     return ensure(key);
   };
@@ -471,6 +549,7 @@ export function buildShopYear(input: {
   };
   for (const punch of input.staffPunches) addPunch(punch, 'staff');
   for (const punch of input.workPunches) addPunch(punch, 'work');
+  attributeJobBalances(input.invoices, input.payments, input.deposits, place);
 
   const dayNode = (day: CalendarDay): ShopDayNode => {
     const bucket = buckets.get(day.id) || emptyBucket();

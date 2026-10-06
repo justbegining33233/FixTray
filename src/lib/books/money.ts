@@ -866,6 +866,40 @@ export interface InPersonPlan {
  * is omitted, the fee is the card gross-up of savedFeeCents (older callers).
  * A partial tender records no fee until the job is paid in full.
  */
+/**
+ * The owed line is the frozen customer fee on the full shop job.
+ * The cash remainder is not the base. The formula is the PlatformConfig gross-up.
+ */
+export function owedFeeBreakdown(input: {
+  jobCents: number;
+  platformNetCents: number;
+  storedFeeCents: number;
+  cashPortionCents?: number | null;
+}): {
+  jobCents: number;
+  platformNetCents: number;
+  customerFeeCents: number;
+  formulaFeeCents: number;
+  matchesFullJob: boolean;
+  cashPortionCents: number | null;
+  cashPortionFeeCents: number | null;
+} {
+  const jobCents = Math.max(0, Math.round(input.jobCents));
+  const platformNetCents = Math.max(0, Math.round(input.platformNetCents));
+  const customerFeeCents = Math.max(0, Math.round(input.storedFeeCents));
+  const formulaFeeCents = customerFacingServiceFeeCents(jobCents, platformNetCents);
+  const cashPortionCents = input.cashPortionCents == null ? null : Math.max(0, Math.round(input.cashPortionCents));
+  return {
+    jobCents,
+    platformNetCents,
+    customerFeeCents,
+    formulaFeeCents,
+    matchesFullJob: customerFeeCents === formulaFeeCents,
+    cashPortionCents,
+    cashPortionFeeCents: cashPortionCents == null ? null : customerFacingServiceFeeCents(cashPortionCents, platformNetCents),
+  };
+}
+
 export function planInPersonPayment(input: {
   workOrderId: string;
   shopId?: string | null;
@@ -922,6 +956,16 @@ export function planInPersonPayment(input: {
       note: `in-person ${input.method}; platform fee; not a shop expense`,
     });
   }
+  entries.push({
+    kind: 'deposit',
+    appliesTo: 'job',
+    amountCents: shopReceived,
+    status: 'posted',
+    idempotencyKey: `inperson-deposit:${input.workOrderId}:${shopReceived}`,
+    sourceId: null,
+    depositAt: input.at,
+    note: `in-person ${input.method}; shop receipt ${shopReceived} cents`,
+  });
   return {
     ok: true,
     entries,

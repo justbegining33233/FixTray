@@ -214,6 +214,9 @@ export const PRODUCTION_COLUMN_STATEMENTS = [
 let pending: Promise<void> | null = null;
 
 export function ensureProductionColumns(): Promise<void> {
+  // Next sets this while it prerenders pages. A production build must not
+  // migrate the database it was pointed at. The first live request runs it.
+  if (process.env.NEXT_PHASE === 'phase-production-build') return Promise.resolve();
   if (!process.env.DATABASE_URL) return Promise.resolve();
   if (!pending) {
     pending = applyColumns().catch((error) => {

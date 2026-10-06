@@ -66,7 +66,7 @@ function normalizeMargins(raw: any, days: number): MarginData {
 
 export default function ProfitMarginsPage() {
   const say = usePhrase();
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'accountant']);
   const [data, setData] = useState<MarginData | null>(null);
   const [loading, setLoading] = useState(true);
   const [marginError, setMarginError] = useState('');
@@ -109,7 +109,7 @@ export default function ProfitMarginsPage() {
     <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaChartLine style={{marginRight:4}} /> {say("Profit Margins")}</h1>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}><FaChartLine style={{marginRight:4}} /> Job Profit</h1>
           <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: 14 }}>{say("Per-job profitability analysis  -  identify your most and least profitable work")}</p>
         </div>
         <select value={days} onChange={e => setDays(Number(e.target.value))}

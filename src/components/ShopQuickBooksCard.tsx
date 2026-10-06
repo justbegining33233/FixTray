@@ -7,8 +7,9 @@ import { FaChartBar } from 'react-icons/fa';
  * Shop-owner connect card. OAuth is the QuickBooks path.
  * Intuit client id and secret are never collected here.
  */
-export default function ShopQuickBooksCard() {
+export default function ShopQuickBooksCard({ readOnly = false }: { readOnly?: boolean }) {
   const [connected, setConnected] = useState(false);
+  const [configured, setConfigured] = useState<boolean | null>(null);
   const [realmId, setRealmId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -23,6 +24,7 @@ export default function ShopQuickBooksCard() {
         if (!response.ok) return;
         const body = await response.json();
         setConnected(body.connected === true);
+        setConfigured(body.configured === true);
         setRealmId(typeof body.realmId === 'string' ? body.realmId : null);
       })
       .catch(() => setError('Could not load QuickBooks Online'));
@@ -54,7 +56,9 @@ export default function ShopQuickBooksCard() {
         </div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>QuickBooks Online</div>
-          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{connected ? `Connected${realmId ? ` · ${realmId}` : ''}` : 'Not connected'}</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
+            {configured === false ? 'QuickBooks Online is not configured' : connected ? `Connected${realmId ? ` · ${realmId}` : ''}` : 'Not connected'}
+          </div>
         </div>
       </div>
       <p style={{ color: '#9ca3af', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>
@@ -64,10 +68,10 @@ export default function ShopQuickBooksCard() {
       <button
         type="button"
         onClick={connect}
-        disabled={busy}
-        style={{ width: '100%', background: '#2CA01C', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: busy ? 'wait' : 'pointer' }}
+        disabled={busy || readOnly || configured !== true}
+        style={{ width: '100%', background: configured !== true || readOnly ? '#374151' : '#2CA01C', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: busy || readOnly || configured !== true ? 'not-allowed' : 'pointer' }}
       >
-        {busy ? '...' : connected ? 'Reconnect QuickBooks Online' : 'Connect QuickBooks Online'}
+        {configured === false ? 'QuickBooks Online is not configured' : busy ? '...' : connected ? 'Reconnect QuickBooks Online' : 'Connect QuickBooks Online'}
       </button>
     </div>
   );

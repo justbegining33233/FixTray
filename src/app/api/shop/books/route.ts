@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
@@ -50,6 +51,47 @@ export async function POST(request: NextRequest) {
   }
   const action = String((body as { action?: string }).action || '');
   const at = new Date().toISOString();
+
+  if (action === 'create-invoice') {
+    if (auth.role !== 'shop') return NextResponse.json({ error: 'Only the owner can create an invoice for a paid job.' }, { status: 403 });
+    const workOrderId = String((body as { workOrderId?: string }).workOrderId || '');
+    const order = await prisma.workOrder.findFirst({ where: { id: workOrderId, shopId } });
+    if (!order) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    const history = await prisma.statusHistory.findFirst({
+      where: { workOrderId, toStatus: 'waiting-for-payment' },
+      select: { id: true },
+    });
+    if (!history) {
+      await prisma.statusHistory.create({
+        data: {
+          workOrderId,
+          fromStatus: order.status || 'completed',
+          toStatus: 'waiting-for-payment',
+          reason: 'Invoice created for a paid job that had no invoice',
+        },
+      });
+    }
+    const description = `Invoice for work order ${workOrderId}`;
+    const link = await prisma.paymentLink.findFirst({
+      where: { workOrderId, description: { startsWith: 'Invoice for work order' } },
+      select: { id: true },
+    });
+    if (!link) {
+      await prisma.paymentLink.create({
+        data: {
+          shopId,
+          workOrderId,
+          customerId: order.customerId,
+          token: crypto.randomBytes(24).toString('hex'),
+          amount: order.estimatedCost || 0,
+          description,
+          status: order.paymentStatus === 'paid' ? 'paid' : 'pending',
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+    return NextResponse.json({ ok: true, workOrderId, description });
+  }
 
   if (action === 'deposit') {
     const workOrderId = String((body as { workOrderId?: string }).workOrderId || '');

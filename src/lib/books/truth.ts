@@ -7,7 +7,7 @@
  * never negative: an overpayment is customer credit.
  */
 
-import { dayKey } from '@/lib/books/periods';
+import { booksDayKey, reportTimeZone } from '@/lib/books/periods';
 
 export const COMPLETED_STATUSES = new Set(['closed', 'completed']);
 
@@ -91,9 +91,54 @@ function whole(cents: number): number {
   return Math.max(0, Math.round(cents));
 }
 
-function inWindow(at: string, start: Date, end: Date): boolean {
-  const time = new Date(at).getTime();
-  return Number.isFinite(time) && time >= start.getTime() && time < end.getTime();
+/** Shop day of an event, compared to the shop days of the window edges. */
+export function civilInRange(at: string, start: Date, end: Date, timeZone: string): boolean {
+  const instant = new Date(at);
+  if (Number.isNaN(instant.getTime())) return false;
+  const zone = reportTimeZone(timeZone);
+  const day = booksDayKey(instant, zone);
+  const startDay = booksDayKey(start, zone);
+  const endDay = booksDayKey(end, zone);
+  return day >= startDay && day < endDay;
+}
+
+/**
+ * Accounts receivable and customer credit for one job.
+ * A deposit counts as shop money only when it is not already in the payments,
+ * so a matched deposit is not added twice. The two balances are never netted
+ * against each other.
+ */
+export function jobBalance(input: {
+  invoiceCents: number | null;
+  paidCents: number;
+  refundCents: number;
+  chargebackCents: number;
+  depositCents: number;
+}): { arCents: number; customerCreditCents: number; collectedCents: number } {
+  const paid = whole(input.paidCents);
+  const refund = whole(input.refundCents);
+  const chargeback = whole(input.chargebackCents);
+  const deposit = whole(input.depositCents);
+  const netPaid = paid - refund - chargeback;
+  const fromDeposit = deposit - refund - chargeback;
+  const collected = Math.max(netPaid, fromDeposit);
+  if (input.invoiceCents == null) {
+    return { arCents: 0, customerCreditCents: Math.max(0, collected), collectedCents: collected };
+  }
+  const invoiced = whole(input.invoiceCents);
+  if (collected > invoiced) {
+    return { arCents: 0, customerCreditCents: collected - invoiced, collectedCents: collected };
+  }
+  return {
+    arCents: Math.max(0, invoiced - Math.max(0, collected)),
+    customerCreditCents: 0,
+    collectedCents: Math.max(0, collected),
+  };
+}
+
+export function isStillOpenStatus(status: string | null | undefined): boolean {
+  const value = String(status || '').trim().toLowerCase();
+  return value !== 'closed' && value !== 'completed' && value !== 'denied-estimate';
 }
 
 export function positionJob(job: ShopJobFacts): JobPosition {
@@ -119,22 +164,14 @@ export function positionJob(job: ShopJobFacts): JobPosition {
     flags.push('missing_invoice');
     flags.push('payment_without_invoice');
   }
-  let arCents = 0;
-  let customerCreditCents = 0;
-  let appliedCents = 0;
-  if (missingInvoice) {
-    customerCreditCents = Math.max(0, netPaid);
-  } else if (netPaid > invoicedCents) {
-    appliedCents = invoicedCents;
-    customerCreditCents = netPaid - invoicedCents;
-    flags.push('overpayment');
-  } else if (netPaid >= 0) {
-    appliedCents = netPaid;
-    arCents = invoicedCents - netPaid;
-  } else {
-    appliedCents = 0;
-    arCents = invoicedCents - netPaid;
-  }
+  const balance = jobBalance({
+    invoiceCents: missingInvoice ? null : invoicedCents,
+    paidCents,
+    refundCents,
+    chargebackCents,
+    depositCents,
+  });
+  if (!missingInvoice && balance.customerCreditCents > 0) flags.push('overpayment');
   return {
     workOrderId: job.id,
     invoicedCents,
@@ -143,9 +180,9 @@ export function positionJob(job: ShopJobFacts): JobPosition {
     chargebackCents,
     depositCents,
     voidCents,
-    appliedCents,
-    arCents,
-    customerCreditCents,
+    appliedCents: Math.min(balance.collectedCents, invoicedCents),
+    arCents: balance.arCents,
+    customerCreditCents: balance.customerCreditCents,
     revenueCents: netPaid,
     missingInvoice,
     flags,
@@ -156,17 +193,19 @@ export function positionJobs(jobs: ShopJobFacts[]): JobPosition[] {
   return jobs.map(positionJob);
 }
 
-function eventsInRange(jobs: ShopJobFacts[], start: Date, end: Date): ShopMoneyEvent[] {
-  return jobs.flatMap((job) => job.events.filter((event) => inWindow(event.at, start, end)));
+function eventsInRange(jobs: ShopJobFacts[], start: Date, end: Date, timeZone: string): ShopMoneyEvent[] {
+  return jobs.flatMap((job) => job.events.filter((event) => civilInRange(event.at, start, end, timeZone)));
 }
 
 /**
  * Period activity plus the open AR and credit of these jobs.
  * Revenue is shop job cash in the range and does not include the FixTray fee.
+ * AR and customer credit are each job's own balance. They are not netted.
  */
-export function rangeSnapshot(jobs: ShopJobFacts[], start: Date, end: Date): RangeSnapshot {
+export function rangeSnapshot(jobs: ShopJobFacts[], start: Date, end: Date, timeZone = 'America/New_York'): RangeSnapshot {
+  const zone = reportTimeZone(timeZone);
   const positions = positionJobs(jobs);
-  const events = eventsInRange(jobs, start, end);
+  const events = eventsInRange(jobs, start, end, zone);
   const snapshot: RangeSnapshot = {
     invoicedCents: 0,
     paidCents: 0,
@@ -203,7 +242,7 @@ export function rangeSnapshot(jobs: ShopJobFacts[], start: Date, end: Date): Ran
   snapshot.revenueCents = snapshot.paidCents - snapshot.refundCents - snapshot.chargebackCents;
   for (const job of jobs) {
     if (!job.completedAt || !COMPLETED_STATUSES.has(String(job.status || '').trim().toLowerCase())) continue;
-    if (inWindow(job.completedAt, start, end)) snapshot.completedCount += 1;
+    if (civilInRange(job.completedAt, start, end, zone)) snapshot.completedCount += 1;
   }
   if (snapshot.arCents < 0) snapshot.arCents = 0;
   return snapshot;
@@ -224,8 +263,8 @@ export function arAging(jobs: ShopJobFacts[], asOf: Date, timeZone: string): Agi
     const position = positionJob(job);
     if (position.arCents <= 0) continue;
     const invoiceAt = job.invoiceAt || job.events.find((event) => event.kind === 'invoice')?.at;
-    const invoiceDay = invoiceAt ? dayKey(new Date(invoiceAt), timeZone) : dayKey(asOf, timeZone);
-    const asOfDay = dayKey(asOf, timeZone);
+    const invoiceDay = invoiceAt ? booksDayKey(new Date(invoiceAt), timeZone) : booksDayKey(asOf, timeZone);
+    const asOfDay = booksDayKey(asOf, timeZone);
     const ageDays = Math.max(0, Math.round((new Date(`${asOfDay}T00:00:00.000Z`).getTime() - new Date(`${invoiceDay}T00:00:00.000Z`).getTime()) / 86400000));
     const bucket = ageDays <= 30 ? 'current' : ageDays <= 60 ? '30' : ageDays <= 90 ? '60' : '90';
     rows.push({ workOrderId: job.id, arCents: position.arCents, ageDays, bucket, flags: position.flags });

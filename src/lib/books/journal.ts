@@ -292,8 +292,43 @@ export function statementTotals(entries: JournalDraft[]): StatementTotals {
 }
 
 export function balanceSheetBalances(entries: JournalDraft[]): boolean {
+  return balanceSheetView(entries).balanced;
+}
+
+export interface BalanceSheetLine {
+  key: string;
+  label: string;
+  cents: number;
+  side: 'asset' | 'liability' | 'equity';
+}
+
+/** Every balance-sheet line, including zeros, plus assets = liabilities + equity. */
+export function balanceSheetView(entries: JournalDraft[]): {
+  lines: BalanceSheetLine[];
+  assetsCents: number;
+  liabilitiesCents: number;
+  equityCents: number;
+  balanced: boolean;
+} {
   const totals = statementTotals(entries);
-  const assets = totals.bankCents + totals.undepositedCents + totals.arCents + totals.inventoryCents;
-  const liabilities = totals.apCents + totals.salesTaxCents + totals.customerCreditCents + totals.wagesPayableCents;
-  return assets === liabilities + totals.equityCents;
+  const assetsCents = totals.bankCents + totals.undepositedCents + totals.arCents + totals.inventoryCents;
+  const liabilitiesCents = totals.apCents + totals.salesTaxCents + totals.customerCreditCents + totals.wagesPayableCents;
+  const lines: BalanceSheetLine[] = [
+    { key: 'undeposited', label: 'Undeposited funds', cents: totals.undepositedCents, side: 'asset' },
+    { key: 'bank', label: 'Operating bank', cents: totals.bankCents, side: 'asset' },
+    { key: 'ar', label: 'Accounts receivable', cents: totals.arCents, side: 'asset' },
+    { key: 'inventory', label: 'Inventory', cents: totals.inventoryCents, side: 'asset' },
+    { key: 'ap', label: 'Accounts payable', cents: totals.apCents, side: 'liability' },
+    { key: 'tax', label: 'Sales tax payable', cents: totals.salesTaxCents, side: 'liability' },
+    { key: 'credit', label: 'Customer credit', cents: totals.customerCreditCents, side: 'liability' },
+    { key: 'wages', label: 'Wages payable', cents: totals.wagesPayableCents, side: 'liability' },
+    { key: 'equity', label: "Owner's equity", cents: totals.equityCents, side: 'equity' },
+  ];
+  return {
+    lines,
+    assetsCents,
+    liabilitiesCents,
+    equityCents: totals.equityCents,
+    balanced: assetsCents === liabilitiesCents + totals.equityCents,
+  };
 }

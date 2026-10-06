@@ -63,6 +63,7 @@
       return path === '/shop/books'
         || path === '/shop/ar-aging'
         || under(path, '/shop/ar-aging')
+        || path === '/shop/profit-margins'
         || path === '/shop/accounting'
         || under(path, '/shop/accounting');
     }

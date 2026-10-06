@@ -14,6 +14,56 @@ export interface JobProfit {
   rateNote: string | null;
 }
 
+/** Parts cost from the line when it has a cost, otherwise the inventory cost times quantity. */
+export function partsCostFromUsage(input: {
+  partsUsed: unknown;
+  catalog?: Array<{ id: string; sku?: string | null; costCents: number }>;
+}): number {
+  if (!Array.isArray(input.partsUsed)) return 0;
+  const catalog = input.catalog || [];
+  let total = 0;
+  for (const raw of input.partsUsed) {
+    if (!raw || typeof raw !== 'object') continue;
+    const part = raw as {
+      id?: string;
+      partId?: string;
+      itemId?: string;
+      sku?: string;
+      quantity?: number;
+      qty?: number;
+      cost?: number;
+      costCents?: number;
+    };
+    const qtyRaw = part.quantity ?? part.qty ?? 1;
+    const qty = Math.max(0, Math.round(Number(qtyRaw)));
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+    let unit = 0;
+    if (Number.isFinite(part.costCents) && (part.costCents as number) > 0) unit = Math.round(part.costCents as number);
+    else if (Number.isFinite(part.cost) && (part.cost as number) > 0) unit = Math.round((part.cost as number) * 100);
+    if (unit <= 0) {
+      const id = String(part.id || part.partId || part.itemId || '');
+      const sku = String(part.sku || '');
+      const match = catalog.find((item) => (id && item.id === id) || (sku && item.sku && item.sku === sku));
+      if (match) unit = Math.max(0, Math.round(match.costCents));
+    }
+    total += unit * qty;
+  }
+  return total;
+}
+
+/** Shop revenue by tech from job payments. Estimated totals and the FixTray fee are not used. */
+export function allocateTechRevenue(rows: Array<{ techId: string | null | undefined; cents: number }>): Array<{ techId: string; revenueCents: number }> {
+  const byTech = new Map<string, number>();
+  for (const row of rows) {
+    const techId = String(row.techId || '').trim();
+    if (!techId) continue;
+    byTech.set(techId, (byTech.get(techId) || 0) + Math.round(row.cents));
+  }
+  return [...byTech.entries()]
+    .map(([techId, revenueCents]) => ({ techId, revenueCents }))
+    .sort((a, b) => a.techId.localeCompare(b.techId));
+}
+
 export function jobProfit(input: {
   workOrderId: string;
   revenueCents: number;

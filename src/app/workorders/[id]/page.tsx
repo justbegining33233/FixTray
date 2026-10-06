@@ -27,6 +27,7 @@ import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { WorkOrderPhone } from '@/components/mobile/WorkOrderPhone';
 import TurnByTurnPanel from '@/components/TurnByTurnPanel';
+import { mergeWorkOrderView } from '@/lib/workOrderView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -202,6 +203,7 @@ export default function WorkOrderDetailPage() {
   const [paymentUrl,    setPaymentUrl]    = useState<string | null>(null);
   const [signPath,      setSignPath]      = useState<string | null>(null);
   const [payBusy,       setPayBusy]       = useState(false);
+  const [payDraft, setPayDraft] = useState<{ method: 'cash' | 'check' | 'other'; amount: string } | null>(null);
   const [invoiceBill,   setInvoiceBill]   = useState<{ quoteAmount: number; serviceFee: number; totalDue: number } | null>(null);
   const [platformFee,   setPlatformFee]   = useState<number>(0);
 
@@ -426,7 +428,7 @@ export default function WorkOrderDetailPage() {
     finally { setSubmittingEst(false); }
   };
 
-  const handlePay = async (method: 'card' | 'cash' | 'check' | 'other') => {
+  const handlePay = async (method: 'card' | 'cash' | 'check' | 'other', amountDollars?: number) => {
     if (!id) return;
     setPayBusy(true);
     setCloseoutMsg('');
@@ -435,7 +437,10 @@ export default function WorkOrderDetailPage() {
       const res = await fetch(`/api/workorders/${id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ method }),
+        body: JSON.stringify({
+          method,
+          ...(amountDollars != null ? { amountCents: Math.round(amountDollars * 100) } : {}),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -446,7 +451,8 @@ export default function WorkOrderDetailPage() {
         window.location.href = data.url;
         return;
       }
-      if (data.workOrder) setWo(data.workOrder);
+      if (data.workOrder) setWo((current) => mergeWorkOrderView(current as unknown as Record<string, unknown>, data.workOrder) as WorkOrder);
+      setPayDraft(null);
       const fee = typeof data.platformFeeCents === 'number' ? data.platformFeeCents / 100 : 0;
       setCloseoutMsg(
         data.paymentStatus === 'paid'
@@ -476,7 +482,7 @@ export default function WorkOrderDetailPage() {
         setCloseoutMsg(data.error || 'Closeout failed.');
         return;
       }
-      if (data.workOrder) setWo(data.workOrder);
+      if (data.workOrder) setWo((current) => mergeWorkOrderView(current as unknown as Record<string, unknown>, data.workOrder) as WorkOrder);
       if (data.invoice) {
         setInvoiceBill({
           quoteAmount: Number(data.invoice.quoteAmount) || 0,
@@ -955,18 +961,52 @@ export default function WorkOrderDetailPage() {
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Pay. Cash, check, and other still use the live card fee. The shop keeps the full job. The fee is owed to FixTray.</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {(['card', 'cash', 'check', 'other'] as const).map((method) => (
+                    <button
+                      type="button"
+                      disabled={payBusy}
+                      onClick={() => { void handlePay('card'); }}
+                      style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Card
+                    </button>
+                    {(['cash', 'check', 'other'] as const).map((method) => (
                       <button
                         key={method}
                         type="button"
                         disabled={payBusy}
-                        onClick={() => { void handlePay(method); }}
+                        onClick={() => {
+                          const remaining = Math.max(0, (wo.estimatedCost || 0) - (wo.amountPaid || 0));
+                          setPayDraft({ method, amount: remaining.toFixed(2) });
+                        }}
                         style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}
                       >
-                        {method === 'card' ? 'Card' : method === 'cash' ? 'Cash' : method === 'check' ? 'Check' : 'Other'}
+                        {method === 'cash' ? 'Cash' : method === 'check' ? 'Check' : 'Other'}
                       </button>
                     ))}
                   </div>
+                  {payDraft && (
+                    <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
+                      <div style={{ fontSize: 13, marginBottom: 8 }}>
+                        {payDraft.method === 'cash' ? 'Cash' : payDraft.method === 'check' ? 'Check' : 'Other'} records ${payDraft.amount || '0.00'}. That starts as the balance after deposits. Confirm or change it before it is saved.
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={payDraft.amount}
+                        onChange={(event) => setPayDraft({ ...payDraft, amount: event.target.value })}
+                        style={{ marginRight: 8, padding: 8 }}
+                      />
+                      <button
+                        type="button"
+                        disabled={payBusy}
+                        onClick={() => { void handlePay(payDraft.method, Number(payDraft.amount)); }}
+                        style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Confirm {payDraft.method}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

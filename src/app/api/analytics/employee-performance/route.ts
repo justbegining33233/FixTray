@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { slaComplianceRate as computeSlaComplianceRate } from '@/lib/slaMetrics';
+import { allocateTechRevenue } from '@/lib/books/floor';
+import { addDays, dayKey, shopDateSpan } from '@/lib/books/periods';
+import { shopTimeZone } from '@/lib/books/loadTruth';
+import { civilInRange } from '@/lib/books/truth';
 
 // GET /api/analytics/employee-performance ΓÇö cross-shop tech performance stats
 export async function GET(request: NextRequest) {
@@ -11,7 +15,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const days = Math.min(parseInt(searchParams.get('days') || '30'), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     // Determine which shops to include
     let shopIds: string[] = [];
@@ -37,6 +40,11 @@ export async function GET(request: NextRequest) {
     if (shopIds.length === 0) {
       return NextResponse.json({ techPerformance: [] });
     }
+    const zone = shopIds.length === 1 ? await shopTimeZone(shopIds[0]) : 'America/New_York';
+    const endDay = dayKey(new Date(), zone);
+    const startDay = addDays(endDay, -(days - 1));
+    const span = shopDateSpan(startDay, endDay, zone);
+    const since = new Date(span.start.getTime() - 24 * 60 * 60 * 1000);
 
     // Fetch all techs across those shops
     const techs = await prisma.tech.findMany({
@@ -98,15 +106,35 @@ export async function GET(request: NextRequest) {
       const entry = techMap.get(wo.assignedTechId);
       if (!entry) continue;
       entry.total++;
-      if (['closed', 'completed', 'Completed', 'waiting-for-payment'].includes(wo.status)) {
+      if (['closed', 'completed', 'Completed'].includes(wo.status)) {
         entry.completed++;
-        entry.revenue += wo.amountPaid || wo.estimatedCost || 0;
         if (wo.dueDate && wo.completedAt) {
           entry.withDueDate++;
           if (new Date(wo.completedAt) <= new Date(wo.dueDate)) entry.onTime++;
         }
       }
     }
+
+    const paymentRows = await prisma.booksEntry.findMany({
+      where: {
+        shopId: { in: shopIds },
+        appliesTo: 'job',
+        kind: { in: ['card_payment', 'job_payment'] },
+        status: { not: 'open' },
+        createdAt: { gte: since, lt: span.end },
+      },
+      select: { workOrderId: true, amountCents: true, createdAt: true },
+    });
+    const inPeriod = paymentRows.filter((row) => civilInRange(row.createdAt.toISOString(), span.start, span.end, zone));
+    const paymentOrders = inPeriod.length === 0 ? [] : await prisma.workOrder.findMany({
+      where: { id: { in: [...new Set(inPeriod.map((row) => row.workOrderId))] } },
+      select: { id: true, assignedTechId: true },
+    });
+    const techByOrder = new Map(paymentOrders.map((order) => [order.id, order.assignedTechId]));
+    const revenueByTech = new Map(allocateTechRevenue(inPeriod.map((row) => ({
+      techId: techByOrder.get(row.workOrderId),
+      cents: row.amountCents,
+    }))).map((row) => [row.techId, row.revenueCents]));
 
     const techPerformance = Array.from(techMap.entries()).map(([techId, data]) => ({
       techId,
@@ -117,10 +145,10 @@ export async function GET(request: NextRequest) {
       completedJobs: data.completed,
       completionRate: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
       slaComplianceRate: computeSlaComplianceRate(data.onTime, data.withDueDate),
-      revenue: Math.round(data.revenue * 100) / 100,
+      revenue: Math.round((revenueByTech.get(techId) || 0)) / 100,
       hoursWorked: Math.round((hoursMap.get(techId) || 0) * 10) / 10,
       revenuePerHour: (hoursMap.get(techId) || 0) > 0
-        ? Math.round((data.revenue / (hoursMap.get(techId) || 1)) * 100) / 100
+        ? Math.round(((revenueByTech.get(techId) || 0) / 100) / (hoursMap.get(techId) || 1) * 100) / 100
         : 0,
     })).sort((a, b) => b.completedJobs - a.completedJobs);
 

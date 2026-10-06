@@ -63,6 +63,31 @@ export function dayKey(instant: Date, timeZone: string): string {
   return dayKeyFromParts(zonedParts(instant, timeZone));
 }
 
+/** A timestamp stored as a calendar date, with no time of day. */
+export function isUtcMidnight(instant: Date): boolean {
+  return instant.getUTCHours() === 0
+    && instant.getUTCMinutes() === 0
+    && instant.getUTCSeconds() === 0
+    && instant.getUTCMilliseconds() === 0;
+}
+
+/**
+ * Civil day for shop books.
+ * A UTC-midnight value is a date-only stamp, so the UTC calendar date is the
+ * shop day (2026-10-05T00:00:00.000Z is Oct 5, not the evening before).
+ * Any other instant uses the shop timezone.
+ */
+export function booksDayKey(instant: Date, timeZone: string): string {
+  if (isUtcMidnight(instant)) {
+    return dayKeyFromParts({
+      year: instant.getUTCFullYear(),
+      month: instant.getUTCMonth() + 1,
+      day: instant.getUTCDate(),
+    });
+  }
+  return dayKey(instant, timeZone);
+}
+
 export function monthKeyFromDay(day: string): string {
   return day.slice(0, 7);
 }

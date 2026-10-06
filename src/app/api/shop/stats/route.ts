@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
     const week = shopWeekRange(now, zone);
     const showRevenue = decoded.role === 'shop' || decoded.role === 'admin' || decoded.role === 'superadmin';
     const facts = await loadShopFacts(shopId);
-    const todaySnap = rangeSnapshot(facts, today.start, today.end);
-    const weekSnap = rangeSnapshot(facts, week.start, week.end);
+    const todaySnap = rangeSnapshot(facts, today.start, today.end, zone);
+    const weekSnap = rangeSnapshot(facts, week.start, week.end, zone);
 
     // Work order stats
     const [openJobs] = await Promise.all([

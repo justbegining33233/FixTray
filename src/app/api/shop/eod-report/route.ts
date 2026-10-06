@@ -5,7 +5,7 @@ import { shopJobReceiptCents } from '@/lib/books/money';
 import { dayKey } from '@/lib/books/periods';
 import { shopDayRange } from '@/lib/books/periods';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
-import { rangeSnapshot } from '@/lib/books/truth';
+import { positionJobs, rangeSnapshot } from '@/lib/books/truth';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const startOfDay = day.start;
     const endOfDay = day.end;
     const facts = await loadShopFacts(shopId);
-    const snap = rangeSnapshot(facts, startOfDay, endOfDay);
+    const snap = rangeSnapshot(facts, startOfDay, endOfDay, zone);
     const showRevenue = auth.role === 'shop' || auth.role === 'admin';
 
     // Jobs completed today
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     const openJobs = await prisma.workOrder.count({
       where: {
         shopId,
-        status: { notIn: ['closed', 'denied-estimate'] },
+        status: { notIn: ['closed', 'completed', 'denied-estimate'] },
       },
     });
 
@@ -72,24 +72,16 @@ export async function GET(request: NextRequest) {
       total: totalRevenue,
     };
 
-    // Outstanding balances (work orders waiting for payment)
-    const outstandingWOs = await prisma.workOrder.findMany({
-      where: {
-        shopId,
-        status: 'waiting-for-payment',
-      },
+    const arRows = positionJobs(facts).filter((job) => job.arCents > 0);
+    const outstandingWOs = arRows.length === 0 ? [] : await prisma.workOrder.findMany({
+      where: { shopId, id: { in: arRows.map((job) => job.workOrderId) } },
       select: {
         id: true,
-        estimatedCost: true,
-        amountPaid: true,
         customer: { select: { firstName: true, lastName: true } },
       },
     });
-
-    const outstandingBalance = outstandingWOs.reduce((sum, wo) => {
-      const owed = (wo.estimatedCost || 0) - (shopJobReceiptCents(wo) / 100);
-      return sum + Math.max(0, owed);
-    }, 0);
+    const arById = new Map(arRows.map((job) => [job.workOrderId, job.arCents]));
+    const outstandingBalance = arRows.reduce((sum, job) => sum + job.arCents, 0) / 100;
 
     // Tech hours (time entries)
     const timeEntries = await prisma.timeEntry.findMany({
@@ -165,7 +157,7 @@ export async function GET(request: NextRequest) {
       outstandingWOs: outstandingWOs.map(wo => ({
         id: wo.id,
         customer: wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : 'N/A',
-        owed: Math.max(0, (wo.estimatedCost || 0) - (shopJobReceiptCents(wo) / 100)),
+        owed: (arById.get(wo.id) || 0) / 100,
       })),
       techHours,
     });

@@ -17,8 +17,8 @@ function PaymentMetrics({ moneyTotals, showRevenue }: { moneyTotals: ShopMoneyTo
       {showRevenue ? <Metric label="Paid" value={money(moneyTotals.paidCents)} /> : null}
       {showRevenue ? (
         <>
-          <Metric label="Unpaid" value={money(moneyTotals.unpaidCents)} hint="Open amount in this period. Overpayment is customer credit, so this is never negative." />
-          <Metric label="Customer credit" value={money(moneyTotals.customerCreditCents)} hint="Payments past the invoice, including payments with no invoice." />
+          <Metric label="Unpaid" value={money(moneyTotals.unpaidCents)} hint="Open accounts receivable on invoices in this period. Customer credit is not subtracted." />
+          <Metric label="Customer credit" value={money(moneyTotals.customerCreditCents)} hint="This job's own overpayment, including payments with no invoice. It is not netted against other jobs." />
         </>
       ) : null}
       <Metric label="Card" value={money(moneyTotals.cardCents)} />

@@ -4,8 +4,8 @@ import { booksAccess, shopIdForBooks } from '@/lib/books/access';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
 import { shopDateSpan } from '@/lib/books/periods';
 import { rangeSnapshot } from '@/lib/books/truth';
-import { balanceSheetBalances, statementTotals, trialBalance } from '@/lib/books/journal';
-import { journalForFacts } from '@/lib/books/statements';
+import { balanceSheetView, postInventoryAdjustment, statementTotals, trialBalance } from '@/lib/books/journal';
+import { cashBasisIncome, journalForFacts } from '@/lib/books/statements';
 import { taxSettingsFromShop } from '@/lib/books/shopTax';
 import prisma from '@/lib/prisma';
 
@@ -30,14 +30,42 @@ export async function GET(request: NextRequest) {
     prisma.shopSettings.findUnique({ where: { shopId }, select: { taxRate: true, laborTaxable: true, partsTaxable: true } }).catch(() => null),
   ]);
   const tax = taxSettingsFromShop(settings);
-  const entries = journalForFacts(facts, span.start, span.end, tax, zone);
-  const books = rangeSnapshot(facts, span.start, span.end);
-  const statements = statementTotals(entries);
-  const balance = trialBalance(entries);
+  const periodEntries = journalForFacts(facts, span.start, span.end, tax, zone);
+  const asOfEntries = journalForFacts(facts, new Date('2000-01-01T00:00:00.000Z'), span.end, tax, zone);
+  const books = rangeSnapshot(facts, span.start, span.end, zone);
+  const period = statementTotals(periodEntries);
+  const cash = cashBasisIncome({
+    revenueCents: books.revenueCents,
+    cogsCents: period.cogsCents,
+    payrollCents: period.payrollCents,
+    shopSuppliesCents: period.shopSuppliesCents,
+  });
+  let inventoryCents = 0;
+  try {
+    const items = await prisma.inventoryItem.findMany({
+      where: { shopId },
+      select: { quantity: true, costCents: true },
+    });
+    inventoryCents = items.reduce((sum, item) => sum + Math.max(0, item.quantity) * Math.max(0, item.costCents || 0), 0);
+  } catch {
+    inventoryCents = 0;
+  }
+  if (inventoryCents > 0) {
+    asOfEntries.push(postInventoryAdjustment({
+      id: `inventory:${shopId}:${to}`,
+      date: to,
+      amountCents: inventoryCents,
+      direction: 'increase',
+    }));
+  }
+  const sheet = balanceSheetView(asOfEntries);
+  const balance = trialBalance(asOfEntries);
   return NextResponse.json({
     from,
     to,
     timeZone: zone,
+    basis: cash.basis,
+    basisNote: cash.note,
     books: {
       invoicedCents: books.invoicedCents,
       paidCents: books.paidCents,
@@ -45,8 +73,17 @@ export async function GET(request: NextRequest) {
       arCents: books.arCents,
       customerCreditCents: books.customerCreditCents,
     },
-    profitAndLoss: statements,
-    balanceSheetBalances: entries.length === 0 || balanceSheetBalances(entries),
+    profitAndLoss: {
+      ...period,
+      basis: cash.basis,
+      revenueCents: cash.revenueCents,
+      netIncomeCents: cash.netIncomeCents,
+      accrualInvoicedCents: books.invoicedCents,
+      accrualNetIncomeCents: period.netIncomeCents,
+      note: cash.note,
+    },
+    balanceSheet: sheet,
+    balanceSheetBalances: sheet.balanced,
     trialBalance: balance,
     readOnly: booksAccess(auth.role).accountantRead,
   });

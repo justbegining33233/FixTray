@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
-import { jobProfit, reorderAlerts, techProductivity } from '@/lib/books/floor';
+import { allocateTechRevenue, jobProfit, partsCostFromUsage, reorderAlerts, techProductivity } from '@/lib/books/floor';
+import { addDays, dayKey, shopDateSpan } from '@/lib/books/periods';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { civilInRange, rangeSnapshot } from '@/lib/books/truth';
 
 export async function GET(req: NextRequest) {
   const auth = authenticateRequest(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (auth.role === 'manager') {
+  if (auth.role === 'manager' || (auth.role !== 'shop' && auth.role !== 'accountant' && auth.role !== 'admin' && auth.role !== 'superadmin')) {
     return NextResponse.json({ error: 'Shop income is not available to managers.' }, { status: 403 });
   }
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
@@ -14,30 +17,42 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const days = Number(searchParams.get('days') || 30);
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const zone = await shopTimeZone(shopId);
+  const endDay = dayKey(new Date(), zone);
+  const startDay = addDays(endDay, -(Math.max(1, days) - 1));
+  const span = shopDateSpan(startDay, endDay, zone);
+  const since = span.start;
+  const facts = await loadShopFacts(shopId);
+  const snap = rangeSnapshot(facts, span.start, span.end, zone);
+  const paidByJob = new Map<string, number>();
+  for (const job of facts) {
+    let paid = 0;
+    for (const event of job.events) {
+      if (event.kind !== 'payment' || !civilInRange(event.at, span.start, span.end, zone)) continue;
+      paid += Math.round(event.cents);
+    }
+    if (paid > 0) paidByJob.set(job.id, paid);
+  }
 
-  const orders = await prisma.workOrder.findMany({
-    where: {
-      shopId,
-      status: { in: ['closed', 'completed'] },
-      completedAt: { gte: since },
-    },
+  const paidIds = [...paidByJob.keys()];
+  const orders = paidIds.length === 0 ? [] : await prisma.workOrder.findMany({
+    where: { shopId, id: { in: paidIds } },
     include: {
-      assignedTo: { select: { firstName: true, lastName: true, hourlyRate: true } },
+      assignedTo: { select: { id: true, firstName: true, lastName: true, hourlyRate: true } },
       timeEntries: true,
       customer: { select: { firstName: true, lastName: true } },
     },
     orderBy: { completedAt: 'desc' },
   });
+  const catalog = await prisma.inventoryItem.findMany({
+    where: { shopId },
+    select: { id: true, sku: true, costCents: true, name: true, quantity: true, reorderPoint: true, price: true },
+  });
 
   const results = orders.map(wo => {
-    const revenueCents = Math.round((wo.estimatedCost || 0) * 100);
+    const revenueCents = paidByJob.get(wo.id) || 0;
     const laborMinutes = Math.round(wo.timeEntries.reduce((sum, te) => sum + (te.hoursWorked || 0), 0) * 60);
-    const partsCostCents = wo.partsUsed ? (() => {
-      const parts = wo.partsUsed as unknown;
-      if (!Array.isArray(parts)) return 0;
-      return parts.reduce((sum: number, p: { cost?: number }) => sum + Math.round((p.cost || 0) * 100), 0);
-    })() : 0;
+    const partsCostCents = partsCostFromUsage({ partsUsed: wo.partsUsed, catalog });
     const rateCents = wo.assignedTo && wo.assignedTo.hourlyRate > 0 ? Math.round(wo.assignedTo.hourlyRate * 100) : null;
     const profit = jobProfit({
       workOrderId: wo.id,
@@ -55,7 +70,7 @@ export async function GET(req: NextRequest) {
 
     return {
       id: wo.id,
-      customer: `${wo.customer.firstName} ${wo.customer.lastName}`,
+      customer: wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : 'Unknown',
       tech: wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : 'Unassigned',
       completedAt: wo.completedAt,
       revenue,
@@ -75,8 +90,8 @@ export async function GET(req: NextRequest) {
     cost: acc.cost + r.totalCost,
     profit: acc.profit + (r.grossProfit || 0),
   }), { revenue: 0, cost: 0, profit: 0 });
-  const revenueAll = results.reduce((sum, row) => sum + row.revenue, 0);
-  const [clocks, billed, stock] = await Promise.all([
+  const revenueAll = snap.revenueCents / 100;
+  const [clocks, billed] = await Promise.all([
     prisma.timeEntry.findMany({
       where: { shopId, clockIn: { gte: since } },
       select: { techId: true, hoursWorked: true, clockIn: true, clockOut: true },
@@ -85,11 +100,8 @@ export async function GET(req: NextRequest) {
       where: { shopId, clockIn: { gte: since } },
       select: { techId: true, hoursSpent: true },
     }),
-    prisma.inventoryItem.findMany({
-      where: { shopId },
-      select: { id: true, name: true, sku: true, quantity: true, reorderPoint: true, price: true, costCents: true },
-    }),
   ]);
+  const stock = catalog;
   const productivity = techProductivity([
     ...clocks.map((row) => ({
       personId: row.techId,
@@ -134,5 +146,12 @@ export async function GET(req: NextRequest) {
     productivity,
     reorder,
     partMargins,
+    techRevenue: allocateTechRevenue(orders.map((order) => ({
+      techId: order.assignedTo?.id || null,
+      cents: paidByJob.get(order.id) || 0,
+    }))),
+    basis: 'Shop payments in these dates. The FixTray fee is not included.',
+    from: startDay,
+    to: endDay,
   });
 }

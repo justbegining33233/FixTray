@@ -143,15 +143,17 @@ export default function ShopHome() {
         }
 
         // Financial summary (today + week revenue)
-        if (finRes.ok) {
+        if (finRes.ok && user?.role === 'shop') {
           const data = await finRes.json();
           const summary = data.summary || data;
-          const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-          setShopStats(prev => ({
-            ...prev,
-            todayRevenue: fmt(Number(summary.todayRevenue) || 0),
-            weekRevenue: fmt(Number(summary.weeklyRevenue) || 0),
-          }));
+          if (typeof summary.todayRevenue === 'number') {
+            const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            setShopStats(prev => ({
+              ...prev,
+              todayRevenue: fmt(summary.todayRevenue),
+              weekRevenue: fmt(Number(summary.weeklyRevenue) || 0),
+            }));
+          }
         }
 
         // Team members + active tech count
@@ -475,6 +477,7 @@ export default function ShopHome() {
           pendingApprovals={shopStats.pendingApprovals}
           todayRevenue={shopStats.todayRevenue}
           weekRevenue={shopStats.weekRevenue}
+          showRevenue={user?.role === 'shop' && user.isShopAdmin}
           activeTechs={shopStats.activeTechs}
           roadcalls={pendingRoadcalls.length}
           appointments={pendingInShopAppointments.length}
@@ -558,7 +561,7 @@ export default function ShopHome() {
             <div style={{fontSize:32, fontWeight:700, color:'#e5332a'}}>{dashboardReady ? shopStats.pendingApprovals : '...'} </div>
           </div>
           {/* Admin / owner only */}
-          {user.isShopAdmin && (
+          {user.role === 'shop' && user.isShopAdmin && (
             <>
               <div style={{background:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:12, padding:20}}>
                 <div style={{fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Today's Revenue")}</div>

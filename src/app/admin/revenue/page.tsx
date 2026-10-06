@@ -17,7 +17,10 @@ interface StripeLinks {
 }
 
 interface WorkOrderFees {
-  feePerWorkOrder: number;
+  feesOwed: number;
+  feesRefunded: number;
+  feesAccrued: number;
+  netFees: number;
   totalFees: number;
   feesToday: number;
   feesThisWeek: number;
@@ -26,23 +29,15 @@ interface WorkOrderFees {
   feesLast3Months: number;
   momGrowth: number;
   totalPaidWorkOrders: number;
-  paidWorkOrdersToday: number;
-  paidWorkOrdersThisWeek: number;
-  paidWorkOrdersThisMonth: number;
-  totalWorkOrderRevenue: number;
-  thisMonthWorkOrderRevenue: number;
-  lastMonthWorkOrderRevenue: number;
-  averageTicket: number;
   dailyFeesTrend: number[];
   dailyPaidOrdersTrend: number[];
-  dailyRevenueTrend: number[];
-  feesByShop: Array<{ shopId: string; shopName: string; count: number; fees: number; totalRevenue: number }>;
+  dailyNetTrend: number[];
+  feesByShop: Array<{ shopId: string; shopName: string; count: number; fees: number }>;
   recentTransactions: Array<{
     id: string;
     shopName: string;
-    customerName: string;
+    kind: string;
     description: string;
-    amountPaid: number;
     fee: number;
     date: string;
   }>;
@@ -220,18 +215,18 @@ export default function AdminRevenuePage() {
           <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
             <div className="text-stone-400 text-sm mb-1">{say("Fees This Month")}</div>
             <div className="text-3xl font-bold text-[#ff6b64]">{formatCurrency(workOrderFees.feesThisMonth)}</div>
-            <div className="text-stone-500 text-sm mt-1">{workOrderFees.paidWorkOrdersThisMonth.toLocaleString()} {say("paid work orders")}</div>
+            <div className="text-stone-500 text-sm mt-1">{say("Card fees and settlements")}</div>
           </div>
 
           <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
             <div className="text-stone-400 text-sm mb-1">{say("Fees This Week")}</div>
             <div className="text-3xl font-bold text-orange-400">{formatCurrency(workOrderFees.feesThisWeek)}</div>
-            <div className="text-stone-500 text-sm mt-1">{workOrderFees.paidWorkOrdersThisWeek.toLocaleString()} {say("paid work orders")}</div>
+            <div className="text-stone-500 text-sm mt-1">{say("Monday week in New York")}</div>
           </div>
 
           <div className="bg-gradient-to-br from-[#000000] to-[#000000] border border-[#1f2937] rounded-2xl p-6 shadow-lg shadow-black/30">
-            <div className="text-stone-400 text-sm mb-1">{say("Fee per paid work order")}</div>
-            <div className="text-3xl font-bold text-purple-400">{formatCurrency(workOrderFees.feePerWorkOrder)}</div>
+            <div className="text-stone-400 text-sm mb-1">{say("Fees still owed")}</div>
+            <div className="text-3xl font-bold text-purple-400">{formatCurrency(workOrderFees.feesOwed)}</div>
           </div>
         </div>
 
@@ -249,16 +244,16 @@ export default function AdminRevenuePage() {
               <div className="text-stone-400 text-xs">{say("Fees Last 3 Months")}</div>
             </div>
             <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-purple-400">{formatCurrency(workOrderFees.totalWorkOrderRevenue)}</div>
-              <div className="text-stone-400 text-xs">{say("Total Paid Work Order Revenue")}</div>
+              <div className="text-2xl font-bold text-purple-400">{formatCurrency(workOrderFees.feesAccrued)}</div>
+              <div className="text-stone-400 text-xs">{say("In-person fees accrued")}</div>
             </div>
             <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-orange-400">{formatCurrency(workOrderFees.thisMonthWorkOrderRevenue)}</div>
-              <div className="text-stone-400 text-xs">{say("This Month Work Order Revenue")}</div>
+              <div className="text-2xl font-bold text-orange-400">{formatCurrency(workOrderFees.feesRefunded)}</div>
+              <div className="text-stone-400 text-xs">{say("Fee refunds")}</div>
             </div>
             <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-cyan-400">{formatCurrency(workOrderFees.averageTicket)}</div>
-              <div className="text-stone-400 text-xs">{say("Average Ticket")}</div>
+              <div className="text-2xl font-bold text-cyan-400">{formatCurrency(workOrderFees.netFees)}</div>
+              <div className="text-stone-400 text-xs">{say("Net fees")}</div>
             </div>
           </div>
 
@@ -290,14 +285,14 @@ export default function AdminRevenuePage() {
             <div className="bg-[#000000] border border-[#1f2937] rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-stone-400 text-sm">{say("Work Order Revenue (7 days)")}</div>
-                  <div className="text-2xl font-bold text-[#ff6b64]">{formatCurrency(workOrderFees.dailyRevenueTrend.reduce((a, b) => a + b, 0))}</div>
+                  <div className="text-stone-400 text-sm">{say("Net fees (7 days)")}</div>
+                  <div className="text-2xl font-bold text-[#ff6b64]">{formatCurrency(workOrderFees.dailyNetTrend.reduce((a, b) => a + b, 0))}</div>
                 </div>
                 <div className="w-10 h-10 bg-[#e5332a]/15 rounded-lg flex items-center justify-center">
                   <span className="text-xl"><FaDollarSign style={{marginRight:4}} /></span>
                 </div>
               </div>
-              <MiniLineChart data={workOrderFees.dailyRevenueTrend} color="#FF6B64" height={32} />
+              <MiniLineChart data={workOrderFees.dailyNetTrend} color="#FF6B64" height={32} />
             </div>
           </div>
 
@@ -337,8 +332,8 @@ export default function AdminRevenuePage() {
             </a>
             <div className="bg-[#000000] border border-[#1f2937] rounded-xl p-4 text-center">
               <div className="text-2xl mb-2"><FaChartBar style={{marginRight:4}} /></div>
-              <div className="font-medium">{say("Shop Fees")}</div>
-              <div className="text-stone-400 text-sm">{say("Based on paid work orders only")}</div>
+              <div className="font-medium">{say("Fee Year-End")}</div>
+              <Link href="/admin/fee-year-end" className="text-stone-400 text-sm">{say("Month, week, and day")}</Link>
             </div>
           </div>
         </div>
@@ -354,12 +349,11 @@ export default function AdminRevenuePage() {
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                       <div>
                         <div className="font-medium">{say(shop.shopName)}</div>
-                        <div className="text-stone-400 text-sm">{say(shop.count)} {say("paid work orders")}</div>
+                        <div className="text-stone-400 text-sm">{shop.count} {say("stored fee lines")}</div>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="font-medium text-green-400">{formatCurrency(shop.fees)}</div>
-                      <div className="text-stone-500 text-xs">{say("Jobs")}{' '}{formatCurrency(shop.totalRevenue)}</div>
                     </div>
                   </div>
                 ))}
@@ -378,12 +372,11 @@ export default function AdminRevenuePage() {
                   <div key={txn.id} className="flex items-center justify-between py-2 border-b border-[#1f2937] last:border-0">
                     <div>
                       <div className="font-medium">{say(txn.shopName)}</div>
-                      <div className="text-stone-400 text-sm">{say(txn.customerName)}</div>
+                      <div className="text-stone-400 text-sm">{say(txn.kind)}</div>
                       <div className="text-stone-500 text-xs">{formatDate(txn.date)}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium text-green-400">+{formatCurrency(txn.fee)}</div>
-                      <div className="text-stone-500 text-xs">{say("Job")}{' '}{formatCurrency(txn.amountPaid)}</div>
+                      <div className="font-medium text-green-400">{formatCurrency(txn.fee)}</div>
                       <div className="text-stone-500 text-xs">{txn.description.slice(0, 28)}</div>
                       </div>
                     </div>

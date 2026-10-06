@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
+import type { ShopYearReport } from '@/lib/books/shopDrill';
+import ShopYearDrill from '@/components/books/ShopYearDrill';
+import { pageStyle } from '@/components/books/drillChrome';
 
 type Standing = 'unpaid' | 'partial' | 'paid' | 'reversed';
 
@@ -39,10 +42,22 @@ interface BooksPayload {
     shopReceivedCents: number;
   };
   monthClose: { readyToSync: boolean; warnings: string[] };
-  inventory: Array<{ id: string; name: string; onHand: number; unitCostCents: number; sellUnitCents: number }>;
   tickets: Array<{ workOrderId: string; sync: { synced: boolean; issues: string[] }; taxLines: Array<{ kind: string; baseCents: number; taxCents: number }> }>;
   qbMap: Record<string, string>;
   quickBooksSync?: string;
+  inventory: Array<{ id: string; name: string; sku?: string | null; onHand: number; unitCostCents: number; sellUnitCents: number }>;
+  fixtrayOwed?: {
+    owedCents: number;
+    openLines?: Array<{ workOrderId: string; feeCents: number }>;
+    weekLabel: string;
+    week: {
+      owedCents: number;
+      accruedCents: number;
+      settledCents: number;
+      openLines?: Array<{ workOrderId: string; feeCents: number }>;
+    };
+    feeDeductedFromShop: false;
+  };
 }
 
 interface QboStatus {
@@ -89,12 +104,15 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   const [depositAmount, setDepositAmount] = useState('');
   const [depositDate, setDepositDate] = useState('');
   const [partId, setPartId] = useState('');
+  const [partQuery, setPartQuery] = useState('');
   const [partQty, setPartQty] = useState('1');
   const [partReason, setPartReason] = useState('');
   const [qbo, setQbo] = useState<QboStatus | null>(null);
   const [accounts, setAccounts] = useState<QboAccount[]>([]);
   const [mapDraft, setMapDraft] = useState<Record<string, string>>({});
   const [syncing, setSyncing] = useState(false);
+  const [drill, setDrill] = useState<ShopYearReport | null>(null);
+  const [reportYear, setReportYear] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -121,6 +139,17 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     if (accountsResponse.ok && Array.isArray(accountsBody.accounts)) setAccounts(accountsBody.accounts);
   }, [role]);
 
+  const loadDrill = useCallback(async (year?: number) => {
+    const query = year ? `?view=drill&year=${year}` : '?view=drill';
+    const response = await fetch(`/api/shop/books${query}`, { headers: authHeaders() });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(body.error || 'Could not load the books report');
+      return;
+    }
+    setDrill(body);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     load()
@@ -130,8 +159,9 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         if (flag === 'connected') setNotice('QuickBooks Online connected');
         if (flag === 'error') setError('QuickBooks Online did not connect. Start again from this page.');
       });
+    loadDrill(reportYear || undefined).catch(() => setError('Could not load the books report'));
     loadQuickBooks().catch(() => setError('Could not load QuickBooks Online'));
-  }, [user, load, loadQuickBooks]);
+  }, [user, load, loadDrill, loadQuickBooks, reportYear]);
 
   async function post(action: string, extra: Record<string, unknown>) {
     setNotice('');
@@ -232,12 +262,13 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     await loadQuickBooks();
   }
 
-  if (isLoading) return <div style={{ padding: 32, color: '#e5e7eb' }}>Loading...</div>;
-  if (!user || !books) return <div style={{ padding: 32, color: '#e5e7eb' }}>{error || 'Loading...'}</div>;
+  if (isLoading) return <div style={pageStyle}>Loading...</div>;
+  if (!user || !books) return <div style={pageStyle}>{error || 'Loading...'}</div>;
 
   const ledger = books.ledger;
+  const showRevenue = role === 'shop' && drill?.revenueVisible !== false;
   return (
-    <div style={{ minHeight: '100vh', color: '#e5e7eb', padding: 24, fontFamily: 'system-ui,sans-serif' }}>
+    <div style={pageStyle}>
       <h1 style={{ marginTop: 0 }}>Shop books</h1>
       <p>{books.copy}</p>
       <p>{books.quickBooksSync || 'Sync sends shop sales, payments, refunds, and labor to QuickBooks Online. The FixTray fee stays on the platform and is not a shop expense.'}</p>
@@ -247,6 +278,12 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
       </label>
       {error && <p style={{ color: '#fca5a5' }}>{error}</p>}
       {notice && <p style={{ color: '#86efac' }}>{notice}</p>}
+      {drill ? (
+        <ShopYearDrill report={drill} onYear={setReportYear} />
+      ) : (
+        <p>Loading the year report...</p>
+      )}
+      {showRevenue && (
       <section>
         <h2>Ledger</h2>
         <p>Customer paid {money(ledger.customerPaidJobCents)}. Shop received {money(ledger.shopReceivedCents)}. Shop total {money(ledger.shopTotalCents)}.</p>
@@ -274,6 +311,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
           </tbody>
         </table>
       </section>
+      )}
       <section>
         <h2>Month close</h2>
         <p>{books.monthClose.readyToSync ? 'Ready to sync.' : 'Not ready to sync.'}</p>
@@ -315,11 +353,11 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
                 </button>
               </div>
             )}
+            <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>
           </div>
         ) : (
           <p>The shop owner connects QuickBooks Online and syncs from the shop login.</p>
         )}
-        <button type="button" onClick={exportBooks}>Optional CSV download</button>
       </section>
       <section>
         <h2>Deposit</h2>
@@ -329,16 +367,81 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <button type="button" onClick={() => post('deposit', { workOrderId: depositJob, amountCents: Number(depositAmount), depositAt: depositDate })}>Record deposit</button>
       </section>
       <section>
+        <h2>FixTray owed this week</h2>
+        <p>
+          Week of {books.fixtrayOwed?.weekLabel || 'this week'}: {money(books.fixtrayOwed?.week.owedCents || 0)} from in-person payments.
+          The shop kept the full job. This fee is owed to FixTray and is not a shop expense.
+        </p>
+        {(books.fixtrayOwed?.week.openLines || []).length === 0 ? (
+          <p>No open in-person fees this week.</p>
+        ) : (
+          <ul>
+            {(books.fixtrayOwed?.week.openLines || []).map((line) => (
+              <li key={line.workOrderId}>
+                Work order {line.workOrderId}: {money(line.feeCents)} still open
+              </li>
+            ))}
+          </ul>
+        )}
+        <p>Open balance across weeks: {money(books.fixtrayOwed?.owedCents || 0)}.</p>
+        {(books.fixtrayOwed?.openLines || []).length > 0 && (
+          <ul>
+            {(books.fixtrayOwed?.openLines || []).map((line) => (
+              <li key={`open-${line.workOrderId}`}>
+                Work order {line.workOrderId}: {money(line.feeCents)} open balance
+              </li>
+            ))}
+          </ul>
+        )}
+        <button type="button" onClick={async () => {
+          const response = await fetch('/api/shop/books', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ action: 'fee-invoice' }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            setError(body.error || 'Could not send the FixTray invoice');
+            return;
+          }
+          setNotice(body.sent ? 'FixTray invoice emailed' : 'Invoice prepared. Email was not sent.');
+        }}>Email FixTray invoice</button>
+        <button type="button" onClick={async () => {
+          const response = await fetch('/api/shop/books', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ action: 'pay-fixtray' }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok || !body.url) {
+            setError(body.error || 'Could not start FixTray payment');
+            return;
+          }
+          window.location.href = body.url;
+        }}>Pay FixTray</button>
+      </section>
+      <section>
         <h2>Parts</h2>
-        {books.inventory.map((item) => (
-          <p key={item.id}>{item.name}: {item.onHand} on hand, cost {money(item.unitCostCents)}, sell {money(item.sellUnitCents)}</p>
-        ))}
-        <input placeholder="Part id" value={partId} onChange={(event) => setPartId(event.target.value)} />
+        <input placeholder="Search name or SKU" value={partQuery} onChange={(event) => setPartQuery(event.target.value)} />
+        <select value={partId} onChange={(event) => setPartId(event.target.value)}>
+          <option value="">Choose a stock part</option>
+          {books.inventory
+            .filter((item) => {
+              const query = partQuery.trim().toLowerCase();
+              if (!query) return true;
+              return item.name.toLowerCase().includes(query) || (item.sku || '').toLowerCase().includes(query);
+            })
+            .map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}{item.sku ? ` (${item.sku})` : ''} — {item.onHand} on hand
+              </option>
+            ))}
+        </select>
         <input placeholder="Qty" value={partQty} onChange={(event) => setPartQty(event.target.value)} />
-        <input placeholder="Adjust reason" value={partReason} onChange={(event) => setPartReason(event.target.value)} />
+        <input placeholder="Reason (required for return and adjust)" value={partReason} onChange={(event) => setPartReason(event.target.value)} />
         <button type="button" onClick={() => post('part', { itemId: partId, kind: 'use', qty: Number(partQty) })}>Use</button>
-        <button type="button" onClick={() => post('part', { itemId: partId, kind: 'return', qty: Number(partQty) })}>Return</button>
-        <button type="button" onClick={() => post('part', { itemId: partId, kind: 'adjust', qty: Number(partQty), reason: partReason })}>Adjust</button>
+        <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'return', qty: Number(partQty), reason: partReason })}>Return</button>
+        <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'adjust', qty: Number(partQty), reason: partReason })}>Adjust</button>
       </section>
       <section>
         <h2>Tickets</h2>

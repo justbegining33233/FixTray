@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { refundPayment } from '@/lib/stripe';
+import { refundDestinationCharge } from '@/lib/stripe';
+import { destinationChargeRefundPlan } from '@/lib/stripeRefund';
 import { planAllocatedReversal, usdToCents } from '@/lib/books/money';
 import { findShopJob } from '@/lib/books/loadShopBooks';
 import { ensureOpeningBalance, writeBooksEntries } from '@/lib/books/persist';
@@ -87,8 +88,20 @@ export async function POST(request: NextRequest) {
     const jobRemainingCents = jobBooks?.shopReceivedCents ?? usdToCents(workOrder.estimatedCost);
     const feeRemainingCents = jobBooks?.platformFeeCents ?? Math.max(0, usdToCents(workOrder.amountPaid) - usdToCents(workOrder.estimatedCost));
 
-    // Process refund with Stripe
-    const stripeRefund = await refundPayment(validated.paymentIntentId, refundAmount);
+    const refundPlan = destinationChargeRefundPlan({
+      amountCents: usdToCents(refundAmount),
+      jobRemainingCents,
+      feeRemainingCents,
+      appliesTo,
+    });
+    if (!refundPlan.ok) {
+      return NextResponse.json({ error: refundPlan.error }, { status: 400 });
+    }
+    // Reverse the shop transfer for the job and the application fee only when the fee is refunded.
+    const stripeRefund = await refundDestinationCharge({
+      paymentIntentId: validated.paymentIntentId,
+      ...refundPlan.plan,
+    });
 
     if (!stripeRefund.id) {
       throw new Error('Stripe refund failed');

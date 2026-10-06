@@ -5,6 +5,7 @@ import { sendPaymentReceiptEmail } from '@/lib/emailService';
 import { pushPaymentConfirmed } from '@/lib/serverPush';
 import logger from '@/lib/logger';
 import { recordStripeWorkOrderPayment } from '@/lib/recordStripePayment';
+import { recordFeeSettlement } from '@/lib/recordFeeSettlement';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -38,7 +39,21 @@ export async function POST(request: NextRequest) {
       // Checkout completed - handles work-order payments
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const { workOrderId } = session.metadata ?? {};
+        const metadata = session.metadata ?? {};
+        if (metadata.kind === 'fixtray_fee_settlement' && metadata.shopId) {
+          const paymentIntentId = typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id;
+          if (session.payment_status === 'paid' && paymentIntentId?.startsWith('pi_')) {
+            await recordFeeSettlement({
+              shopId: metadata.shopId,
+              paymentIntentId,
+              amountCents: session.amount_total ?? Number(metadata.owedCents || 0),
+            });
+          }
+          break;
+        }
+        const { workOrderId } = metadata;
 
         // -- Work-order payment flow -------------------------------------------
         if (!workOrderId) break;

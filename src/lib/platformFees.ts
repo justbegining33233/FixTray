@@ -1,10 +1,6 @@
-export const DEFAULT_SERVICE_FEE_CENTS = 500;
-
 export function feePerPaidWorkOrder(serviceFeeCents: number | null | undefined): number {
-  const cents = typeof serviceFeeCents === 'number' && Number.isFinite(serviceFeeCents)
-    ? serviceFeeCents
-    : DEFAULT_SERVICE_FEE_CENTS;
-  return Math.round(Math.max(0, cents)) / 100;
+  if (typeof serviceFeeCents !== 'number' || !Number.isFinite(serviceFeeCents)) return 0;
+  return Math.round(Math.max(0, serviceFeeCents)) / 100;
 }
 
 export function platformFeeForPaidOrders(paidCount: number, serviceFeeCents: number | null | undefined): number {

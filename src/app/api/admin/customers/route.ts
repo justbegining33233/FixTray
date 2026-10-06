@@ -3,9 +3,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
-import { getPlatformConfig } from '@/lib/platformConfig';
-import { feePerPaidWorkOrder } from '@/lib/platformFees';
 import { platformFeeHeadline } from '@/lib/platformRevenue';
+import { centsToDollars, loadFeeMovements, reportZone } from '@/lib/books/storedFeeReport';
+import { addDays, dayKey } from '@/lib/books/periods';
+import { platformFeeYear } from '@/lib/books/money';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
@@ -16,8 +17,18 @@ export async function GET(request: NextRequest) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfLastMonth = startOfMonth;
-    const platformConfig = await getPlatformConfig();
-    const feePerWorkOrder = feePerPaidWorkOrder(platformConfig?.serviceFee);
+    const zone = await reportZone();
+    const movements = await loadFeeMovements();
+    const feeYear = platformFeeYear(movements);
+    const collectedLines = movements.filter((row) => row.kind === 'collected' || row.kind === 'settled');
+    const todayKey = dayKey(now, zone);
+    const thisMonthKey = todayKey.slice(0, 7);
+    const lastMonthKey = addDays(`${thisMonthKey}-01`, -1).slice(0, 7);
+    const dollarsForOrders = (orderIds: Set<string>, month?: string) => centsToDollars(collectedLines.reduce((sum, row) => {
+      if (!orderIds.has(row.workOrderId)) return sum;
+      if (month && !dayKey(new Date(row.at), zone).startsWith(month)) return sum;
+      return sum + row.feeCents;
+    }, 0));
 
     const customers: any[] = await prisma.customer.findMany({
       orderBy: { createdAt: 'desc' },
@@ -60,9 +71,10 @@ export async function GET(request: NextRequest) {
         return createdAt >= startOfLastMonth && createdAt < endOfLastMonth;
       }).length;
 
-      const totalFixtrayFees = paidWorkOrders.length * feePerWorkOrder;
-      const feesThisMonth = paidWorkOrdersThisMonth.length * feePerWorkOrder;
-      const feesLastMonth = paidWorkOrdersLastMonth.length * feePerWorkOrder;
+      const orderIds = new Set<string>((customer.workOrders || []).map((workOrder: { id: string }) => workOrder.id));
+      const totalFixtrayFees = dollarsForOrders(orderIds);
+      const feesThisMonth = dollarsForOrders(orderIds, thisMonthKey);
+      const feesLastMonth = dollarsForOrders(orderIds, lastMonthKey);
 
       const avgRating = customer.reviews.length > 0
         ? customer.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / customer.reviews.length
@@ -128,15 +140,15 @@ export async function GET(request: NextRequest) {
     const workOrderRevenueThisMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.revenueThisMonth, 0);
     const workOrderRevenueLastMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.revenueLastMonth, 0);
 
-    const fixtrayFeesLastMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.feesLastMonth, 0);
+    const fixtrayFeesLastMonth = centsToDollars(collectedLines.reduce((sum, row) => (
+      dayKey(new Date(row.at), zone).startsWith(lastMonthKey) ? sum + row.feeCents : sum
+    ), 0));
     const totalPaidWorkOrders = formattedCustomers.reduce((sum: number, c: any) => sum + c.paidWorkOrders, 0);
     const paidWorkOrdersThisMonth = formattedCustomers.reduce((sum: number, c: any) => sum + c.paidWorkOrdersThisMonth, 0);
-    const paidStamps = customers.flatMap((customer: any) =>
-      (customer.workOrders || [])
-        .filter((workOrder: any) => workOrder.paymentStatus === 'paid')
-        .map((workOrder: any) => ({ amountPaid: workOrder.amountPaid, createdAt: workOrder.createdAt }))
+    const feeHeadline = platformFeeHeadline(
+      collectedLines.map((row) => ({ feeCents: row.feeCents, at: row.at })),
+      now,
     );
-    const feeHeadline = platformFeeHeadline(paidStamps, feePerWorkOrder, now);
     const totalFixtrayFees = feeHeadline.collected;
     const fixtrayFeesThisMonth = feeHeadline.periodFees;
 
@@ -193,7 +205,6 @@ export async function GET(request: NextRequest) {
       dayEnd.setDate(dayEnd.getDate() + 1);
 
       let dayRevenue = 0;
-      let dayPaidWorkOrders = 0;
 
       customers.forEach((c: any) => {
         c.workOrders.forEach((wo: any) => {
@@ -201,13 +212,15 @@ export async function GET(request: NextRequest) {
           const woDate = new Date(wo.createdAt);
           if (woDate >= dayStart && woDate < dayEnd) {
             dayRevenue += wo.amountPaid || 0;
-            dayPaidWorkOrders += 1;
           }
         });
       });
 
       revenueTrend.push(dayRevenue);
-      feeTrend.push(dayPaidWorkOrders * feePerWorkOrder);
+      const trendKey = addDays(todayKey, -i);
+      feeTrend.push(centsToDollars(collectedLines.reduce((sum, row) => (
+        dayKey(new Date(row.at), zone) === trendKey ? sum + row.feeCents : sum
+      ), 0)));
     }
 
     return NextResponse.json({
@@ -218,7 +231,7 @@ export async function GET(request: NextRequest) {
         newCustomersThisMonth,
         newCustomersLastMonth,
         customerGrowth: `${customerGrowth >= 0 ? '+' : ''}${customerGrowth}%`,
-        feePerWorkOrder,
+        feesOwed: centsToDollars(feeYear.owedCents),
         totalFixtrayFees,
         fixtrayFeesThisMonth,
         fixtrayFeesLastMonth,

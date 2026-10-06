@@ -19,9 +19,9 @@ describe('getPlatformServiceFeeUsd', () => {
     await expect(getPlatformServiceFeeUsd()).resolves.toBe(7.5);
   });
 
-  it('falls back to the default $5 when config is missing', async () => {
+  it('fails closed when the platform fee is not configured', async () => {
     (prisma.platformConfig.findUnique as jest.Mock).mockResolvedValue(null);
-    await expect(getPlatformServiceFeeUsd()).resolves.toBe(5);
+    await expect(getPlatformServiceFeeUsd()).resolves.toBeNull();
   });
 });
 

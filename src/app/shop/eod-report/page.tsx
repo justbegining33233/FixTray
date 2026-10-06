@@ -9,14 +9,15 @@ import { FaCheckCircle, FaClock, FaDollarSign, FaExclamationTriangle, FaPrint } 
 
 interface EODReport {
   date: string;
+  revenueVisible?: boolean;
   summary: {
     completedJobsCount: number;
     newJobsCount: number;
     openJobsCount: number;
     appointmentsCount: number;
-    outstandingBalance: number;
+    outstandingBalance?: number;
   };
-  paymentBreakdown: {
+  paymentBreakdown?: {
     cash: number;
     card: number;
     check: number;
@@ -28,11 +29,11 @@ interface EODReport {
     id: string;
     customer: string;
     tech: string;
-    amount: number;
+    amount?: number;
     vehicleType: string;
     completedAt: string;
   }>;
-  outstandingWOs: Array<{
+  outstandingWOs?: Array<{
     id: string;
     customer: string;
     owed: number;
@@ -47,7 +48,7 @@ interface EODReport {
 
 export default function EODReportPage() {
   const say = usePhrase();
-  useRequireAuth(['shop', 'manager']);
+  const { user } = useRequireAuth(['shop', 'manager']);
   const [report, setReport] = useState<EODReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -121,6 +122,10 @@ export default function EODReportPage() {
           <div style={{ textAlign: 'center', padding: 60, color: '#e5332a' }}>{say("Failed to load report")}</div>
         ) : (
           <>
+            {(() => {
+              const showMoney = report.revenueVisible !== false && user?.role !== 'manager';
+              return (
+          <>
             {/* Summary Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
               <div style={cardStyle}>
@@ -139,28 +144,31 @@ export default function EODReportPage() {
                 <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 8 }}>{say("Appointments")}</div>
                 <div style={statStyle('#a855f7')}>{say(report.summary.appointmentsCount)}</div>
               </div>
+              {showMoney && typeof report.summary.outstandingBalance === 'number' ? (
               <div style={cardStyle}>
                 <div style={{ fontSize: 13, color: '#9aa3b2', marginBottom: 8 }}>{say("Outstanding")}</div>
                 <div style={statStyle('#e5332a')}>${report.summary.outstandingBalance.toFixed(2)}</div>
               </div>
+              ) : null}
             </div>
 
-            {/* Payment Breakdown */}
+            {showMoney && report.paymentBreakdown ? (
             <div style={{ ...cardStyle, marginBottom: 24 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginBottom: 16 }}><FaDollarSign style={{marginRight:4}} /> {say("Payment Breakdown")}</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                 {(['cash', 'card', 'check', 'transfer', 'other'] as const).map(method => (
                   <div key={method} style={{ padding: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8, textAlign: 'center' }}>
                     <div style={{ fontSize: 12, color: '#9aa3b2', textTransform: 'capitalize', marginBottom: 4 }}>{say(method)}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>${report.paymentBreakdown[method].toFixed(2)}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#e5e7eb' }}>${(report.paymentBreakdown?.[method] ?? 0).toFixed(2)}</div>
                   </div>
                 ))}
               </div>
               <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 16, fontWeight: 600, color: '#e5e7eb' }}>{say("Total Revenue")}</span>
-                <span style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>${report.paymentBreakdown.total.toFixed(2)}</span>
+                <span style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>${(report.paymentBreakdown?.total ?? 0).toFixed(2)}</span>
               </div>
             </div>
+            ) : null}
 
             {/* Completed Jobs Table */}
             <div style={{ ...cardStyle, marginBottom: 24 }}>
@@ -176,7 +184,7 @@ export default function EODReportPage() {
                         <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, color: '#9aa3b2', fontWeight: 600 }}>{say("Customer")}</th>
                         <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, color: '#9aa3b2', fontWeight: 600 }}>{say("Tech")}</th>
                         <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 12, color: '#9aa3b2', fontWeight: 600 }}>{say("Vehicle")}</th>
-                        <th style={{ textAlign: 'right', padding: '8px 12px', fontSize: 12, color: '#9aa3b2', fontWeight: 600 }}>{say("Amount")}</th>
+                        {showMoney ? <th style={{ textAlign: 'right', padding: '8px 12px', fontSize: 12, color: '#9aa3b2', fontWeight: 600 }}>{say("Amount")}</th> : null}
                       </tr>
                     </thead>
                     <tbody>
@@ -186,7 +194,7 @@ export default function EODReportPage() {
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{say(job.customer)}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{say(job.tech)}</td>
                           <td style={{ padding: '10px 12px', fontSize: 13, color: '#e5e7eb' }}>{say(job.vehicleType)}</td>
-                          <td style={{ padding: '10px 12px', fontSize: 13, color: '#22c55e', textAlign: 'right' }}>${job.amount.toFixed(2)}</td>
+                          {showMoney && typeof job.amount === 'number' ? <td style={{ padding: '10px 12px', fontSize: 13, color: '#22c55e', textAlign: 'right' }}>${job.amount.toFixed(2)}</td> : null}
                         </tr>
                       ))}
                     </tbody>
@@ -196,7 +204,7 @@ export default function EODReportPage() {
             </div>
 
             {/* Outstanding Balances */}
-            {report.outstandingWOs.length > 0 && (
+            {showMoney && report.outstandingWOs && report.outstandingWOs.length > 0 && (
               <div style={{ ...cardStyle, marginBottom: 24 }}>
                 <h2 style={{ fontSize: 18, fontWeight: 700, color: '#e5e7eb', marginBottom: 16 }}><FaExclamationTriangle style={{marginRight:4}} /> {say("Outstanding Balances")}</h2>
                 <div style={{ overflowX: 'auto' }}>
@@ -250,6 +258,9 @@ export default function EODReportPage() {
                 </div>
               </div>
             )}
+          </>
+              );
+            })()}
           </>
         )}
       </div>

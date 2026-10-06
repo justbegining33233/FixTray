@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole, AuthUser } from '@/lib/auth';
+import { staffPunchMinutes } from '@/lib/books/clocks';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
@@ -39,14 +40,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    const now = new Date();
     const performance = teamMembers.map(member => {
-      const todayHours = member.timeEntries.reduce((acc, entry) => {
-        if (entry.clockOut) {
-          const hours = (new Date(entry.clockOut).getTime() - new Date(entry.clockIn).getTime()) / (1000 * 60 * 60);
-          return acc + hours;
-        }
-        return acc;
-      }, 0);
+      const todayMinutes = member.timeEntries.reduce((acc, entry) => acc + staffPunchMinutes({
+        clockIn: entry.clockIn,
+        clockOut: entry.clockOut,
+        hoursWorked: entry.hoursWorked,
+        breakMinutes: entry.breakDuration,
+      }, now), 0);
+      const todayHours = todayMinutes / 60;
 
       return {
         id: member.id,

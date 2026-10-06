@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { usageQuantityFromOrders } from '@/lib/partStockUse';
+import { inventoryPageTotals } from '@/lib/inventoryPageTotals';
 
 interface PartUsage {
   name?: string;
@@ -92,10 +93,11 @@ export async function GET(request: NextRequest) {
       .filter((item) => item.isLowStock)
       .sort((a, b) => (a.quantity - (a.reorderPoint || 0)) - (b.quantity - (b.reorderPoint || 0)));
 
+    const totals = inventoryPageTotals(stockLevels.map((item) => ({ quantity: item.quantity, price: item.price })));
     const summary = {
-      totalItems: stockLevels.length,
+      totalItems: totals.totalItems,
       lowStockItems: reorderRecommendations.length,
-      totalInventoryValue: Number(stockLevels.reduce((sum, item) => sum + item.inventoryValue, 0).toFixed(2)),
+      totalInventoryValue: totals.totalInventoryValue,
       totalUsageQuantity: usageQuantityFromOrders(workOrders),
       totalUsageValue: Number(usageStats.reduce((sum, item) => sum + item.totalValue, 0).toFixed(2)),
     };

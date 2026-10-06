@@ -82,7 +82,7 @@ interface CommandCenterData {
   };
   serviceBreakdown: Record<string, number>;
   workOrderFees: {
-    feePerWorkOrder: number;
+    feesOwed: number;
     totalFees: number;
     feesToday: number;
     feesThisWeek: number;
@@ -517,7 +517,7 @@ export default function CommandCenterPage() {
                     {formatCurrency(liveFees?.totalFees || 0)}
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <span className="text-[#ff6b64]">{formatCurrency(liveFees?.feePerWorkOrder || 0)} {say("per paid work order")}</span>
+                    <span className="text-[#ff6b64]">{formatCurrency(liveFees?.feesOwed || 0)} {say("still owed")}</span>
                   </div>
                 </div>
               </div>
@@ -556,9 +556,9 @@ export default function CommandCenterPage() {
                 isString
               />
               <MetricCard
-                label={say("Fee Per Paid WO")}
-                value={formatCurrency(liveFees?.feePerWorkOrder || 0)}
-                sublabel="flat"
+                label={say("Fees still owed")}
+                value={formatCurrency(liveFees?.feesOwed || 0)}
+                sublabel="in person"
                 color="orange"
                 icon="$"
                 isString
@@ -647,7 +647,7 @@ export default function CommandCenterPage() {
                         <th className="pb-3 font-medium">{say("Customer")}</th>
                         <th className="pb-3 font-medium">{say("Fee")}</th>
                         <th className="pb-3 font-medium">{say("Date")}</th>
-                        <th className="pb-3 font-medium text-right">{say("Amount Paid")}</th>
+                        <th className="pb-3 font-medium text-right">{say("Kind")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -657,8 +657,8 @@ export default function CommandCenterPage() {
                           <td className="py-3 text-stone-400 text-sm">{tx.customerName || '-'}</td>
                           <td className="py-3 text-emerald-400 font-semibold">{formatCurrency(tx.fee)}</td>
                           <td className="py-3 text-stone-400 text-sm">{new Date(tx.date).toLocaleDateString()}</td>
-                          <td className="py-3 text-right font-semibold text-emerald-400">
-                            {formatCurrency(tx.amountPaid)}
+                          <td className="py-3 text-right font-semibold text-stone-300">
+                            {tx.customerName}
                           </td>
                         </tr>
                       ))}
@@ -757,8 +757,8 @@ export default function CommandCenterPage() {
                 <GlassCard title={say("FixTray Fee Summary")} icon="">
                   <div className="space-y-3">
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-                      <span className="text-stone-400 text-sm">{say("Fee per paid work order")}</span>
-                      <span className="text-xl font-bold text-emerald-400">{formatCurrency(liveFees?.feePerWorkOrder || 0)}</span>
+                      <span className="text-stone-400 text-sm">{say("Fees still owed")}</span>
+                      <span className="text-xl font-bold text-emerald-400">{formatCurrency(liveFees?.feesOwed || 0)}</span>
                     </div>
                     <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
                       <span className="text-stone-400 text-sm">{say("Paid work orders today")}</span>

@@ -9,15 +9,18 @@ import {
   centsToUsd,
   feeMovements,
   inMonth,
+  inPersonFeeOwed,
+  inPersonOwedReport,
   monthClose,
   platformFeeYear,
   shopLedger,
   shopReport,
   usdToCents,
+  utcWeekRange,
   type BooksRow,
   type OrderInput,
 } from '@/lib/books/money';
-import { bpsFromPercent, linesFromWorkOrder, ticketPreview } from '@/lib/books/parts';
+import { bpsFromPercent, linesFromWorkOrder, ticketPreview, ticketWasInvoiced } from '@/lib/books/parts';
 
 function monthRange(month: string): { gte: Date; lt: Date } | null {
   if (!/^\d{4}-\d{2}$/.test(month)) return null;
@@ -107,6 +110,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       estimatedCost: true,
       amountPaid: true,
       paymentStatus: true,
+      status: true,
       createdAt: true,
       estimate: true,
       partsUsed: true,
@@ -171,6 +175,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
         paidJobCents: job?.shopReceivedCents || 0,
         standing: job?.standing || 'unpaid',
         storedEstimateCents: order.estimatedCost != null ? usdToCents(order.estimatedCost) : null,
+        invoiced: ticketWasInvoiced(order.status, order.paymentStatus),
       }),
     };
   });
@@ -210,6 +215,11 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       })),
     feeYearExcluded: true,
     shopReceivedUsd: centsToUsd(ledger.shopReceivedCents),
+    fixtrayOwed: {
+      ...inPersonFeeOwed(booksRows),
+      week: inPersonFeeOwed(booksRows, utcWeekRange(new Date())),
+      weekLabel: utcWeekRange(new Date()).label,
+    },
   };
 }
 
@@ -241,12 +251,70 @@ export async function loadPlatformFeeYear(month?: string | null) {
     amountCents: entry.amountCents,
     status: entry.status,
     sourceId: entry.sourceId,
+    note: entry.note,
     createdAt: entry.createdAt,
   }))));
   const names = new Map(orders.map((order) => [order.shopId, order.shop?.shopName || order.shopId]));
+  const owedRows = entries.map((entry) => ({
+    id: entry.id,
+    workOrderId: entry.workOrderId,
+    shopId: entry.shopId,
+    kind: entry.kind,
+    appliesTo: entry.appliesTo,
+    amountCents: entry.amountCents,
+    status: entry.status,
+    createdAt: entry.createdAt,
+  }));
+  const week = utcWeekRange(new Date());
+  const owedReport = inPersonOwedReport(
+    orders.map((order) => ({ id: order.id, shopId: order.shopId })),
+    owedRows,
+    week,
+  );
+  const owedByShop = new Map(owedReport.byShop.map((shop) => [shop.shopId, shop]));
+  const seen = new Set(year.perShop.map((row) => row.shopId));
+  const perShop = [
+    ...year.perShop.map((row) => {
+      const owed = owedByShop.get(row.shopId);
+      return {
+        ...row,
+        shopName: names.get(row.shopId) || row.shopId,
+        inPersonOwedCents: owed?.owedCents || 0,
+        inPersonLines: (owed?.lines || []).map((line) => ({
+          workOrderId: line.workOrderId,
+          feeCents: line.feeCents,
+          at: line.at,
+        })),
+      };
+    }),
+    ...owedReport.byShop
+      .filter((shop) => !seen.has(shop.shopId) && shop.lines.length > 0)
+      .map((shop) => ({
+        shopId: shop.shopId,
+        shopName: names.get(shop.shopId) || shop.shopId,
+        collectedCents: 0,
+        refundedCents: 0,
+        netCents: 0,
+        inPersonOwedCents: shop.owedCents,
+        inPersonLines: shop.lines.map((line) => ({
+          workOrderId: line.workOrderId,
+          feeCents: line.feeCents,
+          at: line.at,
+        })),
+        })),
+  ].sort((a, b) => a.shopId.localeCompare(b.shopId));
   return {
     ...year,
-    perShop: year.perShop.map((row) => ({ ...row, shopName: names.get(row.shopId) || row.shopId })),
+    perShop,
+    inPersonOwedCents: owedReport.owedCents,
+    inPersonLines: owedReport.lines.map((line) => ({
+      shopId: line.shopId,
+      shopName: names.get(line.shopId) || line.shopId,
+      workOrderId: line.workOrderId,
+      feeCents: line.feeCents,
+      at: line.at,
+    })),
+    weekLabel: week.label,
     shopRevenueIncluded: false,
   };
 }

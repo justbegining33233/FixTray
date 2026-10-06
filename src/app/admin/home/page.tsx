@@ -162,7 +162,7 @@ function AdminHomeContent() {
 
   const quickLinks = [
     { href: '/admin/messaging', label: ' Messages', icon: 'messages', highlight: true },
-    { href: '/admin/revenue', label: ' Revenue & Payouts', icon: 'money' },
+    { href: '/admin/revenue', label: ' Fee Revenue', icon: 'money' },
     { href: '/admin/pending-shops', label: 'Pending Approvals', badge: pendingApprovalsCount, icon: 'clock' },
     { href: '/admin/accepted-shops', label: ' Accepted Shops', icon: 'shops' },
     { href: '/admin/shops', label: ' Manage Shops', icon: 'shops' },

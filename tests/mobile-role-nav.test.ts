@@ -62,7 +62,7 @@ describe('mobile role tabs', () => {
     for (const shopLabel of ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance', 'Command Center', 'Security Settings', 'Platform Security', 'Platform Home', 'Admin Home']) {
       expect(labels).not.toContain(shopLabel);
     }
-    expect(labels).toEqual(expect.arrayContaining(['Shop Approvals', 'Shops', 'Users', 'Platform Settings', 'Revenue & Payouts', 'Health', 'Activity Logs', 'Messaging']));
+    expect(labels).toEqual(expect.arrayContaining(['Shop Approvals', 'Shops', 'Users', 'Platform Settings', 'Fee Revenue', 'Health', 'Activity Logs', 'Messaging']));
     expect(labels.filter((label) => label === 'Profile' || label === 'My Profile' || label === 'Platform Profile')).toEqual(['Profile']);
     expect(labels.filter((label) => label === 'Command Center' || label === 'Platform Home' || label === 'Admin Home' || label === 'Dashboard')).toEqual([]);
     expect(hrefs.filter((href) => href === '/admin/home')).toEqual(['/admin/home']);

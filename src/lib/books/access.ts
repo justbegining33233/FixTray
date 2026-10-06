@@ -17,6 +17,8 @@ export function isPlatformFeeYearPath(pathname: string): boolean {
 
 export interface BooksAccess {
   shopLedger: boolean;
+  /** Invoiced, paid, and unpaid shop revenue. Owners only. */
+  shopRevenue: boolean;
   staffTotals: boolean;
   ownClock: boolean;
   parts: boolean;
@@ -32,6 +34,7 @@ export function booksAccess(role: string | null | undefined, username?: unknown)
   const clockRole = shopStaff || normalized === 'tech';
   return {
     shopLedger: shopStaff,
+    shopRevenue: normalized === 'shop',
     staffTotals: shopStaff,
     ownClock: clockRole,
     parts: shopStaff,

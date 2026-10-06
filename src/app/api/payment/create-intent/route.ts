@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/middleware';
 import { createPaymentIntent, shopConnectPayoutReady } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
-import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
-import { invoiceTotal } from '@/lib/workOrderCloseout';
+import { freezeWorkOrderCheckoutFee } from '@/lib/freezeWorkOrderFee';
 import { buildConnectDestinationSplit } from '@/lib/stripeConnectSplit';
 import logger from '@/lib/logger';
 
@@ -33,10 +32,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
-    const bill = invoiceTotal(workOrder, await getPlatformServiceFeeUsd());
+    const bill = await freezeWorkOrderCheckoutFee(workOrder);
+    if (!bill.ok) {
+      return NextResponse.json({ error: bill.error }, { status: bill.status });
+    }
     const shop = await prisma.shop.findUnique({ where: { id: workOrder.shopId } });
     const split = buildConnectDestinationSplit({
-      quoteUsd: bill.quoteAmount,
+      quoteUsd: bill.subtotal,
       serviceFeeUsd: bill.serviceFee,
       connectedAccountId: shop?.stripeAccountId,
     });
@@ -56,9 +58,9 @@ export async function POST(request: NextRequest) {
     }
 
     const serviceFee = bill.serviceFee;
-    const totalAmount = bill.amount;
+    const totalAmount = bill.total;
 
-    // Destination charge: application fee is the live platform fee only.
+    // Destination charge: application fee is the customer fee frozen at checkout.
     const paymentIntent = await createPaymentIntent(split, {
       workOrderId: workOrder.id,
       customerId: workOrder.customerId,

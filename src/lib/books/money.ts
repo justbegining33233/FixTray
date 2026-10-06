@@ -1,3 +1,5 @@
+import { customerFacingServiceFeeCents } from '@/lib/serviceFeeBill';
+
 /**
  * Shop job money and the platform fee ledger.
  *
@@ -22,7 +24,7 @@ export interface BooksAuditEvent {
 }
 
 export interface BooksEntryDraft {
-  kind: 'card_payment' | 'job_payment' | 'deposit' | 'refund' | 'chargeback';
+  kind: 'card_payment' | 'job_payment' | 'deposit' | 'refund' | 'chargeback' | 'fee_settlement';
   appliesTo: 'job' | 'fee';
   amountCents: number;
   status: 'posted' | 'open';
@@ -95,6 +97,7 @@ export interface BooksRow {
   sourceId?: string | null;
   depositAt?: string | Date | null;
   createdAt?: string | Date | null;
+  note?: string | null;
 }
 
 export interface MonthCloseIssue {
@@ -113,7 +116,9 @@ export interface MonthClose {
 export interface FeeMovement {
   id: string;
   shopId: string;
-  kind: 'collected' | 'refund' | 'chargeback';
+  workOrderId: string;
+  /** collected = card fee or legacy opening balance. settled = shop paid FixTray. accrued = in-person fee not yet paid. */
+  kind: 'collected' | 'accrued' | 'settled' | 'refund' | 'chargeback';
   feeCents: number;
   at: string;
 }
@@ -126,8 +131,16 @@ export interface PerShopFees {
 }
 
 export interface PlatformFeeYear {
+  /** Card fees, legacy opening balances, and shop settlements. Not in-person cash before the shop pays. */
   collectedCents: number;
+  /** In-person fees recorded at checkout. Not cash FixTray has received. */
+  accruedCents: number;
+  /** Shop settlements. Also included in collectedCents. */
+  settledCents: number;
+  /** accruedCents minus settledCents. Not clamped, so a later settlement can be negative. */
+  owedCents: number;
   refundedCents: number;
+  /** collectedCents minus fee refunds and chargebacks. */
   netCents: number;
   history: FeeMovement[];
   perShop: PerShopFees[];
@@ -308,9 +321,20 @@ export function planDeposit(input: {
   depositAt: string;
   actorId: string;
   at: string;
+  /** Shop receipt already on the job. Required for a deposit that can close. */
+  shopReceivedCents?: number;
 }): { ok: true; entry: BooksEntryDraft; audit: BooksAuditEvent } | { ok: false; error: string } {
   const amount = cents(input.amountCents, 'deposit');
   if (amount <= 0) return { ok: false, error: 'Deposit amount must be greater than zero' };
+  if (input.shopReceivedCents != null) {
+    const received = cents(input.shopReceivedCents, 'shop receipt');
+    if (received <= 0) {
+      return { ok: false, error: 'Record the customer payment before depositing it' };
+    }
+    if (amount !== received) {
+      return { ok: false, error: 'Deposit must match the shop receipt' };
+    }
+  }
   const when = new Date(input.depositAt);
   if (Number.isNaN(when.getTime())) return { ok: false, error: 'Deposit date is required' };
   const depositAt = when.toISOString();
@@ -692,6 +716,22 @@ function movementAt(value: string | Date | null | undefined): string {
   return iso(value) || new Date(0).toISOString();
 }
 
+/**
+ * Cash FixTray has actually received is a card fee, a legacy opening balance,
+ * or a shop settlement. An in-person fee is accrued until the shop pays it.
+ */
+export function classifyFeeRow(row: Pick<BooksRow, 'kind' | 'appliesTo' | 'status' | 'note'>): FeeMovement['kind'] | null {
+  if (row.appliesTo !== 'fee') return null;
+  if (String(row.status || 'posted') === 'open') return null;
+  const opening = String(row.note || '').toLowerCase().includes('opening balance');
+  if (row.kind === 'card_payment') return 'collected';
+  if (row.kind === 'fee_settlement') return 'settled';
+  if (row.kind === 'job_payment') return opening ? 'collected' : 'accrued';
+  if (row.kind === 'refund') return 'refund';
+  if (row.kind === 'chargeback') return 'chargeback';
+  return null;
+}
+
 /** Live fee movements. Shop job cents are not copied onto these rows. */
 export function feeMovements(orders: OrderInput[], rows: BooksRow[]): FeeMovement[] {
   const movements: FeeMovement[] = [];
@@ -703,6 +743,7 @@ export function feeMovements(orders: OrderInput[], rows: BooksRow[]): FeeMovemen
         movements.push({
           id: `${order.id}:legacy-fee`,
           shopId: order.shopId,
+          workOrderId: order.id,
           kind: 'collected',
           feeCents: legacy.fee,
           at: movementAt(order.createdAt),
@@ -713,38 +754,29 @@ export function feeMovements(orders: OrderInput[], rows: BooksRow[]): FeeMovemen
     for (const row of mine) {
       if (row.appliesTo !== 'fee') continue;
       if (String(row.status || 'posted') === 'open') continue;
-      if (row.kind === 'card_payment' || row.kind === 'job_payment') {
-        movements.push({
-          id: row.id,
-          shopId: order.shopId,
-          kind: 'collected',
-          feeCents: row.amountCents,
-          at: movementAt(row.createdAt || order.createdAt),
-        });
-      } else if (row.kind === 'refund') {
-        movements.push({
-          id: row.id,
-          shopId: order.shopId,
-          kind: 'refund',
-          feeCents: row.amountCents,
-          at: movementAt(row.createdAt || order.createdAt),
-        });
-      } else if (row.kind === 'chargeback') {
-        movements.push({
-          id: row.id,
-          shopId: order.shopId,
-          kind: 'chargeback',
-          feeCents: row.amountCents,
-          at: movementAt(row.createdAt || order.createdAt),
-        });
-      }
+      const kind = classifyFeeRow(row);
+      if (!kind) continue;
+      movements.push({
+        id: row.id,
+        shopId: order.shopId,
+        workOrderId: order.id,
+        kind,
+        feeCents: row.amountCents,
+        at: movementAt(row.createdAt || order.createdAt),
+      });
     }
   }
   return movements;
 }
 
+function receivedFee(kind: FeeMovement['kind']): boolean {
+  return kind === 'collected' || kind === 'settled';
+}
+
 export function platformFeeYear(movements: FeeMovement[]): PlatformFeeYear {
   let collected = 0;
+  let accrued = 0;
+  let settled = 0;
   let refunded = 0;
   const byShop = new Map<string, PerShopFees>();
   for (const movement of movements) {
@@ -754,9 +786,12 @@ export function platformFeeYear(movements: FeeMovement[]): PlatformFeeYear {
       refundedCents: 0,
       netCents: 0,
     };
-    if (movement.kind === 'collected') {
+    if (receivedFee(movement.kind)) {
       collected += movement.feeCents;
       row.collectedCents += movement.feeCents;
+      if (movement.kind === 'settled') settled += movement.feeCents;
+    } else if (movement.kind === 'accrued') {
+      accrued += movement.feeCents;
     } else {
       refunded += movement.feeCents;
       row.refundedCents += movement.feeCents;
@@ -767,11 +802,28 @@ export function platformFeeYear(movements: FeeMovement[]): PlatformFeeYear {
   const history = movements.slice().sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
   return {
     collectedCents: collected,
+    accruedCents: accrued,
+    settledCents: settled,
+    owedCents: accrued - settled,
     refundedCents: refunded,
     netCents: collected - refunded,
     history,
     perShop: [...byShop.values()].sort((a, b) => a.shopId.localeCompare(b.shopId)),
   };
+}
+
+/** Shop receipt. A card charge stores the customer fee on top of the job in amountPaid. */
+export function shopJobReceiptCents(input: {
+  amountPaid?: number | null;
+  estimatedCost?: number | null;
+  paymentStatus?: string | null;
+}): number {
+  const job = usdToCents(input.estimatedCost);
+  const charged = usdToCents(input.amountPaid);
+  const status = String(input.paymentStatus || '').trim().toLowerCase();
+  if (charged <= 0 || status === 'unpaid' || status === 'refunded') return 0;
+  if (job > 0 && charged > job) return job;
+  return charged;
 }
 
 export function accountantFeeCsv(year: PlatformFeeYear): string {
@@ -783,4 +835,319 @@ export function accountantFeeCsv(year: PlatformFeeYear): string {
   lines.push(`total,,refunded,${year.refundedCents}`);
   lines.push(`total,,net,${year.netCents}`);
   return `${lines.join('\n')}\n`;
+}
+
+export type InPersonMethod = 'cash' | 'check' | 'other';
+
+/** Work-order paymentStatus the rest of the app already writes. Partial is pending. */
+export function paymentStatusForStanding(standing: PaymentStanding): 'paid' | 'pending' | 'unpaid' | 'refunded' {
+  if (standing === 'paid') return 'paid';
+  if (standing === 'partial') return 'pending';
+  if (standing === 'reversed') return 'refunded';
+  return 'unpaid';
+}
+
+export interface InPersonPlan {
+  ok: true;
+  entries: BooksEntryDraft[];
+  customerPaidJobCents: number;
+  shopReceivedCents: number;
+  platformFeeCents: number;
+  standing: PaymentStanding;
+  paymentStatus: 'paid' | 'pending' | 'unpaid';
+  feeDeductedFromShop: false;
+  audit: BooksAuditEvent;
+}
+
+/**
+ * Counter payment. The shop keeps the full job cents collected.
+ * The FixTray fee is written appliesTo=fee and is not subtracted from the shop.
+ * Pass customerFacingFeeCents to record the fee frozen at checkout. When that
+ * is omitted, the fee is the card gross-up of savedFeeCents (older callers).
+ * A partial tender records no fee until the job is paid in full.
+ */
+export function planInPersonPayment(input: {
+  workOrderId: string;
+  shopId?: string | null;
+  jobCents: number;
+  alreadyReceivedCents: number;
+  tenderedCents: number;
+  savedFeeCents: number;
+  /** Exact customer fee from the checkout snapshot. Not recomputed. */
+  customerFacingFeeCents?: number | null;
+  method: InPersonMethod;
+  feeAlreadyRecorded: boolean;
+  actorId: string;
+  at: string;
+}): InPersonPlan | { ok: false; error: string } {
+  const job = cents(input.jobCents, 'job');
+  const already = cents(input.alreadyReceivedCents, 'already received');
+  const tendered = cents(input.tenderedCents, 'tender');
+  const savedFee = cents(input.savedFeeCents, 'saved fee');
+  if (job <= 0) return { ok: false, error: 'The shop job amount is missing' };
+  if (already > job) return { ok: false, error: 'This job is already paid past the shop total' };
+  if (tendered <= 0) return { ok: false, error: 'Enter the amount the customer paid' };
+  const remaining = job - already;
+  if (tendered > remaining) {
+    return { ok: false, error: 'That amount is more than the shop still has coming' };
+  }
+  const shopReceived = already + tendered;
+  const standing = standingFor({ jobCents: job, shopReceivedCents: shopReceived, hadJobReversal: false });
+  const platformFee = standing === 'paid' && !input.feeAlreadyRecorded
+    ? (input.customerFacingFeeCents == null
+      ? customerFacingServiceFeeCents(job, savedFee)
+      : cents(input.customerFacingFeeCents, 'customer fee'))
+    : 0;
+  const entries: BooksEntryDraft[] = [
+    {
+      kind: 'job_payment',
+      appliesTo: 'job',
+      amountCents: tendered,
+      status: 'posted',
+      idempotencyKey: `inperson:${input.workOrderId}:job:${shopReceived}`,
+      sourceId: null,
+      depositAt: null,
+      note: `in-person ${input.method}`,
+    },
+  ];
+  if (platformFee > 0) {
+    entries.push({
+      kind: 'job_payment',
+      appliesTo: 'fee',
+      amountCents: platformFee,
+      status: 'posted',
+      idempotencyKey: `inperson:${input.workOrderId}:fee`,
+      sourceId: null,
+      depositAt: null,
+      note: `in-person ${input.method}; platform fee; not a shop expense`,
+    });
+  }
+  return {
+    ok: true,
+    entries,
+    customerPaidJobCents: shopReceived,
+    shopReceivedCents: shopReceived,
+    platformFeeCents: platformFee,
+    standing,
+    paymentStatus: (() => {
+      const status = paymentStatusForStanding(standing);
+      return status === 'refunded' ? 'unpaid' : status;
+    })(),
+    feeDeductedFromShop: false,
+    audit: auditEvent({
+      actorId: input.actorId,
+      at: input.at,
+      action: 'books.in_person_payment',
+      targetType: 'work_order',
+      targetId: input.workOrderId,
+      shopId: input.shopId,
+      details: `in-person ${input.method}; job ${tendered} cents; shop received ${shopReceived} cents; platform fee ${platformFee} cents; fee not deducted from shop`,
+    }),
+  };
+}
+
+export interface InPersonFeeLine {
+  id: string;
+  shopId: string;
+  workOrderId: string;
+  feeCents: number;
+  at: string;
+  note: string | null;
+}
+
+export interface InPersonFeeOwed {
+  accruedCents: number;
+  settledCents: number;
+  owedCents: number;
+  /** Gross in-person fee rows. Settlements are not netted here. */
+  lines: InPersonFeeLine[];
+  /** Per work order, fee cents still open after settlements in the same window. */
+  openLines: InPersonFeeLine[];
+  feeDeductedFromShop: false;
+}
+
+function inRange(value: string | Date | null | undefined, range?: { start: Date; end: Date }): boolean {
+  if (!range) return true;
+  const date = value instanceof Date ? value : value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return false;
+  return date.getTime() >= range.start.getTime() && date.getTime() < range.end.getTime();
+}
+
+/**
+ * FixTray amount the shop still owes from in-person fee rows.
+ * Card fees are already collected on the Stripe charge and are not owed again.
+ * Settlements reduce the open amount. Nothing here is a shop expense.
+ */
+export function inPersonFeeOwed(
+  rows: BooksRow[],
+  range?: { start: Date; end: Date },
+): InPersonFeeOwed {
+  const lines: InPersonFeeLine[] = [];
+  const byOrder = new Map<string, InPersonFeeLine & { accrued: number; settled: number }>();
+  let accrued = 0;
+  let settled = 0;
+  for (const row of rows) {
+    if (row.appliesTo !== 'fee') continue;
+    if (String(row.status || 'posted') === 'open') continue;
+    if (!inRange(row.createdAt, range)) continue;
+    const amount = cents(row.amountCents, 'fee');
+    if (row.kind === 'job_payment') {
+      accrued += amount;
+      const line: InPersonFeeLine = {
+        id: row.id,
+        shopId: row.shopId || '',
+        workOrderId: row.workOrderId,
+        feeCents: amount,
+        at: iso(row.createdAt) || '',
+        note: null,
+      };
+      lines.push(line);
+      const slot = byOrder.get(row.workOrderId) || { ...line, accrued: 0, settled: 0 };
+      slot.accrued += amount;
+      if (!slot.at) slot.at = line.at;
+      byOrder.set(row.workOrderId, slot);
+    } else if (row.kind === 'fee_settlement') {
+      settled += amount;
+      const slot = byOrder.get(row.workOrderId) || {
+        id: row.id,
+        shopId: row.shopId || '',
+        workOrderId: row.workOrderId,
+        feeCents: 0,
+        at: iso(row.createdAt) || '',
+        note: null,
+        accrued: 0,
+        settled: 0,
+      };
+      slot.settled += amount;
+      byOrder.set(row.workOrderId, slot);
+    }
+  }
+  const openLines = [...byOrder.values()]
+    .map((slot) => ({
+      id: slot.id,
+      shopId: slot.shopId,
+      workOrderId: slot.workOrderId,
+      feeCents: Math.max(0, slot.accrued - slot.settled),
+      at: slot.at,
+      note: null,
+    }))
+    .filter((line) => line.feeCents > 0)
+    .sort((a, b) => a.workOrderId.localeCompare(b.workOrderId) || a.id.localeCompare(b.id));
+  return {
+    accruedCents: accrued,
+    settledCents: settled,
+    owedCents: Math.max(0, accrued - settled),
+    lines,
+    openLines,
+    feeDeductedFromShop: false,
+  };
+}
+
+export interface InPersonOwedReportLine {
+  shopId: string;
+  workOrderId: string;
+  feeCents: number;
+  at: string;
+}
+
+/** Per-shop and per-work-order in-person fees still open. Card fees are excluded. */
+export function inPersonOwedReport(
+  orders: Array<{ id: string; shopId: string }>,
+  rows: BooksRow[],
+  range?: { start: Date; end: Date },
+): {
+  owedCents: number;
+  lines: InPersonOwedReportLine[];
+  byShop: Array<{ shopId: string; owedCents: number; lines: InPersonOwedReportLine[] }>;
+} {
+  const byShop = new Map<string, { owedCents: number; lines: InPersonOwedReportLine[] }>();
+  const lines: InPersonOwedReportLine[] = [];
+  for (const order of orders) {
+    const owed = inPersonFeeOwed(rows.filter((row) => row.workOrderId === order.id), range);
+    const shop = byShop.get(order.shopId) || { owedCents: 0, lines: [] };
+    shop.owedCents += owed.owedCents;
+    for (const line of owed.openLines) {
+      const entry = {
+        shopId: line.shopId || order.shopId,
+        workOrderId: line.workOrderId,
+        feeCents: line.feeCents,
+        at: line.at,
+      };
+      shop.lines.push(entry);
+      lines.push(entry);
+    }
+    byShop.set(order.shopId, shop);
+  }
+  return {
+    owedCents: [...byShop.values()].reduce((sum, shop) => sum + shop.owedCents, 0),
+    lines: lines.sort((a, b) => a.workOrderId.localeCompare(b.workOrderId) || a.shopId.localeCompare(b.shopId)),
+    byShop: [...byShop.entries()]
+      .map(([shopId, value]) => ({ shopId, owedCents: value.owedCents, lines: value.lines }))
+      .sort((a, b) => a.shopId.localeCompare(b.shopId)),
+  };
+}
+
+export function inPersonFeeInvoice(input: {
+  shopName: string;
+  weekLabel: string;
+  owed: InPersonFeeOwed;
+}): { subject: string; text: string } {
+  const dollars = (input.owed.owedCents / 100).toFixed(2);
+  const openLines = input.owed.openLines ?? input.owed.lines;
+  const detail = openLines.length === 0
+    ? 'No open in-person fee rows.'
+    : openLines.map((line) => `${line.workOrderId}: $${(line.feeCents / 100).toFixed(2)}`).join('\n');
+  return {
+    subject: `FixTray fee invoice ${input.weekLabel}`,
+    text: [
+      `${input.shopName} owes FixTray $${dollars} for the week of ${input.weekLabel}.`,
+      'These were in-person payments. The shop was paid the full job. This fee is owed to FixTray and is not a shop expense.',
+      detail,
+    ].join('\n'),
+  };
+}
+
+/** Monday 00:00 UTC through the next Monday. Callers pass the instant they care about. */
+export function utcWeekRange(at: Date): { start: Date; end: Date; label: string } {
+  const day = at.getUTCDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const start = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate() + mondayOffset));
+  const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const label = start.toISOString().slice(0, 10);
+  return { start, end, label };
+}
+
+export function planFeeSettlement(input: {
+  workOrderId: string;
+  shopId?: string | null;
+  amountCents: number;
+  paymentIntentId: string;
+  actorId: string;
+  at: string;
+}): { ok: true; entry: BooksEntryDraft; audit: BooksAuditEvent } | { ok: false; error: string } {
+  const amount = cents(input.amountCents, 'settlement');
+  if (amount <= 0) return { ok: false, error: 'Settlement amount must be greater than zero' };
+  if (!input.paymentIntentId.startsWith('pi_')) return { ok: false, error: 'A PaymentIntent id is required' };
+  return {
+    ok: true,
+    entry: {
+      kind: 'fee_settlement',
+      appliesTo: 'fee',
+      amountCents: amount,
+      status: 'posted',
+      idempotencyKey: `settle:${input.paymentIntentId}:${input.workOrderId}`,
+      sourceId: input.paymentIntentId,
+      depositAt: null,
+      note: `shop paid FixTray fee ${input.paymentIntentId}`,
+    },
+    audit: auditEvent({
+      actorId: input.actorId,
+      at: input.at,
+      action: 'books.fee_settlement',
+      targetType: 'work_order',
+      targetId: input.workOrderId,
+      shopId: input.shopId,
+      details: `fee settlement ${amount} cents via ${input.paymentIntentId}; not a shop expense`,
+    }),
+  };
 }

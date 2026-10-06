@@ -4,6 +4,7 @@ import { sendSms } from '@/lib/smsService';
 import { sendEmail, sendLowStockAlert } from '@/lib/emailService';
 import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 import { APPOINTMENT_OPEN_STATUSES, appointmentStatusUpdates } from '@/lib/appointmentValidation';
+import { emailWeeklyFixtrayInvoices } from '@/lib/books/weeklyFeeInvoice';
 
 // Cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -520,6 +521,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Custom automations error:', error);
     results.customAutomations = { error: 'Failed' };
+  }
+
+  try {
+    results.weeklyFeeInvoices = await emailWeeklyFixtrayInvoices(now);
+  } catch (error) {
+    console.error('Weekly FixTray invoices error:', error);
+    results.weeklyFeeInvoices = { error: 'Failed' };
   }
 
   return NextResponse.json({

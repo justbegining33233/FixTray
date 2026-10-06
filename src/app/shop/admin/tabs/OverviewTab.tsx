@@ -23,9 +23,18 @@ import MessagingCard from '@/components/MessagingCard';
 
 type TabName = 'overview' | 'settings' | 'payroll' | 'team' | 'inventory';
 
+interface InventoryPageSnapshot {
+  totalItems: number;
+  totalUnits: number;
+  totalInventoryValue: number;
+  lowStockItems: number;
+  rows: Array<{ id: string; name: string; sku?: string | null; quantity: number; low: boolean }>;
+}
+
 interface OverviewTabProps {
   shopStats: any;
   inventoryStock: any[];
+  inventoryPage: InventoryPageSnapshot | null;
   budgetData: any;
   userId: string;
   shopId: string;
@@ -36,6 +45,7 @@ interface OverviewTabProps {
 export default function OverviewTab({
   shopStats,
   inventoryStock,
+  inventoryPage,
   budgetData,
   userId,
   shopId,
@@ -53,9 +63,24 @@ export default function OverviewTab({
     );
   }
 
-  const lowStockCount = inventoryStock.filter((item: any) => item.quantity <= item.reorderPoint).length;
-  const totalInventoryUnits = inventoryStock.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
-  const totalInventoryValue = inventoryStock.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.sellingPrice || 0)), 0);
+  const pageRows = inventoryPage?.rows || [];
+  const lowStockCount = inventoryPage ? inventoryPage.lowStockItems : inventoryStock.filter((item: any) => item.quantity <= item.reorderPoint).length;
+  const totalInventoryUnits = inventoryPage
+    ? inventoryPage.totalUnits
+    : inventoryStock.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+  const totalInventoryValue = inventoryPage
+    ? inventoryPage.totalInventoryValue
+    : inventoryStock.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.sellingPrice || 0)), 0);
+  const inventoryItemCount = inventoryPage ? inventoryPage.totalItems : inventoryStock.length;
+  const snapshotRows = inventoryPage
+    ? pageRows
+    : inventoryStock.slice(0, 8).map((item: any) => ({
+      id: item.id,
+      name: item.itemName || item.name,
+      sku: item.sku,
+      quantity: item.quantity || 0,
+      low: item.quantity <= item.reorderPoint,
+    }));
 
   const openWorkOrders = shopStats.workOrders.open || 0;
   const completedThisWeek = shopStats.workOrders.completedThisWeek || 0;
@@ -75,7 +100,7 @@ export default function OverviewTab({
           { label: say("Weekly Revenue"), value: `$${(shopStats.revenue?.week ?? 0).toFixed(2)}`, sub: <>${(shopStats.revenue?.today ?? 0).toFixed(2)} {say("today")}</>, color: '#22c55e', icon: <FaChartBar /> },
           { label: say("Team On Shift"), value: `${shopStats.team.clockedIn || 0}/${shopStats.team.total || 0}`, sub: say("Live staffing coverage"), color: '#f59e0b', icon: <FaUsers /> },
           { label: say("Pending Actions"), value: String((shopStats.workOrders.pendingApprovals || 0) + (shopStats.inventory.pendingRequests || 0)), sub: <>{shopStats.inventory.pendingRequests || 0} {say("inventory approvals")}</>, color: '#e5332a', icon: <FaExclamationTriangle /> },
-          { label: say("Inventory Items"), value: String(inventoryStock.length), sub: <>{lowStockCount} {say("low stock")}</>, color: '#8b5cf6', icon: <FaBox /> },
+          { label: say("Inventory Items"), value: String(inventoryItemCount), sub: <>{lowStockCount} {say("low stock")}</>, color: '#8b5cf6', icon: <FaBox /> },
         ].map((card) => (
           <div key={card.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12, padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -174,14 +199,14 @@ export default function OverviewTab({
               </tr>
             </thead>
             <tbody>
-              {inventoryStock.slice(0, 8).map((item: any) => (
+              {snapshotRows.map((item) => (
                 <tr key={item.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                  <td style={{ padding: 10, color: '#e5e7eb' }}>{say(item.itemName)}</td>
+                  <td style={{ padding: 10, color: '#e5e7eb' }}>{say(item.name)}</td>
                   <td style={{ padding: 10, color: '#9aa3b2' }}>{item.sku || '-'}</td>
                   <td style={{ padding: 10, color: '#e5e7eb', fontWeight: 700 }}>{say(item.quantity)}</td>
                   <td style={{ padding: 10 }}>
-                    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: item.quantity <= item.reorderPoint ? 'rgba(245,158,11,0.2)' : 'rgba(34,197,94,0.2)', color: item.quantity <= item.reorderPoint ? '#f59e0b' : '#22c55e' }}>
-                      {item.quantity <= item.reorderPoint ? say("LOW") : say("GOOD")}
+                    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: item.low ? 'rgba(245,158,11,0.2)' : 'rgba(34,197,94,0.2)', color: item.low ? '#f59e0b' : '#22c55e' }}>
+                      {item.low ? say("LOW") : say("GOOD")}
                     </span>
                   </td>
                 </tr>

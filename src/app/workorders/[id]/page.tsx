@@ -58,6 +58,12 @@ type SvcItem = { id: string; serviceName: string; category: string; price?: numb
 
 const uid = () => Math.random().toString(36).slice(2);
 
+function counterSignPath(estimate: unknown): string | null {
+  if (!estimate || typeof estimate !== 'object') return null;
+  const token = (estimate as { counterSignToken?: unknown }).counterSignToken;
+  return typeof token === 'string' && token.length >= 16 ? `/sign/${token}` : null;
+}
+
 function toArr(raw: unknown): Record<string, unknown>[] {
   if (!raw) return [];
   try {
@@ -194,6 +200,8 @@ export default function WorkOrderDetailPage() {
   const [closeoutBusy,  setCloseoutBusy]  = useState<string | null>(null);
   const [closeoutMsg,   setCloseoutMsg]   = useState('');
   const [paymentUrl,    setPaymentUrl]    = useState<string | null>(null);
+  const [signPath,      setSignPath]      = useState<string | null>(null);
+  const [payBusy,       setPayBusy]       = useState(false);
   const [invoiceBill,   setInvoiceBill]   = useState<{ quoteAmount: number; serviceFee: number; totalDue: number } | null>(null);
   const [platformFee,   setPlatformFee]   = useState<number>(0);
 
@@ -264,6 +272,7 @@ export default function WorkOrderDetailPage() {
       .then(data => {
         const w: WorkOrder = data?.workOrder ?? data;
         setWo(w);
+        setSignPath(counterSignPath(w.estimate));
         setLineItems(parseLineItems(w));
         setMessages(w.messages ?? []);
         void markWorkOrderThreadSeen(w.id || id);
@@ -371,6 +380,7 @@ export default function WorkOrderDetailPage() {
           estimate: {
             ...payload.estimate,
             ...(existingEstimate.customerDecision ? { customerDecision: existingEstimate.customerDecision } : {}),
+            ...(typeof existingEstimate.counterSignToken === 'string' ? { counterSignToken: existingEstimate.counterSignToken } : {}),
             ...(typeof existingEstimate.notes === 'string' && existingEstimate.notes ? { notes: existingEstimate.notes } : {}),
           },
         }),
@@ -395,19 +405,59 @@ export default function WorkOrderDetailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
+      const submitted = await res.json().catch(() => ({}));
       if (res.ok) {
+        if (typeof submitted.signPath === 'string') setSignPath(submitted.signPath);
         setSubmitEstMsg('Submitted!');
         // Refresh work order to show updated status
         const r = await fetch(`/api/workorders/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-        if (r.ok) { const d = await r.json(); setWo(d?.workOrder ?? d); }
+        if (r.ok) {
+          const d = await r.json();
+          const next = d?.workOrder ?? d;
+          setWo(next);
+          setSignPath(counterSignPath(next?.estimate) || (typeof submitted.signPath === 'string' ? submitted.signPath : null));
+        }
         setTimeout(() => setSubmitEstMsg(''), 4000);
       } else {
-        const d = await res.json();
-        setSubmitEstMsg(d.error || 'Failed.');
+        setSubmitEstMsg(submitted.error || 'Failed.');
         setTimeout(() => setSubmitEstMsg(''), 4000);
       }
     } catch { setSubmitEstMsg('Failed.'); setTimeout(() => setSubmitEstMsg(''), 3000); }
     finally { setSubmittingEst(false); }
+  };
+
+  const handlePay = async (method: 'card' | 'cash' | 'check' | 'other') => {
+    if (!id) return;
+    setPayBusy(true);
+    setCloseoutMsg('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/workorders/${id}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ method }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCloseoutMsg(data.error || 'Payment failed.');
+        return;
+      }
+      if (method === 'card' && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      if (data.workOrder) setWo(data.workOrder);
+      const fee = typeof data.platformFeeCents === 'number' ? data.platformFeeCents / 100 : 0;
+      setCloseoutMsg(
+        data.paymentStatus === 'paid'
+          ? `Recorded ${method}. Shop keeps the full job. FixTray fee $${fee.toFixed(2)} is owed to the platform, not a shop expense.`
+          : `Recorded a partial ${method} payment. The job stays pending until the job amount is paid.`,
+      );
+    } catch {
+      setCloseoutMsg('Payment failed.');
+    } finally {
+      setPayBusy(false);
+    }
   };
 
   const handleCloseout = async (action: 'invoice' | 'paid' | 'complete') => {
@@ -863,7 +913,7 @@ export default function WorkOrderDetailPage() {
                       : wo.paymentStatus === 'paid'
                         ? say("Payment is recorded. Complete the job when the work is finished.")
                         : wo.status === 'waiting-for-payment'
-                          ? say("Payment was requested for this work order. Mark it paid, then complete the job.")
+                          ? say("Payment was requested. Choose how the customer pays, then complete the job.")
                           : (wo.status === 'in-progress' || wo.status === 'assigned')
                             ? say("Invoice this work order, mark it paid, then complete the job.")
                             : say("Invoice unlocks after the customer accepts and signs and the job is in progress.")}
@@ -895,6 +945,30 @@ export default function WorkOrderDetailPage() {
                   </div>
                 );
               })()}
+              {awaitingAuth && signPath && (
+                <div style={{ marginBottom: 12, background: 'rgba(96,165,250,0.12)', borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontSize: 13, marginBottom: 8 }}>Walk-in signature. The customer can accept or deny on this device. No login is required.</div>
+                  <a href={signPath} style={{ color: '#93c5fd', fontWeight: 700 }}>Sign on this device</a>
+                </div>
+              )}
+              {['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status) && wo.paymentStatus !== 'paid' && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Pay. Cash, check, and other still use the live card fee. The shop keeps the full job. The fee is owed to FixTray.</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {(['card', 'cash', 'check', 'other'] as const).map((method) => (
+                      <button
+                        key={method}
+                        type="button"
+                        disabled={payBusy}
+                        onClick={() => { void handlePay(method); }}
+                        style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        {method === 'card' ? 'Card' : method === 'cash' ? 'Cash' : method === 'check' ? 'Check' : 'Other'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   onClick={() => handleCloseout('invoice')}

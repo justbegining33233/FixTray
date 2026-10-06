@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ownerClockEmail, resolveActorClockTech } from '@/lib/ownerClock';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
@@ -52,6 +53,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       where.techId = techId;
+      if (decoded.role === 'shop' && techId === decoded.id) {
+        const owner = await prisma.tech.findUnique({
+          where: { email: ownerClockEmail(decoded.id) },
+          select: { id: true },
+        });
+        if (owner) where.techId = owner.id;
+      }
     } else if (shopId) {
       // Shops can only view their own shop's entries
       if (decoded.role === 'shop' && decoded.id !== shopId) {
@@ -108,10 +116,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const { action, techId, shopId, notes, location, photo } = await request.json();
+    const body = await request.json();
+    const { action, shopId, notes, location, photo } = body;
+    let { techId } = body;
 
     if (!action || !techId || !shopId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (decoded.role === 'shop' || decoded.role === 'tech') {
+      const resolved = await resolveActorClockTech({
+        role: decoded.role,
+        actorId: decoded.id,
+        requestedTechId: techId,
+        shopId,
+      });
+      if (!resolved.ok) return NextResponse.json({ error: resolved.error }, { status: 400 });
+      techId = resolved.techId;
     }
 
     if (action === 'clock-in') {

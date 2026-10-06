@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
+import { loadShopYearDrill } from '@/lib/books/loadDrill';
+import { hideShopRevenue } from '@/lib/books/shopDrill';
 import { findShopJob, loadShopBooks, saveQbMap } from '@/lib/books/loadShopBooks';
-import { planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
+import { inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
+import { createFeeSettlementCheckout } from '@/lib/feeSettlementCheckout';
+import { sendEmail } from '@/lib/emailService';
 import { ensureOpeningBalance, writeAudit, writeBooksEntries } from '@/lib/books/persist';
-import { applyQty, partMoveAudit, partValue } from '@/lib/books/parts';
+import { partMoveAudit, partValue, pickStockPart, preparePartMove } from '@/lib/books/parts';
 
 function processorId(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -21,7 +25,13 @@ export async function GET(request: NextRequest) {
   }
   const shopId = shopIdForBooks(auth);
   if (!shopId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const month = new URL(request.url).searchParams.get('month');
+  const url = new URL(request.url);
+  if (url.searchParams.get('view') === 'drill') {
+    const requested = Number(url.searchParams.get('year'));
+    const drill = await loadShopYearDrill(shopId, Number.isInteger(requested) ? requested : null);
+    return NextResponse.json(booksAccess(auth.role).shopRevenue ? drill : hideShopRevenue(drill));
+  }
+  const month = url.searchParams.get('month');
   const books = await loadShopBooks(shopId, month);
   return NextResponse.json(books);
 }
@@ -52,6 +62,7 @@ export async function POST(request: NextRequest) {
       depositAt: String((body as { depositAt?: string }).depositAt || ''),
       actorId: auth.id,
       at,
+      shopReceivedCents: job.shopReceivedCents,
     });
     if (!planned.ok) return NextResponse.json({ error: planned.error }, { status: 400 });
     await writeBooksEntries({ shopId, workOrderId, entries: [planned.entry], audit: planned.audit });
@@ -126,12 +137,22 @@ export async function POST(request: NextRequest) {
     if (kind !== 'use' && kind !== 'return' && kind !== 'adjust') {
       return NextResponse.json({ error: 'Unknown part action' }, { status: 400 });
     }
-    const item = await prisma.inventoryStock.findFirst({ where: { id: itemId, shopId } });
+    const stock = await prisma.inventoryStock.findMany({
+      where: { shopId },
+      select: { id: true, itemName: true, sku: true, quantity: true },
+    });
+    const picked = pickStockPart(
+      stock.map((row) => ({ id: row.id, name: row.itemName, sku: row.sku, onHand: row.quantity })),
+      itemId,
+    );
+    if (!picked.ok) return NextResponse.json({ error: picked.error }, { status: 400 });
+    const item = await prisma.inventoryStock.findFirst({ where: { id: picked.part.id, shopId } });
     if (!item) return NextResponse.json({ error: 'Part not found' }, { status: 404 });
-    const moved = applyQty(item.quantity, {
+    const moved = preparePartMove({
       kind,
       qty: Number((body as { qty?: number }).qty),
       reason: typeof (body as { reason?: string }).reason === 'string' ? (body as { reason: string }).reason : undefined,
+      onHand: item.quantity,
     });
     if (!moved.ok) return NextResponse.json({ error: moved.error }, { status: 400 });
     await prisma.inventoryStock.update({ where: { id: item.id }, data: { quantity: moved.onHand } });
@@ -152,6 +173,50 @@ export async function POST(request: NextRequest) {
       value: partValue(moved.onHand, usdToCents(item.unitCost), usdToCents(item.sellingPrice)),
       audit,
     });
+  }
+
+  if (action === 'fee-invoice' || action === 'pay-fixtray') {
+    const books = await loadShopBooks(shopId);
+    const owed = books.fixtrayOwed.week;
+    const shop = await prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { email: true, shopName: true },
+    });
+    const invoice = inPersonFeeInvoice({
+      shopName: shop?.shopName || 'Shop',
+      weekLabel: books.fixtrayOwed.weekLabel,
+      owed,
+    });
+    if (action === 'fee-invoice') {
+      if (owed.owedCents <= 0) {
+        return NextResponse.json({ error: 'There is no FixTray fee to invoice this week.' }, { status: 400 });
+      }
+      const sent = shop?.email
+        ? await sendEmail({
+          to: shop.email,
+          subject: invoice.subject,
+          html: `<p>${invoice.text.replace(/\n/g, '<br>')}</p>`,
+          from: 'FixTray Support <support@fixtray.app>',
+          shopId,
+        })
+        : false;
+      return NextResponse.json({
+        ok: true,
+        sent,
+        owedCents: owed.owedCents,
+        invoice,
+        feeDeductedFromShop: false,
+      });
+    }
+    const session = await createFeeSettlementCheckout({
+      shopId,
+      shopEmail: shop?.email,
+      owedCents: owed.owedCents,
+      weekLabel: books.fixtrayOwed.weekLabel,
+      appUrl: request.nextUrl.origin,
+    });
+    if (!session.ok) return NextResponse.json({ error: session.error }, { status: session.status });
+    return NextResponse.json({ ok: true, url: session.url, owedCents: owed.owedCents });
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 });

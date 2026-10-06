@@ -26,7 +26,7 @@ const OWNER_REDIRECTS = [
 
 const SHOP_MORE_STILL_THERE = ['Inventory', 'Environmental Fees', 'Campaigns'];
 const OWNER_MORE_GONE = ['Offline', 'DVI Approvals', 'Compliance', 'Inventory', 'Environmental Fees', 'Campaigns', 'Performance', 'Owner Tools', 'Command Center', 'Security Settings', 'Platform Home', 'Admin Home'];
-const OWNER_MORE_KEPT = ['Shop Approvals', 'Users', 'Platform Settings', 'Revenue & Payouts', 'Health', 'Activity Logs', 'Messaging'];
+const OWNER_MORE_KEPT = ['Shop Approvals', 'Users', 'Platform Settings', 'Fee Revenue', 'Health', 'Activity Logs', 'Messaging'];
 
 function sign(role: string) {
   return jwt.sign({

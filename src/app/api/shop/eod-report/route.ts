@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { shopJobReceiptCents } from '@/lib/books/money';
+import { addDays, dayKey, zonedDayStart } from '@/lib/books/periods';
+import { reportZone } from '@/lib/books/storedFeeReport';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -18,19 +21,17 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
-    
-    // Default to today
-    const targetDate = dateParam ? new Date(dateParam) : new Date();
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const zone = await reportZone();
+    const targetKey = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : dayKey(new Date(), zone);
+    const startOfDay = zonedDayStart(targetKey, zone);
+    const endOfDay = zonedDayStart(addDays(targetKey, 1), zone);
+    const showRevenue = auth.role === 'shop' || auth.role === 'admin';
 
     // Jobs completed today
     const completedJobs = await prisma.workOrder.findMany({
       where: {
         shopId,
-        completedAt: { gte: startOfDay, lte: endOfDay },
+        completedAt: { gte: startOfDay, lt: endOfDay },
       },
       include: {
         customer: { select: { firstName: true, lastName: true } },
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     const newJobs = await prisma.workOrder.count({
       where: {
         shopId,
-        createdAt: { gte: startOfDay, lte: endOfDay },
+        createdAt: { gte: startOfDay, lt: endOfDay },
       },
     });
 
@@ -60,12 +61,12 @@ export async function GET(request: NextRequest) {
       where: {
         shopId,
         paymentStatus: 'paid',
-        updatedAt: { gte: startOfDay, lte: endOfDay },
+        updatedAt: { gte: startOfDay, lt: endOfDay },
       },
-      select: { amountPaid: true },
+      select: { amountPaid: true, estimatedCost: true, paymentStatus: true },
     });
 
-    const totalRevenue = paidJobsToday.reduce((sum, j) => sum + (j.amountPaid || 0), 0);
+    const totalRevenue = paidJobsToday.reduce((sum, job) => sum + (shopJobReceiptCents(job) / 100), 0);
     const paymentBreakdown = {
       cash: 0,
       card: totalRevenue,
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest) {
     });
 
     const outstandingBalance = outstandingWOs.reduce((sum, wo) => {
-      const owed = (wo.estimatedCost || 0) - (wo.amountPaid || 0);
+      const owed = (wo.estimatedCost || 0) - (shopJobReceiptCents(wo) / 100);
       return sum + Math.max(0, owed);
     }, 0);
 
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest) {
     const timeEntries = await prisma.timeEntry.findMany({
       where: {
         shopId,
-        clockIn: { gte: startOfDay, lte: endOfDay },
+        clockIn: { gte: startOfDay, lt: endOfDay },
       },
       include: {
         tech: { select: { firstName: true, lastName: true } },
@@ -120,12 +121,41 @@ export async function GET(request: NextRequest) {
     const appointments = await prisma.appointment.count({
       where: {
         shopId,
-        scheduledDate: { gte: startOfDay, lte: endOfDay },
+        scheduledDate: { gte: startOfDay, lt: endOfDay },
       },
     });
 
+    const completed = completedJobs.map((job) => ({
+      id: job.id,
+      customer: job.customer ? `${job.customer.firstName} ${job.customer.lastName}` : 'N/A',
+      tech: job.assignedTo ? `${job.assignedTo.firstName} ${job.assignedTo.lastName}` : 'Unassigned',
+      vehicleType: job.vehicleType,
+      completedAt: job.completedAt,
+      ...(showRevenue ? {
+        amount: job.paymentStatus === 'paid'
+          ? shopJobReceiptCents(job) / 100
+          : (job.estimatedCost || 0),
+      } : {}),
+    }));
+
+    if (!showRevenue) {
+      return NextResponse.json({
+        date: targetKey,
+        revenueVisible: false,
+        summary: {
+          completedJobsCount: completedJobs.length,
+          newJobsCount: newJobs,
+          openJobsCount: openJobs,
+          appointmentsCount: appointments,
+        },
+        completedJobs: completed,
+        techHours,
+      });
+    }
+
     return NextResponse.json({
-      date: targetDate.toISOString().split('T')[0],
+      date: targetKey,
+      revenueVisible: true,
       summary: {
         completedJobsCount: completedJobs.length,
         newJobsCount: newJobs,
@@ -134,18 +164,11 @@ export async function GET(request: NextRequest) {
         outstandingBalance: Math.round(outstandingBalance * 100) / 100,
       },
       paymentBreakdown,
-      completedJobs: completedJobs.map(j => ({
-        id: j.id,
-        customer: j.customer ? `${j.customer.firstName} ${j.customer.lastName}` : 'N/A',
-        tech: j.assignedTo ? `${j.assignedTo.firstName} ${j.assignedTo.lastName}` : 'Unassigned',
-        amount: j.amountPaid || j.estimatedCost || 0,
-        vehicleType: j.vehicleType,
-        completedAt: j.completedAt,
-      })),
+      completedJobs: completed,
       outstandingWOs: outstandingWOs.map(wo => ({
         id: wo.id,
         customer: wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : 'N/A',
-        owed: Math.max(0, (wo.estimatedCost || 0) - (wo.amountPaid || 0)),
+        owed: Math.max(0, (wo.estimatedCost || 0) - (shopJobReceiptCents(wo) / 100)),
       })),
       techHours,
     });

@@ -248,7 +248,15 @@ describe('retest d6e43aa ground truth', () => {
       taxCollectedCents: 504,
       linkStatus: 'paid',
       linkAmountCents: 8051,
+      note: 'in-person cash; platform fee; fee cash collected 1249 cents; not a shop expense',
     })).toBe(1249);
+    expect(feeCashHeld({
+      feeCents: 1210,
+      jobPaidCents: 1999,
+      taxCollectedCents: 0,
+      linkStatus: 'paid',
+      linkAmountCents: 3209,
+    })).toBe(0);
     expect(feeCashHeld({
       feeCents: 1210,
       jobPaidCents: 4999,

@@ -687,14 +687,23 @@ function hideMoney(money: ShopMoneyTotals): ShopMoneyTotals {
   };
 }
 
-/** Shop revenue stays with the owner. Managers keep the other books figures. */
+function hideStockValue<T extends { stockValueStartCents: number; stockValueEndCents: number; stockValueNote: string }>(node: T): T {
+  return {
+    ...node,
+    stockValueStartCents: 0,
+    stockValueEndCents: 0,
+    stockValueNote: STOCK_VALUE_EMPTY,
+  };
+}
+
+/** Shop revenue stays with the owner. Managers keep quantities, not dollar totals. */
 export function hideShopRevenue<T extends ShopYearReport>(report: T): T {
-  const walkDay = (day: ShopDayNode): ShopDayNode => ({ ...day, money: hideMoney(day.money), fixtrayLines: [] });
-  const months = report.months.map((month) => ({
+  const walkDay = (day: ShopDayNode): ShopDayNode => hideStockValue({ ...day, money: hideMoney(day.money), fixtrayLines: [] });
+  const months = report.months.map((month) => hideStockValue({
     ...month,
     money: hideMoney(month.money),
     fixtrayLines: [],
-    weeks: month.weeks.map((week) => ({
+    weeks: month.weeks.map((week) => hideStockValue({
       ...week,
       money: hideMoney(week.money),
       fixtrayLines: [],
@@ -704,7 +713,7 @@ export function hideShopRevenue<T extends ShopYearReport>(report: T): T {
   return {
     ...report,
     revenueVisible: false,
-    totals: { ...report.totals, money: hideMoney(report.totals.money), fixtrayLines: [] },
+    totals: hideStockValue({ ...report.totals, money: hideMoney(report.totals.money), fixtrayLines: [] }),
     months,
   };
 }

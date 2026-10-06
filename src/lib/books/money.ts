@@ -964,8 +964,8 @@ export function counterBalanceDueCents(input: {
 }
 
 /**
- * Fee cash sitting in the drawer. A fee row that was booked without the
- * customer paying it, or a link flipped early, is not cash.
+ * Fee cash sitting in the drawer. Only the in-person checkout note counts.
+ * A paid invoice link, including one flipped by mark-paid-links, is not cash.
  */
 export function feeCashHeld(input: {
   feeCents: number;
@@ -978,15 +978,39 @@ export function feeCashHeld(input: {
   const fee = Math.max(0, Math.round(input.feeCents || 0));
   if (fee <= 0) return 0;
   if (String(input.note || '').toLowerCase().includes('fee cash collected')) return fee;
-  if (String(input.linkStatus || '').toLowerCase() !== 'paid') return 0;
-  const link = input.linkAmountCents == null ? null : Math.max(0, Math.round(input.linkAmountCents));
-  if (link == null || link <= 0) return 0;
-  const jobPaid = Math.max(0, Math.round(input.jobPaidCents || 0));
-  const tax = Math.max(0, Math.round(input.taxCollectedCents || 0));
-  if (jobPaid + tax + fee < link) return 0;
-  const gap = link - jobPaid - tax;
-  if (gap <= 0) return 0;
-  return Math.min(fee, gap);
+  return 0;
+}
+
+/** Manager books keep job counts and on-hand qty. Fee lines and fee totals stay with the owner. */
+export function hideManagerFeeOwed<T extends {
+  owedCents: number;
+  lines?: unknown[];
+  openLines?: unknown[];
+  collectedCents?: number;
+  accruedCents?: number;
+  settledCents?: number;
+  week?: {
+    owedCents: number;
+    lines?: unknown[];
+    openLines?: unknown[];
+    collectedCents?: number;
+    accruedCents?: number;
+    settledCents?: number;
+  };
+}>(owed: T): T {
+  const cleared = {
+    owedCents: 0,
+    lines: [] as unknown[],
+    openLines: [] as unknown[],
+    collectedCents: 0,
+    accruedCents: 0,
+    settledCents: 0,
+  };
+  return {
+    ...owed,
+    ...cleared,
+    week: owed.week ? { ...owed.week, ...cleared } : owed.week,
+  };
 }
 
 /** Pending invoice links on jobs whose shop portion is already paid. */

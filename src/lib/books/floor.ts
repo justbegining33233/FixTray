@@ -78,15 +78,21 @@ export function partMovementFromAudit(row: {
   if (!Number.isInteger(delta) || delta === 0) return null;
   const targetType = String(row.targetType || '').toLowerCase();
   const workOrderFromType = targetType === 'work_order' || targetType === 'workorder' ? row.targetId : null;
-  const workOrderFromDetails = String(row.details || '').match(/workOrderId\s+(\S+)/);
+  const workOrderFromDetails = workOrderIdInAudit(String(row.details || ''));
   const itemFromType = targetType === 'inventory_stock' || targetType === 'inventory' ? row.targetId : null;
   return {
     kind,
     qty: kind === 'return' ? Math.abs(delta) : delta,
     itemId: itemFromType || null,
-    workOrderId: workOrderFromType || (workOrderFromDetails ? workOrderFromDetails[1] : null),
+    workOrderId: workOrderFromType || workOrderFromDetails,
     unitCostCents: null,
   };
+}
+
+/** Audit text says "work order <id>" or "workOrderId <id>". */
+function workOrderIdInAudit(details: string): string | null {
+  const match = details.match(/work\s*order(?:\s*id)?\s*[#:]?\s*([A-Za-z0-9_-]+)/i);
+  return match ? match[1] : null;
 }
 
 function partLines(partsUsed: unknown, catalog: Array<{ id: string; sku?: string | null; costCents: number }>): Array<{ itemId: string; qty: number; unit: number }> {
@@ -141,13 +147,15 @@ export function jobPartsCostCents(input: {
   let total = lines.reduce((sum, line) => sum + line.unit * line.qty, 0);
   for (const move of input.movements || []) {
     if (move.kind !== 'return' || move.qty <= 0) continue;
-    if (move.workOrderId && move.workOrderId !== input.workOrderId) continue;
-    const line = lines.find((item) => move.itemId && item.itemId === move.itemId) || (lines.length === 1 ? lines[0] : undefined);
-    if (!line && move.workOrderId !== input.workOrderId) continue;
-    const unit = move.unitCostCents && move.unitCostCents > 0 ? Math.round(move.unitCostCents) : (line?.unit || 0);
-    const qty = Math.min(move.qty, line?.qty || move.qty);
+    // An unassigned return is not this job's cost. A return for another job is not either.
+    if (!move.workOrderId || move.workOrderId !== input.workOrderId) continue;
+    const matched = move.itemId ? lines.find((item) => item.itemId === move.itemId) : undefined;
+    const line = matched || (!move.itemId && lines.length === 1 ? lines[0] : undefined);
+    if (!line) continue;
+    const unit = move.unitCostCents && move.unitCostCents > 0 ? Math.round(move.unitCostCents) : line.unit;
+    const qty = Math.min(move.qty, line.qty);
     total -= unit * qty;
-    if (line) line.qty = Math.max(0, line.qty - qty);
+    line.qty = Math.max(0, line.qty - qty);
   }
   return Math.max(0, total);
 }

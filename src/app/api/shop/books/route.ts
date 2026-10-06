@@ -6,7 +6,7 @@ import { booksAccess, shopIdForBooks } from '@/lib/books/access';
 import { loadShopYearDrill } from '@/lib/books/loadDrill';
 import { hideShopRevenue } from '@/lib/books/shopDrill';
 import { findShopJob, loadShopBooks, saveQbMap } from '@/lib/books/loadShopBooks';
-import { hideManagerShopRevenue, inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
+import { hideManagerFeeOwed, hideManagerShopRevenue, inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
 import { createFeeSettlementCheckout } from '@/lib/feeSettlementCheckout';
 import { sendEmail } from '@/lib/emailService';
 import { ensureOpeningBalance, writeAudit, writeBooksEntries } from '@/lib/books/persist';
@@ -39,15 +39,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ...hidden,
       tickets: [],
-      fixtrayOwed: {
-        ...hidden.fixtrayOwed,
-        owedCents: 0,
-        openLines: [],
-        collectedCents: 0,
-        accruedCents: 0,
-        settledCents: 0,
-        week: { ...hidden.fixtrayOwed.week, owedCents: 0, openLines: [], collectedCents: 0, accruedCents: 0, settledCents: 0 },
-      },
+      inventory: books.inventory.map((item) => ({ ...item, unitCostCents: 0, sellUnitCents: 0 })),
+      reversals: books.reversals.map((row) => ({ ...row, amountCents: 0 })),
+      fixtrayOwed: hideManagerFeeOwed(hidden.fixtrayOwed),
     });
   }
   return NextResponse.json(books);

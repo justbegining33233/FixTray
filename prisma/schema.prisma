@@ -25,6 +25,7 @@ model Customer {
   internalNotes       String?
   tags                String?
   preferredLocale     String?
+  qboId               String?
   appointments        Appointment[]
   documents           CustomerDocument[]
   messages            CustomerMessage[]
@@ -134,8 +135,16 @@ model Shop {
   workOrderTemplates  WorkOrderTemplate[]
   branding            ShopBranding?
   inventoryStocks     InventoryStock[]
+  timezone            String                   @default("America/New_York")
   booksEntries        BooksEntry[]
   clockCorrections    ClockCorrection[]
+  ledgerAccounts      LedgerAccount[]
+  journalEntries      JournalEntry[]
+  vendorBills         VendorBill[]
+  billPayments        BillPayment[]
+  inventorySnapshots  InventoryValueSnapshot[]
+  accountants         ShopAccountant[]
+  bankDeposits        BankDeposit[]
 
   @@map("shops")
 }
@@ -406,6 +415,8 @@ model InventoryItem {
   rate         Float?
   supplier     String?
   notes        String?
+  costCents    Int      @default(0)
+  qboId        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -543,6 +554,8 @@ model ShopSettings {
   inventoryMarkup          Float    @default(0.30)
   businessHours            String?
   taxRate                  Float    @default(0)
+  laborTaxable             Boolean  @default(false)
+  partsTaxable             Boolean  @default(false)
   allowTimeTracking        Boolean  @default(true)
   requireClockInOut        Boolean  @default(false)
   gpsVerificationEnabled   Boolean  @default(false)
@@ -1659,9 +1672,11 @@ model Vendor {
   rating        Int      @default(0)
   notes         String   @default("")
   isActive      Boolean  @default(true)
+  qboId         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  bills         VendorBill[]
 
   @@index([shopId])
   @@map("vendors")
@@ -1916,4 +1931,153 @@ model SupportInboxMessage {
 
   @@index([receivedAt])
   @@map("support_inbox_messages")
+}
+
+/// Shop chart of accounts. The FixTray fee is never one of these.
+model LedgerAccount {
+  id           String   @id @default(cuid())
+  shopId       String
+  code         String
+  name         String
+  accountType  String
+  systemKey    String
+  qboAccountId String?
+  createdAt    DateTime @default(now())
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, systemKey])
+  @@unique([shopId, code])
+  @@index([shopId])
+  @@map("ledger_accounts")
+}
+
+model JournalEntry {
+  id         String        @id @default(cuid())
+  shopId     String
+  entryDate  DateTime
+  sourceType String
+  sourceId   String
+  memo       String
+  actorId    String
+  createdAt  DateTime      @default(now())
+  shop       Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  lines      JournalLine[]
+
+  @@unique([shopId, sourceType, sourceId])
+  @@index([shopId, entryDate])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id           String       @id @default(cuid())
+  entryId      String
+  accountKey   String
+  debitCents   Int          @default(0)
+  creditCents  Int          @default(0)
+  workOrderId  String?
+  memo         String?
+  entry        JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@index([accountKey])
+  @@map("journal_lines")
+}
+
+model VendorBill {
+  id        String           @id @default(cuid())
+  shopId    String
+  vendorId  String
+  billDate  DateTime
+  dueDate   DateTime
+  status    String           @default("unpaid")
+  memo      String           @default("")
+  qboId     String?
+  createdAt DateTime         @default(now())
+  shop      Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  vendor    Vendor           @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  lines     VendorBillLine[]
+  payments  BillPayment[]
+
+  @@index([shopId, billDate])
+  @@index([vendorId])
+  @@map("vendor_bills")
+}
+
+model VendorBillLine {
+  id              String     @id @default(cuid())
+  billId          String
+  inventoryItemId String?
+  description     String
+  qty             Int
+  unitCostCents   Int
+  amountCents     Int
+  bill            VendorBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([billId])
+  @@map("vendor_bill_lines")
+}
+
+model BillPayment {
+  id          String     @id @default(cuid())
+  billId      String
+  shopId      String
+  amountCents Int
+  paidAt      DateTime
+  method      String
+  qboId       String?
+  createdAt   DateTime   @default(now())
+  bill        VendorBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  shop        Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, paidAt])
+  @@index([billId])
+  @@map("bill_payments")
+}
+
+model InventoryValueSnapshot {
+  id            String   @id @default(cuid())
+  shopId        String
+  itemId        String?
+  asOf          DateTime
+  qty           Int
+  unitCostCents Int
+  valueCents    Int
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, asOf])
+  @@map("inventory_value_snapshots")
+}
+
+/// Read-only accountant invited by the shop owner. Scoped to that shop.
+model ShopAccountant {
+  id        String   @id @default(cuid())
+  shopId    String
+  email     String
+  name      String   @default("")
+  password  String
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, email])
+  @@index([email])
+  @@map("shop_accountants")
+}
+
+/// A deposit grouped the way the bank posts it. Not a bank-feed connection.
+model BankDeposit {
+  id           String   @id @default(cuid())
+  shopId       String
+  depositedAt  DateTime
+  amountCents  Int
+  method       String
+  sourceId     String?
+  qboId        String?
+  workOrderIds String[] @default([])
+  memo         String   @default("")
+  createdAt    DateTime @default(now())
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, depositedAt])
+  @@map("bank_deposits")
 }

@@ -49,6 +49,14 @@ export async function recordEstimateDecision(input: {
       },
     },
   });
+  await prisma.statusHistory.create({
+    data: {
+      workOrderId: workOrder.id,
+      fromStatus: workOrder.status,
+      toStatus: decision.woStatus,
+      reason: decision.response === 'accepted' ? 'Estimate accepted' : 'Estimate denied',
+    },
+  });
 
   if (decision.createAuthorization) {
     const summary = String(workOrder.issueDescription ?? '').slice(0, 1000) || 'Customer-signed estimate';

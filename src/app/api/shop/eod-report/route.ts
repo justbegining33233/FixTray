@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { shopJobReceiptCents } from '@/lib/books/money';
-import { addDays, dayKey, zonedDayStart } from '@/lib/books/periods';
-import { reportZone } from '@/lib/books/storedFeeReport';
+import { dayKey } from '@/lib/books/periods';
+import { shopDayRange } from '@/lib/books/periods';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { factsAsOf, positionJobs, rangeSnapshot } from '@/lib/books/truth';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -21,10 +23,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
-    const zone = await reportZone();
+    const zone = await shopTimeZone(shopId);
     const targetKey = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : dayKey(new Date(), zone);
-    const startOfDay = zonedDayStart(targetKey, zone);
-    const endOfDay = zonedDayStart(addDays(targetKey, 1), zone);
+    const day = shopDayRange(targetKey, zone);
+    const startOfDay = day.start;
+    const endOfDay = day.end;
+    const facts = factsAsOf(await loadShopFacts(shopId), endOfDay);
+    const snap = rangeSnapshot(facts, startOfDay, endOfDay, zone);
     const showRevenue = auth.role === 'shop' || auth.role === 'admin';
 
     // Jobs completed today
@@ -52,62 +57,46 @@ export async function GET(request: NextRequest) {
     const openJobs = await prisma.workOrder.count({
       where: {
         shopId,
-        status: { notIn: ['closed', 'denied-estimate'] },
+        status: { notIn: ['closed', 'completed', 'denied-estimate'] },
       },
     });
 
     // Payment breakdown from work orders paid today
-    const paidJobsToday = await prisma.workOrder.findMany({
-      where: {
-        shopId,
-        paymentStatus: 'paid',
-        updatedAt: { gte: startOfDay, lt: endOfDay },
-      },
-      select: { amountPaid: true, estimatedCost: true, paymentStatus: true },
-    });
-
-    const totalRevenue = paidJobsToday.reduce((sum, job) => sum + (shopJobReceiptCents(job) / 100), 0);
+    const totalRevenue = snap.revenueCents / 100;
     const paymentBreakdown = {
-      cash: 0,
-      card: totalRevenue,
-      check: 0,
-      transfer: 0,
-      other: 0,
+      cash: snap.cashCents / 100,
+      card: snap.cardCents / 100,
+      check: snap.checkCents / 100,
+      transfer: snap.transferCents / 100,
+      other: snap.otherCents / 100,
       total: totalRevenue,
     };
 
-    // Outstanding balances (work orders waiting for payment)
-    const outstandingWOs = await prisma.workOrder.findMany({
-      where: {
-        shopId,
-        status: 'waiting-for-payment',
-      },
+    const arRows = positionJobs(facts).filter((job) => job.arCents > 0);
+    const outstandingWOs = arRows.length === 0 ? [] : await prisma.workOrder.findMany({
+      where: { shopId, id: { in: arRows.map((job) => job.workOrderId) } },
       select: {
         id: true,
-        estimatedCost: true,
-        amountPaid: true,
         customer: { select: { firstName: true, lastName: true } },
       },
     });
-
-    const outstandingBalance = outstandingWOs.reduce((sum, wo) => {
-      const owed = (wo.estimatedCost || 0) - (shopJobReceiptCents(wo) / 100);
-      return sum + Math.max(0, owed);
-    }, 0);
+    const arById = new Map(arRows.map((job) => [job.workOrderId, job.arCents]));
+    const outstandingBalance = arRows.reduce((sum, job) => sum + job.arCents, 0) / 100;
 
     // Tech hours (time entries)
     const timeEntries = await prisma.timeEntry.findMany({
       where: {
         shopId,
         clockIn: { gte: startOfDay, lt: endOfDay },
+        clockOut: { not: null },
       },
       include: {
         tech: { select: { firstName: true, lastName: true } },
       },
     });
 
-    const techHours = timeEntries.map(entry => {
-      const clockOut = entry.clockOut || new Date();
+    const techHours = timeEntries.filter((entry) => entry.clockOut).map(entry => {
+      const clockOut = entry.clockOut as Date;
       const hours = (clockOut.getTime() - entry.clockIn.getTime()) / (1000 * 60 * 60);
       return {
         techName: `${entry.tech.firstName} ${entry.tech.lastName}`,
@@ -155,6 +144,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       date: targetKey,
+      timeZone: zone,
       revenueVisible: true,
       summary: {
         completedJobsCount: completedJobs.length,
@@ -168,7 +158,7 @@ export async function GET(request: NextRequest) {
       outstandingWOs: outstandingWOs.map(wo => ({
         id: wo.id,
         customer: wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : 'N/A',
-        owed: Math.max(0, (wo.estimatedCost || 0) - (shopJobReceiptCents(wo) / 100)),
+        owed: (arById.get(wo.id) || 0) / 100,
       })),
       techHours,
     });

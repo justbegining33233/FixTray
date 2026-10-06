@@ -16,6 +16,7 @@ import { hasWorkOrderFieldUpdates, legacyMessagesToStore, workOrderDirectMessage
 import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
 import { quantityAfterUse, stockDeltasForPartUse } from '@/lib/partStockUse';
 import { decorateWorkOrderMessages, resolveAccountLocale, stampOutgoingTranslation } from '@/lib/chatTranslationStore';
+import { workOrderLinkAllowed } from '@/lib/workOrderOwnership';
 
 export async function GET(
   request: NextRequest,
@@ -353,6 +354,31 @@ export async function PUT(
       });
     }
     
+    const nextCustomerId = data.customerId && data.customerId !== current.customerId ? data.customerId : null;
+    const nextVehicleId = data.vehicleId && data.vehicleId !== current.vehicleId ? data.vehicleId : null;
+    const nextTechId = data.assignedTechId && data.assignedTechId !== current.assignedTechId ? data.assignedTechId : null;
+    if (nextCustomerId || nextVehicleId || nextTechId) {
+      const [customer, vehicle, tech, customerJobs] = await Promise.all([
+        nextCustomerId ? prisma.customer.findUnique({ where: { id: nextCustomerId }, select: { id: true } }) : Promise.resolve(null),
+        nextVehicleId ? prisma.vehicle.findUnique({ where: { id: nextVehicleId }, select: { id: true, customerId: true } }) : Promise.resolve(null),
+        nextTechId ? prisma.tech.findUnique({ where: { id: nextTechId }, select: { id: true, shopId: true } }) : Promise.resolve(null),
+        nextCustomerId
+          ? prisma.workOrder.findMany({ where: { customerId: nextCustomerId }, select: { shopId: true } })
+          : Promise.resolve([]),
+      ]);
+      const allowed = workOrderLinkAllowed({
+        shopId: current.shopId,
+        customerId: current.customerId,
+        nextCustomerId,
+        nextVehicleId,
+        nextTechId,
+        customer: customer ? { id: customer.id, shopIds: [...new Set(customerJobs.map((job) => job.shopId))] } : null,
+        vehicle,
+        tech,
+      });
+      if (!allowed.ok) return NextResponse.json({ error: allowed.error }, { status: 400 });
+    }
+
     const updatedWorkOrder = await prisma.workOrder.update({
       where: { id },
       data: {

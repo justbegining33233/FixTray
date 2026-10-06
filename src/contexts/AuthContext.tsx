@@ -302,6 +302,7 @@ const ROLE_HOME_MAP: Record<string, string> = {
   manager:    '/manager/home',
   tech:       '/tech/home',
   customer:   '/customer/dashboard',
+  accountant: '/shop/books',
 };
 
 // Hook for role-based access control

@@ -15,7 +15,7 @@ import { filterMenuGroups, type MenuIcon, type SidebarRole } from '@/lib/roleMen
 import { useSessionUsername } from '@/lib/useSessionUsername';
 
 interface SidebarProps {
-  role: 'shop' | 'manager' | 'tech' | 'admin' | 'superadmin';
+  role: 'shop' | 'manager' | 'tech' | 'admin' | 'superadmin' | 'accountant';
   isOpen?: boolean;
   onClose?: () => void;
   onSelectTab?: (tab: string) => void;

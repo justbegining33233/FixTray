@@ -12,12 +12,17 @@ import {
   platformFeeYear,
   shopLedger,
   shopReport,
+  owedFeeBreakdown,
   usdToCents,
   utcWeekRange,
   type BooksRow,
   type OrderInput,
 } from '@/lib/books/money';
 import { bpsFromPercent, linesFromWorkOrder, ticketPreview, ticketWasInvoiced } from '@/lib/books/parts';
+import { booksDayKey, shopWeekRange } from '@/lib/books/periods';
+import { readFeeSnapshot } from '@/lib/feeSnapshot';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { positionJobs } from '@/lib/books/truth';
 
 function monthRange(month: string): { gte: Date; lt: Date } | null {
   if (!/^\d{4}-\d{2}$/.test(month)) return null;
@@ -89,6 +94,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       estimate: true,
       partsUsed: true,
       techLabor: true,
+      completion: true,
     },
     orderBy: { createdAt: 'asc' },
   });
@@ -105,6 +111,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
     estimatedCost: order.estimatedCost,
     amountPaid: order.amountPaid,
     paymentStatus: order.paymentStatus,
+    status: order.status,
     createdAt: order.createdAt,
   }));
   const booksRows: BooksRow[] = entries.map((entry) => ({
@@ -120,7 +127,15 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
     createdAt: entry.createdAt,
   }));
   const jobs = assembleShopJobs(orderInputs, booksRows);
+  const zone = await shopTimeZone(shopId);
   const ledger = shopLedger(jobs);
+  const ledgerView = {
+    ...ledger,
+    jobs: ledger.jobs.map((job) => ({
+      ...job,
+      depositDay: job.depositAt ? booksDayKey(new Date(job.depositAt), zone) : null,
+    })),
+  };
   const report = shopReport(ledger);
   const close = monthClose(jobs);
   const taxRule = await prisma.taxRule.findFirst({
@@ -160,7 +175,8 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
     copy: SHOP_PAID_IN_FULL_COPY,
     quickBooksOwnsBooks: QUICKBOOKS_OWNS_BOOKS_COPY,
     month: month || null,
-    ledger,
+    ledger: ledgerView,
+    timeZone: zone,
     report,
     monthClose: close,
     tickets,
@@ -177,6 +193,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       .filter((row) => row.kind === 'refund' || row.kind === 'chargeback')
       .map((row) => ({
         id: row.id,
+        workOrderId: row.workOrderId,
         appliesTo: row.appliesTo === 'fee' ? 'fee' as const : 'job' as const,
         kind: row.kind === 'chargeback' ? 'chargeback' as const : 'refund' as const,
         amountCents: row.amountCents,
@@ -185,11 +202,47 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       })),
     feeYearExcluded: true,
     shopReceivedUsd: centsToUsd(ledger.shopReceivedCents),
-    fixtrayOwed: {
-      ...inPersonFeeOwed(booksRows),
-      week: inPersonFeeOwed(booksRows, utcWeekRange(new Date())),
-      weekLabel: utcWeekRange(new Date()).label,
-    },
+    figures: await shopPosition(shopId),
+    fixtrayOwed: await shopOwed(shopId, booksRows, orders),
+  };
+}
+
+async function shopPosition(shopId: string) {
+  const positions = positionJobs(await loadShopFacts(shopId));
+  return {
+    invoicedCents: positions.reduce((sum, job) => sum + job.invoicedCents, 0),
+    paidCents: positions.reduce((sum, job) => sum + job.paidCents, 0),
+    arCents: positions.reduce((sum, job) => sum + job.arCents, 0),
+    customerCreditCents: positions.reduce((sum, job) => sum + job.customerCreditCents, 0),
+    revenueCents: positions.reduce((sum, job) => sum + job.revenueCents, 0),
+    flags: [...new Set(positions.flatMap((job) => job.flags))],
+    missingInvoices: positions
+      .filter((job) => job.flags.includes('missing_invoice'))
+      .map((job) => ({ workOrderId: job.workOrderId, flags: job.flags })),
+  };
+}
+
+async function shopOwed(shopId: string, booksRows: BooksRow[], orders: Array<{ id: string; estimatedCost: number | null; completion: unknown }>) {
+  const zone = await shopTimeZone(shopId);
+  const week = shopWeekRange(new Date(), zone);
+  const owed = inPersonFeeOwed(booksRows);
+  const weekOwed = inPersonFeeOwed(booksRows, week);
+  const decorate = <T extends { workOrderId: string; feeCents: number }>(line: T) => {
+    const order = orders.find((item) => item.id === line.workOrderId);
+    const snap = readFeeSnapshot(order?.completion);
+    const jobCents = usdToCents(order?.estimatedCost || 0);
+    const breakdown = owedFeeBreakdown({
+      jobCents,
+      platformNetCents: snap?.platformFeeCents || 0,
+      storedFeeCents: line.feeCents,
+    });
+    return { ...line, ...breakdown };
+  };
+  return {
+    ...owed,
+    openLines: owed.openLines.map(decorate),
+    week: { ...weekOwed, openLines: weekOwed.openLines.map(decorate) },
+    weekLabel: week.label,
   };
 }
 

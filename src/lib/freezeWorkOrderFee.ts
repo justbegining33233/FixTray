@@ -15,6 +15,7 @@ import {
 import { getConfiguredPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { usdToCents } from '@/lib/serviceFeeBill';
 import { quoteAmount } from '@/lib/workOrderCloseout';
+import { freezeSalesTaxSnapshot, taxSettingsFromShop } from '@/lib/books/shopTax';
 
 export type FrozenCheckoutBill =
   | {
@@ -22,6 +23,7 @@ export type FrozenCheckoutBill =
       reused: boolean;
       snapshot: FixtrayFeeSnapshot;
       quoteCents: number;
+      taxCents: number;
       subtotal: number;
       serviceFee: number;
       total: number;
@@ -30,9 +32,11 @@ export type FrozenCheckoutBill =
 
 export async function freezeWorkOrderCheckoutFee(workOrder: {
   id: string;
+  shopId?: string;
   completion: unknown;
   estimatedCost?: number | null;
   estimate?: unknown;
+  partsUsed?: unknown;
 }): Promise<FrozenCheckoutBill> {
   const quoteCents = usdToCents(quoteAmount(workOrder));
   const link = await prisma.paymentLink.findFirst({
@@ -56,16 +60,35 @@ export async function freezeWorkOrderCheckoutFee(workOrder: {
     return { ok: false, status, error: frozen.error };
   }
 
+  let completion = frozen.completion;
+  let taxCents = 0;
+  if (workOrder.shopId) {
+    const settings = await prisma.shopSettings.findUnique({
+      where: { shopId: workOrder.shopId },
+      select: { taxRate: true, laborTaxable: true, partsTaxable: true },
+    }).catch(() => null);
+    const taxed = freezeSalesTaxSnapshot({
+      completion,
+      quoteCents,
+      partsUsed: workOrder.partsUsed,
+      settings: taxSettingsFromShop(settings),
+      now: new Date().toISOString(),
+    });
+    completion = taxed.completion;
+    taxCents = taxed.snapshot.taxCents;
+  }
+
   const previous = readFeeSnapshot(workOrder.completion);
   const changed = !previous
     || previous.customerFacingFeeCents !== frozen.snapshot.customerFacingFeeCents
     || previous.quoteCents !== frozen.snapshot.quoteCents
     || previous.frozenAt !== frozen.snapshot.frozenAt
-    || previous.platformFeeCents !== frozen.snapshot.platformFeeCents;
+    || previous.platformFeeCents !== frozen.snapshot.platformFeeCents
+    || taxCents > 0;
   if (changed) {
     await prisma.workOrder.update({
       where: { id: workOrder.id },
-      data: { completion: frozen.completion as Prisma.InputJsonValue },
+      data: { completion: completion as Prisma.InputJsonValue },
     });
   }
 
@@ -75,8 +98,9 @@ export async function freezeWorkOrderCheckoutFee(workOrder: {
     reused: frozen.reused,
     snapshot: frozen.snapshot,
     quoteCents,
+    taxCents,
     subtotal: bill.subtotal,
     serviceFee: bill.serviceFee,
-    total: bill.total,
+    total: Math.round((bill.total + taxCents / 100) * 100) / 100,
   };
 }

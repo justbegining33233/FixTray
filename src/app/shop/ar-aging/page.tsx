@@ -24,7 +24,7 @@ interface ARInvoice {
 
 export default function ARAgingPage() {
   const say = usePhrase();
-  const { user, isLoading } = useRequireAuth(['shop']);
+  const { user, isLoading } = useRequireAuth(['shop', 'accountant']);
   const [data, setData] = useState<ARBucket[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);

@@ -7,6 +7,8 @@ import prisma from '@/lib/prisma';
  * throw — and the UI shows a generic failure — when any of these are missing.
  *
  * Every statement is idempotent. Safe to run on every cold start.
+ * Shop-accounting tables are not created here. They come from
+ * prisma/migrations/20261006_shop_accounting when the release is promoted.
  */
 export const PRODUCTION_COLUMN_STATEMENTS = [
   `ALTER TABLE "payment_links" ADD COLUMN IF NOT EXISTS "customerName" TEXT`,
@@ -93,6 +95,9 @@ export const PRODUCTION_COLUMN_STATEMENTS = [
 let pending: Promise<void> | null = null;
 
 export function ensureProductionColumns(): Promise<void> {
+  // A production build must not touch the database. Shop-accounting tables
+  // come from prisma/migrations/20261006_shop_accounting at promote, not here.
+  if (process.env.NEXT_PHASE === 'phase-production-build') return Promise.resolve();
   if (!process.env.DATABASE_URL) return Promise.resolve();
   if (!pending) {
     pending = applyColumns().catch((error) => {

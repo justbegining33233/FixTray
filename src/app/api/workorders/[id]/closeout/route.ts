@@ -6,12 +6,21 @@ import { closeoutTransition } from '@/lib/workOrderCloseout';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { freezeWorkOrderCheckoutFee } from '@/lib/freezeWorkOrderFee';
+import { recordStatusHistory } from '@/lib/statusHistoryWrite';
 
 const CLOSEOUT_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
 
 // Do not return customerName. Production databases that have not picked up
 // the additive column otherwise fail the INSERT ... RETURNING and the shop
 // only sees "Closeout failed." Mark paid does not charge a card.
+const WORK_ORDER_VIEW = {
+  include: {
+    customer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, company: true } },
+    vehicle: { select: { id: true, vehicleType: true, make: true, model: true, year: true, vin: true, licensePlate: true } },
+    assignedTo: { select: { id: true, firstName: true, lastName: true } },
+  },
+} as const;
+
 const PAYMENT_LINK_SELECT = {
   id: true,
   token: true,
@@ -96,6 +105,13 @@ export async function POST(
       const updated = await prisma.workOrder.update({
         where: { id },
         data: { status: transition.status, paymentStatus: transition.paymentStatus },
+        ...WORK_ORDER_VIEW,
+      });
+      await recordStatusHistory({
+        workOrderId: id,
+        fromStatus: workOrder.status,
+        toStatus: transition.status,
+        reason: 'Invoice created',
       });
       return NextResponse.json({
         workOrder: updated,
@@ -125,6 +141,13 @@ export async function POST(
           paymentStatus: 'paid',
           amountPaid: transition.amount > 0 ? transition.amount : workOrder.amountPaid,
         },
+        ...WORK_ORDER_VIEW,
+      });
+      await recordStatusHistory({
+        workOrderId: id,
+        fromStatus: workOrder.status,
+        toStatus: transition.status,
+        reason: 'Marked paid',
       });
       return NextResponse.json({
         workOrder: updated,
@@ -143,6 +166,13 @@ export async function POST(
         paymentStatus: 'paid',
         completedAt: new Date(),
       },
+      ...WORK_ORDER_VIEW,
+    });
+    await recordStatusHistory({
+      workOrderId: id,
+      fromStatus: workOrder.status,
+      toStatus: transition.status,
+      reason: 'Job completed',
     });
     return NextResponse.json({
       workOrder: updated,

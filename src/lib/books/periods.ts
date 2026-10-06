@@ -63,6 +63,31 @@ export function dayKey(instant: Date, timeZone: string): string {
   return dayKeyFromParts(zonedParts(instant, timeZone));
 }
 
+/** A timestamp stored as a calendar date, with no time of day. */
+export function isUtcMidnight(instant: Date): boolean {
+  return instant.getUTCHours() === 0
+    && instant.getUTCMinutes() === 0
+    && instant.getUTCSeconds() === 0
+    && instant.getUTCMilliseconds() === 0;
+}
+
+/**
+ * Civil day for shop books.
+ * A UTC-midnight value is a date-only stamp, so the UTC calendar date is the
+ * shop day (2026-10-05T00:00:00.000Z is Oct 5, not the evening before).
+ * Any other instant uses the shop timezone.
+ */
+export function booksDayKey(instant: Date, timeZone: string): string {
+  if (isUtcMidnight(instant)) {
+    return dayKeyFromParts({
+      year: instant.getUTCFullYear(),
+      month: instant.getUTCMonth() + 1,
+      day: instant.getUTCDate(),
+    });
+  }
+  return dayKey(instant, timeZone);
+}
+
 export function monthKeyFromDay(day: string): string {
   return day.slice(0, 7);
 }
@@ -146,6 +171,34 @@ export function zonedTimeToUtc(
 export function zonedDayStart(day: string, timeZone: string): Date {
   const { year, month, day: date } = parseDay(day);
   return zonedTimeToUtc(year, month, date, 0, 0, timeZone);
+}
+
+/** Monday 00:00 through the next Monday 00:00 in the shop's timezone. */
+export function shopWeekRange(at: Date, timeZone: string): { start: Date; end: Date; label: string } {
+  const zone = reportTimeZone(timeZone);
+  const monday = mondayKey(dayKey(at, zone));
+  return {
+    start: zonedDayStart(monday, zone),
+    end: zonedDayStart(addDays(monday, 7), zone),
+    label: monday,
+  };
+}
+
+export function shopDayRange(day: string, timeZone: string): { start: Date; end: Date } {
+  const zone = reportTimeZone(timeZone);
+  return {
+    start: zonedDayStart(day, zone),
+    end: zonedDayStart(addDays(day, 1), zone),
+  };
+}
+
+/** Inclusive civil start and exclusive end for a YYYY-MM-DD pair in the shop timezone. */
+export function shopDateSpan(startDay: string, endDay: string, timeZone: string): { start: Date; end: Date } {
+  const zone = reportTimeZone(timeZone);
+  return {
+    start: zonedDayStart(startDay, zone),
+    end: zonedDayStart(addDays(endDay, 1), zone),
+  };
 }
 
 export function currentYear(timeZone: string, now = new Date()): number {

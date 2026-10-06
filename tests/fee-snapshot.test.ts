@@ -139,7 +139,7 @@ describe('checkout fee snapshot', () => {
       shopId: 'shop-1',
       jobCents: quoteCents,
       alreadyReceivedCents: 0,
-      tenderedCents: quoteCents,
+      tenderedCents: quoteCents + frozen.snapshot.customerFacingFeeCents,
       savedFeeCents: raisedPlatformFeeCents,
       customerFacingFeeCents: frozen.snapshot.customerFacingFeeCents,
       method: 'cash',
@@ -223,10 +223,12 @@ describe('in-person fee screens read stored lines', () => {
 
   it('does not read the live platform fee when a job is marked paid in person', () => {
     const pay = readFileSync(join(root, 'src/app/api/workorders/[id]/pay/route.ts'), 'utf8');
+    const counter = readFileSync(join(root, 'src/lib/books/counterPay.ts'), 'utf8');
     expect(pay).not.toContain('getConfiguredPlatformServiceFeeUsd');
     expect(pay).not.toContain('getPlatformServiceFeeUsd');
-    expect(pay).toContain('readCheckoutFeeForInPerson');
-    expect(pay).toContain('customerFacingFeeCents');
+    expect(pay).toContain('planCounterPayment');
+    expect(counter).toContain('readCheckoutFeeForInPerson');
+    expect(counter).toContain('customerFacingFeeCents');
   });
 
   it('lists each open work order on shop books and fee year-end', () => {

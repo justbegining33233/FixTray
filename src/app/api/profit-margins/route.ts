@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
+import { allocateTechRevenue, assignPartReturns, closedJobLaborMinutes, jobPartsCostCents, jobProfit, partMovementFromAudit, reorderAlerts, techProductivity } from '@/lib/books/floor';
+import { usdToCents } from '@/lib/books/money';
+import { addDays, dayKey, shopDateSpan } from '@/lib/books/periods';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { civilInRange, rangeSnapshot } from '@/lib/books/truth';
 
 export async function GET(req: NextRequest) {
   const auth = authenticateRequest(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (auth.role === 'manager') {
+  if (auth.role === 'manager' || (auth.role !== 'shop' && auth.role !== 'accountant' && auth.role !== 'admin' && auth.role !== 'superadmin')) {
     return NextResponse.json({ error: 'Shop income is not available to managers.' }, { status: 403 });
   }
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
@@ -13,69 +18,162 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const days = Number(searchParams.get('days') || 30);
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const zone = await shopTimeZone(shopId);
+  const endDay = dayKey(new Date(), zone);
+  const startDay = addDays(endDay, -(Math.max(1, days) - 1));
+  const span = shopDateSpan(startDay, endDay, zone);
+  const since = span.start;
+  const facts = await loadShopFacts(shopId);
+  const snap = rangeSnapshot(facts, span.start, span.end, zone);
+  const paidByJob = new Map<string, number>();
+  for (const job of facts) {
+    let paid = 0;
+    for (const event of job.events) {
+      if (event.kind !== 'payment' || !civilInRange(event.at, span.start, span.end, zone)) continue;
+      paid += Math.round(event.cents);
+    }
+    if (paid > 0) paidByJob.set(job.id, paid);
+  }
 
-  const orders = await prisma.workOrder.findMany({
-    where: {
-      shopId,
-      status: { in: ['closed', 'completed'] },
-      completedAt: { gte: since },
-    },
+  const paidIds = [...paidByJob.keys()];
+  const orders = paidIds.length === 0 ? [] : await prisma.workOrder.findMany({
+    where: { shopId, id: { in: paidIds } },
     include: {
-      assignedTo: { select: { firstName: true, lastName: true, hourlyRate: true } },
-      timeEntries: true,
+      assignedTo: { select: { id: true, firstName: true, lastName: true, hourlyRate: true } },
+      workOrderTimeEntries: { select: { clockIn: true, clockOut: true, hoursSpent: true } },
       customer: { select: { firstName: true, lastName: true } },
     },
     orderBy: { completedAt: 'desc' },
   });
-
-  const settings = await prisma.shopSettings.findUnique({ where: { shopId } });
-  const _markup = settings?.inventoryMarkup || 0.3;
+  const [items, stockRows] = await Promise.all([
+    prisma.inventoryItem.findMany({
+      where: { shopId },
+      select: { id: true, sku: true, costCents: true, name: true, quantity: true, reorderPoint: true, price: true },
+    }),
+    prisma.inventoryStock.findMany({
+      where: { shopId },
+      select: { id: true, sku: true, unitCost: true },
+    }),
+  ]);
+  const catalog = [
+    ...stockRows.map((item) => ({ id: item.id, sku: item.sku, costCents: usdToCents(item.unitCost) })),
+    ...items.map((item) => ({ id: item.id, sku: item.sku, costCents: item.costCents })),
+  ];
+  const audits = await prisma.auditLog.findMany({
+    where: { shopId, action: { startsWith: 'parts.' } },
+    select: { action: true, details: true, targetId: true, targetType: true },
+  }).catch(() => []);
+  const movements = assignPartReturns({
+    jobs: orders.map((order) => ({ id: order.id, partsUsed: order.partsUsed })),
+    movements: audits.flatMap((row) => {
+      const movement = partMovementFromAudit(row);
+      return movement ? [movement] : [];
+    }),
+  });
 
   const results = orders.map(wo => {
-    const revenue = wo.estimatedCost || 0;
-    // Estimate labor cost from time entries
-    const laborHours = wo.timeEntries.reduce((sum, te) => sum + (te.hoursWorked || 0), 0);
-    const laborRate = wo.assignedTo?.hourlyRate || 0;
-    const laborCost = laborHours * laborRate;
-    // Estimate parts cost from markup (partsUsed is a Json? field — already parsed by Prisma)
-    const partsCost = wo.partsUsed ? (() => {
-      const parts = wo.partsUsed as unknown;
-      return Array.isArray(parts) ? parts.reduce((sum: number, p: { cost?: number; price?: number }) => sum + (p.cost || p.price || 0), 0) : 0;
-    })() : 0;
+    const revenueCents = paidByJob.get(wo.id) || 0;
+    const laborMinutes = closedJobLaborMinutes(wo.workOrderTimeEntries);
+    const partsCostCents = jobPartsCostCents({ workOrderId: wo.id, partsUsed: wo.partsUsed, catalog, movements });
+    const rateCents = wo.assignedTo && wo.assignedTo.hourlyRate > 0 ? Math.round(wo.assignedTo.hourlyRate * 100) : null;
+    const profit = jobProfit({
+      workOrderId: wo.id,
+      revenueCents,
+      partsCostCents,
+      laborMinutes,
+      hourlyRateCents: rateCents,
+    });
+    const revenue = revenueCents / 100;
+    const laborCost = profit.laborCostCents / 100;
+    const partsCost = profit.partsCostCents / 100;
     const totalCost = laborCost + partsCost;
-    const grossProfit = revenue - totalCost;
-    const margin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
+    const grossProfit = profit.profitCents == null ? null : profit.profitCents / 100;
+    const margin = profit.profitCents == null || revenue <= 0 ? null : (profit.profitCents / revenueCents) * 100;
 
     return {
       id: wo.id,
-      customer: `${wo.customer.firstName} ${wo.customer.lastName}`,
+      customer: wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}` : 'Unknown',
       tech: wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : 'Unassigned',
       completedAt: wo.completedAt,
       revenue,
       laborCost: Math.round(laborCost * 100) / 100,
       partsCost: Math.round(partsCost * 100) / 100,
       totalCost: Math.round(totalCost * 100) / 100,
-      grossProfit: Math.round(grossProfit * 100) / 100,
-      margin: Math.round(margin * 10) / 10,
-      laborHours: Math.round(laborHours * 10) / 10,
+      grossProfit: grossProfit == null ? null : Math.round(grossProfit * 100) / 100,
+      margin: margin == null ? null : Math.round(margin * 10) / 10,
+      laborHours: Math.round(laborMinutes / 6) / 10,
+      rateNote: profit.rateNote,
     };
   });
 
-  const totals = results.reduce((acc, r) => ({
+  const priced = results.filter((row) => row.grossProfit != null);
+  const totals = priced.reduce((acc, r) => ({
     revenue: acc.revenue + r.revenue,
     cost: acc.cost + r.totalCost,
-    profit: acc.profit + r.grossProfit,
+    profit: acc.profit + (r.grossProfit || 0),
   }), { revenue: 0, cost: 0, profit: 0 });
+  const revenueAll = snap.revenueCents / 100;
+  const [clocks, billed] = await Promise.all([
+    prisma.timeEntry.findMany({
+      where: { shopId, clockIn: { gte: since }, clockOut: { not: null } },
+      select: { techId: true, hoursWorked: true, clockIn: true, clockOut: true },
+    }),
+    prisma.workOrderTimeEntry.findMany({
+      where: { shopId, clockIn: { gte: since } },
+      select: { techId: true, hoursSpent: true },
+    }),
+  ]);
+  const stock = items;
+  const productivity = techProductivity([
+    ...clocks.map((row) => ({
+      personId: row.techId,
+      clockedMinutes: Math.round((row.hoursWorked || 0) * 60),
+      billedMinutes: 0,
+    })),
+    ...billed.map((row) => ({
+      personId: row.techId,
+      clockedMinutes: 0,
+      billedMinutes: Math.round((row.hoursSpent || 0) * 60),
+    })),
+  ]);
+  const reorder = reorderAlerts(stock.map((item) => ({
+    id: item.id,
+    name: item.name,
+    quantity: item.quantity,
+    reorderPoint: item.reorderPoint,
+    workOrderIds: orders
+      .filter((order) => {
+        const blob = JSON.stringify(order.partsUsed || '');
+        return blob.includes(item.id) || (item.sku ? blob.includes(item.sku) : false);
+      })
+      .map((order) => order.id),
+  })));
+  const partMargins = stock.map((item) => ({
+    id: item.id,
+    name: item.name,
+    costCents: item.costCents,
+    sellCents: Math.round((item.price || 0) * 100),
+  }));
 
   return NextResponse.json({
     orders: results,
     summary: {
       count: results.length,
-      totalRevenue: Math.round(totals.revenue * 100) / 100,
+      totalRevenue: Math.round(revenueAll * 100) / 100,
       totalCost: Math.round(totals.cost * 100) / 100,
       totalProfit: Math.round(totals.profit * 100) / 100,
       avgMargin: totals.revenue > 0 ? Math.round((totals.profit / totals.revenue) * 1000) / 10 : 0,
+      ratesMissing: results.filter((row) => row.rateNote).length,
     },
+    productivity,
+    reorder,
+    partMargins,
+    techRevenue: allocateTechRevenue(orders.map((order) => ({
+      techId: order.assignedTo?.id || null,
+      cents: paidByJob.get(order.id) || 0,
+    }))),
+    basis: 'Shop payments in these dates. The FixTray fee is not included.',
+    from: startDay,
+    to: endDay,
   });
 }

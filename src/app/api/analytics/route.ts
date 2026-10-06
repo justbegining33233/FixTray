@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { dayKey, shopDateSpan } from '@/lib/books/periods';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { rangeSnapshot } from '@/lib/books/truth';
+import { analyticsPerformance } from '@/lib/books/floor';
 
 export async function GET(request: NextRequest) {
   // Require authenticated role for analytics.
@@ -17,11 +21,12 @@ export async function GET(request: NextRequest) {
     const startDateParam = url.searchParams.get('startDate');
     const endDateParam = url.searchParams.get('endDate');
 
-    const startDate = startDateParam ? new Date(startDateParam) : undefined;
-    const endDate = endDateParam ? new Date(endDateParam) : undefined;
-
-    const hasValidStart = !!startDate && !Number.isNaN(startDate.getTime());
-    const hasValidEnd = !!endDate && !Number.isNaN(endDate.getTime());
+    const shopZoneId = auth.role === 'shop' ? (auth.shopId || auth.id) : auth.role === 'manager' ? auth.shopId : requestedShopId;
+    const zone = shopZoneId ? await shopTimeZone(shopZoneId) : 'America/New_York';
+    const hasDay = (value: string | null) => !!value && /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const span = hasDay(startDateParam) && hasDay(endDateParam)
+      ? shopDateSpan(startDateParam as string, endDateParam as string, zone)
+      : null;
 
     // Build where clause with strict auth-scoping.
     // Shop and manager roles are always locked to their own shop.
@@ -38,11 +43,11 @@ export async function GET(request: NextRequest) {
       where.shopId = requestedShopId;
     }
 
-    if (hasValidStart || hasValidEnd) {
-      where.createdAt = {
-        ...(hasValidStart ? { gte: startDate } : {}),
-        ...(hasValidEnd ? { lte: endDate } : {}),
-      };
+    if (span) {
+      where.OR = [
+        { completedAt: { gte: span.start, lt: span.end } },
+        { createdAt: { gte: span.start, lt: span.end } },
+      ];
     }
 
     const workOrders = await prisma.workOrder.findMany({
@@ -53,16 +58,33 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate summary stats
-    const closedOrders = workOrders.filter(wo => wo.status === 'closed');
+    const closedOrders = workOrders.filter(wo => wo.status === 'closed' || wo.status === 'completed');
     const inProgressOrders = workOrders.filter(wo => wo.status === 'in-progress');
     const pendingOrders = workOrders.filter(wo => wo.status === 'pending');
 
-    // Revenue from closed orders.
-    const totalRevenue = closedOrders.reduce((sum, wo) => {
-      const est = wo.estimate as Record<string, unknown> | null;
-      return sum + (Number(est?.amount) || wo.estimatedCost || 0);
-    }, 0);
-    const averageJobValue = closedOrders.length > 0 ? totalRevenue / closedOrders.length : 0;
+    const scopedShop = typeof where.shopId === 'string' ? where.shopId : '';
+    const facts = scopedShop ? await loadShopFacts(scopedShop) : [];
+    const snap = span && facts.length >= 0
+      ? rangeSnapshot(facts, span.start, span.end, zone)
+      : null;
+    const paidByJob = new Map<string, number>();
+    for (const job of facts) {
+      let paid = 0;
+      for (const event of job.events) {
+        if (event.kind !== 'payment') continue;
+        if (span && !((new Date(event.at) >= span.start) && (new Date(event.at) < span.end))) continue;
+        paid += event.cents;
+      }
+      if (paid > 0) paidByJob.set(job.id, paid);
+    }
+    const performance = analyticsPerformance(workOrders.map((wo) => ({
+      status: wo.status,
+      techName: wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : 'Unassigned',
+      paidCents: paidByJob.get(wo.id) || 0,
+    })));
+    const totalRevenue = snap ? snap.revenueCents / 100 : performance.paidCents / 100;
+    const completedInRange = snap ? snap.completedCount : performance.completedJobs;
+        const averageJobValue = performance.paidJobCount > 0 ? (snap ? snap.revenueCents / 100 : performance.paidCents / 100) / performance.paidJobCount : 0;
 
     // Completion time
     const completionTimes = closedOrders
@@ -80,15 +102,9 @@ export async function GET(request: NextRequest) {
 
     // Tech performance
     const techPerformance: Record<string, { completed: number; totalRevenue: number; avgTime: number }> = {};
-    closedOrders.forEach(wo => {
-      const techName = wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : 'Unassigned';
-      if (!techPerformance[techName]) {
-        techPerformance[techName] = { completed: 0, totalRevenue: 0, avgTime: 0 };
-      }
-      techPerformance[techName].completed++;
-      const est = wo.estimate as Record<string, unknown> | null;
-      techPerformance[techName].totalRevenue += Number(est?.amount) || wo.estimatedCost || 0;
-    });
+    for (const row of performance.byTech) {
+      techPerformance[row.techName] = { completed: row.jobs, totalRevenue: row.paidCents / 100, avgTime: 0 };
+    }
 
     // Calculate average time per tech
     Object.keys(techPerformance).forEach(tech => {
@@ -118,11 +134,20 @@ export async function GET(request: NextRequest) {
     const revenueByDate: Record<string, number> = {};
     const completionByDate: Record<string, { sum: number; count: number }> = {};
 
+    if (snap) {
+      for (const job of facts) {
+        for (const event of job.events) {
+          if (event.kind !== 'payment' && event.kind !== 'refund' && event.kind !== 'chargeback') continue;
+          const when = new Date(event.at);
+          if (span && (when < span.start || when >= span.end)) continue;
+          const day = dayKey(when, zone);
+          const signed = event.kind === 'payment' ? event.cents : -event.cents;
+          revenueByDate[day] = (revenueByDate[day] || 0) + signed / 100;
+        }
+      }
+    }
     closedOrders.forEach((wo) => {
-      const day = new Date(wo.updatedAt).toISOString().slice(0, 10);
-      const est = wo.estimate as Record<string, unknown> | null;
-      const revenue = Number(est?.amount) || wo.estimatedCost || 0;
-      revenueByDate[day] = (revenueByDate[day] || 0) + revenue;
+      const day = dayKey(new Date(wo.completedAt || wo.updatedAt), zone);
 
       const created = new Date(wo.createdAt).getTime();
       const updated = new Date(wo.updatedAt).getTime();
@@ -150,7 +175,7 @@ export async function GET(request: NextRequest) {
     const payload = {
       summary: {
         totalOrders: workOrders.length,
-        completedJobs: closedOrders.length,
+        completedJobs: completedInRange,
         inProgressOrders: inProgressOrders.length,
         pendingOrders: pendingOrders.length,
         totalRevenue,

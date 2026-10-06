@@ -58,7 +58,7 @@ export interface MobileSection {
 }
 
 export interface MobileRoleNav {
-  id: 'superadmin' | 'shop' | 'manager' | 'tech' | 'customer';
+  id: 'superadmin' | 'shop' | 'manager' | 'tech' | 'customer' | 'accountant';
   roleLabel: string;
   homeHref: string;
   messagesHref: string;
@@ -67,7 +67,7 @@ export interface MobileRoleNav {
   more: MobileSection[];
 }
 
-export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin' | 'superadmin';
+export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin' | 'superadmin' | 'accountant';
 
 type Actor = { role?: string | null; isSuperAdmin?: boolean | null; isOwner?: boolean | null; username?: string | null } | null | undefined;
 
@@ -225,6 +225,18 @@ const techNav = buildNav('tech', {
   ],
 });
 
+const accountantNav = buildNav('accountant', {
+  roleLabel: 'Accountant',
+  homeHref: TOP_BAR.accountant.home,
+  messagesHref: TOP_BAR.accountant.messages,
+  tabs: [
+    { label: 'Books', href: '/shop/books', icon: 'dollar', match: ['/shop/books', '/shop/books/*'] },
+    { label: 'Statements', href: '/shop/accounting', icon: 'chart', match: ['/shop/accounting'] },
+    { label: 'AR', href: '/shop/ar-aging', icon: 'file', match: ['/shop/ar-aging', '/shop/ar-aging/*'] },
+    { label: 'Export', href: '/shop/accounting/exports', icon: 'file', match: ['/shop/accounting/exports'] },
+  ],
+});
+
 const customerNav = buildNav('customer', {
   roleLabel: 'Customer',
   homeHref: TOP_BAR.customer.home,
@@ -243,6 +255,7 @@ export const MOBILE_ROLE_NAVS: Record<MobileRoleNav['id'], MobileRoleNav> = {
   manager: managerNav,
   tech: techNav,
   customer: customerNav,
+  accountant: accountantNav,
 };
 
 export function isSuperAdminActor(actor: Actor): boolean {
@@ -256,7 +269,7 @@ export function shellRoleForActor(actor: Actor): ShellRole | null {
   if (!actor) return null;
   if (isSuperAdminActor(actor) || normalizeRole(actor.role) === 'admin') return 'admin';
   const role = normalizeRole(actor.role);
-  if (role === 'shop' || role === 'manager' || role === 'tech' || role === 'customer') return role;
+  if (role === 'shop' || role === 'manager' || role === 'tech' || role === 'customer' || role === 'accountant') return role;
   return null;
 }
 
@@ -274,6 +287,7 @@ export function mobileNavForActor(shellRole: ShellRole, actor: Actor): MobileRol
       actor?.username,
     );
   }
+  if (shellRole === 'accountant') return MOBILE_ROLE_NAVS.accountant;
   return MOBILE_ROLE_NAVS[shellRole] ?? null;
 }
 

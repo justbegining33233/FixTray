@@ -49,7 +49,7 @@ export async function createWorkOrderCheckoutSession(input: {
   const bill = await freezeWorkOrderCheckoutFee(workOrder);
   if (!bill.ok) return { ok: false, status: bill.status, error: bill.error };
   const split = buildConnectDestinationSplit({
-    quoteUsd: bill.subtotal,
+    quoteUsd: bill.subtotal + (bill.taxCents || 0) / 100,
     serviceFeeUsd: bill.serviceFee,
     connectedAccountId: workOrder.shop?.stripeAccountId,
   });
@@ -76,11 +76,24 @@ export async function createWorkOrderCheckoutSession(input: {
               : 'Vehicle Service'
           }`,
         },
-        unit_amount: split.quoteCents,
+        unit_amount: bill.quoteCents,
       },
       quantity: 1,
     },
   ];
+  if ((bill.taxCents || 0) > 0) {
+    lineItems.push({
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: 'Sales tax',
+          description: 'Sales tax set by the shop',
+        },
+        unit_amount: bill.taxCents,
+      },
+      quantity: 1,
+    });
+  }
   if (split.applicationFeeCents > 0) {
     lineItems.push({
       price_data: {

@@ -59,6 +59,14 @@
       return under(path, '/manager') || under(path, '/shop/new-inshop-job') || under(path, '/workorders');
     }
     if (role === 'tech') return isTechSurface(path);
+    if (role === 'accountant') {
+      return path === '/shop/books'
+        || path === '/shop/ar-aging'
+        || under(path, '/shop/ar-aging')
+        || path === '/shop/profit-margins'
+        || path === '/shop/accounting'
+        || under(path, '/shop/accounting');
+    }
     return false;
   }
 

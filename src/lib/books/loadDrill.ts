@@ -15,7 +15,8 @@ import {
   type ShopYearReport,
 } from '@/lib/books/shopDrill';
 import { usdToCents } from '@/lib/books/money';
-import { currentYear, reportTimeZone, zonedDayStart } from '@/lib/books/periods';
+import { currentYear, reportTimeZone, zonedDayStart, dayKey } from '@/lib/books/periods';
+import { shopTimeZone } from '@/lib/books/loadTruth';
 
 async function reportZone(): Promise<string> {
   try {
@@ -70,7 +71,7 @@ function personName(person: { firstName?: string | null; lastName?: string | nul
 }
 
 export async function loadShopYearDrill(shopId: string, yearInput?: number | null, now = new Date()): Promise<ShopYearReport> {
-  const timeZone = await reportZone();
+  const timeZone = await shopTimeZone(shopId);
   const year = Number.isInteger(yearInput) && (yearInput as number) >= 2000 && (yearInput as number) <= 2100
     ? (yearInput as number)
     : currentYear(timeZone, now);
@@ -104,7 +105,7 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
       where: {
         shopId,
         clockIn: { lt: end },
-        OR: [{ clockOut: null }, { clockOut: { gte: start } }],
+        clockOut: { not: null, gte: start },
       },
       select: {
         id: true,
@@ -120,7 +121,7 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
       where: {
         shopId,
         clockIn: { lt: end },
-        OR: [{ clockOut: null }, { clockOut: { gte: start } }],
+        clockOut: { not: null, gte: start },
       },
       select: {
         id: true,
@@ -177,6 +178,49 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
     const slot = firstPayment.get(entry.workOrderId);
     if (slot) slot.cents += entry.amountCents;
   }
+
+  let stockSnapshots: Array<{ day: string; valueCents: number }> = [];
+  try {
+    const snaps = await prisma.inventoryValueSnapshot.findMany({
+      where: { shopId, asOf: { gte: start, lt: end } },
+      select: { asOf: true, valueCents: true },
+    });
+    const byDay = new Map<string, number>();
+    for (const snap of snaps) {
+      const key = dayKey(snap.asOf, timeZone);
+      byDay.set(key, (byDay.get(key) || 0) + snap.valueCents);
+    }
+    stockSnapshots = [...byDay.entries()].map(([day, valueCents]) => ({ day, valueCents }));
+  } catch {
+    stockSnapshots = [];
+  }
+
+  const billedJobs = await prisma.workOrder.findMany({
+    where: {
+      shopId,
+      status: { in: ['waiting-for-payment', 'awaiting-payment', 'completed', 'closed', 'paid'] },
+    },
+    select: { id: true, estimatedCost: true, completedAt: true, createdAt: true },
+  });
+  for (const job of billedJobs) {
+    if (invoiceAt.has(job.id)) continue;
+    const at = (job.completedAt || job.createdAt).toISOString();
+    if (!civilDayInYear(at, start, end)) continue;
+    invoiceAt.set(job.id, at);
+    quoteByOrder.set(job.id, usdToCents(job.estimatedCost));
+  }
+  const [stockRows, itemRows] = await Promise.all([
+    prisma.inventoryStock.findMany({
+      where: { shopId },
+      select: { quantity: true, unitCost: true },
+    }).catch(() => []),
+    prisma.inventoryItem.findMany({
+      where: { shopId },
+      select: { quantity: true, costCents: true },
+    }).catch(() => []),
+  ]);
+  const onHandValueCents = stockRows.reduce((sum, item) => sum + Math.max(0, item.quantity) * usdToCents(item.unitCost), 0)
+    + itemRows.reduce((sum, item) => sum + Math.max(0, item.quantity) * Math.max(0, item.costCents), 0);
 
   return buildShopYear({
     year,
@@ -265,5 +309,12 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
         totalMinutes: minutes,
       };
     }),
+    stockSnapshots,
+    onHandValueCents,
   });
+}
+
+function civilDayInYear(at: string, start: Date, end: Date): boolean {
+  const instant = new Date(at);
+  return !Number.isNaN(instant.getTime()) && instant >= start && instant < end;
 }

@@ -42,6 +42,7 @@ const MONEY_FIELDS: Array<keyof ShopMoneyTotals> = [
   'depositsMatchedCents',
   'depositsUnmatchedCents',
   'missingDepositCents',
+  'customerCreditCents',
 ];
 
 function assertFeeRollup(report: FeeYearReport) {
@@ -81,42 +82,52 @@ function addFee(target: FeeTotals, source: FeeTotals) {
   for (const field of FEE_FIELDS) target[field] += source[field];
 }
 
+const DERIVED_MONEY = new Set<keyof ShopMoneyTotals>(['paidCents']);
+
+function expectActivitySums(parent: ShopMoneyTotals, children: ShopMoneyTotals[]) {
+  const sum = emptyMoney();
+  for (const child of children) addMoney(sum, child);
+  for (const field of MONEY_FIELDS) {
+    if (DERIVED_MONEY.has(field)) continue;
+    expect(sum[field]).toBe(parent[field]);
+  }
+  expect(parent.unpaidCents).toBe(children.reduce((total, child) => total + child.unpaidCents, 0));
+  expect(parent.customerCreditCents).toBe(children.reduce((total, child) => total + child.customerCreditCents, 0));
+  expect(parent.unpaidCents).toBeGreaterThanOrEqual(0);
+  expect(parent.paidCents).toBe(parent.cardCents + parent.cashCents + parent.checkCents + parent.otherCents);
+}
+
 function assertShopRollup(report: ShopYearReport) {
   expect(report.months).toHaveLength(12);
-  const monthSum = emptyMoney();
   let staff = 0;
   let work = 0;
   for (const month of report.months) {
-    const weekSum = emptyMoney();
     let monthStaff = 0;
     let monthWork = 0;
     for (const week of month.weeks) {
-      const daySum = emptyMoney();
       let weekStaff = 0;
       let weekWork = 0;
       for (const day of week.days) {
-        addMoney(daySum, day.money);
         weekStaff += day.staffMinutes;
         weekWork += day.workMinutes;
         expect(day.staff.reduce((sum, person) => sum + person.minutes, 0)).toBe(day.staffMinutes);
         expect(day.work.reduce((sum, person) => sum + person.minutes, 0)).toBe(day.workMinutes);
         for (const field of MONEY_FIELDS) expect(Number.isInteger(day.money[field])).toBe(true);
+        expectActivitySums(day.money, [day.money]);
       }
-      expect(daySum).toEqual(week.money);
+      expectActivitySums(week.money, week.days.map((day) => day.money));
       expect(weekStaff).toBe(week.staffMinutes);
       expect(weekWork).toBe(week.workMinutes);
-      addMoney(weekSum, week.money);
       monthStaff += week.staffMinutes;
       monthWork += week.workMinutes;
     }
-    expect(weekSum).toEqual(month.money);
+    expectActivitySums(month.money, month.weeks.flatMap((week) => week.days).map((day) => day.money));
     expect(monthStaff).toBe(month.staffMinutes);
     expect(monthWork).toBe(month.workMinutes);
-    addMoney(monthSum, month.money);
     staff += month.staffMinutes;
     work += month.workMinutes;
   }
-  expect(monthSum).toEqual(report.totals.money);
+  expectActivitySums(report.totals.money, report.months.flatMap((month) => month.weeks.flatMap((week) => week.days)).map((day) => day.money));
   expect(staff).toBe(report.totals.staffMinutes);
   expect(work).toBe(report.totals.workMinutes);
 }
@@ -138,6 +149,7 @@ function emptyMoney(): ShopMoneyTotals {
     depositsMatchedCents: 0,
     depositsUnmatchedCents: 0,
     missingDepositCents: 0,
+    customerCreditCents: 0,
   };
 }
 
@@ -313,7 +325,7 @@ describe('shop books drill', () => {
     expect(september?.money.invoicedCents).toBe(10000);
     expect(october?.money.invoicedCents).toBe(5000);
     expect(september?.money.paidCents).toBe(10000);
-    expect(october?.money.unpaidCents).toBe(3000);
+    expect(october?.money.unpaidCents).toBe(3400);
     expect(november?.money.refundCents).toBe(400);
     expect(october?.money.refundCents).toBe(0);
     expect(report.totals.money.refundCents).toBe(400);
@@ -381,10 +393,13 @@ describe('shop books drill', () => {
     expect(hidden.totals.money.invoicedCents).toBe(0);
     expect(hidden.totals.money.paidCents).toBe(0);
     expect(hidden.totals.money.unpaidCents).toBe(0);
-    expect(hidden.totals.money.cardCents).toBe(report.totals.money.cardCents);
-    expect(hidden.totals.money.fixtrayOwedCents).toBe(515);
-    expect(hidden.months.every((month) => month.money.invoicedCents === 0 && month.money.paidCents === 0)).toBe(true);
-    expect(hidden.months[9].money.cashCents).toBe(2000);
+    expect(hidden.totals.money.cardCents).toBe(0);
+    expect(hidden.totals.money.cashCents).toBe(0);
+    expect(hidden.totals.money.depositsMatchedCents).toBe(0);
+    expect(hidden.totals.money.fixtrayOwedCents).toBe(0);
+    expect(hidden.totals.fixtrayLines).toEqual([]);
+    expect(hidden.months.every((month) => month.money.invoicedCents === 0 && month.money.paidCents === 0 && month.fixtrayLines.length === 0)).toBe(true);
+    expect(hidden.months[9].money.cashCents).toBe(0);
   });
 });
 
@@ -439,8 +454,9 @@ describe('drill screens', () => {
     }));
     const shopHtml = renderToStaticMarkup(createElement(ShopYearDrill, { report: shop, onYear: () => undefined }));
     expect(shopHtml).toContain('Shop revenue is visible to the shop owner only.');
-    expect(shopHtml).toContain('Work order WO-2');
-    expect(shopHtml).toContain('$25.00');
+    expect(shopHtml).not.toContain('Work order WO-2');
+    expect(shopHtml).toContain('No in-person FixTray fees');
+    expect(shopHtml).not.toContain('$25.00');
     expect(shopHtml).not.toContain('Jobs invoiced');
     expect(shopHtml).toContain('No outside purchases');
     expect(shopHtml).toContain(TIPS_EMPTY);

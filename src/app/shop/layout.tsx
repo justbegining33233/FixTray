@@ -31,7 +31,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   const isDesktopMode = !(isNative || isMobile);
   const showBackToDashboard = false;
   const actorRole = normalizeRole(user?.role);
-  const shellRole = actorRole === 'manager' ? 'manager' : actorRole === 'tech' ? 'tech' : 'shop';
+  const shellRole = actorRole === 'manager' ? 'manager' : actorRole === 'tech' ? 'tech' : actorRole === 'accountant' ? 'accountant' : 'shop';
   const managerDest = !isLoading && actorRole === 'manager' ? managerShopRedirect(pathname, 'manager') : null;
 
   useEffect(() => {

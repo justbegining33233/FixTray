@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
 import { loadShopYearDrill } from '@/lib/books/loadDrill';
 import { hideShopRevenue } from '@/lib/books/shopDrill';
 import { findShopJob, loadShopBooks, saveQbMap } from '@/lib/books/loadShopBooks';
-import { inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
+import { hideManagerFeeOwed, hideManagerShopRevenue, inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
 import { createFeeSettlementCheckout } from '@/lib/feeSettlementCheckout';
 import { sendEmail } from '@/lib/emailService';
 import { ensureOpeningBalance, writeAudit, writeBooksEntries } from '@/lib/books/persist';
@@ -18,7 +19,7 @@ function processorId(value: unknown): string | null {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['shop', 'manager']);
+  const auth = requireRole(request, ['shop', 'manager', 'accountant']);
   if (auth instanceof NextResponse) return auth;
   if (!booksAccess(auth.role).shopLedger) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -33,6 +34,16 @@ export async function GET(request: NextRequest) {
   }
   const month = url.searchParams.get('month');
   const books = await loadShopBooks(shopId, month);
+  if (!booksAccess(auth.role).shopRevenue) {
+    const hidden = hideManagerShopRevenue(books);
+    return NextResponse.json({
+      ...hidden,
+      tickets: [],
+      inventory: books.inventory.map((item) => ({ ...item, unitCostCents: 0, sellUnitCents: 0 })),
+      reversals: books.reversals.map((row) => ({ ...row, amountCents: 0 })),
+      fixtrayOwed: hideManagerFeeOwed(hidden.fixtrayOwed),
+    });
+  }
   return NextResponse.json(books);
 }
 
@@ -50,6 +61,75 @@ export async function POST(request: NextRequest) {
   }
   const action = String((body as { action?: string }).action || '');
   const at = new Date().toISOString();
+
+  if (action === 'create-invoice') {
+    if (auth.role !== 'shop') return NextResponse.json({ error: 'Only the owner can create an invoice for a paid job.' }, { status: 403 });
+    const workOrderId = String((body as { workOrderId?: string }).workOrderId || '');
+    const order = await prisma.workOrder.findFirst({ where: { id: workOrderId, shopId } });
+    if (!order) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    const history = await prisma.statusHistory.findFirst({
+      where: { workOrderId, toStatus: 'waiting-for-payment' },
+      select: { id: true },
+    });
+    if (!history) {
+      await prisma.statusHistory.create({
+        data: {
+          workOrderId,
+          fromStatus: order.status || 'completed',
+          toStatus: 'waiting-for-payment',
+          reason: 'Invoice created for a paid job that had no invoice',
+        },
+      });
+    }
+    const description = `Invoice for work order ${workOrderId}`;
+    const link = await prisma.paymentLink.findFirst({
+      where: { workOrderId, description: { startsWith: 'Invoice for work order' } },
+      select: { id: true },
+    });
+    if (!link) {
+      await prisma.paymentLink.create({
+        data: {
+          shopId,
+          workOrderId,
+          customerId: order.customerId,
+          token: crypto.randomBytes(24).toString('hex'),
+          amount: order.estimatedCost || 0,
+          description,
+          status: order.paymentStatus === 'paid' ? 'paid' : 'pending',
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    } else if (order.paymentStatus === 'paid') {
+      await prisma.paymentLink.updateMany({
+        where: { workOrderId, status: 'pending' },
+        data: { status: 'paid', paidAt: new Date() },
+      });
+    }
+    return NextResponse.json({ ok: true, workOrderId, description });
+  }
+
+  if (action === 'mark-paid-links') {
+    if (auth.role !== 'shop') return NextResponse.json({ error: 'Only the owner can mark paid invoice links.' }, { status: 403 });
+    const [orders, pending] = await Promise.all([
+      prisma.workOrder.findMany({
+        where: { shopId, paymentStatus: 'paid' },
+        select: { id: true },
+      }),
+      prisma.paymentLink.findMany({
+        where: { shopId, status: 'pending', description: { startsWith: 'Invoice for work order' } },
+        select: { id: true, workOrderId: true },
+      }),
+    ]);
+    const paidIds = new Set(orders.map((order) => order.id));
+    const ids = pending.filter((link) => link.workOrderId && paidIds.has(link.workOrderId)).map((link) => link.id);
+    if (ids.length > 0) {
+      await prisma.paymentLink.updateMany({
+        where: { id: { in: ids } },
+        data: { status: 'paid', paidAt: new Date() },
+      });
+    }
+    return NextResponse.json({ ok: true, marked: ids.length });
+  }
 
   if (action === 'deposit') {
     const workOrderId = String((body as { workOrderId?: string }).workOrderId || '');

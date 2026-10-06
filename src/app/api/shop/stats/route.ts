@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { activeWorkOrderWhere, pendingApprovalWhere, resolveShopId } from '@/lib/workOrderMetrics';
-import { shopJobReceiptCents } from '@/lib/books/money';
-import { addDays, dayKey, mondayKey, zonedDayStart } from '@/lib/books/periods';
-import { reportZone } from '@/lib/books/storedFeeReport';
+import { shopWeekRange, shopDayRange, dayKey } from '@/lib/books/periods';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { rangeSnapshot } from '@/lib/books/truth';
 
 // GET - Get shop dashboard stats
 export async function GET(request: NextRequest) {
@@ -41,52 +41,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Shop access only' }, { status: 403 });
     }
 
-    const zone = await reportZone();
-    const todayKey = dayKey(new Date(), zone);
-    const today = zonedDayStart(todayKey, zone);
-    const tomorrow = zonedDayStart(addDays(todayKey, 1), zone);
-    const weekAgo = zonedDayStart(mondayKey(todayKey), zone);
+    const zone = await shopTimeZone(shopId);
+    const now = new Date();
+    const todayKey = dayKey(now, zone);
+    const today = shopDayRange(todayKey, zone);
+    const week = shopWeekRange(now, zone);
     const showRevenue = decoded.role === 'shop' || decoded.role === 'admin' || decoded.role === 'superadmin';
+    const facts = await loadShopFacts(shopId);
+    const todaySnap = rangeSnapshot(facts, today.start, today.end, zone);
+    const weekSnap = rangeSnapshot(facts, week.start, week.end, zone);
 
     // Work order stats
-    const [openJobs, completedToday, weekJobs, allJobs] = await Promise.all([
+    const [openJobs] = await Promise.all([
       prisma.workOrder.count({
         where: activeWorkOrderWhere({ shopId }),
       }),
-      prisma.workOrder.count({
-        where: {
-          shopId,
-          status: 'closed',
-          completedAt: { gte: today, lt: tomorrow },
-        },
-      }),
-      prisma.workOrder.count({
-        where: {
-          shopId,
-          completedAt: { gte: weekAgo },
-        },
-      }),
-      prisma.workOrder.findMany({
-        where: { shopId },
-        select: {
-          status: true,
-          amountPaid: true,
-          estimatedCost: true,
-          paymentStatus: true,
-          completedAt: true,
-        },
-      }),
     ]);
-
-    const receipt = (job: { amountPaid: number | null; estimatedCost: number | null; paymentStatus: string | null }) =>
-      shopJobReceiptCents(job) / 100;
-    const todayRevenue = allJobs
-      .filter(j => j.completedAt && j.completedAt >= today && j.completedAt < tomorrow)
-      .reduce((sum, j) => sum + receipt(j), 0);
-
-    const weekRevenue = allJobs
-      .filter(j => j.completedAt && j.completedAt >= weekAgo)
-      .reduce((sum, j) => sum + receipt(j), 0);
+    const completedToday = todaySnap.completedCount;
+    const weekJobs = weekSnap.completedCount;
+    const todayRevenue = todaySnap.revenueCents / 100;
+    const weekRevenue = weekSnap.revenueCents / 100;
 
     // Get team stats
     const [totalTechs, activeTechs, clockedInNow] = await Promise.all([

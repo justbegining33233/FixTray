@@ -466,6 +466,15 @@ sendWorkOrderCreatedEmail(workOrder.customer.email, workOrder.id, workOrder.shop
       },
     });
 
+    await prisma.statusHistory.create({
+      data: {
+        workOrderId: workOrder.id,
+        fromStatus: 'created',
+        toStatus: 'pending',
+        reason: 'Work order created',
+      },
+    });
+
     return NextResponse.json(workOrder, { status: 201 });
   } catch (error) {
     console.error('Error creating work order:', error);

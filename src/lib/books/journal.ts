@@ -13,6 +13,7 @@ export const SHOP_ACCOUNTS = {
   customerCredits: { code: '2200', name: 'Customer Credits', accountType: 'liability' },
   wagesPayable: { code: '2300', name: 'Wages Payable', accountType: 'liability' },
   ownerEquity: { code: '3000', name: "Owner's Equity", accountType: 'equity' },
+  openingBalanceEquity: { code: '3100', name: 'Opening Balance Equity', accountType: 'equity' },
   laborIncome: { code: '4000', name: 'Labor Income', accountType: 'income' },
   partsIncome: { code: '4100', name: 'Parts Income', accountType: 'income' },
   subletIncome: { code: '4200', name: 'Sublet Income', accountType: 'income' },
@@ -203,7 +204,7 @@ export function postInventoryAdjustment(input: { id: string; date: string; amoun
   if (input.direction === 'increase') {
     return draft('inventory_adjustment', input.id, input.date, `Inventory increase ${input.id}`, [
       line('inventory', amount, 0),
-      line('ownerEquity', 0, amount),
+      line('openingBalanceEquity', 0, amount),
     ]);
   }
   return draft('inventory_adjustment', input.id, input.date, `Inventory decrease ${input.id}`, [
@@ -218,6 +219,31 @@ export function postPartsCogs(input: { id: string; workOrderId: string; date: st
   return draft('cogs', input.id, input.date, `Parts cost ${input.workOrderId}`, [
     line('cogsParts', amount, 0, input.workOrderId),
     line('inventory', 0, amount, input.workOrderId),
+  ]);
+}
+
+/** Opening on-hand inventory, posted once. Purchases after this go through bills. */
+export function postOpeningInventory(input: { id: string; date: string; amountCents: number }): JournalDraft {
+  const amount = Math.round(input.amountCents);
+  const abs = Math.abs(amount);
+  if (amount >= 0) {
+    return draft('opening_inventory', input.id, input.date, 'Opening inventory', [
+      line('inventory', abs, 0),
+      line('openingBalanceEquity', 0, abs),
+    ]);
+  }
+  return draft('opening_inventory', input.id, input.date, 'Opening inventory', [
+    line('openingBalanceEquity', abs, 0),
+    line('inventory', 0, abs),
+  ]);
+}
+
+/** Tax the customer actually paid. It is a liability, not revenue and not AR. */
+export function postCollectedTax(input: { id: string; workOrderId: string; date: string; amountCents: number }): JournalDraft {
+  const amount = Math.max(0, Math.round(input.amountCents));
+  return draft('sales_tax', input.id, input.date, `Sales tax ${input.workOrderId}`, [
+    line('undepositedFunds', amount, 0, input.workOrderId),
+    line('salesTaxPayable', 0, amount, input.workOrderId),
   ]);
 }
 
@@ -248,6 +274,8 @@ export interface StatementTotals {
   apCents: number;
   customerCreditCents: number;
   wagesPayableCents: number;
+  openingBalanceEquityCents: number;
+  retainedEarningsCents: number;
   equityCents: number;
 }
 
@@ -269,6 +297,8 @@ export function statementTotals(entries: JournalDraft[]): StatementTotals {
   const shopSuppliesCents = net(balance, 'shopSupplies');
   const income = laborIncomeCents + partsIncomeCents + subletIncomeCents - refundsCents;
   const netIncomeCents = income - cogsCents - payrollCents - shopSuppliesCents;
+  const openingBalanceEquityCents = net(balance, 'openingBalanceEquity');
+  const ownerEquityCents = net(balance, 'ownerEquity');
   return {
     laborIncomeCents,
     partsIncomeCents,
@@ -287,7 +317,9 @@ export function statementTotals(entries: JournalDraft[]): StatementTotals {
     apCents: net(balance, 'accountsPayable'),
     customerCreditCents: net(balance, 'customerCredits'),
     wagesPayableCents: net(balance, 'wagesPayable'),
-    equityCents: net(balance, 'ownerEquity') + netIncomeCents,
+    openingBalanceEquityCents,
+    retainedEarningsCents: netIncomeCents,
+    equityCents: ownerEquityCents + openingBalanceEquityCents + netIncomeCents,
   };
 }
 
@@ -322,7 +354,9 @@ export function balanceSheetView(entries: JournalDraft[]): {
     { key: 'tax', label: 'Sales tax payable', cents: totals.salesTaxCents, side: 'liability' },
     { key: 'credit', label: 'Customer credit', cents: totals.customerCreditCents, side: 'liability' },
     { key: 'wages', label: 'Wages payable', cents: totals.wagesPayableCents, side: 'liability' },
-    { key: 'equity', label: "Owner's equity", cents: totals.equityCents, side: 'equity' },
+    { key: 'openingEquity', label: 'Opening balance equity', cents: totals.openingBalanceEquityCents, side: 'equity' },
+    { key: 'retained', label: 'Retained earnings', cents: totals.retainedEarningsCents, side: 'equity' },
+    { key: 'equity', label: "Owner's equity", cents: totals.equityCents - totals.openingBalanceEquityCents - totals.retainedEarningsCents, side: 'equity' },
   ];
   return {
     lines,

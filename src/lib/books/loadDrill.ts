@@ -105,7 +105,7 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
       where: {
         shopId,
         clockIn: { lt: end },
-        OR: [{ clockOut: null }, { clockOut: { gte: start } }],
+        clockOut: { not: null, gte: start },
       },
       select: {
         id: true,
@@ -121,7 +121,7 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
       where: {
         shopId,
         clockIn: { lt: end },
-        OR: [{ clockOut: null }, { clockOut: { gte: start } }],
+        clockOut: { not: null, gte: start },
       },
       select: {
         id: true,
@@ -194,6 +194,26 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
   } catch {
     stockSnapshots = [];
   }
+
+  const billedJobs = await prisma.workOrder.findMany({
+    where: {
+      shopId,
+      status: { in: ['waiting-for-payment', 'awaiting-payment', 'completed', 'closed', 'paid'] },
+    },
+    select: { id: true, estimatedCost: true, completedAt: true, createdAt: true },
+  });
+  for (const job of billedJobs) {
+    if (invoiceAt.has(job.id)) continue;
+    const at = (job.completedAt || job.createdAt).toISOString();
+    if (!civilDayInYear(at, start, end)) continue;
+    invoiceAt.set(job.id, at);
+    quoteByOrder.set(job.id, usdToCents(job.estimatedCost));
+  }
+  const stockRows = await prisma.inventoryStock.findMany({
+    where: { shopId },
+    select: { quantity: true, unitCost: true },
+  }).catch(() => []);
+  const onHandValueCents = stockRows.reduce((sum, item) => sum + Math.max(0, item.quantity) * usdToCents(item.unitCost), 0);
 
   return buildShopYear({
     year,
@@ -283,5 +303,11 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
       };
     }),
     stockSnapshots,
+    onHandValueCents,
   });
+}
+
+function civilDayInYear(at: string, start: Date, end: Date): boolean {
+  const instant = new Date(at);
+  return !Number.isNaN(instant.getTime()) && instant >= start && instant < end;
 }

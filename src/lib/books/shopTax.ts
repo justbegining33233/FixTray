@@ -86,7 +86,7 @@ export function partsSellCents(partsUsed: unknown): number {
   for (const part of partsUsed) {
     if (!part || typeof part !== 'object') continue;
     const row = part as Record<string, unknown>;
-    const unit = Number(row.price ?? row.sell ?? row.sellingPrice ?? 0);
+    const unit = Number(row.unitPrice ?? row.price ?? row.sell ?? row.sellingPrice ?? 0);
     const qty = Number(row.qty ?? row.quantity ?? 1);
     if (!Number.isFinite(unit) || unit <= 0) continue;
     const count = Number.isFinite(qty) && qty > 0 ? qty : 1;
@@ -165,6 +165,7 @@ export function freezeSalesTaxSnapshot(input: {
 
 /**
  * Tax for one invoice. A frozen snapshot wins over a later settings change.
+ * An invoice with no snapshot was not taxed and stays at zero.
  * Labor and parts are taxed once each. The FixTray fee is not a base.
  */
 export function taxForInvoice(input: {
@@ -184,5 +185,12 @@ export function taxForInvoice(input: {
     };
   }
   const bases = invoiceBases({ invoiceCents: input.invoiceCents, partsSellCents: input.partsSellCents });
-  return invoiceTax({ laborCents: bases.laborCents, partsCents: bases.partsCents, settings: input.settings });
+  return {
+    laborBaseCents: bases.laborCents,
+    partsBaseCents: bases.partsCents,
+    laborTaxCents: 0,
+    partsTaxCents: 0,
+    taxCents: 0,
+    ratePercent: 0,
+  };
 }

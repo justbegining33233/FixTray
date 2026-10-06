@@ -22,6 +22,11 @@ interface Statements {
     basis?: string;
     revenueCents?: number;
     netIncomeCents: number;
+    arCents?: number;
+    payrollCents?: number;
+    shopSuppliesCents?: number;
+    cashNetIncomeCents?: number;
+    retainedEarningsCents?: number;
     accrualInvoicedCents?: number;
     cogsCents: number;
     salesTaxCents: number;
@@ -120,7 +125,8 @@ export default function ShopStatements({ focus }: { focus: 'all' | 'pl' | 'balan
           <p style={{ color: '#c4a8a4' }}>{data.timeZone}. Cash basis. This revenue is the same number as Books for these dates.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(148px, 1fr))', gap: 8 }}>
             <Metric label="Cash revenue" value={money(cashRevenue)} hint="Matches Books revenue. Fee excluded." />
-            <Metric label="Net income" value={money(data.profitAndLoss.netIncomeCents)} hint="Cash revenue minus costs." />
+            <Metric label="Accounts receivable" value={money(data.books.arCents)} hint="Open invoices. Estimates are not included. Tax that was not billed is not included." />
+            <Metric label="Net income" value={money(data.profitAndLoss.netIncomeCents)} hint="Ties to retained earnings on the balance sheet." />
             <Metric label="Invoiced (accrual)" value={money(data.profitAndLoss.accrualInvoicedCents ?? data.books.invoicedCents)} hint="Invoices in these dates. Not cash revenue." />
             <Metric label="COGS" value={money(data.profitAndLoss.cogsCents)} />
             <Metric label="Sales tax payable" value={money(data.profitAndLoss.salesTaxCents)} />

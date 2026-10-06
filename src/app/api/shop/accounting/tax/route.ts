@@ -32,16 +32,15 @@ export async function GET(request: NextRequest) {
   for (const job of facts) {
     const invoice = job.events.find((event) => event.kind === 'invoice' && new Date(event.at) >= span.start && new Date(event.at) < span.end);
     if (!invoice) continue;
+    if (!job.salesTax) continue;
     const tax = taxForInvoice({
       invoiceCents: invoice.cents,
       partsSellCents: job.partsSellCents,
       settings: settingsView,
       frozen: job.salesTax,
     });
-    const laborTaxable = job.salesTax ? job.salesTax.laborTaxable : settingsView.laborTaxable;
-    const partsTaxable = job.salesTax ? job.salesTax.partsTaxable : settingsView.partsTaxable;
-    if (laborTaxable) taxableCents += tax.laborBaseCents;
-    if (partsTaxable) taxableCents += tax.partsBaseCents;
+    if (job.salesTax.laborTaxable) taxableCents += tax.laborBaseCents;
+    if (job.salesTax.partsTaxable) taxableCents += tax.partsBaseCents;
     taxCents += tax.taxCents;
   }
   return NextResponse.json({

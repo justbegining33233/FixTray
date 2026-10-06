@@ -7,14 +7,17 @@
 
 import { z } from 'zod';
 
+/** Shop ids are cuids. A UUID check rejects the ids this app saves. */
+const appId = z.string().trim().min(1).max(128);
+
 // Work Order Schemas
 export const workOrderUpdateSchema = z.object({
   issueDescription: z.string().max(5000).optional(),
   status: z.enum(['pending', 'assigned', 'in-progress', 'waiting-estimate', 'estimate-submitted', 'waiting-for-payment', 'closed', 'denied-estimate']).optional(),
   bay: z.number().int().min(1).max(999).nullable().optional(),
-  assignedTechId: z.string().uuid().nullable().optional(),
-  customerId: z.string().uuid().optional(),
-  vehicleId: z.string().uuid().nullable().optional(),
+  assignedTechId: appId.nullable().optional(),
+  customerId: appId.optional(),
+  vehicleId: appId.nullable().optional(),
   estimatedCost: z.number().min(0).optional(),
   amountPaid: z.number().min(0).optional(),
   dueDate: z.string().datetime().optional(),
@@ -92,7 +95,7 @@ export const shopSettingsUpdateSchema = z.object({
 
 // Time Entry Schema
 export const timeEntrySchema = z.object({
-  techId: z.string().uuid(),
+  techId: appId,
   clockIn: z.string().datetime().optional(),
   clockOut: z.string().datetime().optional(),
   breakStart: z.string().datetime().nullable().optional(),
@@ -125,7 +128,7 @@ export const inventoryItemUpdateSchema = z.object({
 
 // Message Schema
 export const messageSchema = z.object({
-  workOrderId: z.string().uuid(),
+  workOrderId: appId,
   sender: z.enum(['customer', 'shop', 'tech']),
   senderName: z.string().min(1).max(100),
   body: z.string().min(1).max(5000),

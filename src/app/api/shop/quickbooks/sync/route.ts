@@ -8,6 +8,7 @@ import { lockedMonths, readQboConnection, saveQboSyncResult } from '@/lib/books/
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
 import { shopDateSpan } from '@/lib/books/periods';
 import { buildQboBooksPush, postQboEntities, qboTotalsMatchBooks, reconcileShopMonth } from '@/lib/books/qboPush';
+import { bankDepositEvents } from '@/lib/books/statements';
 import { accessTokenFor } from '@/lib/books/qboSession';
 
 export const dynamic = 'force-dynamic';
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     prisma.billPayment.findMany({ where: { shopId: owner.shopId, paidAt: { gte: span.start, lt: span.end } } }),
     prisma.bankDeposit.findMany({ where: { shopId: owner.shopId, depositedAt: { gte: span.start, lt: span.end } } }),
     prisma.timeEntry.findMany({
-      where: { shopId: owner.shopId, clockIn: { gte: span.start, lt: span.end } },
+      where: { shopId: owner.shopId, clockOut: { not: null }, clockIn: { gte: span.start, lt: span.end } },
       include: { tech: { select: { firstName: true, lastName: true, hourlyRate: true } } },
     }),
   ]);
@@ -108,13 +109,21 @@ export async function POST(request: NextRequest) {
         date: row.paidAt.toISOString(),
         amountCents: row.amountCents,
       })),
-      deposits: deposits.map((row) => ({
-        id: row.id,
-        date: row.depositedAt.toISOString(),
-        amountCents: row.amountCents,
-        workOrderIds: row.workOrderIds,
-      })),
-      time: clocks.filter((row) => (row.hoursWorked || 0) > 0 && row.tech.hourlyRate > 0).map((row) => ({
+      deposits: (deposits.length > 0
+        ? deposits.map((row) => ({
+          id: row.id,
+          date: row.depositedAt.toISOString(),
+          amountCents: row.amountCents,
+          workOrderIds: row.workOrderIds,
+        }))
+        : bankDepositEvents(facts).map((row) => ({
+          id: row.id,
+          date: row.at,
+          amountCents: row.cents,
+          workOrderIds: [row.workOrderId],
+        }))
+      ),
+      time: clocks.filter((row) => row.clockOut && (row.hoursWorked || 0) > 0 && row.tech.hourlyRate > 0).map((row) => ({
         id: row.id,
         personName: `${row.tech.firstName} ${row.tech.lastName}`.trim(),
         date: row.clockIn.toISOString(),

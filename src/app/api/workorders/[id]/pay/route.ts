@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
-import { usdToCents, type InPersonMethod } from '@/lib/books/money';
+import { counterBalanceDueCents, usdToCents, type InPersonMethod } from '@/lib/books/money';
 import { planCounterPayment } from '@/lib/books/counterPay';
+import { postCollectedTax, postPayment } from '@/lib/books/journal';
+import { recordStatusHistory } from '@/lib/statusHistoryWrite';
 import { findShopJob } from '@/lib/books/loadShopBooks';
 import { writeBooksEntries } from '@/lib/books/persist';
-import { embeddedFeeCents, readFeeSnapshot } from '@/lib/feeSnapshot';
-import { postPayment } from '@/lib/books/journal';
+import { embeddedFeeCents, readCheckoutFeeForInPerson, readFeeSnapshot } from '@/lib/feeSnapshot';
 import { saveJournalDraft } from '@/lib/books/persistJournal';
 import { readSalesTaxSnapshot } from '@/lib/books/shopTax';
 import { quoteAmount } from '@/lib/workOrderCloseout';
@@ -63,16 +64,31 @@ export async function POST(
   const job = await findShopJob(workOrder.shopId, id);
   const alreadyReceivedCents = job?.shopReceivedCents || 0;
   const feeAlreadyRecorded = (job?.platformFeeCents || 0) > 0;
-  const remaining = Math.max(0, jobCents - alreadyReceivedCents);
-  const tendered = body?.amountCents == null ? remaining : Number(body.amountCents);
+  const embedded = embeddedFeeCents(link?.amount, jobCents + taxCents);
+  const preview = readCheckoutFeeForInPerson({
+    completion: workOrder.completion,
+    quoteCents: jobCents,
+    embeddedFeeCents: embedded,
+    now: at,
+  });
+  const feeCents = preview.ok ? preview.snapshot.customerFacingFeeCents : 0;
+  const due = counterBalanceDueCents({
+    jobCents,
+    alreadyReceivedCents: Math.max(0, alreadyReceivedCents),
+    feeCents,
+    taxCents,
+    feeAlreadyRecorded,
+  });
+  const tendered = body?.amountCents == null ? due.dueCents : Number(body.amountCents);
   const counter = planCounterPayment({
     workOrderId: id,
     shopId: workOrder.shopId,
     completion: workOrder.completion,
     quoteCents: jobCents,
-    embeddedFeeCents: embeddedFeeCents(link?.amount, jobCents + taxCents),
+    embeddedFeeCents: embedded,
     alreadyReceivedCents: Math.max(0, alreadyReceivedCents),
     tenderedCents: tendered,
+    taxCents,
     method: method as InPersonMethod,
     feeAlreadyRecorded,
     actorId: auth.id,
@@ -93,7 +109,7 @@ export async function POST(
     entries: planned.entries,
     audit: planned.audit,
   });
-  const jobPayment = planned.entries.find((entry) => entry.appliesTo === 'job');
+  const jobPayment = planned.entries.find((entry) => entry.appliesTo === 'job' && entry.kind === 'job_payment');
   if (jobPayment) {
     await saveJournalDraft(workOrder.shopId, auth.id, postPayment({
       id: jobPayment.idempotencyKey,
@@ -103,6 +119,26 @@ export async function POST(
       openArCents: Math.max(0, jobCents - Math.max(0, alreadyReceivedCents)),
       hasInvoice: true,
     }));
+  }
+  if (planned.taxCollectedCents > 0) {
+    await saveJournalDraft(workOrder.shopId, auth.id, postCollectedTax({
+      id: `tax:${id}:${planned.shopReceivedCents}`,
+      workOrderId: id,
+      date: at.slice(0, 10),
+      amountCents: planned.taxCollectedCents,
+    }));
+  }
+  if (planned.paymentStatus === 'paid') {
+    await prisma.paymentLink.updateMany({
+      where: { workOrderId: id, status: 'pending' },
+      data: { status: 'paid', paidAt: new Date() },
+    });
+    await recordStatusHistory({
+      workOrderId: id,
+      fromStatus: workOrder.status || 'waiting-for-payment',
+      toStatus: 'paid',
+      reason: 'Paid in person',
+    });
   }
   const updated = await prisma.workOrder.update({
     where: { id },

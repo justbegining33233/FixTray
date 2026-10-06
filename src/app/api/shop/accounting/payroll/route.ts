@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   if (!shopId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const zone = await shopTimeZone(shopId);
   const rows = await prisma.timeEntry.findMany({
-    where: { shopId },
+    where: { shopId, clockOut: { not: null } },
     include: { tech: { select: { firstName: true, lastName: true, hourlyRate: true } } },
     orderBy: { clockIn: 'asc' },
   });

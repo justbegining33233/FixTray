@@ -79,7 +79,7 @@ describe('one shop calculation', () => {
     expect(snap.cashCents).toBe(12000);
     expect(snap.completedCount).toBe(3);
     expect(snap.arCents).toBe(10000);
-    expect(snap.customerCreditCents).toBe(7000);
+    expect(snap.customerCreditCents).toBe(2000);
     expect(snap.arCents).toBeGreaterThanOrEqual(0);
     const again = rangeSnapshot(facts, week.start, week.end);
     expect(again).toEqual(snap);
@@ -92,7 +92,7 @@ describe('one shop calculation', () => {
     expect(overPosition.flags).toContain('overpayment');
     const missingPosition = positionJob(missing);
     expect(missingPosition.arCents).toBe(0);
-    expect(missingPosition.customerCreditCents).toBe(5000);
+    expect(missingPosition.customerCreditCents).toBe(0);
     expect(missingPosition.flags).toEqual(expect.arrayContaining(['missing_invoice', 'payment_without_invoice']));
     for (const row of arAging(facts, new Date(AT), ZONE)) {
       expect(row.arCents).toBeGreaterThan(0);
@@ -216,8 +216,8 @@ describe('journal, inventory, and job profit', () => {
   it('receives a vendor bill into inventory and then cost of goods', () => {
     const received = receiveInventory({ onHand: 2, unitCostCents: 100, qty: 3, billUnitCostCents: 250 });
     expect(received.qty).toBe(5);
-    expect(received.unitCostCents).toBe(250);
-    expect(received.valueCents).toBe(1250);
+    expect(received.unitCostCents).toBe(100);
+    expect(received.valueCents).toBe(500);
     const bill = postVendorBill({ id: 'bill-1', date: '2026-10-05', amountCents: 750, toInventory: true });
     const cogs = postPartsCogs({ id: 'cogs-1', workOrderId: 'wo-paid', date: '2026-10-05', amountCents: 250 });
     const entries = [bill, cogs];
@@ -406,17 +406,17 @@ describe('preview books disagreements', () => {
       workPunches: [],
     });
     expect(report.totals.money.unpaidCents).toBe(3799);
-    expect(report.totals.money.customerCreditCents).toBe(52493);
+    expect(report.totals.money.customerCreditCents).toBe(0);
     const october = report.months.find((month) => month.id === '2026-10');
     expect(october?.money.unpaidCents).toBe(3799);
-    expect(october?.money.customerCreditCents).toBe(52493);
+    expect(october?.money.customerCreditCents).toBe(0);
     const facts = [
       job({ id: 'open-ar', invoiceCents: 3799, events: [{ id: 'inv', workOrderId: 'open-ar', at: '2026-10-06T16:00:00.000Z', kind: 'invoice', cents: 3799 }] }),
       job({ id: 'seeded', invoiceCents: null, events: [{ id: 'pay', workOrderId: 'seeded', at: '2026-10-05T00:00:00.000Z', kind: 'payment', cents: 52493, method: 'card' }] }),
     ];
     const positions = facts.map(positionJob);
     expect(positions.reduce((sum, row) => sum + row.arCents, 0)).toBe(3799);
-    expect(positions.reduce((sum, row) => sum + row.customerCreditCents, 0)).toBe(52493);
+    expect(positions.reduce((sum, row) => sum + row.customerCreditCents, 0)).toBe(0);
   });
 
   it('uses shop payments for job profit and tech revenue, and inventory cost for parts', () => {
@@ -490,7 +490,7 @@ describe('preview books disagreements', () => {
     expect(planned.ok).toBe(true);
     if (!planned.ok) return;
     const deposit = planned.entries.find((entry) => entry.kind === 'deposit');
-    expect(deposit?.amountCents).toBe(4999);
+    expect(deposit?.amountCents).toBe(1999);
     const rows: BooksRow[] = [
       { id: 'prior', workOrderId: 'wo-09', kind: 'job_payment', appliesTo: 'job', amountCents: 3000, createdAt: '2026-10-05T00:00:00.000Z' },
       { id: 'old', workOrderId: 'wo-09', kind: 'deposit', appliesTo: 'job', amountCents: 3000, depositAt: '2026-10-05T00:00:00.000Z', createdAt: '2026-10-05T00:00:00.000Z' },
@@ -520,8 +520,12 @@ describe('preview books disagreements', () => {
       }),
       job({
         id: 'collected',
-        invoiceCents: null,
-        events: [{ id: 'pay', workOrderId: 'collected', at: '2026-10-05T00:00:00.000Z', kind: 'payment', cents: 21997, method: 'card' }],
+        invoiceCents: 21997,
+        invoiceAt: '2026-10-05T00:00:00.000Z',
+        events: [
+          { id: 'inv-c', workOrderId: 'collected', at: '2026-10-05T00:00:00.000Z', kind: 'invoice', cents: 21997 },
+          { id: 'pay', workOrderId: 'collected', at: '2026-10-05T00:00:00.000Z', kind: 'payment', cents: 21997, method: 'card' },
+        ],
       }),
     ];
     const span = { start: shopDayRange('2026-10-01', ZONE).start, end: shopDayRange('2026-10-06', ZONE).end };

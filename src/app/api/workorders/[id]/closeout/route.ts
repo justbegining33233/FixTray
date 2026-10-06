@@ -6,6 +6,7 @@ import { closeoutTransition } from '@/lib/workOrderCloseout';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { freezeWorkOrderCheckoutFee } from '@/lib/freezeWorkOrderFee';
+import { recordStatusHistory } from '@/lib/statusHistoryWrite';
 
 const CLOSEOUT_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
 
@@ -106,6 +107,12 @@ export async function POST(
         data: { status: transition.status, paymentStatus: transition.paymentStatus },
         ...WORK_ORDER_VIEW,
       });
+      await recordStatusHistory({
+        workOrderId: id,
+        fromStatus: workOrder.status,
+        toStatus: transition.status,
+        reason: 'Invoice created',
+      });
       return NextResponse.json({
         workOrder: updated,
         invoice: {
@@ -136,6 +143,12 @@ export async function POST(
         },
         ...WORK_ORDER_VIEW,
       });
+      await recordStatusHistory({
+        workOrderId: id,
+        fromStatus: workOrder.status,
+        toStatus: transition.status,
+        reason: 'Marked paid',
+      });
       return NextResponse.json({
         workOrder: updated,
         invoice: {
@@ -154,6 +167,12 @@ export async function POST(
         completedAt: new Date(),
       },
       ...WORK_ORDER_VIEW,
+    });
+    await recordStatusHistory({
+      workOrderId: id,
+      fromStatus: workOrder.status,
+      toStatus: transition.status,
+      reason: 'Job completed',
     });
     return NextResponse.json({
       workOrder: updated,

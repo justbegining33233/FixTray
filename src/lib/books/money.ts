@@ -1,4 +1,5 @@
 import { customerFacingServiceFeeCents } from '@/lib/serviceFeeBill';
+import { isInvoicedJobStatus } from '@/lib/books/jobStatus';
 
 /**
  * Shop job money and the platform fee ledger.
@@ -37,12 +38,17 @@ export interface BooksEntryDraft {
 export interface ShopJob {
   id: string;
   shopId: string;
+  /** Absent on older callers. Set from the work order so estimates are not unpaid. */
+  status?: string | null;
   jobCents: number;
   customerPaidJobCents: number;
   shopReceivedCents: number;
   platformFeeCents: number;
   cardJobCents: number;
+  /** Latest deposit row. A legacy row may be the running total. */
   depositCents: number | null;
+  /** Sum of deposit rows. Incremental payments add up to the shop receipt. */
+  depositTotalCents?: number | null;
   depositAt: string | null;
   openReversalIds: string[];
   standing: PaymentStanding;
@@ -83,6 +89,7 @@ export interface OrderInput {
   estimatedCost?: number | null;
   amountPaid?: number | null;
   paymentStatus?: string | null;
+  status?: string | null;
   createdAt?: string | Date | null;
 }
 
@@ -582,15 +589,18 @@ export function assembleShopJobs(orders: OrderInput[], rows: BooksRow[]): ShopJo
 
     const deposits = mine.filter((row) => row.kind === 'deposit' && String(row.status || 'posted') !== 'open');
     const deposit = deposits[deposits.length - 1];
+    const depositTotal = deposits.reduce((sum, row) => sum + row.amountCents, 0);
     return {
       id: order.id,
       shopId: order.shopId,
+      status: order.status ?? null,
       jobCents,
       customerPaidJobCents: settled,
       shopReceivedCents: settled,
       platformFeeCents: fee,
       cardJobCents: settled,
       depositCents: deposit ? deposit.amountCents : null,
+      depositTotalCents: deposits.length > 0 ? depositTotal : null,
       depositAt: deposit ? iso(deposit.depositAt) : null,
       openReversalIds: openIds,
       standing: standingFor({ jobCents, shopReceivedCents: settled, hadJobReversal }),
@@ -614,6 +624,8 @@ export function shopLedger(jobs: ShopJob[]): ShopLedger {
     customerPaid += job.shopReceivedCents;
     fee += job.platformFeeCents;
     const remaining = Math.max(0, job.jobCents - job.shopReceivedCents);
+    const receivable = job.status == null || isInvoicedJobStatus(job.status);
+    if (!receivable) continue;
     if (job.standing === 'unpaid') {
       standing.unpaid.count += 1;
       standing.unpaid.remainingCents += remaining;
@@ -637,6 +649,66 @@ export function shopLedger(jobs: ShopJob[]): ShopLedger {
     shopTotalCents: customerPaid,
     feeDeductedFromShop: false,
     standing,
+  };
+}
+
+/** Shop revenue stays with the owner and the accountant. */
+export function hideManagerShopRevenue<T extends {
+  report: ShopReport;
+  ledger: ShopLedger;
+  shopReceivedUsd?: number;
+  figures?: {
+    invoicedCents: number;
+    paidCents: number;
+    arCents: number;
+    customerCreditCents: number;
+    revenueCents: number;
+  } | null;
+}>(books: T): T {
+  const jobs = books.ledger.jobs.map((job) => ({
+    ...job,
+    jobCents: 0,
+    customerPaidJobCents: 0,
+    shopReceivedCents: 0,
+    cardJobCents: 0,
+    platformFeeCents: 0,
+    depositCents: job.depositCents == null ? null : 0,
+  }));
+  return {
+    ...books,
+    shopReceivedUsd: 0,
+    report: {
+      ...books.report,
+      customerPaidJobCents: 0,
+      shopReceivedCents: 0,
+      shopTotalCents: 0,
+      unpaidCents: 0,
+      partialCents: 0,
+      paidCents: 0,
+      platformFeeCents: 0,
+    },
+    ledger: {
+      ...books.ledger,
+      customerPaidJobCents: 0,
+      shopReceivedCents: 0,
+      platformFeeCents: 0,
+      shopTotalCents: 0,
+      jobs,
+      standing: {
+        unpaid: { count: books.ledger.standing.unpaid.count, remainingCents: 0 },
+        partial: { count: books.ledger.standing.partial.count, remainingCents: 0, paidCents: 0 },
+        paid: { count: books.ledger.standing.paid.count, paidCents: 0 },
+        reversed: { count: books.ledger.standing.reversed.count, reversedCents: 0 },
+      },
+    },
+    figures: books.figures ? {
+      ...books.figures,
+      invoicedCents: 0,
+      paidCents: 0,
+      arCents: 0,
+      customerCreditCents: 0,
+      revenueCents: 0,
+    } : books.figures,
   };
 }
 
@@ -673,9 +745,13 @@ export function depositLinesUp(job: ShopJob): { ok: true } | { ok: false; reason
     if (job.depositCents != null && job.depositCents > 0) return { ok: false, reason: 'deposit_without_shop_receipt' };
     return { ok: true };
   }
-  if (job.depositCents == null || !job.depositAt) return { ok: false, reason: 'missing_deposit' };
-  if (job.depositCents !== job.shopReceivedCents) return { ok: false, reason: 'deposit_amount_mismatch' };
-  return { ok: true };
+  if ((job.depositCents == null && job.depositTotalCents == null) || !job.depositAt) {
+    return { ok: false, reason: 'missing_deposit' };
+  }
+  const last = job.depositCents;
+  const total = job.depositTotalCents == null ? last : job.depositTotalCents;
+  if (last === job.shopReceivedCents || total === job.shopReceivedCents) return { ok: true };
+  return { ok: false, reason: 'deposit_amount_mismatch' };
 }
 
 export function monthClose(jobs: ShopJob[]): MonthClose {
@@ -683,7 +759,8 @@ export function monthClose(jobs: ShopJob[]): MonthClose {
   const openRefunds: MonthCloseIssue[] = [];
   const unpaid: MonthCloseIssue[] = [];
   for (const job of jobs) {
-    if (job.standing === 'unpaid' || job.standing === 'partial') {
+    const receivable = job.status == null || isInvoicedJobStatus(job.status);
+    if (receivable && (job.standing === 'unpaid' || job.standing === 'partial')) {
       unpaid.push({ id: job.id, reason: job.standing });
     }
     for (const id of job.openReversalIds) openRefunds.push({ id, reason: 'open_refund' });
@@ -853,10 +930,35 @@ export interface InPersonPlan {
   customerPaidJobCents: number;
   shopReceivedCents: number;
   platformFeeCents: number;
+  /** Sales tax collected in this tender. It is not shop revenue and not AR. */
+  taxCollectedCents: number;
   standing: PaymentStanding;
   paymentStatus: 'paid' | 'pending' | 'unpaid';
   feeDeductedFromShop: false;
   audit: BooksAuditEvent;
+}
+
+/**
+ * Cash or check at the counter. The customer pays the job, the FixTray fee
+ * on top, and sales tax on top, minus what is already collected.
+ */
+export function counterBalanceDueCents(input: {
+  jobCents: number;
+  alreadyReceivedCents: number;
+  feeCents: number;
+  taxCents: number;
+  feeAlreadyRecorded?: boolean;
+  taxAlreadyCollectedCents?: number;
+}): { dueCents: number; jobRemainingCents: number; feeDueCents: number; taxDueCents: number } {
+  const jobRemainingCents = Math.max(0, Math.round(input.jobCents) - Math.round(input.alreadyReceivedCents));
+  const feeDueCents = input.feeAlreadyRecorded ? 0 : Math.max(0, Math.round(input.feeCents || 0));
+  const taxDueCents = Math.max(0, Math.round(input.taxCents || 0) - Math.round(input.taxAlreadyCollectedCents || 0));
+  return {
+    dueCents: jobRemainingCents + feeDueCents + taxDueCents,
+    jobRemainingCents,
+    feeDueCents,
+    taxDueCents,
+  };
 }
 
 /**
@@ -909,6 +1011,9 @@ export function planInPersonPayment(input: {
   savedFeeCents: number;
   /** Exact customer fee from the checkout snapshot. Not recomputed. */
   customerFacingFeeCents?: number | null;
+  /** Sales tax frozen on the invoice. Collected on top of the job. */
+  taxCents?: number | null;
+  taxAlreadyCollectedCents?: number | null;
   method: InPersonMethod;
   feeAlreadyRecorded: boolean;
   actorId: string;
@@ -921,29 +1026,50 @@ export function planInPersonPayment(input: {
   if (job <= 0) return { ok: false, error: 'The shop job amount is missing' };
   if (already > job) return { ok: false, error: 'This job is already paid past the shop total' };
   if (tendered <= 0) return { ok: false, error: 'Enter the amount the customer paid' };
-  const remaining = job - already;
-  if (tendered > remaining) {
-    return { ok: false, error: 'That amount is more than the shop still has coming' };
+  const storedFee = input.customerFacingFeeCents == null ? 0 : cents(input.customerFacingFeeCents, 'customer fee');
+  const due = counterBalanceDueCents({
+    jobCents: job,
+    alreadyReceivedCents: already,
+    feeCents: storedFee,
+    taxCents: input.taxCents || 0,
+    feeAlreadyRecorded: input.feeAlreadyRecorded,
+    taxAlreadyCollectedCents: input.taxAlreadyCollectedCents || 0,
+  });
+  if (tendered > due.dueCents) {
+    return { ok: false, error: 'That amount is more than the balance due' };
   }
-  const shopReceived = already + tendered;
+  const jobPortion = Math.min(tendered, due.jobRemainingCents);
+  const taxCollectedCents = Math.min(tendered - jobPortion, due.taxDueCents);
+  const shopReceived = already + jobPortion;
   const standing = standingFor({ jobCents: job, shopReceivedCents: shopReceived, hadJobReversal: false });
   const platformFee = standing === 'paid' && !input.feeAlreadyRecorded
     ? (input.customerFacingFeeCents == null
       ? customerFacingServiceFeeCents(job, savedFee)
-      : cents(input.customerFacingFeeCents, 'customer fee'))
+      : storedFee)
     : 0;
-  const entries: BooksEntryDraft[] = [
-    {
+  const entries: BooksEntryDraft[] = [];
+  if (jobPortion > 0) {
+    entries.push({
       kind: 'job_payment',
       appliesTo: 'job',
-      amountCents: tendered,
+      amountCents: jobPortion,
       status: 'posted',
       idempotencyKey: `inperson:${input.workOrderId}:job:${shopReceived}`,
       sourceId: null,
       depositAt: null,
       note: `in-person ${input.method}`,
-    },
-  ];
+    });
+    entries.push({
+      kind: 'deposit',
+      appliesTo: 'job',
+      amountCents: jobPortion,
+      status: 'posted',
+      idempotencyKey: `inperson-deposit:${input.workOrderId}:${shopReceived}`,
+      sourceId: null,
+      depositAt: input.at,
+      note: `in-person ${input.method}; shop receipt ${jobPortion} cents`,
+    });
+  }
   if (platformFee > 0) {
     entries.push({
       kind: 'job_payment',
@@ -956,22 +1082,13 @@ export function planInPersonPayment(input: {
       note: `in-person ${input.method}; platform fee; not a shop expense`,
     });
   }
-  entries.push({
-    kind: 'deposit',
-    appliesTo: 'job',
-    amountCents: shopReceived,
-    status: 'posted',
-    idempotencyKey: `inperson-deposit:${input.workOrderId}:${shopReceived}`,
-    sourceId: null,
-    depositAt: input.at,
-    note: `in-person ${input.method}; shop receipt ${shopReceived} cents`,
-  });
   return {
     ok: true,
     entries,
     customerPaidJobCents: shopReceived,
     shopReceivedCents: shopReceived,
     platformFeeCents: platformFee,
+    taxCollectedCents,
     standing,
     paymentStatus: (() => {
       const status = paymentStatusForStanding(standing);
@@ -985,7 +1102,7 @@ export function planInPersonPayment(input: {
       targetType: 'work_order',
       targetId: input.workOrderId,
       shopId: input.shopId,
-      details: `in-person ${input.method}; job ${tendered} cents; shop received ${shopReceived} cents; platform fee ${platformFee} cents; fee not deducted from shop`,
+      details: `in-person ${input.method}; job ${jobPortion} cents; tax ${taxCollectedCents} cents; shop received ${shopReceived} cents; platform fee ${platformFee} cents; fee not deducted from shop`,
     }),
   };
 }

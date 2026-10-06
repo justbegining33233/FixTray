@@ -6,7 +6,7 @@ import { booksAccess, shopIdForBooks } from '@/lib/books/access';
 import { loadShopYearDrill } from '@/lib/books/loadDrill';
 import { hideShopRevenue } from '@/lib/books/shopDrill';
 import { findShopJob, loadShopBooks, saveQbMap } from '@/lib/books/loadShopBooks';
-import { inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
+import { hideManagerShopRevenue, inPersonFeeInvoice, planAllocatedReversal, planDeposit, usdToCents } from '@/lib/books/money';
 import { createFeeSettlementCheckout } from '@/lib/feeSettlementCheckout';
 import { sendEmail } from '@/lib/emailService';
 import { ensureOpeningBalance, writeAudit, writeBooksEntries } from '@/lib/books/persist';
@@ -34,6 +34,22 @@ export async function GET(request: NextRequest) {
   }
   const month = url.searchParams.get('month');
   const books = await loadShopBooks(shopId, month);
+  if (!booksAccess(auth.role).shopRevenue) {
+    const hidden = hideManagerShopRevenue(books);
+    return NextResponse.json({
+      ...hidden,
+      tickets: [],
+      fixtrayOwed: {
+        ...hidden.fixtrayOwed,
+        owedCents: 0,
+        openLines: [],
+        collectedCents: 0,
+        accruedCents: 0,
+        settledCents: 0,
+        week: { ...hidden.fixtrayOwed.week, owedCents: 0, openLines: [], collectedCents: 0, accruedCents: 0, settledCents: 0 },
+      },
+    });
+  }
   return NextResponse.json(books);
 }
 

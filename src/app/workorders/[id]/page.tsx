@@ -12,6 +12,9 @@ import {
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
+import { counterBalanceDueCents } from '@/lib/books/money';
+import { readFeeSnapshot } from '@/lib/feeSnapshot';
+import { readSalesTaxSnapshot } from '@/lib/books/shopTax';
 import { workOrderNotificationId } from '@/lib/notificationInbox';
 import { saveSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
 import { markWorkOrderThreadSeen } from '@/lib/markWorkOrderThreadSeen';
@@ -44,6 +47,7 @@ type WorkOrder = {
   dueDate?: string | null; createdAt: string; shopId?: string;
   repairs?: unknown; maintenance?: unknown; partsMaterials?: unknown;
   partsUsed?: unknown; techLabor?: unknown; estimate?: unknown; location?: unknown;
+  completion?: unknown;
   /** Live PlatformConfig fee (USD) attached by GET /api/workorders/[id]. */
   fixtrayServiceFee?: number;
   customer?: { id: string; firstName: string; lastName: string; email?: string; phone?: string; company?: string };
@@ -975,8 +979,16 @@ export default function WorkOrderDetailPage() {
                         type="button"
                         disabled={payBusy}
                         onClick={() => {
-                          const remaining = Math.max(0, (wo.estimatedCost || 0) - (wo.amountPaid || 0));
-                          setPayDraft({ method, amount: remaining.toFixed(2) });
+                          const jobCents = Math.round((wo.estimatedCost || 0) * 100);
+                          const already = Math.min(jobCents, Math.round((wo.amountPaid || 0) * 100));
+                          const due = counterBalanceDueCents({
+                            jobCents,
+                            alreadyReceivedCents: already,
+                            feeCents: readFeeSnapshot(wo.completion)?.customerFacingFeeCents || 0,
+                            taxCents: readSalesTaxSnapshot(wo.completion)?.taxCents || 0,
+                            feeAlreadyRecorded: wo.paymentStatus === 'paid',
+                          });
+                          setPayDraft({ method, amount: (due.dueCents / 100).toFixed(2) });
                         }}
                         style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}
                       >
@@ -987,7 +999,7 @@ export default function WorkOrderDetailPage() {
                   {payDraft && (
                     <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
                       <div style={{ fontSize: 13, marginBottom: 8 }}>
-                        {payDraft.method === 'cash' ? 'Cash' : payDraft.method === 'check' ? 'Check' : 'Other'} records ${payDraft.amount || '0.00'}. That starts as the balance after deposits. Confirm or change it before it is saved.
+                        {payDraft.method === 'cash' ? 'Cash' : payDraft.method === 'check' ? 'Check' : 'Other'} records ${payDraft.amount || '0.00'}. That starts as the job plus the FixTray fee plus sales tax, after deposits. Confirm or change it before it is saved.
                       </div>
                       <input
                         type="number"

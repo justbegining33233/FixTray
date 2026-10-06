@@ -16,6 +16,8 @@ export function planCounterPayment(input: {
   embeddedFeeCents?: number | null;
   alreadyReceivedCents: number;
   tenderedCents: number;
+  taxCents?: number | null;
+  taxAlreadyCollectedCents?: number | null;
   method: CounterMethod;
   feeAlreadyRecorded: boolean;
   actorId: string;
@@ -36,6 +38,8 @@ export function planCounterPayment(input: {
     tenderedCents: input.tenderedCents,
     savedFeeCents: 0,
     customerFacingFeeCents: frozen.snapshot.customerFacingFeeCents,
+    taxCents: input.taxCents,
+    taxAlreadyCollectedCents: input.taxAlreadyCollectedCents,
     method: input.method,
     feeAlreadyRecorded: input.feeAlreadyRecorded,
     actorId: input.actorId,

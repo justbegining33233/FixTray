@@ -3,10 +3,9 @@ import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
 import { shopDateSpan } from '@/lib/books/periods';
-import { rangeSnapshot } from '@/lib/books/truth';
-import { balanceSheetView, postInventoryAdjustment, statementTotals, trialBalance } from '@/lib/books/journal';
-import { cashBasisIncome, journalForFacts } from '@/lib/books/statements';
-import { taxSettingsFromShop } from '@/lib/books/shopTax';
+import { cashBasisIncome, bankDepositEvents, buildShopStatement, periodCogsCents } from '@/lib/books/statements';
+import { closedPayrollGrossCents, inventoryOnHandValueCents, partsCostFromUsage } from '@/lib/books/floor';
+import { usdToCents } from '@/lib/books/money';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -25,41 +24,104 @@ export async function GET(request: NextRequest) {
   }
   const zone = await shopTimeZone(shopId);
   const span = shopDateSpan(from, to, zone);
-  const [facts, settings] = await Promise.all([
-    loadShopFacts(shopId),
-    prisma.shopSettings.findUnique({ where: { shopId }, select: { taxRate: true, laborTaxable: true, partsTaxable: true } }).catch(() => null),
+  const facts = await loadShopFacts(shopId);
+  const [stock, orders, punches, bills, billPays, bankRows, taxRows] = await Promise.all([
+    prisma.inventoryStock.findMany({ where: { shopId }, select: { id: true, sku: true, quantity: true, unitCost: true } }).catch(() => []),
+    prisma.workOrder.findMany({
+      where: { shopId },
+      select: { id: true, status: true, completedAt: true, partsUsed: true, createdAt: true },
+    }).catch(() => []),
+    prisma.timeEntry.findMany({
+      where: { shopId, clockOut: { not: null } },
+      select: { id: true, techId: true, clockOut: true, hoursWorked: true, tech: { select: { hourlyRate: true } } },
+    }).catch(() => []),
+    prisma.vendorBill.findMany({
+      where: { shopId },
+      select: { id: true, billDate: true, lines: { select: { amountCents: true, inventoryItemId: true } } },
+    }).catch(() => []),
+    prisma.billPayment.findMany({
+      where: { shopId },
+      select: { id: true, paidAt: true, amountCents: true },
+    }).catch(() => []),
+    prisma.bankDeposit.findMany({
+      where: { shopId },
+      select: { id: true, depositedAt: true, amountCents: true },
+    }).catch(() => []),
+    prisma.journalEntry.findMany({
+      where: { shopId, sourceType: 'sales_tax' },
+      select: {
+        id: true,
+        entryDate: true,
+        lines: { select: { accountKey: true, creditCents: true, workOrderId: true } },
+      },
+    }).catch(() => []),
   ]);
-  const tax = taxSettingsFromShop(settings);
-  const periodEntries = journalForFacts(facts, span.start, span.end, tax, zone);
-  const asOfEntries = journalForFacts(facts, new Date('2000-01-01T00:00:00.000Z'), span.end, tax, zone);
-  const books = rangeSnapshot(facts, span.start, span.end, zone);
-  const period = statementTotals(periodEntries);
+  const catalog = stock.map((item) => ({ id: item.id, sku: item.sku, costCents: usdToCents(item.unitCost) }));
+  const partsCost = orders
+    .filter((order) => order.status === 'completed' || order.status === 'closed')
+    .map((order) => ({
+      id: `cogs:${order.id}`,
+      workOrderId: order.id,
+      at: (order.completedAt || order.createdAt).toISOString(),
+      cents: partsCostFromUsage({ partsUsed: order.partsUsed, catalog }),
+    }))
+    .filter((row) => row.cents > 0);
+  const payroll = punches
+    .filter((row) => row.clockOut)
+    .map((row) => ({
+      id: `payroll:${row.id}`,
+      personId: row.techId,
+      at: row.clockOut ? row.clockOut.toISOString() : to,
+      cents: closedPayrollGrossCents([{ clockOut: row.clockOut, hoursWorked: row.hoursWorked, hourlyRate: row.tech.hourlyRate }]),
+    }))
+    .filter((row) => row.cents > 0);
+  const billLines = bills.map((bill) => ({
+    id: bill.id,
+    at: bill.billDate.toISOString(),
+    cents: bill.lines.reduce((sum, line) => sum + line.amountCents, 0),
+    toInventory: bill.lines.some((line) => Boolean(line.inventoryItemId)),
+  }));
+  const bankDeposits = bankRows.length > 0
+    ? bankRows.map((row) => ({ id: row.id, at: row.depositedAt.toISOString(), cents: row.amountCents }))
+    : bankDepositEvents(facts);
+  const collectedTax = taxRows.map((entry) => ({
+    id: entry.id,
+    workOrderId: entry.lines.find((line) => line.workOrderId)?.workOrderId || entry.id,
+    at: entry.entryDate.toISOString(),
+    cents: entry.lines
+      .filter((line) => line.accountKey === 'salesTaxPayable')
+      .reduce((sum, line) => sum + line.creditCents, 0),
+  })).filter((row) => row.cents > 0);
+  const statement = buildShopStatement({
+    jobs: facts,
+    timeZone: zone,
+    from: span.start,
+    to: span.end,
+    partsCost,
+    payroll,
+    bills: billLines,
+    billPayments: billPays.map((row) => ({ id: row.id, at: row.paidAt.toISOString(), cents: row.amountCents })),
+    bankDeposits,
+    collectedTax,
+    inventoryValueCents: inventoryOnHandValueCents(stock.map((item) => ({
+      quantity: item.quantity,
+      unitCostCents: usdToCents(item.unitCost),
+    }))),
+  });
+  const books = statement.books;
+  const periodCogs = periodCogsCents(partsCost, span.start, span.end, zone);
+  const periodPayroll = payroll.reduce((sum, row) => {
+    const at = new Date(row.at);
+    return at >= span.start && at < span.end ? sum + row.cents : sum;
+  }, 0);
   const cash = cashBasisIncome({
     revenueCents: books.revenueCents,
-    cogsCents: period.cogsCents,
-    payrollCents: period.payrollCents,
-    shopSuppliesCents: period.shopSuppliesCents,
+    cogsCents: periodCogs,
+    payrollCents: periodPayroll,
+    shopSuppliesCents: statement.period.shopSuppliesCents,
   });
-  let inventoryCents = 0;
-  try {
-    const items = await prisma.inventoryItem.findMany({
-      where: { shopId },
-      select: { quantity: true, costCents: true },
-    });
-    inventoryCents = items.reduce((sum, item) => sum + Math.max(0, item.quantity) * Math.max(0, item.costCents || 0), 0);
-  } catch {
-    inventoryCents = 0;
-  }
-  if (inventoryCents > 0) {
-    asOfEntries.push(postInventoryAdjustment({
-      id: `inventory:${shopId}:${to}`,
-      date: to,
-      amountCents: inventoryCents,
-      direction: 'increase',
-    }));
-  }
-  const sheet = balanceSheetView(asOfEntries);
-  const balance = trialBalance(asOfEntries);
+  const sheet = statement.sheet;
+  const balance = statement.trial;
   return NextResponse.json({
     from,
     to,
@@ -74,13 +136,20 @@ export async function GET(request: NextRequest) {
       customerCreditCents: books.customerCreditCents,
     },
     profitAndLoss: {
-      ...period,
-      basis: cash.basis,
+      basis: 'accrual',
       revenueCents: cash.revenueCents,
-      netIncomeCents: cash.netIncomeCents,
-      accrualInvoicedCents: books.invoicedCents,
-      accrualNetIncomeCents: period.netIncomeCents,
-      note: cash.note,
+      cogsCents: periodCogs,
+      payrollCents: periodPayroll,
+      shopSuppliesCents: statement.period.shopSuppliesCents,
+      salesTaxCents: statement.asOf.salesTaxCents,
+      arCents: statement.arCents,
+      customerCreditCents: statement.customerCreditCents,
+      cashNetIncomeCents: cash.netIncomeCents,
+      netIncomeCents: statement.asOf.retainedEarningsCents,
+      retainedEarningsCents: statement.asOf.retainedEarningsCents,
+      accrualInvoicedCents: statement.asOf.laborIncomeCents + statement.asOf.partsIncomeCents + statement.asOf.subletIncomeCents,
+      accrualNetIncomeCents: statement.asOf.retainedEarningsCents,
+      note: 'Cash revenue matches Books. Net income is retained earnings on the balance sheet. The FixTray fee is not included.',
     },
     balanceSheet: sheet,
     balanceSheetBalances: sheet.balanced,

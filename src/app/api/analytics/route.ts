@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/middleware';
 import { dayKey, shopDateSpan } from '@/lib/books/periods';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
 import { rangeSnapshot } from '@/lib/books/truth';
+import { analyticsPerformance } from '@/lib/books/floor';
 
 export async function GET(request: NextRequest) {
   // Require authenticated role for analytics.
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate summary stats
-    const closedOrders = workOrders.filter(wo => wo.status === 'closed');
+    const closedOrders = workOrders.filter(wo => wo.status === 'closed' || wo.status === 'completed');
     const inProgressOrders = workOrders.filter(wo => wo.status === 'in-progress');
     const pendingOrders = workOrders.filter(wo => wo.status === 'pending');
 
@@ -66,9 +67,24 @@ export async function GET(request: NextRequest) {
     const snap = span && facts.length >= 0
       ? rangeSnapshot(facts, span.start, span.end, zone)
       : null;
-    const totalRevenue = snap ? snap.revenueCents / 100 : closedOrders.reduce((sum, wo) => sum + (wo.estimatedCost || 0), 0);
-    const completedInRange = snap ? snap.completedCount : closedOrders.length;
-    const averageJobValue = closedOrders.length > 0 ? totalRevenue / closedOrders.length : 0;
+    const paidByJob = new Map<string, number>();
+    for (const job of facts) {
+      let paid = 0;
+      for (const event of job.events) {
+        if (event.kind !== 'payment') continue;
+        if (span && !((new Date(event.at) >= span.start) && (new Date(event.at) < span.end))) continue;
+        paid += event.cents;
+      }
+      if (paid > 0) paidByJob.set(job.id, paid);
+    }
+    const performance = analyticsPerformance(workOrders.map((wo) => ({
+      status: wo.status,
+      techName: wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : 'Unassigned',
+      paidCents: paidByJob.get(wo.id) || 0,
+    })));
+    const totalRevenue = snap ? snap.revenueCents / 100 : performance.paidCents / 100;
+    const completedInRange = snap ? snap.completedCount : performance.completedJobs;
+    const averageJobValue = performance.completedJobs > 0 ? (snap ? snap.revenueCents / 100 : performance.paidCents / 100) / performance.completedJobs : 0;
 
     // Completion time
     const completionTimes = closedOrders
@@ -86,15 +102,9 @@ export async function GET(request: NextRequest) {
 
     // Tech performance
     const techPerformance: Record<string, { completed: number; totalRevenue: number; avgTime: number }> = {};
-    closedOrders.forEach(wo => {
-      const techName = wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}` : 'Unassigned';
-      if (!techPerformance[techName]) {
-        techPerformance[techName] = { completed: 0, totalRevenue: 0, avgTime: 0 };
-      }
-      techPerformance[techName].completed++;
-      const est = wo.estimate as Record<string, unknown> | null;
-      techPerformance[techName].totalRevenue += Number(est?.amount) || wo.estimatedCost || 0;
-    });
+    for (const row of performance.byTech) {
+      techPerformance[row.techName] = { completed: row.jobs, totalRevenue: row.paidCents / 100, avgTime: 0 };
+    }
 
     // Calculate average time per tech
     Object.keys(techPerformance).forEach(tech => {

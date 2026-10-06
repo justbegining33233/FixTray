@@ -111,6 +111,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
     estimatedCost: order.estimatedCost,
     amountPaid: order.amountPaid,
     paymentStatus: order.paymentStatus,
+    status: order.status,
     createdAt: order.createdAt,
   }));
   const booksRows: BooksRow[] = entries.map((entry) => ({

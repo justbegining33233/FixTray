@@ -62,6 +62,16 @@ export async function POST(
       estimate: { ...priorEstimate, counterSignToken },
     },
   });
+  if (workOrder.status !== 'estimate-submitted') {
+    await prisma.statusHistory.create({
+      data: {
+        workOrderId: id,
+        fromStatus: workOrder.status || 'pending',
+        toStatus: 'estimate-submitted',
+        reason: 'Estimate submitted',
+      },
+    });
+  }
 
   await prisma.workAuthorization.deleteMany({
     where: { workOrderId: id, status: 'pending' },

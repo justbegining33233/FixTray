@@ -88,14 +88,15 @@ export async function GET(request: NextRequest) {
       where: {
         shopId,
         clockIn: { gte: startOfDay, lt: endOfDay },
+        clockOut: { not: null },
       },
       include: {
         tech: { select: { firstName: true, lastName: true } },
       },
     });
 
-    const techHours = timeEntries.map(entry => {
-      const clockOut = entry.clockOut || new Date();
+    const techHours = timeEntries.filter((entry) => entry.clockOut).map(entry => {
+      const clockOut = entry.clockOut as Date;
       const hours = (clockOut.getTime() - entry.clockIn.getTime()) / (1000 * 60 * 60);
       return {
         techName: `${entry.tech.firstName} ${entry.tech.lastName}`,

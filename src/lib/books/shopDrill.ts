@@ -463,6 +463,8 @@ export function buildShopYear(input: {
   staffPunches: ShopPunch[];
   workPunches: ShopPunch[];
   stockSnapshots?: Array<{ day: string; valueCents: number }>;
+  /** On-hand quantity times each item's own unit cost. Same number as the balance sheet. */
+  onHandValueCents?: number | null;
 }): ShopYearReport {
   const calendar = buildYearCalendar(input.year, input.timeZone);
   const buckets = new Map<string, DayBucket>();
@@ -645,6 +647,15 @@ export function buildShopYear(input: {
     yearRoll.stockValueStartCents = months[0]?.stockValueStartCents || 0;
     yearRoll.stockValueEndCents = months[months.length - 1]?.stockValueEndCents || 0;
     yearRoll.stockValueNote = 'Inventory value from stored snapshots.';
+  }
+  if (input.onHandValueCents != null && input.onHandValueCents > 0) {
+    yearRoll.stockValueEndCents = input.onHandValueCents;
+    yearRoll.stockValueNote = 'On-hand quantity times each item\'s own unit cost.';
+    const last = months[months.length - 1];
+    if (last) {
+      last.stockValueEndCents = input.onHandValueCents;
+      last.stockValueNote = yearRoll.stockValueNote;
+    }
   }
   return {
     year: input.year,

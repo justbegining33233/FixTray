@@ -28,6 +28,9 @@ export function partsCostFromUsage(input: {
       id?: string;
       partId?: string;
       itemId?: string;
+      inventoryItemId?: string;
+      inventoryStockId?: string;
+      stockId?: string;
       sku?: string;
       quantity?: number;
       qty?: number;
@@ -41,7 +44,7 @@ export function partsCostFromUsage(input: {
     if (Number.isFinite(part.costCents) && (part.costCents as number) > 0) unit = Math.round(part.costCents as number);
     else if (Number.isFinite(part.cost) && (part.cost as number) > 0) unit = Math.round((part.cost as number) * 100);
     if (unit <= 0) {
-      const id = String(part.id || part.partId || part.itemId || '');
+      const id = String(part.inventoryStockId || part.stockId || part.inventoryItemId || part.id || part.partId || part.itemId || '');
       const sku = String(part.sku || '');
       const match = catalog.find((item) => (id && item.id === id) || (sku && item.sku && item.sku === sku));
       if (match) unit = Math.max(0, Math.round(match.costCents));
@@ -155,7 +158,10 @@ export interface ReceiveResult {
   valueCents: number;
 }
 
-/** Receiving a vendor bill line adds quantity and keeps the latest unit cost. */
+/**
+ * Receiving adds quantity. Units already on hand keep their own unit cost.
+ * A first receipt, when the item has no cost yet, takes the bill's unit cost.
+ */
 export function receiveInventory(input: {
   onHand: number;
   unitCostCents: number;
@@ -163,6 +169,70 @@ export function receiveInventory(input: {
   billUnitCostCents: number;
 }): ReceiveResult {
   const qty = Math.max(0, input.onHand) + Math.max(0, input.qty);
-  const unitCostCents = Math.max(0, Math.round(input.billUnitCostCents));
+  const own = Math.max(0, Math.round(input.unitCostCents));
+  const billed = Math.max(0, Math.round(input.billUnitCostCents));
+  const unitCostCents = own > 0 ? own : billed;
   return { qty, unitCostCents, valueCents: qty * unitCostCents };
+}
+
+/** On-hand quantity times that item's own unit cost. */
+export function inventoryOnHandValueCents(items: Array<{ quantity: number; unitCostCents: number }>): number {
+  return items.reduce((sum, item) => {
+    const qty = Math.max(0, Math.round(item.quantity));
+    const cost = Math.max(0, Math.round(item.unitCostCents));
+    return sum + qty * cost;
+  }, 0);
+}
+
+/** Closed job-clock minutes. An open clock-in is not finished work. */
+export function closedJobLaborMinutes(entries: Array<{ clockOut?: Date | string | null; hoursSpent?: number | null; clockIn?: Date | string | null }>): number {
+  let minutes = 0;
+  for (const entry of entries) {
+    if (!entry.clockOut) continue;
+    if (typeof entry.hoursSpent === 'number' && entry.hoursSpent > 0) {
+      minutes += Math.round(entry.hoursSpent * 60);
+      continue;
+    }
+    if (!entry.clockIn) continue;
+    const start = new Date(entry.clockIn).getTime();
+    const end = new Date(entry.clockOut).getTime();
+    if (Number.isFinite(start) && Number.isFinite(end) && end > start) minutes += Math.round((end - start) / 60000);
+  }
+  return minutes;
+}
+
+/** Gross wages for closed staff punches only. FixTray does not withhold taxes. */
+export function closedPayrollGrossCents(rows: Array<{ clockOut?: Date | string | null; hoursWorked?: number | null; hourlyRate?: number | null }>): number {
+  let total = 0;
+  for (const row of rows) {
+    if (!row.clockOut) continue;
+    const hours = Number(row.hoursWorked || 0);
+    const rate = Number(row.hourlyRate || 0);
+    if (!Number.isFinite(hours) || !Number.isFinite(rate) || hours <= 0 || rate <= 0) continue;
+    total += Math.round(hours * rate * 100);
+  }
+  return total;
+}
+
+const DONE = new Set(['closed', 'completed']);
+
+/** Completed and paid, the same jobs Books counts. Closed-only estimates are not used. */
+export function analyticsPerformance(rows: Array<{
+  status?: string | null;
+  techName: string;
+  paidCents: number;
+}>): { completedJobs: number; paidCents: number; byTech: Array<{ techName: string; jobs: number; paidCents: number }> } {
+  const done = rows.filter((row) => DONE.has(String(row.status || '').trim().toLowerCase()));
+  const byTech = new Map<string, { techName: string; jobs: number; paidCents: number }>();
+  for (const row of done) {
+    const slot = byTech.get(row.techName) || { techName: row.techName, jobs: 0, paidCents: 0 };
+    slot.jobs += 1;
+    slot.paidCents += Math.round(row.paidCents);
+    byTech.set(row.techName, slot);
+  }
+  return {
+    completedJobs: done.length,
+    paidCents: done.reduce((sum, row) => sum + Math.round(row.paidCents), 0),
+    byTech: [...byTech.values()].sort((a, b) => a.techName.localeCompare(b.techName)),
+  };
 }

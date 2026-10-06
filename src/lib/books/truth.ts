@@ -2,9 +2,10 @@
  * One shop-money calculation for dashboard, Books, ledger, reports, EOD,
  * AR, profit, and the statements. Amounts are integer cents.
  *
- * The shop job never includes the customer FixTray fee. A payment with no
- * invoice is flagged and becomes customer credit. Accounts receivable is
- * never negative: an overpayment is customer credit.
+ * The shop job never includes the customer FixTray fee. Customer credit is
+ * only a payment that is more than the invoice. A deposit row is not extra
+ * cash. A paid job with no invoice record is not credit. Estimates are not
+ * accounts receivable. Accounts receivable is never negative.
  */
 
 import { booksDayKey, reportTimeZone } from '@/lib/books/periods';
@@ -23,6 +24,8 @@ export interface ShopMoneyEvent {
   method?: JobPayMethod;
   /** Sales tax included in an invoice's cents. Zero unless the owner set a rate. */
   taxCents?: number;
+  /** Books note. Counter receipts say "shop receipt" and are not bank deposits. */
+  note?: string | null;
 }
 
 export interface ShopJobFacts {
@@ -30,12 +33,17 @@ export interface ShopJobFacts {
   customerId?: string | null;
   status?: string | null;
   completedAt?: string | null;
-  /** Null when the job was never invoiced. */
+  /** Null when the job was never invoiced. Estimates stay null. */
   invoiceCents: number | null;
+  /**
+   * False when the money invoice comes from the job status but there is no
+   * status history or payment link yet. The create-invoice action still shows.
+   */
+  invoiceRecorded?: boolean;
   invoiceAt?: string | null;
   /** Parts sell cents inside the invoice. Labor is the rest. */
   partsSellCents?: number;
-  /** Tax frozen at invoice. Absent means use the owner's current settings. */
+  /** Tax frozen at invoice. Absent means this invoice has no tax. */
   salesTax?: {
     ratePercent: number;
     laborTaxable: boolean;
@@ -104,9 +112,9 @@ export function civilInRange(at: string, start: Date, end: Date, timeZone: strin
 
 /**
  * Accounts receivable and customer credit for one job.
- * A deposit counts as shop money only when it is not already in the payments,
- * so a matched deposit is not added twice. The two balances are never netted
- * against each other.
+ * Credit is only payments above the invoice. Deposit rows, including a
+ * running total saved on top of the payment, are not customer money.
+ * No invoice means no credit and no AR. The two balances are never netted.
  */
 export function jobBalance(input: {
   invoiceCents: number | null;
@@ -118,21 +126,19 @@ export function jobBalance(input: {
   const paid = whole(input.paidCents);
   const refund = whole(input.refundCents);
   const chargeback = whole(input.chargebackCents);
-  const deposit = whole(input.depositCents);
   const netPaid = paid - refund - chargeback;
-  const fromDeposit = deposit - refund - chargeback;
-  const collected = Math.max(netPaid, fromDeposit);
+  const collected = Math.max(0, netPaid);
   if (input.invoiceCents == null) {
-    return { arCents: 0, customerCreditCents: Math.max(0, collected), collectedCents: collected };
+    return { arCents: 0, customerCreditCents: 0, collectedCents: collected };
   }
   const invoiced = whole(input.invoiceCents);
   if (collected > invoiced) {
     return { arCents: 0, customerCreditCents: collected - invoiced, collectedCents: collected };
   }
   return {
-    arCents: Math.max(0, invoiced - Math.max(0, collected)),
+    arCents: Math.max(0, invoiced - collected),
     customerCreditCents: 0,
-    collectedCents: Math.max(0, collected),
+    collectedCents: collected,
   };
 }
 
@@ -142,8 +148,9 @@ export function isStillOpenStatus(status: string | null | undefined): boolean {
 }
 
 export function positionJob(job: ShopJobFacts): JobPosition {
-  const missingInvoice = job.invoiceCents == null;
-  const invoicedCents = missingInvoice ? 0 : whole(job.invoiceCents as number);
+  const formalMissing = job.invoiceRecorded === false;
+  const missingInvoice = job.invoiceCents == null || formalMissing;
+  const invoicedCents = job.invoiceCents == null ? 0 : whole(job.invoiceCents);
   let paidCents = 0;
   let refundCents = 0;
   let chargebackCents = 0;
@@ -165,7 +172,7 @@ export function positionJob(job: ShopJobFacts): JobPosition {
     flags.push('payment_without_invoice');
   }
   const balance = jobBalance({
-    invoiceCents: missingInvoice ? null : invoicedCents,
+    invoiceCents: job.invoiceCents == null ? null : invoicedCents,
     paidCents,
     refundCents,
     chargebackCents,

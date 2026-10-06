@@ -159,7 +159,7 @@ describe('in-person fee snapshot', () => {
       completion: frozen.completion,
       quoteCents,
       alreadyReceivedCents: 0,
-      tenderedCents: quoteCents,
+      tenderedCents: quoteCents + frozen.snapshot.customerFacingFeeCents,
       method,
       feeAlreadyRecorded: false,
       actorId: 'jose',

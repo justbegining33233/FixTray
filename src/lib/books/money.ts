@@ -932,6 +932,8 @@ export interface InPersonPlan {
   platformFeeCents: number;
   /** Sales tax collected in this tender. It is not shop revenue and not AR. */
   taxCollectedCents: number;
+  /** FixTray fee cash taken in this tender. It is not shop revenue. */
+  feeCollectedCents: number;
   standing: PaymentStanding;
   paymentStatus: 'paid' | 'pending' | 'unpaid';
   feeDeductedFromShop: false;
@@ -959,6 +961,50 @@ export function counterBalanceDueCents(input: {
     feeDueCents,
     taxDueCents,
   };
+}
+
+/**
+ * Fee cash sitting in the drawer. A fee row that was booked without the
+ * customer paying it, or a link flipped early, is not cash.
+ */
+export function feeCashHeld(input: {
+  feeCents: number;
+  jobPaidCents: number;
+  taxCollectedCents: number;
+  linkStatus?: string | null;
+  linkAmountCents?: number | null;
+  note?: string | null;
+}): number {
+  const fee = Math.max(0, Math.round(input.feeCents || 0));
+  if (fee <= 0) return 0;
+  if (String(input.note || '').toLowerCase().includes('fee cash collected')) return fee;
+  if (String(input.linkStatus || '').toLowerCase() !== 'paid') return 0;
+  const link = input.linkAmountCents == null ? null : Math.max(0, Math.round(input.linkAmountCents));
+  if (link == null || link <= 0) return 0;
+  const jobPaid = Math.max(0, Math.round(input.jobPaidCents || 0));
+  const tax = Math.max(0, Math.round(input.taxCollectedCents || 0));
+  if (jobPaid + tax + fee < link) return 0;
+  const gap = link - jobPaid - tax;
+  if (gap <= 0) return 0;
+  return Math.min(fee, gap);
+}
+
+/** Pending invoice links on jobs whose shop portion is already paid. */
+export function paidJobsWithPendingLinks(jobs: Array<{
+  id: string;
+  paymentStatus?: string | null;
+  shopReceivedCents: number;
+  jobCents: number;
+  linkStatus?: string | null;
+}>): string[] {
+  return jobs
+    .filter((job) => String(job.linkStatus || '').toLowerCase() === 'pending')
+    .filter((job) => {
+      const paid = String(job.paymentStatus || '').toLowerCase() === 'paid';
+      const covered = job.jobCents > 0 && job.shopReceivedCents >= job.jobCents;
+      return paid || covered;
+    })
+    .map((job) => job.id);
 }
 
 /**
@@ -1035,14 +1081,19 @@ export function planInPersonPayment(input: {
     feeAlreadyRecorded: input.feeAlreadyRecorded,
     taxAlreadyCollectedCents: input.taxAlreadyCollectedCents || 0,
   });
+  if (due.dueCents <= 0) return { ok: false, error: 'This job is already paid' };
   if (tendered > due.dueCents) {
     return { ok: false, error: 'That amount is more than the balance due' };
   }
   const jobPortion = Math.min(tendered, due.jobRemainingCents);
-  const taxCollectedCents = Math.min(tendered - jobPortion, due.taxDueCents);
+  const taxCollectedCents = Math.min(Math.max(0, tendered - jobPortion), due.taxDueCents);
+  const feeCollectedCents = Math.min(Math.max(0, tendered - jobPortion - taxCollectedCents), due.feeDueCents);
   const shopReceived = already + jobPortion;
-  const standing = standingFor({ jobCents: job, shopReceivedCents: shopReceived, hadJobReversal: false });
-  const platformFee = standing === 'paid' && !input.feeAlreadyRecorded
+  const fullyPaid = tendered === due.dueCents;
+  const standing: PaymentStanding = fullyPaid
+    ? 'paid'
+    : (shopReceived > 0 || taxCollectedCents > 0 || feeCollectedCents > 0 ? 'partial' : 'unpaid');
+  const platformFee = fullyPaid && !input.feeAlreadyRecorded
     ? (input.customerFacingFeeCents == null
       ? customerFacingServiceFeeCents(job, savedFee)
       : storedFee)
@@ -1079,7 +1130,7 @@ export function planInPersonPayment(input: {
       idempotencyKey: `inperson:${input.workOrderId}:fee`,
       sourceId: null,
       depositAt: null,
-      note: `in-person ${input.method}; platform fee; not a shop expense`,
+      note: `in-person ${input.method}; platform fee; fee cash collected ${platformFee} cents; not a shop expense`,
     });
   }
   return {
@@ -1089,6 +1140,7 @@ export function planInPersonPayment(input: {
     shopReceivedCents: shopReceived,
     platformFeeCents: platformFee,
     taxCollectedCents,
+    feeCollectedCents,
     standing,
     paymentStatus: (() => {
       const status = paymentStatusForStanding(standing);
@@ -1102,7 +1154,7 @@ export function planInPersonPayment(input: {
       targetType: 'work_order',
       targetId: input.workOrderId,
       shopId: input.shopId,
-      details: `in-person ${input.method}; job ${jobPortion} cents; tax ${taxCollectedCents} cents; shop received ${shopReceived} cents; platform fee ${platformFee} cents; fee not deducted from shop`,
+      details: `in-person ${input.method}; job ${jobPortion} cents; tax ${taxCollectedCents} cents; fee cash ${feeCollectedCents} cents; shop received ${shopReceived} cents; platform fee ${platformFee} cents; fee not deducted from shop`,
     }),
   };
 }

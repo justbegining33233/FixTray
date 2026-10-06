@@ -209,11 +209,18 @@ export async function loadShopYearDrill(shopId: string, yearInput?: number | nul
     invoiceAt.set(job.id, at);
     quoteByOrder.set(job.id, usdToCents(job.estimatedCost));
   }
-  const stockRows = await prisma.inventoryStock.findMany({
-    where: { shopId },
-    select: { quantity: true, unitCost: true },
-  }).catch(() => []);
-  const onHandValueCents = stockRows.reduce((sum, item) => sum + Math.max(0, item.quantity) * usdToCents(item.unitCost), 0);
+  const [stockRows, itemRows] = await Promise.all([
+    prisma.inventoryStock.findMany({
+      where: { shopId },
+      select: { quantity: true, unitCost: true },
+    }).catch(() => []),
+    prisma.inventoryItem.findMany({
+      where: { shopId },
+      select: { quantity: true, costCents: true },
+    }).catch(() => []),
+  ]);
+  const onHandValueCents = stockRows.reduce((sum, item) => sum + Math.max(0, item.quantity) * usdToCents(item.unitCost), 0)
+    + itemRows.reduce((sum, item) => sum + Math.max(0, item.quantity) * Math.max(0, item.costCents), 0);
 
   return buildShopYear({
     year,

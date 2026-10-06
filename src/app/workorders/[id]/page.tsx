@@ -981,13 +981,15 @@ export default function WorkOrderDetailPage() {
                         onClick={() => {
                           const jobCents = Math.round((wo.estimatedCost || 0) * 100);
                           const already = Math.min(jobCents, Math.round((wo.amountPaid || 0) * 100));
+                          if (wo.paymentStatus === 'paid') return;
                           const due = counterBalanceDueCents({
                             jobCents,
                             alreadyReceivedCents: already,
                             feeCents: readFeeSnapshot(wo.completion)?.customerFacingFeeCents || 0,
                             taxCents: readSalesTaxSnapshot(wo.completion)?.taxCents || 0,
-                            feeAlreadyRecorded: wo.paymentStatus === 'paid',
+                            feeAlreadyRecorded: false,
                           });
+                          if (due.dueCents <= 0) return;
                           setPayDraft({ method, amount: (due.dueCents / 100).toFixed(2) });
                         }}
                         style={{ background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}

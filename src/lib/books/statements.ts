@@ -11,6 +11,8 @@ import {
   postBankDeposit,
   postBillPayment,
   postCollectedTax,
+  postFeeHeld,
+  postInventoryShrink,
   postInvoice,
   postOpeningInventory,
   postPartsCogs,
@@ -111,7 +113,11 @@ export interface ShopStatementInput {
   billPayments?: DatedCents[];
   bankDeposits?: DatedCents[];
   collectedTax?: Array<DatedCents & { workOrderId: string }>;
-  /** On-hand quantity times each item's own unit cost. */
+  /** Counted write-offs. Each one is quantity times that item's own unit cost. */
+  writeOffs?: DatedCents[];
+  /** FixTray fee cash the shop is actually holding. Not a fee that was only booked. */
+  feeHeld?: Array<DatedCents & { workOrderId: string }>;
+  /** On-hand quantity times each item's own unit cost, from every inventory table. */
   inventoryValueCents: number;
 }
 
@@ -224,12 +230,30 @@ export function buildShopStatement(input: ShopStatementInput) {
       amountCents: row.cents,
     }));
   }
+  let writeOffs = 0;
+  for (const row of input.writeOffs || []) {
+    if (row.cents <= 0 || !inWindow(row.at, wideStart, input.to, zone)) continue;
+    entries.push(postInventoryShrink({ id: row.id, date: eventDay(row.at, zone), amountCents: row.cents }));
+    writeOffs += row.cents;
+  }
+  for (const row of input.feeHeld || []) {
+    if (row.cents <= 0 || !inWindow(row.at, wideStart, input.to, zone)) continue;
+    entries.push(postFeeHeld({
+      id: row.id,
+      workOrderId: row.workOrderId,
+      date: eventDay(row.at, zone),
+      amountCents: row.cents,
+    }));
+  }
 
   const cogs = (input.partsCost || [])
     .filter((row) => row.cents > 0 && inWindow(row.at, wideStart, input.to, zone))
     .reduce((sum, row) => sum + row.cents, 0);
   const inventoryValue = Math.max(0, Math.round(input.inventoryValueCents));
-  const opening = inventoryValue - inventoryBills + cogs;
+  // Opening is only the stock already on hand before the bills in this statement.
+  // Ending inventory is on-hand quantity times each item's own unit cost, so a
+  // sale, return, bill, or write-off moves it. Write-offs stay an expense.
+  const opening = inventoryValue - inventoryBills + cogs + writeOffs;
   if (opening !== 0) {
     entries.push(postOpeningInventory({
       id: 'opening-inventory',

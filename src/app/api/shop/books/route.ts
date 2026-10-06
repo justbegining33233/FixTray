@@ -105,8 +105,36 @@ export async function POST(request: NextRequest) {
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       });
+    } else if (order.paymentStatus === 'paid') {
+      await prisma.paymentLink.updateMany({
+        where: { workOrderId, status: 'pending' },
+        data: { status: 'paid', paidAt: new Date() },
+      });
     }
     return NextResponse.json({ ok: true, workOrderId, description });
+  }
+
+  if (action === 'mark-paid-links') {
+    if (auth.role !== 'shop') return NextResponse.json({ error: 'Only the owner can mark paid invoice links.' }, { status: 403 });
+    const [orders, pending] = await Promise.all([
+      prisma.workOrder.findMany({
+        where: { shopId, paymentStatus: 'paid' },
+        select: { id: true },
+      }),
+      prisma.paymentLink.findMany({
+        where: { shopId, status: 'pending', description: { startsWith: 'Invoice for work order' } },
+        select: { id: true, workOrderId: true },
+      }),
+    ]);
+    const paidIds = new Set(orders.map((order) => order.id));
+    const ids = pending.filter((link) => link.workOrderId && paidIds.has(link.workOrderId)).map((link) => link.id);
+    if (ids.length > 0) {
+      await prisma.paymentLink.updateMany({
+        where: { id: { in: ids } },
+        data: { status: 'paid', paidAt: new Date() },
+      });
+    }
+    return NextResponse.json({ ok: true, marked: ids.length });
   }
 
   if (action === 'deposit') {

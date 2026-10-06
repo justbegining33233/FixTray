@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     })));
     const totalRevenue = snap ? snap.revenueCents / 100 : performance.paidCents / 100;
     const completedInRange = snap ? snap.completedCount : performance.completedJobs;
-    const averageJobValue = performance.completedJobs > 0 ? (snap ? snap.revenueCents / 100 : performance.paidCents / 100) / performance.completedJobs : 0;
+        const averageJobValue = performance.paidJobCount > 0 ? (snap ? snap.revenueCents / 100 : performance.paidCents / 100) / performance.paidJobCount : 0;
 
     // Completion time
     const completionTimes = closedOrders

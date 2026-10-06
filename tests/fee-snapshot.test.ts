@@ -139,7 +139,7 @@ describe('checkout fee snapshot', () => {
       shopId: 'shop-1',
       jobCents: quoteCents,
       alreadyReceivedCents: 0,
-      tenderedCents: quoteCents,
+      tenderedCents: quoteCents + frozen.snapshot.customerFacingFeeCents,
       savedFeeCents: raisedPlatformFeeCents,
       customerFacingFeeCents: frozen.snapshot.customerFacingFeeCents,
       method: 'cash',

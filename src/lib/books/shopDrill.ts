@@ -668,25 +668,43 @@ export function buildShopYear(input: {
 }
 
 function hideMoney(money: ShopMoneyTotals): ShopMoneyTotals {
-  return { ...money, invoicedCents: 0, paidCents: 0, unpaidCents: 0, customerCreditCents: 0 };
+  return {
+    ...money,
+    invoicedCents: 0,
+    paidCents: 0,
+    unpaidCents: 0,
+    customerCreditCents: 0,
+    cardCents: 0,
+    cashCents: 0,
+    checkCents: 0,
+    otherCents: 0,
+    refundCents: 0,
+    chargebackCents: 0,
+    depositsMatchedCents: 0,
+    depositsUnmatchedCents: 0,
+    missingDepositCents: 0,
+    fixtrayOwedCents: 0,
+  };
 }
 
 /** Shop revenue stays with the owner. Managers keep the other books figures. */
 export function hideShopRevenue<T extends ShopYearReport>(report: T): T {
-  const walkDay = (day: ShopDayNode): ShopDayNode => ({ ...day, money: hideMoney(day.money) });
+  const walkDay = (day: ShopDayNode): ShopDayNode => ({ ...day, money: hideMoney(day.money), fixtrayLines: [] });
   const months = report.months.map((month) => ({
     ...month,
     money: hideMoney(month.money),
+    fixtrayLines: [],
     weeks: month.weeks.map((week) => ({
       ...week,
       money: hideMoney(week.money),
+      fixtrayLines: [],
       days: week.days.map(walkDay),
     })),
   }));
   return {
     ...report,
     revenueVisible: false,
-    totals: { ...report.totals, money: hideMoney(report.totals.money) },
+    totals: { ...report.totals, money: hideMoney(report.totals.money), fixtrayLines: [] },
     months,
   };
 }

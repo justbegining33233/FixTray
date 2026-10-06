@@ -393,10 +393,13 @@ describe('shop books drill', () => {
     expect(hidden.totals.money.invoicedCents).toBe(0);
     expect(hidden.totals.money.paidCents).toBe(0);
     expect(hidden.totals.money.unpaidCents).toBe(0);
-    expect(hidden.totals.money.cardCents).toBe(report.totals.money.cardCents);
-    expect(hidden.totals.money.fixtrayOwedCents).toBe(515);
-    expect(hidden.months.every((month) => month.money.invoicedCents === 0 && month.money.paidCents === 0)).toBe(true);
-    expect(hidden.months[9].money.cashCents).toBe(2000);
+    expect(hidden.totals.money.cardCents).toBe(0);
+    expect(hidden.totals.money.cashCents).toBe(0);
+    expect(hidden.totals.money.depositsMatchedCents).toBe(0);
+    expect(hidden.totals.money.fixtrayOwedCents).toBe(0);
+    expect(hidden.totals.fixtrayLines).toEqual([]);
+    expect(hidden.months.every((month) => month.money.invoicedCents === 0 && month.money.paidCents === 0 && month.fixtrayLines.length === 0)).toBe(true);
+    expect(hidden.months[9].money.cashCents).toBe(0);
   });
 });
 
@@ -451,8 +454,9 @@ describe('drill screens', () => {
     }));
     const shopHtml = renderToStaticMarkup(createElement(ShopYearDrill, { report: shop, onYear: () => undefined }));
     expect(shopHtml).toContain('Shop revenue is visible to the shop owner only.');
-    expect(shopHtml).toContain('Work order WO-2');
-    expect(shopHtml).toContain('$25.00');
+    expect(shopHtml).not.toContain('Work order WO-2');
+    expect(shopHtml).toContain('No in-person FixTray fees');
+    expect(shopHtml).not.toContain('$25.00');
     expect(shopHtml).not.toContain('Jobs invoiced');
     expect(shopHtml).toContain('No outside purchases');
     expect(shopHtml).toContain(TIPS_EMPTY);

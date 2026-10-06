@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
-import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { shopTimeZone } from '@/lib/books/loadTruth';
 import { shopDateSpan } from '@/lib/books/periods';
-import { taxForInvoice, taxSettingsFromShop } from '@/lib/books/shopTax';
+import { taxSettingsFromShop } from '@/lib/books/shopTax';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -20,38 +20,32 @@ export async function GET(request: NextRequest) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
     return NextResponse.json({ error: 'Choose from and to dates' }, { status: 400 });
   }
-  const [zone, settings, facts] = await Promise.all([
+  const [zone, settings, collected] = await Promise.all([
     shopTimeZone(shopId),
     prisma.shopSettings.findUnique({ where: { shopId }, select: { taxRate: true, laborTaxable: true, partsTaxable: true } }).catch(() => null),
-    loadShopFacts(shopId),
+    prisma.journalEntry.findMany({
+      where: { shopId, sourceType: 'sales_tax' },
+      select: { entryDate: true, lines: { select: { accountKey: true, creditCents: true } } },
+    }).catch(() => []),
   ]);
   const settingsView = taxSettingsFromShop(settings);
   const span = shopDateSpan(from, to, zone);
-  let taxableCents = 0;
   let taxCents = 0;
-  for (const job of facts) {
-    const invoice = job.events.find((event) => event.kind === 'invoice' && new Date(event.at) >= span.start && new Date(event.at) < span.end);
-    if (!invoice) continue;
-    if (!job.salesTax) continue;
-    const tax = taxForInvoice({
-      invoiceCents: invoice.cents,
-      partsSellCents: job.partsSellCents,
-      settings: settingsView,
-      frozen: job.salesTax,
-    });
-    if (job.salesTax.laborTaxable) taxableCents += tax.laborBaseCents;
-    if (job.salesTax.partsTaxable) taxableCents += tax.partsBaseCents;
-    taxCents += tax.taxCents;
+  for (const entry of collected) {
+    if (entry.entryDate < span.start || entry.entryDate >= span.end) continue;
+    taxCents += entry.lines
+      .filter((line) => line.accountKey === 'salesTaxPayable')
+      .reduce((sum, line) => sum + line.creditCents, 0);
   }
   return NextResponse.json({
     from,
     to,
     timeZone: zone,
     settings: settingsView,
-    taxableCents,
+    taxableCents: 0,
     taxCents,
     readOnly: booksAccess(auth.role).accountantRead,
-    note: settingsView.ratePercent <= 0 ? 'No sales tax until the shop owner sets a rate.' : 'Tax uses the owner rate and the labor or parts flags. Each invoice is taxed once.',
+    note: 'Collected tax is tax the customer paid. Uncollected tax is not on this report, not accounts receivable, and not tax payable.',
   });
 }
 

@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { counterBalanceDueCents, usdToCents, type InPersonMethod } from '@/lib/books/money';
 import { planCounterPayment } from '@/lib/books/counterPay';
-import { postCollectedTax, postPayment } from '@/lib/books/journal';
+import { postCollectedTax, postFeeHeld, postPayment } from '@/lib/books/journal';
 import { recordStatusHistory } from '@/lib/statusHistoryWrite';
 import { findShopJob } from '@/lib/books/loadShopBooks';
 import { writeBooksEntries } from '@/lib/books/persist';
@@ -50,8 +50,16 @@ export async function POST(
     return NextResponse.json({ ok: true, method: 'card', url: session.url });
   }
 
+  if (String(workOrder.paymentStatus || '').toLowerCase() === 'paid') {
+    return NextResponse.json({ error: 'This job is already paid' }, { status: 400 });
+  }
   const jobCents = usdToCents(quoteAmount(workOrder));
   const taxCents = readSalesTaxSnapshot(workOrder.completion)?.taxCents || 0;
+  const taxLines = await prisma.journalLine.findMany({
+    where: { workOrderId: id, accountKey: 'salesTaxPayable', entry: { shopId: workOrder.shopId, sourceType: 'sales_tax' } },
+    select: { creditCents: true },
+  }).catch(() => []);
+  const taxAlreadyCollectedCents = taxLines.reduce((sum, line) => sum + line.creditCents, 0);
   const link = await prisma.paymentLink.findFirst({
     where: {
       workOrderId: id,
@@ -78,7 +86,11 @@ export async function POST(
     feeCents,
     taxCents,
     feeAlreadyRecorded,
+    taxAlreadyCollectedCents,
   });
+  if (due.dueCents <= 0) {
+    return NextResponse.json({ error: 'This job is already paid' }, { status: 400 });
+  }
   const tendered = body?.amountCents == null ? due.dueCents : Number(body.amountCents);
   const counter = planCounterPayment({
     workOrderId: id,
@@ -89,6 +101,7 @@ export async function POST(
     alreadyReceivedCents: Math.max(0, alreadyReceivedCents),
     tenderedCents: tendered,
     taxCents,
+    taxAlreadyCollectedCents,
     method: method as InPersonMethod,
     feeAlreadyRecorded,
     actorId: auth.id,
@@ -122,10 +135,18 @@ export async function POST(
   }
   if (planned.taxCollectedCents > 0) {
     await saveJournalDraft(workOrder.shopId, auth.id, postCollectedTax({
-      id: `tax:${id}:${planned.shopReceivedCents}`,
+      id: `tax:${id}:${planned.shopReceivedCents}:${planned.taxCollectedCents}`,
       workOrderId: id,
       date: at.slice(0, 10),
       amountCents: planned.taxCollectedCents,
+    }));
+  }
+  if (planned.feeCollectedCents > 0) {
+    await saveJournalDraft(workOrder.shopId, auth.id, postFeeHeld({
+      id: `fee-held:${id}:${planned.shopReceivedCents}:${planned.feeCollectedCents}`,
+      workOrderId: id,
+      date: at.slice(0, 10),
+      amountCents: planned.feeCollectedCents,
     }));
   }
   if (planned.paymentStatus === 'paid') {

@@ -54,6 +54,126 @@ export function partsCostFromUsage(input: {
   return total;
 }
 
+export interface PartMovement {
+  kind: 'return' | 'adjust';
+  qty: number;
+  itemId?: string | null;
+  workOrderId?: string | null;
+  unitCostCents?: number | null;
+}
+
+/** Pull a parts.return or parts.adjust audit into a quantity movement. */
+export function partMovementFromAudit(row: {
+  action: string;
+  details?: string | null;
+  targetId?: string | null;
+  targetType?: string | null;
+}): PartMovement | null {
+  const action = String(row.action || '');
+  const kind = action.startsWith('parts.') ? action.slice('parts.'.length) : '';
+  if (kind !== 'return' && kind !== 'adjust') return null;
+  const match = String(row.details || '').match(/delta (-?\d+)/);
+  if (!match) return null;
+  const delta = Number(match[1]);
+  if (!Number.isInteger(delta) || delta === 0) return null;
+  const targetType = String(row.targetType || '').toLowerCase();
+  const workOrderFromType = targetType === 'work_order' || targetType === 'workorder' ? row.targetId : null;
+  const workOrderFromDetails = String(row.details || '').match(/workOrderId\s+(\S+)/);
+  const itemFromType = targetType === 'inventory_stock' || targetType === 'inventory' ? row.targetId : null;
+  return {
+    kind,
+    qty: kind === 'return' ? Math.abs(delta) : delta,
+    itemId: itemFromType || null,
+    workOrderId: workOrderFromType || (workOrderFromDetails ? workOrderFromDetails[1] : null),
+    unitCostCents: null,
+  };
+}
+
+function partLines(partsUsed: unknown, catalog: Array<{ id: string; sku?: string | null; costCents: number }>): Array<{ itemId: string; qty: number; unit: number }> {
+  if (!Array.isArray(partsUsed)) return [];
+  const lines: Array<{ itemId: string; qty: number; unit: number }> = [];
+  for (const raw of partsUsed) {
+    if (!raw || typeof raw !== 'object') continue;
+    const part = raw as {
+      id?: string;
+      partId?: string;
+      itemId?: string;
+      inventoryItemId?: string;
+      inventoryStockId?: string;
+      stockId?: string;
+      sku?: string;
+      quantity?: number;
+      qty?: number;
+      returnedQty?: number;
+      cost?: number;
+      costCents?: number;
+    };
+    const qtyRaw = part.quantity ?? part.qty ?? 1;
+    const returned = Math.max(0, Math.round(Number(part.returnedQty || 0)));
+    const qty = Math.max(0, Math.round(Number(qtyRaw)) - returned);
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+    let unit = 0;
+    if (Number.isFinite(part.costCents) && (part.costCents as number) > 0) unit = Math.round(part.costCents as number);
+    else if (Number.isFinite(part.cost) && (part.cost as number) > 0) unit = Math.round((part.cost as number) * 100);
+    const id = String(part.inventoryStockId || part.stockId || part.inventoryItemId || part.id || part.partId || part.itemId || '');
+    const sku = String(part.sku || '');
+    if (unit <= 0) {
+      const match = catalog.find((item) => (id && item.id === id) || (sku && item.sku && item.sku === sku));
+      if (match) unit = Math.max(0, Math.round(match.costCents));
+    }
+    lines.push({ itemId: id || sku, qty, unit });
+  }
+  return lines;
+}
+
+/**
+ * Cost of the parts still on the job. A return reduces that cost.
+ * The line cost wins. Otherwise the item's own unit cost is used.
+ */
+export function jobPartsCostCents(input: {
+  workOrderId: string;
+  partsUsed: unknown;
+  catalog?: Array<{ id: string; sku?: string | null; costCents: number }>;
+  movements?: PartMovement[];
+}): number {
+  const catalog = input.catalog || [];
+  const lines = partLines(input.partsUsed, catalog);
+  let total = lines.reduce((sum, line) => sum + line.unit * line.qty, 0);
+  for (const move of input.movements || []) {
+    if (move.kind !== 'return' || move.qty <= 0) continue;
+    if (move.workOrderId && move.workOrderId !== input.workOrderId) continue;
+    const line = lines.find((item) => move.itemId && item.itemId === move.itemId) || (lines.length === 1 ? lines[0] : undefined);
+    if (!line && move.workOrderId !== input.workOrderId) continue;
+    const unit = move.unitCostCents && move.unitCostCents > 0 ? Math.round(move.unitCostCents) : (line?.unit || 0);
+    const qty = Math.min(move.qty, line?.qty || move.qty);
+    total -= unit * qty;
+    if (line) line.qty = Math.max(0, line.qty - qty);
+  }
+  return Math.max(0, total);
+}
+
+/** Give an unassigned return to the one invoiced job that used that part. */
+export function assignPartReturns(input: {
+  jobs: Array<{ id: string; partsUsed: unknown }>;
+  movements: PartMovement[];
+}): PartMovement[] {
+  const usedBy = new Map<string, string[]>();
+  for (const job of input.jobs) {
+    for (const line of partLines(job.partsUsed, [])) {
+      if (!line.itemId) continue;
+      const list = usedBy.get(line.itemId) || [];
+      list.push(job.id);
+      usedBy.set(line.itemId, list);
+    }
+  }
+  return input.movements.map((move) => {
+    if (move.kind !== 'return' || move.workOrderId || !move.itemId) return move;
+    const jobs = [...new Set(usedBy.get(move.itemId) || [])];
+    if (jobs.length !== 1) return move;
+    return { ...move, workOrderId: jobs[0] };
+  });
+}
+
 /** Shop revenue by tech from job payments. Estimated totals and the FixTray fee are not used. */
 export function allocateTechRevenue(rows: Array<{ techId: string | null | undefined; cents: number }>): Array<{ techId: string; revenueCents: number }> {
   const byTech = new Map<string, number>();
@@ -216,23 +336,40 @@ export function closedPayrollGrossCents(rows: Array<{ clockOut?: Date | string |
 
 const DONE = new Set(['closed', 'completed']);
 
-/** Completed and paid, the same jobs Books counts. Closed-only estimates are not used. */
+/**
+ * Completed jobs are closed or completed. Tech revenue is every job payment
+ * for that tech, the same payments employee performance uses.
+ */
 export function analyticsPerformance(rows: Array<{
   status?: string | null;
   techName: string;
   paidCents: number;
-}>): { completedJobs: number; paidCents: number; byTech: Array<{ techName: string; jobs: number; paidCents: number }> } {
-  const done = rows.filter((row) => DONE.has(String(row.status || '').trim().toLowerCase()));
+}>): {
+  completedJobs: number;
+  paidJobCount: number;
+  paidCents: number;
+  byTech: Array<{ techName: string; jobs: number; paidCents: number }>;
+} {
   const byTech = new Map<string, { techName: string; jobs: number; paidCents: number }>();
-  for (const row of done) {
+  let paidCents = 0;
+  let paidJobCount = 0;
+  let completedJobs = 0;
+  for (const row of rows) {
+    const paid = Math.round(row.paidCents || 0);
+    const done = DONE.has(String(row.status || '').trim().toLowerCase());
+    if (done) completedJobs += 1;
+    if (paid > 0) paidJobCount += 1;
+    paidCents += paid;
+    if (!done && paid <= 0) continue;
     const slot = byTech.get(row.techName) || { techName: row.techName, jobs: 0, paidCents: 0 };
-    slot.jobs += 1;
-    slot.paidCents += Math.round(row.paidCents);
+    if (done) slot.jobs += 1;
+    slot.paidCents += paid;
     byTech.set(row.techName, slot);
   }
   return {
-    completedJobs: done.length,
-    paidCents: done.reduce((sum, row) => sum + Math.round(row.paidCents), 0),
+    completedJobs,
+    paidJobCount,
+    paidCents,
     byTech: [...byTech.values()].sort((a, b) => a.techName.localeCompare(b.techName)),
   };
 }

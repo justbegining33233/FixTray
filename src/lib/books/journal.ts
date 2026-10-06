@@ -12,6 +12,7 @@ export const SHOP_ACCOUNTS = {
   salesTaxPayable: { code: '2100', name: 'Sales Tax Payable', accountType: 'liability' },
   customerCredits: { code: '2200', name: 'Customer Credits', accountType: 'liability' },
   wagesPayable: { code: '2300', name: 'Wages Payable', accountType: 'liability' },
+  dueToPlatform: { code: '2400', name: 'Due to FixTray', accountType: 'liability' },
   ownerEquity: { code: '3000', name: "Owner's Equity", accountType: 'equity' },
   openingBalanceEquity: { code: '3100', name: 'Opening Balance Equity', accountType: 'equity' },
   laborIncome: { code: '4000', name: 'Labor Income', accountType: 'income' },
@@ -21,6 +22,7 @@ export const SHOP_ACCOUNTS = {
   cogsParts: { code: '5000', name: 'COGS Parts', accountType: 'cogs' },
   payrollExpense: { code: '6000', name: 'Payroll Labor Expense', accountType: 'expense' },
   shopSupplies: { code: '6100', name: 'Shop Supplies', accountType: 'expense' },
+  inventoryShrink: { code: '6200', name: 'Inventory Shrink', accountType: 'expense' },
 } as const;
 
 export type ShopAccountKey = keyof typeof SHOP_ACCOUNTS;
@@ -238,6 +240,24 @@ export function postOpeningInventory(input: { id: string; date: string; amountCe
   ]);
 }
 
+/** Cash the shop is holding for FixTray. It is not shop revenue and not a shop expense. */
+export function postFeeHeld(input: { id: string; workOrderId: string; date: string; amountCents: number }): JournalDraft {
+  const amount = Math.max(0, Math.round(input.amountCents));
+  return draft('platform_fee_held', input.id, input.date, `Fee cash held ${input.workOrderId}`, [
+    line('undepositedFunds', amount, 0, input.workOrderId),
+    line('dueToPlatform', 0, amount, input.workOrderId),
+  ]);
+}
+
+/** A counted write-off. Quantity times that item's own unit cost. */
+export function postInventoryShrink(input: { id: string; date: string; amountCents: number }): JournalDraft {
+  const amount = Math.max(0, Math.round(input.amountCents));
+  return draft('inventory_shrink', input.id, input.date, `Inventory write-off ${input.id}`, [
+    line('inventoryShrink', amount, 0),
+    line('inventory', 0, amount),
+  ]);
+}
+
 /** Tax the customer actually paid. It is a liability, not revenue and not AR. */
 export function postCollectedTax(input: { id: string; workOrderId: string; date: string; amountCents: number }): JournalDraft {
   const amount = Math.max(0, Math.round(input.amountCents));
@@ -265,6 +285,8 @@ export interface StatementTotals {
   cogsCents: number;
   payrollCents: number;
   shopSuppliesCents: number;
+  inventoryShrinkCents: number;
+  dueToPlatformCents: number;
   netIncomeCents: number;
   cashCents: number;
   arCents: number;
@@ -295,8 +317,9 @@ export function statementTotals(entries: JournalDraft[]): StatementTotals {
   const cogsCents = net(balance, 'cogsParts');
   const payrollCents = net(balance, 'payrollExpense');
   const shopSuppliesCents = net(balance, 'shopSupplies');
+  const inventoryShrinkCents = net(balance, 'inventoryShrink');
   const income = laborIncomeCents + partsIncomeCents + subletIncomeCents - refundsCents;
-  const netIncomeCents = income - cogsCents - payrollCents - shopSuppliesCents;
+  const netIncomeCents = income - cogsCents - payrollCents - shopSuppliesCents - inventoryShrinkCents;
   const openingBalanceEquityCents = net(balance, 'openingBalanceEquity');
   const ownerEquityCents = net(balance, 'ownerEquity');
   return {
@@ -308,6 +331,8 @@ export function statementTotals(entries: JournalDraft[]): StatementTotals {
     cogsCents,
     payrollCents,
     shopSuppliesCents,
+    inventoryShrinkCents,
+    dueToPlatformCents: net(balance, 'dueToPlatform'),
     netIncomeCents,
     cashCents: net(balance, 'operatingBank') + net(balance, 'undepositedFunds'),
     arCents: net(balance, 'accountsReceivable'),
@@ -344,7 +369,7 @@ export function balanceSheetView(entries: JournalDraft[]): {
 } {
   const totals = statementTotals(entries);
   const assetsCents = totals.bankCents + totals.undepositedCents + totals.arCents + totals.inventoryCents;
-  const liabilitiesCents = totals.apCents + totals.salesTaxCents + totals.customerCreditCents + totals.wagesPayableCents;
+  const liabilitiesCents = totals.apCents + totals.salesTaxCents + totals.customerCreditCents + totals.wagesPayableCents + totals.dueToPlatformCents;
   const lines: BalanceSheetLine[] = [
     { key: 'undeposited', label: 'Undeposited funds', cents: totals.undepositedCents, side: 'asset' },
     { key: 'bank', label: 'Operating bank', cents: totals.bankCents, side: 'asset' },
@@ -354,6 +379,7 @@ export function balanceSheetView(entries: JournalDraft[]): {
     { key: 'tax', label: 'Sales tax payable', cents: totals.salesTaxCents, side: 'liability' },
     { key: 'credit', label: 'Customer credit', cents: totals.customerCreditCents, side: 'liability' },
     { key: 'wages', label: 'Wages payable', cents: totals.wagesPayableCents, side: 'liability' },
+    { key: 'dueToPlatform', label: 'Due to FixTray', cents: totals.dueToPlatformCents, side: 'liability' },
     { key: 'openingEquity', label: 'Opening balance equity', cents: totals.openingBalanceEquityCents, side: 'equity' },
     { key: 'retained', label: 'Retained earnings', cents: totals.retainedEarningsCents, side: 'equity' },
     { key: 'equity', label: "Owner's equity", cents: totals.equityCents - totals.openingBalanceEquityCents - totals.retainedEarningsCents, side: 'equity' },

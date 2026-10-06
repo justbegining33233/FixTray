@@ -58,13 +58,15 @@ describe('in-person pay', () => {
   it('calculates the card gross-up fee and does not take it from the shop', () => {
     const savedFeeCents = 1000;
     const jobCents = 4999;
+    const fee = customerFacingServiceFeeCents(jobCents, savedFeeCents);
     const planned = planInPersonPayment({
       workOrderId: 'wo-1',
       shopId: 'shop-1',
       jobCents,
       alreadyReceivedCents: 0,
-      tenderedCents: jobCents,
+      tenderedCents: jobCents + fee,
       savedFeeCents,
+      customerFacingFeeCents: fee,
       method: 'cash',
       feeAlreadyRecorded: false,
       actorId: ACTOR,
@@ -72,7 +74,6 @@ describe('in-person pay', () => {
     });
     expect(planned.ok).toBe(true);
     if (!planned.ok) return;
-    const fee = customerFacingServiceFeeCents(jobCents, savedFeeCents);
     expect(fee).toBeGreaterThan(0);
     expect(planned.platformFeeCents).toBe(fee);
     expect(planned.shopReceivedCents).toBe(jobCents);

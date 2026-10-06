@@ -196,6 +196,22 @@ export function positionJob(job: ShopJobFacts): JobPosition {
   };
 }
 
+/** Facts as of a moment. Invoices and payments after that moment are not in yet. */
+export function factsAsOf(facts: ShopJobFacts[], end: Date): ShopJobFacts[] {
+  const endMs = end.getTime();
+  return facts.map((job) => {
+    const events = job.events.filter((event) => new Date(event.at).getTime() < endMs);
+    const invoiceMs = job.invoiceAt ? new Date(job.invoiceAt).getTime() : null;
+    const invoiced = job.invoiceCents != null && invoiceMs != null && invoiceMs < endMs;
+    return {
+      ...job,
+      events,
+      invoiceCents: invoiced ? job.invoiceCents : null,
+      invoiceAt: invoiced ? job.invoiceAt : null,
+    };
+  });
+}
+
 export function positionJobs(jobs: ShopJobFacts[]): JobPosition[] {
   return jobs.map(positionJob);
 }

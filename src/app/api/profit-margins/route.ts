@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
-import { allocateTechRevenue, closedJobLaborMinutes, jobProfit, partsCostFromUsage, reorderAlerts, techProductivity } from '@/lib/books/floor';
+import { allocateTechRevenue, assignPartReturns, closedJobLaborMinutes, jobPartsCostCents, jobProfit, partMovementFromAudit, reorderAlerts, techProductivity } from '@/lib/books/floor';
 import { usdToCents } from '@/lib/books/money';
 import { addDays, dayKey, shopDateSpan } from '@/lib/books/periods';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
@@ -59,11 +59,22 @@ export async function GET(req: NextRequest) {
     ...stockRows.map((item) => ({ id: item.id, sku: item.sku, costCents: usdToCents(item.unitCost) })),
     ...items.map((item) => ({ id: item.id, sku: item.sku, costCents: item.costCents })),
   ];
+  const audits = await prisma.auditLog.findMany({
+    where: { shopId, action: { startsWith: 'parts.' } },
+    select: { action: true, details: true, targetId: true, targetType: true },
+  }).catch(() => []);
+  const movements = assignPartReturns({
+    jobs: orders.map((order) => ({ id: order.id, partsUsed: order.partsUsed })),
+    movements: audits.flatMap((row) => {
+      const movement = partMovementFromAudit(row);
+      return movement ? [movement] : [];
+    }),
+  });
 
   const results = orders.map(wo => {
     const revenueCents = paidByJob.get(wo.id) || 0;
     const laborMinutes = closedJobLaborMinutes(wo.workOrderTimeEntries);
-    const partsCostCents = partsCostFromUsage({ partsUsed: wo.partsUsed, catalog });
+    const partsCostCents = jobPartsCostCents({ workOrderId: wo.id, partsUsed: wo.partsUsed, catalog, movements });
     const rateCents = wo.assignedTo && wo.assignedTo.hourlyRate > 0 ? Math.round(wo.assignedTo.hourlyRate * 100) : null;
     const profit = jobProfit({
       workOrderId: wo.id,

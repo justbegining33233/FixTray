@@ -5,7 +5,7 @@ import { shopJobReceiptCents } from '@/lib/books/money';
 import { dayKey } from '@/lib/books/periods';
 import { shopDayRange } from '@/lib/books/periods';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
-import { positionJobs, rangeSnapshot } from '@/lib/books/truth';
+import { factsAsOf, positionJobs, rangeSnapshot } from '@/lib/books/truth';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const day = shopDayRange(targetKey, zone);
     const startOfDay = day.start;
     const endOfDay = day.end;
-    const facts = await loadShopFacts(shopId);
+    const facts = factsAsOf(await loadShopFacts(shopId), endOfDay);
     const snap = rangeSnapshot(facts, startOfDay, endOfDay, zone);
     const showRevenue = auth.role === 'shop' || auth.role === 'admin';
 

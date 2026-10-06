@@ -2,7 +2,7 @@
 export const ROUTE_ROLES: Record<string, string[]> = {
   '/admin': ['admin', 'superadmin'],
   '/superadmin': ['superadmin'],
-  '/shop': ['shop', 'tech', 'manager', 'superadmin'],
+  '/shop': ['shop', 'tech', 'manager', 'superadmin', 'accountant'],
   '/tech': ['tech', 'superadmin'],
   '/customer': ['customer', 'superadmin'],
   '/manager': ['manager', 'superadmin'],

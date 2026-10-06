@@ -52,7 +52,7 @@ function staticPages(roleDir: string): string[] {
 }
 
 describe('role menus', () => {
-  it.each(['superadmin', 'shop', 'manager', 'tech', 'customer'] as const)(
+  it.each(['superadmin', 'shop', 'manager', 'tech', 'customer', 'accountant'] as const)(
     '%s phone hrefs equal the computer menu',
     (role: MenuRole) => {
       expect(allMobileNavHrefs(MOBILE_ROLE_NAVS[role]).slice().sort()).toEqual(menuHrefs(role).slice().sort());

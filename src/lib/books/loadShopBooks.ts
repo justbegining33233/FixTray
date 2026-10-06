@@ -18,6 +18,9 @@ import {
   type OrderInput,
 } from '@/lib/books/money';
 import { bpsFromPercent, linesFromWorkOrder, ticketPreview, ticketWasInvoiced } from '@/lib/books/parts';
+import { shopWeekRange } from '@/lib/books/periods';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { positionJobs } from '@/lib/books/truth';
 
 function monthRange(month: string): { gte: Date; lt: Date } | null {
   if (!/^\d{4}-\d{2}$/.test(month)) return null;
@@ -177,6 +180,7 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       .filter((row) => row.kind === 'refund' || row.kind === 'chargeback')
       .map((row) => ({
         id: row.id,
+        workOrderId: row.workOrderId,
         appliesTo: row.appliesTo === 'fee' ? 'fee' as const : 'job' as const,
         kind: row.kind === 'chargeback' ? 'chargeback' as const : 'refund' as const,
         amountCents: row.amountCents,
@@ -185,11 +189,30 @@ export async function loadShopBooks(shopId: string, month?: string | null) {
       })),
     feeYearExcluded: true,
     shopReceivedUsd: centsToUsd(ledger.shopReceivedCents),
-    fixtrayOwed: {
-      ...inPersonFeeOwed(booksRows),
-      week: inPersonFeeOwed(booksRows, utcWeekRange(new Date())),
-      weekLabel: utcWeekRange(new Date()).label,
-    },
+    figures: await shopPosition(shopId),
+    fixtrayOwed: await shopOwed(shopId, booksRows),
+  };
+}
+
+async function shopPosition(shopId: string) {
+  const positions = positionJobs(await loadShopFacts(shopId));
+  return {
+    invoicedCents: positions.reduce((sum, job) => sum + job.invoicedCents, 0),
+    paidCents: positions.reduce((sum, job) => sum + job.paidCents, 0),
+    arCents: positions.reduce((sum, job) => sum + job.arCents, 0),
+    customerCreditCents: positions.reduce((sum, job) => sum + job.customerCreditCents, 0),
+    revenueCents: positions.reduce((sum, job) => sum + job.revenueCents, 0),
+    flags: [...new Set(positions.flatMap((job) => job.flags))],
+  };
+}
+
+async function shopOwed(shopId: string, booksRows: BooksRow[]) {
+  const zone = await shopTimeZone(shopId);
+  const week = shopWeekRange(new Date(), zone);
+  return {
+    ...inPersonFeeOwed(booksRows),
+    week: inPersonFeeOwed(booksRows, week),
+    weekLabel: week.label,
   };
 }
 

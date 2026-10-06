@@ -148,6 +148,34 @@ export function zonedDayStart(day: string, timeZone: string): Date {
   return zonedTimeToUtc(year, month, date, 0, 0, timeZone);
 }
 
+/** Monday 00:00 through the next Monday 00:00 in the shop's timezone. */
+export function shopWeekRange(at: Date, timeZone: string): { start: Date; end: Date; label: string } {
+  const zone = reportTimeZone(timeZone);
+  const monday = mondayKey(dayKey(at, zone));
+  return {
+    start: zonedDayStart(monday, zone),
+    end: zonedDayStart(addDays(monday, 7), zone),
+    label: monday,
+  };
+}
+
+export function shopDayRange(day: string, timeZone: string): { start: Date; end: Date } {
+  const zone = reportTimeZone(timeZone);
+  return {
+    start: zonedDayStart(day, zone),
+    end: zonedDayStart(addDays(day, 1), zone),
+  };
+}
+
+/** Inclusive civil start and exclusive end for a YYYY-MM-DD pair in the shop timezone. */
+export function shopDateSpan(startDay: string, endDay: string, timeZone: string): { start: Date; end: Date } {
+  const zone = reportTimeZone(timeZone);
+  return {
+    start: zonedDayStart(startDay, zone),
+    end: zonedDayStart(addDays(endDay, 1), zone),
+  };
+}
+
 export function currentYear(timeZone: string, now = new Date()): number {
   return zonedParts(now, timeZone).year;
 }

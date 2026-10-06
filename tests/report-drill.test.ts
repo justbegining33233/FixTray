@@ -42,6 +42,7 @@ const MONEY_FIELDS: Array<keyof ShopMoneyTotals> = [
   'depositsMatchedCents',
   'depositsUnmatchedCents',
   'missingDepositCents',
+  'customerCreditCents',
 ];
 
 function assertFeeRollup(report: FeeYearReport) {
@@ -81,42 +82,53 @@ function addFee(target: FeeTotals, source: FeeTotals) {
   for (const field of FEE_FIELDS) target[field] += source[field];
 }
 
+const DERIVED_MONEY = new Set<keyof ShopMoneyTotals>(['unpaidCents', 'customerCreditCents', 'paidCents']);
+
+function expectActivitySums(parent: ShopMoneyTotals, children: ShopMoneyTotals[]) {
+  const sum = emptyMoney();
+  for (const child of children) addMoney(sum, child);
+  for (const field of MONEY_FIELDS) {
+    if (DERIVED_MONEY.has(field)) continue;
+    expect(sum[field]).toBe(parent[field]);
+  }
+  const raw = parent.invoicedCents - parent.paidCents + parent.refundCents + parent.chargebackCents;
+  expect(parent.unpaidCents).toBe(Math.max(0, raw));
+  expect(parent.customerCreditCents).toBe(Math.max(0, -raw));
+  expect(parent.unpaidCents).toBeGreaterThanOrEqual(0);
+  expect(parent.paidCents).toBe(parent.cardCents + parent.cashCents + parent.checkCents + parent.otherCents);
+}
+
 function assertShopRollup(report: ShopYearReport) {
   expect(report.months).toHaveLength(12);
-  const monthSum = emptyMoney();
   let staff = 0;
   let work = 0;
   for (const month of report.months) {
-    const weekSum = emptyMoney();
     let monthStaff = 0;
     let monthWork = 0;
     for (const week of month.weeks) {
-      const daySum = emptyMoney();
       let weekStaff = 0;
       let weekWork = 0;
       for (const day of week.days) {
-        addMoney(daySum, day.money);
         weekStaff += day.staffMinutes;
         weekWork += day.workMinutes;
         expect(day.staff.reduce((sum, person) => sum + person.minutes, 0)).toBe(day.staffMinutes);
         expect(day.work.reduce((sum, person) => sum + person.minutes, 0)).toBe(day.workMinutes);
         for (const field of MONEY_FIELDS) expect(Number.isInteger(day.money[field])).toBe(true);
+        expectActivitySums(day.money, [day.money]);
       }
-      expect(daySum).toEqual(week.money);
+      expectActivitySums(week.money, week.days.map((day) => day.money));
       expect(weekStaff).toBe(week.staffMinutes);
       expect(weekWork).toBe(week.workMinutes);
-      addMoney(weekSum, week.money);
       monthStaff += week.staffMinutes;
       monthWork += week.workMinutes;
     }
-    expect(weekSum).toEqual(month.money);
+    expectActivitySums(month.money, month.weeks.flatMap((week) => week.days).map((day) => day.money));
     expect(monthStaff).toBe(month.staffMinutes);
     expect(monthWork).toBe(month.workMinutes);
-    addMoney(monthSum, month.money);
     staff += month.staffMinutes;
     work += month.workMinutes;
   }
-  expect(monthSum).toEqual(report.totals.money);
+  expectActivitySums(report.totals.money, report.months.flatMap((month) => month.weeks.flatMap((week) => week.days)).map((day) => day.money));
   expect(staff).toBe(report.totals.staffMinutes);
   expect(work).toBe(report.totals.workMinutes);
 }
@@ -138,6 +150,7 @@ function emptyMoney(): ShopMoneyTotals {
     depositsMatchedCents: 0,
     depositsUnmatchedCents: 0,
     missingDepositCents: 0,
+    customerCreditCents: 0,
   };
 }
 

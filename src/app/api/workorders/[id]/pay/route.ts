@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
-import { planInPersonPayment, usdToCents, type InPersonMethod } from '@/lib/books/money';
+import { usdToCents, type InPersonMethod } from '@/lib/books/money';
+import { planCounterPayment } from '@/lib/books/counterPay';
 import { findShopJob } from '@/lib/books/loadShopBooks';
 import { writeBooksEntries } from '@/lib/books/persist';
-import { embeddedFeeCents, readCheckoutFeeForInPerson, readFeeSnapshot } from '@/lib/feeSnapshot';
+import { embeddedFeeCents, readFeeSnapshot } from '@/lib/feeSnapshot';
+import { postPayment } from '@/lib/books/journal';
+import { saveJournalDraft } from '@/lib/books/persistJournal';
+import { readSalesTaxSnapshot } from '@/lib/books/shopTax';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
 
 const PAY_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
-const IN_PERSON = new Set<InPersonMethod>(['cash', 'check', 'other']);
+const IN_PERSON = new Set<InPersonMethod>(['cash', 'check', 'other', 'card']);
 
 export async function POST(
   request: NextRequest,
@@ -24,7 +28,9 @@ export async function POST(
 
   const { id } = await params;
   const body = await request.json().catch(() => null);
-  const method = String(body?.method || '');
+  const methodRaw = String(body?.method || '');
+  const inPersonCard = methodRaw === 'card_in_person' || (methodRaw === 'card' && body?.inPerson === true);
+  const method = inPersonCard ? 'card' : methodRaw;
   if (method !== 'card' && !IN_PERSON.has(method as InPersonMethod)) {
     return NextResponse.json({ error: 'Choose card, cash, check, or other.' }, { status: 400 });
   }
@@ -36,7 +42,7 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  if (method === 'card') {
+  if (method === 'card' && !inPersonCard) {
     const origin = request.nextUrl.origin;
     const session = await createWorkOrderCheckoutSession({ workOrderId: id, appUrl: origin });
     if (!session.ok) return NextResponse.json({ error: session.error }, { status: session.status });
@@ -44,6 +50,7 @@ export async function POST(
   }
 
   const jobCents = usdToCents(quoteAmount(workOrder));
+  const taxCents = readSalesTaxSnapshot(workOrder.completion)?.taxCents || 0;
   const link = await prisma.paymentLink.findFirst({
     where: {
       workOrderId: id,
@@ -53,13 +60,26 @@ export async function POST(
     select: { amount: true },
   });
   const at = new Date().toISOString();
-  const frozen = readCheckoutFeeForInPerson({
+  const job = await findShopJob(workOrder.shopId, id);
+  const alreadyReceivedCents = job?.shopReceivedCents || 0;
+  const feeAlreadyRecorded = (job?.platformFeeCents || 0) > 0;
+  const remaining = Math.max(0, jobCents - alreadyReceivedCents);
+  const tendered = body?.amountCents == null ? remaining : Number(body.amountCents);
+  const counter = planCounterPayment({
+    workOrderId: id,
+    shopId: workOrder.shopId,
     completion: workOrder.completion,
     quoteCents: jobCents,
-    embeddedFeeCents: embeddedFeeCents(link?.amount, jobCents),
-    now: at,
+    embeddedFeeCents: embeddedFeeCents(link?.amount, jobCents + taxCents),
+    alreadyReceivedCents: Math.max(0, alreadyReceivedCents),
+    tenderedCents: tendered,
+    method: method as InPersonMethod,
+    feeAlreadyRecorded,
+    actorId: auth.id,
+    at,
   });
-  if (!frozen.ok) return NextResponse.json({ error: frozen.error }, { status: 409 });
+  if (!counter.ok) return NextResponse.json({ error: counter.error }, { status: counter.error.includes('Invoice') ? 409 : 400 });
+  const { frozen, planned } = counter;
   const previous = readFeeSnapshot(workOrder.completion);
   if (!previous || previous.customerFacingFeeCents !== frozen.snapshot.customerFacingFeeCents || previous.quoteCents !== frozen.snapshot.quoteCents) {
     await prisma.workOrder.update({
@@ -67,31 +87,23 @@ export async function POST(
       data: { completion: frozen.completion as Prisma.InputJsonValue },
     });
   }
-  const job = await findShopJob(workOrder.shopId, id);
-  const alreadyReceivedCents = job?.shopReceivedCents || 0;
-  const feeAlreadyRecorded = (job?.platformFeeCents || 0) > 0;
-  const remaining = Math.max(0, jobCents - alreadyReceivedCents);
-  const tendered = body?.amountCents == null ? remaining : Number(body.amountCents);
-  const planned = planInPersonPayment({
-    workOrderId: id,
-    shopId: workOrder.shopId,
-    jobCents,
-    alreadyReceivedCents: Math.max(0, alreadyReceivedCents),
-    tenderedCents: tendered,
-    savedFeeCents: 0,
-    customerFacingFeeCents: frozen.snapshot.customerFacingFeeCents,
-    method: method as InPersonMethod,
-    feeAlreadyRecorded,
-    actorId: auth.id,
-    at,
-  });
-  if (!planned.ok) return NextResponse.json({ error: planned.error }, { status: 400 });
   await writeBooksEntries({
     shopId: workOrder.shopId,
     workOrderId: id,
     entries: planned.entries,
     audit: planned.audit,
   });
+  const jobPayment = planned.entries.find((entry) => entry.appliesTo === 'job');
+  if (jobPayment) {
+    await saveJournalDraft(workOrder.shopId, auth.id, postPayment({
+      id: jobPayment.idempotencyKey,
+      workOrderId: id,
+      date: at.slice(0, 10),
+      amountCents: jobPayment.amountCents,
+      openArCents: Math.max(0, jobCents - Math.max(0, alreadyReceivedCents)),
+      hasInvoice: true,
+    }));
+  }
   const updated = await prisma.workOrder.update({
     where: { id },
     data: {

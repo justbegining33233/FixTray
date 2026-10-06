@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { shopJobReceiptCents } from '@/lib/books/money';
-import { addDays, dayKey, zonedDayStart } from '@/lib/books/periods';
-import { reportZone } from '@/lib/books/storedFeeReport';
+import { dayKey } from '@/lib/books/periods';
+import { shopDayRange } from '@/lib/books/periods';
+import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
+import { rangeSnapshot } from '@/lib/books/truth';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -21,10 +23,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
-    const zone = await reportZone();
+    const zone = await shopTimeZone(shopId);
     const targetKey = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : dayKey(new Date(), zone);
-    const startOfDay = zonedDayStart(targetKey, zone);
-    const endOfDay = zonedDayStart(addDays(targetKey, 1), zone);
+    const day = shopDayRange(targetKey, zone);
+    const startOfDay = day.start;
+    const endOfDay = day.end;
+    const facts = await loadShopFacts(shopId);
+    const snap = rangeSnapshot(facts, startOfDay, endOfDay);
     const showRevenue = auth.role === 'shop' || auth.role === 'admin';
 
     // Jobs completed today
@@ -57,22 +62,13 @@ export async function GET(request: NextRequest) {
     });
 
     // Payment breakdown from work orders paid today
-    const paidJobsToday = await prisma.workOrder.findMany({
-      where: {
-        shopId,
-        paymentStatus: 'paid',
-        updatedAt: { gte: startOfDay, lt: endOfDay },
-      },
-      select: { amountPaid: true, estimatedCost: true, paymentStatus: true },
-    });
-
-    const totalRevenue = paidJobsToday.reduce((sum, job) => sum + (shopJobReceiptCents(job) / 100), 0);
+    const totalRevenue = snap.revenueCents / 100;
     const paymentBreakdown = {
-      cash: 0,
-      card: totalRevenue,
-      check: 0,
-      transfer: 0,
-      other: 0,
+      cash: snap.cashCents / 100,
+      card: snap.cardCents / 100,
+      check: snap.checkCents / 100,
+      transfer: snap.transferCents / 100,
+      other: snap.otherCents / 100,
       total: totalRevenue,
     };
 
@@ -155,6 +151,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       date: targetKey,
+      timeZone: zone,
       revenueVisible: true,
       summary: {
         completedJobsCount: completedJobs.length,

@@ -15,12 +15,13 @@ export const ROLE_HOME: Record<string, string> = {
   manager: '/manager/home',
   tech: '/tech/home',
   customer: '/customer/dashboard',
+  accountant: '/shop/books',
 };
 
 /**
  * User roles in the system
  */
-export type UserRole = 'customer' | 'tech' | 'manager' | 'admin' | 'shop' | 'superadmin';
+export type UserRole = 'customer' | 'tech' | 'manager' | 'admin' | 'shop' | 'superadmin' | 'accountant';
 
 /**
  * Roles that require business verification
@@ -38,6 +39,7 @@ export const ADMIN_ROLES: UserRole[] = ['admin', 'superadmin'];
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   customer: 1,
   tech: 2,
+  accountant: 2,
   manager: 3,
   shop: 4,
   admin: 5,

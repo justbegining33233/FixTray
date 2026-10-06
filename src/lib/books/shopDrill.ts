@@ -42,6 +42,8 @@ export interface ShopMoneyTotals {
   depositsMatchedCents: number;
   depositsUnmatchedCents: number;
   missingDepositCents: number;
+  /** Payments past invoices in this period. Overpayment is not negative AR. */
+  customerCreditCents: number;
 }
 
 export interface FixtrayOwedLine {
@@ -223,15 +225,18 @@ export function emptyMoney(): ShopMoneyTotals {
     depositsMatchedCents: 0,
     depositsUnmatchedCents: 0,
     missingDepositCents: 0,
+    customerCreditCents: 0,
   };
 }
 
 function finishMoney(money: ShopMoneyTotals): ShopMoneyTotals {
   const paidCents = money.cardCents + money.cashCents + money.checkCents + money.otherCents;
+  const raw = money.invoicedCents - paidCents + money.refundCents + money.chargebackCents;
   return {
     ...money,
     paidCents,
-    unpaidCents: money.invoicedCents - paidCents + money.refundCents + money.chargebackCents,
+    unpaidCents: Math.max(0, raw),
+    customerCreditCents: Math.max(0, -raw),
     tipsCents: 0,
     voidCents: 0,
   };
@@ -254,6 +259,7 @@ export function addMoney(left: ShopMoneyTotals, right: ShopMoneyTotals): ShopMon
     depositsMatchedCents: left.depositsMatchedCents + right.depositsMatchedCents,
     depositsUnmatchedCents: left.depositsUnmatchedCents + right.depositsUnmatchedCents,
     missingDepositCents: left.missingDepositCents + right.missingDepositCents,
+    customerCreditCents: 0,
   });
 }
 
@@ -266,6 +272,7 @@ export function booksPaymentMethod(kind: string, note: string | null | undefined
   const text = String(note || '').toLowerCase();
   if (text.includes('opening balance')) return 'other';
   if (text.includes('check')) return 'check';
+  if (text.includes('card')) return 'card';
   if (text.includes('other')) return 'other';
   if (text.includes('cash') || text.includes('in-person')) return 'cash';
   return 'other';
@@ -377,6 +384,7 @@ export function buildShopYear(input: {
   purchases: PurchaseLine[];
   staffPunches: ShopPunch[];
   workPunches: ShopPunch[];
+  stockSnapshots?: Array<{ day: string; valueCents: number }>;
 }): ShopYearReport {
   const calendar = buildYearCalendar(input.year, input.timeZone);
   const buckets = new Map<string, DayBucket>();
@@ -535,10 +543,18 @@ export function buildShopYear(input: {
   const monthNode = (month: CalendarMonth): ShopMonthNode => {
     const weeks = month.weeks.map(weekNode);
     const days = weeks.flatMap((week) => week.days);
+    const base = periodOf(days);
+    const snaps = (input.stockSnapshots || []).filter((row) => row.day.startsWith(month.id)).sort((a, b) => a.day.localeCompare(b.day));
+    const prior = (input.stockSnapshots || []).filter((row) => row.day < `${month.id}-01`).sort((a, b) => a.day.localeCompare(b.day));
+    if (snaps.length > 0 || prior.length > 0) {
+      base.stockValueStartCents = (snaps[0] && snaps[0].day.endsWith('-01') ? snaps[0].valueCents : prior[prior.length - 1]?.valueCents) || snaps[0]?.valueCents || 0;
+      base.stockValueEndCents = (snaps[snaps.length - 1] || prior[prior.length - 1])?.valueCents || 0;
+      base.stockValueNote = 'Inventory value from stored snapshots.';
+    }
     return {
       id: month.id,
       label: month.label,
-      ...periodOf(days),
+      ...base,
       weeks,
     };
   };
@@ -546,6 +562,11 @@ export function buildShopYear(input: {
   const months = calendar.months.map(monthNode);
   const days = months.flatMap((month) => month.weeks.flatMap((week) => week.days));
   const yearRoll = roll(days);
+  if ((input.stockSnapshots || []).length > 0) {
+    yearRoll.stockValueStartCents = months[0]?.stockValueStartCents || 0;
+    yearRoll.stockValueEndCents = months[months.length - 1]?.stockValueEndCents || 0;
+    yearRoll.stockValueNote = 'Inventory value from stored snapshots.';
+  }
   return {
     year: input.year,
     timeZone: calendar.timeZone,
@@ -557,7 +578,7 @@ export function buildShopYear(input: {
 }
 
 function hideMoney(money: ShopMoneyTotals): ShopMoneyTotals {
-  return { ...money, invoicedCents: 0, paidCents: 0, unpaidCents: 0 };
+  return { ...money, invoicedCents: 0, paidCents: 0, unpaidCents: 0, customerCreditCents: 0 };
 }
 
 /** Shop revenue stays with the owner. Managers keep the other books figures. */

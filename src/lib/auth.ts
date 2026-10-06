@@ -107,7 +107,7 @@ export interface AuthUser {
   id: string;
   email?: string;
   username?: string;
-  role: 'customer' | 'tech' | 'manager' | 'admin' | 'shop' | 'superadmin';
+  role: 'customer' | 'tech' | 'manager' | 'admin' | 'shop' | 'superadmin' | 'accountant';
   shopId?: string;
   isSuperAdmin?: boolean;
   isOwner?: boolean;

@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
   const provider = typeof body?.provider === 'string' ? body.provider.trim() : '';
   if (!provider) return NextResponse.json({ error: 'Provider is required' }, { status: 400 });
 
+  if (provider === 'quickbooks') {
+    return NextResponse.json(
+      { error: 'QuickBooks Online connects with OAuth. Choose Connect QuickBooks Online. Do not paste the Intuit client secret.' },
+      { status: 400 },
+    );
+  }
+
   if (provider === 'stripe') {
     return NextResponse.json(
       { error: 'Stripe payouts use Connect. Start onboarding from shop integrations — do not paste secret keys.' },

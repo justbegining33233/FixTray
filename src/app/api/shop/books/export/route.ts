@@ -10,7 +10,7 @@ import { quickBooksExportAudit, quickBooksHandoff } from '@/lib/books/quickbooks
 import { writeAudit } from '@/lib/books/persist';
 
 export async function GET(request: NextRequest) {
-  const auth = requireRole(request, ['shop', 'manager']);
+  const auth = requireRole(request, ['shop', 'manager', 'accountant']);
   if (auth instanceof NextResponse) return auth;
   if (!booksAccess(auth.role).quickBooks || !booksAccess(auth.role).shopRevenue) {
     return NextResponse.json({ error: 'Shop revenue export is limited to the shop owner.' }, { status: 403 });

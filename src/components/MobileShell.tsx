@@ -17,7 +17,7 @@ import { useSessionUsername } from '@/lib/useSessionUsername';
 import RoleTabBar from '@/components/RoleTabBar';
 import { FaBell, FaSearch } from 'react-icons/fa';
 
-export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin';
+export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin' | 'accountant';
 
 const headerIconButton: CSSProperties = {
   width: 32,
@@ -79,7 +79,51 @@ interface RoleConfig {
   tabGroups: TabGroup[];
 }
 
+const accountantRole: RoleConfig = {
+  accentColor: '#e5332a',
+  roleLabel: 'Accountant',
+  ico: '📒',
+  tiles: [
+    { ico: '📒', name: 'Books', sub: 'Shop ledger', href: '/shop/books', color: '#0f1e3a', span2: true },
+    { ico: '📊', name: 'Statements', sub: 'Profit and balance sheet', href: '/shop/accounting', color: '#0a1e2e' },
+    { ico: '📄', name: 'Bills', sub: 'Vendor bills', href: '/shop/accounting/ap', color: '#2e1a0a' },
+    { ico: '🧾', name: 'Sales tax', sub: 'Tax collected', href: '/shop/accounting/tax', color: '#1a0f2e' },
+  ],
+  footer: [
+    { ico: '📒', label: 'Books', href: '/shop/books' },
+    { ico: '📊', label: 'Statements', href: '/shop/accounting' },
+    { ico: '⏳', label: 'AR', href: '/shop/ar-aging' },
+    { ico: '⬇️', label: 'Export', href: '/shop/accounting/exports' },
+  ],
+  tabGroups: [
+    {
+      match: ['/shop/books', '/shop/accounting', '/shop/ar-aging'],
+      tabs: [
+        { ico: '📒', label: 'Books', href: '/shop/books' },
+        { ico: '📊', label: 'Statements', href: '/shop/accounting' },
+        { ico: '📄', label: 'Bills', href: '/shop/accounting/ap' },
+        { ico: '🧾', label: 'Tax', href: '/shop/accounting/tax' },
+      ],
+    },
+  ],
+  newOptions: [],
+  drawer: [
+    {
+      title: 'Books',
+      items: [
+        { ico: '📒', label: 'Books', href: '/shop/books' },
+        { ico: '📊', label: 'Statements', href: '/shop/accounting' },
+        { ico: '⏳', label: 'AR Aging', href: '/shop/ar-aging' },
+        { ico: '📄', label: 'Bills', href: '/shop/accounting/ap' },
+        { ico: '🧾', label: 'Sales Tax', href: '/shop/accounting/tax' },
+        { ico: '⬇️', label: 'Exports', href: '/shop/accounting/exports' },
+      ],
+    },
+  ],
+};
+
 const ROLES: Record<ShellRole, RoleConfig> = {
+  accountant: accountantRole,
   shop: {
     accentColor: '#e5332a',
     roleLabel: 'Shop Owner',
@@ -702,6 +746,7 @@ export default function MobileShell({
     customer: '/customer/dashboard',
     manager: '/manager/home',
     admin: '/admin/home',
+    accountant: '/shop/books',
   };
 
   useEffect(() => {

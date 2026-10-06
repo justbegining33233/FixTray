@@ -89,7 +89,41 @@ export async function POST(request: NextRequest) {
     }
 
     if (!tech) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      const accountant = await prisma.shopAccountant.findFirst({
+        where: { email: identifierLower, status: 'active' },
+        include: { shop: { select: { shopName: true } } },
+      });
+      if (!accountant?.password) {
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      }
+      const passwordOk = await bcrypt.compare(password, accountant.password);
+      if (!passwordOk) {
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      }
+      resetRateLimit(rateLimitKey);
+      const accessToken = generateAccessToken({
+        id: accountant.id,
+        email: accountant.email,
+        role: 'accountant',
+        shopId: accountant.shopId,
+      });
+      const response = NextResponse.json({
+        id: accountant.id,
+        email: accountant.email,
+        name: accountant.name || accountant.email,
+        role: 'accountant',
+        shopId: accountant.shopId,
+        shopName: accountant.shop.shopName,
+        accessToken,
+      }, { status: 200 });
+      response.cookies.set('sos_auth', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24,
+      });
+      return response;
     }
 
     if (!tech.password) {

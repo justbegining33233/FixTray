@@ -24,6 +24,7 @@ interface WOMargin {
   profit: number;
   margin: number;
   completedAt?: string;
+  rateNote?: string | null;
 }
 
 function normalizeMargins(raw: any, days: number): MarginData {
@@ -37,9 +38,10 @@ function normalizeMargins(raw: any, days: number): MarginData {
       partsCost: Number(o.partsCost ?? 0),
       laborCost: Number(o.laborCost ?? 0),
       totalCost: Number(o.totalCost ?? 0),
-      profit: Number(o.profit ?? o.grossProfit ?? 0),
-      margin: Number(o.margin ?? 0),
+      profit: o.grossProfit == null && o.rateNote ? Number.NaN : Number(o.profit ?? o.grossProfit ?? 0),
+      margin: o.margin == null ? Number.NaN : Number(o.margin ?? 0),
       completedAt: o.completedAt,
+      rateNote: o.rateNote,
     }));
 
     return {
@@ -179,9 +181,9 @@ export default function ProfitMarginsPage() {
                     <div style={{ textAlign: 'right', fontWeight: 700 }}>${wo.revenue.toFixed(0)}</div>
                     <div style={{ textAlign: 'right', color: '#9ca3af', fontSize: 13 }}>${wo.partsCost.toFixed(0)}</div>
                     <div style={{ textAlign: 'right', color: '#9ca3af', fontSize: 13 }}>${wo.laborCost.toFixed(0)}</div>
-                    <div style={{ textAlign: 'right', color: '#22c55e', fontWeight: 700 }}>${wo.profit.toFixed(0)}</div>
+                    <div style={{ textAlign: 'right', color: '#22c55e', fontWeight: 700 }}>{wo.rateNote || !Number.isFinite(wo.profit) ? 'rate not set' : `$${wo.profit.toFixed(0)}`}</div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ background: `${mc}20`, color: mc, border: `1px solid ${mc}`, borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{m.toFixed(0)}%</span>
+                      <span style={{ background: `${mc}20`, color: mc, border: `1px solid ${mc}`, borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{Number.isFinite(m) ? `${m.toFixed(0)}%` : '—'}</span>
                     </div>
                   </div>
                 );

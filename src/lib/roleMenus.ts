@@ -14,7 +14,7 @@ import { isPlatformFeeYearAccount, isPlatformFeeYearPath, PLATFORM_FEE_YEAR_HREF
 import { PLATFORM_VISITS_HREF, isPlatformVisitsPath } from './platformVisits';
 import { isShopEdgeSensitivePath } from './shopRestrictedRoutes';
 
-export type MenuRole = 'superadmin' | 'shop' | 'manager' | 'tech' | 'customer';
+export type MenuRole = 'superadmin' | 'shop' | 'manager' | 'tech' | 'customer' | 'accountant';
 
 export type MenuIcon =
   | 'home'
@@ -55,7 +55,7 @@ export interface RoleMenuGroup {
   items: RoleMenuItem[];
 }
 
-export type SidebarRole = 'shop' | 'manager' | 'tech' | 'admin' | 'superadmin';
+export type SidebarRole = 'shop' | 'manager' | 'tech' | 'admin' | 'superadmin' | 'accountant';
 
 /** Customer dashboard tiles. The phone menu includes these same links. */
 export const CUSTOMER_TILE_HREFS = {
@@ -88,6 +88,7 @@ export const TOP_BAR: Record<MenuRole, { home: string; profile: string; messages
   manager: { home: '/manager/home', profile: '/manager/profile', messages: '/manager/messages' },
   tech: { home: '/tech/home', profile: '/tech/profile', messages: '/tech/messages' },
   customer: { home: '/customer/dashboard', profile: '/customer/profile', messages: '/customer/messages' },
+  accountant: { home: '/shop/books', profile: '/shop/accounting', messages: '/shop/accounting/exports' },
 };
 
 export function topBarFor(role?: string | null): { home: string; profile: string; messages: string } | null {
@@ -239,6 +240,8 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
       items: [
         { icon: 'chart', label: 'Reports', href: '/shop/analytics' },
         { icon: 'dollar', label: 'Books', href: '/shop/books' },
+        { icon: 'chart', label: 'Statements', href: '/shop/accounting' },
+        { icon: 'file', label: 'Bills', href: '/shop/accounting/ap' },
         { icon: 'file', label: 'EOD Report', href: '/shop/eod-report' },
         { icon: 'clock', label: 'SLA Metrics', href: '/shop/analytics/sla' },
         { icon: 'user', label: 'Employee Perf', href: '/shop/analytics/performance' },
@@ -433,6 +436,21 @@ export const ROLE_MENUS: Record<MenuRole, RoleMenuGroup[]> = {
       ],
     },
   ],
+  accountant: [
+    {
+      label: 'Books',
+      icon: 'dollar',
+      defaultOpen: true,
+      items: [
+        { icon: 'dollar', label: 'Books', href: '/shop/books' },
+        { icon: 'chart', label: 'Statements', href: '/shop/accounting' },
+        { icon: 'file', label: 'Exports', href: '/shop/accounting/exports' },
+        { icon: 'chart', label: 'AR Aging', href: '/shop/ar-aging' },
+        { icon: 'file', label: 'Bills', href: '/shop/accounting/ap' },
+        { icon: 'dollar', label: 'Sales Tax', href: '/shop/accounting/tax' },
+      ],
+    },
+  ],
 };
 
 const PERSONAL_ROOT: Record<MenuRole, string[]> = {
@@ -441,6 +459,7 @@ const PERSONAL_ROOT: Record<MenuRole, string[]> = {
   manager: ['/manager'],
   tech: ['/tech'],
   customer: ['/customer'],
+  accountant: ['/shop/accounting'],
 };
 
 const PORTALS = ['/admin', '/superadmin', '/shop', '/tech', '/manager', '/customer', '/workorders', '/reports', '/tech-offline'];
@@ -453,7 +472,7 @@ export function cleanMenuPath(pathname: string): string {
 export function menuRoleFor(role?: string | null): MenuRole | null {
   const actor = normalizeRole(role);
   if (actor === 'admin' || actor === 'superadmin') return 'superadmin';
-  if (actor === 'shop' || actor === 'manager' || actor === 'tech' || actor === 'customer') return actor;
+  if (actor === 'shop' || actor === 'manager' || actor === 'tech' || actor === 'customer' || actor === 'accountant') return actor;
   return null;
 }
 
@@ -467,7 +486,8 @@ export function menuHrefs(role: MenuRole): string[] {
 }
 
 export function menuRoleForSidebar(role: SidebarRole): MenuRole {
-  return role === 'admin' || role === 'superadmin' ? 'superadmin' : role;
+  if (role === 'admin' || role === 'superadmin') return 'superadmin';
+  return role;
 }
 
 function appendPlatformOwnerItem(groups: RoleMenuGroup[], item: RoleMenuItem): RoleMenuGroup[] {

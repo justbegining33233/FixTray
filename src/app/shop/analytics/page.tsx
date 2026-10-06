@@ -34,6 +34,21 @@ export default function AnalyticsPage() {
   const [rangeNotice, setRangeNotice] = useState('');
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch('/api/shop/eod-report', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (!body?.date || typeof body.date !== 'string') return;
+        const end = body.date;
+        const startDate = new Date(`${end}T12:00:00.000Z`);
+        startDate.setUTCDate(startDate.getUTCDate() - 30);
+        const start = startDate.toISOString().slice(0, 10);
+        setDateRange((current) => (current.end === end ? current : { start, end }));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const id = localStorage.getItem('shopId');
 
     setShopId(id || '');

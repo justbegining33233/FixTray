@@ -23,20 +23,27 @@ export interface BooksAccess {
   ownClock: boolean;
   parts: boolean;
   quickBooks: boolean;
+  /** OAuth connect, account mapping, and sync. Shop owner only. */
+  quickBooksConnect: boolean;
+  /** Read-only books, reports, statements, tax, AP, and AR. */
+  accountantRead: boolean;
   platformFeeYear: boolean;
 }
 
 export function booksAccess(role: string | null | undefined, username?: unknown): BooksAccess {
   const normalized = String(role || '').trim().toLowerCase();
   const shopStaff = normalized === 'shop' || normalized === 'manager';
+  const accountant = normalized === 'accountant';
   const clockRole = shopStaff || normalized === 'tech';
   return {
-    shopLedger: shopStaff,
-    shopRevenue: normalized === 'shop',
+    shopLedger: shopStaff || accountant,
+    shopRevenue: normalized === 'shop' || accountant,
     staffTotals: shopStaff,
     ownClock: clockRole,
     parts: shopStaff,
-    quickBooks: shopStaff,
+    quickBooks: shopStaff || accountant,
+    quickBooksConnect: normalized === 'shop',
+    accountantRead: accountant,
     platformFeeYear: isPlatformFeeYearAccount(username)
       && (normalized === 'admin' || normalized === 'superadmin'),
   };
@@ -45,6 +52,6 @@ export function booksAccess(role: string | null | undefined, username?: unknown)
 export function shopIdForBooks(actor: { role?: string | null; id?: string | null; shopId?: string | null }): string | null {
   const role = String(actor.role || '').trim().toLowerCase();
   if (role === 'shop') return actor.id || null;
-  if (role === 'manager' || role === 'tech') return actor.shopId || null;
+  if (role === 'manager' || role === 'tech' || role === 'accountant') return actor.shopId || null;
   return null;
 }

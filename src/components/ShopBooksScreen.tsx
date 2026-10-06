@@ -43,6 +43,14 @@ interface BooksPayload {
   };
   monthClose: { readyToSync: boolean; warnings: string[] };
   tickets: Array<{ workOrderId: string; sync: { synced: boolean; issues: string[] }; taxLines: Array<{ kind: string; baseCents: number; taxCents: number }> }>;
+  figures?: {
+    invoicedCents: number;
+    paidCents: number;
+    arCents: number;
+    customerCreditCents: number;
+    revenueCents: number;
+    flags: string[];
+  };
   qbMap: Record<string, string>;
   inventory: Array<{ id: string; name: string; sku?: string | null; onHand: number; unitCostCents: number; sellUnitCents: number }>;
   fixtrayOwed?: {
@@ -69,7 +77,8 @@ function authHeaders(): HeadersInit {
 }
 
 export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) {
-  const { user, isLoading } = useRequireAuth([role]);
+  const { user, isLoading } = useRequireAuth(role === 'shop' ? ['shop', 'accountant'] : [role]);
+  const readOnly = user?.role === 'accountant';
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [books, setBooks] = useState<BooksPayload | null>(null);
   const [error, setError] = useState('');
@@ -160,7 +169,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   if (!user || !books) return <div style={pageStyle}>{error || 'Loading...'}</div>;
 
   const ledger = books.ledger;
-  const showRevenue = role === 'shop' && drill?.revenueVisible !== false;
+  const showRevenue = (role === 'shop' || readOnly) && drill?.revenueVisible !== false;
   return (
     <div style={pageStyle}>
       <h1 style={{ marginTop: 0 }}>Shop books</h1>
@@ -180,11 +189,14 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
       {showRevenue && (
       <section>
         <h2>Ledger</h2>
-        <p>Customer paid {money(ledger.customerPaidJobCents)}. Shop received {money(ledger.shopReceivedCents)}. Shop total {money(ledger.shopTotalCents)}.</p>
+        <p>Customer paid {money(books.figures?.paidCents ?? ledger.customerPaidJobCents)}. Shop received {money(books.figures?.paidCents ?? ledger.shopReceivedCents)}. Shop revenue {money(books.figures?.revenueCents ?? ledger.shopTotalCents)} excludes the FixTray fee.</p>
         <p>Platform fee {money(ledger.platformFeeCents)} is separate and is not a shop deduction.</p>
         <p>
-          Unpaid {money(books.report.unpaidCents)} · Partial {money(books.report.partialCents)} · Paid {money(books.report.paidCents)}
+          Invoiced {money(books.figures?.invoicedCents ?? 0)} · Paid {money(books.figures?.paidCents ?? books.report.paidCents)} · AR {money(books.figures?.arCents ?? books.report.unpaidCents)} · Customer credit {money(books.figures?.customerCreditCents ?? 0)}
         </p>
+        {(books.figures?.flags || []).length > 0 && (
+          <p>Needs a look: {books.figures?.flags.join(', ').replaceAll('_', ' ')}.</p>
+        )}
         <table>
           <thead>
             <tr>
@@ -210,15 +222,15 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <h2>Month close</h2>
         <p>{books.monthClose.readyToSync ? 'Ready to sync.' : 'Not ready to sync.'}</p>
         {books.monthClose.warnings.map((warning) => <p key={warning}>{warning}</p>)}
-        {role === 'shop' && <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>}
+        {(role === 'shop' || readOnly) && <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>}
       </section>
-      <section>
+      {!readOnly && <section>
         <h2>Deposit</h2>
         <input placeholder="Job id" value={depositJob} onChange={(event) => setDepositJob(event.target.value)} />
         <input placeholder="Amount cents" value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} />
         <input type="date" value={depositDate} onChange={(event) => setDepositDate(event.target.value)} />
         <button type="button" onClick={() => post('deposit', { workOrderId: depositJob, amountCents: Number(depositAmount), depositAt: depositDate })}>Record deposit</button>
-      </section>
+      </section>}
       <section>
         <h2>FixTray owed this week</h2>
         <p>
@@ -246,6 +258,8 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
             ))}
           </ul>
         )}
+        {!readOnly && (
+          <>
         <button type="button" onClick={async () => {
           const response = await fetch('/api/shop/books', {
             method: 'POST',
@@ -272,8 +286,10 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
           }
           window.location.href = body.url;
         }}>Pay FixTray</button>
+          </>
+        )}
       </section>
-      <section>
+      {!readOnly && <section>
         <h2>Parts</h2>
         <input placeholder="Search name or SKU" value={partQuery} onChange={(event) => setPartQuery(event.target.value)} />
         <select value={partId} onChange={(event) => setPartId(event.target.value)}>
@@ -295,7 +311,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <button type="button" onClick={() => post('part', { itemId: partId, kind: 'use', qty: Number(partQty) })}>Use</button>
         <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'return', qty: Number(partQty), reason: partReason })}>Return</button>
         <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'adjust', qty: Number(partQty), reason: partReason })}>Adjust</button>
-      </section>
+      </section>}
       <section>
         <h2>Tickets</h2>
         {books.tickets.map((ticket) => (

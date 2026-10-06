@@ -837,7 +837,7 @@ export function accountantFeeCsv(year: PlatformFeeYear): string {
   return `${lines.join('\n')}\n`;
 }
 
-export type InPersonMethod = 'cash' | 'check' | 'other';
+export type InPersonMethod = 'cash' | 'check' | 'other' | 'card';
 
 /** Work-order paymentStatus the rest of the app already writes. Partial is pending. */
 export function paymentStatusForStanding(standing: PaymentStanding): 'paid' | 'pending' | 'unpaid' | 'refunded' {

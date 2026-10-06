@@ -51,7 +51,7 @@ export default function EODReportPage() {
   const { user } = useRequireAuth(['shop', 'manager']);
   const [report, setReport] = useState<EODReport | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -62,11 +62,14 @@ export default function EODReportPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/shop/eod-report?date=${date}`, {
+      const query = date ? `?date=${date}` : '';
+      const res = await fetch(`/api/shop/eod-report${query}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setReport(await res.json());
+        const body = await res.json();
+        setReport(body);
+        if (!date && typeof body.date === 'string') setSelectedDate(body.date);
       }
     } catch (err) {
       console.error('Failed to fetch EOD report:', err);

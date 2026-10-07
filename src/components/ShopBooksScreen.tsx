@@ -79,6 +79,15 @@ interface BooksPayload {
   };
 }
 
+interface QboStatus {
+  connected: boolean;
+  realmId: string | null;
+  mapSaved: boolean;
+  lastSyncAt: string | null;
+  configured: boolean;
+  missing: string[];
+}
+
 function money(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -104,6 +113,8 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   const [partReason, setPartReason] = useState('');
   const [drill, setDrill] = useState<ShopYearReport | null>(null);
   const [reportYear, setReportYear] = useState<number | null>(null);
+  const [qbo, setQbo] = useState<QboStatus | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     setError('');
@@ -127,11 +138,34 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     setDrill(body);
   }, []);
 
+  const loadQuickBooks = useCallback(async () => {
+    if (user?.role !== 'shop') return;
+    const response = await fetch('/api/shop/quickbooks/status', { headers: authHeaders(), credentials: 'include' });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) return;
+    setQbo({
+      connected: body.connected === true,
+      realmId: typeof body.realmId === 'string' ? body.realmId : null,
+      mapSaved: body.mapSaved === true,
+      lastSyncAt: typeof body.lastSyncAt === 'string' ? body.lastSyncAt : null,
+      configured: body.configured === true,
+      missing: Array.isArray(body.missing) ? body.missing.filter((item: unknown) => typeof item === 'string') : [],
+    });
+  }, [user?.role]);
+
   useEffect(() => {
     if (!user) return;
-    load().catch(() => setError('Could not load the shop ledger'));
+    load()
+      .catch(() => setError('Could not load the shop ledger'))
+      .finally(() => {
+        if (user.role !== 'shop') return;
+        const flag = new URLSearchParams(window.location.search).get('quickbooks');
+        if (flag === 'connected') setNotice('QuickBooks Online connected');
+        if (flag === 'error') setError('QuickBooks Online did not connect. Start again from this page.');
+      });
     loadDrill(reportYear || undefined).catch(() => setError('Could not load the books report'));
-  }, [user, load, loadDrill, reportYear]);
+    loadQuickBooks().catch(() => setError('Could not load QuickBooks Online'));
+  }, [user, load, loadDrill, loadQuickBooks, reportYear]);
 
   async function post(action: string, extra: Record<string, unknown>) {
     setNotice('');
@@ -175,6 +209,33 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     link.click();
     URL.revokeObjectURL(url);
     setNotice('QuickBooks handoff downloaded');
+  }
+
+  async function syncQuickBooks() {
+    if (user?.role !== 'shop') return;
+    setNotice('');
+    setError('');
+    setSyncing(true);
+    const response = await fetch('/api/shop/quickbooks/sync', {
+      method: 'POST',
+      headers: authHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ month }),
+    });
+    const body = await response.json().catch(() => ({}));
+    setSyncing(false);
+    if (response.status === 409) {
+      const warnings = Array.isArray(body.warnings) ? body.warnings.filter((item: unknown) => typeof item === 'string') : [];
+      const message = [typeof body.error === 'string' ? body.error : '', ...warnings].filter(Boolean).join(' ');
+      setError(message || 'Month is not ready to sync');
+      return;
+    }
+    if (!response.ok) {
+      setError(body.error || 'QuickBooks sync failed');
+      return;
+    }
+    setNotice('Synced to QuickBooks Online');
+    await loadQuickBooks();
   }
 
   if (isLoading) return <div style={pageStyle}>Loading...</div>;
@@ -244,6 +305,28 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <h2>Month close</h2>
         <p>{books.monthClose.readyToSync ? 'Ready to sync.' : 'Not ready to sync.'}</p>
         {books.monthClose.warnings.map((warning) => <p key={warning}>{warning}</p>)}
+        {user?.role === 'shop' ? (
+          <div>
+            {qbo?.connected ? (
+              <p>QuickBooks Online is connected{qbo.realmId ? ` for company ${qbo.realmId}` : ''}{qbo.lastSyncAt ? `. Last sync ${qbo.lastSyncAt.slice(0, 16).replace('T', ' ')}` : ''}.</p>
+            ) : (
+              <p>
+                Connect QuickBooks Online once, then map accounts and sync this month.{' '}
+                <a href="/shop/accounting/quickbooks">Connect QuickBooks Online</a>
+                {' · '}
+                <a href="/shop/accounting/chart">Map accounts</a>
+              </p>
+            )}
+            {qbo && !qbo.configured && <p>Production still needs {qbo.missing.join(', ')}.</p>}
+            {qbo?.connected && (
+              <button type="button" onClick={syncQuickBooks} disabled={!books.monthClose.readyToSync || !qbo.mapSaved || syncing}>
+                {syncing ? 'Syncing...' : 'Sync to QuickBooks Online'}
+              </button>
+            )}
+          </div>
+        ) : role === 'manager' ? (
+          <p>The shop owner connects QuickBooks Online and syncs from the shop login.</p>
+        ) : null}
         {(role === 'shop' || readOnly) && <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>}
       </section>
       {!readOnly && <section>

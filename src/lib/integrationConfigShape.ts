@@ -86,7 +86,7 @@ export function normalizeIntegrationConfig(row: {
     provider: row.provider || '',
     isEnabled,
     enabled: isEnabled,
-    settings: row.provider === 'stripe' ? {} : parseIntegrationSettings(row.settings),
+    settings: row.provider === 'stripe' || row.provider === 'quickbooks' ? {} : parseIntegrationSettings(row.settings),
     ...(lastSync ? { lastSync } : {}),
     accountId: row.provider === 'stripe' ? null : (row.accountId ?? null),
   };

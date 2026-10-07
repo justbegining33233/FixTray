@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
-import { minutesFromHours } from '@/lib/books/clocks';
 import { loadShopBooks } from '@/lib/books/loadShopBooks';
-import { usdToCents } from '@/lib/books/money';
-import { payableHours } from '@/lib/timesheetPeriod';
-import { quickBooksExportAudit, quickBooksHandoff } from '@/lib/books/quickbooks';
+import { laborRowsForQuickBooksExport, quickBooksExportAudit, quickBooksHandoff } from '@/lib/books/quickbooks';
 import { writeAudit } from '@/lib/books/persist';
 
 export async function GET(request: NextRequest) {
@@ -24,20 +21,7 @@ export async function GET(request: NextRequest) {
     where: { shopId },
     select: { techId: true, clockIn: true, clockOut: true, hoursWorked: true, tech: { select: { hourlyRate: true } } },
   });
-  const grouped = new Map<string, { entries: typeof staffEntries; rate: number }>();
-  for (const entry of staffEntries) {
-    const current = grouped.get(entry.techId) || { entries: [], rate: entry.tech?.hourlyRate || 0 };
-    current.entries.push(entry);
-    grouped.set(entry.techId, current);
-  }
-  const labor = [...grouped.entries()].map(([personId, group]) => {
-    const hours = payableHours(group.entries, { clockedIn: group.entries.some((entry) => !entry.clockOut) });
-    return {
-      personId,
-      minutes: minutesFromHours(hours),
-      hourlyRateCents: usdToCents(group.rate),
-    };
-  });
+  const labor = laborRowsForQuickBooksExport(staffEntries, month);
   const handoff = quickBooksHandoff({
     jobs: books.ledger.jobs,
     reversals: books.reversals,

@@ -7,11 +7,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { gateCrossRole, requestHeadersWithNativePlatform } from './src/proxy';
+import { isNoindexPath, NOINDEX_REQUEST_HEADER, setNoindexHeader } from './src/lib/searchIndexing';
 
 export async function middleware(request: NextRequest) {
+  const requestHeaders = requestHeadersWithNativePlatform(request);
+  if (isNoindexPath(request.nextUrl.pathname)) {
+    requestHeaders.set(NOINDEX_REQUEST_HEADER, '1');
+  }
   const gated = await gateCrossRole(request);
   const response = gated ?? NextResponse.next({
-    request: { headers: requestHeadersWithNativePlatform(request) },
+    request: { headers: requestHeaders },
   });
   
   // Add security headers
@@ -65,6 +70,9 @@ export async function middleware(request: NextRequest) {
   // Remove server identification
   headers.delete('Server');
   headers.delete('X-Powered-By');
+
+  // Private app routes, login-gated 307s, and /api stay out of the index.
+  setNoindexHeader(headers, request.nextUrl.pathname);
 
   headers.forEach((value, key) => {
     response.headers.set(key, value);

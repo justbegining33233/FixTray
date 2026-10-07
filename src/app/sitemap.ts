@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { HELP_ARTICLES, helpArticlePath } from "@/lib/helpCenter";
-import { PUBLIC_SITE_ORIGIN } from "@/lib/publicMetadata";
+import { publicCanonicalUrl } from "@/lib/publicMetadata";
 
 const paths = [
   "/",
@@ -18,6 +18,6 @@ const paths = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return paths.map((path) => ({
-    url: path === "/" ? `${PUBLIC_SITE_ORIGIN}/` : `${PUBLIC_SITE_ORIGIN}${path}`,
+    url: publicCanonicalUrl(path),
   }));
 }

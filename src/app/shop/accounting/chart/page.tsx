@@ -14,22 +14,34 @@ const MAP_FIELDS = [
   ['tax', 'Sales tax'],
 ] as const;
 
+interface QboAccount {
+  id: string;
+  name: string;
+  accountType: string;
+}
+
 export default function ChartOfAccountsPage() {
   const { user, isLoading } = useRequireAuth(['shop', 'accountant']);
   const [map, setMap] = useState<Record<string, string>>({});
   const [configured, setConfigured] = useState<boolean | null>(null);
+  const [accounts, setAccounts] = useState<QboAccount[]>([]);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('token');
-    fetch('/api/shop/quickbooks/status', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch('/api/shop/quickbooks/status', { headers, credentials: 'include' })
       .then(async (res) => {
         if (!res.ok) return;
         const body = await res.json();
         setConfigured(body.configured === true);
         if (body.qbMap && typeof body.qbMap === 'object') setMap(body.qbMap);
+        if (body.connected !== true || user.role !== 'shop') return;
+        const accountsResponse = await fetch('/api/shop/quickbooks/accounts', { headers, credentials: 'include' });
+        const accountsBody = await accountsResponse.json().catch(() => ({}));
+        if (accountsResponse.ok && Array.isArray(accountsBody.accounts)) setAccounts(accountsBody.accounts);
       })
       .catch(() => setError('Could not load the QuickBooks map'));
   }, [user]);
@@ -77,15 +89,34 @@ export default function ChartOfAccountsPage() {
         </tbody>
       </table>
       <h2>Map to QuickBooks</h2>
+      <p style={{ color: '#c4a8a4' }}>Map sales, payments, refunds, labor, parts, and tax. Do not map the FixTray fee. It is not a shop expense.</p>
       {configured === false ? <p>QuickBooks Online is not configured. You can still save the map for when it is.</p> : null}
       {MAP_FIELDS.map(([key, label]) => (
         <label key={key} style={{ display: 'block', marginBottom: 8 }}>
           {label}{' '}
-          <input
-            value={map[key] || ''}
-            disabled={readOnly}
-            onChange={(event) => setMap({ ...map, [key]: event.target.value })}
-          />
+          {accounts.length > 0 ? (
+            <select
+              aria-label={label}
+              value={map[key] || ''}
+              disabled={readOnly}
+              onChange={(event) => setMap({ ...map, [key]: event.target.value })}
+            >
+              <option value="">Select {label.toLowerCase()} account</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>{account.name}</option>
+              ))}
+              {map[key] && !accounts.some((account) => account.id === map[key]) ? (
+                <option value={map[key]}>{map[key]}</option>
+              ) : null}
+            </select>
+          ) : (
+            <input
+              aria-label={label}
+              value={map[key] || ''}
+              disabled={readOnly}
+              onChange={(event) => setMap({ ...map, [key]: event.target.value })}
+            />
+          )}
         </label>
       ))}
       {error ? <p style={{ color: '#fca5a5' }}>{error}</p> : null}

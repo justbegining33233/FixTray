@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { NOINDEX_METADATA } from '@/lib/searchIndexing';
+
+export const metadata: Metadata = NOINDEX_METADATA;
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (

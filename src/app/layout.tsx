@@ -14,6 +14,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { appDocumentTitle } from '@/lib/phraseKey';
 import { PUBLIC_SITE_ORIGIN } from '@/lib/publicMetadata';
+import { NOINDEX_REQUEST_HEADER, NOINDEX_ROBOTS } from '@/lib/searchIndexing';
 import { appDesktopViewResetScript, installedShellBootstrapScript } from '@/lib/nativeIntro';
 import AppNavigationGuard from '@/components/AppNavigationGuard';
 import DesktopViewEscape from '@/components/DesktopViewEscape';
@@ -43,10 +44,13 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('phrases');
+  const headerStore = await headers();
+  const noindex = headerStore.get(NOINDEX_REQUEST_HEADER) === '1';
   return {
     metadataBase: new URL(PUBLIC_SITE_ORIGIN),
     title: appDocumentTitle(t('work_order_management_2')),
     description: "Streamlined work order management for roadside and in-shop services",
+    ...(noindex ? { robots: NOINDEX_ROBOTS } : {}),
     manifest: '/manifest.json',
     appleWebApp: {
       capable: true,

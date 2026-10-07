@@ -34,7 +34,7 @@ const marketingFiles = [
   'src/app/terms/page.tsx',
   'src/app/get-started/page.tsx',
   'src/app/help/page.tsx',
-  'src/app/not-found.tsx',
+  'src/components/NotFoundScreen.tsx',
 ];
 
 describe('public marketing copy', () => {
@@ -107,10 +107,12 @@ describe('public marketing copy', () => {
   });
 
   it('shows a real apostrophe on the 404 page', () => {
-    const src = fs.readFileSync(path.join(root, 'src/app/not-found.tsx'), 'utf8');
+    const src = fs.readFileSync(path.join(root, 'src/components/NotFoundScreen.tsx'), 'utf8');
     expect(src).not.toContain('&apos;');
     expect(src).not.toContain('&amp;');
     expect(src).toContain("The page you're looking for doesn't exist or has been moved.");
+    const notFound = fs.readFileSync(path.join(root, 'src/app/not-found.tsx'), 'utf8');
+    expect(notFound).toContain('NOINDEX_METADATA');
   });
 
   it('describes FixTray and points search metadata at the public site', () => {
@@ -128,6 +130,10 @@ describe('public marketing copy', () => {
     expect(sources).not.toContain('/docs');
     expect(sources).not.toContain('/blog');
     expect(sources).toContain('/pricing');
+    expect(PUBLIC_AND_ADMIN_REDIRECTS.every((row) => row.permanent === true)).toBe(true);
+    expect(marketingMetadata('/features').title).toBe('Features | FixTray');
+    expect(marketingMetadata('/features').title).not.toBe(PUBLIC_SITE_TITLE);
+    expect(marketingMetadata('/help/approve-an-estimate').title).toBe('Approve an estimate | FixTray Help');
     const sitemap = fs.readFileSync(path.join(root, 'src/app/sitemap.ts'), 'utf8');
     expect(sitemap).not.toContain("'/docs'");
     expect(sitemap).not.toContain("'/blog'");

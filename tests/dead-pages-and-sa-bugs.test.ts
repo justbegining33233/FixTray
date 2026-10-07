@@ -38,6 +38,15 @@ describe('dead marketing and admin aliases', () => {
     expect(bySource['/auth/password']).toBe('/auth/reset');
     expect(bySource['/privacy-policy']).toBe('/privacy');
     expect(bySource['/terms-of-service']).toBe('/terms');
+    expect(bySource['/index']).toBe('/');
+  });
+
+  it('uses a permanent redirect and does not chain one alias into another', () => {
+    const sources = new Set(PUBLIC_AND_ADMIN_REDIRECTS.map((row) => row.source));
+    for (const row of PUBLIC_AND_ADMIN_REDIRECTS) {
+      expect(row.permanent).toBe(true);
+      expect(sources.has(row.destination)).toBe(false);
+    }
   });
 });
 

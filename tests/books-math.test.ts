@@ -42,6 +42,7 @@ import {
 } from '../src/lib/books/parts';
 import {
   DEFAULT_QB_MAP,
+  laborRowsForQuickBooksExport,
   qbAccounts,
   quickBooksExportAudit,
   quickBooksHandoff,
@@ -470,6 +471,15 @@ describe('month close and QuickBooks', () => {
     expect(audit.actorId).toBe(ACTOR);
     expect(audit.at).toBe(AT);
     expect(qbAccounts(null)).toEqual(DEFAULT_QB_MAP);
+  });
+
+  it('keeps QuickBooks CSV labor inside the chosen month', () => {
+    const rows = laborRowsForQuickBooksExport([
+      { techId: 'tech-1', clockIn: '2026-10-04T15:00:00.000Z', clockOut: '2026-10-04T16:00:00.000Z', hoursWorked: 1, tech: { hourlyRate: 20 } },
+      { techId: 'tech-1', clockIn: '2026-11-02T15:00:00.000Z', clockOut: '2026-11-02T18:00:00.000Z', hoursWorked: 3, tech: { hourlyRate: 20 } },
+      { techId: 'tech-2', clockIn: '2026-09-30T15:00:00.000Z', clockOut: '2026-09-30T16:00:00.000Z', hoursWorked: 1, tech: { hourlyRate: 0 } },
+    ], '2026-10');
+    expect(rows).toEqual([{ personId: 'tech-1', minutes: 60, hourlyRateCents: 2000 }]);
   });
 
   it('filters a month in UTC', () => {

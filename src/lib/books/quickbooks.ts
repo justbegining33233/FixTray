@@ -4,8 +4,9 @@
  * The FixTray fee is not a row and is not a shop expense.
  */
 
-import { auditEvent, monthClose, type BooksAuditEvent, type MonthClose, type ShopJob } from '@/lib/books/money';
-import { laborPayCents } from '@/lib/books/clocks';
+import { auditEvent, inMonth, monthClose, usdToCents, type BooksAuditEvent, type MonthClose, type ShopJob } from '@/lib/books/money';
+import { laborPayCents, minutesFromHours } from '@/lib/books/clocks';
+import { payableHours } from '@/lib/timesheetPeriod';
 
 export const SHOP_PAID_IN_FULL_COPY =
   'The shop is paid in full for the job. The FixTray fee is separate and is not taken from the shop.';
@@ -57,6 +58,34 @@ export interface QbLabor {
   personId: string;
   minutes: number;
   hourlyRateCents: number;
+}
+
+export interface ShopLaborClock {
+  techId: string;
+  clockIn: string | Date | null;
+  clockOut?: string | Date | null;
+  hoursWorked?: number | null;
+  tech?: { hourlyRate?: number | null } | null;
+}
+
+/** Labor for the QuickBooks CSV. A chosen month keeps that month's punches only. */
+export function laborRowsForQuickBooksExport(entries: ShopLaborClock[], month?: string | null): QbLabor[] {
+  const filtered = month ? entries.filter((entry) => inMonth(entry.clockIn, month)) : entries;
+  const grouped = new Map<string, { entries: ShopLaborClock[]; rate: number }>();
+  for (const entry of filtered) {
+    const current = grouped.get(entry.techId) || { entries: [], rate: entry.tech?.hourlyRate || 0 };
+    current.entries.push(entry);
+    if (entry.tech?.hourlyRate) current.rate = entry.tech.hourlyRate;
+    grouped.set(entry.techId, current);
+  }
+  return [...grouped.entries()].map(([personId, group]) => {
+    const hours = payableHours(group.entries, { clockedIn: group.entries.some((entry) => !entry.clockOut) });
+    return {
+      personId,
+      minutes: minutesFromHours(hours),
+      hourlyRateCents: usdToCents(group.rate),
+    };
+  });
 }
 
 export interface QbTax {

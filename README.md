@@ -153,6 +153,19 @@ DATABASE_URL=your-database-url
 JWT_SECRET=your-secret-key
 ```
 
+### QuickBooks Online (Vercel Production)
+
+Shop Books syncs to QuickBooks Online with OAuth. Set these on the Production environment. Do not commit the secret.
+
+```env
+INTUIT_CLIENT_ID=
+INTUIT_CLIENT_SECRET=
+INTUIT_REDIRECT_URI=https://fixtray.app/api/shop/quickbooks/callback
+INTUIT_ENVIRONMENT=production
+```
+
+Use `INTUIT_ENVIRONMENT=sandbox` only for a sandbox company. The redirect URI must match the Intuit app exactly. Shops do not paste these values. CSV download stays an optional escape hatch.
+
 ---
 
 ## Standalone Socket Server (local dev)

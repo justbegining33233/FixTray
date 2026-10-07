@@ -318,4 +318,17 @@ describe('QuickBooks Online sync', () => {
     expect(calls.some((call) => call.method === 'POST' && call.body.includes('Shop payment'))).toBe(true);
     expect(calls.some((call) => call.method === 'POST' && call.body.includes('Shop labor'))).toBe(true);
   });
+
+  it('keeps shop-owner sync and the live account picker on the current books screens', () => {
+    const books = fs.readFileSync('src/components/ShopBooksScreen.tsx', 'utf8');
+    const chart = fs.readFileSync('src/app/shop/accounting/chart/page.tsx', 'utf8');
+    expect(books).toContain("user?.role === 'shop'");
+    expect(books).toContain('/api/shop/quickbooks/sync');
+    expect(books).toContain('Sync to QuickBooks Online');
+    expect(books).toContain("flag === 'connected'");
+    expect(books).toContain('Download QuickBooks CSV');
+    expect(books).toContain('The shop owner connects QuickBooks Online and syncs from the shop login.');
+    expect(chart).toContain('/api/shop/quickbooks/accounts');
+    expect(chart).toContain('Do not map the FixTray fee');
+  });
 });

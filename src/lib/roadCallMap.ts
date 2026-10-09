@@ -204,12 +204,14 @@ export function buildRoadCallMap(input: {
   shop: { id: string; name: string; address: string };
   jobs: RoadCallJobInput[];
   geocodes?: Record<string, GeoPoint | null | undefined>;
+  storedShopPoint?: GeoPoint | null;
   now?: number;
 }): ShopOpsMap {
   const now = input.now ?? Date.now();
   const geocodes = input.geocodes || {};
   const shopAddress = input.shop.address.trim();
-  const shopPoint = shopAddress ? geocodes[shopAddress] ?? null : null;
+  const lookedUp = shopAddress ? geocodes[shopAddress] ?? null : null;
+  const shopPoint = lookedUp || input.storedShopPoint || null;
   const shop: ShopOpsShop = {
     id: input.shop.id,
     name: input.shop.name || 'Shop',

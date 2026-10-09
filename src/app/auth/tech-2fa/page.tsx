@@ -57,8 +57,9 @@ export default function TechTwoFactorAuthPage() {
       setError('Session expired. Please log in again.');
       return;
     }
-    if (code.length !== 6) {
-      setError('Enter the 6-digit code from your authenticator app.');
+    const digits = code.replace(/\D/g, '');
+    if (digits.length !== 6) {
+      setError('Enter the 6-digit code from your authenticator app. The box keeps what you typed.');
       return;
     }
 
@@ -68,7 +69,7 @@ export default function TechTwoFactorAuthPage() {
       const res = await fetch('/api/auth/tech-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tempToken, action: 'verify', token: code }),
+        body: JSON.stringify({ tempToken, action: 'verify', token: digits }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Invalid verification code');
@@ -135,7 +136,7 @@ export default function TechTwoFactorAuthPage() {
             <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>{say("6-digit code")}</label>
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.slice(0, 12))}
               placeholder="000000"
               maxLength={6}
               style={{ width: '100%', marginBottom: 14, padding: '12px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(0,0,0,0.35)', color: '#fff', letterSpacing: 4, textAlign: 'center', fontSize: 20, fontFamily: 'monospace' }}
@@ -143,8 +144,8 @@ export default function TechTwoFactorAuthPage() {
 
             <button
               onClick={verifyCode}
-              disabled={loading || code.length !== 6}
-              style={{ width: '100%', padding: '11px 14px', borderRadius: 9, border: 'none', background: '#e5332a', color: '#fff', fontWeight: 700, cursor: loading || code.length !== 6 ? 'not-allowed' : 'pointer', opacity: loading || code.length !== 6 ? 0.6 : 1 }}
+              disabled={loading}
+              style={{ width: '100%', padding: '11px 14px', borderRadius: 9, border: 'none', background: '#e5332a', color: '#fff', fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1 }}
             >
               {loading ? say("Verifying...") : say("Complete Login")}
             </button>

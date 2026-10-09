@@ -13,8 +13,9 @@ import { saveJournalDraft } from '@/lib/books/persistJournal';
 import { readSalesTaxSnapshot } from '@/lib/books/shopTax';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
+import { managerMustNotSeePlatformFee, stripPlatformFeeFromCompletion } from '@/lib/staffMoneyAccess';
 
-const PAY_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
+const PAY_ROLES = new Set(['shop', 'manager']);
 const IN_PERSON = new Set<InPersonMethod>(['cash', 'check', 'other', 'card']);
 
 export async function POST(
@@ -39,7 +40,7 @@ export async function POST(
   const workOrder = await prisma.workOrder.findUnique({ where: { id } });
   if (!workOrder) return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
   const shopId = auth.role === 'shop' ? auth.id : auth.shopId;
-  if (auth.role !== 'superadmin' && auth.role !== 'admin' && workOrder.shopId !== shopId) {
+  if (workOrder.shopId !== shopId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -173,13 +174,13 @@ export async function POST(
       assignedTo: { select: { id: true, firstName: true, lastName: true } },
     },
   });
+  const hideFee = managerMustNotSeePlatformFee(auth.role);
   return NextResponse.json({
     ok: true,
     method,
-    workOrder: updated,
+    workOrder: hideFee ? { ...updated, completion: stripPlatformFeeFromCompletion(updated.completion) } : updated,
     shopReceivedCents: planned.shopReceivedCents,
-    platformFeeCents: planned.platformFeeCents,
-    feeDeductedFromShop: false,
+    ...(hideFee ? {} : { platformFeeCents: planned.platformFeeCents, feeDeductedFromShop: false }),
     paymentStatus: planned.paymentStatus,
     connectRequired: false,
   });

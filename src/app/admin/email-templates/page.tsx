@@ -10,6 +10,57 @@ export default function EmailTemplates() {
   const say = usePhrase();
   const { user, isLoading } = useRequireAuth(['admin', 'superadmin']);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>('welcome');
+  const [subject, setSubject] = useState('Welcome to FixTray!');
+  const [body, setBody] = useState("Hello {{name}},\n\nWelcome to FixTray! We're excited to have you on board.\n\nBest regards,\nThe FixTray Team");
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const loadTemplate = async (key: string) => {
+    setSelectedTemplate(key);
+    setNotice('');
+    setError('');
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`/api/admin/email-templates?key=${encodeURIComponent(key)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error || 'Could not load this template.');
+        return;
+      }
+      if (data.template?.subject) setSubject(data.template.subject);
+      if (data.template?.body) setBody(data.template.body);
+    } catch {
+      setError('Could not load this template.');
+    }
+  };
+
+  const saveTemplate = async () => {
+    if (!selectedTemplate) return;
+    setSaving(true);
+    setNotice('');
+    setError('');
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch('/api/admin/email-templates', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ key: selectedTemplate, subject, body }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error || 'Template was not saved.');
+        return;
+      }
+      setNotice('Template saved.');
+    } catch {
+      setError('Template was not saved. The request did not finish.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -64,7 +115,7 @@ export default function EmailTemplates() {
                 {templates.map((template) => (
                   <div
                     key={template.id}
-                    onClick={() => setSelectedTemplate(template.id)}
+                    onClick={() => { void loadTemplate(template.id); }}
                     style={{
                       padding:12,
                       background: selectedTemplate === template.id ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)',
@@ -97,7 +148,8 @@ export default function EmailTemplates() {
                     <label style={{display:'block', fontSize:14, color:'#9aa3b2', marginBottom:8}}>{say("Subject Line")}</label>
                     <input 
                       type="text" 
-                      defaultValue="Welcome to FixTray!"
+                      value={subject}
+                      onChange={(event) => setSubject(event.target.value)}
                       style={{width:'100%', padding:'12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#e5e7eb', fontSize:14}}
                     />
                   </div>
@@ -105,7 +157,8 @@ export default function EmailTemplates() {
                     <label style={{display:'block', fontSize:14, color:'#9aa3b2', marginBottom:8}}>{say("Email Body")}</label>
                     <textarea 
                       rows={12}
-                      defaultValue="Hello {{name}},\n\nWelcome to FixTray! We're excited to have you on board.\n\nBest regards,\nThe FixTray Team"
+                      value={body}
+                      onChange={(event) => setBody(event.target.value)}
                       style={{width:'100%', padding:'12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#e5e7eb', fontSize:14, fontFamily:'monospace', resize:'vertical'}}
                     />
                   </div>
@@ -115,15 +168,24 @@ export default function EmailTemplates() {
                       {say("{{name}}, {{email}}, {{shopName}}, {{workOrderId}}, {{date}}")}
                     </div>
                   </div>
+                  {notice ? <div role="status" style={{ background: '#12301c', border: '1px solid #86efac', color: '#bbf7d0', borderRadius: 10, padding: 12 }}>{say(notice)}</div> : null}
+                  {error ? <div role="alert" style={{ background: '#3b1214', border: '1px solid #fca5a5', color: '#fecaca', borderRadius: 10, padding: 12 }}>{say(error)}</div> : null}
                   <div style={{display:'flex', justifyContent:'flex-end', gap:12}}>
-                    <button 
+                    <button
+                      type="button"
+                      onClick={() => setNotice('No email was sent. This preview stays on the page so a template save cannot mail customers by accident.')}
                       style={{padding:'12px 24px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                     >
-                      {say("Send Test Email")}{' '}</button>
-                    <button 
+                      {say("Send Test Email")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { void saveTemplate(); }}
+                      disabled={saving}
                       style={{padding:'12px 24px', background:'#8b5cf6', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
                     >
-                      {say("Save Template")}{' '}</button>
+                      {saving ? say('Saving...') : say("Save Template")}
+                    </button>
                   </div>
                 </div>
               </>

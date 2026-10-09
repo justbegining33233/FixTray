@@ -30,6 +30,7 @@ function formatWhen(iso: string | null): string {
 export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapProps) {
   const say = usePhrase();
   const [data, setData] = useState<LoadState>({ status: 'loading' });
+  const [reloadToken, setReloadToken] = useState(0);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<{ map: LeafletMap; layer: LeafletLayerGroup } | null>(null);
   const boundsKey = useRef('');
@@ -43,6 +44,7 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
         const response = await fetch(`/api/tech/tracking?shopId=${encodeURIComponent(shopId)}`, {
           credentials: 'include',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: AbortSignal.timeout(12000),
         });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
@@ -53,7 +55,10 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
         setData({ status: 'ready', map: payload });
       } catch (error) {
         if (cancelled) return;
-        const message = error instanceof Error ? error.message : 'Could not load the shop map';
+        const timedOut = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+        const message = timedOut
+          ? 'The map did not load. Check the shop address in settings, then try again.'
+          : (error instanceof Error ? error.message : 'Could not load the shop map');
         setData((current) => (
           current.status === 'ready' ? { ...current, stale: true } : { status: 'error', message }
         ));
@@ -66,7 +71,7 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [shopId]);
+  }, [shopId, reloadToken]);
 
   const payload = data.status === 'ready' ? data.map : null;
   const markers = useMemo(() => markerList(payload), [payload]);
@@ -147,8 +152,18 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
         )}
 
         {data.status === 'error' && (
-          <div data-testid="shop-ops-map-error" style={{ minHeight: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', textAlign: 'center', padding: 16 }}>
-            {data.message}
+          <div data-testid="shop-ops-map-error" role="alert" style={{ minHeight: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#fca5a5', textAlign: 'center', padding: 16 }}>
+            <div>{say(data.message)}</div>
+            <button
+              type="button"
+              onClick={() => {
+                setData({ status: 'loading' });
+                setReloadToken((current) => current + 1);
+              }}
+              style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              {say('Try Again')}
+            </button>
           </div>
         )}
 

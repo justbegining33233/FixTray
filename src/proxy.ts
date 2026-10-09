@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
-import { PLATFORM_HOME, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
+import { PLATFORM_HOME, isPlatformActor, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
+import { isShopOperationalApi, PLATFORM_OWNER_SHOP_DENIED } from './lib/platformOwnerApi';
 import { isPlatformEmailAccount, isPlatformEmailPath } from './lib/platformEmailAccess';
 import { isPlatformFeeYearAccount, isPlatformFeeYearPath } from './lib/books/access';
 import { isPlatformVisitsPath } from './lib/platformVisits';
@@ -186,7 +187,18 @@ export async function proxy(request: NextRequest) {
  */
 export async function gateCrossRole(request: NextRequest): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith('/api/') || pathname === '/admin/login') return null;
+  if (pathname.startsWith('/api/')) {
+    if (!isShopOperationalApi(pathname)) return null;
+    const token =
+      request.cookies.get('sos_auth')?.value ??
+      request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) return null;
+    const payload = await verifyJwt(token);
+    const role = typeof payload?.role === 'string' ? payload.role : undefined;
+    if (!isPlatformActor({ role })) return null;
+    return NextResponse.json(PLATFORM_OWNER_SHOP_DENIED, { status: 403 });
+  }
+  if (pathname === '/admin/login') return null;
 
   // Profile setup is a child of Shop Settings. Keep the old address working
   // (including the Stripe return query) without opening a page outside the menu.

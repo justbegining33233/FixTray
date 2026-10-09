@@ -10,6 +10,7 @@ import { paymentLinkFeeBreakdown, unpaidInvoiceDisplay, usdToCents } from '@/lib
 import { billFromFrozenFee, readFeeSnapshot } from '@/lib/feeSnapshot';
 import { createWorkOrderCheckoutSession } from '@/lib/workOrderCheckout';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
+import { managerMustNotSeePlatformFee, mayListPaymentLinks } from '@/lib/staffMoneyAccess';
 
 async function invoiceBreakdown(link: {
   amount: number;
@@ -108,6 +109,9 @@ export async function GET(req: NextRequest) {
 
   const auth = authenticateRequest(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!mayListPaymentLinks(auth.role)) {
+    return NextResponse.json({ error: 'Invoice links are limited to the shop owner and manager.' }, { status: 403 });
+  }
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
   if (!shopId) return NextResponse.json({ error: 'No shop' }, { status: 400 });
   const workOrderId = req.nextUrl.searchParams.get('workOrderId');
@@ -115,7 +119,8 @@ export async function GET(req: NextRequest) {
     where: { shopId, ...(workOrderId ? { workOrderId } : {}) },
     orderBy: { createdAt: 'desc' },
   });
-  return NextResponse.json(links);
+  if (!managerMustNotSeePlatformFee(auth.role)) return NextResponse.json(links);
+  return NextResponse.json(links.map(({ amount: _amount, ...link }) => link));
 }
 
 export async function POST(req: NextRequest) {

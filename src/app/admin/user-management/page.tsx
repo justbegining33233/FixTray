@@ -141,6 +141,9 @@ export default function UserManagement() {
       }
 
       setUsers((prev) => prev.map((item) => item.id === targetUser.id ? { ...item, status: nextStatus } : item));
+      alert(say(nextStatus === 'active' ? 'User activated.' : 'User status updated.'));
+    } catch {
+      alert(say('Could not update this user. The request did not finish.'));
     } finally {
       setSavingAction(false);
     }

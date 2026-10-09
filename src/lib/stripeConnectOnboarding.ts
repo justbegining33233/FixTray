@@ -349,7 +349,7 @@ export function connectFailureMessage(err: unknown): string {
     return 'Stripe could not start Connect. Confirm the platform secret key can create connected accounts, then try again.';
   }
   if (/signed up for connect/i.test(raw)) {
-    return 'Stripe Connect is not enabled on the platform account. Turn on Connect in the Stripe Dashboard, then try again.';
+    return 'Stripe Connect is not enabled on the FixTray platform account. Turn on Connect in the Stripe Dashboard: open Settings, then Connect, and enable it so shops can create connected accounts. After that, try again from this page. A shop cannot turn this on by itself.';
   }
   if (/https/i.test(raw) && /redirect/i.test(raw)) {
     return 'Stripe rejected the return URL because it is not HTTPS. Set NEXT_PUBLIC_APP_URL to https://fixtray.app and try again.';

@@ -695,6 +695,14 @@ function ShopSettingsPageContent() {
             <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:4, display:'flex', alignItems:'center', gap:12}}>
               <FaCog style={{fontSize:28, color:'#e5e7eb'}} /> {say("Shop Settings")}{' '}</h1>
             <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Manage your shop information and preferences")}</p>
+            {searchParams?.get('notice') === 'finish-setup' ? (
+              <div role="status" style={{ marginTop: 12, background: '#3b1214', border: '1px solid #fca5a5', color: '#fecaca', borderRadius: 12, padding: '12px 14px', maxWidth: 640 }}>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>{say('Finish shop setup')}</div>
+                <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                  {say('Other shop pages stay closed until this profile is finished. On General Info, accept the participation agreement and enter the business license and insurance policy. Card payments also need Stripe payout setup on the Payments tab.')}
+                </div>
+              </div>
+            ) : null}
           </div>
           <button
             onClick={() => {

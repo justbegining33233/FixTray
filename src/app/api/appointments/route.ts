@@ -94,7 +94,27 @@ export async function GET(request: NextRequest) {
     });
 
     const presented = await reconcileAppointmentStatuses(appointments);
-    return NextResponse.json({ appointments: presented });
+    const customerIds = [...new Set(presented.map((row) => row.customerId).filter((id): id is string => Boolean(id)))];
+    const shopIds = [...new Set(presented.map((row) => row.shopId).filter((id): id is string => Boolean(id)))];
+    const workOrderIdByPair = new Map<string, string>();
+    if (customerIds.length > 0 && shopIds.length > 0) {
+      const orders = await prisma.workOrder.findMany({
+        where: { customerId: { in: customerIds }, shopId: { in: shopIds } },
+        select: { id: true, customerId: true, shopId: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 200,
+      });
+      for (const order of orders) {
+        const key = `${order.customerId}:${order.shopId}`;
+        if (!workOrderIdByPair.has(key)) workOrderIdByPair.set(key, order.id);
+      }
+    }
+    return NextResponse.json({
+      appointments: presented.map((row) => ({
+        ...row,
+        workOrderId: workOrderIdByPair.get(`${row.customerId}:${row.shopId}`) || null,
+      })),
+    });
   } catch (error) {
     console.error('Error fetching appointments:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

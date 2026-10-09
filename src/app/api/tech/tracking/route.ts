@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { authenticateRequest, verifyToken } from '@/lib/auth';
 import { geocodeAddresses } from '@/lib/geocodeAddress';
+import { saveShopPoint, storedShopPoint } from '@/lib/persistShopCoordinates';
 import { actorMayAccessShop, usableShopId } from '@/lib/shopAccess';
 import { TRACKABLE_WORK_ORDER_STATUSES } from '@/lib/customerTracking';
 import {
@@ -127,11 +128,17 @@ export async function GET(request: NextRequest) {
     }));
 
     const address = shopAddressFromRecord(shop);
-    const geocodes = await geocodeAddresses(addressesToGeocode(address, jobs));
+    const savedPoint = await storedShopPoint(shop.id);
+    const geocodes = await geocodeAddresses(addressesToGeocode(savedPoint ? '' : address, jobs), { budgetMs: 4000 });
+    const lookedUp = address ? geocodes[address.trim()] : null;
+    if (!savedPoint && lookedUp) {
+      void saveShopPoint(shop.id, lookedUp).catch(() => undefined);
+    }
     const map = buildRoadCallMap({
       shop: { id: shop.id, name: shop.shopName, address },
       jobs,
       geocodes,
+      storedShopPoint: savedPoint,
     });
 
     return NextResponse.json(map);

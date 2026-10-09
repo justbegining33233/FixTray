@@ -58,7 +58,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       const accepted = await fetchShopAgreementAccepted();
       if (cancelled) return;
       // Unknown (failed fetch) must not hijack Orders and the rest of the shop.
-      if (accepted === false) router.replace('/shop/settings?tab=general');
+      if (accepted === false) router.replace('/shop/settings?tab=general&notice=finish-setup');
     })();
     return () => {
       cancelled = true;

@@ -56,11 +56,11 @@ export default function TechManuals() {
         <h2 style={{fontSize:16, fontWeight:700, color:'#9aa3b2', marginBottom:12, textTransform:'uppercase', letterSpacing:1}}>{say("Free Resources")}</h2>
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:16, marginBottom:32}}>
           {[
-            { label: say("NHTSA TSB Search"), desc: say("Official Technical Service Bulletins by VIN or YMME"), icon: <FaUniversity style={{marginRight:4}} />, href: 'https://www.nhtsa.gov/vehicle/latest/#/' },
+            { label: say("NHTSA TSB Search"), desc: say("Official Technical Service Bulletins by VIN or YMME"), icon: <FaUniversity style={{marginRight:4}} />, href: 'https://www.nhtsa.gov/vehicle' },
             { label: say("NHTSA Recall Search"), desc: say("Check for open safety recalls by VIN"), icon: '', href: 'https://www.nhtsa.gov/recalls' },
             { label: say("iATN TechHelp"), desc: say("Free peer-to-peer tech discussion forums"), icon: '', href: 'https://iatn.net' },
             { label: say("YouTube - EricTheCarGuy"), desc: say("Free visual repair walkthroughs"), icon: <FaCaretRight style={{marginRight:4}} />, href: 'https://youtube.com/@EricTheCarGuy' },
-            { label: say("Gates Timing Guide"), desc: say("Timing belt intervals & kits by vehicle"), icon: '', href: 'https://www.gates.com/en-us/resources/tools-and-resources/timing-drive-component-kits' },
+            { label: say("Gates Timing Guide"), desc: say("Timing belt intervals and kits by vehicle"), icon: '', href: 'https://www.gates.com/us/en/knowledge-center/resource-library.html' },
             { label: say("FCA ServiceInfo (Mopar)"), desc: say("Stellantis/Mopar factory service info"), icon: '', href: 'https://www.fcaserviceinfo.com' },
           ].map(r => (
             <a key={r.label} href={r.href} target="_blank" rel="noopener noreferrer"

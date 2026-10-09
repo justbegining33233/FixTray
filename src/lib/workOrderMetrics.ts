@@ -231,8 +231,7 @@ export type ShopScopeResult =
 export function resolveShopId(actor: ShopActor, requestedShopId?: string | null): ShopScopeResult {
   const requested = String(requestedShopId || '').trim();
   if (actor.role === 'superadmin' || actor.role === 'admin') {
-    if (!requested) return { ok: false, error: 'missing' };
-    return { ok: true, shopId: requested };
+    return { ok: false, error: 'forbidden' };
   }
   const own = actor.role === 'shop' ? (actor.shopId || actor.id) : (actor.shopId || '');
   if (!own) return { ok: false, error: 'missing' };
@@ -268,7 +267,7 @@ export function workOrderScope(
     return { scope: { shopId: resolved.shopId } };
   }
   if (actor.role === 'superadmin' || actor.role === 'admin') {
-    return { scope: requestedShopId ? { shopId: requestedShopId } : {} };
+    return { error: 'Platform accounts cannot read shop operations.', status: 403 };
   }
   return { error: 'Forbidden', status: 403 };
 }

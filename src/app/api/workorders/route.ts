@@ -28,6 +28,7 @@ import {
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { quoteAmount } from '@/lib/workOrderCloseout';
 import { estimateBillForOrder } from '@/lib/customerLedger';
+import { redactPlatformFeeForRole } from '@/lib/staffMoneyAccess';
 import { demoOutboundBlocked } from '@/lib/demoOutboundContext';
 import { isDemoShopId } from '@/lib/demoShopLookup';
 import { workOrderTextMatch } from '@/lib/workOrderSearch';
@@ -275,8 +276,9 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const result = {
-      workOrders,
+    const visibleOrders = workOrders.map((row) => redactPlatformFeeForRole(auth.role, row));
+    const result = redactPlatformFeeForRole(auth.role, {
+      workOrders: visibleOrders,
       fixtrayServiceFee,
       pagination: {
         total,
@@ -285,7 +287,7 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit),
       },
       ...(metrics ? { metrics } : {}),
-    };
+    });
 
     // Cache the result — skip for live ops queries
     if (!isOpsQuery) {

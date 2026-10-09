@@ -83,7 +83,10 @@ export default function ShopSecurityPanel({ focus = 'all' }: { focus?: 'all' | '
   }
 
   async function handleVerify() {
-    if (tokenInput.length !== 6) return;
+    if (tokenInput.replace(/\D/g, '').length !== 6) {
+      setErrorMsg('Enter the 6-digit code from your authenticator app.');
+      return;
+    }
     setFetching(true);
     setErrorMsg(null);
     try {
@@ -108,7 +111,10 @@ export default function ShopSecurityPanel({ focus = 'all' }: { focus?: 'all' | '
   }
 
   async function handleDisable() {
-    if (tokenInput.length !== 6) return;
+    if (tokenInput.replace(/\D/g, '').length !== 6) {
+      setErrorMsg('Enter the 6-digit code from your authenticator app.');
+      return;
+    }
     setFetching(true);
     setErrorMsg(null);
     try {
@@ -159,7 +165,8 @@ export default function ShopSecurityPanel({ focus = 'all' }: { focus?: 'all' | '
           {say("Two-factor authentication is")}{' '}{enabled ? 'on' : 'off'}
         </div>
         {statusMsg && <div style={{ color: '#86efac', marginBottom: 12 }}>{say(statusMsg)}</div>}
-        {errorMsg && <div style={{ color: '#fca5a5', marginBottom: 12 }}>{say(errorMsg)}</div>}
+        {errorMsg && <div role="alert" style={{ background: '#3b1214', border: '1px solid #fca5a5', color: '#fecaca', borderRadius: 10, padding: 12, marginBottom: 12 }}>{say(errorMsg)}</div>}
+        {statusMsg && <div role="status" style={{ background: '#12301c', border: '1px solid #86efac', color: '#bbf7d0', borderRadius: 10, padding: 12, marginBottom: 12 }}>{say(statusMsg)}</div>}
 
         {step === 'verify' && qrCode && (
           <div style={{ marginBottom: 16 }}>

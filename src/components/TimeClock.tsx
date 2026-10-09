@@ -34,8 +34,36 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
     fetchShopSettings();
   }, [techId]);
 
+  const paintElapsed = (entry: { clockIn?: string; breaks?: Array<{ durationMinutes?: number; start?: string; end?: string }>; breakStart?: string; breakEnd?: string }) => {
+    if (!entry?.clockIn) return;
+    const now = new Date();
+    const clockInTime = new Date(entry.clockIn);
+    if (Number.isNaN(clockInTime.getTime())) return;
+    let diff = now.getTime() - clockInTime.getTime();
+    const breaksArray = entry.breaks || [];
+    const activeBreak = breaksArray.length ? breaksArray[breaksArray.length - 1] : null;
+    const completedBreakMinutes = breaksArray.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
+    diff -= completedBreakMinutes * 60 * 1000;
+    if (activeBreak && !activeBreak.end && activeBreak.start) {
+      const breakSoFar = now.getTime() - new Date(activeBreak.start).getTime();
+      diff -= breakSoFar;
+      const breakHours = Math.floor(breakSoFar / (1000 * 60 * 60));
+      const breakMinutes = Math.floor((breakSoFar % (1000 * 60 * 60)) / (1000 * 60));
+      const breakSeconds = Math.floor((breakSoFar % (1000 * 60)) / 1000);
+      setBreakTime(`${String(breakHours).padStart(2, '0')}:${String(breakMinutes).padStart(2, '0')}:${String(breakSeconds).padStart(2, '0')}`);
+    } else if (entry.breakStart && entry.breakEnd) {
+      diff -= new Date(entry.breakEnd).getTime() - new Date(entry.breakStart).getTime();
+    }
+    if (diff < 0) diff = 0;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    setElapsedTime(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+  };
+
   useEffect(() => {
     if (isClockedIn && currentEntry) {
+      paintElapsed(currentEntry);
       const interval = setInterval(() => {
         const now = new Date();
         const clockInTime = new Date(currentEntry.clockIn);
@@ -102,24 +130,41 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
   const checkClockStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/time-tracking?techId=${techId}&startDate=${new Date().toISOString().split('T')[0]}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const { timeEntries } = await response.json();
-        const activeEntry = timeEntries.find((e: any) => !e.clockOut);
-        
-        if (activeEntry) {
+      const headers = { Authorization: `Bearer ${token}` };
+      const statusResponse = await fetch(`/api/timeclock/status?userId=${encodeURIComponent(techId)}`, { headers });
+      if (statusResponse.ok) {
+        const data = await statusResponse.json();
+        if (data.isClockedIn && data.currentEntry?.clockIn) {
           setIsClockedIn(true);
-          setCurrentEntry(activeEntry);
-          const breaksArray: any[] = activeEntry.breaks || [];
-          const lastBreak = breaksArray.length ? breaksArray[breaksArray.length - 1] : null;
-          setOnBreak((lastBreak && !lastBreak.end) || (activeEntry.breakStart && !activeEntry.breakEnd));
+          setCurrentEntry(data.currentEntry);
+          setOnBreak(Boolean(data.currentEntry.breakStart && !data.currentEntry.breakEnd));
+          return;
         }
+        setIsClockedIn(false);
+        setCurrentEntry(null);
+        setElapsedTime('00:00:00');
+        return;
       }
-    } catch (error) {
-      console.error('Error checking clock status:', error);
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/time-tracking?techId=${techId}&startDate=${today}&endDate=${today}`, { headers });
+      if (!response.ok) {
+        setClockMsg({ type: 'error', text: 'Clock status could not be loaded.' });
+        return;
+      }
+      const { timeEntries } = await response.json();
+      const activeEntry = (timeEntries || []).find((e: { clockOut?: string | null }) => !e.clockOut);
+      if (activeEntry) {
+        setIsClockedIn(true);
+        setCurrentEntry(activeEntry);
+        const breaksArray: Array<{ end?: string }> = activeEntry.breaks || [];
+        const lastBreak = breaksArray.length ? breaksArray[breaksArray.length - 1] : null;
+        setOnBreak((lastBreak && !lastBreak.end) || (activeEntry.breakStart && !activeEntry.breakEnd));
+      } else {
+        setIsClockedIn(false);
+        setCurrentEntry(null);
+      }
+    } catch {
+      setClockMsg({ type: 'error', text: 'Clock status could not be loaded.' });
     }
   };
 
@@ -440,7 +485,7 @@ export default function TimeClock({ techId, shopId, techName }: TimeClockProps) 
             fontFamily: 'monospace',
             letterSpacing: '2px',
           }}>
-            {say(elapsedTime)}
+            {elapsedTime}
           </div>
           {onBreak && (
             <div style={{

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
+import { mayReadPayrollRates } from '@/lib/staffMoneyAccess';
 
 // GET /api/payroll/employees - list all employees with payroll info
 export async function GET(req: NextRequest) {
   const auth = authenticateRequest(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!mayReadPayrollRates(auth.role)) {
+    return NextResponse.json({ error: 'Payroll rates are limited to the shop owner and manager.' }, { status: 403 });
+  }
   const shopId = auth.role === 'shop' ? auth.id : (auth as any).shopId;
   if (!shopId) return NextResponse.json({ error: 'No shop context' }, { status: 400 });
 

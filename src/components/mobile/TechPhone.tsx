@@ -43,31 +43,33 @@ export function TechHomePhone({
   roadCalls: Array<{ id: string; vehicleType?: string; status?: string }>;
 }) {
   const say = usePhrase();
-  const [clock, setClock] = useState<{ on: boolean; at: string } | null>(null);
+  const [clock, setClock] = useState<{ state: 'checking' | 'in' | 'out' | 'unknown'; at: string }>({ state: 'checking', at: '' });
   useEffect(() => {
     if (!userId) return;
     const token = localStorage.getItem('token');
     fetch(`/api/timeclock/status?userId=${encodeURIComponent(userId)}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) {
-          setClock({ on: false, at: '' });
+      .then(async (res) => {
+        if (!res.ok) {
+          setClock({ state: 'unknown', at: '' });
           return;
         }
+        const data = await res.json();
         const at = data.currentEntry?.clockIn
           ? new Date(data.currentEntry.clockIn).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
           : '';
-        setClock({ on: Boolean(data.isClockedIn), at });
+        setClock({ state: data.isClockedIn ? 'in' : 'out', at });
       })
-      .catch(() => setClock({ on: false, at: '' }));
+      .catch(() => setClock({ state: 'unknown', at: '' }));
   }, [userId]);
-  const clockLine = !clock
+  const clockLine = clock.state === 'checking'
     ? say('Checking clock status...')
-    : clock.on
-      ? `${say('Clocked in')}: ${clock.at || say('now')}`
-      : say('Not clocked in');
+    : clock.state === 'unknown'
+      ? say('Clock status unavailable')
+      : clock.state === 'in'
+        ? `${say('Clocked in')}: ${clock.at || say('now')}`
+        : say('Not clocked in');
   return (
     <div className="pm">
       <div className="pm-row" style={{ alignItems: 'center' }}>
@@ -75,7 +77,7 @@ export function TechHomePhone({
           <h1 className="pm-title">{say('Hi')}, {firstName(name)}</h1>
           <div className="pm-sub">{clockLine}</div>
         </div>
-        <span className={`pm-badge ${clock?.on ? 'pm-b-green' : 'pm-b-ghost'}`}>● {clock?.on ? say('Clocked In') : say('Off clock')}</span>
+        <span className={`pm-badge ${clock.state === 'in' ? 'pm-b-green' : 'pm-b-ghost'}`}>● {clock.state === 'in' ? say('Clocked In') : clock.state === 'unknown' ? say('Clock unknown') : say('Off clock')}</span>
       </div>
       <div className="pm-g2">
         <div className="pm-stat pm-t-red"><span className="lbl">{say('My Open Jobs')}</span><span className="val">{count(openJobs)}</span></div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { geocodeAddress } from '@/lib/geocodeAddress';
+import { saveShopPoint, storedShopPoint } from '@/lib/persistShopCoordinates';
 import { shopAddressFromRecord } from '@/lib/roadCallMap';
 import {
   browserDirectionLinks,
@@ -80,8 +81,14 @@ export async function GET(
   }
 
   let point = preliminary.point;
+  if (!point && preliminary.kind === 'shop') {
+    point = await storedShopPoint(workOrder.shopId);
+  }
   if (!point && preliminary.address) {
     point = await geocodeAddress(preliminary.address);
+    if (point && preliminary.kind === 'shop') {
+      void saveShopPoint(workOrder.shopId, point).catch(() => undefined);
+    }
   }
   if (!point) {
     return NextResponse.json({

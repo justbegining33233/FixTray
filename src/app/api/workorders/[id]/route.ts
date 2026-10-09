@@ -8,6 +8,7 @@ import { awardLoyaltyPoints } from '@/lib/loyaltyService';
 import { dispatchWebhook } from '@/lib/webhookService';
 import logger from '@/lib/logger';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
+import { redactPlatformFeeForRole } from '@/lib/staffMoneyAccess';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
@@ -87,8 +88,7 @@ export async function GET(
     }
     
     // Check authorization
-    const authorized = 
-      (auth.role === 'superadmin') ||
+    const authorized =
       (auth.role === 'customer' && workOrder.customerId === auth.id) ||
       (auth.role === 'shop' && workOrder.shopId === auth.id) ||
       ((auth.role === 'tech' || auth.role === 'manager') && workOrder.shopId === auth.shopId);
@@ -99,10 +99,12 @@ export async function GET(
     
     const viewerLocale = await resolveAccountLocale(request, auth);
     const messages = await decorateWorkOrderMessages(workOrder.messages, viewerLocale);
-    return NextResponse.json(
-      { ...workOrder, messages, fixtrayServiceFee: await getPlatformServiceFeeUsd() },
-      { headers: corsHeaders }
-    );
+    const payload = redactPlatformFeeForRole(auth.role, {
+      ...workOrder,
+      messages,
+      fixtrayServiceFee: await getPlatformServiceFeeUsd(),
+    });
+    return NextResponse.json(payload, { headers: corsHeaders });
   } catch (error) {
     logger.error('Error fetching work order', { error: error instanceof Error ? error.message : String(error), workOrderId: id });
     return NextResponse.json({ error: 'Failed to fetch work order' }, { status: 500 });
@@ -150,8 +152,7 @@ export async function PUT(
     }
     
     // Check authorization
-    const canUpdate = 
-      (auth.role === 'superadmin') ||
+    const canUpdate =
       (auth.role === 'shop' && current.shopId === auth.id) ||
       ((auth.role === 'tech' || auth.role === 'manager') && current.shopId === auth.shopId) ||
       (auth.role === 'customer' && current.customerId === auth.id);

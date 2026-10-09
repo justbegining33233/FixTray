@@ -197,6 +197,7 @@ export default function WorkOrderDetailPage() {
   const [lineItems,  setLineItems]    = useState<LineItem[]>([]);
   const [saving,     setSaving]       = useState(false);
   const [saveMsg,    setSaveMsg]      = useState('');
+  const [saveTone,   setSaveTone]     = useState<'ok' | 'err'>('ok');
 
   // Submit estimate state
   const [submittingEst, setSubmittingEst] = useState(false);
@@ -232,6 +233,7 @@ export default function WorkOrderDetailPage() {
   const [shopMarkup,      setShopMarkup]      = useState(0.30);
   const [itemSearch,      setItemSearch]      = useState('');
   const [modalLoading,    setModalLoading]    = useState(false);
+  const [modalError,      setModalError]      = useState('');
   const [poVendor,        setPoVendor]        = useState('');
   const [poPartName,      setPoPartName]      = useState('');
   const [poSku,           setPoSku]           = useState('');
@@ -361,7 +363,8 @@ export default function WorkOrderDetailPage() {
   // ── Save line items ────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!id) return;
-    setSaving(true); setSaveMsg('');
+    setSaving(true);
+    setSaveMsg('');
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
       const payload = buildEstimateSave(
@@ -379,25 +382,54 @@ export default function WorkOrderDetailPage() {
       const existingEstimate = wo?.estimate && typeof wo.estimate === 'object'
         ? wo.estimate as Record<string, unknown>
         : {};
+      const decision = existingEstimate.customerDecision;
+      const signed = Boolean(decision && typeof decision === 'object' && (decision as { response?: string }).response === 'accepted');
+      const previousTotal = typeof existingEstimate.total === 'number'
+        ? existingEstimate.total
+        : Number(wo?.estimatedCost || 0);
+      const quoteChanged = Math.abs(previousTotal - payload.estimate.total) > 0.009;
+      const canReopen = ['assigned', 'in-progress', 'waiting-estimate', 'estimate-submitted', 'waiting-for-payment'].includes(wo?.status || '');
+      const needsNewSignature = signed && quoteChanged && canReopen;
       const res = await fetch(`/api/workorders/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           ...payload,
+          ...(needsNewSignature ? { status: 'estimate-submitted', statusReason: 'The quote changed after the customer signed.' } : {}),
           estimate: {
             ...payload.estimate,
-            ...(existingEstimate.customerDecision ? { customerDecision: existingEstimate.customerDecision } : {}),
+            ...(decision && !needsNewSignature ? { customerDecision: decision } : {}),
             ...(typeof existingEstimate.counterSignToken === 'string' ? { counterSignToken: existingEstimate.counterSignToken } : {}),
             ...(typeof existingEstimate.notes === 'string' && existingEstimate.notes ? { notes: existingEstimate.notes } : {}),
           },
         }),
       });
+      const body = await res.json().catch(() => ({}));
       if (res.ok) {
         setLineItems(prev => prev.map(li => ({ ...li, status: 'saved' })));
-        setSaveMsg('Saved!');
-        setTimeout(() => setSaveMsg(''), 3000);
-      } else { setSaveMsg('Save failed.'); }
-    } catch { setSaveMsg('Save failed.'); }
+        if (needsNewSignature) {
+          setWo((current) => current ? {
+            ...current,
+            status: 'estimate-submitted',
+            estimatedCost: payload.estimate.total,
+            estimate: {
+              ...(current.estimate && typeof current.estimate === 'object' ? current.estimate : {}),
+              ...payload.estimate,
+            },
+          } : current);
+        }
+        setSaveTone('ok');
+        setSaveMsg(needsNewSignature
+          ? 'Line items saved. The previous signature does not cover this total. Send the estimate again so the customer can sign before you invoice.'
+          : 'Line items saved.');
+      } else {
+        setSaveTone('err');
+        setSaveMsg(typeof body.error === 'string' ? body.error : 'Line items were not saved.');
+      }
+    } catch {
+      setSaveTone('err');
+      setSaveMsg('Line items were not saved. The request did not finish.');
+    }
     finally { setSaving(false); }
   };
 
@@ -585,6 +617,7 @@ export default function WorkOrderDetailPage() {
   // ── Open add-item modal + fetch shop data ─────────────────────────────────
   const handleOpenItemModal = async () => {
     setShowItemModal(true);
+    setModalError('');
     setModalTab('inventory');
     setItemSearch('');
     setCustomDesc(''); setCustomType('part'); setCustomPrice(0); setCustomQty(1);
@@ -599,13 +632,18 @@ export default function WorkOrderDetailPage() {
       actorId: decoded?.id,
       storedShopId: typeof window !== 'undefined' ? localStorage.getItem('shopId') : null,
     });
-    if (!shopId2) { setModalLoading(false); return; }
+    if (!shopId2) {
+      setModalLoading(false);
+      setModalError('This job has no shop, so parts and labor cannot be loaded.');
+      return;
+    }
     try {
       const [invRes, svcRes, settingsRes] = await Promise.all([
         fetch(`/api/inventory?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         fetch(`/api/services?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         fetch(`/api/shop/settings?shopId=${shopId2}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
       ]);
+      const failures: string[] = [];
       if (invRes.ok) {
         const d = await invRes.json();
         setInventoryItems(partsPickerRows(d).map((row) => ({
@@ -617,11 +655,20 @@ export default function WorkOrderDetailPage() {
           type: row.type || 'part',
           rate: null,
         })));
-      }
+      } else failures.push('inventory');
       if (svcRes.ok) { const d = await svcRes.json(); setShopServices(d.services || []); }
+      else failures.push('services');
       if (settingsRes.ok) { const d = await settingsRes.json(); setShopMarkup(d.settings?.inventoryMarkup ?? 0.30); }
-    } catch { /* ignore */ }
+      if (failures.length) setModalError(`Could not load ${failures.join(' and ')}. You can still add a custom line, or close this and try again.`);
+    } catch {
+      setModalError('Parts and labor did not load. You can still add a custom line, or close this and try again.');
+    }
     finally { setModalLoading(false); }
+  };
+
+  const noteLineAdded = () => {
+    setSaveTone('ok');
+    setSaveMsg('Line added. Save line items so it stays on this job.');
   };
 
   // ── Add inventory item to line items ──────────────────────────────────────
@@ -634,6 +681,7 @@ export default function WorkOrderDetailPage() {
       ...(item.type === 'labor' ? {} : { inventoryItemId: item.id }),
     }]);
     setShowItemModal(false);
+    noteLineAdded();
   };
 
   // ── Add service to line items ─────────────────────────────────────────────
@@ -646,6 +694,7 @@ export default function WorkOrderDetailPage() {
       status: 'new',
     }]);
     setShowItemModal(false);
+    noteLineAdded();
   };
 
   // ── Add part pickup + create PO ───────────────────────────────────────────
@@ -677,6 +726,7 @@ export default function WorkOrderDetailPage() {
     }]);
     setPoVendor(''); setPoPartName(''); setPoSku(''); setPoCost(0); setPoQty(1);
     setShowItemModal(false);
+    noteLineAdded();
   };
 
   // ── Add custom line item ──────────────────────────────────────────────────
@@ -689,6 +739,7 @@ export default function WorkOrderDetailPage() {
     }]);
     setCustomDesc(''); setCustomType('part'); setCustomPrice(0); setCustomQty(1);
     setShowItemModal(false);
+    noteLineAdded();
   };
 
   // ── Clock in ──────────────────────────────────────────────────────────────
@@ -810,6 +861,10 @@ export default function WorkOrderDetailPage() {
         canClose={Boolean(userRole && ['shop', 'manager', 'admin', 'superadmin'].includes(userRole))}
         onInvoice={() => { void handleCloseout('invoice'); }}
         onAddItem={() => { void handleOpenItemModal(); }}
+        onSave={() => { void handleSave(); }}
+        saving={saving}
+        saveMessage={saveMsg}
+        unsavedCount={lineItems.filter((item) => item.status !== 'saved').length}
         invoiceDisabled={!!closeoutBusy || !['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status)}
         invoiceLabel={closeoutBusy === 'invoice' ? say('Requesting…') : say('Invoice / Request payment')}
         inspectionStatus={userRole === 'tech' ? inspectionStatus : undefined}
@@ -1088,8 +1143,8 @@ export default function WorkOrderDetailPage() {
             icon={<FaBox />}
             action={
               <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 5, background: saving ? 'transparent' : saveMsg === 'Saved!' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${saveMsg === 'Saved!' ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`, color: saveMsg === 'Saved!' ? '#22c55e' : '#e5e7eb', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
-                  <FaSave style={{ fontSize: 11 }} /> {saving ? say("Saving…") : saveMsg || say("Save")}
+                <button type="button" onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 5, background: saving ? 'transparent' : saveTone === 'ok' && saveMsg ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${saveTone === 'ok' && saveMsg ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`, color: saveTone === 'ok' && saveMsg ? '#22c55e' : '#e5e7eb', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                  <FaSave style={{ fontSize: 11 }} /> {saving ? say("Saving…") : say("Save line items")}
                 </button>
                 {userRole !== 'customer' && (
                   <button onClick={handleSubmitEstimate} disabled={submittingEst} style={{ display: 'flex', alignItems: 'center', gap: 5, background: submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.15)' : 'rgba(96,165,250,0.12)', border: `1px solid ${submitEstMsg === 'Submitted!' ? 'rgba(34,197,94,0.3)' : 'rgba(96,165,250,0.3)'}`, color: submitEstMsg === 'Submitted!' ? '#22c55e' : '#60a5fa', fontSize: 12, fontWeight: 700, borderRadius: 6, padding: '4px 10px', cursor: submittingEst ? 'not-allowed' : 'pointer', opacity: submittingEst ? 0.6 : 1 }}>
@@ -1099,6 +1154,11 @@ export default function WorkOrderDetailPage() {
               </div>
             }
           >
+            {saveMsg ? (
+              <div role="status" style={{ marginBottom: 12, background: saveTone === 'err' ? '#3b1214' : '#12301c', border: `1px solid ${saveTone === 'err' ? '#fca5a5' : '#86efac'}`, color: saveTone === 'err' ? '#fecaca' : '#bbf7d0', borderRadius: 10, padding: 12, fontSize: 13, lineHeight: 1.45 }}>
+                {say(saveMsg)}
+              </div>
+            ) : null}
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
                 <thead>
@@ -1393,6 +1453,21 @@ export default function WorkOrderDetailPage() {
 
             {/* Content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+              {(() => {
+                const decision = wo?.estimate && typeof wo.estimate === 'object'
+                  ? (wo.estimate as { customerDecision?: { response?: string } }).customerDecision
+                  : undefined;
+                return decision?.response === 'accepted' ? (
+                  <div role="status" style={{ marginBottom: 12, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', color: '#fde68a', borderRadius: 8, padding: 10, fontSize: 12, lineHeight: 1.45 }}>
+                    {say('This quote was already signed. Saving a different total clears that signature. Send the estimate again before invoicing.')}
+                  </div>
+                ) : null;
+              })()}
+              {modalError ? (
+                <div role="alert" style={{ marginBottom: 12, background: '#3b1214', border: '1px solid #fca5a5', color: '#fecaca', borderRadius: 8, padding: 10, fontSize: 12, lineHeight: 1.45 }}>
+                  {say(modalError)}
+                </div>
+              ) : null}
               {modalLoading ? (
                 <div style={{ textAlign: 'center', color: '#9aa3b2', padding: 40, fontSize: 13 }}>{say("Loading shop data…")}</div>
               ) : modalTab === 'inventory' ? (

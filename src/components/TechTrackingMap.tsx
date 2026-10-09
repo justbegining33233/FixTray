@@ -30,6 +30,7 @@ function formatWhen(iso: string | null): string {
 export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapProps) {
   const say = usePhrase();
   const [data, setData] = useState<LoadState>({ status: 'loading' });
+  const [reloadToken, setReloadToken] = useState(0);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<{ map: LeafletMap; layer: LeafletLayerGroup } | null>(null);
   const boundsKey = useRef('');
@@ -70,7 +71,7 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [shopId]);
+  }, [shopId, reloadToken]);
 
   const payload = data.status === 'ready' ? data.map : null;
   const markers = useMemo(() => markerList(payload), [payload]);
@@ -151,8 +152,18 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
         )}
 
         {data.status === 'error' && (
-          <div data-testid="shop-ops-map-error" style={{ minHeight: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5', textAlign: 'center', padding: 16 }}>
-            {data.message}
+          <div data-testid="shop-ops-map-error" role="alert" style={{ minHeight: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#fca5a5', textAlign: 'center', padding: 16 }}>
+            <div>{say(data.message)}</div>
+            <button
+              type="button"
+              onClick={() => {
+                setData({ status: 'loading' });
+                setReloadToken((current) => current + 1);
+              }}
+              style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              {say('Try Again')}
+            </button>
           </div>
         )}
 

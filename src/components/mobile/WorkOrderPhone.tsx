@@ -32,6 +32,10 @@ export function WorkOrderPhone({
   canClose,
   onInvoice,
   onAddItem,
+  onSave,
+  saving,
+  saveMessage,
+  unsavedCount,
   invoiceDisabled,
   invoiceLabel,
   inspectionStatus,
@@ -47,6 +51,10 @@ export function WorkOrderPhone({
   canClose: boolean;
   onInvoice: () => void;
   onAddItem: () => void;
+  onSave: () => void;
+  saving?: boolean;
+  saveMessage?: string;
+  unsavedCount?: number;
   invoiceDisabled: boolean;
   invoiceLabel: string;
   inspectionStatus?: string;
@@ -119,10 +127,25 @@ export function WorkOrderPhone({
       <div className="pm-card" style={{ padding: '4px 12px 10px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 }}>
           <h3>{say('Line Items')}</h3>
-          <button type="button" className="pm-btn pm-btn-ghost pm-btn-sm" onClick={onAddItem}>
-            <FaPlus size={10} /> {say('Add Line Item')}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="pm-btn pm-btn-ghost pm-btn-sm" onClick={onAddItem}>
+              <FaPlus size={10} /> {say('Add Line Item')}
+            </button>
+            <button type="button" className="pm-btn pm-btn-primary pm-btn-sm" disabled={saving || !unsavedCount} onClick={onSave}>
+              {saving ? say('Saving…') : say('Save line items')}
+            </button>
+          </div>
         </div>
+        {saveMessage ? (
+          <div role="status" style={{ margin: '8px 0', fontSize: 12, fontWeight: 700, color: saveMessage.toLowerCase().includes('fail') || saveMessage.toLowerCase().includes('not saved') ? '#fca5a5' : '#86efac' }}>
+            {say(saveMessage)}
+          </div>
+        ) : null}
+        {unsavedCount ? (
+          <div style={{ fontSize: 12, color: '#fde68a', marginBottom: 6 }}>
+            {say('New lines stay on this screen until you save them.')}
+          </div>
+        ) : null}
         {lineItems.length === 0 ? <div className="pm-empty">{say('No line items yet.')}</div> : lineItems.map((item, index) => {
           const kind = item.type === 'labor' ? say('Labor') : item.type === 'part' ? say('Part') : say('Misc');
           const tag = item.type === 'labor' ? 'pm-b-purple' : item.type === 'part' ? 'pm-b-green' : 'pm-b-ghost';

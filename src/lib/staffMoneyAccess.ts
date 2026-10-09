@@ -1,8 +1,9 @@
 /**
  * Who may see payroll rates, customer pay links, and FixTray fee settlement.
  * Techs never see coworkers' pay or invoice pay tokens.
- * Managers may see payroll (the manager payroll page) but never FixTray fee
- * amounts or the owner's fee-settlement actions.
+ * Managers and techs see the FixTray fee on one work order and the customer
+ * total that includes it. Weekly owed, year-end, the owed panel, and fee
+ * totals across jobs stay with the shop owner and platform views.
  */
 
 export function mayReadPayrollRates(role: string | null | undefined): boolean {
@@ -21,9 +22,41 @@ export function maySettlePlatformFee(role: string | null | undefined): boolean {
   return String(role || '').trim().toLowerCase() === 'shop';
 }
 
-export function managerMustNotSeePlatformFee(role: string | null | undefined): boolean {
-  return String(role || '').trim().toLowerCase() === 'manager';
+/** The fee line and customer total on one work order. */
+export function maySeePerJobPlatformFee(role: string | null | undefined): boolean {
+  const normalized = String(role || '').trim().toLowerCase();
+  return normalized === 'shop'
+    || normalized === 'manager'
+    || normalized === 'tech'
+    || normalized === 'customer'
+    || normalized === 'accountant'
+    || normalized === 'admin'
+    || normalized === 'superadmin';
 }
+
+/**
+ * Weekly owed, fee year-end, the FixTray owed panel, cumulative fee revenue,
+ * and fee totals across jobs. Shop owner and platform views only.
+ */
+export function maySeeAggregatePlatformFee(role: string | null | undefined): boolean {
+  const normalized = String(role || '').trim().toLowerCase();
+  return normalized === 'shop' || normalized === 'admin' || normalized === 'superadmin';
+}
+
+export function hidesAggregatePlatformFee(role: string | null | undefined): boolean {
+  return !maySeeAggregatePlatformFee(role);
+}
+
+/**
+ * Per-job fee is visible. This stays false so older callers do not strip it.
+ * Aggregate totals use hidesAggregatePlatformFee.
+ */
+export function managerMustNotSeePlatformFee(_role: string | null | undefined): boolean {
+  return false;
+}
+
+export const PER_JOB_FEE_NOTE =
+  'FixTray fee, collected on top of the job and owed to FixTray weekly. The amount stored at checkout is not recalculated.';
 
 type FeeBill = {
   subtotal?: number;
@@ -51,9 +84,9 @@ function jobSubtotal(bill: FeeBill): number {
   return Math.max(0, Number(bill.total || 0) - Number(bill.serviceFee || 0));
 }
 
-/** Drop FixTray fee dollars from a work-order payload. Job amounts stay. */
+/** Keep the per-job fee. Roles that cannot see a work-order fee still have it removed. */
 export function redactPlatformFeeForRole<T extends Record<string, unknown>>(role: string | null | undefined, value: T): T {
-  if (!managerMustNotSeePlatformFee(role)) return value;
+  if (maySeePerJobPlatformFee(role)) return value;
   const next: Record<string, unknown> = { ...value };
   delete next.fixtrayServiceFee;
   delete next.platformFeeCents;
@@ -86,11 +119,11 @@ type CloseoutPayload = {
 };
 
 /**
- * Managers can request payment. The stored charge still includes the fee.
- * The JSON they receive shows only the job amount, so the fee cannot be subtracted out.
+ * Closeout shows the per-job fee and the customer total that includes it.
+ * Roles that cannot see that fee receive the job amount only.
  */
 export function presentCloseoutForRole<T extends CloseoutPayload>(role: string | null | undefined, payload: T): T {
-  if (!managerMustNotSeePlatformFee(role)) return payload;
+  if (maySeePerJobPlatformFee(role)) return payload;
   const quote = Number(payload.invoice?.quoteAmount) || 0;
   const workOrder = payload.workOrder
     ? { ...payload.workOrder, completion: stripPlatformFeeFromCompletion(payload.workOrder.completion) }

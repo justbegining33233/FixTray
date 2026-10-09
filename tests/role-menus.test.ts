@@ -100,7 +100,8 @@ describe('role menus', () => {
   it('sends each role home from pages outside its menu', () => {
     expect(portalAccessDecision('/shop/calendar', 'tech')).toBe('home');
     expect(roleHome('tech')).toBe('/tech/home');
-    for (const role of ['shop', 'manager', 'tech', 'customer'] as const) {
+    expect(portalAccessDecision('/reports', 'shop')).toBe('allow');
+    for (const role of ['manager', 'tech', 'customer'] as const) {
       expect(portalAccessDecision('/reports', role)).toBe('home');
       expect(portalAccessDecision('/reports', role)).not.toBe('forbidden');
     }

@@ -52,8 +52,7 @@ describe('platform owner scope', () => {
     const shopGate = await gateCrossRole(new NextRequest('http://localhost/shop/reports', {
       headers: { cookie: `sos_auth=${shop}` },
     }));
-    expect(shopGate?.status).toBe(307);
-    expect(shopGate?.headers.get('location')).toBe('http://localhost/shop/admin');
+    expect(shopGate).toBeNull();
 
     const offlineTech = await gateCrossRole(new NextRequest('http://localhost/tech-offline/', {
       headers: { cookie: `sos_auth=${shop}` },

@@ -189,6 +189,15 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
     }
   }
 
+  function recordDeposit() {
+    if (!depositJob.trim() || !depositAmount.trim()) {
+      setNotice('');
+      setError('Choose a job and enter an amount');
+      return;
+    }
+    void post('deposit', { workOrderId: depositJob, amountCents: Number(depositAmount), depositAt: depositDate });
+  }
+
   async function exportBooks() {
     setNotice('');
     setError('');
@@ -388,7 +397,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <input placeholder="Job id" value={depositJob} onChange={(event) => setDepositJob(event.target.value)} />
         <input placeholder="Amount cents" value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} />
         <input type="date" value={depositDate} onChange={(event) => setDepositDate(event.target.value)} />
-        <button type="button" onClick={() => post('deposit', { workOrderId: depositJob, amountCents: Number(depositAmount), depositAt: depositDate })}>Record deposit</button>
+        <button type="button" onClick={recordDeposit}>Record deposit</button>
       </section>}
       {role === 'shop' && <section style={sectionCard}>
         <h2>FixTray owed this week</h2>

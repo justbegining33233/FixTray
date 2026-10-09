@@ -4,6 +4,8 @@ import { requireRole, AuthUser } from '@/lib/auth';
 import { shopJobReceiptCents } from '@/lib/books/money';
 import { addDays, dayKey, mondayKey, zonedDayStart } from '@/lib/books/periods';
 import { reportZone } from '@/lib/books/storedFeeReport';
+import { loadShopFacts } from '@/lib/books/loadTruth';
+import { outstandingArDollars } from '@/lib/outstandingBalance';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
@@ -23,18 +25,10 @@ export async function GET(request: NextRequest) {
   // Managers keep outstanding bills for closeout. Shop income stays off this response.
   if (user.role === 'manager') {
     try {
-      const outstandingInvoices = await prisma.workOrder.aggregate({
-        where: {
-          shopId,
-          paymentStatus: 'unpaid',
-        },
-        _sum: {
-          estimatedCost: true,
-        },
-      });
+      const outstandingInvoices = outstandingArDollars(await loadShopFacts(shopId));
       return NextResponse.json({
         summary: {
-          outstandingInvoices: outstandingInvoices._sum.estimatedCost || 0,
+          outstandingInvoices,
         },
       });
     } catch (error) {
@@ -52,15 +46,12 @@ export async function GET(request: NextRequest) {
     const startOfTomorrow = zonedDayStart(addDays(todayKey, 1), zone);
 
     const rangeStart = startOfWeek < startOfMonth ? startOfWeek : startOfMonth;
-    const [closedOrders, outstandingInvoices] = await Promise.all([
+    const [closedOrders, facts] = await Promise.all([
       prisma.workOrder.findMany({
         where: { shopId, status: 'closed', updatedAt: { gte: rangeStart } },
         select: { amountPaid: true, estimatedCost: true, paymentStatus: true, updatedAt: true },
       }),
-      prisma.workOrder.aggregate({
-        where: { shopId, paymentStatus: 'unpaid' },
-        _sum: { estimatedCost: true },
-      }),
+      loadShopFacts(shopId),
     ]);
 
     const receipt = (order: { amountPaid: number | null; estimatedCost: number | null; paymentStatus: string | null }) =>
@@ -75,7 +66,7 @@ export async function GET(request: NextRequest) {
       todayRevenue: sumSince(startOfToday, startOfTomorrow),
       weeklyRevenue: sumSince(startOfWeek),
       monthlyRevenue: sumSince(startOfMonth),
-      outstandingInvoices: outstandingInvoices._sum.estimatedCost || 0,
+      outstandingInvoices: outstandingArDollars(facts),
       revenueVisible: true,
     };
 

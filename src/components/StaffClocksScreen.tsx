@@ -17,6 +17,14 @@ interface WorkRow {
   minutes: number;
 }
 
+interface StaffRow {
+  id: string;
+  personId: string;
+  name?: string;
+  clockIn?: string;
+  minutes: number;
+}
+
 interface ClockPayload {
   scope: 'self' | 'shop';
   people: ClockPerson[];
@@ -25,6 +33,7 @@ interface ClockPayload {
   shopTotalMinutes: number | null;
   workMinutes: number;
   work: WorkRow[];
+  staffEntries?: StaffRow[];
 }
 
 function hours(minutes: number): string {
@@ -111,14 +120,78 @@ export default function StaffClocksScreen({ role }: { role: 'shop' | 'manager' |
         <p key={row.id}>{row.workOrderId}: {hours(row.minutes)} hours ({row.id})</p>
       ))}
       <h2>Correction</h2>
-      <select value={clock} onChange={(event) => setClock(event.target.value === 'work' ? 'work' : 'staff')}>
-        <option value="staff">Staff clock</option>
-        <option value="work">Work clock</option>
-      </select>
-      <input placeholder="Entry id" value={entryId} onChange={(event) => setEntryId(event.target.value)} />
-      <input placeholder="Minutes" value={minutes} onChange={(event) => setMinutes(event.target.value)} />
-      <input placeholder="Reason" value={reason} onChange={(event) => setReason(event.target.value)} />
-      <button type="button" onClick={correct}>Save correction</button>
+      <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 16, maxWidth: 560, display: 'grid', gap: 10 }}>
+        <label style={{ display: 'grid', gap: 6, color: '#9aa3b2', fontSize: 13 }}>
+          Clock
+          <select value={clock} onChange={(event) => setClock(event.target.value === 'work' ? 'work' : 'staff')} style={{ background: '#111827', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '10px 12px' }}>
+            <option value="staff">Staff clock</option>
+            <option value="work">Work clock</option>
+          </select>
+        </label>
+        <div style={{ color: '#9aa3b2', fontSize: 13 }}>Clock entry</div>
+        {(clocks.staffEntries || []).length === 0 && clocks.work.length === 0 ? (
+          <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 12, color: '#9aa3b2' }}>No clock entries to correct.</div>
+        ) : (
+          <div role="listbox" aria-label="Clock entries" style={{ display: 'grid', gap: 8 }}>
+            {(clocks.staffEntries || []).map((row) => {
+              const selected = entryId === row.id && clock === 'staff';
+              const when = row.clockIn ? new Date(row.clockIn).toLocaleString() : 'Staff clock';
+              return (
+                <button
+                  key={`staff-${row.id}`}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    setEntryId(row.id);
+                    setClock('staff');
+                  }}
+                  style={{
+                    textAlign: 'left',
+                    background: selected ? 'rgba(229,51,42,0.22)' : 'rgba(0,0,0,0.45)',
+                    border: selected ? '1px solid rgba(229,51,42,0.55)' : '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    color: '#e5e7eb',
+                    padding: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Staff · {row.name || row.personId} · {when} · {hours(row.minutes)} hours
+                </button>
+              );
+            })}
+            {clocks.work.map((row) => {
+              const selected = entryId === row.id && clock === 'work';
+              return (
+                <button
+                  key={`work-${row.id}`}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    setEntryId(row.id);
+                    setClock('work');
+                  }}
+                  style={{
+                    textAlign: 'left',
+                    background: selected ? 'rgba(229,51,42,0.22)' : 'rgba(0,0,0,0.45)',
+                    border: selected ? '1px solid rgba(229,51,42,0.55)' : '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    color: '#e5e7eb',
+                    padding: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Work · {row.workOrderId} · {hours(row.minutes)} hours
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <input placeholder="Minutes" value={minutes} onChange={(event) => setMinutes(event.target.value)} style={{ background: '#111827', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '10px 12px' }} />
+        <input placeholder="Reason" value={reason} onChange={(event) => setReason(event.target.value)} style={{ background: '#111827', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '10px 12px' }} />
+        <button type="button" onClick={correct} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', justifySelf: 'start' }}>Save correction</button>
+      </div>
     </div>
   );
 }

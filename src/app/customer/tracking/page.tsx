@@ -42,6 +42,34 @@ interface TrackingOrder {
   };
 }
 
+function OrderLocation({ order }: { order: TrackingOrder }) {
+  const say = usePhrase();
+  const latitude = order.location?.latitude;
+  const longitude = order.location?.longitude;
+  if (typeof latitude === 'number' && Number.isFinite(latitude) && typeof longitude === 'number' && Number.isFinite(longitude)) {
+    return (
+      <div style={{display:'flex', flexDirection:'column', gap:6}}>
+        <div style={{fontSize:14, color:'#e5e7eb'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say("Current Location:")}{' '}{latitude.toFixed(4)}, {longitude.toFixed(4)}</div>
+        <a href={`https://maps.google.com/?q=${latitude},${longitude}`} target="_blank" rel="noopener noreferrer" style={{fontSize:14, color:'#93c5fd', fontWeight:700}}>{say("Open in Maps")}</a>
+        {order.location?.estimatedArrival && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> {say("ETA:")}{' '}{new Date(order.location.estimatedArrival).toLocaleTimeString()}</div>}
+      </div>
+    );
+  }
+  if (order.isInShop || order.location?.shopAddress) {
+    return (
+      <div style={{display:'flex', flexDirection:'column', gap:6}}>
+        <div style={{fontSize:14, color:'#9aa3b2'}}>
+          <FaMapMarkerAlt style={{marginRight:4}} /> {order.shop.address || order.location?.shopAddress}
+        </div>
+        <div style={{fontSize:14, color:'#f59e0b', fontWeight:600}}>
+          <FaClock style={{marginRight:4}} /> {say("Service Time:")}{' '}{order.serviceTime ? new Date(order.serviceTime).toLocaleString() : (order.estimatedArrival ? new Date(order.estimatedArrival).toLocaleString() : '')}
+        </div>
+      </div>
+    );
+  }
+  return <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Live tracking not available for this job yet.")}</div>;
+}
+
 export default function LiveTracking() {
   const say = usePhrase();
   useRequireAuth(['customer']);
@@ -71,48 +99,48 @@ export default function LiveTracking() {
   }, []);
 
   useEffect(() => {
-    if (userId) {
-      fetchTrackingData();
-    } else {
+    if (!userId) {
       setLoading(false);
+      return;
     }
-  }, [userId]);
+    let cancelled = false;
 
-  const fetchTrackingData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
-      
-      if (!token) {
-        setError('Authentication required');
-        return;
+    const fetchTrackingData = async (initial: boolean) => {
+      try {
+        if (initial) setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          if (!cancelled) setError('Authentication required');
+          return;
+        }
+        const response = await fetch(`/api/customers/tracking?customerId=${encodeURIComponent(userId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (cancelled) return;
+        if (response.ok) {
+          const data = await response.json();
+          setTrackingOrders(Array.isArray(data) ? data : []);
+          setError('');
+        } else if (response.status === 404) {
+          setTrackingOrders([]);
+          setError('');
+        } else if (initial) {
+          setError('Failed to load tracking data');
+        }
+      } catch {
+        if (!cancelled && initial) setError('Failed to load tracking data');
+      } finally {
+        if (!cancelled && initial) setLoading(false);
       }
-      
-      const response = await fetch(`/api/customers/tracking?customerId=${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTrackingOrders(Array.isArray(data) ? data : []);
-        setError('');
-      } else if (response.status === 404) {
-        setTrackingOrders([]);
-        setError('');
-      } else {
-        const _errorText = await response.text();
-        setError('Failed to load tracking data');
-      }
-    } catch {
-      setError('Failed to load tracking data');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchTrackingData(true);
+    const timer = window.setInterval(() => { void fetchTrackingData(false); }, 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [userId]);
 
   const handleSignOut = () => {
     localStorage.removeItem('userRole');
@@ -244,27 +272,7 @@ export default function LiveTracking() {
                     <FaStore style={{marginRight:4}} /> {say(order.shop.shopName)}
                   </div>
 
-                  {order.isInShop || order.location?.shopAddress ? (
-                    <div style={{display:'flex', flexDirection:'column', gap:6}}>
-                      <div style={{fontSize:14, color:'#9aa3b2'}}>
-                        <FaMapMarkerAlt style={{marginRight:4}} /> {order.shop.address || order.location?.shopAddress}
-                      </div>
-                      <div style={{fontSize:14, color:'#f59e0b', fontWeight:600}}>
-                        <FaClock style={{marginRight:4}} /> {say("Service Time:")}{' '}{order.serviceTime ? new Date(order.serviceTime).toLocaleString() : (order.estimatedArrival ? new Date(order.estimatedArrival).toLocaleString() : '')}
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{display:'flex', flexDirection:'column', gap:6}}>
-                      {order.location && order.location.latitude !== undefined && order.location.longitude !== undefined ? (
-                        <div style={{display:'flex', gap:12, alignItems:'center'}}>
-                          <div style={{fontSize:14, color:'#e5e7eb'}}><FaMapMarkerAlt style={{marginRight:4}} /> {say("Current Location:")}{' '}{order.location.latitude!.toFixed(4)}, {order.location.longitude!.toFixed(4)}</div>
-                          {order.location.estimatedArrival && <div style={{fontSize:14, color:'#f59e0b'}}><FaClock style={{marginRight:4}} /> {say("ETA:")}{' '}{new Date(order.location.estimatedArrival).toLocaleTimeString()}</div>}
-                        </div>
-                      ) : (
-                        <div style={{fontSize:14, color:'#9aa3b2'}}>{say("Live tracking not available for this job yet.")}</div>
-                      )}
-                    </div>
-                  )}
+                  <OrderLocation order={order} />
                 </div>
                 <div style={{display:'flex', gap:12}}>
                   <Link href={`/customer/workorders/${order.workOrderId}`} style={{

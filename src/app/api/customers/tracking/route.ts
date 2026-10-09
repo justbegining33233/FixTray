@@ -4,6 +4,8 @@ import { verifyToken } from '@/lib/auth';
 import { getSocketServer } from '@/lib/socket-server';
 import { customerTrackingWhere } from '@/lib/customerTracking';
 import { customerJobTrack } from '@/lib/customerJobTrack';
+import { locationShareIsLive } from '@/lib/customerJobTracking';
+import { isRoadsideLocation } from '@/lib/waitingRoomBoard';
 
 // GET /api/customers/tracking - Get real-time tech location for active work order
 export async function GET(request: Request) {
@@ -58,8 +60,11 @@ export async function GET(request: Request) {
     }
 
     const trackingData = workOrders.map(wo => {
-      // If this is an in-shop job, expose shop address and appointment time instead of tech GPS
-      const isInShop = wo.serviceLocation && wo.serviceLocation.toLowerCase() !== 'roadside';
+      // Road calls use several location spellings. A live share on this job
+      // also exposes GPS when the visit itself is in the shop.
+      const liveShare = locationShareIsLive(wo.tracking?.updatedAt);
+      const showGps = isRoadsideLocation(wo.serviceLocation) || liveShare;
+      const isInShop = !showGps;
       const shopAddress = wo.shop?.address || '';
 
       return {
@@ -79,8 +84,7 @@ export async function GET(request: Request) {
           phone: wo.shop?.phone || '',
         },
         serviceTime: wo.dueDate?.toISOString() || wo.createdAt.toISOString(),
-        // For in-shop work orders, return shop address (no coordinates); otherwise return tech tracking if available
-        location: isInShop ? { shopAddress } : (wo.tracking || null),
+        location: showGps ? (wo.tracking || null) : { shopAddress },
         estimatedArrival: isInShop ? wo.dueDate?.toISOString() || null : wo.tracking?.estimatedArrival || null,
         isInShop,
         job: customerJobTrack(wo),

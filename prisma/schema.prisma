@@ -82,6 +82,9 @@ model Shop {
   state               String?
   businessLicense     String?
   insurancePolicy     String?
+  licenseExpiresAt    DateTime?
+  insuranceExpiresAt  DateTime?
+  entityType          String?
   shopType            String?
   profileComplete     Boolean                  @default(false)
   capacity            Int                      @default(1)
@@ -466,10 +469,12 @@ model Admin {
   id            String         @id @default(cuid())
   username      String         @unique
   password      String
-  email         String         @unique
-  isSuperAdmin  Boolean        @default(false)
-  preferredLocale String?
-  createdAt     DateTime       @default(now())
+  email            String         @unique
+  isSuperAdmin     Boolean        @default(false)
+  preferredLocale  String?
+  twoFactorEnabled Boolean?
+  twoFactorSecret  String?
+  createdAt        DateTime       @default(now())
   refreshTokens RefreshToken[]
 
   @@map("admins")

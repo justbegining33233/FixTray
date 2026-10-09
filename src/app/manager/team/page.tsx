@@ -18,6 +18,7 @@ interface TeamMember {
   status: string;
   assignedJobs: number;
   joinedDate: string;
+  hourlyRate: number | null;
 }
 
 export default function ManagerTeamPage() {
@@ -27,6 +28,8 @@ export default function ManagerTeamPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
   const [search, setSearch] = useState('');
+  const [rateDrafts, setRateDrafts] = useState<Record<string, string>>({});
+  const [rateMessage, setRateMessage] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -40,26 +43,30 @@ export default function ManagerTeamPage() {
       const shopId = user?.shopId || localStorage.getItem('shopId') || '';
       if (!shopId) return;
 
-      const res = await fetch(`/api/techs?shopId=${shopId}`, {
+      const res = await fetch(`/api/shop/team?shopId=${shopId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
         const data = await res.json();
-        const techs = data.techs || [];
-        setTeamMembers(
-          techs.map((t: any) => ({
-            id: t.id,
-            employeeNumber: t.employeeNumber || '',
-            name: `${t.firstName} ${t.lastName}`,
-            role: t.role || 'tech',
-            email: t.email || '',
-            phone: t.phone || '',
-            status: t.clockedIn ? 'Clocked In' : 'Off',
-            assignedJobs: t.assignedJobs ?? 0,
-            joinedDate: t.createdAt ? new Date(t.createdAt).toLocaleDateString() : ' - ',
-          }))
-        );
+        const techs = data.team || data.techs || [];
+        const members = techs.map((t: any) => ({
+          id: t.id,
+          employeeNumber: t.employeeNumber || '',
+          name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim(),
+          role: t.role || 'tech',
+          email: t.email || '',
+          phone: t.phone || '',
+          status: t.isClockedIn ? 'Clocked in' : 'Off',
+          assignedJobs: t.assignedOpenJobs ?? t.assignedJobs ?? t._count?.assignedWorkOrders ?? 0,
+          joinedDate: (t.joinedAt || t.createdAt) ? new Date(t.joinedAt || t.createdAt).toLocaleDateString() : ' - ',
+          hourlyRate: typeof t.hourlyRate === 'number' ? t.hourlyRate : null,
+        }));
+        setTeamMembers(members);
+        setRateDrafts(Object.fromEntries(members.map((member: TeamMember) => [
+          member.id,
+          typeof member.hourlyRate === 'number' ? String(member.hourlyRate) : '',
+        ])));
       }
     } catch (e) {
       console.error('Error loading team:', e);
@@ -74,6 +81,37 @@ export default function ManagerTeamPage() {
     advisor: { bg: 'rgba(234,179,8,0.2)',   color: '#fde047' },
     shop:    { bg: 'rgba(34,197,94,0.2)',   color: '#86efac' },
   };
+
+  async function saveHourlyRate(member: TeamMember) {
+    const draft = rateDrafts[member.id] ?? '';
+    const original = typeof member.hourlyRate === 'number' ? String(member.hourlyRate) : '';
+    if (draft.trim() === original) return;
+    const rate = Number(draft);
+    if (!Number.isFinite(rate) || rate < 0) {
+      setRateMessage('Enter an hourly rate of 0 or more.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/techs/${member.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ hourlyRate: rate }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setRateMessage(body?.error || 'Could not save hourly rate.');
+        return;
+      }
+      setTeamMembers((prev) => prev.map((row) => row.id === member.id ? { ...row, hourlyRate: rate } : row));
+      setRateMessage('Hourly rate saved.');
+    } catch {
+      setRateMessage('Could not save hourly rate.');
+    }
+  }
 
   const filtered = teamMembers.filter(
     m =>
@@ -108,6 +146,7 @@ export default function ManagerTeamPage() {
             <span style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '6px 14px', color: '#94a3b8', fontSize: '0.85rem' }}>
               {loadingTeam ? say("Loading members…") : `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}`}
             </span>
+            {rateMessage ? <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{say(rateMessage)}</span> : null}
           </div>
 
           {/* Search */}
@@ -169,8 +208,8 @@ export default function ManagerTeamPage() {
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
                     <span style={{
                       fontSize: '0.78rem', padding: '3px 10px', borderRadius: '9999px',
-                      background: member.status === 'Clocked In' ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.2)',
-                      color: member.status === 'Clocked In' ? '#4ade80' : '#94a3b8',
+                      background: member.status === 'Clocked in' ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.2)',
+                      color: member.status === 'Clocked in' ? '#4ade80' : '#94a3b8',
                     }}>
                       <FaCircle style={{marginRight:4}} /> {say(member.status)}
                     </span>
@@ -178,6 +217,23 @@ export default function ManagerTeamPage() {
                       <FaFolder style={{marginRight:4}} /> {say(member.assignedJobs)} job{member.assignedJobs !== 1 ? 's' : ''}
                     </span>
                   </div>
+
+                  <label style={{ display: 'block', marginBottom: 14 }}>
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: 6 }}>{say("Hourly rate")}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={rateDrafts[member.id] ?? ''}
+                      onChange={(event) => setRateDrafts((prev) => ({ ...prev, [member.id]: event.target.value }))}
+                      onBlur={() => saveHourlyRate(member)}
+                      placeholder={say("Not set")}
+                      style={{
+                        width: '100%', padding: '8px 10px', background: '#0f172a',
+                        border: '1px solid #334155', borderRadius: 8, color: '#e5e7eb', fontSize: '0.9rem',
+                      }}
+                    />
+                  </label>
 
                   {/* Contact info */}
                   <div style={{ borderTop: '1px solid #334155', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
+import { closeStaleOpenPunches, openPunchLive } from '@/lib/staffClock';
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -28,8 +29,18 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tech) {
+      if (auth.role === 'shop' || auth.role === 'admin' || auth.role === 'superadmin') {
+        return NextResponse.json({
+          applicable: false,
+          isClockedIn: false,
+          reason: 'Owners do not clock in',
+        });
+      }
       return NextResponse.json({ error: 'Tech not found' }, { status: 404 });
     }
+
+    const now = new Date();
+    await closeStaleOpenPunches({ techId: userId }, now);
 
     // Check for active time entry (not clocked out)
     const activeEntry = await prisma.timeEntry.findFirst({
@@ -42,11 +53,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const isClockedIn = !!activeEntry;
+    const isClockedIn = !!activeEntry && openPunchLive(activeEntry.clockIn, now);
 
     return NextResponse.json({
       isClockedIn,
-      currentEntry: activeEntry ? {
+      applicable: true,
+      currentEntry: isClockedIn && activeEntry ? {
         id: activeEntry.id,
         clockIn: activeEntry.clockIn,
         breakStart: activeEntry.breakStart,

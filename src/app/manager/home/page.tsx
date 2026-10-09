@@ -13,6 +13,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { MobilePageFrame } from '@/components/MobileShell';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { managerAlertHref } from '@/lib/managerAlerts';
+import { OUTSTANDING_DEFINITION } from '@/lib/outstandingBalance';
 import { ManagerDashboardPhone } from '@/components/mobile/ManagerPhone';
 
 export default function ManagerHome() {
@@ -242,6 +243,9 @@ export default function ManagerHome() {
           team={teamPerformance}
           outstanding={outstandingInvoices}
         />
+        <p style={{ color: '#9aa3b2', fontSize: 12, margin: '8px 12px 0', lineHeight: 1.4 }} title={OUTSTANDING_DEFINITION}>
+          {say(OUTSTANDING_DEFINITION)}
+        </p>
       </MobilePageFrame>
     );
   }
@@ -351,8 +355,8 @@ export default function ManagerHome() {
                           <div key={member.id} style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
                             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
                               <div style={{color:'#e5e7eb', fontWeight:600}}>{say(member.name)}</div>
-                              <div style={{color: member.isActive ? '#22c55e' : '#6b7280', fontSize:12}}>
-                                {member.isActive ? say(" Active") : say(" Away")}
+                              <div style={{color: (member.isClockedIn ?? member.isActive) ? '#22c55e' : '#6b7280', fontSize:12}}>
+                                {(member.isClockedIn ?? member.isActive) ? say("Clocked in") : say("Off")}
                               </div>
                             </div>
                             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, fontSize:13}}>
@@ -482,8 +486,9 @@ export default function ManagerHome() {
                   <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:24}}>
                     <h3 style={{color:'#e5e7eb', marginBottom:16, fontSize:18}}>{say("Outstanding")}</h3>
                     <div style={{background:'rgba(245,158,11,0.1)', borderRadius:8, padding:12}}>
-                      <div style={{color:'#f59e0b', fontSize:12, marginBottom:4}}>{say("Outstanding")}</div>
+                      <div style={{color:'#f59e0b', fontSize:12, marginBottom:4}} title={OUTSTANDING_DEFINITION}>{say("Outstanding")}</div>
                       <div style={{color:'#e5e7eb', fontSize:20, fontWeight:700}}>${outstandingInvoices.toFixed(2)}</div>
+                      <div style={{color:'#9aa3b2', fontSize:12, marginTop:8, lineHeight:1.4}}>{say(OUTSTANDING_DEFINITION)}</div>
                     </div>
                   </div>
 

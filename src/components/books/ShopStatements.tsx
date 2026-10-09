@@ -139,6 +139,11 @@ export default function ShopStatements({ focus }: { focus: 'all' | 'pl' | 'balan
           <p style={{ color: '#c4a8a4' }}>
             As of {data.to}. Assets {money(sheet.assetsCents)} = liabilities {money(sheet.liabilitiesCents)} + equity {money(sheet.equityCents)}. {sheet.balanced ? 'It balances.' : 'It is out of balance.'}
           </p>
+          {sheet.equityCents < 0 ? (
+            <p style={{ color: '#c4a8a4' }}>
+              Liabilities exceed assets. Equity is negative because of a net loss. &quot;It balances&quot; means the accounting equation holds: assets equal liabilities plus equity, even when equity is negative.
+            </p>
+          ) : null}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
             <div>
               <h3>Assets</h3>

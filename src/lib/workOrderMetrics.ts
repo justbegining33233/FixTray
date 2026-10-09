@@ -227,11 +227,13 @@ export type ShopScopeResult =
  * Managers and techs use token shopId only — never their user id
  * (that query matches nothing and paints every total as zero).
  * A requested shopId that is not the actor's shop is forbidden.
+ * Platform accounts oversee a shop when they pass that shop's id.
  */
 export function resolveShopId(actor: ShopActor, requestedShopId?: string | null): ShopScopeResult {
   const requested = String(requestedShopId || '').trim();
   if (actor.role === 'superadmin' || actor.role === 'admin') {
-    return { ok: false, error: 'forbidden' };
+    if (!requested) return { ok: false, error: 'missing' };
+    return { ok: true, shopId: requested };
   }
   const own = actor.role === 'shop' ? (actor.shopId || actor.id) : (actor.shopId || '');
   if (!own) return { ok: false, error: 'missing' };
@@ -267,7 +269,8 @@ export function workOrderScope(
     return { scope: { shopId: resolved.shopId } };
   }
   if (actor.role === 'superadmin' || actor.role === 'admin') {
-    return { error: 'Platform accounts cannot read shop operations.', status: 403 };
+    const requested = String(requestedShopId || '').trim();
+    return { scope: requested ? { shopId: requested } : {} };
   }
   return { error: 'Forbidden', status: 403 };
 }

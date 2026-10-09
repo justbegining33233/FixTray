@@ -4,14 +4,27 @@ import { requireAuth } from '@/lib/middleware';
 import { geocodeAddress } from '@/lib/geocodeAddress';
 import { saveShopPoint, storedShopPoint } from '@/lib/persistShopCoordinates';
 import { shopAddressFromRecord } from '@/lib/roadCallMap';
+import { SHOP_ADDRESS_PROMPT, shopMapEmptyMessage } from '@/lib/shopAddressPrompt';
 import {
   browserDirectionLinks,
+  directionBlockReason,
   jobNeedsDirections,
   osrmRouteUrl,
   parseOsrmRoute,
   readOriginParam,
   resolveDirectionTarget,
+  type DirectionBlockReason,
+  type JobDirectionTarget,
 } from '@/lib/turnByTurn';
+
+function directionGapMessage(reason: DirectionBlockReason, kind: JobDirectionTarget['kind'] | null): string {
+  if (reason === 'missing-shop-address') return SHOP_ADDRESS_PROMPT;
+  if (reason === 'ungeocoded' && kind === 'shop') {
+    return shopMapEmptyMessage('ungeocoded') || SHOP_ADDRESS_PROMPT;
+  }
+  if (reason === 'ungeocoded') return 'The address is on the job, but it could not be placed on the map.';
+  return 'This job has no address to route to yet.';
+}
 
 export async function GET(
   request: NextRequest,
@@ -70,13 +83,19 @@ export async function GET(
     shopAddress,
   });
   if (!preliminary) {
+    const reason = directionBlockReason({
+      serviceLocation: workOrder.serviceLocation,
+      shopAddress,
+      target: null,
+    }) || 'missing-job-address';
     return NextResponse.json({
       available: true,
       destination: null,
       steps: [],
       line: [],
       external: null,
-      message: 'This job has no address to route to yet.',
+      reason,
+      message: directionGapMessage(reason, null),
     });
   }
 
@@ -91,6 +110,11 @@ export async function GET(
     }
   }
   if (!point) {
+    const reason = directionBlockReason({
+      serviceLocation: workOrder.serviceLocation,
+      shopAddress,
+      target: preliminary,
+    }) || 'ungeocoded';
     return NextResponse.json({
       available: true,
       destination: {
@@ -103,7 +127,8 @@ export async function GET(
       steps: [],
       line: [],
       external: null,
-      message: 'The address is on the job, but it could not be placed on the map.',
+      reason,
+      message: directionGapMessage(reason, preliminary.kind),
     });
   }
 

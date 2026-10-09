@@ -76,6 +76,27 @@ export function resolveDirectionTarget(input: {
   };
 }
 
+export type DirectionBlockReason = 'missing-shop-address' | 'missing-job-address' | 'ungeocoded';
+
+/**
+ * Why routing cannot start. A road call with no site is not a missing shop
+ * address, and a saved address with no coordinates is ungeocoded.
+ * resolveDirectionTarget still returns null when there is nothing to route to.
+ */
+export function directionBlockReason(input: {
+  serviceLocation?: string | null;
+  shopAddress?: string | null;
+  target: JobDirectionTarget | null;
+}): DirectionBlockReason | null {
+  if (input.target?.point) return null;
+  if (isRoadsideLocation(input.serviceLocation)) {
+    const address = String(input.target?.address || '').trim();
+    return address ? 'ungeocoded' : 'missing-job-address';
+  }
+  const shopAddress = String(input.shopAddress || input.target?.address || '').trim();
+  return shopAddress ? 'ungeocoded' : 'missing-shop-address';
+}
+
 export function osrmRouteUrl(origin: GeoPoint, destination: GeoPoint): string {
   const path = `${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}`;
   return `https://router.project-osrm.org/route/v1/driving/${path}?overview=full&geometries=geojson&steps=true`;

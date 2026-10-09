@@ -117,9 +117,11 @@ async function poll() {
   if (!token) return;
 
   const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const role = localStorage.getItem('userRole');
+  const pollsShopJobs = role !== 'admin' && role !== 'superadmin';
 
   // ── Work orders ─────────────────────────────────────────────────────────
-  try {
+  if (pollsShopJobs) try {
     const res = await fetch('/api/workorders', { headers, credentials: 'include' });
     if (res.ok) {
       const data = await res.json();

@@ -18,6 +18,7 @@ interface TeamMember {
   status: string;
   assignedJobs: number;
   joinedDate: string;
+  hourlyRate?: number | null;
 }
 
 interface StoredEmployee {
@@ -113,7 +114,8 @@ export default function ManageTeamPage() {
           phone: tech.phone || '',
           status: tech.available ? 'active' : 'inactive',
           assignedJobs: tech._count?.assignedWorkOrders || 0,
-          joinedDate: tech.createdAt
+          joinedDate: tech.createdAt,
+          hourlyRate: typeof tech.hourlyRate === 'number' ? tech.hourlyRate : null,
         }));
         setTeamMembers(loadedMembers);
       } else {
@@ -239,7 +241,7 @@ export default function ManageTeamPage() {
       email: member.email,
       phone: member.phone,
       role: member.role,
-      hourlyRate: 0 // Default value, will be fetched from API
+      hourlyRate: typeof member.hourlyRate === 'number' ? String(member.hourlyRate) : '',
     });
     setShowEditModal(true);
   };
@@ -252,6 +254,7 @@ export default function ManageTeamPage() {
     setEditError('');
     try {
       const token = localStorage.getItem('token');
+      const parsedRate = parseFloat(String(editingMember.hourlyRate));
       const response = await fetch(`/api/techs/${editingMember.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -260,7 +263,7 @@ export default function ManageTeamPage() {
           lastName: editingMember.lastName,
           email: editingMember.email,
           phone: editingMember.phone,
-          hourlyRate: parseFloat(editingMember.hourlyRate) || 0,
+          ...(Number.isFinite(parsedRate) ? { hourlyRate: parsedRate } : {}),
           role: editingMember.role,
         }),
       });
@@ -356,6 +359,14 @@ export default function ManageTeamPage() {
                         <div>
                           <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Assigned Jobs")}</div>
                           <div style={{fontSize:14, color:'#e5e7eb'}}>{say(member.assignedJobs)}</div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Hourly Rate")}</div>
+                          <div style={{fontSize:14, color:'#e5e7eb'}}>
+                            {typeof member.hourlyRate === 'number' && member.hourlyRate > 0
+                              ? `$${member.hourlyRate.toFixed(2)}/hr`
+                              : say("Not set")}
+                          </div>
                         </div>
                         <div>
                           <div style={{fontSize:11, color:'#9aa3b2', marginBottom:4}}>{say("Joined")}</div>

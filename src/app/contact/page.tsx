@@ -55,7 +55,7 @@ export default function ContactPage() {
           <div className="rounded-3xl border border-white/10 bg-black p-8">
             <h2 className="text-2xl font-semibold text-white">{say("Contact details")}</h2>
             <ul className="mt-6 space-y-4 text-sm text-slate-300">
-              <li><span className="text-slate-500">{say("Email:")}</span> {say("support@fixtray.app")}</li>
+              <li><span className="text-slate-500">{say("Email:")}</span> <a href="mailto:support@fixtray.app" className="text-slate-100 underline">support@fixtray.app</a></li>
               <li><span className="text-slate-500">{say("Availability:")}</span> {say("Mon-Fri, 8am-6pm")}</li>
             </ul>
           </div>

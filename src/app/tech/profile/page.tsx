@@ -9,6 +9,7 @@ import type { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaUser, FaCircle, FaRegCircle, FaSyncAlt } from 'react-icons/fa';
+import { techClockStatusLabel, techWageLabel } from '@/lib/techWage';
 
 type TechProfileSection = 'profile' | 'contact' | 'links';
 
@@ -25,7 +26,7 @@ function TechProfilePageContent() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [techProfile, setTechProfile] = useState<any>(null);
-  const [refreshCounter, setRefreshCounter] = useState(0);
+  const [clockedIn, setClockedIn] = useState(false);
 
   useEffect(() => {
     const raw = (searchParams?.get('section') || 'profile').toLowerCase();
@@ -93,20 +94,35 @@ function TechProfilePageContent() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
-        const tech = await response.json();
-        setTechProfile(tech);
+        const data = await response.json();
+        setTechProfile(data.tech ?? data);
       }
     } catch (error) {
       console.error('Error fetching tech profile:', error);
     }
   };
 
+  const fetchClockStatus = async (techId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/timeclock/status?userId=${encodeURIComponent(techId)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      setClockedIn(data.applicable === false ? false : data.isClockedIn === true);
+    } catch (error) {
+      console.error('Error fetching clock status:', error);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     fetchTechProfile(user.id);
+    fetchClockStatus(user.id);
     const interval = setInterval(() => {
       fetchTechProfile(user.id);
-      setRefreshCounter(c => c + 1);
+      fetchClockStatus(user.id);
     }, 30000);
     return () => clearInterval(interval);
   }, [user]);
@@ -177,12 +193,12 @@ function TechProfilePageContent() {
                           </div>
                           <div style={{display:'flex', justifyContent:'space-between', background:'rgba(229,51,42,0.2)', padding:'8px 12px', borderRadius:8, marginTop:4}}>
                             <span style={{fontSize:13, fontWeight:600, color:'#ff6b64'}}>{say("Hourly Rate:")}</span>
-                            <span style={{fontSize:16, fontWeight:700, color:'#ff6b64'}}>${(techProfile.hourlyRate ?? 0).toFixed(2)}/hr</span>
+                            <span style={{fontSize:16, fontWeight:700, color:'#ff6b64'}}>{say(techWageLabel(techProfile.hourlyRate).text)}</span>
                           </div>
                           <div style={{display:'flex', justifyContent:'space-between'}}>
                             <span style={{fontSize:13, color:'#9aa3b2'}}>{say("Status:")}</span>
-                            <span style={{fontSize:13, fontWeight:600, color: techProfile.available ? '#22c55e' : '#ef4444'}}>
-                              {techProfile.available ? <><FaCircle style={{marginRight:4}} /> {say("Active")}</> : <><FaRegCircle style={{marginRight:4}} /> {say("Inactive")}</>}
+                            <span style={{fontSize:13, fontWeight:600, color: clockedIn ? '#22c55e' : '#ef4444'}}>
+                              {clockedIn ? <><FaCircle style={{marginRight:4}} /> {say(techClockStatusLabel(true))} / {say("Clocked in")}</> : <><FaRegCircle style={{marginRight:4}} /> {say(techClockStatusLabel(false))}</>}
                             </span>
                           </div>
                         </div>

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { headlinePaidMonth } from '@/lib/platformRevenue';
 import { managedUserTotal } from '@/lib/platformUserCensus';
+import { countApprovedShops, isApprovedShop } from '@/lib/shopCensus';
 
 function formatCurrency(value: number) {
   return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
     const [
-      totalShops,
+      shopStatusRows,
       pendingShops,
       totalJobs,
       paidWorkOrders,
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
       shopCount,
       staffCount,
     ] = await Promise.all([
-      prisma.shop.count({ where: { status: 'approved' } }),
+      prisma.shop.findMany({ select: { status: true } }),
       prisma.shop.count({ where: { status: 'pending' } }),
       prisma.workOrder.count(),
       prisma.workOrder.findMany({ where: { paymentStatus: 'paid' }, select: { amountPaid: true, createdAt: true } }),
@@ -111,10 +112,9 @@ export async function GET(request: NextRequest) {
       }),
       prisma.shop.findMany({
         where: {
-          status: 'approved',
           createdAt: { gte: oldestWeekStart, lte: endOfWeek },
         },
-        select: { createdAt: true },
+        select: { createdAt: true, status: true },
       }),
       prisma.refreshToken.findMany({
         where: {
@@ -148,6 +148,8 @@ export async function GET(request: NextRequest) {
       }
     }
     const activeUsers = activeUserOwnerKeys.size;
+    const approvedShopCount = countApprovedShops(shopStatusRows);
+    const allShops = shopCount;
 
     const totalRevenue = paidWorkOrders.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
     const totalIncomeLast3Months = paidWorkOrdersLast3Months.reduce((sum, wo) => sum + (wo.amountPaid || 0), 0);
@@ -181,6 +183,7 @@ export async function GET(request: NextRequest) {
 
     const weeklyCounts = [0, 0, 0, 0];
     for (const shop of approvedShopsForWeeklyTrend) {
+      if (!isApprovedShop(shop)) continue;
       const created = shop.createdAt;
       for (let i = 0; i < weekStarts.length; i++) {
         if (created >= weekStarts[i].weekStart && created <= weekStarts[i].weekEnd) {
@@ -191,14 +194,16 @@ export async function GET(request: NextRequest) {
     }
     const weeklyConversionTrend = weekStarts.map((w, i) => ({ label: w.label, value: weeklyCounts[i] }));
 
-    const conversionBase = pendingShops + totalShops;
-    const conversionRateRaw = conversionBase > 0 ? (totalShops / conversionBase) * 100 : 0;
+    const conversionBase = pendingShops + approvedShopCount;
+    const conversionRateRaw = conversionBase > 0 ? (approvedShopCount / conversionBase) * 100 : 0;
     const systemHealth = recentErrorLogs === 0 ? 100 : null;
 
     return NextResponse.json({
       totalRevenue: formatCurrency(totalRevenue),
       totalRevenueRaw: totalRevenue,
-      totalShops,
+      totalShops: allShops,
+      allShops,
+      approvedShops: approvedShopCount,
       totalJobs,
       activeUsers,
       pendingShops,
@@ -236,7 +241,7 @@ export async function GET(request: NextRequest) {
         avgRating: avgRating._avg.rating?.toFixed(1) || '0.0',
         reviewsCount,
         websiteVisits: pageViews,
-        totalShopsEver: totalShops,
+        totalShopsEver: allShops,
         conversionRate: `${conversionRateRaw.toFixed(1)}%`,
         weeklyConversionTrend,
       },

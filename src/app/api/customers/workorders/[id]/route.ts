@@ -7,6 +7,7 @@ import { frozenCustomerFeeUsd } from '@/lib/feeSnapshot';
 import { quoteAmount as closeoutQuote } from '@/lib/workOrderCloseout';
 import { decorateWorkOrderMessages, resolveAccountLocale } from '@/lib/chatTranslationStore';
 import { cardPaymentOfferForShop } from '@/lib/customerCardPayServer';
+import { customerFacingTechnician } from '@/lib/customerTechnician';
 
 export async function GET(
   request: NextRequest,
@@ -45,6 +46,21 @@ export async function GET(
             firstName: true,
             lastName: true,
             phone: true,
+            role: true,
+          },
+        },
+        workOrderTimeEntries: {
+          orderBy: { clockIn: 'desc' },
+          select: {
+            clockIn: true,
+            tech: {
+              select: {
+                firstName: true,
+                lastName: true,
+                phone: true,
+                role: true,
+              },
+            },
           },
         },
         vehicle: {
@@ -105,6 +121,17 @@ export async function GET(
       await resolveAccountLocale(request, { id: payload.id, role: payload.role }),
     );
     const cardPayment = await cardPaymentOfferForShop(workOrder.shop?.stripeAccountId);
+    const punches = (workOrder.workOrderTimeEntries || []).map((entry) => ({
+      firstName: entry.tech?.firstName || '',
+      lastName: entry.tech?.lastName || '',
+      phone: entry.tech?.phone || '',
+      role: entry.tech?.role || '',
+      clockIn: entry.clockIn.toISOString(),
+    }));
+    const technician = customerFacingTechnician({
+      assigned: workOrder.assignedTo,
+      punches,
+    });
     const response = {
       id: workOrder.id,
       issueDescription: workOrder.issueDescription,
@@ -123,7 +150,15 @@ export async function GET(
             address: workOrder.shop.address,
           }
         : null,
-      assignedTo: workOrder.assignedTo,
+      assignedTo: technician
+        ? {
+            firstName: technician.firstName || '',
+            lastName: technician.lastName || '',
+            phone: technician.phone || '',
+            role: technician.role || 'tech',
+          }
+        : null,
+      punches,
       vehicle: workOrder.vehicle,
       tracking: workOrder.tracking || null,
       messages: shownMessages.map((message) => ({

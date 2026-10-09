@@ -203,7 +203,7 @@ export default function Payments() {
                       {paying === payment.id ? say("Redirecting...") : `Pay $${payment.amount.toFixed(2)} Securely`}
                     </button>
                   ) : payment.cardPaymentMessage ? (
-                    <span style={{ fontSize: 13, color: '#f59e0b', alignSelf: 'center' }}>{say("This shop cannot take card payment yet.")}</span>
+                    <span style={{ fontSize: 13, color: '#f59e0b', alignSelf: 'center' }}>{say("This shop cannot take card payment yet. The shop still needs to finish Stripe payout setup. Ask the shop, or pay another way.")}</span>
                   ) : null}
                 </div>
               </div>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import useRequireAuth from '@/lib/useRequireAuth';
 import type { ShopYearReport } from '@/lib/books/shopDrill';
 import ShopYearDrill from '@/components/books/ShopYearDrill';
-import { pageStyle } from '@/components/books/drillChrome';
+import { pageStyle, sectionCard } from '@/components/books/drillChrome';
 
 type Standing = 'unpaid' | 'partial' | 'paid' | 'reversed';
 
@@ -155,6 +155,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
 
   useEffect(() => {
     if (!user) return;
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return;
     load()
       .catch(() => setError('Could not load the shop ledger'))
       .finally(() => {
@@ -170,45 +171,60 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   async function post(action: string, extra: Record<string, unknown>) {
     setNotice('');
     setError('');
-    const response = await fetch('/api/shop/books', {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ action, ...extra }),
-    });
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(body.error || 'Could not save');
-      return;
+    try {
+      const response = await fetch('/api/shop/books', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ action, ...extra }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(body.error || 'Could not save');
+        return;
+      }
+      setNotice('Saved');
+      await load();
+    } catch {
+      setError('Could not reach the shop books service. Check the connection and try again.');
     }
-    setNotice('Saved');
-    await load();
   }
 
   async function exportBooks() {
     setNotice('');
     setError('');
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/api/shop/books/export?month=${month}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    if (response.status === 409) {
-      const body = await response.json();
-      setError((body.warnings || []).join(' '));
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+      setError('QuickBooks CSV was not downloaded. Enter the month as YYYY-MM.');
       return;
     }
-    if (!response.ok) {
-      setError('Export failed');
-      return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/shop/books/export?month=${month}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (response.status === 409) {
+        const body = await response.json().catch(() => ({}));
+        const warnings = Array.isArray(body.warnings) ? body.warnings.filter((item: unknown) => typeof item === 'string') : [];
+        const reason = [typeof body.copy === 'string' ? body.copy : '', ...warnings].filter(Boolean).join(' ');
+        setError(`QuickBooks CSV was not downloaded. ${reason || 'This month is not ready to export.'}`);
+        return;
+      }
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setError(body.error || 'QuickBooks CSV was not downloaded. Export failed.');
+        return;
+      }
+      const csv = await response.text();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `fixtray-quickbooks-${month}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setNotice('QuickBooks handoff downloaded');
+    } catch {
+      setError('QuickBooks CSV was not downloaded. The request did not finish.');
     }
-    const csv = await response.text();
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `fixtray-quickbooks-${month}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setNotice('QuickBooks handoff downloaded');
   }
 
   async function syncQuickBooks() {
@@ -242,25 +258,63 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
   if (!user || !books) return <div style={pageStyle}>{error || 'Loading...'}</div>;
 
   const ledger = books.ledger;
-  const showRevenue = (role === 'shop' || readOnly) && drill?.revenueVisible !== false;
+  const showRevenue = role === 'shop' && drill?.revenueVisible !== false;
+  const monthReady = /^\d{4}-(0[1-9]|1[0-2])$/.test(month);
   return (
-    <div style={pageStyle}>
+    <div className="books-sheet" style={pageStyle}>
+      <style>{`
+        .books-sheet input, .books-sheet select, .books-sheet button {
+          background: #1c0d10;
+          color: #f8ecea;
+          border: 1px solid #5c2428;
+          border-radius: 8px;
+          padding: 8px 10px;
+          margin: 4px 8px 4px 0;
+          font: inherit;
+        }
+        .books-sheet button { cursor: pointer; font-weight: 700; }
+        .books-sheet button:disabled { opacity: 0.45; cursor: not-allowed; }
+        .books-sheet table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        .books-sheet th, .books-sheet td {
+          text-align: left;
+          padding: 8px;
+          border-bottom: 1px solid #4a1c22;
+          font-size: 14px;
+        }
+        .books-sheet a { color: #f0b4ae; }
+        .books-sheet h2 { margin: 0 0 8px; }
+      `}</style>
       <h1 style={{ marginTop: 0 }}>Shop books</h1>
       <p>{books.copy}</p>
       <p>{books.quickBooksOwnsBooks}</p>
       <label>
         Month{' '}
-        <input value={month} onChange={(event) => setMonth(event.target.value)} type="month" />
+        <input
+          value={month}
+          aria-label="Month"
+          inputMode="numeric"
+          placeholder="YYYY-MM"
+          onChange={(event) => setMonth(event.target.value)}
+        />
       </label>
-      {error && <p style={{ color: '#fca5a5' }}>{error}</p>}
-      {notice && <p style={{ color: '#86efac' }}>{notice}</p>}
+      {!monthReady ? <p style={{ color: '#f0b4ae' }}>Use YYYY-MM, for example 2026-10. The report loads when the month is complete.</p> : null}
+      {error && (
+        <div role="alert" style={{ background: '#3b1214', border: '1px solid #fca5a5', color: '#fecaca', borderRadius: 12, padding: '12px 14px', marginTop: 12, fontWeight: 650 }}>
+          {error}
+        </div>
+      )}
+      {notice && (
+        <div role="status" style={{ background: '#12301c', border: '1px solid #86efac', color: '#bbf7d0', borderRadius: 12, padding: '12px 14px', marginTop: 12, fontWeight: 650 }}>
+          {notice}
+        </div>
+      )}
       {drill ? (
         <ShopYearDrill report={drill} onYear={setReportYear} />
       ) : (
         <p>Loading the year report...</p>
       )}
       {showRevenue && (
-      <section>
+      <section style={sectionCard}>
         <h2>Ledger</h2>
         <p>Customer paid {money(books.figures?.paidCents ?? ledger.customerPaidJobCents)}. Shop received {money(books.figures?.paidCents ?? ledger.shopReceivedCents)}. Shop revenue {money(books.figures?.revenueCents ?? ledger.shopTotalCents)} excludes the FixTray fee.</p>
         <p>Platform fee {money(ledger.platformFeeCents)} is separate and is not a shop deduction.</p>
@@ -301,7 +355,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         </table>
       </section>
       )}
-      <section>
+      <section style={sectionCard}>
         <h2>Month close</h2>
         <p>{books.monthClose.readyToSync ? 'Ready to sync.' : 'Not ready to sync.'}</p>
         {books.monthClose.warnings.map((warning) => <p key={warning}>{warning}</p>)}
@@ -329,14 +383,14 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         ) : null}
         {(role === 'shop' || readOnly) && <button type="button" onClick={exportBooks}>Download QuickBooks CSV</button>}
       </section>
-      {!readOnly && <section>
+      {!readOnly && <section style={sectionCard}>
         <h2>Deposit</h2>
         <input placeholder="Job id" value={depositJob} onChange={(event) => setDepositJob(event.target.value)} />
         <input placeholder="Amount cents" value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} />
         <input type="date" value={depositDate} onChange={(event) => setDepositDate(event.target.value)} />
         <button type="button" onClick={() => post('deposit', { workOrderId: depositJob, amountCents: Number(depositAmount), depositAt: depositDate })}>Record deposit</button>
       </section>}
-      <section>
+      {role === 'shop' && <section style={sectionCard}>
         <h2>FixTray owed this week</h2>
         <p>
           Week of {books.fixtrayOwed?.weekLabel || 'this week'}: {money(books.fixtrayOwed?.week.owedCents || 0)} from in-person payments.
@@ -368,35 +422,47 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         {!readOnly && (
           <>
         <button type="button" onClick={async () => {
-          const response = await fetch('/api/shop/books', {
-            method: 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ action: 'fee-invoice' }),
-          });
-          const body = await response.json().catch(() => ({}));
-          if (!response.ok) {
-            setError(body.error || 'Could not send the FixTray invoice');
-            return;
+          setError('');
+          setNotice('');
+          try {
+            const response = await fetch('/api/shop/books', {
+              method: 'POST',
+              headers: authHeaders(),
+              body: JSON.stringify({ action: 'fee-invoice' }),
+            });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              setError(body.error || 'Could not send the FixTray invoice');
+              return;
+            }
+            setNotice(body.sent ? 'FixTray invoice emailed' : 'Invoice prepared. Email was not sent.');
+          } catch {
+            setError('Could not send the FixTray invoice. The request did not finish.');
           }
-          setNotice(body.sent ? 'FixTray invoice emailed' : 'Invoice prepared. Email was not sent.');
         }}>Email FixTray invoice</button>
         <button type="button" onClick={async () => {
-          const response = await fetch('/api/shop/books', {
-            method: 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ action: 'pay-fixtray' }),
-          });
-          const body = await response.json().catch(() => ({}));
-          if (!response.ok || !body.url) {
-            setError(body.error || 'Could not start FixTray payment');
-            return;
+          setError('');
+          setNotice('');
+          try {
+            const response = await fetch('/api/shop/books', {
+              method: 'POST',
+              headers: authHeaders(),
+              body: JSON.stringify({ action: 'pay-fixtray' }),
+            });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok || !body.url) {
+              setError(body.error || 'Could not start FixTray payment');
+              return;
+            }
+            window.location.href = body.url;
+          } catch {
+            setError('Could not start FixTray payment. The request did not finish.');
           }
-          window.location.href = body.url;
         }}>Pay FixTray</button>
           </>
         )}
-      </section>
-      {!readOnly && <section>
+      </section>}
+      {!readOnly && <section style={sectionCard}>
         <h2>Parts</h2>
         <input placeholder="Search name or SKU" value={partQuery} onChange={(event) => setPartQuery(event.target.value)} />
         <select value={partId} onChange={(event) => setPartId(event.target.value)}>
@@ -419,7 +485,7 @@ export default function ShopBooksScreen({ role }: { role: 'shop' | 'manager' }) 
         <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'return', qty: Number(partQty), reason: partReason })}>Return</button>
         <button type="button" disabled={!partReason.trim()} onClick={() => post('part', { itemId: partId, kind: 'adjust', qty: Number(partQty), reason: partReason })}>Adjust</button>
       </section>}
-      <section>
+      <section style={sectionCard}>
         <h2>Tickets</h2>
         {books.tickets.map((ticket) => (
           <p key={ticket.workOrderId}>

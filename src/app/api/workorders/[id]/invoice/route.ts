@@ -6,6 +6,7 @@ import { generateInvoicePDF } from '@/lib/pdf';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { frozenCustomerFeeUsd } from '@/lib/feeSnapshot';
 import { quoteAmount } from '@/lib/workOrderCloseout';
+import { managerMustNotSeePlatformFee } from '@/lib/staffMoneyAccess';
 
 export async function GET(
   request: NextRequest,
@@ -31,8 +32,7 @@ export async function GET(
     }
     
     // Check authorization
-    const authorized = 
-      (auth.role === 'superadmin') ||
+    const authorized =
       (auth.role === 'customer' && workOrder.customerId === auth.id) ||
       (auth.role === 'shop' && workOrder.shopId === auth.id) ||
       ((auth.role === 'tech' || auth.role === 'manager') && workOrder.shopId === auth.shopId);
@@ -42,11 +42,18 @@ export async function GET(
     }
     
     const quote = quoteAmount(workOrder);
-    const serviceFee = frozenCustomerFeeUsd(workOrder.completion, quote) ?? await getPlatformServiceFeeUsd();
+    const hideFee = managerMustNotSeePlatformFee(auth.role);
+    const serviceFee = hideFee
+      ? 0
+      : (frozenCustomerFeeUsd(workOrder.completion, quote) ?? await getPlatformServiceFeeUsd());
     if (serviceFee == null) {
       return NextResponse.json({ error: 'The platform service fee is not configured.' }, { status: 409 });
     }
-    const pdf = generateInvoicePDF(workOrder as any, serviceFee);
+    const paid = Number(workOrder.amountPaid) || 0;
+    const pdfOrder = hideFee
+      ? { ...workOrder, completion: null, amountPaid: Math.min(paid, quote) }
+      : workOrder;
+    const pdf = generateInvoicePDF(pdfOrder as any, serviceFee);
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
     
     return new NextResponse(pdfBuffer, {

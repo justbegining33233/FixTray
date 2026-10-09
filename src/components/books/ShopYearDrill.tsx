@@ -21,13 +21,13 @@ function PaymentMetrics({ moneyTotals, showRevenue }: { moneyTotals: ShopMoneyTo
           <Metric label="Customer credit" value={money(moneyTotals.customerCreditCents)} hint="This job's own overpayment, including payments with no invoice. It is not netted against other jobs." />
         </>
       ) : null}
-      <Metric label="Card" value={money(moneyTotals.cardCents)} />
-      <Metric label="Cash" value={money(moneyTotals.cashCents)} />
-      <Metric label="Check" value={money(moneyTotals.checkCents)} />
-      <Metric label="Other" value={money(moneyTotals.otherCents)} />
+      {showRevenue ? <Metric label="Card" value={money(moneyTotals.cardCents)} /> : null}
+      {showRevenue ? <Metric label="Cash" value={money(moneyTotals.cashCents)} /> : null}
+      {showRevenue ? <Metric label="Check" value={money(moneyTotals.checkCents)} /> : null}
+      {showRevenue ? <Metric label="Other" value={money(moneyTotals.otherCents)} /> : null}
       <Metric label="Tips" value={money(moneyTotals.tipsCents)} hint="Tips are not recorded. This is 0, not an estimate." />
-      <Metric label="Refunds" value={money(moneyTotals.refundCents)} />
-      <Metric label="Chargebacks" value={money(moneyTotals.chargebackCents)} />
+      {showRevenue ? <Metric label="Refunds" value={money(moneyTotals.refundCents)} /> : null}
+      {showRevenue ? <Metric label="Chargebacks" value={money(moneyTotals.chargebackCents)} /> : null}
       <Metric label="Voids" value={money(moneyTotals.voidCents)} hint="Voids are not recorded. This is 0, not an estimate." />
     </div>
   );
@@ -109,17 +109,21 @@ export default function ShopYearDrill({
       {!showRevenue ? <p style={{ color: '#f0b4ae' }}>Shop revenue is visible to the shop owner only.</p> : null}
       <Crumb items={crumbs} />
       <PaymentMetrics moneyTotals={revenueOf(current)} showRevenue={showRevenue} />
-      <h3>FixTray owed</h3>
-      <p>{money(figures.money.fixtrayOwedCents)} in this period. The shop kept the full job.</p>
-      {figures.fixtrayLines.length === 0 ? <EmptyLine>No in-person FixTray fees in this period.</EmptyLine> : (
-        <div style={{ display: 'grid', gap: 8 }}>
-          {figures.fixtrayLines.map((line) => (
-            <div key={line.workOrderId} style={{ background: '#241014', border: '1px solid #4a1c22', borderRadius: 12, padding: 12 }}>
-              Work order {line.workOrderId}: {money(line.feeCents)}
+      {showRevenue ? (
+        <>
+          <h3>FixTray owed</h3>
+          <p>{money(figures.money.fixtrayOwedCents)} in this period. The shop kept the full job.</p>
+          {figures.fixtrayLines.length === 0 ? <EmptyLine>No in-person FixTray fees in this period.</EmptyLine> : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {figures.fixtrayLines.map((line) => (
+                <div key={line.workOrderId} style={{ background: '#241014', border: '1px solid #4a1c22', borderRadius: 12, padding: 12 }}>
+                  Work order {line.workOrderId}: {money(line.feeCents)}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
+        </>
+      ) : null}
       <h3>Inventory</h3>
       <div style={gridStyle}>
         <Metric label="Parts used" value={String(figures.parts.usedQty)} />

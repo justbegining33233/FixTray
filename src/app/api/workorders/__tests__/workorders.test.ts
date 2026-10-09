@@ -213,14 +213,14 @@ describe('GET /api/workorders/[id]', () => {
     expect(res.status).toBe(200);
   });
 
-  it('returns 200 for admin regardless of ownership', async () => {
+  it('returns 403 for a platform admin with no shop', async () => {
     (prisma.workOrder.findUnique as jest.Mock).mockResolvedValue(mockWorkOrder);
     const token = makeToken({ id: 'admin-001', role: 'admin' });
     const res = await getById(
       makeGetRequest('http://localhost/api/workorders/wo-001', token),
       { params: Promise.resolve({ id: 'wo-001' }) }
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(403);
   });
 });
 

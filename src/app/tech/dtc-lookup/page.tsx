@@ -51,9 +51,6 @@ export default function DTCLookupPage() {
     setLoading(false);
   };
 
-  if (isLoading) return <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e5e7eb' }}>{say("Loading...")}</div>;
-  if (!user) return null;
-
   return (
     <div className="centered-app-page" style={{ minHeight: '100vh', background: 'transparent', color: '#e5e7eb', fontFamily: 'system-ui,sans-serif' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -62,6 +59,8 @@ export default function DTCLookupPage() {
       </div>
 
       <div style={{ padding: 32, maxWidth: 720 }}>
+        {isLoading ? <p style={{ color: '#9ca3af' }}>{say('Checking your tech login. The code box stays on this page.')}</p> : null}
+        {!isLoading && !user ? <p role="alert" style={{ color: '#fca5a5' }}>{say('Tech login is required for DTC lookup.')}</p> : null}
         {/* Search Bar */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 32 }}>
           <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} onKeyDown={e => e.key === 'Enter' && lookup()}

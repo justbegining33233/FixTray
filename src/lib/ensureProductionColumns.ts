@@ -90,6 +90,13 @@ export const PRODUCTION_COLUMN_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS "clock_corrections_shopId_createdAt_idx" ON "clock_corrections"("shopId", "createdAt")`,
   `CREATE INDEX IF NOT EXISTS "clock_corrections_entryId_idx" ON "clock_corrections"("entryId")`,
+  `CREATE TABLE IF NOT EXISTS "email_templates" (
+    "key" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "email_templates_pkey" PRIMARY KEY ("key")
+  )`,
 ] as const;
 
 let pending: Promise<void> | null = null;

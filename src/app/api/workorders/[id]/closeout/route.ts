@@ -7,8 +7,9 @@ import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { freezeWorkOrderCheckoutFee } from '@/lib/freezeWorkOrderFee';
 import { recordStatusHistory } from '@/lib/statusHistoryWrite';
+import { presentCloseoutForRole } from '@/lib/staffMoneyAccess';
 
-const CLOSEOUT_ROLES = new Set(['shop', 'manager', 'admin', 'superadmin']);
+const CLOSEOUT_ROLES = new Set(['shop', 'manager']);
 
 // Do not return customerName. Production databases that have not picked up
 // the additive column otherwise fail the INSERT ... RETURNING and the shop
@@ -54,7 +55,7 @@ export async function POST(
     }
 
     const shopId = auth.role === 'shop' ? auth.id : auth.shopId;
-    if (auth.role !== 'superadmin' && auth.role !== 'admin' && workOrder.shopId !== shopId) {
+    if (workOrder.shopId !== shopId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -113,7 +114,7 @@ export async function POST(
         toStatus: transition.status,
         reason: 'Invoice created',
       });
-      return NextResponse.json({
+      return NextResponse.json(presentCloseoutForRole(auth.role, {
         workOrder: updated,
         invoice: {
           quoteAmount: frozen.subtotal,
@@ -126,7 +127,7 @@ export async function POST(
           serviceFee: frozen.serviceFee,
           url: `/customer/pay/${link.token}`,
         },
-      });
+      }));
     }
 
     if (transition.action === 'paid') {
@@ -149,14 +150,14 @@ export async function POST(
         toStatus: transition.status,
         reason: 'Marked paid',
       });
-      return NextResponse.json({
+      return NextResponse.json(presentCloseoutForRole(auth.role, {
         workOrder: updated,
         invoice: {
           quoteAmount: transition.quoteAmount,
           serviceFee: transition.serviceFee,
           totalDue: transition.amount,
         },
-      });
+      }));
     }
 
     const updated = await prisma.workOrder.update({
@@ -174,14 +175,14 @@ export async function POST(
       toStatus: transition.status,
       reason: 'Job completed',
     });
-    return NextResponse.json({
+    return NextResponse.json(presentCloseoutForRole(auth.role, {
       workOrder: updated,
       invoice: {
         quoteAmount: transition.quoteAmount,
         serviceFee: transition.serviceFee,
         totalDue: transition.amount,
       },
-    });
+    }));
   } catch (error) {
     console.error('[workorders closeout]', error);
     return NextResponse.json({ error: 'Closeout failed.' }, { status: 500 });

@@ -139,7 +139,7 @@ export default function CustomerPayPage() {
         )}
         {!isExpired && !isAlreadyPaid && link?.cardPaymentAvailable !== true && (
           <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10, padding: 14, color: '#fcd34d', fontWeight: 600 }}>
-            {say("This shop cannot take card payment yet.")}
+            {say("This shop cannot take card payment yet. The shop still needs to finish Stripe payout setup. Ask the shop, or pay another way.")}
           </div>
         )}
       </div>

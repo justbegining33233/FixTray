@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
+import { maySettlePlatformFee } from '@/lib/staffMoneyAccess';
 import { loadShopYearDrill } from '@/lib/books/loadDrill';
 import { hideShopRevenue } from '@/lib/books/shopDrill';
 import { findShopJob, loadShopBooks, saveQbMap } from '@/lib/books/loadShopBooks';
@@ -256,6 +257,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === 'fee-invoice' || action === 'pay-fixtray') {
+    if (!maySettlePlatformFee(auth.role)) {
+      return NextResponse.json({ error: 'Only the shop owner can settle the FixTray fee.' }, { status: 403 });
+    }
     const books = await loadShopBooks(shopId);
     const owed = books.fixtrayOwed.week;
     const shop = await prisma.shop.findUnique({

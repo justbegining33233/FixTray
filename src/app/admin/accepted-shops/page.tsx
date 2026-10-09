@@ -3,6 +3,7 @@
 import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { resolveShopContactEmail, shopContactMailto } from '@/lib/shopContact';
 import { FaArrowLeft, FaArrowRight, FaCheck, FaEnvelope, FaMapMarkerAlt, FaMedal, FaPhone, FaStar, FaStore, FaTimes } from 'react-icons/fa';
@@ -225,11 +226,12 @@ export default function AcceptedShops() {
 
                 {/* Actions */}
                 <div style={{display:'flex', gap:12}}>
-                  <button 
-                    onClick={() => handleViewDetails(shop)}
-                    style={{flex:1, padding:'12px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}
+                  <Link
+                    href={`/admin/shops/${shop.id}` as Route}
+                    style={{flex:1, padding:'12px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', textAlign:'center', textDecoration:'none'}}
                   >
-                    {say("View Details")}{' '}</button>
+                    {say("View Details")}
+                  </Link>
                   <button 
                     onClick={() => handleContactShop(shop)}
                     style={{padding:'12px 24px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}

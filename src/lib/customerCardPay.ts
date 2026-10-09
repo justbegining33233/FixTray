@@ -7,7 +7,7 @@ import { shopCanReceiveConnectTransfer } from '@/lib/stripeConnectSplit';
  * A shop that can receive transfers is still offered Pay. An account id is
  * never treated as ready on its own.
  */
-export const SHOP_CANNOT_TAKE_CARDS = 'This shop cannot take card payment yet.';
+export const SHOP_CANNOT_TAKE_CARDS = 'This shop cannot take card payment yet. The shop still needs to finish Stripe payout setup. Ask the shop, or pay another way.';
 
 const CLOSED_STATUSES = new Set(['denied-estimate', 'cancelled', 'canceled', 'completed', 'closed']);
 

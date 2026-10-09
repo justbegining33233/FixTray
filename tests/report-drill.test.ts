@@ -455,9 +455,12 @@ describe('drill screens', () => {
     const shopHtml = renderToStaticMarkup(createElement(ShopYearDrill, { report: shop, onYear: () => undefined }));
     expect(shopHtml).toContain('Shop revenue is visible to the shop owner only.');
     expect(shopHtml).not.toContain('Work order WO-2');
-    expect(shopHtml).toContain('No in-person FixTray fees');
+    expect(shopHtml).not.toContain('FixTray');
     expect(shopHtml).not.toContain('$25.00');
     expect(shopHtml).not.toContain('Jobs invoiced');
+    expect(shopHtml).not.toContain('>Card<');
+    expect(shopHtml).not.toContain('>Cash<');
+    expect(shopHtml).not.toContain('>Refunds<');
     expect(shopHtml).toContain('No outside purchases');
     expect(shopHtml).toContain(TIPS_EMPTY);
   });

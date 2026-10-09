@@ -39,6 +39,15 @@ function ManagerProfilePageContent() {
     setName((u.name as string) || '');
     setEmail((u.email as string) || '');
     setPhone((u.phone as string) || '');
+    if (u.email) return;
+    const token = localStorage.getItem('token');
+    fetch('/api/auth/profile', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const next = data?.user?.email || data?.email;
+        if (typeof next === 'string' && next) setEmail(next);
+      })
+      .catch(() => setMessage('Email could not be loaded.'));
   }, [user]);
 
   const initials = useMemo(() => {

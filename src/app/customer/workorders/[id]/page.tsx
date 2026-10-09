@@ -358,7 +358,7 @@ export default function WorkOrderDetailsPage() {
                   && workOrder.status !== 'denied-estimate'
                   && workOrder.estimate.totalDue > 0 ? (
                   <div style={{color:'#f59e0b',fontSize:14,padding:'12px 14px',background:'rgba(245,158,11,0.1)',borderRadius:8}}>
-                    {say("This shop cannot take card payment yet.")}
+                    {say("This shop cannot take card payment yet. The shop still needs to finish Stripe payout setup. Ask the shop, or pay another way.")}
                   </div>
                 ) : null}
               </div>

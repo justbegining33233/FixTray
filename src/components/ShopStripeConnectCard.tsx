@@ -135,7 +135,16 @@ export default function ShopStripeConnectCard({ origin }: { origin: ConnectRetur
         <p style={{ color: '#fde68a', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>{returnNotice}</p>
       ) : null}
       {error ? (
-        <p style={{ color: '#fca5a5', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>{error}</p>
+        <div role="alert" style={{ background: '#3b1214', border: '1px solid #fca5a5', color: '#fecaca', borderRadius: 10, padding: 12, margin: '0 0 12px', lineHeight: 1.5, fontSize: 13 }}>
+          {error}
+        </div>
+      ) : null}
+      {state !== 'ready' ? (
+        <ol style={{ color: '#e5e7eb', fontSize: 13, lineHeight: 1.5, margin: '0 0 12px', paddingLeft: 18 }}>
+          <li>The FixTray platform account must have Stripe Connect enabled under Settings, then Connect, in the Stripe Dashboard.</li>
+          <li>The shop owner starts Connect here. Stripe hosts the account form. Do not paste a secret key.</li>
+          <li>Customers can pay by card after transfers are active or payouts are enabled. Until then, checkout explains that this shop cannot take cards yet.</li>
+        </ol>
       ) : null}
 
       <button

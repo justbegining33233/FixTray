@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 /** Loads the offline engine for every signed-in role and prefetches the open job. */
 export default function TechOfflineBridge() {
+  const [notice, setNotice] = useState<{ ok: boolean; message: string } | null>(null);
   useEffect(() => {
     const boot = () => {
       const role = localStorage.getItem('userRole');
@@ -17,7 +18,14 @@ export default function TechOfflineBridge() {
     const onPrep = (event: Event) => {
       const detail = (event as CustomEvent<{ workOrderId?: string; status?: string; baseStatus?: string }>).detail || {};
       if (!detail.workOrderId) return;
-      window.FixTrayOffline?.downloadJob?.(detail.workOrderId);
+      const engine = window.FixTrayOffline;
+      if (!engine?.downloadJob) {
+        setNotice({ ok: false, message: 'Offline download is not ready on this device yet.' });
+        return;
+      }
+      Promise.resolve(engine.downloadJob(detail.workOrderId))
+        .then(() => setNotice({ ok: true, message: 'This job was saved for offline use.' }))
+        .catch(() => setNotice({ ok: false, message: 'This job was not saved for offline use.' }));
       if (detail.status === 'en-route') {
         window.FixTrayOffline?.setStatus?.(detail.workOrderId, detail.baseStatus || 'assigned', 'en-route');
       }
@@ -37,7 +45,13 @@ export default function TechOfflineBridge() {
     return () => window.removeEventListener('fixtray-prep-download', onPrep);
   }, []);
 
-  return null;
+  if (!notice) return null;
+  return (
+    <div role="status" style={{ position: 'fixed', bottom: 16, left: 16, right: 16, zIndex: 80, maxWidth: 420, margin: '0 auto', background: notice.ok ? '#12301c' : '#3b1214', border: `1px solid ${notice.ok ? '#86efac' : '#fca5a5'}`, color: notice.ok ? '#bbf7d0' : '#fecaca', borderRadius: 12, padding: 12, fontWeight: 700 }}>
+      {notice.message}
+      <button type="button" onClick={() => setNotice(null)} style={{ marginLeft: 12, background: 'transparent', color: 'inherit', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Dismiss</button>
+    </div>
+  );
 }
 
 declare global {

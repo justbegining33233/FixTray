@@ -43,6 +43,7 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
         const response = await fetch(`/api/tech/tracking?shopId=${encodeURIComponent(shopId)}`, {
           credentials: 'include',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: AbortSignal.timeout(12000),
         });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
@@ -53,7 +54,10 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
         setData({ status: 'ready', map: payload });
       } catch (error) {
         if (cancelled) return;
-        const message = error instanceof Error ? error.message : 'Could not load the shop map';
+        const timedOut = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+        const message = timedOut
+          ? 'The map did not load. Check the shop address in settings, then try again.'
+          : (error instanceof Error ? error.message : 'Could not load the shop map');
         setData((current) => (
           current.status === 'ready' ? { ...current, stale: true } : { status: 'error', message }
         ));

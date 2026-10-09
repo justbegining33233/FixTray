@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/middleware';
 import { validateCsrf } from '@/lib/csrf';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
+import { formatShopAddress, persistShopCoordinates } from '@/lib/persistShopCoordinates';
 
 // GET shop settings
 export async function GET(request: NextRequest) {
@@ -118,6 +119,16 @@ export async function PUT(request: NextRequest) {
         updatedAt: new Date(),
       },
     });
+
+    if (address !== undefined || city !== undefined || state !== undefined || zipCode !== undefined) {
+      const formatted = formatShopAddress({
+        address: updatedShop.address,
+        city: updatedShop.city,
+        state: updatedShop.state,
+        zipCode: updatedShop.zipCode,
+      });
+      await persistShopCoordinates(shopId, formatted).catch(() => null);
+    }
 
     if (notificationSettings || fixtrayAgreement) {
       const existingSettings = await prisma.shopSettings.findUnique({

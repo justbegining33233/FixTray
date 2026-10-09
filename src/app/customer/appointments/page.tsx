@@ -168,8 +168,7 @@ export default function CustomerAppointmentsPage() {
       } else {
         setApptMsg({type:'error',text:'Failed to send message. Please try again.'});
       }
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    } catch {
       setApptMsg({type:'error',text:'Failed to send message. Please try again.'});
     } finally {
       setMessageModal(prev => ({ ...prev, sending: false }));
@@ -332,15 +331,19 @@ export default function CustomerAppointmentsPage() {
                 )}
 
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Link href={`/customer/jobs/${apt.workOrderId}/track`} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
+                  <Link href={(apt.workOrderId ? `/customer/jobs/${apt.workOrderId}/track` : `/customer/appointments/${apt.id}`) as Route} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
                     <FaMapMarkerAlt style={{marginRight:4}} /> {say("Track")}{' '}</Link>
 
-                  {/* Message button - opens modal for this appointment */}
+                  <Link href={`/customer/messages?shopId=${apt.shop.id}` as Route} style={{ flex: 1, padding: '10px', background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
+                    <FaComments style={{marginRight:4}} /> {say("Message")}
+                  </Link>
                   <button
+                    type="button"
                     onClick={() => openMessageModal(apt)}
-                    style={{ flex: 1, padding: '10px', background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', background: 'transparent', color: '#d8b4fe', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    <FaComments style={{marginRight:4}} /> {say("Message")}{' '}</button>
+                    {say("Quick message")}
+                  </button>
                 </div>
               </div>
               );

@@ -21,6 +21,14 @@ export const pageStyle: CSSProperties = {
   fontFamily: 'system-ui, sans-serif',
 };
 
+export const sectionCard: CSSProperties = {
+  background: '#241014',
+  border: '1px solid #4a1c22',
+  borderRadius: 14,
+  padding: 16,
+  marginTop: 16,
+};
+
 export const gridStyle: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(148px, 1fr))',

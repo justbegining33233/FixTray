@@ -35,11 +35,24 @@ export default function ManagerTwoFactorPage() {
   }, [user]);
 
   const startSetup = async () => {
-    setFetching(true); setErrorMsg(null);
-    const r = await fetch('/api/auth/2fa/setup', { method: 'POST', headers: authHeaders });
-    if (r.ok) { const d = await r.json(); setQrCode(d.qrCode); setSecret(d.secret); setStep('setup'); }
-    else setErrorMsg('Failed to start 2FA setup');
-    setFetching(false);
+    setFetching(true);
+    setErrorMsg(null);
+    try {
+      const r = await fetch('/api/auth/2fa/setup', { method: 'POST', headers: authHeaders });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setErrorMsg(d.error || 'Failed to start 2FA setup');
+        return;
+      }
+      setQrCode(d.qrCode);
+      setSecret(d.secret);
+      setStep('setup');
+      setStatusMsg('Scan the code, then enter the 6-digit number from your authenticator app.');
+    } catch {
+      setErrorMsg('Could not start two-factor setup. The request did not finish.');
+    } finally {
+      setFetching(false);
+    }
   };
 
   const verify = async () => {

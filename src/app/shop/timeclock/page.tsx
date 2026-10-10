@@ -6,19 +6,32 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import TimeClock from '@/components/TimeClock';
 
 interface TimeEntry {
   id: string;
   techId: string;
   clockIn: string;
   clockOut?: string | null;
-  hoursWorked?: number;
+  hoursWorked?: number | null;
+  breakDuration?: number | null;
   tech?: {
     firstName?: string;
     lastName?: string;
     role?: string;
   };
+}
+
+function getEntryHours(entry: TimeEntry): number {
+  const now = new Date();
+  if (entry.clockOut && typeof entry.hoursWorked === 'number' && Number.isFinite(entry.hoursWorked) && entry.hoursWorked >= 0) {
+    return entry.hoursWorked;
+  }
+  const start = new Date(entry.clockIn).getTime();
+  const rawEnd = entry.clockOut ? new Date(entry.clockOut).getTime() : now.getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(rawEnd) || rawEnd < start) return 0;
+  const end = entry.clockOut ? rawEnd : Math.min(rawEnd, start + 16 * 60 * 60 * 1000);
+  const breakMs = Math.max(0, Number(entry.breakDuration) || 0) * 60 * 1000;
+  return Math.max(0, (end - start - breakMs) / (1000 * 60 * 60));
 }
 
 export default function ShopTimeClockPage() {
@@ -39,15 +52,6 @@ export default function ShopTimeClockPage() {
     const diff = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + diff);
     return d;
-  };
-
-  const getEntryHours = (entry: TimeEntry) => {
-    if (typeof entry.hoursWorked === 'number' && Number.isFinite(entry.hoursWorked)) {
-      return entry.hoursWorked;
-    }
-    const clockIn = new Date(entry.clockIn).getTime();
-    const clockOut = entry.clockOut ? new Date(entry.clockOut).getTime() : Date.now();
-    return Math.max(0, (clockOut - clockIn) / (1000 * 60 * 60));
   };
 
   const weekAnalytics = useMemo(() => {
@@ -124,7 +128,7 @@ export default function ShopTimeClockPage() {
         if (timeRes.ok) {
           const data = await timeRes.json();
           const entries: TimeEntry[] = Array.isArray(data?.timeEntries) ? data.timeEntries : [];
-          const total = entries.reduce((sum, entry) => sum + Number(entry.hoursWorked || 0), 0);
+          const total = entries.reduce((sum, entry) => sum + getEntryHours(entry), 0);
           setPeriodHours(Math.round(total * 10) / 10);
         }
       } catch {
@@ -231,12 +235,13 @@ export default function ShopTimeClockPage() {
                   )}
                   {!shopEntriesLoading && shopEntries.map((entry) => {
                     const employeeName = `${entry.tech?.firstName || ''} ${entry.tech?.lastName || ''}`.trim() || 'Unknown Employee';
-                    const active = !entry.clockOut;
+                    const startMs = new Date(entry.clockIn).getTime();
+                    const active = !entry.clockOut && Number.isFinite(startMs) && Date.now() - startMs <= 16 * 60 * 60 * 1000;
                     return (
                       <tr key={entry.id} style={{ borderTop: '1px solid #1f2937' }}>
                         <td style={{ color: '#e5e7eb', fontSize: 13, padding: '10px 12px' }}>{say(employeeName)}</td>
                         <td style={{ color: '#cbd5e1', fontSize: 13, padding: '10px 12px' }}>{new Date(entry.clockIn).toLocaleString()}</td>
-                        <td style={{ color: '#cbd5e1', fontSize: 13, padding: '10px 12px' }}>{entry.clockOut ? new Date(entry.clockOut).toLocaleString() : say("Still clocked in")}</td>
+                        <td style={{ color: '#cbd5e1', fontSize: 13, padding: '10px 12px' }}>{entry.clockOut ? new Date(entry.clockOut).toLocaleString() : (active ? say("Still clocked in") : say("Not a live clock"))}</td>
                         <td style={{ color: '#22c55e', fontSize: 13, padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{getEntryHours(entry).toFixed(2)}h</td>
                         <td style={{ textAlign: 'center', padding: '10px 12px' }}>
                           <span style={{
@@ -260,7 +265,10 @@ export default function ShopTimeClockPage() {
             </div>
           </div>
 
-          <TimeClock techId={user.id} shopId={user.shopId || user.id} techName={user.name || 'Shop Owner'} />
+          <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 10, padding: '16px', color: '#e5e7eb' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{say("Owners do not clock in")}</div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>{say("Shop owners do not have a time clock. Employee clock-ins for this shop are listed above.")}</div>
+          </div>
         </main>
       </div>
     </div>

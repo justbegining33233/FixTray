@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { booksAccess, shopIdForBooks } from '@/lib/books/access';
-import { correctClock, minutesFromHours, sumStaffMinutes, sumWorkMinutes } from '@/lib/books/clocks';
+import { correctClock, minutesFromHours, staffPunchMinutes, sumStaffMinutes, sumWorkMinutes } from '@/lib/books/clocks';
 import { writeAudit } from '@/lib/books/persist';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { payableHours } from '@/lib/timesheetPeriod';
@@ -46,6 +46,17 @@ export async function GET(request: NextRequest) {
     };
   });
   const staff = sumStaffMinutes(people);
+  const now = new Date();
+  const staffRows = staffEntries.map((entry) => {
+    const tech = entry.tech;
+    return {
+      id: entry.id,
+      personId: entry.techId,
+      name: tech ? `${tech.firstName} ${tech.lastName}`.trim() : entry.techId,
+      clockIn: entry.clockIn,
+      minutes: staffPunchMinutes(entry, now),
+    };
+  });
   const work = workEntries.map((entry) => ({
     id: entry.id,
     personId: entry.techId,
@@ -64,6 +75,7 @@ export async function GET(request: NextRequest) {
     shopTotalMinutes: selfOnly ? null : staff.totalMinutes,
     workMinutes: sumWorkMinutes(work),
     work,
+    staffEntries: staffRows,
   });
 }
 

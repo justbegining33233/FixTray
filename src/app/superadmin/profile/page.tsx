@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ShopSecurityPanel from '@/components/ShopSecurityPanel';
 
 type SuperAdminProfileSection = 'profile' | 'contact' | 'security';
 
@@ -174,6 +175,9 @@ function SuperAdminProfilePageContent() {
                       {say("Security Settings")}{' '}</Link>
                     <Link href={'/admin/settings' as Route} style={{ textDecoration: 'none', color: '#c7d2fe', border: '1px solid #3730a3', borderRadius: 8, padding: '10px 12px', background: 'rgba(55,48,163,0.2)' }}>
                       {say("Global Settings")}{' '}</Link>
+                  </div>
+                  <div style={{ marginTop: 18 }}>
+                    <ShopSecurityPanel focus="twoFactor" />
                   </div>
                 </div>
               )}

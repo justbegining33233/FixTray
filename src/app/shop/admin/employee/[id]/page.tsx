@@ -10,7 +10,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 
 export default function EmployeeProfile() {
   const say = usePhrase();
-  useRequireAuth(['shop']);
+  const { user } = useRequireAuth(['shop']);
   const router = useRouter();
   const params = useParams();
   const employeeId = (params?.id as string) || '';
@@ -23,28 +23,22 @@ export default function EmployeeProfile() {
   const [employeeMsg, setEmployeeMsg] = useState<{type:'success'|'error';text:string}|null>(null);
 
   useEffect(() => {
-    const admin = localStorage.getItem('isShopAdmin');
-    const id = localStorage.getItem('shopId') || '';
-
-    if (admin !== 'true') {
-      router.push('/shop/home' as Route);
-      return;
-    }
+    const id = user?.shopId || (user?.role === 'shop' ? user.id : '') || localStorage.getItem('shopId') || '';
+    if (!id) return;
 
     setShopId(id);
-    if (id && employeeId) {
+    if (employeeId) {
       fetchEmployeeData(id, employeeId);
     }
 
-    // Auto-refresh every 5 seconds
     const interval = setInterval(() => {
-      if (id && employeeId) {
+      if (employeeId) {
         fetchEmployeeData(id, employeeId);
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [router, employeeId]);
+  }, [employeeId, user?.id, user?.role, user?.shopId]);
 
   const fetchEmployeeData = async (shopId: string, empId: string) => {
     try {

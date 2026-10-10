@@ -625,6 +625,44 @@ function isCustomerAddressBook(path: string, role: MenuRole): boolean {
   return role === 'customer' && path === '/customer/addresses';
 }
 
+/**
+ * Real shop pages that are not sidebar items. The owner opens them by address.
+ * Managers stay on their own menu.
+ */
+const SHOP_OWNER_DIRECT = new Set([
+  '/shop',
+  '/shop/bays',
+  '/shop/calendar',
+  '/shop/branding',
+  '/shop/team-performance',
+  '/shop/new-roadside-job',
+  '/shop/parts-labor',
+  '/shop/reports',
+  '/shop/purchase-orders-receiving',
+  '/reports',
+]);
+
+function isShopOwnerDirect(path: string, role: MenuRole): boolean {
+  if (role !== 'shop') return false;
+  if (SHOP_OWNER_DIRECT.has(path)) return true;
+  if (/^\/shop\/admin\/employee\/[^/]+$/.test(path)) return true;
+  if (/^\/shop\/customers\/[^/]+\/crm$/.test(path)) return true;
+  return false;
+}
+
+/** Documented aliases. The page itself explains the redirect to the real flow. */
+function isWorkOrderAlias(path: string, role: MenuRole): boolean {
+  if (role !== 'shop' && role !== 'manager' && role !== 'tech') return false;
+  return path === '/workorders'
+    || path === '/workorders/new'
+    || path === '/workorders/list'
+    || path === '/workorders/inshop';
+}
+
+function isCustomerJobTrack(path: string, role: MenuRole): boolean {
+  return role === 'customer' && /^\/customer\/jobs\/[^/]+\/track$/.test(path);
+}
+
 export function canOpenMenuPath(role: MenuRole, pathname: string): boolean {
   const path = cleanMenuPath(pathname);
   const hrefs = menuHrefs(role);
@@ -635,6 +673,9 @@ export function canOpenMenuPath(role: MenuRole, pathname: string): boolean {
   if (isShopRecordDetail(path, role)) return true;
   if (isShopCustomerDirectory(path, role)) return true;
   if (isCustomerAddressBook(path, role)) return true;
+  if (isShopOwnerDirect(path, role)) return true;
+  if (isWorkOrderAlias(path, role)) return true;
+  if (isCustomerJobTrack(path, role)) return true;
   return false;
 }
 

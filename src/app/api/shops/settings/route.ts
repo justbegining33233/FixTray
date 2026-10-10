@@ -6,6 +6,13 @@ import { validateCsrf } from '@/lib/csrf';
 import { ensureProductionColumns } from '@/lib/ensureProductionColumns';
 import { formatShopAddress, persistShopCoordinates } from '@/lib/persistShopCoordinates';
 
+function optionalDate(value: unknown): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 // GET shop settings
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -53,6 +60,9 @@ export async function GET(request: NextRequest) {
         zipCode: shop.zipCode,
         businessLicense: shop.businessLicense,
         insurancePolicy: shop.insurancePolicy,
+        licenseExpiresAt: shop.licenseExpiresAt ? shop.licenseExpiresAt.toISOString() : null,
+        insuranceExpiresAt: shop.insuranceExpiresAt ? shop.insuranceExpiresAt.toISOString() : null,
+        entityType: shop.entityType,
         shopType: shop.shopType,
         services: shop.services.map(s => ({
           id: s.id,
@@ -94,7 +104,23 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { shopId, shopName, email, phone, address, city, state, zipCode, notificationSettings, fixtrayAgreement } = body;
+    const {
+      shopId,
+      shopName,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      zipCode,
+      businessLicense,
+      insurancePolicy,
+      licenseExpiresAt,
+      insuranceExpiresAt,
+      entityType,
+      notificationSettings,
+      fixtrayAgreement,
+    } = body;
 
     if (!shopId) {
       return NextResponse.json({ error: 'Shop ID is required' }, { status: 400 });
@@ -116,6 +142,11 @@ export async function PUT(request: NextRequest) {
         city,
         state,
         zipCode,
+        ...(businessLicense !== undefined ? { businessLicense } : {}),
+        ...(insurancePolicy !== undefined ? { insurancePolicy } : {}),
+        ...(licenseExpiresAt !== undefined ? { licenseExpiresAt: optionalDate(licenseExpiresAt) } : {}),
+        ...(insuranceExpiresAt !== undefined ? { insuranceExpiresAt: optionalDate(insuranceExpiresAt) } : {}),
+        ...(entityType !== undefined ? { entityType } : {}),
         updatedAt: new Date(),
       },
     });

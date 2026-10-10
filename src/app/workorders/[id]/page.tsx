@@ -12,8 +12,9 @@ import {
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
 import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
+import { frozenCustomerFeeUsd, readFeeSnapshot } from '@/lib/feeSnapshot';
+import { PER_JOB_FEE_NOTE } from '@/lib/staffMoneyAccess';
 import { counterBalanceDueCents } from '@/lib/books/money';
-import { readFeeSnapshot } from '@/lib/feeSnapshot';
 import { readSalesTaxSnapshot } from '@/lib/books/shopTax';
 import { workOrderNotificationId } from '@/lib/notificationInbox';
 import { saveSeenWorkOrderIds } from '@/lib/seenWorkOrderAlerts';
@@ -62,6 +63,17 @@ type SvcItem = { id: string; serviceName: string; category: string; price?: numb
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const uid = () => Math.random().toString(36).slice(2);
+
+/** Stored checkout fee when one exists. Otherwise the fee that applies to this quote. */
+function jobCustomerFee(quote: number, platformFee: number, completion: unknown): { serviceFee: number; total: number } {
+  const frozen = frozenCustomerFeeUsd(completion, quote);
+  if (typeof frozen === 'number') {
+    const serviceFee = Math.max(0, frozen);
+    return { serviceFee, total: Math.round((quote + serviceFee) * 100) / 100 };
+  }
+  const live = billWithServiceFee(quote, platformFee);
+  return { serviceFee: live.serviceFee, total: live.total };
+}
 
 function counterSignPath(estimate: unknown): string | null {
   if (!estimate || typeof estimate !== 'object') return null;
@@ -493,13 +505,12 @@ export default function WorkOrderDetailPage() {
       if (data.workOrder) setWo((current) => mergeWorkOrderView(current as unknown as Record<string, unknown>, data.workOrder) as WorkOrder);
       setPayDraft(null);
       const fee = typeof data.platformFeeCents === 'number' ? data.platformFeeCents / 100 : 0;
-      const hideFee = userRole === 'manager' || fee <= 0;
       setCloseoutTone('ok');
       setCloseoutMsg(
         data.paymentStatus === 'paid'
-          ? (hideFee
-            ? `Recorded ${method}. The job is paid. Complete it when the work is finished.`
-            : `Recorded ${method}. Shop keeps the full job. FixTray fee $${fee.toFixed(2)} is owed to the platform, not a shop expense.`)
+          ? (fee > 0
+            ? `Recorded ${method}. Customer total includes the FixTray fee $${fee.toFixed(2)}. ${PER_JOB_FEE_NOTE}`
+            : `Recorded ${method}. The job is paid. Complete it when the work is finished.`)
           : `Recorded a partial ${method} payment. The job stays pending until the job amount is paid.`,
       );
     } catch {
@@ -935,10 +946,11 @@ export default function WorkOrderDetailPage() {
               <Field label={say("Assigned Tech")}    value={techName ?? 'Unassigned'} />
               <Field label={say("Due Date")}         value={wo.dueDate ? new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null} />
               <Field label={say("Est. Cost")}        value={wo.estimatedCost != null ? `$${wo.estimatedCost.toFixed(2)}` : null} />
-              {userRole !== 'manager' && platformFee > 0 && typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 && (
+              {platformFee > 0 && typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 && (
                 <>
-                  <Field label={say(FIXTRAY_SERVICE_FEE_LABEL)} value={fmt(billWithServiceFee(wo.estimatedCost, platformFee).serviceFee)} />
-                  <Field label="Estimate Total" value={fmt(billWithServiceFee(wo.estimatedCost, platformFee).total)} />
+                  <Field label={say(FIXTRAY_SERVICE_FEE_LABEL)} value={fmt(jobCustomerFee(wo.estimatedCost, platformFee, wo.completion).serviceFee)} />
+                  <Field label="Customer total" value={fmt(jobCustomerFee(wo.estimatedCost, platformFee, wo.completion).total)} />
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9aa3b2' }}>{PER_JOB_FEE_NOTE}</p>
                 </>
               )}
               <Field label={say("Payment Status")}   value={wo.paymentStatus?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
@@ -1001,9 +1013,9 @@ export default function WorkOrderDetailPage() {
               {(() => {
                 const quote = invoiceBill?.quoteAmount
                   ?? (typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 ? wo.estimatedCost : grandTotal);
-                const liveBill = billWithServiceFee(quote, userRole === 'manager' ? 0 : platformFee);
-                const fee = userRole === 'manager' ? 0 : (invoiceBill?.serviceFee ?? liveBill.serviceFee);
-                const totalDue = userRole === 'manager' ? quote : (invoiceBill?.totalDue ?? liveBill.total);
+                const liveBill = jobCustomerFee(quote, platformFee, wo.completion);
+                const fee = invoiceBill?.serviceFee ?? liveBill.serviceFee;
+                const totalDue = invoiceBill?.totalDue ?? liveBill.total;
                 if (quote <= 0 && !invoiceBill) return null;
                 return (
                   <div style={{ marginBottom: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
@@ -1013,9 +1025,12 @@ export default function WorkOrderDetailPage() {
                       <span>{fmt(quote)}</span>
                     </div>
                     {fee > 0 && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2', marginBottom: 6 }}>
-                        <span>{FIXTRAY_SERVICE_FEE_LABEL}</span>
-                        <span>{fmt(fee)}</span>
+                      <div style={{ marginBottom: 6 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2' }}>
+                          <span>{FIXTRAY_SERVICE_FEE_LABEL}</span>
+                          <span>{fmt(fee)}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>{PER_JOB_FEE_NOTE}</div>
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: '#22c55e', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
@@ -1033,7 +1048,7 @@ export default function WorkOrderDetailPage() {
               )}
               {['in-progress', 'assigned', 'waiting-for-payment'].includes(wo.status) && wo.paymentStatus !== 'paid' && (
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>{userRole === 'manager' ? 'Pay. Card opens checkout. Cash, check, and other record the job amount.' : 'Pay. Cash, check, and other still use the live card fee. The shop keeps the full job. The fee is owed to FixTray.'}</div>
+                  <div style={{ fontSize: 12, color: '#9aa3b2', marginBottom: 8 }}>Pay. Card opens checkout. Cash, check, and other record the customer total, including the stored FixTray fee. {PER_JOB_FEE_NOTE}</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button
                       type="button"
@@ -1055,7 +1070,7 @@ export default function WorkOrderDetailPage() {
                           const due = counterBalanceDueCents({
                             jobCents,
                             alreadyReceivedCents: already,
-                            feeCents: userRole === 'manager' ? 0 : (readFeeSnapshot(wo.completion)?.customerFacingFeeCents || 0),
+                            feeCents: readFeeSnapshot(wo.completion)?.customerFacingFeeCents || 0,
                             taxCents: readSalesTaxSnapshot(wo.completion)?.taxCents || 0,
                             feeAlreadyRecorded: false,
                           });
@@ -1071,7 +1086,7 @@ export default function WorkOrderDetailPage() {
                   {payDraft && (
                     <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
                       <div style={{ fontSize: 13, marginBottom: 8 }}>
-                        {payDraft.method === 'cash' ? 'Cash' : payDraft.method === 'check' ? 'Check' : 'Other'} records ${payDraft.amount || '0.00'}. {userRole === 'manager' ? 'That starts as the job plus sales tax, after deposits.' : 'That starts as the job plus the FixTray fee plus sales tax, after deposits.'} Confirm or change it before it is saved.
+                        {payDraft.method === 'cash' ? 'Cash' : payDraft.method === 'check' ? 'Check' : 'Other'} records ${payDraft.amount || '0.00'}. That starts as the job plus the stored FixTray fee plus sales tax, after deposits. Confirm or change it before it is saved.
                       </div>
                       <input
                         type="number"
@@ -1229,10 +1244,10 @@ export default function WorkOrderDetailPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                   {lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Labor")}{' '}{fmt(lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
                   {lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Parts")}{' '}{fmt(lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
-                  {userRole !== 'manager' && billWithServiceFee(grandTotal, platformFee).serviceFee > 0 && (
-                    <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say(FIXTRAY_SERVICE_FEE_LABEL)} {fmt(billWithServiceFee(grandTotal, platformFee).serviceFee)}</span>
+                  {jobCustomerFee(grandTotal, platformFee, wo.completion).serviceFee > 0 && (
+                    <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say(FIXTRAY_SERVICE_FEE_LABEL)} {fmt(jobCustomerFee(grandTotal, platformFee, wo.completion).serviceFee)}</span>
                   )}
-                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>{say("Total")}{' '}{fmt(userRole === 'manager' ? grandTotal : billWithServiceFee(grandTotal, platformFee).total)}</span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>{say("Total")}{' '}{fmt(jobCustomerFee(grandTotal, platformFee, wo.completion).total)}</span>
                 </div>
               )}
             </div>

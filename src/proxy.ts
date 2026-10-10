@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { forbiddenFromPath, isRouteAllowed, rolesForPath } from './lib/roleAccess';
-import { PLATFORM_HOME, isPlatformActor, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
-import { isShopOperationalApi, PLATFORM_OWNER_SHOP_DENIED } from './lib/platformOwnerApi';
+import { PLATFORM_HOME, isShopScopedPath, isStaticAssetPath, platformOwnerRedirect } from './lib/platformOwnerScope';
 import { isPlatformEmailAccount, isPlatformEmailPath } from './lib/platformEmailAccess';
+import { setNoindexHeader } from './lib/searchIndexing';
 import { isPlatformFeeYearAccount, isPlatformFeeYearPath } from './lib/books/access';
 import { isPlatformVisitsPath } from './lib/platformVisits';
 import { portalAccessDecision, roleHome } from './lib/roleMenus';
@@ -139,6 +139,11 @@ export function requestHeadersWithNativePlatform(request: NextRequest): Headers 
 
 //  Proxy 
 
+function stampRobots(response: NextResponse, pathname: string): NextResponse {
+  setNoindexHeader(response.headers, pathname);
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -158,17 +163,17 @@ export async function proxy(request: NextRequest) {
     }
 
     if (isPreflight) {
-      return new NextResponse(null, { status: 204, headers: baseHeaders });
+      return stampRobots(new NextResponse(null, { status: 204, headers: baseHeaders }), pathname);
     }
 
     const response = NextResponse.next();
     Object.entries(baseHeaders).forEach(([key, value]) => response.headers.set(key, value));
-    return response;
+    return stampRobots(response, pathname);
   }
 
   // Installed Android/iOS shell opening the marketing URL. Browser tabs fall through.
   const shellEntry = await installedShellEntryRedirect(request);
-  if (shellEntry) return shellEntry;
+  if (shellEntry) return stampRobots(shellEntry, pathname);
 
   // layout.tsx reads x-fixtray-native so the phone shell is server-rendered at any width.
   const requestHeaders = requestHeadersWithNativePlatform(request);
@@ -176,9 +181,9 @@ export async function proxy(request: NextRequest) {
   // 
 
   const gated = await gateCrossRole(request);
-  if (gated) return gated;
+  if (gated) return stampRobots(gated, pathname);
 
-  return passThrough();
+  return stampRobots(passThrough(), pathname);
 }
 
 /**
@@ -187,17 +192,9 @@ export async function proxy(request: NextRequest) {
  */
 export async function gateCrossRole(request: NextRequest): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith('/api/')) {
-    if (!isShopOperationalApi(pathname)) return null;
-    const token =
-      request.cookies.get('sos_auth')?.value ??
-      request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) return null;
-    const payload = await verifyJwt(token);
-    const role = typeof payload?.role === 'string' ? payload.role : undefined;
-    if (!isPlatformActor({ role })) return null;
-    return NextResponse.json(PLATFORM_OWNER_SHOP_DENIED, { status: 403 });
-  }
+  // Platform accounts may read shop APIs so SupAdm1006 can oversee a shop.
+  // Pages must not call those APIs without a shop. The owner nav stays platform-only.
+  if (pathname.startsWith('/api/')) return null;
   if (pathname === '/admin/login') return null;
 
   // Profile setup is a child of Shop Settings. Keep the old address working
@@ -322,5 +319,17 @@ export const config = {
     '/superadmin',
     '/tech-offline',
     '/tech-offline/:path*',
+    '/auth',
+    '/auth/:path*',
+    '/payment',
+    '/payment/:path*',
+    '/sign',
+    '/sign/:path*',
+    '/register',
+    '/register/:path*',
+    '/offline',
+    '/offline/:path*',
+    '/forbidden',
+    '/forbidden/:path*',
   ],
 };

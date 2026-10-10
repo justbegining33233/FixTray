@@ -5,7 +5,57 @@ import { useEffect, useRef, useState } from 'react';
 
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { TRACKABLE_WORK_ORDER_STATUSES } from '@/lib/customerTracking';
+import { waitingJobsQuery } from '@/lib/waitingJobQueue';
+import { workOrderTitle } from '@/lib/workOrderMetrics';
 import { FaArrowLeft, FaBuilding, FaCheck, FaClipboardList, FaComments, FaMap, FaMapMarkerAlt, FaSyncAlt } from 'react-icons/fa';
+
+const LOCATION_TIMEOUT_MS = 12000;
+
+type GeoFailure = 'insecure' | 'unsupported' | 'denied' | 'timeout' | 'error';
+
+function requestCurrentPosition(timeoutMs = LOCATION_TIMEOUT_MS): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject({ code: 'timeout' });
+    }, timeoutMs);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(position);
+      },
+      (error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        reject(error);
+      },
+      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
+    );
+  });
+}
+
+function geoFailureText(error: unknown): { failure: GeoFailure; text: string } {
+  const code = error && typeof error === 'object' && 'code' in error
+    ? (error as { code?: unknown }).code
+    : undefined;
+  if (code === 'timeout' || code === 3) {
+    return { failure: 'timeout', text: 'Location request timed out. Try again.' };
+  }
+  if (code === 1) {
+    return { failure: 'denied', text: 'Location permission was denied.' };
+  }
+  if (code === 2) {
+    return { failure: 'error', text: 'Location is unavailable on this device.' };
+  }
+  const message = error instanceof Error ? error.message : '';
+  return { failure: 'error', text: message || 'Unable to get location. Please allow location access.' };
+}
 
 export default function ShareLocation() {
   const say = usePhrase();
@@ -15,12 +65,42 @@ export default function ShareLocation() {
   const [sharing, setSharing] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [locationMsg, setLocationMsg] = useState<{type:'success'|'error';text:string}|null>(null);
+  const [jobs, setJobs] = useState<Array<{ id: string; label: string }>>([]);
+  const [locating, setLocating] = useState(false);
+  const [geoFailure, setGeoFailure] = useState<{ failure: GeoFailure; text: string } | null>(null);
+  const [sharingJobId, setSharingJobId] = useState<string | null>(null);
   const roadCallId = useRef<string | null>(null);
   const watchId = useRef<number | null>(null);
 
   useEffect(() => () => {
     if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    const token = localStorage.getItem('token');
+    const query = waitingJobsQuery({
+      assignedTo: user.id,
+      statuses: [...TRACKABLE_WORK_ORDER_STATUSES],
+    });
+    fetch(`/api/workorders?${query}`, {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(async (response) => {
+        if (!response.ok || cancelled) return;
+        const data = await response.json();
+        const rows = Array.isArray(data.workOrders) ? data.workOrders : [];
+        if (cancelled) return;
+        setJobs(rows.map((row: { id: string; issueDescription?: unknown }) => ({
+          id: row.id,
+          label: workOrderTitle(row),
+        })));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const publishRoadCallFix = async (lat: number, lng: number) => {
     const token = localStorage.getItem('token');
@@ -54,33 +134,103 @@ export default function ShareLocation() {
     return null; // useRequireAuth handles redirect
   }
 
-  const getCurrentLocation = () => {
+  const beginWatch = (jobId: string) => {
+    if (!navigator.geolocation) return;
+    if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+    roadCallId.current = jobId;
+    watchId.current = navigator.geolocation.watchPosition((position) => {
+      const token = localStorage.getItem('token');
+      fetch('/api/tech/tracking', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          workOrderId: jobId,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }),
+      }).catch(() => {});
+    });
+  };
+
+  const postJobLocation = async (jobId: string, lat: number, lng: number) => {
+    const token = localStorage.getItem('token');
+    const post = await fetch('/api/tech/tracking', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ workOrderId: jobId, latitude: lat, longitude: lng }),
+    });
+    if (!post.ok) {
+      const body = await post.json().catch(() => ({}));
+      throw new Error(typeof body.error === 'string' ? body.error : 'Location captured, but the shop map did not accept it.');
+    }
+    return 'Location sent for this job.';
+  };
+
+  const locate = async (): Promise<{ lat: number; lng: number } | null> => {
     if (!window.isSecureContext) {
-      setLocationMsg({ type: 'error', text: 'Location requires HTTPS. Open the secure site and try again.' });
-      return;
+      const failure = { failure: 'insecure' as const, text: 'Location requires HTTPS. Open the secure site and try again.' };
+      setGeoFailure(failure);
+      setLocationMsg({ type: 'error', text: failure.text });
+      return null;
     }
     if (!navigator.geolocation) {
-      setLocationMsg({ type: 'error', text: 'Geolocation is not supported by your browser' });
-      return;
+      const failure = { failure: 'unsupported' as const, text: 'Geolocation is not supported by your browser' };
+      setGeoFailure(failure);
+      setLocationMsg({ type: 'error', text: failure.text });
+      return null;
     }
+    setLocating(true);
+    setGeoFailure(null);
     setLocationMsg({ type: 'success', text: 'Requesting location permission…' });
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        setLocation(coords);
-        setAddress(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
-        publishRoadCallFix(coords.lat, coords.lng)
-          .then((text) => setLocationMsg({ type: 'success', text }))
-          .catch(() => setLocationMsg({ type: 'error', text: 'Location captured, but the shop map could not be updated.' }));
-      },
-      (error) => {
-        setLocationMsg({ type: 'error', text: error.message || 'Unable to get location. Please allow location access.' });
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
+    try {
+      const position = await requestCurrentPosition();
+      const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+      setLocation(coords);
+      setAddress(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+      setGeoFailure(null);
+      return coords;
+    } catch (error) {
+      const failure = geoFailureText(error);
+      setGeoFailure(failure);
+      setLocationMsg({ type: 'error', text: failure.text });
+      return null;
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const getCurrentLocation = () => {
+    void locate().then((coords) => {
+      if (!coords) return;
+      publishRoadCallFix(coords.lat, coords.lng)
+        .then((text) => setLocationMsg({ type: 'success', text }))
+        .catch(() => setLocationMsg({ type: 'error', text: 'Location captured, but the shop map could not be updated.' }));
+    });
+  };
+
+  const shareForJob = async (jobId: string) => {
+    setSharingJobId(jobId);
+    try {
+      const coords = location || await locate();
+      if (!coords) return;
+      const note = await postJobLocation(jobId, coords.lat, coords.lng);
+      setShareLink(`https://maps.google.com/?q=${coords.lat},${coords.lng}`);
+      setSharing(true);
+      beginWatch(jobId);
+      setLocationMsg({ type: 'success', text: note });
+    } catch (error) {
+      setLocationMsg({ type: 'error', text: error instanceof Error ? error.message : 'Location captured, but the shop map did not accept it.' });
+    } finally {
+      setSharingJobId(null);
+    }
   };
 
   const startSharing = async () => {
@@ -99,24 +249,7 @@ export default function ShareLocation() {
       return;
     }
     if (!roadCallId.current || !navigator.geolocation) return;
-    if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
-    const jobId = roadCallId.current;
-    watchId.current = navigator.geolocation.watchPosition((position) => {
-      const token = localStorage.getItem('token');
-      fetch('/api/tech/tracking', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          workOrderId: jobId,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        }),
-      }).catch(() => {});
-    });
+    beginWatch(roadCallId.current);
   };
 
   const copyLink = () => {
@@ -144,8 +277,8 @@ export default function ShareLocation() {
             <div style={{textAlign:'center', padding:40}}>
               <div style={{fontSize:64, marginBottom:16}}><FaMapMarkerAlt style={{marginRight:4}} /></div>
               <p style={{fontSize:16, color:'#9aa3b2', marginBottom:24}}>{say("Get your current GPS coordinates")}</p>
-              <button onClick={getCurrentLocation} style={{padding:'14px 32px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer'}}>
-                {say("Get Current Location")}{' '}</button>
+              <button onClick={getCurrentLocation} disabled={locating} style={{padding:'14px 32px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor: locating ? 'wait' : 'pointer'}}>
+                {locating ? 'Requesting location permission…' : say("Get Current Location")}{' '}</button>
             </div>
           ) : (
             <div>
@@ -165,8 +298,43 @@ export default function ShareLocation() {
                 </div>
               </div>
 
-              <button onClick={getCurrentLocation} style={{width:'100%', marginTop:16, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer'}}>
-                <FaSyncAlt style={{marginRight:4}} /> {say("Refresh Location")}{' '}</button>
+              <button onClick={getCurrentLocation} disabled={locating} style={{width:'100%', marginTop:16, padding:'12px', background:'rgba(255,255,255,0.1)', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, fontSize:14, fontWeight:600, cursor: locating ? 'wait' : 'pointer'}}>
+                <FaSyncAlt style={{marginRight:4}} /> {locating ? 'Requesting location permission…' : say("Refresh Location")}{' '}</button>
+            </div>
+          )}
+          {locating && <p role="status" style={{margin:'16px 0 0', color:'#e5e7eb'}}>Requesting location permission…</p>}
+          {geoFailure && (
+            <div role="alert" style={{marginTop:16}}>
+              <p style={{margin:'0 0 12px', color:'#fca5a5'}}>{geoFailure.text}</p>
+              <button type="button" onClick={getCurrentLocation} disabled={locating} style={{padding:'12px 20px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:700, cursor: locating ? 'wait' : 'pointer'}}>
+                Retry
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:32, marginBottom:24}}>
+          <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', marginBottom:16}}>Share my location for this job</h2>
+          {jobs.length === 0 ? (
+            <p style={{fontSize:14, color:'#9aa3b2', margin:0}}>You have no assigned jobs right now.</p>
+          ) : (
+            <div style={{display:'grid', gap:12}}>
+              {jobs.map((job) => (
+                <div key={job.id} style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', flexWrap:'wrap'}}>
+                  <div>
+                    <div style={{color:'#e5e7eb', fontWeight:700}}>{job.label}</div>
+                    <div style={{color:'#9aa3b2', fontSize:12}}>{job.id}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { void shareForJob(job.id); }}
+                    disabled={locating || sharingJobId === job.id}
+                    style={{padding:'12px 16px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:700, cursor: locating || sharingJobId === job.id ? 'wait' : 'pointer'}}
+                  >
+                    Share my location for this job
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

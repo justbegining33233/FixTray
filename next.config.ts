@@ -4,6 +4,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import { GUESSED_SHOP_REDIRECTS, LEGACY_SHOP_REDIRECTS } from './src/lib/legacyShopRoutes';
 import { SHOP_RESTRICTED_REDIRECTS } from './src/lib/shopRestrictedRoutes';
 import { PUBLIC_AND_ADMIN_REDIRECTS } from './src/lib/publicRedirects';
+import { privateNoindexSources } from './src/lib/searchIndexing';
 
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
@@ -60,6 +61,10 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      ...privateNoindexSources().map((source) => ({
+        source,
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      })),
       // API versioning headers
       {
         source: '/api/(.*)',
@@ -83,6 +88,8 @@ const nextConfig: NextConfig = {
       // Next strips the trailing slash, and the folder index is not served at the bare path.
       // Staff More links use /tech-offline/, which otherwise lands on the 404 page.
       { source: '/tech-offline', destination: '/tech-offline/index.html', permanent: false },
+      { source: '/tech/clock', destination: '/tech/timeclock', permanent: true },
+      { source: '/admin/analytics', destination: '/admin/platform-analytics', permanent: true },
       // Legacy flat-path routes — redirect to correct nested paths
       { source: '/payment-success',           destination: '/payment/success',       permanent: false },
       { source: '/payment-cancel',            destination: '/payment/cancel',        permanent: false },

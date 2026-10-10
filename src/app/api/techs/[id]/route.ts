@@ -57,9 +57,15 @@ export async function GET(
       }
     }
 
-    // Never return hourlyRate to techs (salary data)
+    // Coworkers do not see each other's rate. A tech still sees their own.
+    const isOwnRecord = decoded.id === tech.id;
     const { hourlyRate: _hourlyRate, ...safeTech } = tech as typeof tech & { hourlyRate: number };
-    const payload = (decoded.role === 'shop' || decoded.role === 'manager' || (decoded.role === 'superadmin'))
+    const payload = (
+      decoded.role === 'shop'
+      || decoded.role === 'manager'
+      || decoded.role === 'superadmin'
+      || (decoded.role === 'tech' && isOwnRecord)
+    )
       ? tech
       : safeTech;
 
@@ -90,8 +96,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Only shop admins can update techs
-    if (decoded.role !== 'shop' && (decoded.role !== 'superadmin')) {
+    // Shop owners, managers in their own shop, and superadmins can update techs
+    if (decoded.role !== 'shop' && decoded.role !== 'manager' && decoded.role !== 'superadmin') {
       console.error('PUT /api/techs/[id] - Forbidden, role:', decoded.role);
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -99,7 +105,8 @@ export async function PUT(
     // Verify the tech belongs to this shop (IDOR prevention)
     if (decoded.role !== 'superadmin') {
       const existingTech = await prisma.tech.findUnique({ where: { id: params.id }, select: { shopId: true } });
-      if (!existingTech || existingTech.shopId !== decoded.id) {
+      const callerShopId = decoded.role === 'manager' ? decoded.shopId : decoded.id;
+      if (!existingTech || !callerShopId || existingTech.shopId !== callerShopId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
     }

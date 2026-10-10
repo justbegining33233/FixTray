@@ -1,9 +1,9 @@
-export const ACCOUNT_TWO_FACTOR_ROLES = ['shop', 'manager', 'tech'] as const;
+export const ACCOUNT_TWO_FACTOR_ROLES = ['shop', 'manager', 'tech', 'admin', 'superadmin'] as const;
 
 type TwoFactorRow = {
   id: string;
   email?: string | null;
-  twoFactorEnabled: boolean;
+  twoFactorEnabled: boolean | null;
   twoFactorSecret: string | null;
 };
 
@@ -15,11 +15,13 @@ type TwoFactorTable = {
 type TwoFactorClient = {
   shop: TwoFactorTable;
   tech: TwoFactorTable;
+  admin: TwoFactorTable;
 };
 
-function tableFor(role: string): 'shop' | 'tech' | null {
+function tableFor(role: string): 'shop' | 'tech' | 'admin' | null {
   if (role === 'shop') return 'shop';
   if (role === 'manager' || role === 'tech') return 'tech';
+  if (role === 'admin' || role === 'superadmin') return 'admin';
   return null;
 }
 

@@ -32,6 +32,16 @@ export const NOINDEX_METADATA: Metadata = {
   robots: NOINDEX_ROBOTS,
 };
 
+/** next.config headers() sources. `/tech` does not match `/tech-offline`. */
+export function privateNoindexSources(): string[] {
+  const sources: string[] = [];
+  for (const prefix of PRIVATE_PATH_PREFIXES) {
+    const bare = prefix.endsWith('/') ? prefix.slice(0, -1) : prefix;
+    sources.push(bare, `${bare}/:path*`);
+  }
+  return sources;
+}
+
 export function isNoindexPath(pathname: string): boolean {
   const path = (pathname.split('?')[0] || '/').replace(/\/+$/, '') || '/';
   return PRIVATE_PATH_PREFIXES.some((prefix) => {

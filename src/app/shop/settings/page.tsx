@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import MemberInstallPrompt from '@/components/MemberInstallPrompt';
 import { FIXTRAY_SHOP_PARTICIPATION_AGREEMENT } from '@/lib/fixtrayShopParticipationAgreement';
+import { renderParticipationAgreement } from '@/lib/participationAgreement';
+import { remainingSetupSteps } from '@/lib/shopSetupSteps';
 import { enablePushNotifications } from '@/lib/nativeMobileService';
 
 type CategoryId = 'diesel' | 'gas' | 'small-engine' | 'heavy-equipment' | 'resurfacing' | 'welding' | 'tire';
@@ -254,6 +256,9 @@ function ShopSettingsPageContent() {
     zipCode: '',
     businessLicense: '',
     insurancePolicy: '',
+    licenseExpiresAt: '',
+    insuranceExpiresAt: '',
+    entityType: '',
     shopType: 'diesel',
     operatingHours: {
       monday: { open: '08:00', close: '18:00', closed: false },
@@ -295,6 +300,7 @@ function ShopSettingsPageContent() {
   const [agreementSignedAt, setAgreementSignedAt] = useState<string | null>(null);
   const [agreementError, setAgreementError] = useState('');
   const [showAgreementModal, setShowAgreementModal] = useState(false);
+  const [stripeConnected, setStripeConnected] = useState(false);
 
   // Billing tab removed.
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -341,8 +347,12 @@ function ShopSettingsPageContent() {
           zipCode: data.shop.zipCode || '',
           businessLicense: data.shop.businessLicense || '',
           insurancePolicy: data.shop.insurancePolicy || '',
+          licenseExpiresAt: data.shop.licenseExpiresAt ? String(data.shop.licenseExpiresAt).slice(0, 10) : '',
+          insuranceExpiresAt: data.shop.insuranceExpiresAt ? String(data.shop.insuranceExpiresAt).slice(0, 10) : '',
+          entityType: data.shop.entityType || '',
           shopType: data.shop.shopType || 'diesel',
         }));
+        setStripeConnected(data.shop.stripeConnected === true);
         setServices(Array.isArray(data.shop.services) ? data.shop.services : []);
       }
 
@@ -466,6 +476,17 @@ function ShopSettingsPageContent() {
 
     setAgreementError('');
     const signedAt = agreementSignedAt || new Date().toISOString();
+    const agreementText = renderParticipationAgreement(FIXTRAY_SHOP_PARTICIPATION_AGREEMENT, {
+      shopName: settings.shopName,
+      entityType: settings.entityType,
+      address: settings.address,
+      city: settings.city,
+      state: settings.state,
+      zipCode: settings.zipCode,
+      email: settings.email,
+      signedBy: agreementSignature.trim(),
+      signedAt,
+    }).text;
 
     try {
       const token = localStorage.getItem('token');
@@ -485,6 +506,11 @@ function ShopSettingsPageContent() {
           city: settings.city,
           state: settings.state,
           zipCode: settings.zipCode,
+          businessLicense: settings.businessLicense,
+          insurancePolicy: settings.insurancePolicy,
+          licenseExpiresAt: settings.licenseExpiresAt,
+          insuranceExpiresAt: settings.insuranceExpiresAt,
+          entityType: settings.entityType,
           notificationSettings: {
             notificationsEnabled,
             notificationSoundEnabled,
@@ -495,6 +521,7 @@ function ShopSettingsPageContent() {
             signedBy: agreementSignature.trim(),
             signedAt,
             version: FIXTRAY_AGREEMENT_VERSION,
+            text: agreementText,
           },
         }),
       });
@@ -524,13 +551,25 @@ function ShopSettingsPageContent() {
     setShowAgreementModal(false);
   };
 
-  const agreementDisplayText = FIXTRAY_SHOP_PARTICIPATION_AGREEMENT
-    .replace(/\[DATE\]/g, new Date().toLocaleDateString())
-    .replace(/\[LEGAL SHOP NAME\]/g, settings.shopName || '[LEGAL SHOP NAME]')
-    .replace(/\[SHOP_LEGAL_NAME\]/g, settings.shopName || '[SHOP_LEGAL_NAME]')
-    .replace(/\[SHOP_ADMIN_FULL_NAME\]/g, agreementSignature || '[SHOP_ADMIN_FULL_NAME]')
-    .replace(/\[SHOP_ADMIN_EMAIL\]/g, settings.email || '[SHOP_ADMIN_EMAIL]')
-    .replace(/\[SHOP_ADMIN_ESIGN_UTC\]/g, agreementSignedAt || '[SHOP_ADMIN_ESIGN_UTC]');
+  const agreementDisplayText = renderParticipationAgreement(FIXTRAY_SHOP_PARTICIPATION_AGREEMENT, {
+    shopName: settings.shopName,
+    entityType: settings.entityType,
+    address: settings.address,
+    city: settings.city,
+    state: settings.state,
+    zipCode: settings.zipCode,
+    email: settings.email,
+    signedBy: agreementSignature,
+    signedAt: agreementSignedAt,
+  }).text;
+  const setupRemaining = remainingSetupSteps({
+    agreementAccepted,
+    businessLicense: settings.businessLicense,
+    insurancePolicy: settings.insurancePolicy,
+    stripeConnected,
+  });
+  const finishNotice = searchParams?.get('notice') === 'finish-setup';
+  const showFinishBanner = finishNotice || (_settingsLoaded && setupRemaining.length > 0);
 
   const handleAddService = async () => {
     if (!shopId) {
@@ -695,12 +734,27 @@ function ShopSettingsPageContent() {
             <h1 style={{fontSize:28, fontWeight:700, color:'#e5e7eb', marginBottom:4, display:'flex', alignItems:'center', gap:12}}>
               <FaCog style={{fontSize:28, color:'#e5e7eb'}} /> {say("Shop Settings")}{' '}</h1>
             <p style={{fontSize:14, color:'#9aa3b2'}}>{say("Manage your shop information and preferences")}</p>
-            {searchParams?.get('notice') === 'finish-setup' ? (
+            {showFinishBanner ? (
               <div role="status" style={{ marginTop: 12, background: '#3b1214', border: '1px solid #fca5a5', color: '#fecaca', borderRadius: 12, padding: '12px 14px', maxWidth: 640 }}>
                 <div style={{ fontWeight: 800, marginBottom: 6 }}>{say('Finish shop setup')}</div>
-                <div style={{ fontSize: 14, lineHeight: 1.5 }}>
-                  {say('Other shop pages stay closed until this profile is finished. On General Info, accept the participation agreement and enter the business license and insurance policy. Card payments also need Stripe payout setup on the Payments tab.')}
-                </div>
+                {!_settingsLoaded ? (
+                  <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    {say('Checking the participation agreement, business license, insurance policy, and Stripe payouts.')}
+                  </div>
+                ) : setupRemaining.length === 0 ? (
+                  <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    {say('Participation agreement, business license, insurance policy, and Stripe payouts are complete.')}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    <div>{say('Still needed:')}</div>
+                    <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                      {setupRemaining.map((step) => (
+                        <li key={step.id}>{say(step.label)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
@@ -787,8 +841,8 @@ function ShopSettingsPageContent() {
                   </div>
 
                   <div>
-                    <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Address")}</label>
-                    <input type="text" value={settings.address} onChange={(e) => setSettings({...settings, address: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                    <label htmlFor="shop-address" style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Address")}</label>
+                    <input id="shop-address" type="text" value={settings.address} onChange={(e) => setSettings({...settings, address: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                   </div>
 
                   <div style={{display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:16}}>
@@ -806,21 +860,37 @@ function ShopSettingsPageContent() {
                     </div>
                   </div>
 
+                  <div>
+                    <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Entity type")}</label>
+                    <input type="text" value={settings.entityType} onChange={(e) => setSettings({...settings, entityType: e.target.value})} placeholder={say("LLC, corporation, sole prop")} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                  </div>
+
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Business License")}</label>
-                      <input type="text" value={settings.businessLicense} onChange={(e) => setSettings({...settings, businessLicense: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Business License")} <span style={{ color: '#fca5a5' }}>{say("Required")}</span></label>
+                      <input type="text" required aria-required="true" value={settings.businessLicense} onChange={(e) => setSettings({...settings, businessLicense: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                     <div>
-                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Insurance Policy")}</label>
-                      <input type="text" value={settings.insurancePolicy} onChange={(e) => setSettings({...settings, insurancePolicy: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Insurance Policy")} <span style={{ color: '#fca5a5' }}>{say("Required")}</span></label>
+                      <input type="text" required aria-required="true" value={settings.insurancePolicy} onChange={(e) => setSettings({...settings, insurancePolicy: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                    </div>
+                  </div>
+
+                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
+                    <div>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("License expires")}</label>
+                      <input type="date" value={settings.licenseExpiresAt} onChange={(e) => setSettings({...settings, licenseExpiresAt: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                    </div>
+                    <div>
+                      <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Insurance expires")}</label>
+                      <input type="date" value={settings.insuranceExpiresAt} onChange={(e) => setSettings({...settings, insuranceExpiresAt: e.target.value})} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                     </div>
                   </div>
 
                   <div style={{ marginTop: 8, padding: 16, borderRadius: 10, background: 'rgba(229,51,42,0.10)', border: '1px solid rgba(229,51,42,0.35)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
                       <div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb' }}>{say("FixTray Shop Participation Agreement")}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#e5e7eb' }}>{say("FixTray Shop Participation Agreement")} <span style={{ color: '#fca5a5', fontSize: 12 }}>{say("Required")}</span></div>
                         <div style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Agreement version:")}{' '}{say(FIXTRAY_AGREEMENT_VERSION)}</div>
                       </div>
                       <button

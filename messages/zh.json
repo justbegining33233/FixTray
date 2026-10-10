@@ -5870,6 +5870,24 @@
     "clock_unknown": "Clock unknown",
     "optional_before_the_work_do_it_or_skip_it_skipping_does_not_hold_the_job_and_is_not_a_pass_or_a_": "Optional, before the work. Do it or skip it. Skipping does not hold the job and is not a pass or a fail.",
     "skip": "Skip",
-    "new_lines_stay_on_this_screen_until_you_save_them": "New lines stay on this screen until you save them."
+    "new_lines_stay_on_this_screen_until_you_save_them": "New lines stay on this screen until you save them.",
+    "loading_shop_counts": "Loading shop counts...",
+    "no_shop_link": "No shop link",
+    "no_shop_on_the_latest_work_order": "No shop on the latest work order",
+    "view_appointment": "View appointment",
+    "off": "Off",
+    "no_shifts_are_on_the_schedule_yet": "No shifts are on the schedule yet.",
+    "checking_the_participation_agreement_business_license_insurance_policy_and_stripe_payouts": "Checking the participation agreement, business license, insurance policy, and Stripe payouts.",
+    "participation_agreement_business_license_insurance_policy_and_stripe_payouts_are_complete": "Participation agreement, business license, insurance policy, and Stripe payouts are complete.",
+    "still_needed": "Still needed:",
+    "entity_type": "Entity type",
+    "llc_corporation_sole_prop": "LLC, corporation, sole prop",
+    "required": "Required",
+    "license_expires": "License expires",
+    "insurance_expires": "Insurance expires",
+    "not_a_live_clock": "Not a live clock",
+    "owners_do_not_clock_in": "Owners do not clock in",
+    "shop_owners_do_not_have_a_time_clock_employee_clock_ins_for_this_shop_are_listed_above": "Shop owners do not have a time clock. Employee clock-ins for this shop are listed above.",
+    "on_iphone_or_ipad_open_share_and_choose_add_to_home_screen": "On iPhone or iPad, open Share and choose Add to Home Screen."
   }
 }

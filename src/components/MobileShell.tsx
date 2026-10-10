@@ -16,6 +16,7 @@ import { mobileNavForActor } from '@/lib/mobileRoleNav';
 import { useSessionUsername } from '@/lib/useSessionUsername';
 import RoleTabBar from '@/components/RoleTabBar';
 import { FaBell, FaSearch } from 'react-icons/fa';
+import GlobalSearch from '@/components/GlobalSearch';
 
 export type ShellRole = 'shop' | 'tech' | 'customer' | 'manager' | 'admin' | 'accountant';
 
@@ -734,6 +735,7 @@ export default function MobileShell({
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [newMenuMounted, setNewMenuMounted] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [shopChip, setShopChip] = useState('');
   const drawerCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const newMenuCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -771,6 +773,7 @@ export default function MobileShell({
   useEffect(() => {
     setDrawerOpen(false);
     setNewMenuOpen(false);
+    setSearchOpen(false);
     if (drawerCloseTimerRef.current) clearTimeout(drawerCloseTimerRef.current);
     if (newMenuCloseTimerRef.current) clearTimeout(newMenuCloseTimerRef.current);
     drawerCloseTimerRef.current = setTimeout(() => setDrawerMounted(false), 180);
@@ -1005,22 +1008,23 @@ export default function MobileShell({
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <button
             type="button"
-            aria-label={say('Search')}
-            onClick={() => setMoreOpen(true)}
+            aria-label="Search"
+            onClick={() => setSearchOpen(true)}
             style={headerIconButton}
           >
             <FaSearch size={14} />
           </button>
-          {nav?.messagesHref && (
-            <button
-              type="button"
-              aria-label={say('Messages')}
-              onClick={() => go(nav.messagesHref)}
-              style={headerIconButton}
-            >
-              <FaBell size={14} />
-            </button>
-          )}
+          <button
+            type="button"
+            aria-label="Notifications"
+            onClick={() => {
+              const href = role === 'customer' ? '/customer/notifications' : nav?.messagesHref;
+              if (href) go(href);
+            }}
+            style={headerIconButton}
+          >
+            <FaBell size={14} />
+          </button>
           <button
             type="button"
             aria-label={say('More')}
@@ -1036,6 +1040,17 @@ export default function MobileShell({
           </button>
         </div>
       </div>
+
+      {searchOpen && (
+        <div
+          onClick={() => setSearchOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.72)', padding: '72px 16px 16px' }}
+        >
+          <div onClick={(event) => event.stopPropagation()} style={{ maxWidth: 640 }}>
+            <GlobalSearch />
+          </div>
+        </div>
+      )}
 
       {/* ─── CONTENT AREA ────────────────────────────────────────── */}
       <div data-mobile-shell-body style={{

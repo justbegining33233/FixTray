@@ -17,12 +17,23 @@ export default function ReferralLinkShare({
 }: ReferralLinkShareProps) {
   const say = usePhrase();
   const [copied, setCopied] = useState(false);
+  const [copyMessage, setCopyMessage] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+      await navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      setCopyMessage('Copied');
+      setTimeout(() => {
+        setCopied(false);
+        setCopyMessage('');
+      }, 2000);
+    } catch {
+      setCopied(false);
+      setCopyMessage('Could not copy the referral link');
+    }
   };
 
   const handleShareVia = (method: 'sms' | 'email' | 'whatsapp') => {
@@ -66,7 +77,7 @@ export default function ReferralLinkShare({
             className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium text-sm transition flex items-center gap-2"
           >
             {copied ? <FaCheck size={14} /> : <FaCopy size={14} />}
-            {copied ? say("Copied!") : say("Copy")}
+            {copied ? 'Copied' : say("Copy")}
           </button>
         </div>
       </div>
@@ -85,9 +96,13 @@ export default function ReferralLinkShare({
             onClick={handleCopy}
             className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium text-sm transition"
           >
-            {copied ? '✓' : say("Copy")}
+            {copied ? 'Copied' : say("Copy")}
           </button>
         </div>
+      </div>
+
+      <div role="status" aria-live="polite" style={{ minHeight: 20, marginBottom: 8, color: copied ? '#86efac' : '#fca5a5', fontSize: 13 }}>
+        {copyMessage}
       </div>
 
       {/* Share Methods */}

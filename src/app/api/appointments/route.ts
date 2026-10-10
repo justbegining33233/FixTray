@@ -5,6 +5,8 @@ import { AuthUser } from '@/lib/auth';
 import { sendSms } from '@/lib/smsService';
 import { findUnconfiguredShopServices } from '@/lib/shopServiceValidation';
 import { hasAppointmentVehicle, isScheduledDateInPast, appointmentStatusUpdates } from '@/lib/appointmentValidation';
+import { locationShareIsLive } from '@/lib/customerJobTracking';
+import { isRoadsideLocation } from '@/lib/waitingRoomBoard';
 
 async function reconcileAppointmentStatuses<T extends {
   id: string;
@@ -24,6 +26,106 @@ async function reconcileAppointmentStatuses<T extends {
     const status = statusById.get(row.id);
     return status ? { ...row, status } : row;
   });
+}
+
+type AppointmentMatch = {
+  id: string;
+  customerId?: string | null;
+  shopId?: string | null;
+  vehicleId?: string | null;
+  scheduledDate?: Date | string | null;
+  serviceType?: string | null;
+  createdAt?: Date | string | null;
+};
+
+type WorkOrderMatch = {
+  id: string;
+  customerId: string;
+  shopId: string;
+  vehicleId: string | null;
+  serviceLocation: string | null;
+  dueDate: Date | null;
+  createdAt: Date;
+  issueDescription: string;
+  location: unknown;
+  tracking: { updatedAt: Date } | null;
+};
+
+function timeMs(value: Date | string | null | undefined): number | null {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
+function isAppointmentWorkOrder(order: { issueDescription?: string | null; location?: unknown }): boolean {
+  const location = order.location;
+  if (location && typeof location === 'object') {
+    const record = location as Record<string, unknown>;
+    if (record.createdFrom === 'appointment' || record.source === 'appointment') return true;
+  }
+  return typeof order.issueDescription === 'string' && order.issueDescription.startsWith('Appointment:');
+}
+
+/** Score the work order that belongs to this appointment. A later shop-wide update does not win. */
+function appointmentWorkOrderScore(appointment: AppointmentMatch, order: WorkOrderMatch): number | null {
+  if (!appointment.customerId || !appointment.shopId) return null;
+  if (order.customerId !== appointment.customerId || order.shopId !== appointment.shopId) return null;
+  if (appointment.vehicleId && order.vehicleId && appointment.vehicleId !== order.vehicleId) return null;
+
+  const due = timeMs(order.dueDate);
+  const scheduled = timeMs(appointment.scheduledDate);
+  const dueDelta = due != null && scheduled != null ? Math.abs(due - scheduled) : null;
+  const created = timeMs(order.createdAt);
+  const opened = timeMs(appointment.createdAt);
+  const createdDelta = created != null && opened != null ? Math.abs(created - opened) : null;
+  const service = String(appointment.serviceType || '').trim();
+  const description = order.issueDescription || '';
+  const serviceHit = service.length > 0 && description.includes(service);
+  const fromAppointment = isAppointmentWorkOrder(order);
+
+  if (fromAppointment && dueDelta != null && dueDelta <= 60_000) return 1_000_000 - dueDelta;
+  if (dueDelta != null && dueDelta <= 60_000 && (fromAppointment || serviceHit)) return 800_000 - dueDelta;
+  if (fromAppointment && serviceHit && createdDelta != null && createdDelta <= 5 * 60_000) return 500_000 - createdDelta;
+  return null;
+}
+
+function soleAppointmentJob(appointment: AppointmentMatch, orders: WorkOrderMatch[]): WorkOrderMatch | null {
+  const service = String(appointment.serviceType || '').trim();
+  const matches = orders.filter((order) => {
+    if (!appointment.customerId || !appointment.shopId) return false;
+    if (order.customerId !== appointment.customerId || order.shopId !== appointment.shopId) return false;
+    if (appointment.vehicleId && order.vehicleId && appointment.vehicleId !== order.vehicleId) return false;
+    if (!isAppointmentWorkOrder(order)) return false;
+    if (service && !order.issueDescription.includes(service)) return false;
+    return true;
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function withTrackableWorkOrder<T extends AppointmentMatch>(appointment: T, orders: WorkOrderMatch[]) {
+  let best: WorkOrderMatch | null = null;
+  let bestScore = -1;
+  for (const order of orders) {
+    const score = appointmentWorkOrderScore(appointment, order);
+    if (score == null) continue;
+    const olderTie = score === bestScore && best != null && order.createdAt.getTime() < best.createdAt.getTime();
+    if (!best || score > bestScore || olderTie) {
+      best = order;
+      bestScore = score;
+    }
+  }
+  if (!best) best = soleAppointmentJob(appointment, orders);
+  if (!best) {
+    return { ...appointment, workOrderId: null as string | null, serviceLocation: null as string | null, sharingLocation: false };
+  }
+  const sharingLocation = locationShareIsLive(best.tracking?.updatedAt);
+  const trackable = isRoadsideLocation(best.serviceLocation) || sharingLocation;
+  return {
+    ...appointment,
+    workOrderId: trackable ? best.id : null,
+    serviceLocation: best.serviceLocation,
+    sharingLocation,
+  };
 }
 
 // GET - Get appointments
@@ -94,26 +196,32 @@ export async function GET(request: NextRequest) {
     });
 
     const presented = await reconcileAppointmentStatuses(appointments);
-    const customerIds = [...new Set(presented.map((row) => row.customerId).filter((id): id is string => Boolean(id)))];
-    const shopIds = [...new Set(presented.map((row) => row.shopId).filter((id): id is string => Boolean(id)))];
-    const workOrderIdByPair = new Map<string, string>();
-    if (customerIds.length > 0 && shopIds.length > 0) {
-      const orders = await prisma.workOrder.findMany({
-        where: { customerId: { in: customerIds }, shopId: { in: shopIds } },
-        select: { id: true, customerId: true, shopId: true },
-        orderBy: { updatedAt: 'desc' },
-        take: 200,
-      });
-      for (const order of orders) {
-        const key = `${order.customerId}:${order.shopId}`;
-        if (!workOrderIdByPair.has(key)) workOrderIdByPair.set(key, order.id);
-      }
+    const seenPairs = new Set<string>();
+    const pairs: { customerId: string; shopId: string }[] = [];
+    for (const row of presented) {
+      if (!row.customerId || !row.shopId) continue;
+      const key = `${row.customerId}:${row.shopId}`;
+      if (seenPairs.has(key)) continue;
+      seenPairs.add(key);
+      pairs.push({ customerId: row.customerId, shopId: row.shopId });
     }
+    const orders: WorkOrderMatch[] = pairs.length === 0 ? [] : await prisma.workOrder.findMany({
+      where: { OR: pairs },
+      select: {
+        id: true,
+        customerId: true,
+        shopId: true,
+        vehicleId: true,
+        serviceLocation: true,
+        dueDate: true,
+        createdAt: true,
+        issueDescription: true,
+        location: true,
+        tracking: { select: { updatedAt: true } },
+      },
+    });
     return NextResponse.json({
-      appointments: presented.map((row) => ({
-        ...row,
-        workOrderId: workOrderIdByPair.get(`${row.customerId}:${row.shopId}`) || null,
-      })),
+      appointments: presented.map((row) => withTrackableWorkOrder(row, orders)),
     });
   } catch (error) {
     console.error('Error fetching appointments:', error);

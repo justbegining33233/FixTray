@@ -139,12 +139,35 @@ export default function ManagerSchedulePage() {
       </div>
 
       {/* Shift Swap Modal */}
-      {showSwapModal && (
+      {showSwapModal && schedules.length > 0 && (
         <ShiftSwapModal
           onClose={() => setShowSwapModal(false)}
-          currentShift={{ id: 'shift-1', date: '2024-01-15', startTime: '08:00', endTime: '16:00', location: 'Main Shop' }}
-          technician={{ id: 'tech-1', name: 'John Doe', phone: '(555) 123-4567' }}
+          technician={{ id: schedules[0].id, name: schedules[0].techName, phone: '' }}
+          currentShift={{
+            id: schedules[0].id,
+            date: schedules[0].date,
+            startTime: schedules[0].startTime,
+            endTime: schedules[0].endTime,
+            location: '',
+          }}
+          availableShifts={schedules.slice(1).map((shift) => ({
+            id: shift.id,
+            techName: shift.techName,
+            date: shift.date,
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            location: '',
+          }))}
         />
+      )}
+      {showSwapModal && schedules.length === 0 && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }}>
+          <div style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 24, maxWidth: 420, width: '100%', color: '#e5e7eb' }}>
+            <h2 style={{ marginTop: 0, fontSize: 20 }}>{say('Swap Requests')}</h2>
+            <p style={{ color: '#9aa3b2' }}>{say('No shifts are on the schedule yet.')}</p>
+            <button type="button" onClick={() => setShowSwapModal(false)} style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer' }}>{say('Close')}</button>
+          </div>
+        </div>
       )}
     </div>
   );

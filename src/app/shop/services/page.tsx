@@ -103,7 +103,7 @@ type TabId = 'my' | 'catalog' | 'custom';
 
 export default function ShopServicesPage() {
   const say = usePhrase();
-  useRequireAuth(['shop']);
+  const { user, isLoading: authLoading } = useRequireAuth(['shop']);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -144,13 +144,19 @@ export default function ShopServicesPage() {
   const [catalogFilterCat, setCatalogFilterCat] = useState('all');
 
   useEffect(() => {
-    const id = localStorage.getItem('shopId') || '';
+    if (authLoading || !user) return;
+    const id = user.shopId || user.id;
+    if (!id) {
+      setLoading(false);
+      setLoadError('Could not load shop services.');
+      return;
+    }
     const token = localStorage.getItem('token');
     setShopId(id);
 
     Promise.all([
-      fetch(`/api/services?shopId=${id}`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`/api/shops/complete-profile?shopId=${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`/api/services?shopId=${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`/api/shops/complete-profile?shopId=${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } }),
     ]).then(async ([svcRes, profileRes]) => {
       if (svcRes.ok) {
         const d = await svcRes.json();
@@ -168,7 +174,7 @@ export default function ShopServicesPage() {
         setCatalogFilterCat(defaultCat);
       }
     }).finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
   const reload = async () => {
     const token = localStorage.getItem('token');

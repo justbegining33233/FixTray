@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { generateAccessToken } from '../src/lib/auth';
-import { isShopOperationalApi, PLATFORM_OWNER_SHOP_DENIED } from '../src/lib/platformOwnerApi';
+import { isShopOperationalApi } from '../src/lib/platformOwnerApi';
+import { workOrderScope } from '../src/lib/workOrderMetrics';
 import { gateCrossRole } from '../src/proxy';
 
 const LEAKED = [
@@ -59,35 +60,25 @@ describe('platform owner shop API gate', () => {
     for (const path of PLATFORM) expect(isShopOperationalApi(path)).toBe(false);
   });
 
-  it('returns 403 for a platform owner and leaves a shop token alone', async () => {
+  it('lets a platform owner read shop APIs and scopes oversight to a shop id', async () => {
     process.env.JWT_SECRET = process.env.JWT_SECRET || 'platform-owner-api-test-secret';
     const owner = generateAccessToken({ id: 'owner-1', username: 'supadm1006', role: 'superadmin' });
     const storedAdmin = generateAccessToken({ id: 'owner-2', username: 'supadm1006', role: 'admin' });
     const shop = generateAccessToken({ id: 'shop-1', role: 'shop' });
 
-    for (const token of [owner, storedAdmin]) {
-      for (const path of LEAKED) {
+    for (const token of [owner, storedAdmin, shop]) {
+      for (const path of [...LEAKED, ...PLATFORM]) {
         const gate = await gateCrossRole(new NextRequest(`http://localhost${path}`, {
           headers: { cookie: `sos_auth=${token}` },
         }));
-        expect(gate?.status).toBe(403);
-        await expect(gate?.json()).resolves.toEqual(PLATFORM_OWNER_SHOP_DENIED);
+        expect(gate).toBeNull();
       }
     }
 
-    for (const path of PLATFORM) {
-      const gate = await gateCrossRole(new NextRequest(`http://localhost${path}`, {
-        headers: { cookie: `sos_auth=${owner}` },
-      }));
-      expect(gate).toBeNull();
-    }
-
-    const shopGate = await gateCrossRole(new NextRequest('http://localhost/api/workorders', {
-      headers: { cookie: `sos_auth=${shop}` },
-    }));
-    expect(shopGate).toBeNull();
-
     const anonymous = await gateCrossRole(new NextRequest('http://localhost/api/workorders'));
     expect(anonymous).toBeNull();
+
+    expect(workOrderScope({ id: 'owner-1', role: 'superadmin' }, 'shop-9')).toEqual({ scope: { shopId: 'shop-9' } });
+    expect(workOrderScope({ id: 'owner-1', role: 'admin' })).toEqual({ scope: {} });
   });
 });

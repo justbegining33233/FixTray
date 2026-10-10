@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
         phone: true,
         role: true,
         available: true,
+        hourlyRate: true,
         createdAt: true,
         _count: {
           select: {
@@ -60,8 +61,13 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { firstName: 'asc' },
     });
+
+    const canSeeRate = auth.role === 'shop' || auth.role === 'manager';
+    const visibleTechs = canSeeRate
+      ? techs
+      : techs.map(({ hourlyRate: _hourlyRate, ...rest }) => rest);
     
-    return NextResponse.json({ techs });
+    return NextResponse.json({ techs: visibleTechs });
   } catch (error) {
     console.error('Error fetching techs:', error);
     return NextResponse.json({ error: 'Failed to fetch techs' }, { status: 500 });

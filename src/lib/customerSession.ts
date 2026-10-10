@@ -1,5 +1,5 @@
-/** Shop, manager, and tech nav may read shop records. Customers must not. */
-const SHOP_SCOPED_ROLES = new Set(['shop', 'manager', 'tech', 'admin', 'superadmin']);
+/** Shop, manager, and tech nav may read shop records. Platform pages must not. */
+const SHOP_SCOPED_ROLES = new Set(['shop', 'manager', 'tech']);
 
 export function roleUsesShopAdminApis(role: string | null | undefined): boolean {
   return typeof role === 'string' && SHOP_SCOPED_ROLES.has(role);

@@ -116,6 +116,7 @@ export default function GlobalSearch() {
         <FaSearch style={{ color: '#9aa3b2', fontSize: 13, flexShrink: 0 }} />
         <input
           ref={inputRef}
+          aria-label="Search"
           value={query}
           onFocus={() => setIsFocused(true)}
           onChange={(e) => setQuery(e.target.value)}

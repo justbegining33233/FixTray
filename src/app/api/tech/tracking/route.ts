@@ -8,13 +8,12 @@ import { TRACKABLE_WORK_ORDER_STATUSES } from '@/lib/customerTracking';
 import {
   addressesToGeocode,
   buildRoadCallMap,
-  isTrackableRoadCall,
   readStoredPoint,
   shopAddressFromRecord,
   type RoadCallJobInput,
   type RoadCallTechInput,
 } from '@/lib/roadCallMap';
-import { isRoadsideLocation, ROADSIDE_LOCATION_VALUES } from '@/lib/waitingRoomBoard';
+import { ROADSIDE_LOCATION_VALUES } from '@/lib/waitingRoomBoard';
 
 function trackingShopId(actor: { id: string; role: string; shopId?: string | null }, requested: unknown): { shopId: string } | { error: string; status: number } {
   const requestedId = usableShopId(requested);
@@ -148,7 +147,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/tech/tracking - Tech shares GPS only while on an active road call
+// POST /api/tech/tracking - Assigned tech shares GPS for this job (roadside or not)
 export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -179,12 +178,9 @@ export async function POST(request: NextRequest) {
           },
         ],
       },
-      select: { id: true, serviceLocation: true, status: true },
+      select: { id: true },
     });
-    if (!workOrder || !isTrackableRoadCall(workOrder)) {
-      if (workOrder && !isRoadsideLocation(workOrder.serviceLocation)) {
-        return NextResponse.json({ error: 'Location is shared only during an active road call' }, { status: 403 });
-      }
+    if (!workOrder) {
       return NextResponse.json({ error: 'Work order not found or not assigned to you' }, { status: 404 });
     }
 

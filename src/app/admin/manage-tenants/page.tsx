@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { listedMoney, tenantBoardStats, tenantHealthScore, tenantOwnerLine, tenantOwnerText } from '@/lib/tenantBoard';
+import { directoryBadge, isCustomerRecord } from '@/lib/tenantDirectory';
 import { FaArrowLeft, FaBuilding, FaChartBar, FaHourglassHalf, FaMapMarkerAlt, FaStore, FaTimes } from 'react-icons/fa';
 
 type Tenant = {
@@ -32,45 +33,41 @@ type Tenant = {
   teamMembers: number;
   activeTeamMembers: number;
   // Health
-  healthScore: number;
+  healthScore: number | null;
   lifetimeMonths: number;
+  kind?: string;
+  badge?: string;
 };
 
-type LiveMetrics = {
-  totalCustomers: number;
-  newCustomersThisMonth: number;
-  customerGrowth: string;
-  totalWorkOrderRevenue: number;
-  totalJobs: number;
-  totalJobsThisMonth: number;
-  jobsGrowth: string;
-  healthDistribution: {
-    excellent: number;
-    good: number;
-    fair: number;
-    poor: number;
-  };
-  customerTrend: number[];
-  revenueTrend: number[];
+type DirectoryEmployee = {
+  id: string;
+  kind: 'employee';
+  name: string;
+  email: string;
+  phone: string;
+  role?: string | null;
+  shopId?: string | null;
+  shopName?: string | null;
+  badge?: string;
 };
 
-// Mini chart component
-function MiniLineChart({ data, color, height = 40 }: { data: number[]; color: string; height?: number }) {
-  if (!data || data.length === 0) return null;
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data, 0);
-  const range = max - min || 1;
-  const width = 100;
-  const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * width;
-    const y = height - ((value - min) / range) * height;
-    return `${x},${y}`;
-  }).join(' ');
-  
+type DirectoryCustomer = {
+  id: string;
+  kind: 'customer';
+  name: string;
+  email: string;
+  phone: string;
+  role?: string | null;
+  shopId?: string | null;
+  shopName?: string | null;
+  badge?: string;
+};
+
+function TypeBadge({ label }: { label: string }) {
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height }}>
-      <polyline fill="none" stroke={color} strokeWidth="2" points={points} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <span style={{ padding: '4px 10px', borderRadius: 999, background: 'rgba(59,130,246,0.18)', color: '#93c5fd', fontSize: 11, fontWeight: 700 }}>
+      {label}
+    </span>
   );
 }
 
@@ -79,7 +76,9 @@ export default function ManageTenants() {
   const { user, isLoading } = useRequireAuth(['admin']);
   const [loading, setLoading] = useState(true);
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [liveMetrics, setLiveMetrics] = useState<LiveMetrics | null>(null);
+  const [directoryTab, setDirectoryTab] = useState<'shops' | 'employees' | 'customers'>('shops');
+  const [employees, setEmployees] = useState<DirectoryEmployee[]>([]);
+  const [customers, setCustomers] = useState<DirectoryCustomer[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [tenantMsg, setTenantMsg] = useState<{type:'success'|'error';text:string}|null>(null);
@@ -92,7 +91,7 @@ export default function ManageTenants() {
     const fetchTenants = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/admin/customers', {
+        const response = await fetch('/api/admin/directory', {
           credentials: 'include',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -101,10 +100,10 @@ export default function ManageTenants() {
         
         if (response.ok) {
           const data = await response.json();
-          if (data.success) {
-            setTenants(data.customers);
-            setLiveMetrics(data.liveMetrics);
-          }
+          const shopRows = Array.isArray(data.shops) ? data.shops : [];
+          setTenants(shopRows.filter((row: { kind?: string }) => !isCustomerRecord(row.kind)));
+          setEmployees(Array.isArray(data.employees) ? data.employees : []);
+          setCustomers(Array.isArray(data.customers) ? data.customers : []);
         }
       } catch (error) {
         console.error('Error fetching tenants:', error);
@@ -178,13 +177,11 @@ export default function ManageTenants() {
                   </span>
                 ) : null}
               </div>
-              {liveMetrics ? <MiniLineChart data={liveMetrics.customerTrend} color="#22c55e" height={30} /> : null}
             </div>
             
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:12, padding:20}}>
               <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Total Revenue")}</div>
               <div style={{fontSize:28, fontWeight:700, color:'#8b5cf6'}}>{formatCurrency(board.revenue)}</div>
-              {liveMetrics ? <MiniLineChart data={liveMetrics.revenueTrend} color="#8b5cf6" height={30} /> : null}
             </div>
             
             <div style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(6,182,212,0.3)', borderRadius:12, padding:20}}>
@@ -203,11 +200,72 @@ export default function ManageTenants() {
           </div>
         )}
 
+        <div role="tablist" aria-label="Directory" style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          {([
+            ['shops', 'Shops'],
+            ['employees', 'Employees'],
+            ['customers', 'Customers'],
+          ] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={directoryTab === id}
+              onClick={() => setDirectoryTab(id)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 999,
+                border: directoryTab === id ? '1px solid rgba(59,130,246,0.6)' : '1px solid rgba(255,255,255,0.12)',
+                background: directoryTab === id ? 'rgba(59,130,246,0.2)' : 'rgba(0,0,0,0.3)',
+                color: '#e5e7eb',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {say(label)}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <div style={{textAlign:'center', padding:48, color:'#9aa3b2'}}>
             <div style={{fontSize:32, marginBottom:16}}><FaHourglassHalf style={{marginRight:4}} /></div>
             <div>{say("Loading tenants...")}</div>
           </div>
+        ) : directoryTab === 'employees' ? (
+          employees.length === 0 ? (
+            <div style={{textAlign:'center', padding:48, color:'#9aa3b2'}}>{say("No employees found")}</div>
+          ) : (
+            <div style={{display:'grid', gap:16}}>
+              {employees.map((person) => (
+                <div key={person.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:24}}>
+                  <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
+                    <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', margin:0}}>{say(person.name)}</h2>
+                    <TypeBadge label={person.badge || directoryBadge('employee', person.role)} />
+                  </div>
+                  <div style={{fontSize:14, color:'#9aa3b2'}}>{person.shopName ? say(person.shopName) : say("No shop link")}</div>
+                  <div style={{fontSize:14, color:'#9aa3b2', marginTop:6}}>{say(person.email)}{person.phone ? ` · ${person.phone}` : ''}</div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : directoryTab === 'customers' ? (
+          customers.length === 0 ? (
+            <div style={{textAlign:'center', padding:48, color:'#9aa3b2'}}>{say("No customers found")}</div>
+          ) : (
+            <div style={{display:'grid', gap:16}}>
+              {customers.map((person) => (
+                <div key={person.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:24}}>
+                  <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
+                    <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb', margin:0}}>{say(person.name)}</h2>
+                    <TypeBadge label={person.badge || directoryBadge('customer')} />
+                  </div>
+                  <div style={{fontSize:14, color:'#9aa3b2'}}>{person.shopName ? `${say("Shop:")} ${say(person.shopName)}` : say("No shop on the latest work order")}</div>
+                  <div style={{fontSize:14, color:'#9aa3b2', marginTop:6}}>{say(person.email)}{person.phone ? ` · ${person.phone}` : ''}</div>
+                </div>
+              ))}
+            </div>
+          )
         ) : tenants.length === 0 ? (
           <div style={{textAlign:'center', padding:48, color:'#9aa3b2'}}>
             <div style={{fontSize:32, marginBottom:16}}><FaBuilding style={{marginRight:4}} /></div>
@@ -222,8 +280,9 @@ export default function ManageTenants() {
             <div key={tenant.id} style={{background:'rgba(0,0,0,0.3)', border:'1px solid rgba(59,130,246,0.3)', borderRadius:12, padding:24}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16}}>
                 <div>
-                  <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
+                  <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8, flexWrap:'wrap'}}>
                     <h2 style={{fontSize:20, fontWeight:700, color:'#e5e7eb'}}>{say(tenant.name)}</h2>
+                    <TypeBadge label={tenant.badge || directoryBadge('shop')} />
                     <span style={{
                       padding:'4px 12px', 
                       background:`${healthColor}20`, 

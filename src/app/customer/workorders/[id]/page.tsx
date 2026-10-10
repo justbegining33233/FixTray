@@ -28,7 +28,8 @@ interface WorkOrderDetails {
     firstName: string;
     lastName: string;
     phone: string;
-  };
+    role?: string | null;
+  } | null;
   vehicle?: {
     make: string;
     model: string;
@@ -234,15 +235,19 @@ export default function WorkOrderDetailsPage() {
                     <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.shop.phone)}</div>
                   </div>
 
-                  {workOrder.assignedTo && (
-                    <div>
-                      <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Technician")}</div>
-                      <div style={{color:'#e5e7eb', fontWeight:500}}>
-                        {say(workOrder.assignedTo.firstName)} {say(workOrder.assignedTo.lastName)}
-                      </div>
-                      <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.assignedTo.phone)}</div>
-                    </div>
-                  )}
+                  <div>
+                    <div style={{fontSize:12, color:'#9aa3b2', marginBottom:4}}>{say("Technician")}</div>
+                    {workOrder.assignedTo ? (
+                      <>
+                        <div style={{color:'#e5e7eb', fontWeight:500}}>
+                          {say(workOrder.assignedTo.firstName)} {say(workOrder.assignedTo.lastName)}
+                        </div>
+                        {workOrder.assignedTo.phone ? <div style={{fontSize:14, color:'#9aa3b2'}}>{say(workOrder.assignedTo.phone)}</div> : null}
+                      </>
+                    ) : (
+                      <div style={{color:'#e5e7eb', fontWeight:500}}>Not assigned yet</div>
+                    )}
+                  </div>
 
                   {workOrder.vehicle && (
                     <div>

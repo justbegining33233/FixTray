@@ -5,6 +5,8 @@ import { activeWorkOrderWhere, pendingApprovalWhere, resolveShopId } from '@/lib
 import { shopWeekRange, shopDayRange, dayKey } from '@/lib/books/periods';
 import { loadShopFacts, shopTimeZone } from '@/lib/books/loadTruth';
 import { rangeSnapshot } from '@/lib/books/truth';
+import { closeStaleOpenPunches, openPunchLive } from '@/lib/staffClock';
+import { staffPunchMinutes } from '@/lib/books/clocks';
 
 // GET - Get shop dashboard stats
 export async function GET(request: NextRequest) {
@@ -43,6 +45,7 @@ export async function GET(request: NextRequest) {
 
     const zone = await shopTimeZone(shopId);
     const now = new Date();
+    await closeStaleOpenPunches({ shopId }, now);
     const todayKey = dayKey(now, zone);
     const today = shopDayRange(todayKey, zone);
     const week = shopWeekRange(now, zone);
@@ -63,13 +66,13 @@ export async function GET(request: NextRequest) {
     const weekRevenue = weekSnap.revenueCents / 100;
 
     // Get team stats
-    const [totalTechs, activeTechs, clockedInNow] = await Promise.all([
+    const [totalTechs, activeTechs, openPunches] = await Promise.all([
       prisma.tech.count({ where: { shopId } }),
       prisma.tech.count({ where: { shopId, available: true } }),
       prisma.timeEntry.findMany({
         where: {
           shopId,
-          clockOut: null, // Currently clocked in
+          clockOut: null,
         },
         include: {
           tech: {
@@ -83,6 +86,7 @@ export async function GET(request: NextRequest) {
         },
       }),
     ]);
+    const clockedInNow = openPunches.filter((entry) => openPunchLive(entry.clockIn, now) && entry.tech);
 
     // Get pending approvals (work orders waiting for estimates, etc.)
     const pendingApprovals = await prisma.workOrder.count({
@@ -116,7 +120,7 @@ export async function GET(request: NextRequest) {
           name: `${entry.tech.firstName} ${entry.tech.lastName}`,
           role: entry.tech.role,
           clockedInAt: entry.clockIn,
-          duration: Math.floor((Date.now() - entry.clockIn.getTime()) / (1000 * 60)), // minutes
+          duration: staffPunchMinutes({ clockIn: entry.clockIn, clockOut: null }, now),
         })),
       },
       inventory: {

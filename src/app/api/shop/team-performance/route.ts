@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole, AuthUser } from '@/lib/auth';
 import { staffPunchMinutes } from '@/lib/books/clocks';
+import { closeStaleOpenPunches, openPunchLive } from '@/lib/staffClock';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['shop', 'manager', 'admin']);
@@ -18,8 +19,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get team members with their performance data
-    const teamMembers = await prisma.tech.findMany({
+    const now = new Date();
+    await closeStaleOpenPunches({ shopId }, now);
+    const [teamMembers, openPunches] = await Promise.all([
+    prisma.tech.findMany({
       where: { shopId },
       include: {
         timeEntries: {
@@ -38,9 +41,16 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-    });
+    }),
+    prisma.timeEntry.findMany({
+      where: { shopId, clockOut: null },
+      select: { techId: true, clockIn: true },
+    }),
+    ]);
 
-    const now = new Date();
+    const liveTechIds = new Set(
+      openPunches.filter((entry) => openPunchLive(entry.clockIn, now)).map((entry) => entry.techId),
+    );
     const performance = teamMembers.map(member => {
       const todayMinutes = member.timeEntries.reduce((acc, entry) => acc + staffPunchMinutes({
         clockIn: entry.clockIn,
@@ -53,7 +63,8 @@ export async function GET(request: NextRequest) {
       return {
         id: member.id,
         name: `${member.firstName} ${member.lastName}`,
-        isActive: member.available,
+        isActive: liveTechIds.has(member.id),
+        isClockedIn: liveTechIds.has(member.id),
         completedJobs: member.assignedWorkOrders.length,
         hoursToday: Math.round(todayHours * 100) / 100,
       };

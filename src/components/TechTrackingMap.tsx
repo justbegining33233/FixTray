@@ -3,6 +3,7 @@
 import { usePhrase } from '@/lib/usePhrase';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ShopOpsMap } from '@/lib/roadCallMap';
+import { SHOP_ADDRESS_PROMPT, SHOP_ADDRESS_SETTINGS_HREF, shopMapEmptyMessage } from '@/lib/shopAddressPrompt';
 import { loadLeaflet, type LeafletLayerGroup, type LeafletMap } from '@/lib/loadLeaflet';
 
 interface TechTrackingMapProps {
@@ -182,12 +183,9 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
                 style={{ height: 420, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}
               />
             ) : (
-              <div data-testid="shop-ops-map-empty" style={{ minHeight: 180, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9aa3b2', textAlign: 'center', padding: 20 }}>
-                {shop?.status === 'missing-address'
-                  ? 'Add the shop street address in Shop Settings. No placeholder pin is shown.'
-                  : shop?.status === 'ungeocoded'
-                    ? 'The shop address is saved, but it could not be placed on the map. No placeholder pin is shown.'
-                    : 'Nothing to pin yet.'}
+              <div data-testid="shop-ops-map-empty" style={{ minHeight: 180, borderRadius: 10, border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#9aa3b2', textAlign: 'center', padding: 20 }}>
+                <div>{shopMapEmptyMessage(shop?.status) || 'Nothing to pin yet.'}</div>
+                {shopMapEmptyMessage(shop?.status) ? <ShopSettingsLink /> : null}
               </div>
             )}
 
@@ -241,6 +239,14 @@ export default function TechTrackingMap({ shopId = 'current' }: TechTrackingMapP
   );
 }
 
+function ShopSettingsLink() {
+  return (
+    <a href={SHOP_ADDRESS_SETTINGS_HREF} style={{ display: 'inline-block', background: '#e5332a', color: '#fff', borderRadius: 8, padding: '8px 12px', fontWeight: 700, textDecoration: 'none' }}>
+      {SHOP_ADDRESS_PROMPT}
+    </a>
+  );
+}
+
 function ShopStatus({ shop }: { shop?: ShopOpsMap['shop'] }) {
   if (!shop) return null;
   if (shop.status === 'pinned') {
@@ -250,17 +256,14 @@ function ShopStatus({ shop }: { shop?: ShopOpsMap['shop'] }) {
       </p>
     );
   }
-  if (shop.status === 'missing-address') {
-    return (
-      <p data-testid="shop-pin-status" style={{ margin: '0 0 12px', color: '#fca5a5', fontSize: 14 }}>
-        Shop address is not set. Add a street, city, state, and ZIP in Shop Settings before the shop can be pinned.
-      </p>
-    );
-  }
+  const message = shopMapEmptyMessage(shop.status);
   return (
-    <p data-testid="shop-pin-status" style={{ margin: '0 0 12px', color: '#fbbf24', fontSize: 14 }}>
-      Shop address is on file ({shop.address}) but could not be placed on the map.
-    </p>
+    <div data-testid="shop-pin-status" style={{ margin: '0 0 12px', fontSize: 14 }}>
+      <p style={{ margin: '0 0 8px', color: shop.status === 'missing-address' ? '#fca5a5' : '#fbbf24' }}>
+        {message}
+      </p>
+      <ShopSettingsLink />
+    </div>
   );
 }
 

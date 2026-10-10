@@ -5,6 +5,7 @@
  */
 
 import { auditEvent, type BooksAuditEvent } from '@/lib/books/money';
+import { MAX_LIVE_SHIFT_MS } from '@/lib/staffClock';
 
 export interface PersonMinutes {
   personId: string;
@@ -98,15 +99,17 @@ export interface StaffPunch {
 
 /**
  * Closed punches use the stored hours when a correction set them.
- * Open punches count through `now`.
+ * Open punches count through `now`, capped at 16 hours. A longer open
+ * shift is not a live clock.
  */
 export function staffPunchMinutes(entry: StaffPunch, now: Date): number {
   if (entry.clockOut && typeof entry.hoursWorked === 'number' && Number.isFinite(entry.hoursWorked) && entry.hoursWorked >= 0) {
     return Math.round(entry.hoursWorked * 60);
   }
   const start = new Date(entry.clockIn).getTime();
-  const end = entry.clockOut ? new Date(entry.clockOut).getTime() : now.getTime();
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 0;
+  const rawEnd = entry.clockOut ? new Date(entry.clockOut).getTime() : now.getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(rawEnd) || rawEnd < start) return 0;
+  const end = entry.clockOut ? rawEnd : Math.min(rawEnd, start + MAX_LIVE_SHIFT_MS);
   const breakMs = Math.max(0, Number(entry.breakMinutes) || 0) * 60 * 1000;
   return Math.max(0, Math.round((end - start - breakMs) / 60000));
 }

@@ -147,7 +147,8 @@ export default function ShopAdminPage() {
 
     (async () => {
     const isManager = user?.role === 'manager';
-    if (user && !user.isShopAdmin && !isManager) {
+    const isOwner = user?.role === 'shop';
+    if (user && !user.isShopAdmin && !isManager && !isOwner) {
       router.replace('/shop/home' as Route);
       return;
     }
@@ -157,8 +158,8 @@ export default function ShopAdminPage() {
     const name = localStorage.getItem('userName');
     const profileComplete = localStorage.getItem('shopProfileComplete') === 'true';
 
-    // Only shop owners need isShopAdmin flag; managers bypass this check
-    if (admin !== 'true' && !isManager) {
+    // The shop role is the owner even when the localStorage flag was never set.
+    if (admin !== 'true' && !isManager && !isOwner) {
       router.push('/shop/home' as Route);
       return;
     }

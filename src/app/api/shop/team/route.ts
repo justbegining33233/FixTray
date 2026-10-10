@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
-import { resolveShopId } from '@/lib/workOrderMetrics';
+import { activeWorkOrderWhere, resolveShopId } from '@/lib/workOrderMetrics';
+import { closeStaleOpenPunches, openPunchLive } from '@/lib/staffClock';
+import { staffPunchMinutes } from '@/lib/books/clocks';
 
 // GET - Get detailed team information including clock status and recent timesheets
 export async function GET(request: NextRequest) {
@@ -46,6 +48,7 @@ export async function GET(request: NextRequest) {
       where: { shopId },
       select: {
         id: true,
+        employeeNumber: true,
         email: true,
         firstName: true,
         lastName: true,
@@ -54,6 +57,13 @@ export async function GET(request: NextRequest) {
         available: true,
         hourlyRate: true,
         createdAt: true,
+        _count: {
+          select: {
+            assignedWorkOrders: {
+              where: activeWorkOrderWhere({}),
+            },
+          },
+        },
       },
       orderBy: [
         { role: 'asc' }, // managers first
@@ -62,6 +72,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Get current clock-in status for each team member
+    const now = new Date();
+    await closeStaleOpenPunches({ shopId }, now);
     const teamMemberIds = teamMembers.map(m => m.id);
     const activeTimeEntries = await prisma.timeEntry.findMany({
       where: {
@@ -106,16 +118,20 @@ export async function GET(request: NextRequest) {
         .filter(e => e.hoursWorked)
         .reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
       
-      // Calculate current session duration if clocked in
+      const isClockedIn = !!activeEntry && openPunchLive(activeEntry.clockIn, now);
+      const assignedOpenJobs = member._count?.assignedWorkOrders || 0;
       let currentSessionMinutes = 0;
-      if (activeEntry) {
-        currentSessionMinutes = Math.floor(
-          (Date.now() - new Date(activeEntry.clockIn).getTime()) / (1000 * 60)
-        );
+      if (isClockedIn && activeEntry) {
+        currentSessionMinutes = staffPunchMinutes({
+          clockIn: activeEntry.clockIn,
+          clockOut: null,
+          breakMinutes: null,
+        }, now);
       }
 
       return {
         id: member.id,
+        employeeNumber: member.employeeNumber,
         name: `${member.firstName} ${member.lastName}`,
         firstName: member.firstName,
         lastName: member.lastName,
@@ -126,12 +142,15 @@ export async function GET(request: NextRequest) {
         ...(canSeePayroll ? { hourlyRate: member.hourlyRate } : {}),
         joinedAt: member.createdAt,
         
+        assignedJobs: assignedOpenJobs,
+        assignedOpenJobs,
+
         // Clock status
-        isClockedIn: !!activeEntry,
-        clockedInAt: activeEntry?.clockIn,
-        clockedInLocation: activeEntry?.location,
-        clockedInNotes: activeEntry?.notes,
-        onBreak: !!activeEntry?.breakStart,
+        isClockedIn,
+        clockedInAt: isClockedIn ? activeEntry?.clockIn : null,
+        clockedInLocation: isClockedIn ? activeEntry?.location : null,
+        clockedInNotes: isClockedIn ? activeEntry?.notes : null,
+        onBreak: isClockedIn && !!activeEntry?.breakStart,
         currentSessionMinutes,
         
         // Statistics

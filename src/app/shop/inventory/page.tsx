@@ -9,7 +9,7 @@ import { formatInventoryType, normalizeInventoryType } from '@/lib/inventoryItem
 
 export default function ShopInventoryPage() {
   const say = usePhrase();
-  useRequireAuth(['shop']);
+  const { user, isLoading: authLoading } = useRequireAuth(['shop']);
   const _router = useRouter();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,11 +34,16 @@ export default function ShopInventoryPage() {
   });
 
   useEffect(() => {
-    const id = localStorage.getItem('shopId');
-    setShopId(id || '');
-    fetchInventory(id || '');
-    if (id) fetchReportSummary(id);
-  }, []);
+    if (authLoading || !user) return;
+    const id = user.shopId || user.id;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    setShopId(id);
+    fetchInventory(id);
+    fetchReportSummary(id);
+  }, [authLoading, user]);
 
   const fetchReportSummary = async (id: string) => {
     try {

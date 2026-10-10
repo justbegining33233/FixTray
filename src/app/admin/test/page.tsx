@@ -28,6 +28,7 @@ export default function AdminTestPage() {
   const [systemStatus, setSystemStatus] = useState<Record<string, 'checking' | 'operational' | 'down'>>({});
   const [stats, setStats] = useState({
     totalShops: 0,
+    approvedShops: 0,
     pendingShops: 0,
     totalUsers: 0,
     totalWorkOrders: 0,
@@ -61,7 +62,8 @@ export default function AdminTestPage() {
       if (res.ok) {
         const data = await res.json();
         setStats({
-          totalShops: data.totalShops || 0,
+          totalShops: data.allShops ?? data.totalShops ?? 0,
+          approvedShops: data.approvedShops ?? 0,
           pendingShops: data.pendingShops || 0,
           totalUsers: data.totalUsers || 0,
           totalWorkOrders: data.totalJobs || 0,
@@ -414,7 +416,7 @@ export default function AdminTestPage() {
                   { label: say("Pending"), value: stats.pendingShops, color: 'text-amber-400' },
                   { label: say("Users"), value: stats.totalUsers, color: say("text-[#e5332a]") },
                   { label: say("Orders"), value: stats.totalWorkOrders, color: 'text-emerald-400' },
-                  { label: say("Approved Shops"), value: stats.totalShops, color: 'text-rose-400' },
+                  { label: say("Approved Shops"), value: stats.approvedShops, color: 'text-rose-400' },
                   { label: say("Revenue"), value: stats.totalRevenue, color: 'text-emerald-400', isText: true },
                 ].map((stat, i) => (
                   <div key={i} className="bg-[#000000] border border-[#1F2937] rounded-lg p-3 text-center">

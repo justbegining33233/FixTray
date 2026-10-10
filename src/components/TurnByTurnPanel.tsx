@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
 import { configureLeafletIcons } from '@/lib/leafletIcons';
+import { SHOP_ADDRESS_PROMPT, SHOP_ADDRESS_SETTINGS_HREF, shopMapEmptyMessage } from '@/lib/shopAddressPrompt';
 import {
   activeStepIndex,
   formatTripDistance,
@@ -28,6 +29,7 @@ type DirectionsPayload = {
   durationSeconds?: number | null;
   external?: { google: string; apple: string } | null;
   message?: string;
+  reason?: 'missing-shop-address' | 'missing-job-address' | 'ungeocoded' | null;
 };
 
 function authHeaders(): Record<string, string> {
@@ -200,6 +202,9 @@ export default function TurnByTurnPanel({ workOrderId }: { workOrderId: string }
   }
 
   const dest = payload.destination;
+  const startReady = typeof dest?.latitude === 'number' && Number.isFinite(dest.latitude);
+  const shopSettings = payload.reason === 'missing-shop-address'
+    || (payload.reason === 'ungeocoded' && dest?.kind === 'shop');
   const summary = [
     formatTripDistance(payload.distanceMeters || 0),
     formatTripDuration(payload.durationSeconds || 0),
@@ -217,13 +222,22 @@ export default function TurnByTurnPanel({ workOrderId }: { workOrderId: string }
         <button
           type="button"
           onClick={start}
-          disabled={busy || !dest?.latitude}
-          style={{ background: '#e5332a', color: '#fff', border: 0, borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: dest?.latitude ? 'pointer' : 'not-allowed', opacity: dest?.latitude ? 1 : 0.5 }}
+          disabled={busy || !startReady}
+          style={{ background: '#e5332a', color: '#fff', border: 0, borderRadius: 8, padding: '10px 14px', fontWeight: 700, cursor: startReady ? 'pointer' : 'not-allowed', opacity: startReady ? 1 : 0.5 }}
         >
           {busy ? say('Starting…') : following ? say('Reroute') : say('Start turn-by-turn')}
         </button>
       </div>
-      {payload.message ? <p style={{ margin: '10px 0 0', color: '#fcd34d', fontSize: 13 }}>{say(payload.message)}</p> : null}
+      {shopSettings ? (
+        <div style={{ marginTop: 10 }}>
+          <p style={{ margin: 0, color: '#fcd34d', fontSize: 13 }}>
+            {payload.reason === 'ungeocoded' ? (shopMapEmptyMessage('ungeocoded') || SHOP_ADDRESS_PROMPT) : SHOP_ADDRESS_PROMPT}
+          </p>
+          <a href={SHOP_ADDRESS_SETTINGS_HREF} style={{ display: 'inline-block', marginTop: 8, background: '#e5332a', color: '#fff', borderRadius: 8, padding: '8px 12px', fontWeight: 700, textDecoration: 'none' }}>
+            {SHOP_ADDRESS_PROMPT}
+          </a>
+        </div>
+      ) : payload.message ? <p style={{ margin: '10px 0 0', color: '#fcd34d', fontSize: 13 }}>{say(payload.message)}</p> : null}
       {error ? <p style={{ margin: '10px 0 0', color: '#fca5a5', fontSize: 13 }}>{say(error)}</p> : null}
       {summary && steps.length > 0 ? <p style={{ margin: '10px 0 0', color: '#e5e7eb', fontSize: 13, fontWeight: 700 }}>{summary}</p> : null}
       {offRoute && following ? (

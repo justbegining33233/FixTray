@@ -7,12 +7,15 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { customerFacingAppointmentStatus, summarizeAppointments } from '@/lib/appointmentValidation';
+import { TRACK_UNAVAILABLE_MESSAGE, customerMayTrackJob } from '@/lib/customerJobTracking';
 import { unwrapVehicles } from '@/lib/workOrderList';
 import { FaArrowLeft, FaCalendarAlt, FaComments, FaMapMarkerAlt } from 'react-icons/fa';
 
 interface Appointment {
   id: string;
-  workOrderId: string;
+  workOrderId?: string | null;
+  serviceLocation?: string | null;
+  sharingLocation?: boolean;
   scheduledDate: string;
   serviceType: string;
   status: string;
@@ -279,11 +282,22 @@ export default function CustomerAppointmentsPage() {
           ) : (
             appointments.map((apt) => {
               const shownStatus = customerFacingAppointmentStatus(apt.status, apt.scheduledDate);
+              const trackDecision = customerMayTrackJob({
+                serviceLocation: apt.serviceLocation,
+                sharingLocation: apt.sharingLocation,
+              });
+              const detailHref = `/customer/appointments/${apt.id}` as string as Route;
+              let trackHref: Route | null = null;
+              if (trackDecision.enabled && apt.workOrderId) {
+                trackHref = `/customer/jobs/${apt.workOrderId}/track` as string as Route;
+              }
               return (
               <div key={apt.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{say(apt.shop.shopName)}</h3>
+                    <h3 style={{ color: '#e5e7eb', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+                      <Link href={detailHref} style={{ color: 'inherit', textDecoration: 'none' }}>{say(apt.shop.shopName)}</Link>
+                    </h3>
                     <div style={{ color: '#9aa3b2', fontSize: 14 }}>{say(apt.shop.address)}</div>
                   </div>
                   <div style={{
@@ -330,11 +344,21 @@ export default function CustomerAppointmentsPage() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Link href={(apt.workOrderId ? `/customer/jobs/${apt.workOrderId}/track` : `/customer/appointments/${apt.id}`) as Route} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
-                    <FaMapMarkerAlt style={{marginRight:4}} /> {say("Track")}{' '}</Link>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <Link href={detailHref} style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.06)', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
+                    {say("View appointment")}
+                  </Link>
+                  {trackHref ? (
+                    <Link href={trackHref} style={{ flex: 1, padding: '10px', background: 'rgba(229,51,42,0.2)', color: '#ff6b64', border: '1px solid rgba(229,51,42,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'inline-block' }}>
+                      <FaMapMarkerAlt style={{marginRight:4}} /> {say("Track")}{' '}
+                    </Link>
+                  ) : (
+                    <button type="button" disabled aria-disabled="true" style={{ flex: '1 1 100%', padding: '10px', background: 'rgba(255,255,255,0.04)', color: '#9aa3b2', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'not-allowed', textAlign: 'center', whiteSpace: 'normal' }}>
+                      {TRACK_UNAVAILABLE_MESSAGE}
+                    </button>
+                  )}
 
-                  <Link href={`/customer/messages?shopId=${apt.shop.id}` as Route} style={{ flex: 1, padding: '10px', background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
+                  <Link href={`/customer/messages?shopId=${apt.shop.id}` as string as Route} style={{ flex: 1, padding: '10px', background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
                     <FaComments style={{marginRight:4}} /> {say("Message")}
                   </Link>
                   <button

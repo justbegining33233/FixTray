@@ -174,14 +174,20 @@ export async function POST(
       });
 
       const assignmentUpdate: { assignedTechId?: string; status?: string } = {};
-      if (!workOrder.assignedTechId) {
-        const clockingTech = await prisma.tech.findFirst({
-          where: { id: techId, shopId: workOrder.shopId },
-          select: { id: true, role: true },
-        });
-        if (clockingTech && clockingTech.role !== 'owner') {
-          assignmentUpdate.assignedTechId = techId;
+      const clockingTech = await prisma.tech.findFirst({
+        where: { id: techId, shopId: workOrder.shopId },
+        select: { id: true, role: true },
+      });
+      if (clockingTech && String(clockingTech.role || '').trim().toLowerCase() === 'tech') {
+        let replaceAssignee = !workOrder.assignedTechId;
+        if (workOrder.assignedTechId) {
+          const currentAssignee = await prisma.tech.findUnique({
+            where: { id: workOrder.assignedTechId },
+            select: { role: true },
+          });
+          replaceAssignee = String(currentAssignee?.role || '').trim().toLowerCase() === 'manager';
         }
+        if (replaceAssignee) assignmentUpdate.assignedTechId = techId;
       }
       if (['pending', 'assigned'].includes(workOrder.status)) {
         assignmentUpdate.status = 'in-progress';

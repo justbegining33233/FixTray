@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { requireRole } from '@/lib/auth';
+import { authenticateRequest } from '@/lib/auth';
 
-// HIGH FIX #7: Require admin authentication for health endpoint
 export async function GET(request: NextRequest) {
-  // Check authentication
-  const auth = requireRole(request, ['admin', 'superadmin']);
-  if (auth instanceof NextResponse) {
-    return auth;
+  const auth = authenticateRequest(request);
+  const isAdmin = auth?.role === 'admin' || auth?.role === 'superadmin';
+  if (!isAdmin) {
+    return NextResponse.json({ status: 'ok' });
   }
 
   const timestamp = Date.now();

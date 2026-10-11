@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { usePhrase } from '@/lib/usePhrase';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { count, initials, money } from '@/components/mobile/format';
+import { staffStatusWords } from '@/lib/staffPresence';
 import '@/components/mobile/phone-mock.css';
 
 export function ManagerDashboardPhone({
@@ -17,7 +18,7 @@ export function ManagerDashboardPhone({
 }: {
   alerts: Array<{ id?: string; title?: string; message?: string }>;
   stats: { activeJobs: number; pendingAssignments: number; overdueJobs: number; completedToday: number };
-  team: Array<{ id?: string; name?: string; isActive?: boolean; completedJobs?: number; hoursToday?: number }>;
+  team: Array<{ id?: string; name?: string; isActive?: boolean; isClockedIn?: boolean; onJob?: boolean; completedJobs?: number; hoursToday?: number }>;
   outstanding?: number | null;
 }) {
   const say = usePhrase();
@@ -57,6 +58,10 @@ export function ManagerDashboardPhone({
         </div>
         {team.length === 0 ? <div className="pm-empty">{say('No team performance data yet.')}</div> : team.slice(0, 5).map((member) => {
           const name = member.name || say('Technician');
+          const status = staffStatusWords({
+            clockedIn: member.isClockedIn ?? member.isActive,
+            onJob: member.onJob,
+          });
           return (
             <div key={member.id || name} className="pm-li">
               <div className="pm-av">{initials(name)}</div>
@@ -64,7 +69,8 @@ export function ManagerDashboardPhone({
                 <div className="t">{name}</div>
                 <div className="s">{say('Jobs')}: {member.completedJobs || 0} · {say('Hours')}: {member.hoursToday || 0}</div>
               </div>
-              <span className={`pm-badge ${member.isActive ? 'pm-b-green' : 'pm-b-ghost'}`}>● {member.isActive ? say('Active') : say('Away')}</span>
+              <span className={`pm-badge ${status.clock === 'Clocked in' ? 'pm-b-green' : 'pm-b-ghost'}`}>● {say(status.clock)}</span>
+              <span className={`pm-badge ${status.job === 'On job' ? 'pm-b-green' : 'pm-b-ghost'}`}>{say(status.job)}</span>
             </div>
           );
         })}
@@ -85,7 +91,7 @@ type QueueOrder = {
   assignedTo?: { id: string; firstName?: string; lastName?: string };
 };
 
-type QueueTech = { id: string; firstName: string; lastName: string; assignedCount: number };
+type QueueTech = { id: string; firstName: string; lastName: string; assignedCount: number; clockedIn?: boolean; onJob?: boolean };
 
 export function ManagerQueuePhone({
   awaiting,
@@ -99,10 +105,6 @@ export function ManagerQueuePhone({
   const say = usePhrase();
   const [tab, setTab] = useState<'awaiting' | 'clocked'>('awaiting');
   const rows = tab === 'awaiting' ? awaiting : clocked;
-  const onJob = new Map<string, string>();
-  clocked.forEach((order) => {
-    if (order.assignedTo?.id) onJob.set(order.assignedTo.id, order.id);
-  });
   return (
     <div className="pm">
       <div>
@@ -137,15 +139,15 @@ export function ManagerQueuePhone({
       <div className="pm-card" style={{ padding: '4px 12px' }}>
         {techs.length === 0 ? <div className="pm-empty">{say('No technicians on this shop.')}</div> : techs.map((tech) => {
           const name = `${tech.firstName} ${tech.lastName}`.trim();
-          const jobId = onJob.get(tech.id);
+          const status = staffStatusWords({ clockedIn: tech.clockedIn, onJob: tech.onJob });
           return (
             <div key={tech.id} className="pm-li">
               <div className="pm-av">{initials(name)}</div>
               <div className="pm-grow">
                 <div className="t">{name}</div>
-                <div className="s">{jobId ? `${say('Clocked in')} · ${shortWorkOrderLabel(jobId)}` : say('Not clocked in')}</div>
+                <div className="s">{say(status.clock)}{status.job === 'On job' ? ` · ${say('On job')}` : ''}</div>
               </div>
-              <span className={`pm-badge ${jobId ? 'pm-b-green' : 'pm-b-ghost'}`}>{jobId ? say('On job') : say('Available')}</span>
+              <span className={`pm-badge ${status.clock === 'Clocked in' ? 'pm-b-green' : 'pm-b-ghost'}`}>{say(status.clock)}</span>
             </div>
           );
         })}

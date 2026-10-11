@@ -6,6 +6,7 @@ import { allocateTechRevenue } from '@/lib/books/floor';
 import { addDays, dayKey, shopDateSpan } from '@/lib/books/periods';
 import { shopTimeZone } from '@/lib/books/loadTruth';
 import { civilInRange } from '@/lib/books/truth';
+import { operatingShopWhere } from '@/lib/shopAccountStatus';
 
 // GET /api/analytics/employee-performance ΓÇö cross-shop tech performance stats
 export async function GET(request: NextRequest) {
@@ -23,14 +24,14 @@ export async function GET(request: NextRequest) {
       if (shopIdParam) {
         shopIds = [shopIdParam];
       } else {
-        const allShops = await prisma.shop.findMany({ where: { status: 'approved' }, select: { id: true } });
+        const allShops = await prisma.shop.findMany({ where: operatingShopWhere(), select: { id: true } });
         shopIds = allShops.map(s => s.id);
       }
     } else if (auth.role === 'shop') {
       // Multi-shop owner: find all shops with same email
       const currentShop = await prisma.shop.findUnique({ where: { id: auth.id }, select: { email: true } });
       if (currentShop) {
-        const owned = await prisma.shop.findMany({ where: { email: currentShop.email, status: 'approved' }, select: { id: true } });
+        const owned = await prisma.shop.findMany({ where: { AND: [{ email: currentShop.email }, operatingShopWhere()] }, select: { id: true } });
         shopIds = owned.map(s => s.id);
       }
     } else {

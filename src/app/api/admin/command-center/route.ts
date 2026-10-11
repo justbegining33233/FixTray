@@ -7,6 +7,7 @@ import { addDays, dayKey, mondayKey, zonedDayStart } from '@/lib/books/periods';
 import { platformFeeYear, shopJobReceiptCents } from '@/lib/books/money';
 import logger from '@/lib/logger';
 import { displayPersonName } from '@/lib/platformUserLabel';
+import { operatingShopWhere } from '@/lib/shopAccountStatus';
 
 export async function GET(request: NextRequest) {
   const auth = requireRole(request, ['admin', 'superadmin']);
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
       prisma.workOrder.aggregate({ where: { paymentStatus: 'pending', status: 'completed' }, _sum: { estimatedCost: true }, _count: { id: true } }),
       prisma.shop.findMany({ where: { status: 'pending' }, take: 10, orderBy: { createdAt: 'desc' } }),
       prisma.shop.count({ where: { status: 'pending' } }),
-      prisma.shop.count({ where: { status: 'approved' } }),
+      prisma.shop.count({ where: operatingShopWhere() }),
       prisma.customer.count(),
       prisma.customer.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.customer.count({ where: { createdAt: { gte: weekAgo } } }),
@@ -203,7 +204,7 @@ export async function GET(request: NextRequest) {
 
     const approvedShops = await prisma.shop.findMany({
       where: {
-        status: 'approved',
+        ...operatingShopWhere(),
       },
       select: { id: true, shopName: true, email: true, updatedAt: true },
     });

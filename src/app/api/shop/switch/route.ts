@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
+import { operatingShopWhere, shopMayLogIn } from '@/lib/shopAccountStatus';
 
 // GET /api/shop/switch — list all shops the logged-in shop owner or multi-shop manager can access
 export async function GET(request: NextRequest) {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     if (auth.role === 'superadmin') {
       // Admin can see all shops
       const shops = await prisma.shop.findMany({
-        where: { status: 'approved' },
+        where: operatingShopWhere(),
         select: { id: true, shopName: true, email: true, city: true, state: true },
         orderBy: { shopName: 'asc' },
       });
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     const shops = await prisma.shop.findMany({
-      where: { email: currentShop.email, status: 'approved' },
+      where: { AND: [{ email: currentShop.email }, operatingShopWhere()] },
       select: { id: true, shopName: true, email: true, city: true, state: true },
       orderBy: { shopName: 'asc' },
     });
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       select: { id: true, username: true, shopName: true, email: true, phone: true, profileComplete: true, status: true },
     });
 
-    if (!targetShop || targetShop.status !== 'approved') {
+    if (!targetShop || !shopMayLogIn(targetShop.status)) {
       return NextResponse.json({ error: 'Shop not found or not approved' }, { status: 404 });
     }
 

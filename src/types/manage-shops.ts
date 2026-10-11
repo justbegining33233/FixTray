@@ -2,7 +2,7 @@ export type Shop = {
   id: string;
   name: string;
   location: string;
-  status: 'active' | 'pending' | 'suspended';
+  status: 'pending' | 'approved' | 'suspended' | 'denied' | 'demo-ended';
   owner: string;
   email: string;
   phone: string;

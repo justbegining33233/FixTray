@@ -75,22 +75,26 @@ describe('owner shop census', () => {
     });
   });
 
-  it('counts the same approved shops the management list keeps, and labels the other one', () => {
+  it('counts approved shops and the legacy active spelling as the same approved total', () => {
     const shops = [
       { id: 'a', status: 'approved' },
       { id: 'b', status: 'approved' },
       { id: 'c', status: 'Approved' },
       { id: 'd', status: 'active' },
+      { id: 'e', status: 'pending' },
+      { id: 'f', status: 'suspended' },
     ];
-    expect(countApprovedShops(shops)).toBe(3);
-    expect(shops).toHaveLength(4);
+    expect(countApprovedShops(shops)).toBe(4);
     expect(shops.map((shop) => shopStatusLabel(shop.status))).toEqual([
       'Approved',
       'Approved',
       'Approved',
-      'Active',
+      'Approved',
+      'Pending',
+      'Suspended',
     ]);
-    expect(shopStatusLabel('active')).not.toBe('Approved');
+    expect(shopStatusLabel('active')).toBe('Approved');
+    expect(shopStatusLabel('inactive')).toBe('Suspended');
     expect(shopStatusLabel('demo-ended')).toBe('Demo ended');
     expect(shopStatusLabel('pending')).toBe('Pending');
   });

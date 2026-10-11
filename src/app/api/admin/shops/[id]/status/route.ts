@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { logActivity } from '@/lib/activityLogger';
+import { canonicalShopStatusWrite, SHOP_ACCOUNT_STATUSES, SHOP_APPROVED_STATUS } from '@/lib/shopAccountStatus';
 
 export async function PATCH(
   request: NextRequest,
@@ -13,12 +14,10 @@ export async function PATCH(
   try {
     const { id } = await params;
     const { status } = await request.json();
-
-    // Validate status
-    const validStatuses = ['pending', 'approved', 'suspended'];
-    if (!validStatuses.includes(status)) {
+    const canonical = canonicalShopStatusWrite(status);
+    if (!canonical) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be one of: pending, approved, suspended' },
+        { error: `Invalid status. Must be one of: ${SHOP_ACCOUNT_STATUSES.join(', ')}` },
         { status: 400 }
       );
     }
@@ -36,22 +35,22 @@ export async function PATCH(
     const updatedShop = await prisma.shop.update({
       where: { id },
       data: {
-        status,
-        ...(status === 'approved' && !existingShop.approvedAt ? { approvedAt: new Date() } : {})
+        status: canonical,
+        ...(canonical === SHOP_APPROVED_STATUS && !existingShop.approvedAt ? { approvedAt: new Date() } : {})
       }
     });
 
     // Fire-and-forget audit log for the status change
     const actionMap: Record<string, string> = { approved: 'shop_approved', suspended: 'shop_suspended', pending: 'shop_pending' };
     logActivity(
-      actionMap[status] ?? 'settings_updated',
+      actionMap[canonical] ?? 'settings_updated',
       (auth as any).username ?? (auth as any).id ?? 'admin',
-      `Shop "${existingShop.shopName}" status changed from "${existingShop.status}" to "${status}"`,
-      { type: 'shop', shopId: id, severity: status === 'approved' ? 'success' : status === 'suspended' ? 'warning' : 'info' }
+      `Shop "${existingShop.shopName}" status changed from "${existingShop.status}" to "${canonical}"`,
+      { type: 'shop', shopId: id, severity: canonical === SHOP_APPROVED_STATUS ? 'success' : canonical === 'suspended' ? 'warning' : 'info' }
     );
 
     return NextResponse.json({
-      message: `Shop status updated to ${status}`,
+      message: `Shop status updated to ${canonical}`,
       shop: {
         id: updatedShop.id,
         shopName: updatedShop.shopName,

@@ -10,6 +10,8 @@ import logger from '@/lib/logger';
 import { getPlatformServiceFeeUsd } from '@/lib/platformFee';
 import { redactPlatformFeeForRole } from '@/lib/staffMoneyAccess';
 import { billWithServiceFee } from '@/lib/serviceFeeBill';
+import { estimateBillForOrder } from '@/lib/customerLedger';
+import { quoteAmount } from '@/lib/workOrderCloseout';
 
 import { validateRequest, workOrderUpdateSchema } from '@/lib/validationSchemas';
 import { customerWorkOrderUpdateForbidden } from '@/lib/customerWorkOrderUpdate';
@@ -99,10 +101,16 @@ export async function GET(
     
     const viewerLocale = await resolveAccountLocale(request, auth);
     const messages = await decorateWorkOrderMessages(workOrder.messages, viewerLocale);
+    const fixtrayServiceFee = (await getPlatformServiceFeeUsd()) ?? 0;
+    const estimateBill = estimateBillForOrder(
+      { ...workOrder, estimatedCost: quoteAmount(workOrder) },
+      fixtrayServiceFee,
+    );
     const payload = redactPlatformFeeForRole(auth.role, {
       ...workOrder,
       messages,
-      fixtrayServiceFee: await getPlatformServiceFeeUsd(),
+      fixtrayServiceFee,
+      estimateBill,
     });
     return NextResponse.json(payload, { headers: corsHeaders });
   } catch (error) {

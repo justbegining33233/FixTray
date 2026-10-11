@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { countApprovedShops, isApprovedShop } from '@/lib/shopCensus';
+import { shopStatusIs } from '@/lib/shopAccountStatus';
 
 function parseSessionMetadata(raw: string | null): { shopId?: string } {
   if (!raw) return {};
@@ -181,8 +182,8 @@ export async function GET(request: NextRequest) {
     const activeShops = formattedShops.filter(s => s.activityStatus === 'active').length;
     const inactiveShops = formattedShops.filter(s => s.activityStatus === 'inactive').length;
     const approvedShops = countApprovedShops(shops);
-    const pendingShops = shops.filter(s => s.status === 'pending').length;
-    const suspendedShops = shops.filter(s => s.status === 'suspended').length;
+    const pendingShops = shops.filter(s => shopStatusIs(s.status, 'pending')).length;
+    const suspendedShops = shops.filter(s => shopStatusIs(s.status, 'suspended')).length;
     
     // Shops by status trend
     const newShopsThisMonth = shops.filter(s => new Date(s.createdAt) >= startOfMonth).length;

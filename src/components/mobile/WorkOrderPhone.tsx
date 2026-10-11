@@ -7,6 +7,7 @@ import { usePhrase } from '@/lib/usePhrase';
 import { shortWorkOrderLabel } from '@/lib/notificationCopy';
 import { workOrderStatusLabel, workOrderStatusTone } from '@/lib/workOrderStatus';
 import { money, vehicleLabel } from '@/components/mobile/format';
+import { FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
 import { chatMessageContent } from '@/lib/messageAttachment';
 import { useAuth } from '@/contexts/AuthContext';
 import TurnByTurnPanel from '@/components/TurnByTurnPanel';
@@ -29,6 +30,8 @@ export function WorkOrderPhone({
   lineItems,
   messages,
   grandTotal,
+  serviceFee,
+  customerTotal,
   canClose,
   onInvoice,
   onAddItem,
@@ -48,6 +51,8 @@ export function WorkOrderPhone({
   lineItems: Line[];
   messages: Note[];
   grandTotal: number;
+  serviceFee?: number;
+  customerTotal?: number;
   canClose: boolean;
   onInvoice: () => void;
   onAddItem: () => void;
@@ -164,6 +169,18 @@ export function WorkOrderPhone({
           <span>{say('Total')}</span>
           <b style={{ fontSize: 15 }}>{money(grandTotal, 2)}</b>
         </div>
+        {typeof serviceFee === 'number' && typeof customerTotal === 'number' ? (
+          <>
+            <div className="pm-kv">
+              <span>{say(FIXTRAY_SERVICE_FEE_LABEL)}</span>
+              <b>{money(serviceFee, 2)}</b>
+            </div>
+            <div className="pm-kv">
+              <span>Customer total</span>
+              <b style={{ fontSize: 15 }}>{money(customerTotal, 2)}</b>
+            </div>
+          </>
+        ) : null}
       </div>
       {canClose ? (
         <div style={{ display: 'flex', gap: 8 }}>

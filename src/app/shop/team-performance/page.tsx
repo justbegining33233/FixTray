@@ -6,16 +6,9 @@ import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaChartBar, FaUsers, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { performanceRangeDays, teamRowsFromEmployeePerformance, type TeamPerformanceRow } from '@/lib/teamPerformanceSource';
 
-interface TechStats {
-  id: string;
-  name: string;
-  jobsCompleted: number;
-  hoursWorked: number;
-  avgTimePerJob: number;
-  efficiency: number;
-  earnings: number;
-}
+type TechStats = TeamPerformanceRow;
 
 export default function ShopPerformancePage() {
   const say = usePhrase();
@@ -34,12 +27,12 @@ export default function ShopPerformancePage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/shop/team-performance?range=${timeRange}`, {
+      const res = await fetch(`/api/analytics/employee-performance?days=${performanceRangeDays(timeRange)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
-        setTechs(data.techs || []);
+        setTechs(teamRowsFromEmployeePerformance(data));
       }
     } catch (error) {
       console.error('Failed to load performance data:', error);

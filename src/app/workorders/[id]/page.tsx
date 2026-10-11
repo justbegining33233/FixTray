@@ -11,8 +11,9 @@ import {
 } from 'react-icons/fa';
 import { WorkOrderTimeClock } from '@/components/WorkOrderTimeClock';
 import { buildEstimateSave } from '@/lib/estimateAuthorization';
-import { billWithServiceFee, FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
-import { frozenCustomerFeeUsd, readFeeSnapshot } from '@/lib/feeSnapshot';
+import { FIXTRAY_SERVICE_FEE_LABEL } from '@/lib/serviceFeeBill';
+import { matchingEstimateBill } from '@/lib/customerLedger';
+import { readFeeSnapshot } from '@/lib/feeSnapshot';
 import { PER_JOB_FEE_NOTE } from '@/lib/staffMoneyAccess';
 import { counterBalanceDueCents } from '@/lib/books/money';
 import { readSalesTaxSnapshot } from '@/lib/books/shopTax';
@@ -51,6 +52,8 @@ type WorkOrder = {
   completion?: unknown;
   /** Live PlatformConfig fee (USD) attached by GET /api/workorders/[id]. */
   fixtrayServiceFee?: number;
+  /** Same bill the estimates list shows for this job. */
+  estimateBill?: { subtotal: number; serviceFee: number; total: number };
   customer?: { id: string; firstName: string; lastName: string; email?: string; phone?: string; company?: string };
   assignedTo?: { id: string; firstName: string; lastName: string };
   vehicle?: Vehicle | null;
@@ -64,16 +67,6 @@ type SvcItem = { id: string; serviceName: string; category: string; price?: numb
 
 const uid = () => Math.random().toString(36).slice(2);
 
-/** Stored checkout fee when one exists. Otherwise the fee that applies to this quote. */
-function jobCustomerFee(quote: number, platformFee: number, completion: unknown): { serviceFee: number; total: number } {
-  const frozen = frozenCustomerFeeUsd(completion, quote);
-  if (typeof frozen === 'number') {
-    const serviceFee = Math.max(0, frozen);
-    return { serviceFee, total: Math.round((quote + serviceFee) * 100) / 100 };
-  }
-  const live = billWithServiceFee(quote, platformFee);
-  return { serviceFee: live.serviceFee, total: live.total };
-}
 
 function counterSignPath(estimate: unknown): string | null {
   if (!estimate || typeof estimate !== 'object') return null;
@@ -815,6 +808,12 @@ export default function WorkOrderDetailPage() {
   const shortId      = shortWorkOrderLabel(wo.id);
   const customerName = wo.customer ? `${wo.customer.firstName} ${wo.customer.lastName}`.trim() : 'Unknown';
   const techName     = wo.assignedTo ? `${wo.assignedTo.firstName} ${wo.assignedTo.lastName}`.trim() : null;
+  const customerBill = matchingEstimateBill({
+    estimatedCost: wo.estimatedCost,
+    lineItemTotal: grandTotal,
+    estimateBill: wo.estimateBill,
+    platformFeeUsd: platformFee,
+  });
 
   // Authorization gates clock-in: estimate must be accepted before tech can start
   const awaitingAuth = wo.status === 'estimate-submitted';
@@ -869,6 +868,8 @@ export default function WorkOrderDetailPage() {
         lineItems={lineItems}
         messages={messages}
         grandTotal={grandTotal}
+        serviceFee={customerBill.subtotal > 0 ? customerBill.serviceFee : undefined}
+        customerTotal={customerBill.subtotal > 0 ? customerBill.total : undefined}
         canClose={Boolean(userRole && ['shop', 'manager', 'admin', 'superadmin'].includes(userRole))}
         onInvoice={() => { void handleCloseout('invoice'); }}
         onAddItem={() => { void handleOpenItemModal(); }}
@@ -945,11 +946,11 @@ export default function WorkOrderDetailPage() {
               <Field label={say("Bay")}              value={wo.bay != null ? `Bay ${wo.bay}` : null} />
               <Field label={say("Assigned Tech")}    value={techName ?? 'Unassigned'} />
               <Field label={say("Due Date")}         value={wo.dueDate ? new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null} />
-              <Field label={say("Est. Cost")}        value={wo.estimatedCost != null ? `$${wo.estimatedCost.toFixed(2)}` : null} />
-              {platformFee > 0 && typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 && (
+              <Field label={say("Est. Cost")}        value={customerBill.subtotal > 0 ? fmt(customerBill.subtotal) : (wo.estimatedCost != null ? `$${wo.estimatedCost.toFixed(2)}` : null)} />
+              {customerBill.subtotal > 0 && (
                 <>
-                  <Field label={say(FIXTRAY_SERVICE_FEE_LABEL)} value={fmt(jobCustomerFee(wo.estimatedCost, platformFee, wo.completion).serviceFee)} />
-                  <Field label="Customer total" value={fmt(jobCustomerFee(wo.estimatedCost, platformFee, wo.completion).total)} />
+                  <Field label={say(FIXTRAY_SERVICE_FEE_LABEL)} value={fmt(customerBill.serviceFee)} />
+                  <Field label="Customer total" value={fmt(customerBill.total)} />
                   <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9aa3b2' }}>{PER_JOB_FEE_NOTE}</p>
                 </>
               )}
@@ -1011,11 +1012,9 @@ export default function WorkOrderDetailPage() {
                             : say("Invoice unlocks after the customer accepts and signs and the job is in progress.")}
               </p>
               {(() => {
-                const quote = invoiceBill?.quoteAmount
-                  ?? (typeof wo.estimatedCost === 'number' && wo.estimatedCost > 0 ? wo.estimatedCost : grandTotal);
-                const liveBill = jobCustomerFee(quote, platformFee, wo.completion);
-                const fee = invoiceBill?.serviceFee ?? liveBill.serviceFee;
-                const totalDue = invoiceBill?.totalDue ?? liveBill.total;
+                const quote = invoiceBill?.quoteAmount ?? customerBill.subtotal;
+                const fee = invoiceBill?.serviceFee ?? customerBill.serviceFee;
+                const totalDue = invoiceBill?.totalDue ?? customerBill.total;
                 if (quote <= 0 && !invoiceBill) return null;
                 return (
                   <div style={{ marginBottom: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12 }}>
@@ -1024,17 +1023,15 @@ export default function WorkOrderDetailPage() {
                       <span>Services & Parts</span>
                       <span>{fmt(quote)}</span>
                     </div>
-                    {fee > 0 && (
-                      <div style={{ marginBottom: 6 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2' }}>
-                          <span>{FIXTRAY_SERVICE_FEE_LABEL}</span>
-                          <span>{fmt(fee)}</span>
-                        </div>
-                        <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>{PER_JOB_FEE_NOTE}</div>
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#9aa3b2' }}>
+                        <span>{FIXTRAY_SERVICE_FEE_LABEL}</span>
+                        <span>{fmt(fee)}</span>
                       </div>
-                    )}
+                      <div style={{ fontSize: 12, color: '#9aa3b2', marginTop: 4 }}>{PER_JOB_FEE_NOTE}</div>
+                    </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: '#22c55e', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
-                      <span>Total Due</span>
+                      <span>Customer total</span>
                       <span>{fmt(totalDue)}</span>
                     </div>
                   </div>
@@ -1240,14 +1237,12 @@ export default function WorkOrderDetailPage() {
             <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
               <button type="button" onClick={handleOpenItemModal} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', color: '#9aa3b2', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer' }}>
                 <FaPlus style={{ fontSize: 10 }} /> {say("Add Line Item")}{' '}</button>
-              {grandTotal > 0 && (
+              {(grandTotal > 0 || customerBill.subtotal > 0) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                   {lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Labor")}{' '}{fmt(lineItems.filter(li => li.type === 'labor').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
                   {lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0) > 0 && <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say("Parts")}{' '}{fmt(lineItems.filter(li => li.type === 'part').reduce((s, li) => s + li.price * li.qty, 0))}</span>}
-                  {jobCustomerFee(grandTotal, platformFee, wo.completion).serviceFee > 0 && (
-                    <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say(FIXTRAY_SERVICE_FEE_LABEL)} {fmt(jobCustomerFee(grandTotal, platformFee, wo.completion).serviceFee)}</span>
-                  )}
-                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>{say("Total")}{' '}{fmt(jobCustomerFee(grandTotal, platformFee, wo.completion).total)}</span>
+                  <span style={{ fontSize: 12, color: '#9aa3b2' }}>{say(FIXTRAY_SERVICE_FEE_LABEL)} {fmt(customerBill.serviceFee)}</span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: '#22c55e' }}>Customer total {fmt(customerBill.total)}</span>
                 </div>
               )}
             </div>

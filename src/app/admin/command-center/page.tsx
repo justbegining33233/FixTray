@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { displayEmployeeLabel } from '@/lib/platformUserLabel';
+import { shopMayLogIn } from '@/lib/shopAccountStatus';
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaBolt, FaChartBar, FaChartLine, FaCheck, FaCheckSquare, FaCircle, FaDollarSign, FaDotCircle, FaExclamationTriangle, FaExternalLinkAlt, FaRegCircle, FaRegStar, FaStar, FaSyncAlt } from 'react-icons/fa';
 
 interface CommandCenterData {
@@ -349,7 +350,7 @@ export default function CommandCenterPage() {
 
   const liveShopMetrics = liveShopsData?.liveMetrics;
   const liveInactiveShops = (liveShopsData?.shops || []).filter(
-    (shop) => shop.activityStatus === 'inactive' && shop.status === 'approved'
+    (shop) => shop.activityStatus === 'inactive' && shopMayLogIn(shop.status)
   );
   const liveFees = liveRevenueData?.workOrderFees ?? data?.workOrderFees;
   const pendingApprovalsCount = liveShopMetrics?.pendingShops ?? data?.shopHealth.pendingApproval ?? 0;

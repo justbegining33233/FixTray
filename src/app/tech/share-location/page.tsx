@@ -48,7 +48,10 @@ function geoFailureText(error: unknown): { failure: GeoFailure; text: string } {
     return { failure: 'timeout', text: 'Location request timed out. Try again.' };
   }
   if (code === 1) {
-    return { failure: 'denied', text: 'Location permission was denied.' };
+    return {
+      failure: 'denied',
+      text: 'Location permission was denied. In the browser address bar, open the lock or site settings, set Location to Allow, then use Retry.',
+    };
   }
   if (code === 2) {
     return { failure: 'error', text: 'Location is unavailable on this device.' };
@@ -307,7 +310,7 @@ export default function ShareLocation() {
             <div role="alert" style={{marginTop:16}}>
               <p style={{margin:'0 0 12px', color:'#fca5a5'}}>{geoFailure.text}</p>
               <button type="button" onClick={getCurrentLocation} disabled={locating} style={{padding:'12px 20px', background:'#e5332a', color:'white', border:'none', borderRadius:8, fontSize:14, fontWeight:700, cursor: locating ? 'wait' : 'pointer'}}>
-                Retry
+                {say("Retry")}
               </button>
             </div>
           )}

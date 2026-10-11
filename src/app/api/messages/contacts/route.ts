@@ -7,6 +7,7 @@ import {
   mapShopEntityContact,
   mapShopStaffContacts,
 } from '@/lib/messageContacts';
+import { operatingShopWhere } from '@/lib/shopAccountStatus';
 
 /**
  * GET /api/messages/contacts
@@ -58,7 +59,7 @@ async function getAdminContacts(currentUserId?: string) {
   try {
     const [shops, staff, customers, admins] = await Promise.all([
       prisma.shop.findMany({
-        where: { status: 'approved' },
+        where: operatingShopWhere(),
         select: { id: true, shopName: true },
         orderBy: { shopName: 'asc' },
       }),
@@ -185,7 +186,7 @@ async function getShopScopedContacts(currentUserId: string, role: string) {
 async function getCustomerScopedContacts(currentUserId: string) {
   const [shops, fixTrayContacts] = await Promise.all([
     prisma.shop.findMany({
-      where: { status: 'approved' },
+      where: operatingShopWhere(),
       select: { id: true, shopName: true },
       orderBy: { shopName: 'asc' },
     }),

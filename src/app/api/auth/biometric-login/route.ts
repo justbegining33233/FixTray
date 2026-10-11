@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateAccessToken, generateRandomToken } from '@/lib/auth';
 import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
+import { shopLoginDenial, shopMayLogIn } from '@/lib/shopAccountStatus';
 
 const BIOMETRIC_TOKEN_EXPIRY_DAYS = 30;
 
@@ -89,8 +90,12 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         select: { id: true, username: true, email: true, shopName: true, status: true },
       });
-      if (!shop || shop.status !== 'approved') {
+      if (!shop) {
         return NextResponse.json({ error: 'Account not active' }, { status: 403 });
+      }
+      const denial = shopLoginDenial(shop.status);
+      if (denial) {
+        return NextResponse.json({ error: denial.error }, { status: denial.httpStatus });
       }
       const { demoLoginWindow } = await import('@/lib/demoShop');
       const demoWindow = await demoLoginWindow(shop.id, true);
@@ -193,7 +198,7 @@ export async function PUT(request: NextRequest) {
     let userExists = false;
     if (userType === 'shop') {
       const shop = await prisma.shop.findUnique({ where: { id: userId }, select: { id: true, status: true } });
-      userExists = !!shop && shop.status === 'approved';
+      userExists = !!shop && shopMayLogIn(shop.status);
     } else if (userType === 'tech') {
       const tech = await prisma.tech.findUnique({ where: { id: userId }, select: { id: true } });
       userExists = !!tech;

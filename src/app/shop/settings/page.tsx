@@ -259,6 +259,7 @@ function ShopSettingsPageContent() {
     licenseExpiresAt: '',
     insuranceExpiresAt: '',
     entityType: '',
+    ownerTitle: '',
     shopType: 'diesel',
     operatingHours: {
       monday: { open: '08:00', close: '18:00', closed: false },
@@ -359,7 +360,12 @@ function ShopSettingsPageContent() {
       if (data?.settings) {
         setNotificationsEnabled(data.settings.notificationsEnabled ?? true);
         setNotificationSoundEnabled(data.settings.notificationSoundEnabled ?? true);
-        setNotifications((prev) => ({ ...prev, ...(data.settings.notificationPreferences || {}) }));
+        const prefs = data.settings.notificationPreferences || {};
+        const { ownerTitle: savedTitle, ...togglePrefs } = prefs;
+        setNotifications((prev) => ({ ...prev, ...togglePrefs }));
+        if (typeof savedTitle === 'string') {
+          setSettings((prev) => ({ ...prev, ownerTitle: savedTitle }));
+        }
         const agreement = data.settings.fixtrayAgreement as
           | { accepted?: boolean; signedBy?: string; signedAt?: string }
           | null;
@@ -486,6 +492,7 @@ function ShopSettingsPageContent() {
       email: settings.email,
       signedBy: agreementSignature.trim(),
       signedAt,
+      ownerTitle: settings.ownerTitle,
     }).text;
 
     try {
@@ -514,7 +521,10 @@ function ShopSettingsPageContent() {
           notificationSettings: {
             notificationsEnabled,
             notificationSoundEnabled,
-            notificationPreferences: notifications,
+            notificationPreferences: {
+              ...notifications,
+              ownerTitle: settings.ownerTitle,
+            },
           },
           fixtrayAgreement: {
             accepted: true,
@@ -561,6 +571,7 @@ function ShopSettingsPageContent() {
     email: settings.email,
     signedBy: agreementSignature,
     signedAt: agreementSignedAt,
+    ownerTitle: settings.ownerTitle,
   }).text;
   const setupRemaining = remainingSetupSteps({
     agreementAccepted,
@@ -863,6 +874,11 @@ function ShopSettingsPageContent() {
                   <div>
                     <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>{say("Entity type")}</label>
                     <input type="text" value={settings.entityType} onChange={(e) => setSettings({...settings, entityType: e.target.value})} placeholder={say("LLC, corporation, sole prop")} style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
+                  </div>
+
+                  <div>
+                    <label style={{display:'block', fontSize:13, color:'#9aa3b2', marginBottom:8}}>Owner title</label>
+                    <input type="text" value={settings.ownerTitle} onChange={(e) => setSettings({...settings, ownerTitle: e.target.value})} placeholder="Owner" style={{width:'100%', padding:'12px', background:'rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#e5e7eb', fontSize:14}} />
                   </div>
 
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>

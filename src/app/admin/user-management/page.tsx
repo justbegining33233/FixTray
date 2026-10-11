@@ -8,6 +8,7 @@ import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { OWNER_ADD_USER_HREF } from '@/lib/ownerShell';
 import { accountRoleLabel, isPlatformStaffAccount, managedRoleCounts } from '@/lib/platformUserCensus';
+import { canonicalShopStatusWrite, shopMayLogIn, shopStatusLabel } from '@/lib/shopAccountStatus';
 import { FaArrowLeft, FaBuilding, FaEnvelope, FaHourglassHalf, FaUsers } from 'react-icons/fa';
 
 type User = {
@@ -20,7 +21,7 @@ type User = {
   email: string;
   role: 'admin' | 'shop' | 'customer' | 'tech' | 'manager' | 'superadmin' | 'staff';
   isSuperAdmin?: boolean;
-  status: 'active' | 'inactive' | 'suspended' | 'pending';
+  status: string;
   activityStatus?: 'active' | 'inactive';
   hasActiveSession?: boolean;
   joinedDate: Date;
@@ -101,7 +102,7 @@ export default function UserManagement() {
       lastName: u.lastName || '',
       email: u.email || '',
       role: u.role,
-      status: u.status,
+      status: u.userType === 'shop' ? (canonicalShopStatusWrite(u.status) || u.status) : u.status,
     });
     setModalMode('edit');
   };
@@ -141,7 +142,7 @@ export default function UserManagement() {
       }
 
       setUsers((prev) => prev.map((item) => item.id === targetUser.id ? { ...item, status: nextStatus } : item));
-      alert(say(nextStatus === 'active' ? 'User activated.' : 'User status updated.'));
+      alert(say(shopMayLogIn(nextStatus) ? 'User activated.' : 'User status updated.'));
     } catch {
       alert(say('Could not update this user. The request did not finish.'));
     } finally {
@@ -221,7 +222,8 @@ export default function UserManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return '#22c55e';
+      case 'active':
+      case 'approved': return '#22c55e';
       case 'inactive': return '#64748b';
       case 'pending': return '#f59e0b';
       case 'suspended': return '#e5332a';
@@ -390,7 +392,7 @@ export default function UserManagement() {
                       {accountRoleLabel(user) === 'Super Admin' ? say("Super Admin") : accountRoleLabel(user)}
                     </span>
                     <span style={{padding:'4px 12px', background:`${getStatusColor(user.status)}20`, color:getStatusColor(user.status), borderRadius:8, fontSize:11, fontWeight:600}}>
-                      {say("ACCOUNT:")}{' '}{user.status.toUpperCase()}
+                      {say("ACCOUNT:")}{' '}{(user.userType === 'shop' ? shopStatusLabel(user.status) : user.status).toUpperCase()}
                     </span>
                     <span style={{padding:'4px 12px', background:`${getStatusColor((user.activityStatus || 'inactive') as string)}20`, color:getStatusColor((user.activityStatus || 'inactive') as string), borderRadius:8, fontSize:11, fontWeight:600}}>
                       {say("ACTIVITY:")}{' '}{(user.activityStatus || 'inactive').toUpperCase()}{user.hasActiveSession ? say(" (SESSION)") : ''}
@@ -416,7 +418,7 @@ export default function UserManagement() {
                   >
                     {say("Reset Password")}{' '}</button>
                   {user.capabilities.canEditStatus ? (
-                    user.status === 'active' ? (
+                    shopMayLogIn(user.status) ? (
                       <button
                         onClick={() => updateUserStatus(user, 'suspended')}
                         disabled={savingAction}
@@ -425,7 +427,7 @@ export default function UserManagement() {
                         {say("Suspend")}{' '}</button>
                     ) : (
                       <button
-                        onClick={() => updateUserStatus(user, 'active')}
+                        onClick={() => updateUserStatus(user, 'approved')}
                         disabled={savingAction}
                         style={{padding:'10px 16px', background:'rgba(34,197,94,0.2)', color:'#22c55e', border:'1px solid rgba(34,197,94,0.3)', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', opacity: savingAction ? 0.7 : 1}}
                       >
@@ -463,10 +465,11 @@ export default function UserManagement() {
                     <option value="customer">{say("Customer")}</option>
                   </select>
                   <select value={editForm.status} onChange={(e) => setEditForm((p) => ({...p, status: e.target.value}))} disabled={!selectedUser.capabilities.canEditStatus} style={{padding:'10px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.18)', background:selectedUser.capabilities.canEditStatus ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.8)', color:'#e5e7eb', opacity: selectedUser.capabilities.canEditStatus ? 1 : 0.7}}>
-                    <option value="active">{say("Active")}</option>
-                    <option value="inactive">{say("Inactive")}</option>
-                    <option value="pending">{say("Pending")}</option>
-                    <option value="suspended">{say("Suspended")}</option>
+                    <option value="approved">{shopStatusLabel('approved')}</option>
+                    <option value="pending">{shopStatusLabel('pending')}</option>
+                    <option value="suspended">{shopStatusLabel('suspended')}</option>
+                    <option value="denied">{shopStatusLabel('denied')}</option>
+                    <option value="demo-ended">{shopStatusLabel('demo-ended')}</option>
                   </select>
                 </div>
                 <p style={{fontSize:12, color:'#94a3b8', margin:0}}>

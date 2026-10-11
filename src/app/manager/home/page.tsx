@@ -15,6 +15,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 import { managerAlertHref } from '@/lib/managerAlerts';
 import { OUTSTANDING_DEFINITION } from '@/lib/outstandingBalance';
 import { ManagerDashboardPhone } from '@/components/mobile/ManagerPhone';
+import { staffStatusWords } from '@/lib/staffPresence';
 
 export default function ManagerHome() {
   const say = usePhrase();
@@ -355,8 +356,8 @@ export default function ManagerHome() {
                           <div key={member.id} style={{background:'rgba(255,255,255,0.05)', borderRadius:8, padding:16}}>
                             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
                               <div style={{color:'#e5e7eb', fontWeight:600}}>{say(member.name)}</div>
-                              <div style={{color: (member.isClockedIn ?? member.isActive) ? '#22c55e' : '#6b7280', fontSize:12}}>
-                                {(member.isClockedIn ?? member.isActive) ? say("Clocked in") : say("Off")}
+                              <div style={{color: staffStatusWords({ clockedIn: member.isClockedIn ?? member.isActive, onJob: member.onJob }).clock === 'Clocked in' ? '#22c55e' : '#6b7280', fontSize:12}}>
+                                {say(staffStatusWords({ clockedIn: member.isClockedIn ?? member.isActive, onJob: member.onJob }).clock)}{member.onJob ? ` · ${say('On job')}` : ''}
                               </div>
                             </div>
                             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, fontSize:13}}>

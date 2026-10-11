@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import logger from '@/lib/logger';
+import { operatingShopWhere } from '@/lib/shopAccountStatus';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
       prisma.workOrder.count(),
       prisma.workOrder.groupBy({ by: ['status'], _count: { status: true } }),
       prisma.shop.count(),
-      prisma.shop.count({ where: { status: 'approved' } }),
+      prisma.shop.count({ where: operatingShopWhere() }),
       prisma.tech.count(),
       prisma.customer.count(),
       // Fetch the last 6 months of work orders for trend data

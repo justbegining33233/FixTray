@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { hashPassword } from '@/lib/auth';
 import { isOwnerAdmin } from '@/lib/owner-access';
+import { canonicalShopStatusWrite, SHOP_ACCOUNT_STATUSES, SHOP_APPROVED_STATUS } from '@/lib/shopAccountStatus';
 
 type SupportedUserType = 'admin' | 'shop' | 'customer' | 'manager' | 'tech';
 
@@ -740,12 +741,33 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update based on user type
+    let recordedStatus = status;
     if (normalizedUserType === 'shop') {
+      const existingShop = await prisma.shop.findUnique({
+        where: { id },
+        select: { id: true, approvedAt: true },
+      });
+      if (!existingShop) {
+        return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
+      }
+      let nextStatus: string | undefined;
+      if (typeof status === 'string' && status.trim()) {
+        const canonical = canonicalShopStatusWrite(status);
+        if (!canonical) {
+          return NextResponse.json(
+            { error: `Invalid shop status. Must be one of: ${SHOP_ACCOUNT_STATUSES.join(', ')}` },
+            { status: 400 },
+          );
+        }
+        nextStatus = canonical;
+        recordedStatus = canonical;
+      }
       const ownerName = [firstName, lastName].filter(Boolean).join(' ').trim();
       updated = await prisma.shop.update({
         where: { id },
         data: {
-          ...(status && { status }),
+          ...(nextStatus ? { status: nextStatus } : {}),
+          ...(nextStatus === SHOP_APPROVED_STATUS && !existingShop.approvedAt ? { approvedAt: new Date() } : {}),
           ...(email && { email }),
           ...(username && { username }),
           ...(ownerName && { ownerName }),
@@ -785,7 +807,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
     }
 
-    await logAdminAction(auth.id, `Updated user ${id}`, describeUserUpdate({ userType: normalizedUserType, role, status }));
+    await logAdminAction(auth.id, `Updated user ${id}`, describeUserUpdate({ userType: normalizedUserType, role, status: recordedStatus }));
     return NextResponse.json({ success: true, user: updated });
   } catch (error) {
     console.error('Error updating user:', error);

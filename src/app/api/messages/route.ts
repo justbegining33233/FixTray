@@ -13,6 +13,7 @@ import {
 } from '@/lib/directMessageAccess';
 import { messageListPreview, resolveChatAttachment } from '@/lib/messageAttachment';
 import { decorateDirectMessages, resolveAccountLocale, stampOutgoingTranslation } from '@/lib/chatTranslationStore';
+import { shopMayLogIn } from '@/lib/shopAccountStatus';
 
 // GET - Fetch messages/conversations for the logged-in user
 export async function GET(request: NextRequest) {
@@ -361,7 +362,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid shop recipient' }, { status: 400 });
       }
 
-      if (senderRole === 'customer' && shop.status !== 'approved') {
+      if (senderRole === 'customer' && !shopMayLogIn(shop.status)) {
         return NextResponse.json({ error: 'Customers can only message approved shops' }, { status: 403 });
       }
 

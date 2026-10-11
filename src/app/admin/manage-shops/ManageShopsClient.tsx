@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { shopDetailsHref } from '@/lib/ownerShell';
+import { shopMayLogIn, shopStatusIs, shopStatusLabel, type ShopAccountStatus } from '@/lib/shopAccountStatus';
 
 interface ShopData {
   id: string;
@@ -41,7 +42,7 @@ export default function ManageShopsClient() {
   const [shops, setShops] = useState<ShopData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | ShopAccountStatus>('all');
   const [activityFilter, setActivityFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [selectedShop, setSelectedShop] = useState<ShopData | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -100,7 +101,7 @@ export default function ManageShopsClient() {
   if (!user) return null;
 
   const filtered = shops.filter(s => {
-    if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+    if (statusFilter !== 'all' && !shopStatusIs(s.status, statusFilter)) return false;
     if (activityFilter !== 'all' && (s.activityStatus || 'inactive') !== activityFilter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -110,8 +111,8 @@ export default function ManageShopsClient() {
   });
 
   const statusColor = (s: string) => {
-    if (s === 'approved') return { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' };
-    if (s === 'suspended') return { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' };
+    if (shopMayLogIn(s)) return { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' };
+    if (shopStatusIs(s, 'suspended')) return { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' };
     return { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' };
   };
 
@@ -122,9 +123,9 @@ export default function ManageShopsClient() {
 
   const counts = {
     all: shops.length,
-    approved: shops.filter(s => s.status === 'approved').length,
-    pending: shops.filter(s => s.status === 'pending').length,
-    suspended: shops.filter(s => s.status === 'suspended').length,
+    approved: shops.filter(s => shopStatusIs(s.status, 'approved')).length,
+    pending: shops.filter(s => shopStatusIs(s.status, 'pending')).length,
+    suspended: shops.filter(s => shopStatusIs(s.status, 'suspended')).length,
     activeUsage: shops.filter(s => (s.activityStatus || 'inactive') === 'active').length,
     inactiveUsage: shops.filter(s => (s.activityStatus || 'inactive') === 'inactive').length,
   };
@@ -219,7 +220,7 @@ export default function ManageShopsClient() {
                     <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:8}}>
                       <h3 style={{fontSize:18, fontWeight:700, color:'#e5e7eb', margin:0}}>{say(shop.name)}</h3>
                       <span style={{...statusColor(shop.status), padding:'3px 10px', borderRadius:12, fontSize:11, fontWeight:700, textTransform:'uppercase' as const}}>
-                        account: {say(shop.status)}
+                        account: {shopStatusLabel(shop.status)}
                       </span>
                       <span style={{...activityColor(shop.activityStatus), padding:'3px 10px', borderRadius:12, fontSize:11, fontWeight:700, textTransform:'uppercase' as const}}>
                         usage: {shop.activityStatus || 'inactive'}
@@ -290,21 +291,21 @@ export default function ManageShopsClient() {
                         padding:'10px 20px', background:'#e5332a', color:'white', borderRadius:8, fontSize:13, fontWeight:600, textDecoration:'none',
                       }}>
                         {say("View Full Details")}{' '}</Link>
-                      {shop.status !== 'approved' && (
+                      {!shopMayLogIn(shop.status) && (
                         <button onClick={() => handleStatusChange(shop.id, 'approved')} disabled={actionLoading === shop.id} style={{
                           padding:'10px 20px', background:'#22c55e', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', opacity: actionLoading === shop.id ? 0.6 : 1,
                         }}>
                           {actionLoading === shop.id ? say("Updating...") : <><FaCheck style={{marginRight:4}} /> {say("Approve")}</>}
                         </button>
                       )}
-                      {shop.status !== 'suspended' && (
+                      {!shopStatusIs(shop.status, 'suspended') && (
                         <button onClick={() => handleStatusChange(shop.id, 'suspended')} disabled={actionLoading === shop.id} style={{
                           padding:'10px 20px', background:'#ef4444', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', opacity: actionLoading === shop.id ? 0.6 : 1,
                         }}>
                           {actionLoading === shop.id ? say("Updating...") : <><FaBan style={{marginRight:4}} /> {say("Suspend")}</>}
                         </button>
                       )}
-                      {shop.status === 'suspended' && (
+                      {shopStatusIs(shop.status, 'suspended') && (
                         <button onClick={() => handleStatusChange(shop.id, 'pending')} disabled={actionLoading === shop.id} style={{
                           padding:'10px 20px', background:'#f59e0b', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', opacity: actionLoading === shop.id ? 0.6 : 1,
                         }}>

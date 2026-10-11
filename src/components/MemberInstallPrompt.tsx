@@ -18,6 +18,7 @@ export default function MemberInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [notice, setNotice] = useState('');
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     const read = () => {
@@ -70,12 +71,26 @@ export default function MemberInstallPrompt() {
             }
             return;
           }
-          setNotice('On iPhone or iPad, open Share and choose Add to Home Screen.');
+          setNotice('Install isn\'t available in this browser. Use the browser menu and choose Install. On iPhone or iPad, open Share and choose Add to Home Screen.');
+          setHelpOpen(true);
         }}
         style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}
       >
         {say('Install')}
       </button>
+      {helpOpen ? (
+        <div role="dialog" aria-modal="true" aria-labelledby="install-unavailable-title" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80, padding: 16 }}>
+          <div style={{ maxWidth: 440, width: '100%', background: '#111', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, padding: 20 }}>
+            <h2 id="install-unavailable-title" style={{ color: '#e5e7eb', fontSize: 18, margin: '0 0 8px' }}>Install isn&apos;t available in this browser</h2>
+            <p style={{ color: '#d1d5db', fontSize: 14, lineHeight: 1.5, margin: '0 0 16px' }}>
+              To add FixTray to your home screen, use the browser menu and choose Install. On iPhone or iPad, open Share and choose Add to Home Screen.
+            </p>
+            <button type="button" onClick={() => setHelpOpen(false)} style={{ background: '#e5332a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' }}>
+              OK
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

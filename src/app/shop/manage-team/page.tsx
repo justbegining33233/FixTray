@@ -2,6 +2,7 @@
 
 import { usePhrase } from '@/lib/usePhrase';
 import React, { useState } from 'react';
+import Link from 'next/link';
 import TopNavBar from '@/components/TopNavBar';
 import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -374,7 +375,13 @@ export default function ManageTeamPage() {
                         </div>
                       </div>
                     </div>
-                    <div style={{display:'flex', gap:8}}>
+                    <div style={{display:'flex', gap:8, flexWrap:'wrap', justifyContent:'flex-end'}}>
+                      <Link
+                        href={`/shop/admin/employee/${member.id}`}
+                        style={{padding:'8px 16px', background:'rgba(34,197,94,0.15)', color:'#86efac', border:'1px solid rgba(34,197,94,0.35)', borderRadius:6, fontSize:13, fontWeight:600, textDecoration:'none'}}
+                      >
+                        {say("View details")}
+                      </Link>
                       <button 
                         onClick={() => handleEditMember(member)}
                         style={{padding:'8px 16px', background:'rgba(229,51,42,0.2)', color:'#e5332a', border:'1px solid rgba(229,51,42,0.3)', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer'}}

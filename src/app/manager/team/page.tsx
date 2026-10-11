@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaCircle, FaEnvelope, FaFolder, FaPhone, FaUsers } from 'react-icons/fa';
+import { staffStatusWords } from '@/lib/staffPresence';
 
 interface TeamMember {
   id: string;
@@ -16,6 +17,7 @@ interface TeamMember {
   email: string;
   phone: string;
   status: string;
+  onJob: boolean;
   assignedJobs: number;
   joinedDate: string;
   hourlyRate: number | null;
@@ -50,18 +52,23 @@ export default function ManagerTeamPage() {
       if (res.ok) {
         const data = await res.json();
         const techs = data.team || data.techs || [];
-        const members = techs.map((t: any) => ({
+        const members = techs.map((t: any) => {
+          const assignedJobs = t.assignedOpenJobs ?? t.assignedJobs ?? t._count?.assignedWorkOrders ?? 0;
+          const words = staffStatusWords({ clockedIn: t.isClockedIn === true, onJob: Number(assignedJobs) > 0 });
+          return {
           id: t.id,
           employeeNumber: t.employeeNumber || '',
           name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim(),
           role: t.role || 'tech',
           email: t.email || '',
           phone: t.phone || '',
-          status: t.isClockedIn ? 'Clocked in' : 'Off',
-          assignedJobs: t.assignedOpenJobs ?? t.assignedJobs ?? t._count?.assignedWorkOrders ?? 0,
+          status: words.clock,
+          onJob: words.job === 'On job',
+          assignedJobs,
           joinedDate: (t.joinedAt || t.createdAt) ? new Date(t.joinedAt || t.createdAt).toLocaleDateString() : ' - ',
           hourlyRate: typeof t.hourlyRate === 'number' ? t.hourlyRate : null,
-        }));
+        };
+        });
         setTeamMembers(members);
         setRateDrafts(Object.fromEntries(members.map((member: TeamMember) => [
           member.id,
@@ -211,7 +218,7 @@ export default function ManagerTeamPage() {
                       background: member.status === 'Clocked in' ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.2)',
                       color: member.status === 'Clocked in' ? '#4ade80' : '#94a3b8',
                     }}>
-                      <FaCircle style={{marginRight:4}} /> {say(member.status)}
+                      <FaCircle style={{marginRight:4}} /> {say(member.status)}{member.onJob ? ` · ${say('On job')}` : ''}
                     </span>
                     <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '9999px', background: 'rgba(229,51,42,0.15)', color: '#ff6b64' }}>
                       <FaFolder style={{marginRight:4}} /> {say(member.assignedJobs)} job{member.assignedJobs !== 1 ? 's' : ''}

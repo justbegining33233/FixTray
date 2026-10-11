@@ -5,7 +5,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft, FaCheck, FaClock, FaUsers } from 'react-icons/fa';
-import { OPEN_WORK_ORDER_STATUSES, isAwaitingClockIn, unwrapTechs, unwrapWorkOrders } from '@/lib/workOrderList';
+import { OPEN_WORK_ORDER_STATUSES, unwrapTeam, unwrapTechs, unwrapWorkOrders } from '@/lib/workOrderList';
+import { staffPresence, staffStatusWords } from '@/lib/staffPresence';
 import { orderWaitingJobs, waitingJobsQuery } from '@/lib/waitingJobQueue';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { ManagerQueuePhone } from '@/components/mobile/ManagerPhone';
@@ -28,6 +29,8 @@ interface Tech {
   lastName: string;
   role: string;
   assignedCount: number;
+  clockedIn: boolean;
+  onJob: boolean;
 }
 
 export default function AssignmentsPage() {
@@ -68,9 +71,11 @@ export default function AssignmentsPage() {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const [woResponse, techResponse] = await Promise.all([
+      const shopId = user?.shopId || localStorage.getItem('shopId') || '';
+      const [woResponse, techResponse, teamResponse] = await Promise.all([
         fetch(`/api/workorders?${waitingJobsQuery({ statuses: OPEN_WORK_ORDER_STATUSES })}`, { headers }),
         fetch('/api/techs', { headers }),
+        shopId ? fetch(`/api/shop/team?shopId=${shopId}`, { headers }) : Promise.resolve(null),
       ]);
 
       if (woResponse.ok) {
@@ -81,15 +86,32 @@ export default function AssignmentsPage() {
         setLoadError('Could not load work orders.');
       }
 
+      const clockById = new Map<string, { clockedIn: boolean; onJob: boolean }>();
+      if (teamResponse && teamResponse.ok) {
+        const teamData = await teamResponse.json();
+        for (const member of unwrapTeam(teamData)) {
+          const presence = staffPresence({
+            clockedIn: member.isClockedIn === true,
+            onJob: Number(member.assignedOpenJobs ?? member.assignedJobs ?? 0) > 0,
+          });
+          clockById.set(String(member.id), presence);
+        }
+      }
+
       if (techResponse.ok) {
         const techData = await techResponse.json();
-        setTechs(unwrapTechs(techData).map((tech: any) => ({
-          id: tech.id,
-          firstName: tech.firstName,
-          lastName: tech.lastName,
-          role: tech.role,
-          assignedCount: Number(tech._count?.assignedWorkOrders ?? tech.assignedWorkOrders?.length ?? 0),
-        })));
+        setTechs(unwrapTechs(techData).map((tech: any) => {
+          const presence = clockById.get(String(tech.id)) ?? staffPresence({ clockedIn: false, onJob: false });
+          return {
+            id: tech.id,
+            firstName: tech.firstName,
+            lastName: tech.lastName,
+            role: tech.role,
+            assignedCount: Number(tech._count?.assignedWorkOrders ?? tech.assignedWorkOrders?.length ?? 0),
+            clockedIn: presence.clockedIn,
+            onJob: presence.onJob,
+          };
+        }));
       } else {
         setTechs([]);
       }
@@ -110,8 +132,10 @@ export default function AssignmentsPage() {
     );
   }
 
-  const awaitingClockIn = workOrders.filter((wo) => isAwaitingClockIn(wo));
-  const clockedIn = workOrders.filter((wo) => !isAwaitingClockIn(wo));
+  const liveClockedIds = new Set(techs.filter((tech) => tech.clockedIn).map((tech) => tech.id));
+  const assignedTechId = (wo: WorkOrder) => wo.assignedTechId || wo.assignedTo?.id || '';
+  const clockedIn = workOrders.filter((wo) => liveClockedIds.has(assignedTechId(wo)));
+  const awaitingClockIn = workOrders.filter((wo) => !liveClockedIds.has(assignedTechId(wo)));
 
   if (isMobile) {
     return <ManagerQueuePhone awaiting={awaitingClockIn} clocked={clockedIn} techs={techs} />;
@@ -215,6 +239,9 @@ export default function AssignmentsPage() {
                           {say(tech.firstName)} {say(tech.lastName)}
                         </div>
                         <div style={{ fontSize: 12, color: '#9aa3b2' }}>{say(tech.role)}</div>
+                        <div style={{ fontSize: 12, color: tech.clockedIn ? '#4ade80' : '#94a3b8', marginTop: 4 }}>
+                          {say(staffStatusWords(tech).clock)}{tech.onJob ? ` · ${say('On job')}` : ''}
+                        </div>
                       </div>
                       <div style={{
                         padding: '4px 8px',

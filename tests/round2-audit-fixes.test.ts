@@ -84,6 +84,10 @@ describe('round 2 audit helpers', () => {
       signedAt: '2026-10-09T16:35:00.000Z',
     });
     expect(filled.text).not.toMatch(/\[STATE\]|\[ADDRESS\]|\[ENTITY TYPE\]|\[STATE\/COUNTRY\]/);
+    expect(filled.text).not.toMatch(/\[[A-Z_]+\]/);
+    expect(filled.text).not.toMatch(/\$\d/);
+    expect(filled.text).toContain('platform fee schedule');
+    expect(filled.text).toContain('SC');
     expect(filled.text).toContain('FixTray, Inc. (FixTray)');
     expect(filled.text).toContain('Week Sim Test');
     expect(filled.text).toContain('LLC');
@@ -92,6 +96,7 @@ describe('round 2 audit helpers', () => {
 
     const blank = renderParticipationAgreement(FIXTRAY_SHOP_PARTICIPATION_AGREEMENT, {});
     expect(blank.text).toContain(SETTINGS_PROMPT);
+    expect(blank.text).not.toMatch(/\[[A-Z_]+\]/);
     expect(blank.missing.length).toBeGreaterThan(0);
   });
 

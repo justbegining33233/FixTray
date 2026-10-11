@@ -117,6 +117,42 @@ export function estimateBillForOrder(order: CustomerLedgerOrder, savedFeeUsd: nu
   return billWithServiceFee(quote, savedFeeUsd);
 }
 
+/**
+ * The customer total shown on a work-order detail page.
+ * Uses the same estimate bill the estimates list already attached.
+ * A missing bill falls back to the same live fee calculation as that list.
+ */
+export function matchingEstimateBill(input: {
+  estimatedCost?: number | null;
+  lineItemTotal?: number | null;
+  estimateBill?: { subtotal?: number; serviceFee?: number; total?: number } | null;
+  platformFeeUsd?: number | null;
+}): ServiceFeeBill {
+  const estimated = typeof input.estimatedCost === 'number' && Number.isFinite(input.estimatedCost) && input.estimatedCost > 0
+    ? roundMoney(input.estimatedCost)
+    : 0;
+  const lines = typeof input.lineItemTotal === 'number' && Number.isFinite(input.lineItemTotal) && input.lineItemTotal > 0
+    ? roundMoney(input.lineItemTotal)
+    : 0;
+  const quote = estimated > 0 ? estimated : lines;
+  const server = input.estimateBill;
+  if (
+    server
+    && typeof server.subtotal === 'number'
+    && typeof server.serviceFee === 'number'
+    && typeof server.total === 'number'
+    && Number.isFinite(server.total)
+    && Math.abs(roundMoney(server.subtotal) - quote) < 0.02
+  ) {
+    return {
+      subtotal: roundMoney(server.subtotal),
+      serviceFee: roundMoney(Math.max(0, server.serviceFee)),
+      total: roundMoney(server.total),
+    };
+  }
+  return billWithServiceFee(quote, Number(input.platformFeeUsd) || 0);
+}
+
 /** Spent and paid are the same recorded payments. Pending is unpaid bills only. */
 export function customerLedgerSummary(
   orders: CustomerLedgerOrder[],

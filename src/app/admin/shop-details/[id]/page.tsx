@@ -16,6 +16,7 @@ import {
   type ShopDetailsView,
 } from '@/lib/shopDetailsView';
 import { shopDetailsBackTarget } from '@/lib/ownerShell';
+import { shopMayLogIn, shopStatusIs, shopStatusLabel } from '@/lib/shopAccountStatus';
 import { FaArrowLeft, FaBuilding, FaCalendarAlt, FaCheck, FaExclamationTriangle, FaHourglassHalf, FaPhone, FaStar, FaTimesCircle } from 'react-icons/fa';
 
 export default function ShopDetailsPage() {
@@ -157,9 +158,11 @@ export default function ShopDetailsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return '#22c55e';
+      case 'approved':
+      case 'active': return '#22c55e';
       case 'pending': return '#f59e0b';
-      case 'suspended': return '#e5332a';
+      case 'suspended':
+      case 'inactive': return '#e5332a';
       default: return '#9aa3b2';
     }
   };
@@ -178,13 +181,13 @@ export default function ShopDetailsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
                 <h1 style={{ fontSize: 28, fontWeight: 700, color: '#e5e7eb' }}>{say(shop.shopName)}</h1>
                 <span style={{ padding: '6px 16px', background: `${getStatusColor(shop.status)}20`, color: getStatusColor(shop.status), borderRadius: 8, fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>
-                  {say(shop.status)}
+                  {shopStatusLabel(shop.status)}
                 </span>
               </div>
               <p style={{ fontSize: 14, color: '#9aa3b2' }}>{say("Owner:")}{' '}{shop.ownerName || say("N/A")} - {shop.shopType || say("Auto")} {say("Shop")}</p>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
-              {shop.status === 'approved' && (
+              {shopMayLogIn(shop.status) && (
                 <button
                   onClick={() => setStatusConfirm('suspended')}
                   disabled={actionLoading}
@@ -193,7 +196,7 @@ export default function ShopDetailsPage() {
                   {actionLoading ? say("Processing...") : say("Suspend Shop")}
                 </button>
               )}
-              {shop.status === 'suspended' && (
+              {shopStatusIs(shop.status, 'suspended') && (
                 <button
                   onClick={() => setStatusConfirm('approved')}
                   disabled={actionLoading}
@@ -202,7 +205,7 @@ export default function ShopDetailsPage() {
                   {actionLoading ? say("Processing...") : say("Reactivate Shop")}
                 </button>
               )}
-              {shop.status === 'pending' && (
+              {shopStatusIs(shop.status, 'pending') && (
                 <button
                   onClick={() => setStatusConfirm('approved')}
                   disabled={actionLoading}

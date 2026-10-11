@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { FaChartBar, FaChartLine, FaClipboardList, FaCog, FaDollarSign, FaStore, FaUsers, FaWrench } from 'react-icons/fa';
+import { shopMayLogIn, shopStatusIs, shopStatusLabel } from '@/lib/shopAccountStatus';
 
 export default function AdminDashboardPage() {
   const say = usePhrase();
@@ -227,20 +228,20 @@ export default function AdminDashboardPage() {
                         fontSize: 12,
                         fontWeight: 600,
                         background:
-                          shop.status === 'approved'
+                          shopMayLogIn(shop.status)
                             ? 'rgba(34, 197, 94, 0.2)'
-                            : shop.status === 'pending'
+                            : shopStatusIs(shop.status, 'pending')
                             ? 'rgba(234, 179, 8, 0.2)'
                             : 'rgba(239, 68, 68, 0.2)',
                         color:
-                          shop.status === 'approved'
+                          shopMayLogIn(shop.status)
                             ? '#22c55e'
-                            : shop.status === 'pending'
+                            : shopStatusIs(shop.status, 'pending')
                             ? '#eab308'
                             : '#ef4444',
                       }}
                     >
-                      {shop.status.toUpperCase()}
+                      {shopStatusLabel(shop.status).toUpperCase()}
                     </span>
                   </div>
                 </div>

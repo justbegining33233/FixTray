@@ -12,6 +12,7 @@ import OilSlickCanvas from '@/components/OilSlickCanvas';
 import { useTranslations } from 'next-intl';
 import { usePhrase } from '@/lib/usePhrase';
 import { loginProbeOrder, type LoginProbe } from '@/lib/customerSession';
+import { SHOP_BLOCKED_LOGIN_MESSAGE } from '@/lib/shopAccountStatus';
 import { decodeToken } from '@/lib/auth-client';
 import { introHandoffPath, readIntroSession } from '@/lib/nativeIntro';
 import { Capacitor } from '@capacitor/core';
@@ -180,6 +181,12 @@ export default function LoginClient() {
             setLoading(false);
             const nextRoute = profileComplete ? '/shop/admin' : '/shop/settings/complete-profile';
             navigateAfterLogin(getPostLoginRoute(nextRoute, ['/shop/', '/workorders/']));
+            return true;
+          }
+          if (shopResponse.status === 403) {
+            const shopError = await shopResponse.json().catch(() => ({}));
+            setErrors({ username: typeof shopError.error === 'string' ? shopError.error : SHOP_BLOCKED_LOGIN_MESSAGE });
+            setLoading(false);
             return true;
           }
           if (shopResponse.status >= 500) serverError = true;

@@ -1,3 +1,7 @@
+import { normalizeShopAccountStatus, shopMayLogIn, shopStatusLabel as labelShopStatus } from '@/lib/shopAccountStatus';
+
+export { normalizeShopAccountStatus } from '@/lib/shopAccountStatus';
+
 /** Headline shop count shared by owner home, manage-shops, and analytics. */
 export type ShopHeadlineInput = {
   totalShops?: number | null;
@@ -13,13 +17,13 @@ export function ownerShopHeadline(metrics: ShopHeadlineInput) {
   };
 }
 
-/** Approved means the shop account status is approved. Letter case does not matter. */
+/** Approved means the shop may sign in: `approved`, or the legacy Activate value `active`. */
 export function normalizeShopStatus(status: unknown): string {
-  return String(status ?? '').trim().toLowerCase().replace(/[\s_]+/g, '-');
+  return normalizeShopAccountStatus(status);
 }
 
 export function isApprovedShop(shop: { status?: unknown } | null | undefined): boolean {
-  return normalizeShopStatus(shop?.status) === 'approved';
+  return shopMayLogIn(shop?.status);
 }
 
 export function countApprovedShops(shops: Array<{ status?: unknown }> | null | undefined): number {
@@ -27,16 +31,9 @@ export function countApprovedShops(shops: Array<{ status?: unknown }> | null | u
   return shops.filter((shop) => isApprovedShop(shop)).length;
 }
 
-/** Label the stored status. Anything other than approved must not read as Approved. */
+/** @deprecated Use shopStatusLabel from shopAccountStatus. Kept so older imports still label `active` as Approved. */
 export function shopStatusLabel(status: unknown): string {
-  const normalized = normalizeShopStatus(status);
-  if (!normalized) return 'Unknown';
-  if (normalized === 'approved') return 'Approved';
-  if (normalized === 'pending') return 'Pending';
-  if (normalized === 'suspended') return 'Suspended';
-  if (normalized === 'denied') return 'Denied';
-  if (normalized === 'demo-ended') return 'Demo ended';
-  return normalized.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return labelShopStatus(status);
 }
 
 function numberOrZero(value: number | null | undefined): number {

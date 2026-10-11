@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireRole } from '@/lib/auth';
 import { syncLowStockReorderAsks } from '@/lib/lowStockReorderAsk';
+import { operatingShopWhere } from '@/lib/shopAccountStatus';
 
 // GET /api/inventory/shared — view inventory across multiple shops
 export async function GET(request: NextRequest) {
@@ -14,12 +15,12 @@ export async function GET(request: NextRequest) {
 
     let shopIds: string[] = [];
     if (auth.role === 'superadmin') {
-      const shops = await prisma.shop.findMany({ where: { status: 'approved' }, select: { id: true } });
+      const shops = await prisma.shop.findMany({ where: operatingShopWhere(), select: { id: true } });
       shopIds = shops.map(s => s.id);
     } else if (auth.role === 'shop') {
       const currentShop = await prisma.shop.findUnique({ where: { id: auth.id }, select: { email: true } });
       if (currentShop) {
-        const owned = await prisma.shop.findMany({ where: { email: currentShop.email, status: 'approved' }, select: { id: true } });
+        const owned = await prisma.shop.findMany({ where: { AND: [{ email: currentShop.email }, operatingShopWhere()] }, select: { id: true } });
         shopIds = owned.map(s => s.id);
       }
     } else {

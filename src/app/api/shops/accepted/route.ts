@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth';
 import type { AuthUser } from '@/lib/auth';
 import { acceptedShopContactPayload, canExposeShopContact } from '@/lib/shopContact';
 import { DEMO_USERNAME_PREFIX } from '@/lib/demoShopRules';
+import { operatingShopWhere } from '@/lib/shopAccountStatus';
 
 export async function GET(request: NextRequest) {
   // Require authentication — shop discovery is only for logged-in users
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Return all approved shops from the database
     const approvedShops = await prisma.shop.findMany({
       where: {
-        status: { equals: 'approved', mode: 'insensitive' },
+        ...operatingShopWhere(),
       },
       orderBy: {
         createdAt: 'desc'

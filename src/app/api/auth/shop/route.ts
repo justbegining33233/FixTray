@@ -7,6 +7,7 @@ import { logActivity } from '@/lib/activityLogger';
 import logger from '@/lib/logger';
 import { enforceSingleActiveSession } from '@/lib/sessionPolicy';
 import { agreementFromNotificationPrefs, fixtrayAgreementAccepted } from '@/lib/fixtrayAgreement';
+import { shopLoginDenial } from '@/lib/shopAccountStatus';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,15 +42,10 @@ export async function POST(request: NextRequest) {
     // Find shop by username, email, or shop name
     const shop = await prisma.shop.findFirst({
       where: {
-        AND: [
-          {
-            OR: [
-              { username: username },
-              { email: username },
-              { shopName: username },
-            ],
-          },
-          { status: 'approved' }, // Only approved shops can login
+        OR: [
+          { username: username },
+          { email: username },
+          { shopName: username },
         ],
       },
     });
@@ -80,6 +76,11 @@ export async function POST(request: NextRequest) {
       // HIGH FIX #6: Record failed attempt for lockout
       await recordFailedLoginAttempt(shop.id, request);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    const denial = shopLoginDenial(shop.status);
+    if (denial) {
+      return NextResponse.json({ error: denial.error }, { status: denial.httpStatus });
     }
 
     // HIGH FIX #6: Clear failed attempts on successful login

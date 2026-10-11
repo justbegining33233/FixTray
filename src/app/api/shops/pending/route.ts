@@ -5,6 +5,7 @@ import { validateCsrf } from '@/lib/csrf';
 import { hashPassword } from '@/lib/auth';
 import { z } from 'zod';
 import { sendShopApprovedEmail } from '@/lib/emailService';
+import { SHOP_APPROVED_STATUS } from '@/lib/shopAccountStatus';
 
 export async function GET(request: NextRequest) {
   // Require admin authentication to view pending shops
@@ -200,7 +201,7 @@ export async function PATCH(request: NextRequest) {
       const approvedShop = await prisma.shop.update({
         where: { id },
         data: {
-          status: 'approved',
+          status: SHOP_APPROVED_STATUS,
           approvedAt: new Date(),
           username: newUsername || shop.username,
           password: hashedPassword || shop.password,
